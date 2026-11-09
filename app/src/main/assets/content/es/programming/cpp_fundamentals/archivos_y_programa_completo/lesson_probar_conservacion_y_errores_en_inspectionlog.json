@@ -1,0 +1,1706 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__probar_conservacion_y_errores_en_inspectionlog",
+  "title": "Probar conservación y errores en InspectionLog",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar propiedades que un informe correcto puede ocultar"
+        },
+        {
+          "type": "paragraph",
+          "text": "El caso base no basta para aceptar el proyecto. Dos programas pueden presentar los mismos totales y conservar datos diferentes. Esta etapa añade pruebas.cpp, un segundo programa que llama a las mismas funciones que main.cpp y compara resultados contra valores preparados. Tendrá su propio main y devolverá 1 si falla alguna comparación; no se enlazará junto con el main del cliente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Mantén el comprobador del modelo y sus diez muestras. El nuevo programa ampliará la evidencia: máximos y empates, comparación completa, entradas límite, conservación de la salida y fallos de apertura. No sustituye una ejecución por otra ni deduce el éxito porque la compilación termine. Cada comprobación debe utilizar el resultado real de la función."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usaremos pruebas_tmp como carpeta de archivos desechables creados por el propio comprobador. Ninguna prueba utilizará archivos personales de inspecciones. Desde la raíz del proyecto, crea esa carpeta y abre el nuevo fuente:"
+        },
+        {
+          "type": "paragraph",
+          "text": "mkdir pruebas_tmp"
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad pruebas.cpp"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__probar_conservacion_y_errores_en_inspectionlog__comparar_datos",
+          "question": "Dos conjuntos tienen los mismos totales, pero el segundo eliminó azul, que estaba presente sin registros. ¿Qué comparación exige nuestro contrato?",
+          "options": [
+            "Aceptar la equivalencia porque no cambiaron los totales.",
+            "Aceptar la equivalencia si el texto guardado es más corto.",
+            "Rechazar la equivalencia porque cambió la presencia de un grupo."
+          ],
+          "correctIndex": 2,
+          "explanation": "El grupo vacío forma parte de los datos. mismos_datos debe distinguirlo de un grupo ausente aunque ambos contribuyan cero a los totales. También debe distinguir el orden y la identidad de los registros."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir casos con una consecuencia observable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el máximo, construye directamente conjuntos de prueba. Primero, rojo contiene aceptados 4 y 4, y azul contiene 7: debe elegirse rojo 8, porque se suman registros. Después comprueba: conjunto sin grupos; un grupo vacío; empate de dos grupos; vacío primero frente a otro con cero; un grupo posterior que supera al primero; tres grupos en los que vence el intermedio; y todos los grupos con total cero en un orden no numérico."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cada caso compara los tres miembros de Informe_mayor. Sin grupos deben ser false, -1 y 0. Un grupo vacío está presente y puede ganar con cero. Conserva una copia del conjunto antes de la llamada y comprueba también que el selector no lo cambió."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para mismos_datos, parte del caso base y prepara seis contrastes separados: igualdad exacta; invertir grupos; invertir registros; eliminar el grupo vacío; eliminar el registro de ceros; y cambiar únicamente los rechazados. Añade un conjunto inválido comparado consigo mismo: el resultado debe ser falso. Esta prueba controla una precondición que comparar sólo los miembros no comprobaría."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye además el límite válido: tres grupos, cada uno con los diez identificadores en orden y ambas cantidades iguales a diez. El informe tendrá 300 aceptados y 300 rechazados. Compón y relee ese conjunto, y compara todos sus datos. Sus bucles generan una muestra reproducible; no necesitan azar ni un archivo descargado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el rechazo, conserva un estado previo verde 9[6;2]. Prueba nombre desconocido, identificador negativo, identificador diez, cantidad negativa, rechazados once, entero demasiado grande, separador incorrecto, apertura incorrecta, texto posterior y un grupo duplicado al final. Cada rechazo debe dejar exactamente el estado previo. Una muestra completa rodeada de blancos sí debe aceptarse."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__probar_conservacion_y_errores_en_inspectionlog__maximo_por_suma",
+          "question": "¿Qué error detecta rojo con dos registros de cuatro aceptados frente a azul con uno de siete?",
+          "options": [
+            "Elegir por el mayor registro individual en lugar de sumar por grupo.",
+            "Rechazar los identificadores repetidos dentro de un mismo grupo.",
+            "No cerrar el archivo de salida después de escribir."
+          ],
+          "correctIndex": 0,
+          "explanation": "La suma de rojo es 8, mayor que 7. Un algoritmo que sólo conserve el registro individual más grande elegiría azul. Los otros contratos necesitan casos diferentes; esta muestra no demuestra que se cierren archivos ni comprueba duplicados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar que el rechazo no borra una salida"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el comprobador, escribe una entrada inválida y prepara una salida con el texto exacto MARCA. Comprueba apertura, escritura y cierre de esos archivos de prueba. Después llama a procesar_archivos con el estado previo no vacío. Debe devolver 2, conservar ese estado y dejar la salida exactamente en MARCA. La ausencia de un informe no basta: hay que releer el archivo para comprobar que no se abrió y truncó antes de tiempo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repite el contraste con cuatro entradas: cantidad once, grupo repetido, segundo grupo truncado y texto posterior al cierre exterior. Para el caso válido, compara el estado aceptado y relee la copia guardada. Conserva las líneas de diagnóstico en un std::ostringstream y comprueba que el mensaje corresponde a la etapa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para provocar una apertura imposible de forma reproducible, crea pruebas_tmp/bloqueo.txt como archivo normal. La ruta pruebas_tmp/bloqueo.txt/salida.txt intenta utilizar ese archivo como si fuera una carpeta. Una muestra válida debe producir Error al abrir salida y terminar con 1. Utiliza la misma idea para una entrada que no pueda abrirse; en ese caso tampoco se debe tocar la salida anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba también rutas escritas exactamente iguales: el resultado técnico debe aparecer antes de abrirlas para escribir. No conviertas estas pruebas en una promesa de protección frente a alias del mismo archivo, interrupciones del equipo o escrituras de otros programas. El alcance demostrado es el que ejecuta cada caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para recuperar el análisis de flujos, escribe en un std::ofstream ya cerrado y observa el fallo; comprueba también un segundo cierre tras una escritura y un primer cierre correctos. Son errores provocados expresamente, no averías físicas observadas. Distingue el indicador del flujo de los bytes que quedaron guardados."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__probar_conservacion_y_errores_en_inspectionlog__marca_observable",
+          "question": "La operación devuelve dos, pero el archivo de salida ahora está vacío. ¿Pasó la prueba de rechazo?",
+          "options": [
+            "Sí, porque el código de retorno basta para declarar conservados los archivos.",
+            "No: el rechazo se informó, pero el contenido anterior se perdió.",
+            "Sí, porque un archivo vacío equivale a no haber abierto la salida."
+          ],
+          "correctIndex": 1,
+          "explanation": "El esperado incluía la conservación literal de MARCA. Un archivo vacío muestra que esa parte del contrato falló. Por eso el comprobador relee la salida y no se limita a comprobar el resultado numérico."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el comprobador y separar sus responsabilidades"
+        },
+        {
+          "type": "paragraph",
+          "text": "En pruebas.cpp incluye aplicacion.h, <fstream>, <iostream> y <sstream>. Crea comprobar(nombre, condicion, fallos): presentará el nombre y OK cuando la condición real sea verdadera; si es falsa, presentará FALLO e incrementará el contador. Recibe el contador por referencia para conservar los fallos de todas las llamadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los auxiliares de prueba tendrán tareas pequeñas. Uno escribe un texto y comprueba el cierre. Otro lee un archivo carácter a carácter con get y distingue fin normal de error. Otro comprueba una entrada rechazada contra el estado previo. Para los informes, compara la cadena completa, incluidos los saltos. No escribas OK sin evaluar la condición ni cambies esperados para acomodar una implementación equivocada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye los casos de las páginas anteriores y termina mostrando Bateria completa: OK si el contador sigue en cero, o Bateria completa: FALLO si no. Devuelve 0 en el primer caso y 1 en el segundo. Las comparaciones deben ejecutarse aunque una anterior falle, salvo que no se puedan preparar los archivos necesarios para esa prueba."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe y guarda el comprobador externo. Al completar la referencia podrás contrastar tanto su código como la lista de casos. La comparación debe seguir razonando desde los requisitos: una referencia del autor puede contener errores y una salida satisfactoria no acredita casos que nunca ejecutó."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia del comprobador completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta implementación conserva las funciones del programa. Los esperados se expresan con estructuras, cadenas y números preparados en el propio comprobador. Los auxiliares no reparan el resultado recibido: sólo lo comparan y registran el fallo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n#include <fstream>\n#include <iostream>\n#include <sstream>\n\nvoid comprobar(const std::string& nombre, bool condicion, int& fallos) {\n    std::cout << nombre << \": \";\n    if (condicion) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; ++fallos; }\n}\n\nbool escribir_texto(const std::string& ruta, const std::string& texto) {\n    std::ofstream salida{ruta};\n    if (!salida) { return false; }\n    salida << texto;\n    if (!salida) { return false; }\n    salida.close();\n    return static_cast<bool>(salida);\n}\n\nbool leer_texto(const std::string& ruta, std::string& destino) {\n    std::ifstream entrada{ruta};\n    if (!entrada) { return false; }\n    std::string candidato;\n    char caracter{0};\n    while (entrada.get(caracter)) { candidato += caracter; }\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nvoid probar_mayor(const std::string& nombre, const Conjunto& conjunto,\n                  bool hay_grupo, int id, int aceptados, int& fallos) {\n    const Conjunto previo = conjunto;\n    const Informe_mayor resultado = seleccionar_mayor(conjunto);\n    comprobar(nombre, resultado.hay_grupo == hay_grupo\n        && resultado.id == id && resultado.aceptados == aceptados\n        && mismos_datos(previo, conjunto), fallos);\n}\n\nvoid probar_rechazo(const std::string& nombre, const std::string& texto,\n                    int& fallos) {\n    const Conjunto previo{{Grupo{1, {{9, {6, 2}}}}}};\n    Conjunto actual = previo;\n    std::istringstream entrada{texto};\n    const bool aceptado = leer_muestra_completa(entrada, actual);\n    comprobar(nombre, !aceptado && mismos_datos(previo, actual), fallos);\n}\n\nvoid probar_informe(const std::string& nombre, const Conjunto& conjunto,\n                    const std::string& esperado, int& fallos) {\n    std::ostringstream salida;\n    const bool correcto = mostrar_informe(conjunto, salida);\n    comprobar(nombre, correcto && salida.str() == esperado, fallos);\n}\n\nvoid probar_rechazo_archivo(const std::string& nombre,\n                            const std::string& texto, int& fallos) {\n    if (!escribir_texto(\"pruebas_tmp/entrada.txt\", texto)\n        || !escribir_texto(\"pruebas_tmp/salida.txt\", \"MARCA\")) {\n        comprobar(nombre + \" preparacion\", false, fallos);\n        return;\n    }\n    const Conjunto previo{{Grupo{1, {{9, {6, 2}}}}}};\n    Conjunto actual = previo;\n    std::ostringstream mensajes;\n    const int resultado = procesar_archivos(\"pruebas_tmp/entrada.txt\",\n        \"pruebas_tmp/salida.txt\", actual, mensajes);\n    std::string guardado;\n    const bool leido = leer_texto(\"pruebas_tmp/salida.txt\", guardado);\n    comprobar(nombre, resultado == 2 && mismos_datos(actual, previo)\n        && leido && guardado == \"MARCA\"\n        && mensajes.str() == \"Entrada rechazada. Estado conservado.\\n\", fallos);\n}\n\nint main() {\n    int fallos{0};\n    const Conjunto por_suma{{Grupo{0, {{1, {4, 0}}, {2, {4, 0}}}},\n                            Grupo{2, {{3, {7, 0}}}}}};\n    probar_mayor(\"maximo_por_suma\", por_suma, true, 0, 8, fallos);\n    probar_mayor(\"maximo_sin_grupos\", Conjunto{}, false, -1, 0, fallos);\n    probar_mayor(\"maximo_grupo_vacio\", Conjunto{{Grupo{2, {}}}}, true, 2, 0, fallos);\n    probar_mayor(\"empate_orden\", Conjunto{{Grupo{2, {{0, {5, 0}}}},\n        Grupo{0, {{1, {2, 0}}, {2, {3, 0}}}}}}, true, 2, 5, fallos);\n    probar_mayor(\"empate_vacio_primero\", Conjunto{{Grupo{2, {}},\n        Grupo{0, {{7, {0, 0}}}}}}, true, 2, 0, fallos);\n    probar_mayor(\"maximo_posterior\", Conjunto{{Grupo{0, {{0, {2, 0}}}},\n        Grupo{1, {{0, {9, 0}}}}}}, true, 1, 9, fallos);\n    probar_mayor(\"maximo_intermedio\", Conjunto{{Grupo{2, {{0, {1, 0}}}},\n        Grupo{0, {{0, {9, 0}}}}, Grupo{1, {{0, {7, 0}}}}}}, true, 0, 9, fallos);\n    probar_mayor(\"empate_tres_ceros\", Conjunto{{Grupo{2, {}}, Grupo{1, {}},\n        Grupo{0, {}}}}, true, 2, 0, fallos);\n\n    const Conjunto base{{Grupo{0, {{7, {0, 0}}, {2, {3, 1}}}}, Grupo{2, {}}}};\n    comprobar(\"comparacion_igual\", mismos_datos(base, base), fallos);\n    Conjunto cambio{{base.grupos.at(1), base.grupos.at(0)}};\n    comprobar(\"comparacion_orden_grupos\", !mismos_datos(base, cambio), fallos);\n    cambio = base;\n    cambio.grupos.at(0).registros = {base.grupos.at(0).registros.at(1),\n                                    base.grupos.at(0).registros.at(0)};\n    comprobar(\"comparacion_orden_registros\", !mismos_datos(base, cambio), fallos);\n    cambio = Conjunto{{base.grupos.at(0)}};\n    comprobar(\"comparacion_presencia_vacia\", !mismos_datos(base, cambio), fallos);\n    cambio = base;\n    cambio.grupos.at(0).registros = {base.grupos.at(0).registros.at(1)};\n    comprobar(\"comparacion_registro_cero\", !mismos_datos(base, cambio), fallos);\n    cambio = base;\n    cambio.grupos.at(0).registros.at(1).recuento.rechazados = 2;\n    comprobar(\"comparacion_rechazados\", !mismos_datos(base, cambio), fallos);\n    cambio = base;\n    cambio.grupos.at(0).registros.at(1).id = 7;\n    comprobar(\"comparacion_invalida\", !mismos_datos(cambio, cambio), fallos);\n    std::string compuesto{\"MARCA\"};\n    comprobar(\"composicion_no_sustituye\", !componer_conjunto(cambio, compuesto)\n        && compuesto == \"MARCA\", fallos);\n\n    Conjunto limite{};\n    for (int grupo = 0; grupo < 3; ++grupo) {\n        Grupo nuevo{grupo, {}};\n        for (int id = 0; id < 10; ++id) {\n            nuevo.registros.push_back(Registro{id, {10, 10}});\n        }\n        limite.grupos.push_back(nuevo);\n    }\n    comprobar(\"limite_valido\", conjunto_valido(limite), fallos);\n    compuesto.clear();\n    const bool compuesto_limite = componer_conjunto(limite, compuesto);\n    std::istringstream lectura_limite{compuesto};\n    Conjunto vuelta{};\n    const bool leido_limite = leer_muestra_completa(lectura_limite, vuelta);\n    comprobar(\"limite_ida_y_vuelta\", compuesto_limite && leido_limite\n        && mismos_datos(limite, vuelta), fallos);\n    probar_informe(\"informe_limite\", limite,\n        \"Grupos: 3\\nAceptados: 300\\nRechazados: 300\\nMayor: rojo 100\\n\", fallos);\n\n    probar_rechazo(\"nombre_desconocido\", \"{ conjunto { grupo negro } }\", fallos);\n    probar_rechazo(\"id_negativo\", \"{ conjunto { grupo rojo -1[0;0] } }\", fallos);\n    probar_rechazo(\"id_diez\", \"{ conjunto { grupo rojo 10[0;0] } }\", fallos);\n    probar_rechazo(\"cantidad_negativa\", \"{ conjunto { grupo rojo 0[-1;0] } }\", fallos);\n    probar_rechazo(\"rechazados_once\", \"{ conjunto { grupo rojo 0[0;11] } }\", fallos);\n    probar_rechazo(\"entero_excesivo\", \"{ conjunto { grupo rojo 0[999999999999999999999999999999;0] } }\", fallos);\n    probar_rechazo(\"separador_incorrecto\", \"{ conjunto { grupo rojo 0[1:2] } }\", fallos);\n    probar_rechazo(\"apertura_incorrecta\", \"[ conjunto }\", fallos);\n    probar_rechazo(\"texto_posterior\", \"{ conjunto } resto\", fallos);\n    probar_rechazo(\"duplicado_al_final\", \"{ conjunto { grupo azul } { grupo rojo } { grupo azul } }\", fallos);\n    std::istringstream blancos{\" \\n\\t{ conjunto { grupo azul } }\\r\\n\\t \"};\n    Conjunto con_blancos{};\n    comprobar(\"blancos_completos\", leer_muestra_completa(blancos, con_blancos)\n        && mismos_datos(con_blancos, Conjunto{{Grupo{2, {}}}}), fallos);\n    std::istringstream averiada{\"{ conjunto }\"};\n    averiada.setstate(std::ios::badbit);\n    Conjunto conservado = base;\n    comprobar(\"flujo_averiado\", !leer_muestra_completa(averiada, conservado)\n        && mismos_datos(conservado, base), fallos);\n\n    probar_informe(\"informe_base\", base,\n        \"Grupos: 2\\nAceptados: 3\\nRechazados: 1\\nMayor: rojo 3\\n\", fallos);\n    probar_informe(\"informe_vacio\", Conjunto{},\n        \"Grupos: 0\\nAceptados: 0\\nRechazados: 0\\nMayor: ninguno\\n\", fallos);\n    probar_informe(\"informe_presente_vacio\", Conjunto{{Grupo{2, {}}}},\n        \"Grupos: 1\\nAceptados: 0\\nRechazados: 0\\nMayor: azul 0\\n\", fallos);\n    std::ostringstream sin_informe;\n    sin_informe << \"MARCA\";\n    comprobar(\"informe_invalido\", !mostrar_informe(cambio, sin_informe)\n        && sin_informe.str() == \"MARCA\", fallos);\n\n    probar_rechazo_archivo(\"archivo_cantidad\", \"{ conjunto { grupo rojo 0[11;0] } }\", fallos);\n    probar_rechazo_archivo(\"archivo_duplicado\", \"{ conjunto { grupo rojo } { grupo rojo } }\", fallos);\n    probar_rechazo_archivo(\"archivo_truncado\", \"{ conjunto { grupo rojo } { grupo azul 2[1;0]\", fallos);\n    probar_rechazo_archivo(\"archivo_texto_posterior\", \"{ conjunto } resto\", fallos);\n\n    const std::string texto_base{\"{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\"};\n    if (!escribir_texto(\"pruebas_tmp/entrada.txt\", texto_base)\n        || !escribir_texto(\"pruebas_tmp/bloqueo.txt\", \"Archivo normal\")) {\n        comprobar(\"preparacion_archivos\", false, fallos);\n        return 1;\n    }\n    Conjunto actual{};\n    std::ostringstream mensajes;\n    int resultado = procesar_archivos(\"pruebas_tmp/entrada.txt\",\n        \"pruebas_tmp/salida.txt\", actual, mensajes);\n    std::string guardado;\n    comprobar(\"archivo_valido\", resultado == 0 && mismos_datos(actual, base)\n        && leer_texto(\"pruebas_tmp/salida.txt\", guardado) && guardado == texto_base\n        && mensajes.str() == \"Entrada aceptada\\nGrupos: 2\\nAceptados: 3\\nRechazados: 1\\nMayor: rojo 3\\nGuardado verificado\\n\", fallos);\n\n    const Conjunto previo{{Grupo{1, {{9, {6, 2}}}}}};\n    actual = previo;\n    mensajes.str(\"\");\n    resultado = procesar_archivos(\"pruebas_tmp/bloqueo.txt/entrada.txt\",\n        \"pruebas_tmp/salida.txt\", actual, mensajes);\n    comprobar(\"entrada_no_abre\", resultado == 1 && mismos_datos(actual, previo)\n        && leer_texto(\"pruebas_tmp/salida.txt\", guardado) && guardado == texto_base\n        && mensajes.str() == \"Error al abrir entrada\\n\", fallos);\n    actual = previo;\n    mensajes.str(\"\");\n    resultado = procesar_archivos(\"pruebas_tmp/entrada.txt\",\n        \"pruebas_tmp/bloqueo.txt/salida.txt\", actual, mensajes);\n    comprobar(\"salida_no_abre\", resultado == 1 && mismos_datos(actual, base)\n        && mensajes.str() == \"Error al abrir salida\\n\", fallos);\n    actual = previo;\n    mensajes.str(\"\");\n    resultado = procesar_archivos(\"pruebas_tmp/entrada.txt\",\n        \"pruebas_tmp/entrada.txt\", actual, mensajes);\n    comprobar(\"rutas_iguales\", resultado == 1 && mismos_datos(actual, previo)\n        && leer_texto(\"pruebas_tmp/entrada.txt\", guardado) && guardado == texto_base\n        && mensajes.str() == \"Rutas vacias o iguales\\n\", fallos);\n\n    std::ofstream cerrado{\"pruebas_tmp/cerrado.txt\"};\n    if (!cerrado) { comprobar(\"preparacion_cerrado\", false, fallos); return 1; }\n    cerrado.close();\n    if (!cerrado) { comprobar(\"cierre_inicial\", false, fallos); return 1; }\n    cerrado << \"MARCA\";\n    comprobar(\"escritura_tras_cierre\", cerrado.fail()\n        && leer_texto(\"pruebas_tmp/cerrado.txt\", guardado) && guardado.empty(), fallos);\n    std::ofstream doble{\"pruebas_tmp/doble.txt\"};\n    if (!doble) { comprobar(\"preparacion_doble\", false, fallos); return 1; }\n    doble << \"MARCA\";\n    if (!doble) { comprobar(\"escritura_doble\", false, fallos); return 1; }\n    doble.close();\n    if (!doble) { comprobar(\"primer_cierre\", false, fallos); return 1; }\n    doble.close();\n    comprobar(\"segundo_cierre\", doble.fail()\n        && leer_texto(\"pruebas_tmp/doble.txt\", guardado) && guardado == \"MARCA\", fallos);\n\n    if (fallos != 0) { std::cout << \"Bateria completa: FALLO\\n\"; return 1; }\n    std::cout << \"Bateria completa: OK\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los archivos bajo pruebas_tmp se crean o sustituyen durante la ejecución. Su nombre y propósito quedan aislados de ejemplos y resultados. El comprobador no debe ejecutarse con archivos personales colocados bajo esos nombres de prueba."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir las dos baterías y examinar una discrepancia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guarda los fuentes y ejecuta cada línea por separado desde la raíz, en la consola de desarrollo. Cada ejecución debe mostrar sus casos correctos y devolver cero; consulta el resultado inmediatamente después de ejecutarla."
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc modelo.cpp prueba_modelo.cpp /Fe:prueba_modelo.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\prueba_modelo.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc modelo.cpp informe.cpp archivos.cpp pruebas.cpp /Fe:pruebas.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\pruebas.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer programa comprueba las diez muestras originales. El segundo debe terminar en Bateria completa: OK y cada línea de caso debe terminar en OK. Si falla una preparación de archivos, revisa primero que pruebas_tmp exista y pueda escribirse; no cambies el dominio de los datos para ocultar un problema de ruta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora realiza una contraprueba deliberada. En modelo.cpp, dentro de seleccionar_mayor, cambia solamente total > mejor.aceptados por total >= mejor.aceptados. Guarda, repite la construcción de pruebas.exe y ejecútalo. Deben fallar casos de empate y el proceso debe devolver 1. El cambio es un error provocado para observar si las pruebas son sensibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Restaura >, guarda, vuelve a construir y ejecutar. Los casos deben recuperar OK y la terminación 0. Anota en README.md, cuando lo preparemos al documentar el proyecto, el cambio deliberado, los casos que lo detectaron y el resultado de la corrección. No atribuyas esa contraprueba a un error real encontrado durante tu uso del programa."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__probar_conservacion_y_errores_en_inspectionlog__sensibilidad",
+          "question": "Cambiaste > por >=, pero ejecutaste pruebas.exe sin reconstruirlo y todos los casos siguen pasando. ¿Qué evidencia tienes?",
+          "options": [
+            "Que los casos de empate son incapaces de detectar cualquier error.",
+            "Que el fuente modificado es correcto, porque el ejecutable se inicia.",
+            "Que pasó el ejecutable disponible; falta construir y ejecutar la revisión modificada."
+          ],
+          "correctIndex": 2,
+          "explanation": "Editar el fuente no actualiza el ejecutable. Hay que guardar, compilar y enlazar la revisión modificada antes de atribuirle un resultado. Sólo entonces se puede valorar si los casos detectan el cambio de desempate."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "8351c01f9e82e4dda7eac8588c6469f6a257de0cc96c839d76f03e3a8a09a129"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "3acce9c73277bbc72b86c5843fabadb66b82562b42fed010449dfcb1ebc27554"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "a8aceea57341d9715b29537b3bcd58ac3cd5a1e3131ae1e539108144fd861d66"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "d1e126fa6658489122e94b9c1551be4d31b527b145681b8945c3c04df1c3411e"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0011",
+            "sha256": "95259f088414d1503cb1af9295cb9728043e2e80ea42b8a3f093299986a8d223"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007",
+          "block_0005_0008",
+          "block_0005_0009",
+          "block_0005_0010",
+          "block_0005_0011"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "d127fc896ec25a7336d4def88478563aa4e156204372618cce547f2f33f7de1a",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "8351c01f9e82e4dda7eac8588c6469f6a257de0cc96c839d76f03e3a8a09a129"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "3acce9c73277bbc72b86c5843fabadb66b82562b42fed010449dfcb1ebc27554"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "a8aceea57341d9715b29537b3bcd58ac3cd5a1e3131ae1e539108144fd861d66"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "d1e126fa6658489122e94b9c1551be4d31b527b145681b8945c3c04df1c3411e"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0011",
+                "sha256": "95259f088414d1503cb1af9295cb9728043e2e80ea42b8a3f093299986a8d223"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "c15004a32e958422d48a208a0e8488705dd4803a68c12e4008beda794202c40b",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "efb7fbdc3f1a8f175ff48feed7d91d357fa6ada9afe6bec8ee6bf8cabf1e3f52",
+        "spans": [
+          {
+            "start": 145,
+            "end": 156,
+            "text": "pruebas.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 223,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 293,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 306,
+            "end": 307,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 369,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "eda4a18f8b0fdf41ab6df97480ce47d67626eca09f05ed3534e399df114b7ec6",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "fcc0ae11b578407aabfd4d878f91934e0cbd507687c1cf3d64f30ac5a37523a0",
+        "spans": [
+          {
+            "start": 9,
+            "end": 20,
+            "text": "pruebas_tmp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "d5a5225c99d40c87dc94e661a41e548e1fe2eee794af61d316000c4cd82be83d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "mkdir pruebas_tmp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/text",
+        "sourceSha256": "f255781af8d953cfc4adec0cd8d2398561c0471f76a09d9c875cc31a4c009cd6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "notepad pruebas.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/question",
+        "sourceSha256": "c7b612ebf289fee2ada903bb2bfc60eafafb79fa84f833e62d0c3c9e6cce8081",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/explanation",
+        "sourceSha256": "db574fff2e08e289cdc9acebb2576d94db6ebac5884bafade5c1c59fa9b6b541",
+        "spans": [
+          {
+            "start": 41,
+            "end": 53,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/options/0",
+        "sourceSha256": "80877511808437c6066c7d75028bc9807ff4f9eb0d38a521b67fea3f8e59d213",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/options/1",
+        "sourceSha256": "9f07631339749be339b39a9da7f60c3cbf62ecaa42dce45e5dc5bd80a347eada",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/options/2",
+        "sourceSha256": "bc40b48b6123b7ea266a4d432f6feebcf167a9963e6107df50152ef64d5d3ee9",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "cce782a4623a6e5f673c086e4246c4e3cf56401a6ae5775daa27567b54cd951e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "f248ff035e638ff0a0d8fc2b73a6bb0a3414ffeee2fa6fa2bd5a2f9f4ed397d3",
+        "spans": [
+          {
+            "start": 69,
+            "end": 73,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 98,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 106,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 139,
+            "text": "rojo 8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "72b5c587848ff5e17cc6ab0e881cf0459ce1ddc5930bacee5fdcc3e7b4770b6e",
+        "spans": [
+          {
+            "start": 42,
+            "end": 55,
+            "text": "Informe_mayor",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 78,
+            "end": 83,
+            "text": "false",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 87,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "30608b1c7b4a8a3465999950a9b19b023a103a4f98ecffd2493617f516ec09a6",
+        "spans": [
+          {
+            "start": 5,
+            "end": 17,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "78199f5b611390a53f5413d92f2b23d47e826661ef877d0cf641aa876974d3be",
+        "spans": [
+          {
+            "start": 148,
+            "end": 151,
+            "text": "300",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 167,
+            "text": "300",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "a4f0399e57f071c8bbe25c566078322300ff82dcdedaa4c1f93a84c602cdf3f9",
+        "spans": [
+          {
+            "start": 43,
+            "end": 55,
+            "text": "verde 9[6;2]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/question",
+        "sourceSha256": "fea6b5d0b3619d418662a5d06fea05cf23334dfa07cbe5d17f5f1f85af488a80",
+        "spans": [
+          {
+            "start": 19,
+            "end": 23,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 51,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 75,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 83,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 92,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/explanation",
+        "sourceSha256": "9801fd14681313e93ab795ff3ddcbde893c763929231f71e0db869238acdff73",
+        "spans": [
+          {
+            "start": 11,
+            "end": 15,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/0",
+        "sourceSha256": "f80cac82f5e51890df2a17414f6c6e6a9c3728be445bd4092c8eb8280da9cca5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/1",
+        "sourceSha256": "5d914e18e55b405d315e14ae189e489a895a0bde502569000cade0d2c8304844",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/2",
+        "sourceSha256": "ab8d34b7ed96f52f472050a621f69914e27d15c85aecfa15837a122dfe7b10f7",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "d848db4e2b00ba81ae52e3aefaf2d6e94bc02ff41327eb02d3b4b22c171752da",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "cec5cd8b5cce2f998e88c19f09dc3b2e7d695f59f3e16ece70e02d1a40a84363",
+        "spans": [
+          {
+            "start": 89,
+            "end": 94,
+            "text": "MARCA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 196,
+            "text": "procesar_archivos",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 242,
+            "end": 243,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 304,
+            "text": "MARCA",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "311fb09eb36d6b37ce8f7b2c1230937c42d1886e78fe44788ff72d6cf539fe4c",
+        "spans": [
+          {
+            "start": 249,
+            "end": 267,
+            "text": "std::ostringstream",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "616e377aa9aafc640cd8223c37f03223aa926536a06c7288aec00fb542d7831e",
+        "spans": [
+          {
+            "start": 65,
+            "end": 88,
+            "text": "pruebas_tmp/bloqueo.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 152,
+            "text": "pruebas_tmp/bloqueo.txt/salida.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 263,
+            "text": "Error al abrir salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 280,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "9297c8f872da52992323f64c462d9900e8f8099c3f764790e0b59a2d0d56a688",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "44b8d13a4371ed8e5eac2d536a7749701b11a7c4f0ae8d13cb3953e1e732faaa",
+        "spans": [
+          {
+            "start": 52,
+            "end": 65,
+            "text": "std::ofstream",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "c093dcb43a5d8dcc9bf74678c63e5b71d9f29d58d8f51d5029d2d3570185d0c5",
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "eda020b39df36b135619933bfe04bbded522687d710ece5667cedc897186abfe",
+        "spans": [
+          {
+            "start": 47,
+            "end": 52,
+            "text": "MARCA",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/0",
+        "sourceSha256": "b20b93aa046ce7c38546f7b3b925c63de74f743a80d82c39f85688e5708e577c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/1",
+        "sourceSha256": "bf8dcacd8565603e2d5d29690ed2c286c7ca3101fcde283c98cfa840c5e662ae",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/2",
+        "sourceSha256": "cf2c3bc4e98ddb39027b54d20587b6a17f023f91e667d2b196b058c7d8e8d914",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "3bfa99c4103367d4d5d784790d51e2843db14dfce00c8596139f69353a9bb768",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "b9c040d8598c73cbea8a254461d0dae4713c805ba2e6a5a2fef29f96c5183024",
+        "spans": [
+          {
+            "start": 3,
+            "end": 14,
+            "text": "pruebas.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 35,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 46,
+            "text": "<fstream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 48,
+            "end": 58,
+            "text": "<iostream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 61,
+            "end": 70,
+            "text": "<sstream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 77,
+            "end": 113,
+            "text": "comprobar(nombre, condicion, fallos)",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 210,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "5c7d60483fa74f7db3e429bc1e2b9ca94d5e7a1d3b46d00be87288f63b22f8a4",
+        "spans": [
+          {
+            "start": 138,
+            "end": 141,
+            "text": "get",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 318,
+            "end": 320,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "0b640c483382d1adbb037db6508de636fb5e2c8d9a02abe1c977b52647938a9a",
+        "spans": [
+          {
+            "start": 66,
+            "end": 86,
+            "text": "Bateria completa: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 142,
+            "text": "Bateria completa: FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 160,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 182,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "71f0328b492d59ec7d6d3c56b6cd78233ca20ecfa79f506520c09d5771f6c389",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "b47a8cc876b64dd46160fb47430776307f5ae2ac88a26618da6f3db8be47598f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "a7b3508770b15ba0c8765bd6f4fa011d98ccc0380628b162aae1cdd3f19dc950",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "2d742eb994da4111bb62e857727c44f934e745e9b83cbeb34ddfa8ef46bf6c1e",
+        "spans": [
+          {
+            "start": 18,
+            "end": 29,
+            "text": "pruebas_tmp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 123,
+            "text": "ejemplos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 136,
+            "text": "resultados",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "bcac6d53b8f44434d041a78346e6f415aa09a767c2fdf54450e5ac0596e99c8c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "357d6a2a6b11255c466bad177e730d9606d934b5ba20cad7b7ed464c06d8a418",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "93133834b7d8f58b604b09d5df79c76092333559f39c84a7a55dbcb276f4c49a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 63,
+            "text": "cl /W4 /EHsc modelo.cpp prueba_modelo.cpp /Fe:prueba_modelo.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "10fcda777cda9e5578ea30529711b3e4ae02a8957e3f1ebb0254b7befb6c7dfe",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": ".\\prueba_modelo.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "4fdab6bf765f6cc2dbabc957bf7e6821f8ede0a142fb0272ceeaf98dc87f52ff",
+        "spans": [
+          {
+            "start": 0,
+            "end": 76,
+            "text": "cl /W4 /EHsc modelo.cpp informe.cpp archivos.cpp pruebas.cpp /Fe:pruebas.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/text",
+        "sourceSha256": "1835f9b42d9c578dd1b3170c62b9c8710688bc46cc1256c91c1a0f120694d641",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": ".\\pruebas.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0008",
+        "path": "/text",
+        "sourceSha256": "4b360be8cf2329def07fbc0d10894e911ce4d5cb4f878d46966980fc880b9db4",
+        "spans": [
+          {
+            "start": 87,
+            "end": 107,
+            "text": "Bateria completa: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 148,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 218,
+            "text": "pruebas_tmp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0009",
+        "path": "/text",
+        "sourceSha256": "bfaf905e6e5a293ac2b32c47628026ba685182e88fa0a88ebb1f1c606848cee4",
+        "spans": [
+          {
+            "start": 46,
+            "end": 56,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 85,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 104,
+            "end": 127,
+            "text": "total > mejor.aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 132,
+            "end": 156,
+            "text": "total >= mejor.aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 192,
+            "end": 203,
+            "text": "pruebas.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 274,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0010",
+        "path": "/text",
+        "sourceSha256": "225f1624170c4da5a86179cf8507ffd34dd5810368dbb8d8fdd72822f111ecd4",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": ">",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 98,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 118,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0011",
+        "path": "/question",
+        "sourceSha256": "276baf3726bf882f71ef9bfb0877e3788a07c372cece43e3763a42db2f6323ea",
+        "spans": [
+          {
+            "start": 10,
+            "end": 11,
+            "text": ">",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 16,
+            "end": 18,
+            "text": ">=",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 36,
+            "end": 47,
+            "text": "pruebas.exe",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0011",
+        "path": "/explanation",
+        "sourceSha256": "f08af65d4e83b08ae8a7809787290b00e50bc1f009c04197c8dc47e9a7828f48",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0011",
+        "path": "/options/0",
+        "sourceSha256": "ff219b50254cb58be385a8cc320eac6821acebf099d7157c8b161f2098708b24",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0011",
+        "path": "/options/1",
+        "sourceSha256": "b00bd8c435e9e9eaa7f869fc643d556501099159740844638c7e7909f92eb860",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0011",
+        "path": "/options/2",
+        "sourceSha256": "ee6da7f446898600bf749f4abd9c06f57dcb83b9758d13d3e5e0a8a7a753f727",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "89432974534d029f5226732da541287e1c0363f220b597ded05eca672b07a68f",
+        "spans": [
+          {
+            "start": 33,
+            "end": 46,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,2292 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__construir_el_modelo_de_inspectionlog",
+  "title": "Construir el modelo de InspectionLog",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un registro que conserva el significado de los datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "InspectionLog será una herramienta de consola para revisar una muestra de inspecciones, presentar sus totales y guardar una copia que pueda recuperarse. La persona que la utiliza prepara un archivo de texto; el programa acepta la muestra completa o la rechaza. El proyecto reúne los tipos propios, vectores, funciones, interpretación y archivos que has construido durante el curso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los grupos admitidos son rojo, verde y azul. Un grupo puede faltar o estar presente sin registros: esos estados significan cosas distintas. Cada registro tiene un identificador de 0 a 9, único dentro de su grupo, y dos cantidades de 0 a 10: aceptados y rechazados. Conservaremos el orden de los grupos y de sus registros."
+        },
+        {
+          "type": "paragraph",
+          "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta muestra conserva dos grupos y dos registros en el primero. El registro 7[0;0] está presente aunque no sume inspecciones; el grupo azul está presente aunque no tenga registros. El informe debe mostrar 3 aceptados y 1 rechazado. Su grupo con más aceptados es rojo, con 3."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__construir_el_modelo_de_inspectionlog__identificadores_locales",
+          "question": "¿Qué muestra respeta el alcance de los identificadores de registro?",
+          "options": [
+            "Dos registros de identificador 7 dentro de rojo.",
+            "Un registro 7 en rojo y otro 7 en azul.",
+            "Dos grupos rojo vacíos, porque no hay registros repetidos."
+          ],
+          "correctIndex": 1,
+          "explanation": "La unicidad del registro se comprueba dentro de cada grupo. Por eso ambos grupos pueden tener el identificador 7. Repetirlo en un mismo grupo es inválido, igual que repetir un grupo, aunque esté vacío."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear la carpeta y los archivos de trabajo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Continúa en la consola de herramientas nativas x64 que ya comprobaste con where cl y el programa de entorno. La carpeta siguiente se crea dentro de tu perfil de Windows y no requiere una unidad de disco adicional. %USERPROFILE% se sustituye por la carpeta de tu usuario. Ejecuta cada orden por separado."
+        },
+        {
+          "type": "paragraph",
+          "text": "mkdir \"%USERPROFILE%\\LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog\""
+        },
+        {
+          "type": "paragraph",
+          "text": "cd /d \"%USERPROFILE%\\LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog\""
+        },
+        {
+          "type": "paragraph",
+          "text": "mkdir crea la carpeta y los directorios intermedios que falten. cd /d cambia la carpeta actual y también la unidad si es necesario. Las comillas mantienen la ruta como un único argumento si contiene espacios. Si la carpeta ya existe, comprueba su contenido y continúa allí; no elimines tu trabajo. Todos los comandos de construcción de estas lecciones se ejecutan desde esta raíz."
+        },
+        {
+          "type": "paragraph",
+          "text": "Crearemos inspection_log.h para los tipos y contratos; modelo.cpp para su implementación; y prueba_modelo.cpp para una primera comprobación que no utiliza disco. Esta separación recupera el trabajo de la unidad de funciones: cada archivo fuente incluye la cabecera que declara lo que necesita, y el enlazador reúne las definiciones en un programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad inspection_log.h"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el editor pregunta si deseas crear el archivo, confirma su creación. Escribe la cabecera en la actividad de la página siguiente y guarda con Ctrl+S. Conserva exactamente la extensión .h; no añadas .txt. Después abre los otros dos archivos con estas órdenes, escribe sus contenidos cuando corresponda y guárdalos con sus nombres completos."
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad modelo.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad prueba_modelo.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al regresar a la consola, dir muestra los nombres guardados. type inspection_log.h permite comprobar el texto del archivo que se compilará. Guardar en el editor todavía no construye un ejecutable."
+        },
+        {
+          "type": "paragraph",
+          "text": "dir"
+        },
+        {
+          "type": "paragraph",
+          "text": "type inspection_log.h"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escribir una interfaz antes de sus definiciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "En inspection_log.h declara los tipos Recuento, Registro, Grupo, Conjunto e Informe_mayor de la construcción anterior. Conserva sus miembros y tipos. Incluye <istream>, <string> y <vector>, porque las declaraciones utilizan esos tipos. Protege la cabecera con #ifndef, #define y #endif bajo el nombre INSPECTION_LOG_H, como ya practicaste al separar interfaces."
+        },
+        {
+          "type": "paragraph",
+          "text": "Declara nombre_grupo, conjunto_valido, leer_muestra_completa, componer_conjunto, mismos_datos y seleccionar_mayor. Una declaración permite comprobar la llamada; las instrucciones que realizan el trabajo irán en modelo.cpp. La cabecera no contendrá main ni las definiciones de esas funciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los parámetros de lectura serán referencias constantes cuando no se modifiquen. leer_muestra_completa recibe un std::istream& y un Conjunto&: lee del primero y sólo sustituye el segundo si acepta todo el texto. componer_conjunto recibe const Conjunto& y std::string&; conserva el texto de destino cuando los datos son inválidos. Ambas devuelven bool. mismos_datos recibe dos referencias constantes y compara todos los datos y su orden. seleccionar_mayor devuelve Informe_mayor y requiere un conjunto válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el editor externo escribe esa cabecera desde estos contratos. En el puzzle siguiente comprueba una decisión que afecta al uso real de los archivos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__construir_el_modelo_de_inspectionlog__cabecera_y_definicion",
+          "question": "modelo.cpp y prueba_modelo.cpp necesitan conocer Conjunto. ¿Qué organización permite usar el mismo tipo y una sola implementación de la carga?",
+          "options": [
+            "Copiar en cada archivo una definición distinta de Conjunto para que cada uno compile por su cuenta.",
+            "Incluir modelo.cpp desde prueba_modelo.cpp y compilar además ambos archivos completos.",
+            "Definir Conjunto en la cabecera, incluirla en ambos fuentes y definir la carga una sola vez en modelo.cpp."
+          ],
+          "correctIndex": 2,
+          "explanation": "La cabecera proporciona la misma definición del tipo a los dos archivos. La definición de la función queda en un solo fuente y se incorpora al enlazar. Incluir el fuente y además compilarlo produciría definiciones repetidas, mientras que alterar el tipo entre archivos rompería el acuerdo de la interfaz."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la interfaz compartida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las estructuras conservan los datos de la construcción anterior. Los comentarios fijan los contratos: un rechazo no se interpreta como un conjunto vacío, el comparador exige datos válidos y el máximo respeta el primer grupo en caso de empate. Las declaraciones no ejecutan la carga ni abren archivos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef INSPECTION_LOG_H\n#define INSPECTION_LOG_H\n\n#include <istream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nstruct Informe_mayor {\n    bool hay_grupo;\n    int id;\n    int aceptados;\n};\n\n// Grupos: 0 rojo, 1 verde, 2 azul. No modifica destino si id es invalido.\nbool nombre_grupo(int id, std::string& destino);\n// Comprueba nombres, unicidad local de IDs, cantidades y capacidades.\nbool conjunto_valido(const Conjunto& conjunto);\n// Acepta el conjunto completo y solo blancos hasta EOF.\n// Rechazar conserva destino; no restaura los caracteres consumidos.\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino);\n// Rechazar un conjunto invalido conserva destino.\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino);\n// Exige validez y compara presencia, orden, IDs y ambas cantidades.\nbool mismos_datos(const Conjunto& primero, const Conjunto& segundo);\n// Requiere un conjunto valido. Los empates conservan el primer grupo.\nInforme_mayor seleccionar_mayor(const Conjunto& conjunto);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El guardado de esta cabecera permite que cada fuente conozca la misma interfaz. <istream> aporta la declaración del flujo de entrada utilizado por la carga. Las funciones de informe y los archivos de disco se incorporarán mediante otra cabecera cuando construyamos esa parte; este modelo todavía no depende de una ruta ni de la consola."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir el modelo y comprobarlo sin disco"
+        },
+        {
+          "type": "paragraph",
+          "text": "En modelo.cpp incluye inspection_log.h, <ostream> y <sstream>. Recupera los procedimientos que construiste en la integración de carga y guardado: buscar el nombre del grupo, validar un recuento, leer sus delimitadores, leer cada grupo y luego el conjunto. Las estructuras ya están en la cabecera; no vuelvas a definirlas en el fuente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada lector construye un candidato local. Sólo lo asigna a su destino al comprobar sus delimitadores, dominio y unicidad. leer_muestra_completa añade una condición: después del cierre exterior únicamente quedan blancos hasta fin de archivo. Por ello, { conjunto } resto debe fallar sin sustituir el estado previo. Consumir caracteres del flujo y modificar el destino son operaciones diferentes; el contrato conserva el objeto, no retrocede el flujo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La composición recorre los grupos y registros en su orden y conserva incluso los vacíos. Antes de escribir en el flujo de cadena, conjunto_valido comprueba todos los datos. mismos_datos compara las dos cantidades de cada registro, los identificadores, las posiciones y la presencia. El informe máximo suma aceptados por grupo, participa aunque esté vacío y sólo sustituye al mejor cuando encuentra un total estrictamente mayor."
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor siguiente proporciona la cabecera y prueba_modelo.cpp, un comprobador de diez muestras. Lee sus esperados: las cuatro válidas tienen un conjunto construido directamente en C++, distinto del texto que debe interpretarse. Las seis rechazadas deben dejar verde con el registro 9[6;2]. Completa modelo.cpp; conserva el comprobador y pulsa Compilar, ejecutar y comprobar. Una implementación correcta produce diez líneas que terminan en OK y devuelve 0."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"inspection_log.h\"\n#include <iostream>\n#include <sstream>\n\nbool probar(const std::string& nombre, const std::string& texto,\n            bool debe_aceptar, const Conjunto& esperado) {\n    const Conjunto previo{{Grupo{1, {{9, {6, 2}}}}}};\n    Conjunto actual = previo;\n    std::istringstream entrada{texto};\n    const bool aceptado = leer_muestra_completa(entrada, actual);\n    bool correcto = aceptado == debe_aceptar;\n    if (debe_aceptar) {\n        if (!mismos_datos(actual, esperado)) { correcto = false; }\n        std::string compuesto;\n        if (!componer_conjunto(actual, compuesto)) { correcto = false; }\n        std::istringstream vuelta{compuesto};\n        Conjunto recuperado{};\n        if (!leer_muestra_completa(vuelta, recuperado)\n            || !mismos_datos(actual, recuperado)) { correcto = false; }\n    } else if (!mismos_datos(actual, previo)) {\n        correcto = false;\n    }\n    std::cout << nombre << \": \";\n    if (correcto) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return correcto;\n}\n\nint main() {\n    bool correcto{true};\n    const Conjunto base{{Grupo{0, {{7, {0, 0}}, {2, {3, 1}}}}, Grupo{2, {}}}};\n    const Conjunto vacio{};\n    const Conjunto presente{{Grupo{0, {}}}};\n    const Conjunto local{{Grupo{0, {{7, {1, 0}}}}, Grupo{2, {{7, {2, 1}}}}}};\n    if (!probar(\"Base\", \"{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\", true, base)) { correcto = false; }\n    if (!probar(\"Vacio\", \"{ conjunto }\", true, vacio)) { correcto = false; }\n    if (!probar(\"Presente vacio\", \"{ conjunto { grupo rojo } }\", true, presente)) { correcto = false; }\n    if (!probar(\"ID local\", \"{ conjunto { grupo rojo 7[1;0] } { grupo azul 7[2;1] } }\", true, local)) { correcto = false; }\n    if (!probar(\"Grupo repetido\", \"{ conjunto { grupo rojo } { grupo rojo } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Registro repetido\", \"{ conjunto { grupo rojo 7[1;0] 7[2;1] } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Cantidad invalida\", \"{ conjunto { grupo rojo 7[11;0] } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Segundo truncado\", \"{ conjunto { grupo rojo } { grupo azul 2[1;0]\", false, vacio)) { correcto = false; }\n    if (!probar(\"Texto posterior\", \"{ conjunto } resto\", false, vacio)) { correcto = false; }\n    if (!probar(\"Sin cierre exterior\", \"{ conjunto { grupo rojo 0[1;0] }\", false, vacio)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "inspection_log.h",
+              "initialCode": "#ifndef INSPECTION_LOG_H\n#define INSPECTION_LOG_H\n\n#include <istream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nstruct Informe_mayor {\n    bool hay_grupo;\n    int id;\n    int aceptados;\n};\n\n// Grupos: 0 rojo, 1 verde, 2 azul. No modifica destino si id es invalido.\nbool nombre_grupo(int id, std::string& destino);\n// Comprueba nombres, unicidad local de IDs, cantidades y capacidades.\nbool conjunto_valido(const Conjunto& conjunto);\n// Acepta el conjunto completo y solo blancos hasta EOF.\n// Rechazar conserva destino; no restaura los caracteres consumidos.\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino);\n// Rechazar un conjunto invalido conserva destino.\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino);\n// Exige validez y compara presencia, orden, IDs y ambas cantidades.\nbool mismos_datos(const Conjunto& primero, const Conjunto& segundo);\n// Requiere un conjunto valido. Los empates conservan el primer grupo.\nInforme_mayor seleccionar_mayor(const Conjunto& conjunto);\n\n#endif\n"
+            },
+            {
+              "path": "modelo.cpp",
+              "initialCode": "#include \"inspection_log.h\"\n#include <ostream>\n#include <sstream>\n\n// Define aqui las funciones desde los contratos.\n"
+            },
+            {
+              "path": "prueba_modelo.cpp",
+              "initialCode": "#include \"inspection_log.h\"\n#include <iostream>\n#include <sstream>\n\nbool probar(const std::string& nombre, const std::string& texto,\n            bool debe_aceptar, const Conjunto& esperado) {\n    const Conjunto previo{{Grupo{1, {{9, {6, 2}}}}}};\n    Conjunto actual = previo;\n    std::istringstream entrada{texto};\n    const bool aceptado = leer_muestra_completa(entrada, actual);\n    bool correcto = aceptado == debe_aceptar;\n    if (debe_aceptar) {\n        if (!mismos_datos(actual, esperado)) { correcto = false; }\n        std::string compuesto;\n        if (!componer_conjunto(actual, compuesto)) { correcto = false; }\n        std::istringstream vuelta{compuesto};\n        Conjunto recuperado{};\n        if (!leer_muestra_completa(vuelta, recuperado)\n            || !mismos_datos(actual, recuperado)) { correcto = false; }\n    } else if (!mismos_datos(actual, previo)) {\n        correcto = false;\n    }\n    std::cout << nombre << \": \";\n    if (correcto) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return correcto;\n}\n\nint main() {\n    bool correcto{true};\n    const Conjunto base{{Grupo{0, {{7, {0, 0}}, {2, {3, 1}}}}, Grupo{2, {}}}};\n    const Conjunto vacio{};\n    const Conjunto presente{{Grupo{0, {}}}};\n    const Conjunto local{{Grupo{0, {{7, {1, 0}}}}, Grupo{2, {{7, {2, 1}}}}}};\n    if (!probar(\"Base\", \"{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\", true, base)) { correcto = false; }\n    if (!probar(\"Vacio\", \"{ conjunto }\", true, vacio)) { correcto = false; }\n    if (!probar(\"Presente vacio\", \"{ conjunto { grupo rojo } }\", true, presente)) { correcto = false; }\n    if (!probar(\"ID local\", \"{ conjunto { grupo rojo 7[1;0] } { grupo azul 7[2;1] } }\", true, local)) { correcto = false; }\n    if (!probar(\"Grupo repetido\", \"{ conjunto { grupo rojo } { grupo rojo } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Registro repetido\", \"{ conjunto { grupo rojo 7[1;0] 7[2;1] } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Cantidad invalida\", \"{ conjunto { grupo rojo 7[11;0] } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Segundo truncado\", \"{ conjunto { grupo rojo } { grupo azul 2[1;0]\", false, vacio)) { correcto = false; }\n    if (!probar(\"Texto posterior\", \"{ conjunto } resto\", false, vacio)) { correcto = false; }\n    if (!probar(\"Sin cierre exterior\", \"{ conjunto { grupo rojo 0[1;0] }\", false, vacio)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "modelo.cpp",
+            "prueba_modelo.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Base: OK\nVacio: OK\nPresente vacio: OK\nID local: OK\nGrupo repetido: OK\nRegistro repetido: OK\nCantidad invalida: OK\nSegundo truncado: OK\nTexto posterior: OK\nSin cierre exterior: OK\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las diez muestras respetan el contrato. Los datos válidos se comparan con estructuras esperadas y completan la ida y vuelta; los rechazos conservan el conjunto anterior."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Tras resolver la actividad, escribe la misma implementación en el archivo externo modelo.cpp y guarda. Conserva en prueba_modelo.cpp el comprobador proporcionado: realizará la misma comprobación con el compilador de tu equipo. Todavía no crea archivos de inspecciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la implementación del modelo"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia mantiene la construcción por candidatos. Observa las dos asignaciones finales: una acepta el cierre del conjunto y otra acepta la muestra completa. Por eso no basta con cerrar una parte interior. Los auxiliares que sólo utiliza este archivo están definidos antes de sus llamadas; la cabecera reserva las funciones que necesitan los demás fuentes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"inspection_log.h\"\n#include <ostream>\n#include <sstream>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nbool grupo_valido(const Grupo& grupo) {\n    if (grupo.id < 0 || grupo.id >= 3 || grupo.registros.size() > 10) {\n        return false;\n    }\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id < 0 || registro.id > 9\n            || !recuento_valido(registro.recuento)) {\n            return false;\n        }\n        int coincidencias{0};\n        for (const Registro& otro : grupo.registros) {\n            if (otro.id == registro.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool conjunto_valido(const Conjunto& conjunto) {\n    if (conjunto.grupos.size() > 3) { return false; }\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (!grupo_valido(grupo)) { return false; }\n        int coincidencias{0};\n        for (const Grupo& otro : conjunto.grupos) {\n            if (otro.id == grupo.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    std::ostringstream salida;\n    salida << \"{ conjunto\";\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::string nombre;\n        if (!nombre_grupo(grupo.id, nombre)) { return false; }\n        salida << \" { grupo \" << nombre;\n        for (const Registro& registro : grupo.registros) {\n            salida << ' ' << registro.id << registro.recuento;\n        }\n        salida << \" }\";\n    }\n    salida << \" }\";\n    if (!salida) { return false; }\n    destino = salida.str();\n    return true;\n}\n\nbool mismos_datos(const Conjunto& primero, const Conjunto& segundo) {\n    if (!conjunto_valido(primero) || !conjunto_valido(segundo)\n        || primero.grupos.size() != segundo.grupos.size()) {\n        return false;\n    }\n    const int cantidad_grupos = static_cast<int>(primero.grupos.size());\n    for (int i = 0; i < cantidad_grupos; ++i) {\n        const Grupo& a = primero.grupos.at(i);\n        const Grupo& b = segundo.grupos.at(i);\n        if (a.id != b.id || a.registros.size() != b.registros.size()) {\n            return false;\n        }\n        const int cantidad_registros = static_cast<int>(a.registros.size());\n        for (int j = 0; j < cantidad_registros; ++j) {\n            const Registro& x = a.registros.at(j);\n            const Registro& y = b.registros.at(j);\n            if (x.id != y.id || x.recuento.aceptados != y.recuento.aceptados\n                || x.recuento.rechazados != y.recuento.rechazados) {\n                return false;\n            }\n        }\n    }\n    return true;\n}\n\nInforme_mayor seleccionar_mayor(const Conjunto& conjunto) {\n    Informe_mayor mejor{false, -1, 0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        int total{0};\n        for (const Registro& registro : grupo.registros) {\n            total += registro.recuento.aceptados;\n        }\n        if (!mejor.hay_grupo || total > mejor.aceptados) {\n            mejor = Informe_mayor{true, grupo.id, total};\n        }\n    }\n    return mejor;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El máximo empieza sin grupo. El primer grupo válido se acepta incluso con total cero; después se utiliza >, de modo que una igualdad conserva el primero. Reemplazarlo por >= cambiaría el desempate. Con hasta tres grupos y diez registros de diez aceptados, el total general no supera 300."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia del comprobador del modelo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada llamada comienza con el mismo estado anterior y recoge su propio resultado. La variable correcto acumula fallos sin saltarse las llamadas siguientes. Para una muestra aceptada se compara contra un objeto esperado independiente; la ida y vuelta añade otra comprobación, pero por sí sola no detectaría que lector y compositor compartieran el mismo error."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"inspection_log.h\"\n#include <iostream>\n#include <sstream>\n\nbool probar(const std::string& nombre, const std::string& texto,\n            bool debe_aceptar, const Conjunto& esperado) {\n    const Conjunto previo{{Grupo{1, {{9, {6, 2}}}}}};\n    Conjunto actual = previo;\n    std::istringstream entrada{texto};\n    const bool aceptado = leer_muestra_completa(entrada, actual);\n    bool correcto = aceptado == debe_aceptar;\n    if (debe_aceptar) {\n        if (!mismos_datos(actual, esperado)) { correcto = false; }\n        std::string compuesto;\n        if (!componer_conjunto(actual, compuesto)) { correcto = false; }\n        std::istringstream vuelta{compuesto};\n        Conjunto recuperado{};\n        if (!leer_muestra_completa(vuelta, recuperado)\n            || !mismos_datos(actual, recuperado)) { correcto = false; }\n    } else if (!mismos_datos(actual, previo)) {\n        correcto = false;\n    }\n    std::cout << nombre << \": \";\n    if (correcto) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return correcto;\n}\n\nint main() {\n    bool correcto{true};\n    const Conjunto base{{Grupo{0, {{7, {0, 0}}, {2, {3, 1}}}}, Grupo{2, {}}}};\n    const Conjunto vacio{};\n    const Conjunto presente{{Grupo{0, {}}}};\n    const Conjunto local{{Grupo{0, {{7, {1, 0}}}}, Grupo{2, {{7, {2, 1}}}}}};\n    if (!probar(\"Base\", \"{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\", true, base)) { correcto = false; }\n    if (!probar(\"Vacio\", \"{ conjunto }\", true, vacio)) { correcto = false; }\n    if (!probar(\"Presente vacio\", \"{ conjunto { grupo rojo } }\", true, presente)) { correcto = false; }\n    if (!probar(\"ID local\", \"{ conjunto { grupo rojo 7[1;0] } { grupo azul 7[2;1] } }\", true, local)) { correcto = false; }\n    if (!probar(\"Grupo repetido\", \"{ conjunto { grupo rojo } { grupo rojo } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Registro repetido\", \"{ conjunto { grupo rojo 7[1;0] 7[2;1] } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Cantidad invalida\", \"{ conjunto { grupo rojo 7[11;0] } }\", false, vacio)) { correcto = false; }\n    if (!probar(\"Segundo truncado\", \"{ conjunto { grupo rojo } { grupo azul 2[1;0]\", false, vacio)) { correcto = false; }\n    if (!probar(\"Texto posterior\", \"{ conjunto } resto\", false, vacio)) { correcto = false; }\n    if (!probar(\"Sin cierre exterior\", \"{ conjunto { grupo rojo 0[1;0] }\", false, vacio)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia el comprobador en prueba_modelo.cpp si necesitas contrastar tu versión. Las líneas esperadas son:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Base: OK\nVacio: OK\nPresente vacio: OK\nID local: OK\nGrupo repetido: OK\nRegistro repetido: OK\nCantidad invalida: OK\nSegundo truncado: OK\nTexto posterior: OK\nSin cierre exterior: OK"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y ejecutar el modelo con MSVC"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guarda los tres archivos. Desde la raíz de InspectionLog, dentro de la consola de desarrollo, ejecuta esta orden. cl compila los dos fuentes y entrega sus objetos al enlazador. La cabecera se incorpora mediante #include; no se enumera como si fuera otro fuente (Microsoft, 2025a)."
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc modelo.cpp prueba_modelo.cpp /Fe:prueba_modelo.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "/W4 solicita el nivel de advertencias que ya utilizaste; /EHsc conserva el modelo de excepciones estándar de C++. /Fe:prueba_modelo.exe elige el nombre del ejecutable. Sin esa opción, el nombre predeterminado procedería del primer fuente. Se crean también modelo.obj y prueba_modelo.obj, productos intermedios de compilación (Microsoft, 2025b)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba que la construcción termina sin errores. Si hay un diagnóstico, identifica el archivo y la línea, corrige, guarda y repite la misma orden. Una compilación fallida no acredita el ejecutable que pueda quedar de una revisión anterior. Después ejecuta:"
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\prueba_modelo.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\ señala la carpeta actual. La primera orden debe presentar las diez líneas esperadas. Ejecuta echo %ERRORLEVEL% inmediatamente después para ver el código de terminación: 0 significa que este comprobador no detectó una discrepancia; 1 indica al menos un caso fallido. Los nombres de los casos permiten localizar el primero que debes estudiar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__construir_el_modelo_de_inspectionlog__enlace",
+          "question": "Los dos fuentes están guardados, pero ejecutas cl sólo con prueba_modelo.cpp y aparece un símbolo externo sin resolver de leer_muestra_completa. ¿Qué falta en esa construcción?",
+          "options": [
+            "Incorporar modelo.cpp para que el enlazador reciba la definición llamada por el comprobador.",
+            "Cambiar el dato inválido para que el programa no llame a la carga.",
+            "Ejecutar el archivo .h como un programa independiente."
+          ],
+          "correctIndex": 0,
+          "explanation": "El compilador puede comprobar la llamada gracias a la declaración de la cabecera, pero el enlazador necesita la definición. La orden completa incluye modelo.cpp y prueba_modelo.cpp, cada uno una sola vez. El dato de prueba no explica la ausencia de una definición durante el enlace."
+        }
+      ]
+    }
+  ],
+  "compilerPuzzlesRequired": true,
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "e96e4296449db0f7f954d07d255b6188e5b6d8abea1c59fc034df7abc99e762e"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "a993da4601556389b033b7be87752a6e93e2e5d5c0f51ae030005f6c8d22fc42"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "8549a5c8fb3f9f61a23cf870adcb91f32bda7e4dd4f1218090f5bc6963408d59"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "0d292b2a45784b910387e6351b5e0b9a77e3d68ebcb7bd1fca32a74aab3eecb9"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "d981176ccaf5b26081f4b77eb0e2d6818450acbaf010c5e487c685554eb08626"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "2097ee30ec21146db388281d41411cc024ae5eb9202895c41982d9c2bed44420"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "591944402890375b60b943ba3ca9b4b0f904c2ac823bcb22fbb4c6f5b3c9aac9"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007",
+          "block_0001_0008",
+          "block_0001_0009",
+          "block_0001_0010",
+          "block_0001_0011",
+          "block_0001_0012"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "34b0d33063144788a5661dddb043f7490e0233a8573210f001bfa96360fddd84",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "e96e4296449db0f7f954d07d255b6188e5b6d8abea1c59fc034df7abc99e762e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "a993da4601556389b033b7be87752a6e93e2e5d5c0f51ae030005f6c8d22fc42"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "8549a5c8fb3f9f61a23cf870adcb91f32bda7e4dd4f1218090f5bc6963408d59"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "0d292b2a45784b910387e6351b5e0b9a77e3d68ebcb7bd1fca32a74aab3eecb9"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "d981176ccaf5b26081f4b77eb0e2d6818450acbaf010c5e487c685554eb08626"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "2097ee30ec21146db388281d41411cc024ae5eb9202895c41982d9c2bed44420"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "591944402890375b60b943ba3ca9b4b0f904c2ac823bcb22fbb4c6f5b3c9aac9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "377fec82eddb04feb601bd0442fb23af6b06dbdeab78c9e34dfa41f65621029c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "f0a04e3aff03be579acb18a24251c80362bd83536c2088004033968c0c40563b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "fcdb73f856605ea5bffbdc70d0daa80457e373a3d72b6d2451e9f1c46cf6d0d5",
+        "spans": [
+          {
+            "start": 25,
+            "end": 29,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 36,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 43,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 181,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 234,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 239,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "6dd3f7a01112827d403c2d640ec7fe1a18ffc42961f1a8cd350447814e17358a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 56,
+            "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "03872e2c873ac8b4f961fd435d0decdd19a2da9dcaed4d7b2447d4b179fc1e9d",
+        "spans": [
+          {
+            "start": 76,
+            "end": 82,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 139,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 220,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 266,
+            "text": "rojo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 273,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "1fa61cad16d659d949ebedc9fb3ba006b8f1b68268f6bd942653aac16ddfb0ca",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "678c3437187ec02781df5ca7a2b402fd97083f5cf9ff0995fc19a4e60fa7cf3d",
+        "spans": [
+          {
+            "start": 111,
+            "end": 112,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/0",
+        "sourceSha256": "500aa7066cde36c262cdf78a03710bb78e66e73535d00a725a019b54c26e628b",
+        "spans": [
+          {
+            "start": 31,
+            "end": 32,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 47,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/1",
+        "sourceSha256": "376512067c272af26c364b0c67aaebb5b47191182d26fb480c6a6a12ad07e5f8",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 21,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/2",
+        "sourceSha256": "b34383c949aa8f2913d8b60dc911c45c83cf230bc05867d5d5823c5f6f652821",
+        "spans": [
+          {
+            "start": 11,
+            "end": 15,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "31912af533dd0a971cc3f7e5e91a6de45a6780e25d2a1286a3271660dfb1b64a",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "875d5e263b2c8c6e68c208b48faca73596a5a9576567ef422bbfa8d4344af872",
+        "spans": [
+          {
+            "start": 74,
+            "end": 82,
+            "text": "where cl",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 227,
+            "text": "%USERPROFILE%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "76f88198174615c00f4c8e655324f457071d45ccaa21b1529af2c26a88777543",
+        "spans": [
+          {
+            "start": 0,
+            "end": 81,
+            "text": "mkdir \"%USERPROFILE%\\LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog\"",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "2380ff213efda742317e34543f0e2528b28649f4410d6586a8cc9aff4e626018",
+        "spans": [
+          {
+            "start": 0,
+            "end": 81,
+            "text": "cd /d \"%USERPROFILE%\\LGAEDProjects\\01_programar_desde_cero_con_cpp\\InspectionLog\"",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "36a6eeccc38be0f4ad1b66558573387161edad06b9d60f1f9532d992423dd449",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "mkdir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "cd /d",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "56e290386a8b77756b5991be97fc9b027a2c933ba325d28a69eece3b8e211ff9",
+        "spans": [
+          {
+            "start": 10,
+            "end": 26,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 65,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 109,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/text",
+        "sourceSha256": "2a1d574371dcfa0e5376b7bfdaf78fe81a5870e9e92778b264f232cfa0107125",
+        "spans": [
+          {
+            "start": 0,
+            "end": 24,
+            "text": "notepad inspection_log.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/text",
+        "sourceSha256": "adf9181878ee3b1b7f644db96c37afde1bae24cde8874d239e2a9a34c7162d5b",
+        "spans": [
+          {
+            "start": 144,
+            "end": 150,
+            "text": "Ctrl+S",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 188,
+            "text": ".h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 204,
+            "text": ".txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/text",
+        "sourceSha256": "cff4f07298fd627e429a8b5bc54cdf2e06fa70687f5d7e53d70c3e234f54d7cd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "notepad modelo.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0009",
+        "path": "/text",
+        "sourceSha256": "e6d03c3b6ecf6f702ad743820fe2d69a114df9207ca1d731e7449badb9db5326",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "notepad prueba_modelo.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/text",
+        "sourceSha256": "2daec0c349139fa3e0afb8521e960ca631c47d7674fca30875977c706f3a9f27",
+        "spans": [
+          {
+            "start": 26,
+            "end": 29,
+            "text": "dir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 82,
+            "text": "type inspection_log.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0011",
+        "path": "/text",
+        "sourceSha256": "2b64c6d9afd8a34ed0dbf35f7de171a8825a50d9f42f05e98fe2b1addf00ab44",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "dir",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/text",
+        "sourceSha256": "7dfddae4f618205fe21b21e64c929e39ff40934e68afa49e28d5fd04a35af353",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "type inspection_log.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "15101d59518449302281f3b95acbec8cf07b53f19fdf047b315b7d88aa6225ff",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "4006072a621c99c6e8047df56a665ee51b5a4b648d46803b3caedaeca830128b",
+        "spans": [
+          {
+            "start": 3,
+            "end": 19,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 46,
+            "text": "Recuento",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 48,
+            "end": 56,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 58,
+            "end": 63,
+            "text": "Grupo",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 65,
+            "end": 73,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 76,
+            "end": 89,
+            "text": "Informe_mayor",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 158,
+            "end": 167,
+            "text": "<istream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 169,
+            "end": 177,
+            "text": "<string>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 180,
+            "end": 188,
+            "text": "<vector>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 260,
+            "end": 267,
+            "text": "#ifndef",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 269,
+            "end": 276,
+            "text": "#define",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 279,
+            "end": 285,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 301,
+            "end": 317,
+            "text": "INSPECTION_LOG_H",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "aa7c1b87fa4a10e1b07635b9704dadd4dd7f487510aea91028eeeed0152f388f",
+        "spans": [
+          {
+            "start": 8,
+            "end": 20,
+            "text": "nombre_grupo",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 22,
+            "end": 37,
+            "text": "conjunto_valido",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 39,
+            "end": 60,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 62,
+            "end": 79,
+            "text": "componer_conjunto",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 81,
+            "end": 93,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 96,
+            "end": 113,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 211,
+            "end": 221,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 252,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "c2316ab9f82981d48cd2c9bc8b93996eff41470fd54d6788109c6c6a9c2a09b5",
+        "spans": [
+          {
+            "start": 80,
+            "end": 101,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 112,
+            "end": 125,
+            "text": "std::istream&",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 131,
+            "end": 140,
+            "text": "Conjunto&",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 211,
+            "end": 228,
+            "text": "componer_conjunto",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 236,
+            "end": 251,
+            "text": "const Conjunto&",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 254,
+            "end": 266,
+            "text": "std::string&",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 345,
+            "end": 349,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 351,
+            "end": 363,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 436,
+            "end": 453,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 463,
+            "end": 476,
+            "text": "Informe_mayor",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "4bfb7d979034c68a1ad91ecfd98214e9c29bd922596ae0051f66961b5566b55b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "d89b0b04af149e0dec3b59390c99c87f1e8983bbae76920555e32f3bf8b3a025",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 13,
+            "end": 30,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 57,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "6df0ee186ea7c9c86ac332c9a596d68d880697d1f82e73cefacc3aba5da9c5c6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/0",
+        "sourceSha256": "eecb241bba67839990e1a2e22f45efba8256e91fb2574affebde4ab763e755c5",
+        "spans": [
+          {
+            "start": 50,
+            "end": 58,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/1",
+        "sourceSha256": "6ac775687d56c85ebe4afa1ae676038bc9f37ae7fbf1dc8371af76fd6f87247f",
+        "spans": [
+          {
+            "start": 8,
+            "end": 18,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 42,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/2",
+        "sourceSha256": "a3adfef8dd512fcc06c7d8948fa22d5657754f42e0d48ba8d8ec64b38c6b65bd",
+        "spans": [
+          {
+            "start": 8,
+            "end": 16,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 95,
+            "end": 105,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "0e5cd5e0563727c4f39ebe301a4a985ab23e5db51054dd1515f6454df10ac196",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "26d039b00adedd9b10e3533b6c0110645095083681c308b9d012f623f335372b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "b0ab40fa56f8719d941f1f711fdb27dd3141b48eb645551d6bfb5c87346701dc",
+        "spans": [
+          {
+            "start": 80,
+            "end": 89,
+            "text": "<istream>",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "571538a8fb490859dda0255c913483c5f8f6ab99aefc606c90bea6945b56cf9f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "c54f75aadc38fcea34a0a69ba23bfd680f1eb39241ce54cb1bb8f47ef0e54eb1",
+        "spans": [
+          {
+            "start": 3,
+            "end": 13,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 38,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 49,
+            "text": "<ostream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 52,
+            "end": 61,
+            "text": "<sstream>",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "c448d5ffcc06ce5fadb1b48338e3f91d86df7c02676ee05b1bf91c023f1005a6",
+        "spans": [
+          {
+            "start": 122,
+            "end": 143,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 251,
+            "end": 269,
+            "text": "{ conjunto } resto",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "9cffa8ffe3d75fca4b316d4b92e95d2126955d5edf62e9556ede8be470997e04",
+        "spans": [
+          {
+            "start": 130,
+            "end": 145,
+            "text": "conjunto_valido",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 173,
+            "end": 185,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "c2590b1c20fe3361385f4112911ea0315e90417d16cfe9f6fb332838c270aa0e",
+        "spans": [
+          {
+            "start": 46,
+            "end": 63,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 267,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 290,
+            "text": "9[6;2]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 311,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 375,
+            "text": "Compilar, ejecutar y comprobar",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 441,
+            "end": 443,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 455,
+            "end": 456,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "296f9a59f0fa86b08c8321a8b6b0178e8ef52540fec8accdc109202a811f62b9",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "92e856e758263210673aac9376e7719e53c51ad1bbadc85c22512548cf7be898",
+        "spans": [
+          {
+            "start": 82,
+            "end": 92,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 132,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "07c87fb48974c8917892359773a42a9dbc1cfe5c5f6061ce3482c8a21bb7c33c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "600e3223e7f008dfc275ff648641e52ee4177e95116041c4e580bf6af6b548b5",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "09f1106f55ade5a673c6049fdd6392232c7f08b50d7096f9b7b2ac6e46943f8d",
+        "spans": [
+          {
+            "start": 105,
+            "end": 106,
+            "text": ">",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 171,
+            "end": 173,
+            "text": ">=",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 283,
+            "end": 286,
+            "text": "300",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "d3af882bce81b92d8c7d66449683ec70fda6e2be170372d3615f3fefea4bb18a",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "ff1ce50aec069c60e175deef74a85f8c701017726d5c6d8afbf2afd569134fda",
+        "spans": [
+          {
+            "start": 93,
+            "end": 101,
+            "text": "correcto",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "9eb8d09d9812120bebf180622a3318304f6c61401350dcdc5bdd6f654ab8cb0a",
+        "spans": [
+          {
+            "start": 24,
+            "end": 41,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "a749c097cf1254b6412f248336b89f68fe53205069b5b78eaad98f2712b90314",
+        "spans": [
+          {
+            "start": 0,
+            "end": 178,
+            "text": "Base: OK\nVacio: OK\nPresente vacio: OK\nID local: OK\nGrupo repetido: OK\nRegistro repetido: OK\nCantidad invalida: OK\nSegundo truncado: OK\nTexto posterior: OK\nSin cierre exterior: OK",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "82074cd061074ace732becf986644e43d2ec5cbaf90aaca2f794f2d1e6721c3e",
+        "spans": [
+          {
+            "start": 35,
+            "end": 39,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "ec072a1d2d3a750f8155aeb9141f962d7a25618955645236951d271221b94b1e",
+        "spans": [
+          {
+            "start": 43,
+            "end": 56,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 116,
+            "text": "cl",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 211,
+            "end": 219,
+            "text": "#include",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 261,
+            "end": 279,
+            "text": "(Microsoft, 2025a)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "93133834b7d8f58b604b09d5df79c76092333559f39c84a7a55dbcb276f4c49a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 63,
+            "text": "cl /W4 /EHsc modelo.cpp prueba_modelo.cpp /Fe:prueba_modelo.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "67b496ed7ab85e2b2af71360ad4a13a64a29429b6884adfa15c4aa1200d0a979",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "/W4",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 62,
+            "text": "/EHsc",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 135,
+            "text": "/Fe:prueba_modelo.exe",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 256,
+            "end": 266,
+            "text": "modelo.obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 286,
+            "text": "prueba_modelo.obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 343,
+            "text": "(Microsoft, 2025b)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/text",
+        "sourceSha256": "d6d3d1c28d66c5fb47bb01bbf8867fdd18ef44b3bfc149d977743041b4f759e5",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "10fcda777cda9e5578ea30529711b3e4ae02a8957e3f1ebb0254b7befb6c7dfe",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": ".\\prueba_modelo.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/text",
+        "sourceSha256": "0d1306fe558012f3919a031ccfc1724f04d94d471591da0ddb857d0aafe4a8f3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": ".\\",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 113,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/question",
+        "sourceSha256": "abff8af56e34bd585b75de3408d68fe2283b0b814ae6ed4be97456cc9f1ea1aa",
+        "spans": [
+          {
+            "start": 47,
+            "end": 49,
+            "text": "cl",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 76,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 143,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/explanation",
+        "sourceSha256": "043aa7fdee42a77ac8556c39bab7e780a045571cd4fe97554de5718191db9a52",
+        "spans": [
+          {
+            "start": 150,
+            "end": 160,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 180,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/options/0",
+        "sourceSha256": "8d080d483b8a4cc2f867f3b33ae7775de6741d38440d5bef79cc3bba61a6cfde",
+        "spans": [
+          {
+            "start": 11,
+            "end": 21,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/options/1",
+        "sourceSha256": "f8a2703cefa44618524ebf5641a614b3881d3c676ce10547013b4aa8f63b6cd9",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/options/2",
+        "sourceSha256": "b4770ce48dbef92b6f90a648ea474744d7a9a24ef26582c9b12cab6a4993e643",
+        "spans": [
+          {
+            "start": 20,
+            "end": 22,
+            "text": ".h",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "45be3f1db392bca9e9b564f0bce95357b3bf590be238b4ab181c05dcde739374",
+        "spans": [
+          {
+            "start": 23,
+            "end": 36,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
+}

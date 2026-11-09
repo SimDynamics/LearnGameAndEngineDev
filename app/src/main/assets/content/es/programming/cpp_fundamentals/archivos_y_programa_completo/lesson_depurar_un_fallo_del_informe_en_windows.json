@@ -1,0 +1,2930 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows",
+  "title": "Depurar un fallo del informe en Windows",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar una observación que permita decidir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las pruebas comparan resultados y detectan una diferencia. El depurador permite detener una ejecución y observar los valores que producen esa diferencia. Usaremos una muestra pequeña de InspectionLog: el grupo verde contiene, en ese orden, los registros 6[2;1] y 0[3;0]. No hay otros grupos ni registros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de abrir el depurador, calcula el resultado previsto a partir del contrato. El informe debe sumar las cantidades de todos los registros y conservar el conjunto. Esta expectativa se obtiene de los datos; no de lo que escriba una ejecución que todavía estamos comprobando."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows__prevision",
+          "question": "¿Qué total de aceptados debe producir esa muestra?",
+          "options": [
+            "3, porque corresponde al último registro.",
+            "5, porque los dos registros aportan 2 y 3.",
+            "2, porque el grupo contiene dos registros."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los aceptados son 2 en el primer registro y 3 en el segundo. La suma es 5. La cantidad de registros y el valor del último registro son observaciones diferentes del total solicitado."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta lección introduciremos deliberadamente un fallo en una copia del informe para aprender a seguirlo. El archivo informe.cpp de la aplicación se conserva. La prueba no representa un fallo encontrado por casualidad en la referencia correcta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aislar el informe y reproducir el fallo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la raíz de tu proyecto, abre depurar_informe.cpp con Bloc de notas. Escribe y guarda el programa siguiente. Los tipos y la inicialización por listas ya pertenecen al modelo. Este main crea siempre la misma muestra, llama al informe y no lee ni escribe archivos de datos; así observarás el mismo recorrido cada vez."
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad depurar_informe.cpp"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n#include <iostream>\n\nint main() {\n    const Conjunto conjunto{{\n        Grupo{1, {\n            Registro{6, Recuento{2, 1}},\n            Registro{0, Recuento{3, 0}}\n        }}\n    }};\n    if (!mostrar_informe(conjunto, std::cout)) { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea otro archivo llamado informe_error.cpp. Copia en él el contenido de tu informe.cpp y cambia únicamente la instrucción aceptados += registro.recuento.aceptados; por aceptados = registro.recuento.aceptados;. Conserva el resto del informe, guarda el archivo nuevo y comprueba que el original mantiene +=. Esta modificación deliberada prepara la observación; todavía no modifica el ejecutable de la aplicación."
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad informe_error.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la consola de desarrollo, desde la raíz de InspectionLog, construye este ejecutable de diagnóstico:"
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc /Zi /Od modelo.cpp informe_error.cpp depurar_informe.cpp /Fe:depurar_informe.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "/Zi genera información que permite relacionar instrucciones, nombres y líneas con el programa construido; se conserva en archivos .pdb (Microsoft, 2026e). /Od desactiva optimizaciones para facilitar el seguimiento de este ejemplo (Microsoft, 2021). Las opciones /W4, /EHsc y /Fe:depurar_informe.exe mantienen las funciones ya practicadas: advertencias, tratamiento de excepciones y nombre del ejecutable."
+        },
+        {
+          "type": "paragraph",
+          "text": "La orden incluye sólo este main y la copia defectuosa del informe. No añadas main.cpp, pruebas.cpp ni informe.cpp a esa misma orden: introducirías otros puntos de entrada o dos definiciones del informe. Conserva los fuentes y los .pdb de esta construcción para depurarla; no mezcles archivos de construcciones distintas."
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\depurar_informe.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows__salida_y_exito",
+          "question": "El ejecutable termina con cero, pero el total de aceptados no coincide con el esperado. ¿Qué permite concluir ese cero?",
+          "options": [
+            "Que esta ejecución llegó a su terminación de éxito; todavía hay que comparar el informe con el contrato.",
+            "Que main devolvió false y por eso la operación de escritura falló.",
+            "Que cada suma del programa necesariamente coincide con los datos de entrada."
+          ],
+          "correctIndex": 0,
+          "explanation": "El main devuelve cero si el informe escribe sin señalar un fallo de flujo. No compara por sí mismo el total con 5. Una terminación normal no sustituye los oráculos que comprueban el comportamiento requerido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Abrir la construcción concreta en Visual Studio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al iniciar Visual Studio por primera vez puede aparecer una pantalla para añadir una cuenta. En la prueba del autor se utilizó la opción visible Skip and add accounts later., que permitió continuar sin añadirla. Si aparece después la preparación inicial del editor, revisa sus opciones y pulsa Start Visual Studio. Si tu instalación ya completó ese inicio, continúa directamente en el IDE."
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde la misma consola de desarrollo, abre el ejecutable con esta orden. devenv inicia el IDE de Visual Studio y /DebugExe prepara el archivo indicado para depurarlo (Microsoft, 2024). En esta práctica no se crea otra solución con una segunda copia de los fuentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "devenv /DebugExe depurar_informe.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Visual Studio, abre informe_error.cpp mediante Archivo → Abrir → Archivo; en la interfaz inglesa, File → Open → File. Selecciona el archivo de la misma carpeta que utilizaste al compilar. Busca la instrucción de asignación de aceptados dentro del recorrido interior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Haz clic en el margen izquierdo junto a aceptados = registro.recuento.aceptados;, o coloca el cursor en esa instrucción y pulsa F9. Debe aparecer un punto de interrupción en esa línea. Su función es detener la ejecución antes de realizar la instrucción señalada (Microsoft, 2025c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa F5 o elige Depurar → Iniciar depuración; en inglés, Debug → Start Debugging. Cuando se alcance el punto, la flecha de ejecución señalará la instrucción que está a punto de ejecutarse. No confundas colocar el punto con haberlo alcanzado: el programa tiene que iniciarse y recorrer esa parte."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows__antes_de_ejecutar",
+          "question": "La flecha amarilla está sobre la asignación que tiene el punto de interrupción. ¿Qué observación es pertinente en ese momento?",
+          "options": [
+            "Suponer que la instrucción ya produjo su efecto y saltarse la comparación con el estado anterior.",
+            "Cambiar el texto del resultado esperado para que coincida con cualquier valor que se vea.",
+            "Leer el acumulador y el registro antes de ejecutar esa instrucción, y compararlos después de avanzar."
+          ],
+          "correctIndex": 2,
+          "explanation": "El punto detiene la ejecución antes de la instrucción señalada. Observar ambos estados permite distinguir el valor acumulado que entra y el efecto de la instrucción. Cambiar la expectativa ocultaría la diferencia que queremos explicar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir las dos iteraciones con valores visibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con la ejecución detenida, abre Depurar → Ventanas → Variables locales; en inglés, Debug → Windows → Locals. Localiza aceptados. El registro actual es registro; despliega recuento dentro de él para observar sus cantidades. También puedes mantener el puntero sobre esas expresiones en el editor para consultar sus valores (Microsoft, 2025c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la primera visita, identifica el total acumulado antes de la asignación y la cantidad del registro actual. Pulsa F10, que ejecuta la siguiente instrucción sin entrar paso a paso en una llamada que ésta contenga. El programa sigue ejecutando esas llamadas cuando corresponden; el cambio está en dónde se detiene el depurador (Microsoft, 2025c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba el nuevo valor de aceptados. Pulsa F5 para continuar hasta la siguiente visita al mismo punto de interrupción. Ahora corresponde al segundo registro. Observa otra vez el valor anterior y el dato que se va a incorporar; después pulsa F10 y compara el resultado. No arrastres la flecha de ejecución ni edites valores: aquí queremos observar el recorrido del programa sin alterarlo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows__distinguir_reemplazo",
+          "question": "En la segunda visita, aceptados vale 2 y registro.recuento.aceptados vale 3. Tras F10, aceptados vale 3. ¿Qué hipótesis explica esa transición?",
+          "options": [
+            "El acumulador incorpora la cantidad anterior y obtiene la suma correcta de ambos registros.",
+            "La instrucción reemplaza el acumulador por la cantidad actual en vez de añadirla.",
+            "El recorrido reinicia el acumulador a cero antes de incorporar cada registro."
+          ],
+          "correctIndex": 1,
+          "explanation": "El estado observado pasa de 2 a 3, exactamente el dato del segundo registro. La asignación = reemplaza el valor. Una acumulación de ambas cantidades produciría 5; la observación concreta permite comprobar esa diferencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relacionar el síntoma con su causa"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera iteración por sí sola no distinguía los procedimientos: asignar 2 al acumulador que vale 0, o añadirle 2, produce el mismo resultado. La segunda iteración sí los distingue porque el acumulador ya contiene una aportación anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia con fallo utiliza =. En la segunda visita, toma 3 del registro y sustituye el 2 anterior, de modo que el total queda en 3. La instrucción += obtiene el valor anterior, añade la cantidad del registro actual y conserva la suma 5. El recorrido y el dato de entrada no necesitan cambiar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este diagnóstico combina una expectativa independiente, un punto de observación y una transición concreta. Una captura con un número aislado no basta: interesa saber en qué función, instrucción e iteración se observó. El máximo por grupo se calcula en otra función del modelo y puede seguir siendo correcto aunque el total general esté mal."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows__informe_contradictorio",
+          "question": "El informe defectuoso muestra Aceptados: 3 y Mayor: verde 5 para esta muestra de un solo grupo. ¿Qué conviene investigar?",
+          "options": [
+            "La diferencia entre los dos cálculos: el total general del informe y la suma por grupo del modelo.",
+            "Un cambio de nombre del grupo para hacer desaparecer la diferencia entre las líneas.",
+            "La eliminación del primer registro, aunque el contrato exige conservarlo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Con un solo grupo, su suma coincide con el total general esperado. La discrepancia indica que los dos cálculos no están produciendo el mismo resultado. Observar el acumulador del informe localiza el defecto sin cambiar los datos que lo revelan."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Corregir, reconstruir y comprobar la corrección"
+        },
+        {
+          "type": "paragraph",
+          "text": "Detén la depuración con Mayús+F5 o Depurar → Detener depuración. En informe_error.cpp, sustituye la asignación por aceptados += registro.recuento.aceptados; y guarda. Ejecuta la orden de construcción de esta página. Guardar el texto no actualiza el programa que estabas depurando."
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc /Zi /Od modelo.cpp informe_error.cpp depurar_informe.cpp /Fe:depurar_informe.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta primero el programa desde la consola y comprueba las cuatro líneas. Después repite el recorrido del depurador sobre la nueva construcción. El punto de interrupción debe estar ligado a la instrucción corregida; si la fuente abierta no coincide con la construida, revisa las rutas y reconstruye antes de interpretar otros valores."
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\depurar_informe.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Grupos: 1\nAceptados: 5\nRechazados: 1\nMayor: verde 5"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al alcanzar la segunda visita, el valor anterior de aceptados debe seguir siendo 2 y el registro debe aportar 3. Después de F10, el acumulador debe valer 5. Esta observación comprueba la hipótesis de corrección en el mismo caso que detectó el fallo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye y ejecuta después el comprobador de la lección de pruebas con la copia informe_error.cpp que acabas de corregir. Conserva pruebas_tmp, la carpeta de archivos de prueba que preparaste en esa lección. Mantén la selección explícita de fuentes y utiliza el nombre pruebas_corregidas.exe para distinguir esta ejecución de la batería original. Las cuarenta y cinco comprobaciones deben pasar y el proceso debe devolver 0: no basta con obtener cinco en un único caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc modelo.cpp informe_error.cpp archivos.cpp pruebas.cpp /Fe:pruebas_corregidas.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\pruebas_corregidas.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba también que la batería detecta el defecto deliberado. En informe_error.cpp, vuelve temporalmente a la asignación =, guarda y construye el comprobador con otro nombre mediante la orden siguiente. Debe señalar la diferencia del informe y terminar con un código distinto de cero. Esta contraprueba muestra qué condición vigila la batería."
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc modelo.cpp informe_error.cpp archivos.cpp pruebas.cpp /Fe:pruebas_error.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\pruebas_error.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de registrar esa diferencia, devuelve informe_error.cpp a la suma +=, guarda y vuelve a construir depurar_informe.exe con la orden completa de esta página. Conserva separados los resultados del comprobador correcto y de la contraprueba; el archivo informe.cpp de la aplicación permanece correcto durante todo el ejercicio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando el depurador no llega al punto esperado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el punto aparece sin enlazarse o nunca se alcanza, primero confirma que estás depurando depurar_informe.exe construido desde la carpeta actual y que ese recorrido llama a mostrar_informe. Comprueba que conservas los fuentes y los archivos .pdb correspondientes. Un archivo de símbolos de otra construcción no describe necesariamente este ejecutable (Microsoft, 2026e)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una flecha detenida en otra función no significa que el acumulador se haya perdido. La ventana de variables locales presenta el contexto actual. Continúa hasta el punto situado en el informe para observar aceptados y registro. Si la compilación falló, resuelve primero su diagnóstico; abrir un ejecutable anterior no comprueba el cambio actual."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows__simbolos_y_version",
+          "question": "Editaste el informe, la compilación falló y abriste de nuevo el ejecutable anterior. ¿Qué debes hacer antes de atribuir sus valores a la corrección?",
+          "options": [
+            "Cambiar los valores desde el depurador hasta que coincidan con la respuesta prevista.",
+            "Borrar el punto de interrupción para que el programa termine sin detenerse.",
+            "Resolver la compilación, construir la fuente guardada y abrir el ejecutable y los símbolos de esa construcción."
+          ],
+          "correctIndex": 2,
+          "explanation": "Los valores observados pertenecen al ejecutable que se está ejecutando. Si no se construyó la modificación, no son evidencia de ella. La correspondencia entre fuente, programa y símbolos debe quedar comprobada antes de interpretar el estado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reproducir el diagnóstico y conservar su evidencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "En README.md conserva un apartado de diagnóstico del proyecto: muestra de dos registros, total esperado, síntoma observado, punto de interrupción, valores antes y después, causa, cambio y pruebas repetidas. Identifica este ejemplo como un defecto provocado para aprender; no lo presentes como una avería real del usuario."
+        },
+        {
+          "type": "paragraph",
+          "text": "La documentación debe describir las observaciones que hayas obtenido y la construcción que ejecutaste. La app no recoge esos valores del depurador ni califica automáticamente el texto del archivo. Una captura o una referencia del autor ayuda a comparar, pero no sustituye tu ejecución."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva informe.cpp como implementación correcta de la aplicación. La referencia siguiente permite reconstruir exactamente el defecto deliberado usado en esta lección; el nombre informe_error.cpp identifica su finalidad y no se incluye en la orden normal de construcción."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados = registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n    return static_cast<bool>(salida);\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comparar, la única instrucción que cambia en la implementación correcta es aceptados += registro.recuento.aceptados;. La diferencia está en conservar la aportación anterior al añadir la siguiente. Las fuentes se seleccionan por nombre en cada orden; no compiles indiscriminadamente todos los archivos .cpp del directorio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el diagnóstico a otro acumulador"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la raíz del proyecto crea informe_rechazados_error.cpp y depurar_rechazados.cpp con Bloc de notas. En el primero copia tu informe.cpp correcto y sustituye únicamente rechazados += registro.recuento.rechazados; por rechazados = registro.recuento.rechazados;. En el segundo copia depurar_informe.cpp y utiliza Recuento{2, 2} para el primer registro y Recuento{3, 4} para el segundo. Los aceptados conservan sus cantidades anteriores; los rechazados pasan a ser dos cantidades positivas."
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad informe_rechazados_error.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad depurar_rechazados.cpp"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__depurar_un_fallo_del_informe_en_windows__prevision_rechazados",
+          "question": "¿Qué resultado debe producir la suma correcta de rechazados con las nuevas cantidades?",
+          "options": [
+            "4, porque el segundo registro reemplaza al primero.",
+            "6, porque las aportaciones son 2 y 4.",
+            "5, porque las cantidades de aceptados no cambiaron."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los rechazados son 2 y 4, por lo que deben sumar 6. Usar cantidades positivas hace que reemplazar la primera por la segunda produzca un resultado diferente de acumularlas. El total de aceptados responde a otra columna."
+        },
+        {
+          "type": "paragraph",
+          "text": "Guarda ambos archivos y construye esta prueba separada con la orden completa. Después abre su ejecutable en Visual Studio y coloca el punto en la asignación de rechazados, dentro de informe_rechazados_error.cpp. Los parámetros y la selección de fuentes cumplen las mismas funciones que en la prueba anterior; cambian la copia del informe, el main de la muestra y el ejecutable."
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc /Zi /Od modelo.cpp informe_rechazados_error.cpp depurar_rechazados.cpp /Fe:depurar_rechazados.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "devenv /DebugExe depurar_rechazados.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Observa las dos visitas al punto y el cambio tras F10. Diagnostica la diferencia con tu expectativa, detén la ejecución y corrige la copia. Guarda, reconstruye con la misma orden y repite la observación. Añade al README.md los valores realmente vistos y el motivo por el que la segunda visita distingue los procedimientos. Conserva informe.cpp como fuente de la aplicación y elige explícitamente los archivos de cada construcción."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "a04519213a0dc80924d8568fd0b43a58acce12ec5640a53485e8b78a151804dc"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "896ea4949d95a261271a951d06f253a4535da62badaa3babba05b74539266b74"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0012",
+            "sha256": "49c751afa12d6256b3a83f2b3d942973c3eb7cd6850f0b931b1185e4c6e32f43"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "f88001ecf776572cc5a56e67bc7af1bec40a6647216076f73babb20bc65f6cbc"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "4f4bad01ca976b1726461fcfa937dea7f210e35079b417e571f7c075163b29a6"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "8fd0b31fb1fb70e432c1262ef3e420048d5ac0b4b3397c514721bf524ee59993"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0015",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "5c7337ad7212d32ce6cb962a933daf48653d6d22102dc973ce4b8619ccbabd6a"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "70bd44f3ddaeb9aa44eebedf15da385e9a723e400b0aecb2bcc460df549abedc"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "b808eab89d01a6362cb2089cf0959b45221d31e1a75fa943f6ba1171b1bbe278"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007",
+          "block_0001_0008",
+          "block_0001_0009",
+          "block_0001_0010",
+          "block_0001_0011",
+          "block_0001_0012"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007",
+          "block_0005_0008",
+          "block_0005_0009",
+          "block_0005_0010",
+          "block_0005_0011",
+          "block_0005_0012",
+          "block_0005_0013",
+          "block_0005_0014",
+          "block_0005_0015"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006",
+          "block_0008_0007",
+          "block_0008_0008"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "eaeb443b5d5412a2dc9b4e7c1f8b908b84b6d311b1c02c21b5a87835bec7324c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "a04519213a0dc80924d8568fd0b43a58acce12ec5640a53485e8b78a151804dc"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "896ea4949d95a261271a951d06f253a4535da62badaa3babba05b74539266b74"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0012",
+                "sha256": "49c751afa12d6256b3a83f2b3d942973c3eb7cd6850f0b931b1185e4c6e32f43"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "f88001ecf776572cc5a56e67bc7af1bec40a6647216076f73babb20bc65f6cbc"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "4f4bad01ca976b1726461fcfa937dea7f210e35079b417e571f7c075163b29a6"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "8fd0b31fb1fb70e432c1262ef3e420048d5ac0b4b3397c514721bf524ee59993"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0015",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "5c7337ad7212d32ce6cb962a933daf48653d6d22102dc973ce4b8619ccbabd6a"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "70bd44f3ddaeb9aa44eebedf15da385e9a723e400b0aecb2bcc460df549abedc"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "b808eab89d01a6362cb2089cf0959b45221d31e1a75fa943f6ba1171b1bbe278"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "a9c2a30d7a948e44d4898fc6fc3331dd99f5c8a1d0e9d835ffcf1c90ce6247b9",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "33a0bb6bd1e33806bdc44cc74488889cea982e9e93f8e1bfe4b46b1d83ad5f65",
+        "spans": [
+          {
+            "start": 186,
+            "end": 199,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 215,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 260,
+            "text": "6[2;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 269,
+            "text": "0[3;0]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "62c901f918618bb45d923bae0bcc82c653d7336e75057accf6765fb39270d0dd",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "c15923c5cb019f657f398046c5f353468098e3e9e6c8b7fec5756b52ccd3ae1f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "728d027ed6725b36a7dbf093489d303dacd681ac516e8e950be96b2461f7448b",
+        "spans": [
+          {
+            "start": 18,
+            "end": 19,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "1cf4bfc312daa9d4b0cd773b0eef9f0ac188f04e9a6dd39d33feff117b5ea8f0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "c5fd1986728c3f57fd983e129901ac5c9113185b16a055c0d33d1b545f57e48b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "779394c7a8571a98fe738fb80605d7615157c93ed1dc53141072f45b2bc996e7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "8de32c558d4dd51a1c8ea9805fbb082d55b1d112ff3996e30f735152985c8f71",
+        "spans": [
+          {
+            "start": 118,
+            "end": 129,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "7aa03b7b76560aec517301fb2a2a84aea82435ba5e2249d064363b36e375bca5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "c1746748c5ab282ea8c75125587c2d31e6d43d9c31dd259a3d97f56af1d2b53a",
+        "spans": [
+          {
+            "start": 32,
+            "end": 51,
+            "text": "depurar_informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 186,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "ab8c4010b787dba493de6c711b0778df8dcfef89d7fbf8379361de8ee929f3b6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 27,
+            "text": "notepad depurar_informe.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "a4feac8416f1dc52e6ea7606c73298aa12deacb660ae3d20a991824cd94f52f1",
+        "spans": [
+          {
+            "start": 26,
+            "end": 43,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 87,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 164,
+            "text": "aceptados += registro.recuento.aceptados;",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 169,
+            "end": 209,
+            "text": "aceptados = registro.recuento.aceptados;",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 303,
+            "end": 305,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "ab1283ea910242e377076bc3e65c5693f8266ad242a1eb2e71a3489963344dfd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "notepad informe_error.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/text",
+        "sourceSha256": "1cbdf6f059f63050a0f92e0c781637c377779b0707e8a981fa3b6e48056b0c2d",
+        "spans": [
+          {
+            "start": 46,
+            "end": 59,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/text",
+        "sourceSha256": "41967d5197499049ec124926e43ce061a636e6d8a35c5b56a6ab0059f633fc36",
+        "spans": [
+          {
+            "start": 0,
+            "end": 93,
+            "text": "cl /W4 /EHsc /Zi /Od modelo.cpp informe_error.cpp depurar_informe.cpp /Fe:depurar_informe.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/text",
+        "sourceSha256": "1c4b92ef34b4b547613a606f862aa2e13aeeb6ae77687d4bcd30e69e6ebda395",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "/Zi",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": ".pdb",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 153,
+            "text": "(Microsoft, 2026e)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 158,
+            "text": "/Od",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 247,
+            "text": "(Microsoft, 2021)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 265,
+            "text": "/W4",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 272,
+            "text": "/EHsc",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 298,
+            "text": "/Fe:depurar_informe.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0009",
+        "path": "/text",
+        "sourceSha256": "377e5027ae31a5ccba2faf5ea885db95efca1da002ca59898f8b763f6c885044",
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 77,
+            "end": 85,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 98,
+            "text": "pruebas.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 113,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 234,
+            "text": ".pdb",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/text",
+        "sourceSha256": "516603efe32ffb847757d95419f5030fb7372857f8ffb3ce9d1a959f1b2a6cb0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": ".\\depurar_informe.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0011",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/question",
+        "sourceSha256": "f241b946bd220b00e521d8eaa4b449bcb3975c3a414248e1df365678dc571755",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/explanation",
+        "sourceSha256": "2213f0b8a69dc76843149b6fa841b185b94ba4cd87f5c832904a292e7cc70368",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/options/0",
+        "sourceSha256": "e1dc97fb060574cbb1b76250176850e1c0833b2dad47dee6ef5bf188dbeac166",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/options/1",
+        "sourceSha256": "c016552ebcac81dee4faed99251368483914af8e153bc313bfe6a730bd2ca92a",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 18,
+            "end": 23,
+            "text": "false",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0012",
+        "path": "/options/2",
+        "sourceSha256": "b530a7a4ce841996bf529c9b73bc35c67bb4aee42ee761297f3ccade8a44befc",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "f6e31fba84525a7776b8876e04b62ca73864eaf8c3c3696d5c9accafbedb720a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "ad40fb2d81ae0c2e1fa9147c2a5da2aa777d6e5e547da7d21e1f4039f67485cf",
+        "spans": [
+          {
+            "start": 145,
+            "end": 173,
+            "text": "Skip and add accounts later.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 313,
+            "text": "Start Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "491cb5ec87bb6785205f0c871978f19cb0a51725ba577a42925b8f000993ca4d",
+        "spans": [
+          {
+            "start": 73,
+            "end": 79,
+            "text": "devenv",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 122,
+            "text": "/DebugExe",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 183,
+            "text": "(Microsoft, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "2462f1eccf19d0055e62246deaff07ed4a8ce9c03d99a555b171b2d690062e4b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 36,
+            "text": "devenv /DebugExe depurar_informe.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "90331c95d551db3d26a660a800d83137085dd98638f85073c3650f962d7afa96",
+        "spans": [
+          {
+            "start": 23,
+            "end": 40,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 75,
+            "text": "Archivo → Abrir → Archivo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 119,
+            "text": "File → Open → File",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 238,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "c9a8ff108afbee163d2974ad1cdeb4ad4daeb2fcab106f2e799400069194854e",
+        "spans": [
+          {
+            "start": 40,
+            "end": 80,
+            "text": "aceptados = registro.recuento.aceptados;",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "text": "F9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 280,
+            "text": "(Microsoft, 2025c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/text",
+        "sourceSha256": "2ca9409adfc2dab4d2bac2374c8dfee1070cfd383fbd28836403f335e001de98",
+        "spans": [
+          {
+            "start": 6,
+            "end": 8,
+            "text": "F5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 45,
+            "text": "Depurar → Iniciar depuración",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 81,
+            "text": "Debug → Start Debugging",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/question",
+        "sourceSha256": "4144f51f4d66398a12ab056998db3b23a38cd8e9d27c3513ad52a5dd4c4f78ba",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/explanation",
+        "sourceSha256": "d25a489599143234513d713edbb014e0969fe0b331e752ed8620393bfd1226d6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/options/0",
+        "sourceSha256": "8c30f3a1d208aa1ea830d04e98723066cab4b140e5f4c1063d703616b78f2add",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/options/1",
+        "sourceSha256": "1756d00eceebd1d522df047d30d92a0249e0a6362257699fb80ff24c255899f5",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/options/2",
+        "sourceSha256": "492ecb9fe8df5db022fb977b3fb5f2a554851fae6518081bbf2ef1c87c83bb82",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "96219b9eec67b1c08c2b14944782f0ea4d3afc94509bdc266b092b6560b2f939",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "9bac10eea9fd4ef0f929a7b7394cdf5d98d6d08d04cf0204de362021c77be642",
+        "spans": [
+          {
+            "start": 32,
+            "end": 70,
+            "text": "Depurar → Ventanas → Variables locales",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 107,
+            "text": "Debug → Windows → Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 127,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 151,
+            "end": 159,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 171,
+            "end": 179,
+            "text": "recuento",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 321,
+            "end": 339,
+            "text": "(Microsoft, 2025c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "cee211f3f96cdc4741c638a05639bada7fe9220ba2d04b5514ee080729d7a44c",
+        "spans": [
+          {
+            "start": 116,
+            "end": 119,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 327,
+            "end": 345,
+            "text": "(Microsoft, 2025c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "549a6f8d2b7126f8c3abf29c4235041117cd8c7656650d46334fd27bfc269c15",
+        "spans": [
+          {
+            "start": 28,
+            "end": 37,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 45,
+            "end": 47,
+            "text": "F5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 243,
+            "end": 246,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "a81af04d542b578b45bdfe8a1406a1958f414981b9ef56cfb747e0e5a8dd58f3",
+        "spans": [
+          {
+            "start": 22,
+            "end": 31,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 68,
+            "text": "registro.recuento.aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 96,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "951fd67af97a8fcb29a5dd9782b417456d137beb43e8899c3107e1a0560ccd27",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 33,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "=",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/0",
+        "sourceSha256": "ff4f681c0ecef37622ed52d61dda4c379f71ba81237b60e9a555e39b774d63f1",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/1",
+        "sourceSha256": "02949fb856f7380f9f3358e5ad9750e096190b4192beb592dc47eadb6a51eb5a",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/2",
+        "sourceSha256": "80dd9baaa2ef34cb3cf4f422a3ea584dc23bd0e105cb49c955777bd44fcb76b8",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "0dfed26eb72980f6c40a7d9c56ee2b21abcff1028d05bb8e2b0100453606d6a2",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "77f752b4cd65066b52ced498626288ab40220bc71e5190b6a21c9bf2a5dc72c8",
+        "spans": [
+          {
+            "start": 75,
+            "end": 76,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 115,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "9b9e0ff0dfe6bafb2833572da19cdf75ab520ce6fa60f13f6024d8c5707f592f",
+        "spans": [
+          {
+            "start": 27,
+            "end": 28,
+            "text": "=",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 149,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "0c8f11062906e822a559cb0523e1de786d65f9df42ec953a6383aaf9801c1c76",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "0522a36f6d59a2ddf8e5c31b955183246fe5ad751ed935f6338ea6c76d74ae03",
+        "spans": [
+          {
+            "start": 30,
+            "end": 42,
+            "text": "Aceptados: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 59,
+            "text": "Mayor: verde 5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "0a68b1664fa764079285de53aaffb5c73fc498281943f7a2c776cf6d5448e206",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/0",
+        "sourceSha256": "bd75c9e2b71313d614bbae4b75ba001764067194855247bd4e2307a8e483e446",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/1",
+        "sourceSha256": "b75dc12741b6ce81fe6c811b350b597bd1cbcd9f90b62cb0238f7bf6c0d47b35",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/2",
+        "sourceSha256": "4c6e2e30ea1fcac30490d2682f0bb596ad6650b359702c82f9c185b3edac3686",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "54be807af42e6cdd8ec1a640370c76b2485645969c8cc8499405ec516e323fd7",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "9ad7215191f95afc44ab6c140d59878dfee3ee97cf20ceded7ee2253883c3988",
+        "spans": [
+          {
+            "start": 24,
+            "end": 32,
+            "text": "Mayús+F5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 63,
+            "text": "Depurar → Detener depuración",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 85,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 156,
+            "text": "aceptados += registro.recuento.aceptados;",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "41967d5197499049ec124926e43ce061a636e6d8a35c5b56a6ab0059f633fc36",
+        "spans": [
+          {
+            "start": 0,
+            "end": 93,
+            "text": "cl /W4 /EHsc /Zi /Od modelo.cpp informe_error.cpp depurar_informe.cpp /Fe:depurar_informe.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "f90afc40ce853bc521c7373f49bed7a8c7d007f3b744b91902f33b73dd6c22cb",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "516603efe32ffb847757d95419f5030fb7372857f8ffb3ce9d1a959f1b2a6cb0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": ".\\depurar_informe.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "e6e089ace1f7b6f2eb5d48b80952694ffbc5b39e43582f9ee80565a91c75d67f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 51,
+            "text": "Grupos: 1\nAceptados: 5\nRechazados: 1\nMayor: verde 5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/text",
+        "sourceSha256": "0f01d3989a323e9a05caccca305b7cbc3d3bca9697196e88e14dea5ffa40ef53",
+        "spans": [
+          {
+            "start": 52,
+            "end": 61,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 127,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/text",
+        "sourceSha256": "e93ecdfa0d3eb793f87f6732b80148dc85e01c469c9ba749d22052e6cce97f05",
+        "spans": [
+          {
+            "start": 81,
+            "end": 98,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 143,
+            "text": "pruebas_tmp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 292,
+            "text": "pruebas_corregidas.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 423,
+            "end": 424,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0008",
+        "path": "/text",
+        "sourceSha256": "86942ce7b964798963a33709b5fe6aaf209bcb458c5803edf1a7e16194a34745",
+        "spans": [
+          {
+            "start": 0,
+            "end": 93,
+            "text": "cl /W4 /EHsc modelo.cpp informe_error.cpp archivos.cpp pruebas.cpp /Fe:pruebas_corregidas.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0009",
+        "path": "/text",
+        "sourceSha256": "0268bff3356adf2293cee4682b0182fd08b317db96659ad5efbd38c26d906988",
+        "spans": [
+          {
+            "start": 0,
+            "end": 24,
+            "text": ".\\pruebas_corregidas.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0010",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0011",
+        "path": "/text",
+        "sourceSha256": "b952ba7ed2a2bdf3502dc8042a1a2933bef9e91e4af7c4bf3546ade28f65c23d",
+        "spans": [
+          {
+            "start": 67,
+            "end": 84,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 124,
+            "text": "=",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0012",
+        "path": "/text",
+        "sourceSha256": "3c872b570af694c474b2180604d02e14b56f1f2695e008e7fbdd631bb2d52c2c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 88,
+            "text": "cl /W4 /EHsc modelo.cpp informe_error.cpp archivos.cpp pruebas.cpp /Fe:pruebas_error.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0013",
+        "path": "/text",
+        "sourceSha256": "ec9104bffb44687d2e80657047587dc987be284d3f4f39e425c3999d2480f126",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": ".\\pruebas_error.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0014",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0015",
+        "path": "/text",
+        "sourceSha256": "b5498d896de9ad341f25e73575f9e6a69cdbabdbdf8ed881750d79c535b5bae7",
+        "spans": [
+          {
+            "start": 46,
+            "end": 63,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 76,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 106,
+            "end": 125,
+            "text": "depurar_informe.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 267,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "62fb6f032e560092cea388bd1bf372e0ddaee5bc968aa9f7d689d735388a90ec",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "b8cc5f8e47b52aa2eea24cc78cc5d7762fd7606109620246345572fd86ce60da",
+        "spans": [
+          {
+            "start": 91,
+            "end": 110,
+            "text": "depurar_informe.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 189,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 242,
+            "end": 246,
+            "text": ".pdb",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 370,
+            "text": "(Microsoft, 2026e)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "db7fc3c025b05b94072111e5559fe8ac0b18ab7547e1d975b7326aadf9bf0ef0",
+        "spans": [
+          {
+            "start": 205,
+            "end": 214,
+            "text": "aceptados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 217,
+            "end": 225,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/question",
+        "sourceSha256": "65402e2a89e6f2375c65f3b8a2ea344d212dd4aba5450f25bea8bd0bfdb576a5",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/explanation",
+        "sourceSha256": "de3fecebdbbbea1c57401fb1034ec401acb32e2c751183ea7f4c673b12036ba9",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/options/0",
+        "sourceSha256": "b5fd8ad157e0ee33f6614c018a96791181c1298c0319d5b81352fa47cdbf6be1",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/options/1",
+        "sourceSha256": "8dba94a5384f15dba19f39456738b93f042c8c6889075c8e1f934f73d4818117",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/options/2",
+        "sourceSha256": "878cf083199187e5167441b5f4e5d1ebc2ba6f86ee20bef0ae094ded414fe224",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "32ab8eb2b63720c95de9ef21f3ce659a7bd9fb697cc3f2597604cfcd625f4bf2",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "44c6d74a830904716efdc6849aa298627d7dd598b3d32a1650ea91ce64e4f624",
+        "spans": [
+          {
+            "start": 3,
+            "end": 12,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "60e769a9a433ab58e5aaf45d77617543cbbf6c081a3f66d348afeedd4260a1ba",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "361d0445d65a52423e8ad50f90fa47b3a50c47d3dfa69d90c6826457dd02468f",
+        "spans": [
+          {
+            "start": 9,
+            "end": 20,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 196,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "18f05df23873ce0ca3050c9d15ff57f850950ed79ed57f8e8836369ef026f38a",
+        "spans": [
+          {
+            "start": 80,
+            "end": 121,
+            "text": "aceptados += registro.recuento.aceptados;",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 306,
+            "end": 310,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "963590e19b345d1b9346989f0704829975fb219bdc18f0bffbb620497c5494f4",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "f37fc278ad093766282ee965ad2eb689cfee196a10420cf4af0d5f7e1f4c2a4e",
+        "spans": [
+          {
+            "start": 29,
+            "end": 57,
+            "text": "informe_rechazados_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 82,
+            "text": "depurar_rechazados.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 136,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 212,
+            "text": "rechazados += registro.recuento.rechazados;",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 217,
+            "end": 259,
+            "text": "rechazados = registro.recuento.rechazados;",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 281,
+            "end": 300,
+            "text": "depurar_informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 325,
+            "text": "Recuento{2, 2}",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 352,
+            "end": 366,
+            "text": "Recuento{3, 4}",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/text",
+        "sourceSha256": "82bfbd9b0b74c4fb97e7896ee5380611c7a5e1590043c7b3756ff718e8992ead",
+        "spans": [
+          {
+            "start": 0,
+            "end": 36,
+            "text": "notepad informe_rechazados_error.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "06fed4229a1e6d0033ddec9d42af15aff58e22036217cbc84b417a824a094a02",
+        "spans": [
+          {
+            "start": 0,
+            "end": 30,
+            "text": "notepad depurar_rechazados.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/question",
+        "sourceSha256": "4ec3c32c0ac45863adf24aefc8155c5fb7a3e744e6122f3b9d8665224d231546",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/explanation",
+        "sourceSha256": "75ae56ddbc516b6e0f510e8ba776ead24a025c9066f7d77cd22687ccf8325725",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 24,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/0",
+        "sourceSha256": "7c3e9aad7464b5c7cdb126783c3d9fe807e88ba0350bc9845d0d39b5665f0601",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/1",
+        "sourceSha256": "8645bb2d8541e9b5db0b2946f4622a3b5a0ca5902c97eb3b3f4a002ef1276afa",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 32,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/2",
+        "sourceSha256": "73e6998d716a5556b79e02d8efb55ce242299a0df9d9d6dedce588f2fb6f24b3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/text",
+        "sourceSha256": "8dfac8865ae397eae434bda1bd4288a71311767e0b82283c8763ea344ae61f83",
+        "spans": [
+          {
+            "start": 160,
+            "end": 170,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 182,
+            "end": 210,
+            "text": "informe_rechazados_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 346,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/text",
+        "sourceSha256": "b77b04b8f6f50b6cf0b86e8da9dd6654c1af24b2646676774a45cc7e5ba6dc88",
+        "spans": [
+          {
+            "start": 0,
+            "end": 110,
+            "text": "cl /W4 /EHsc /Zi /Od modelo.cpp informe_rechazados_error.cpp depurar_rechazados.cpp /Fe:depurar_rechazados.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0007",
+        "path": "/text",
+        "sourceSha256": "bbb3412cde94543237b3b1dba0ba33b660fc6e40890776f5bea3729ceed663e8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 39,
+            "text": "devenv /DebugExe depurar_rechazados.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0008",
+        "path": "/text",
+        "sourceSha256": "3e67a32d6bfaf4ab6affe6192e0ffed0b9e8e505ddb67eb9908e7a25989cf315",
+        "spans": [
+          {
+            "start": 50,
+            "end": 53,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 222,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 343,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "850624bde32cfaa1f766b4d59dead8de5124ce3a2f6859b447c8e5092fd933b2",
+        "spans": []
+      }
+    ]
+  }
+}

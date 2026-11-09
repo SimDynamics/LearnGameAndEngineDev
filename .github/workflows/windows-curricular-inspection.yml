@@ -12,7 +12,7 @@ on:
         description: Probe checks the real IDE; Curriculum uses authored InspectionLog sources
         type: choice
         options: [Probe, Curriculum]
-        default: Probe
+        default: Curriculum
 
 permissions:
   contents: read
@@ -37,7 +37,7 @@ jobs:
       - name: Compile, execute, debug and capture on isolated Windows
         timeout-minutes: 12
         env:
-          CAPTURE_MODE: ${{ inputs.mode || 'Probe' }}
+          CAPTURE_MODE: ${{ inputs.mode || 'Curriculum' }}
         run: |
           $qaPowerShell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
           & $qaPowerShell -NoLogo -NoProfile -NonInteractive -STA -ExecutionPolicy Bypass -File .\scripts\windows\Capture-InspectionLog.ps1 -Mode $env:CAPTURE_MODE
@@ -46,7 +46,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: inspection-log-${{ github.sha }}-${{ inputs.mode || 'Probe' }}
+          name: inspection-log-${{ github.sha }}-${{ inputs.mode || 'Curriculum' }}
           retention-days: 14
           if-no-files-found: error
           path: out/qa/inspection-log/**

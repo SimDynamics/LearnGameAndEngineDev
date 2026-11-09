@@ -1,0 +1,2119 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp",
+  "title": "Instalar los componentes de C++",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir la revisión en una decisión de instalación"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lección anterior permitió reconocer el producto, la carga de escritorio con C++ y el SDK. Ahora resolveremos una ausencia concreta. Visual Studio puede abrirse como editor sin que esa instalación tenga el compilador de C++. El editor permite escribir archivos; el compilador transforma la fuente; el SDK aporta cabeceras, bibliotecas y herramientas de Windows. Necesitamos comprobar esas funciones por separado. Preparar rutas de búsqueda permite localizar una herramienta; no crea los archivos de una herramienta que todavía falta instalar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si ya tienes la instalación y los componentes revisados, conserva esa preparación y pasa después a comprobar la consola. Si existe Visual Studio pero falta C++, modifica esa misma instalación. Si no tienes Visual Studio, obtén el instalador oficial y selecciona las herramientas necesarias durante la instalación inicial. No hace falta crear otra copia sólo para seguir este ejemplo (Microsoft, 2026a)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las capturas nuevas proceden de una prueba realizada el 9 de noviembre de 2026 en Windows Server 2025. Allí se instaló una instancia nueva de Visual Studio Community y luego se le añadieron las herramientas de C++ que le faltaban. Ese equipo desechable ya tenía Enterprise y componentes compartidos del SDK. La prueba demuestra la instalación de Community y la incorporación de su compilador; no representa la preparación de un Windows 11 vacío."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp__decision",
+          "question": "Tu revisión encuentra Visual Studio Community, pero esa instalación no tiene las herramientas de C++. ¿Qué actuación corresponde a esa ausencia?",
+          "options": [
+            "Modificar esa instalación para incorporar el soporte de escritorio con C++.",
+            "Añadir sólo un SDK de Windows, suponiendo que también instala el compilador cl.",
+            "Preparar las rutas de búsqueda de la consola y dar por instalado el compilador ausente."
+          ],
+          "correctIndex": 0,
+          "explanation": "La ausencia se encuentra en los componentes de una instalación identificada. El instalador permite añadir MSVC mediante una modificación. Un SDK aporta recursos distintos, y una ruta de búsqueda permite localizar archivos que deben existir: ninguno sustituye la instalación del compilador que falta.",
+          "reviewFeedback": [
+            "Relaciona la ausencia observada con el cambio que la resuelve dentro de la instalación revisada.",
+            "El SDK aporta cabeceras, bibliotecas y herramientas de Windows; no sustituye al componente MSVC que proporciona el compilador.",
+            "Una ruta de búsqueda no instala el programa que debe localizar. Primero debe existir el compilador y después comprobarse su entorno."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtener el instalador desde la fuente oficial"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una instalación nueva, abre en el navegador la página de descargas de Visual Studio: https://visualstudio.microsoft.com/downloads/. Localiza Visual Studio Community y su descarga gratuita. El archivo pequeño descargado es el iniciador de la instalación: prepara Visual Studio Installer y obtiene los paquetes que selecciones. Descargar ese archivo todavía no instala el compilador (Microsoft, 2026a)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre el archivo descargado desde la carpeta en la que lo guardó tu navegador. Su nombre puede ser VisualStudioSetup.exe o vs_community.exe según el enlace empleado. Comprueba el origen Microsoft y, cuando Windows muestre la confirmación para ejecutarlo, identifica al editor Microsoft Corporation. Lee las condiciones que presenta el instalador y continúa cuando corresponda. Si el programa pide una actualización propia, espera a que la complete antes de elegir componentes (Microsoft, 2026a)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si ya tienes Visual Studio Installer, ábrelo desde Inicio como en la lección anterior. En Instalado, identifica la tarjeta de la instalación que vas a preparar y selecciona Modificar. En las capturas nuevas la interfaz está en inglés: Installed corresponde a Instalado y Modify a Modificar. Esa elección importa cuando hay más de una edición: los componentes que añadas pertenecen a la tarjeta elegida."
+        },
+        {
+          "type": "paragraph",
+          "text": "En nuestra prueba se obtuvo el iniciador de Community desde el enlace oficial estable y se verificó su firma de Microsoft antes de ejecutarlo. Se eligió una carpeta nueva para esa instancia. Primero se instaló sólo el editor base, con el propósito deliberado de comprobar el caso en que todavía faltan las herramientas de C++. Para preparar tu equipo normalmente puedes seleccionar C++ desde la primera instalación."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_instalacion_editor",
+          "src": "images/programming1/p1_windows_instalacion_editor.png",
+          "alt": "Visual Studio Installer real muestra Community 2026 en instalación y, debajo, la tarjeta de Enterprise 2026 que ya existía. La tarjeta de Community distingue descarga e instalación.",
+          "caption": "Instalación real de una instancia nueva de Community en el equipo de prueba. La operación se aplicó con el instalador oficial automatizado; el equipo ya tenía otra edición y componentes compartidos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp__descarga",
+          "question": "El navegador terminó de descargar el iniciador de Visual Studio. ¿Qué se ha completado hasta ese momento?",
+          "options": [
+            "La preparación de las herramientas, porque el iniciador ya está guardado en Descargas.",
+            "La obtención del programa que permitirá iniciar y configurar la instalación.",
+            "La aplicación de la carga de C++, porque la descarga del iniciador terminó."
+          ],
+          "correctIndex": 1,
+          "explanation": "El archivo descargado inicia el proceso y obtiene los componentes seleccionados. Después hay que aplicar la instalación y comprobar su resultado. Descargarlo no acredita que el compilador y el SDK ya estén preparados.",
+          "reviewFeedback": [
+            "Guardar el iniciador permite abrir el proceso de instalación; todavía no acredita que sus componentes estén preparados.",
+            "Distingue la obtención del iniciador de la instalación y de su comprobación posterior.",
+            "La descarga del iniciador no aplica una carga de trabajo: falta seleccionarla y completar su instalación."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Incorporar la carga de escritorio con C++"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el cuadro de selección abre Workloads, Cargas de trabajo. Busca Desktop development with C++, Desarrollo para el escritorio con C++, dentro del grupo de escritorio; si queda fuera del área visible, desplaza la lista. Identifica la casilla de esa tarjeta. La imagen muestra el estado de nuestra instancia antes de añadir esa carga."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_cpp_ausente",
+          "src": "images/programming1/p1_windows_cpp_ausente.png",
+          "alt": "Workloads de Visual Studio Community 2026, versión 18.11.3. La tarjeta Desktop development with C++ está sin marcar; Installation details muestra Visual Studio core editor.",
+          "caption": "Estado previo real de Community. Además de revisar el instalador, se comprobó que esa instancia no registraba el componente del compilador y que su carpeta de herramientas no contenía cl.exe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Marca la carga de escritorio con C++. En Installation details, Detalles de la instalación, despliega su nombre y comprueba la selección de las herramientas MSVC para x64/x86. MSVC identifica el compilador y sus herramientas; x64 y x86 indican destinos de 64 y 32 bits. Selecciona también un SDK de Windows compatible si en tu revisión falta. Puedes localizarlo en Individual components, Componentes individuales, utilizando el filtro enseñado en la lección anterior (Microsoft, 2025e, 2026a)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva los componentes que necesiten tus otros proyectos. No deduzcas que cualquier casilla cercana sustituye a C++: .NET, las herramientas de videojuegos y los SDK tienen funciones distintas. La selección de nuestra prueba añadió la carga de C++ y el componente MSVC x64/x86; utilizó un SDK compartido que ya estaba instalado. No demuestra una descarga nueva de ese SDK."
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisa el destino y el espacio que indica el instalador antes de aplicar. En una instalación nueva el botón inicia la instalación; para cambiar una existente, utiliza Modificar. Marcar la casilla prepara la selección, pero todavía no significa que los paquetes hayan terminado de instalarse."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp__seleccion",
+          "question": "Marcaste la carga de C++ y ves sus componentes en el panel derecho, pero aún no aplicaste la modificación. ¿Qué falta para poder dar por incorporadas esas herramientas?",
+          "options": [
+            "Reabrir la consola para que incorpore la selección todavía pendiente.",
+            "Aplicar la modificación, esperar a que termine y comprobar el resultado.",
+            "Cerrar el instalador y considerar que la casilla ya acredita la instalación."
+          ],
+          "correctIndex": 1,
+          "explanation": "La selección describe los componentes solicitados. La modificación debe completarse y su resultado debe revisarse; sólo después corresponde comprobar el compilador. Abrir otra consola prepara su entorno, pero no aplica una modificación pendiente del instalador.",
+          "reviewFeedback": [
+            "Una consola nueva puede recibir un entorno actualizado, pero no instala los componentes que todavía están pendientes de aplicar.",
+            "Une la selección con la operación que la aplica y con una comprobación posterior.",
+            "Una selección pendiente no acredita la descarga ni la incorporación de los paquetes."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Esperar a que los cambios se apliquen"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tras confirmar, el instalador muestra las operaciones de descarga e instalación. Observa sus estados y deja que finalicen. El tamaño, la velocidad y el tiempo dependen de los paquetes ya disponibles y de tu equipo; no compares esos números con la captura como si fueran una respuesta obligatoria."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_instalacion_cpp",
+          "src": "images/programming1/p1_windows_instalacion_cpp.png",
+          "alt": "La tarjeta de Visual Studio Community 2026 muestra la descarga completada y una instalación de paquetes todavía en progreso. Debajo permanece la tarjeta de Enterprise 2026.",
+          "caption": "El instalador está incorporando los componentes de C++ a Community. Esta pantalla de progreso corresponde a la operación real; la comprobación del compilador se realizó después de que terminara."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si solicita reiniciar, guarda primero el trabajo de las aplicaciones abiertas y realiza el reinicio antes de utilizar las herramientas que dependen de él. Un resultado que requiere reinicio no equivale todavía a un entorno listo para construir. En una instalación controlada por comandos, el código 0 indica operación completada; 3010 indica que se requiere reiniciar antes de usarla. En la prueba mostrada ambas operaciones finalizaron con 0 (Microsoft, 2025d)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si aparece un error, conserva el mensaje y revisa la causa que identifica: por ejemplo, falta de espacio, otra instalación en curso o un problema de descarga. Corrige esa condición antes de repetir. No uses una barra a medio completar ni la mera presencia de la tarjeta del producto como resultado satisfactorio."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp__reinicio",
+          "question": "El instalador comunica que debe reiniciarse el equipo antes de utilizar los componentes. ¿Cuál es el criterio correcto para continuar?",
+          "options": [
+            "Considerar listo el entorno porque los paquetes terminaron de descargarse.",
+            "Continuar porque una consola que ya estaba abierta aún puede ejecutar un programa anterior.",
+            "Completar el reinicio solicitado y comprobar después las herramientas y la construcción."
+          ],
+          "correctIndex": 2,
+          "explanation": "La operación dejó una condición pendiente para poder utilizar sus componentes. Tras completar esa condición, hay que verificar las herramientas y construir la fuente prevista. Una descarga o un ejecutable anterior no comprueban ese estado.",
+          "reviewFeedback": [
+            "Descarga, instalación disponible y construcción funcional son observaciones diferentes.",
+            "Un ejecutable anterior puede funcionar sin comprobar las herramientas recién incorporadas.",
+            "Atiende a la condición concreta que requiere el instalador y comprueba el resultado posterior."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la misma instalación después del cambio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando la operación termine, vuelve a revisar la tarjeta de Community y abre Modificar para inspeccionar la selección. Comprueba que la carga de C++ y sus herramientas figuran en esa misma instalación. Esta revisión posterior debe corresponder al producto y la ruta que acabas de preparar."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_cpp_incorporado",
+          "src": "images/programming1/p1_windows_cpp_incorporado.png",
+          "alt": "Workloads de la misma instancia de Community. La tarjeta Desktop development with C++ aparece ahora marcada; el panel derecho muestra la selección de MSVC Build Tools para x64.",
+          "caption": "Estado posterior real de la misma instancia de Community. El registro de componentes confirmó que ahora incluía el compilador solicitado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después se preparó la consola de desarrollo de esa instancia y se localizó su compilador. La ruta de cl.exe comenzó dentro de C:\\LGAED-CurricularQA\\VSCommunity, la carpeta elegida para la nueva instalación de prueba. Así se evitó atribuir a Community una construcción realizada con el compilador de Enterprise que ya estaba en el equipo."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_cpp_instalado_comprobado",
+          "src": "images/programming1/p1_windows_cpp_instalado_comprobado.png",
+          "alt": "Consola real: where cl localiza el compilador en la instancia nueva VSCommunity; cl construye comprobar_entorno.cpp y la ejecución imprime Entorno preparado. Después se muestra el código de salida 0.",
+          "caption": "El compilador de la instancia nueva construyó el programa pequeño y su ejecución escribió Entorno preparado con código de salida 0. Es una comprobación del entorno, previa a las funciones de InspectionLog."
+        },
+        {
+          "type": "paragraph",
+          "text": "La consola de desarrollo prepara las rutas con las que la ventana localiza las herramientas de una instalación. Una consola ordinaria puede no encontrar cl aunque esté instalado. La siguiente lección enseña ese recorrido de consola paso a paso: localizar la herramienta, crear y guardar la fuente, construirla y ejecutar su resultado. La ruta de esta captura identifica el ensayo del autor; no es un destino que debas copiar si tu instalación utiliza otra carpeta. En tu equipo deberás relacionar el ejecutable encontrado con la instalación que revisaste."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp__identidad",
+          "question": "Un equipo tiene dos ediciones de Visual Studio. Se añadió C++ a Community, pero la prueba usó cl.exe desde la carpeta de Enterprise. ¿Qué demuestra esa prueba?",
+          "options": [
+            "Que el compilador de Enterprise utilizado pudo construir; falta comprobar el de Community.",
+            "Que el compilador de Community también funciona, porque ambas ediciones comparten el SDK.",
+            "Que la casilla de C++ marcada en Community basta para atribuirle la construcción."
+          ],
+          "correctIndex": 0,
+          "explanation": "El resultado acredita la herramienta que realmente se ejecutó. Para verificar la instancia modificada hay que preparar su entorno e identificar su compilador. La coexistencia de dos ediciones no vuelve intercambiable la evidencia de sus componentes.",
+          "reviewFeedback": [
+            "Relaciona el resultado con el ejecutable y la ruta observados.",
+            "Compartir el SDK no demuestra que el compilador de cada instancia esté instalado y se haya utilizado.",
+            "La casilla acredita una selección de componentes; identificar el ejecutable utilizado permite atribuir la construcción a esa instalación."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el siguiente paso según la evidencia"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp__situaciones",
+          "prompt": "Relaciona cada situación con la actuación que responde a lo observado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "situaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "sin_editor",
+                  "label": "No existe la instalación de Visual Studio que se utilizará."
+                },
+                {
+                  "id": "sin_cpp",
+                  "label": "Existe la instalación, pero le falta el soporte de C++."
+                },
+                {
+                  "id": "seleccion",
+                  "label": "Se marcaron componentes, pero la modificación no se ha aplicado."
+                },
+                {
+                  "id": "consola",
+                  "label": "Los componentes están instalados, pero una consola ordinaria no encuentra cl."
+                }
+              ],
+              "targets": [
+                {
+                  "id": "aplicar",
+                  "label": "Aplicar el cambio y revisar su finalización."
+                },
+                {
+                  "id": "obtener",
+                  "label": "Obtener el instalador oficial y preparar una instalación con los componentes necesarios."
+                },
+                {
+                  "id": "entorno",
+                  "label": "Abrir la consola de desarrollo de esa instalación y comprobar allí la herramienta."
+                },
+                {
+                  "id": "modificar",
+                  "label": "Modificar esa instalación para incorporar el componente que falta."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "sin_editor": "obtener",
+                  "sin_cpp": "modificar",
+                  "seleccion": "aplicar",
+                  "consola": "entorno"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada paso responde a una ausencia diferente. Obtener el iniciador, modificar componentes, aplicar una selección y preparar el entorno de una consola son operaciones distintas que se comprueban con resultados distintos.",
+            "incorrect": "Identifica qué falta realmente: el producto, un componente, la aplicación de una selección o el entorno de la ventana. No uses una reinstalación completa como respuesta automática a cualquier síntoma."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes continuar cuando hayas identificado la instalación que utilizarás, incorporado sus herramientas necesarias y resuelto cualquier operación o reinicio pendiente. La construcción de un programa pequeño será la comprobación funcional siguiente. Las respuestas de esta lección evalúan la elección del procedimiento; no inspeccionan automáticamente las herramientas de tu equipo."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "cf94cae8b8112c6a2215324430203ea9aa5abd20c9273be8e054d5f3bab37c5e"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "08efff1c8fb0a8ee64eef053666c86eaf9e3737a45066d77bd7142fa5697c4e9"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "e446579652bd2a0ad2f4e24b4497ffb88b5b55b4c31b32f17977b4d2010454c3"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "31377370d0bcb1d9d93eaa5245f3bc13bbcaacf2a8bb5cc591cf5eaa03691e85"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "9537e9bc14f7e8c5534de3cabb31639298920fec0f96764a2a87e553af3517fc"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "f257b95b4595febb00668d1d4a1572adfdd12f4d5b77cfbf67b9465494f0ea72"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "a71b518cacf174635321ff82d6fa9fa1a87182aaf2990bec440809762544b344"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "fb141be95c61ce89ac857a906449a8eed6b815c5dba174ce4cf42adab3d116de"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "f4a5abe8be94421e5c64c99a9bced0d70cd8b85eb9491133e25fe6b8f4d3578e"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "3aba629682ff6ca79c3e6f951a997498bf7a4b2cdd7807f88dabd4498c68bcf6"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "99c2d2b29a29bb7e3676df31b3be431507b12f3e746a452cd63a5444bf3f85c5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "f0f0dc167cc3ccd4c8a3c5cf5cef161ab3ee1b238edb9d8fc425795915fff96c",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "cf94cae8b8112c6a2215324430203ea9aa5abd20c9273be8e054d5f3bab37c5e"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "08efff1c8fb0a8ee64eef053666c86eaf9e3737a45066d77bd7142fa5697c4e9"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "e446579652bd2a0ad2f4e24b4497ffb88b5b55b4c31b32f17977b4d2010454c3"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "31377370d0bcb1d9d93eaa5245f3bc13bbcaacf2a8bb5cc591cf5eaa03691e85"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "9537e9bc14f7e8c5534de3cabb31639298920fec0f96764a2a87e553af3517fc"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "f257b95b4595febb00668d1d4a1572adfdd12f4d5b77cfbf67b9465494f0ea72"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "a71b518cacf174635321ff82d6fa9fa1a87182aaf2990bec440809762544b344"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "fb141be95c61ce89ac857a906449a8eed6b815c5dba174ce4cf42adab3d116de"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "f4a5abe8be94421e5c64c99a9bced0d70cd8b85eb9491133e25fe6b8f4d3578e"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "3aba629682ff6ca79c3e6f951a997498bf7a4b2cdd7807f88dabd4498c68bcf6"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "99c2d2b29a29bb7e3676df31b3be431507b12f3e746a452cd63a5444bf3f85c5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "7f10031a99b67c345dc9e7e2713625e82229ce2a640e4b6cd7a48d389dec772c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "ad768666eb8daf76c138e9cbd9e3512202f46d0dfdaeb4e1fe0fd173ead8be22",
+        "spans": [
+          {
+            "start": 88,
+            "end": 91,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 148,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 306,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "b82ead3f2aaf6f43ba9bb4ea5f6accbe107f09655a5c417b6ba179ec22787340",
+        "spans": [
+          {
+            "start": 131,
+            "end": 144,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 219,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 401,
+            "text": "(Microsoft, 2026a)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "7c35dbbfff1131970777cc9a45032c3c2032e31dba30a9fecc0b7dea24fb0e3a",
+        "spans": [
+          {
+            "start": 82,
+            "end": 101,
+            "text": "Windows Server 2025",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 165,
+            "text": "Visual Studio Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 272,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 306,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 346,
+            "end": 355,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 428,
+            "end": 438,
+            "text": "Windows 11",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "d61dae15f79afff3a61b1b317b65f2d4feaa3a0628cc10b5e34fd0b2fb1f123b",
+        "spans": [
+          {
+            "start": 22,
+            "end": 45,
+            "text": "Visual Studio Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "7cc3ed67b276c17c4336d39b6d98613f028f0d56a1514f9a76eb8034c76b1436",
+        "spans": [
+          {
+            "start": 106,
+            "end": 110,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 144,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "84e26600af62f977d6e3392731a0feb5b6af785a377a402337b4d02721b25bae",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "Modificar",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "40e34fa4a5d70cb786aed699c3ccbb2073dc2860d4fd59b2d8a3bd471a1c7a55",
+        "spans": [
+          {
+            "start": 15,
+            "end": 18,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 78,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "7bf548daa93a217eab5d84af24f56e99a403ca1129a77d5547c99d7c4fe26b72",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d000d642846bc2cf319a6af8a8c29b4ad41acc9e745ea7e52e75950c0465376c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "0ca20e98c8ae1e047d79557333b3bc5945cc8cc2257f6f7e7954c666c35f7a3f",
+        "spans": [
+          {
+            "start": 3,
+            "end": 6,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 95,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "6dac2e8c74187337462bf3e05c7cea6d20c5febc76e591f4e79b7c0be3ea91c4",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "c678b77cc9ec1d718d984d1fc6e0c875fbd27c76c3e2ce46d69f84907b51c978",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "f6b8e93784263254721cf1e7b2e1473e6550e2d0e112b0dec07894a67db52fe7",
+        "spans": [
+          {
+            "start": 75,
+            "end": 88,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 135,
+            "text": "https://visualstudio.microsoft.com/downloads/",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 169,
+            "text": "Visual Studio Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 290,
+            "text": "Visual Studio Installer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 404,
+            "text": "(Microsoft, 2026a)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "e2a126f81fd0da813518bdb23d09fbdc7a450beeba487b40883ffbb8a59fa0f5",
+        "spans": [
+          {
+            "start": 98,
+            "end": 119,
+            "text": "VisualStudioSetup.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 138,
+            "text": "vs_community.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 296,
+            "text": "Microsoft Corporation",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 475,
+            "end": 493,
+            "text": "(Microsoft, 2026a)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "5a6b7285fa4ba4721c67799a0098d721b9b2e509f6e6c060d605a1ae67e68e61",
+        "spans": [
+          {
+            "start": 13,
+            "end": 36,
+            "text": "Visual Studio Installer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 99,
+            "text": "Instalado",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 182,
+            "text": "Modificar",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 244,
+            "text": "Installed",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 268,
+            "text": "Instalado",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 277,
+            "text": "Modify",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 289,
+            "text": "Modificar",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "472eadc993a9108be7bacd9d1eba79863a4cd2adee8464b9590c7e3c36079e75",
+        "spans": [
+          {
+            "start": 44,
+            "end": 53,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/alt",
+        "sourceSha256": "dacb87146588175b47a9db41c87eeeedcf76abe7ccdc0e7952b7977ae9de4fd9",
+        "spans": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "Visual Studio Installer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 46,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 102,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 147,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/caption",
+        "sourceSha256": "e0c9dd72e64989a648d8fa348d6365fed8af0b992ec1f0ac1f971dc4bdea9bc4",
+        "spans": [
+          {
+            "start": 43,
+            "end": 52,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/question",
+        "sourceSha256": "576515574d869d2c6b16c5680705333c170183fd420eb554af016c7cb52fb8a6",
+        "spans": [
+          {
+            "start": 50,
+            "end": 63,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/explanation",
+        "sourceSha256": "1ceb591f03b8fade6e7398baf8428f7843a6f774dfb6cf1c9a40cac61a464095",
+        "spans": [
+          {
+            "start": 193,
+            "end": 196,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/0",
+        "sourceSha256": "bd30c1cddab2cde0a988b369899f1588366f0558faea7233a44582b7695a667b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/1",
+        "sourceSha256": "fc0fe495090b6b927282782d7f9fdfc246f6390d4696909243e2ebe8da788e4f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/options/2",
+        "sourceSha256": "838c61b83dbba6040e81a9aa6b13874b941c77a6d0525952782a0dc61df16947",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "40bfe8852da883eaacb60c680be7906981d8296c320dfe0b5b569bf1d9cc6f7e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "ca744201303fe9a2d67652bea93a7f39f9e8d237ac6db6d09420fe23d1c797d1",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "3f023b84dd662553b09f86d6adfbf8e207bc41a9956aa32948838b362a7a1798",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "d1f894e504339f7abb09d091b962dfdbf559eb35b6889664993a24ca86ae63ea",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "3d6a2c4be204d2d659619eaa5a147b9310f39a607084073eb98944923e198a8e",
+        "spans": [
+          {
+            "start": 31,
+            "end": 40,
+            "text": "Workloads",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 59,
+            "text": "Cargas de trabajo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 95,
+            "text": "Desktop development with C++",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 134,
+            "text": "Desarrollo para el escritorio con C++",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/alt",
+        "sourceSha256": "13ba351477f0b264e3a9657242327628fe36f4ce1cadafb8f457803d422a55ee",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "Workloads",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 13,
+            "end": 36,
+            "text": "Visual Studio Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 58,
+            "text": "18.11.3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 99,
+            "text": "Desktop development with C++",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 137,
+            "text": "Installation details",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 171,
+            "text": "Visual Studio core editor",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/caption",
+        "sourceSha256": "46a9ccca97ea044aeaa42684eb5959dc89bdbda69ef18095435538403fe99ca4",
+        "spans": [
+          {
+            "start": 22,
+            "end": 31,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 190,
+            "text": "cl.exe",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "254a0743a9cd4d4367cfae016a0e90d316f16b6f0b19c5b6d772ae287279dc5a",
+        "spans": [
+          {
+            "start": 41,
+            "end": 61,
+            "text": "Installation details",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 89,
+            "text": "Detalles de la instalación",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 160,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 173,
+            "text": "x64/x86",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 179,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 228,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 234,
+            "text": "x86",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 257,
+            "text": "64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 262,
+            "text": "32",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 294,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 385,
+            "text": "Individual components",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 411,
+            "text": "Componentes individuales",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 491,
+            "text": "(Microsoft, 2025e, 2026a)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "86ed7dea36f66620e8457d5c7808bd494b39279b14c01c3d45a1eccac13869a6",
+        "spans": [
+          {
+            "start": 119,
+            "end": 123,
+            "text": ".NET",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 166,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 269,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 277,
+            "text": "x64/x86",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 293,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 372,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "2f4d7ff84df992fb219b516f69e5cfed3a07663f1ac9b0adf2867ae9cf6b9f95",
+        "spans": [
+          {
+            "start": 167,
+            "end": 176,
+            "text": "Modificar",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "78ca9d9171f15ddb2579aca4a96baa38d23898c51c4451f37feb36483df70fe1",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "0be2979cd4badc05abef2267cb565b5f5854eeadef7285e32c64d563a34f02d4",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/0",
+        "sourceSha256": "f92ba37923e0d0871abc7f74c27c2044573e23e63a5b284772b8cbe609281ba9",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/1",
+        "sourceSha256": "77ece2e95c985ad5b3674f929603579de1c0d5d259efc879fc125fc5d86d2138",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/2",
+        "sourceSha256": "c3a1c1e68679e861dde3b392da5dd660ab1bc0ecb3e363a35a8a27733d484c09",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "11d4dc0e39aacf87b1256b290088cb302a53c56b6b8448919225f56f46ae5fa8",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "1966fc31d923e5a7229ad4f16b3d81449ff9f2faed84a107e79ac62bb02fadd4",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e079980baa7cd4a978623b90e52403652e1c298f3f5d37e6e4c0b144aedd713d",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "248b44a83673bb34e784e42d7ae62ded12e1e3d6bf32259c029141d506ae39ed",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "ed0f2afbee1f84f899a8e055b722bb8e55ae1685af3b08925415b32d8630925c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/alt",
+        "sourceSha256": "e7ba82a19acea7a83d20dccc19fb45b673e684ad0f9ef46ee2826f4640f0d248",
+        "spans": [
+          {
+            "start": 14,
+            "end": 37,
+            "text": "Visual Studio Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 166,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/caption",
+        "sourceSha256": "c617d79c9c5667ef91ea2a7d99bb9d7cf55d7457626427c0c2aba30fe812e926",
+        "spans": [
+          {
+            "start": 57,
+            "end": 66,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "b8510f9e731d1234c962ea07af09fd222a54aba1aabf8d21bb57590914c4dd06",
+        "spans": [
+          {
+            "start": 299,
+            "end": 300,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 334,
+            "text": "3010",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 441,
+            "end": 442,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 461,
+            "text": "(Microsoft, 2025d)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "16c90e3c2d5d79cd55cd216c19e7c39ed9d2b1b15432ea3eb1b83c174732017a",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "e65fba07a4daf3dfadbcb7d70758304a02eb740f55e04e86e849b3b430367591",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "212ba0ac40e4c38ee83b8924fdce37129c798e118a5d09473bf40df335420f57",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "ea7fe38b0ea16b94f61a45ab64c13dd6be6253507f4723318e3eabff10784113",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "507df39bdb0760dd707f87556ab426077650d52310fddb970b3478691aed8c46",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "be5f19e6ca2dc094ee9f9de7e0e59d35bd434ef292c19748e95667d0c6d2e027",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "e58aa8ab3e18c793e5d69e1a950aac9583982dbd8da45a295f8214c33df388c4",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "6c21fc4dca5d398aa42566756ecd612319423cef003e0564eb7ebb9fdd8aad44",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "a275044de6041397cacba1ee3dd223e9ce1c2d2eca44c076d4dbe5d76247f34f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "ee6026dbfa264d65088850324ebec263c6b1ed645fbff7ea2594260425e48123",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "cd3e75952fb27412010fec9fad82ac4c855206eea22d732e72867dd157108612",
+        "spans": [
+          {
+            "start": 60,
+            "end": 69,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 86,
+            "text": "Modificar",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/alt",
+        "sourceSha256": "f1ef3d20492fe54787e1b91ee813817240c50f8225b6bbf3ddd9492eaff424c4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "Workloads",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 44,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 85,
+            "text": "Desktop development with C++",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 166,
+            "text": "MSVC Build Tools",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 175,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/caption",
+        "sourceSha256": "730aba7ca54e7d4336fcc2aef89d2e70bc6675fec742201cbdcd10ad5fa62fd3",
+        "spans": [
+          {
+            "start": 47,
+            "end": 56,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "4dfa2bac3c14f85d5bd93af67535de8c1848767284f2af36810ba6b6f3944a3b",
+        "spans": [
+          {
+            "start": 101,
+            "end": 107,
+            "text": "cl.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 159,
+            "text": "C:\\LGAED-CurricularQA\\VSCommunity",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 250,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 309,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/alt",
+        "sourceSha256": "8fb651b8dc2459a09cb49d500e1d612e768c3dbf10ff3053824c78e93f86fb07",
+        "spans": [
+          {
+            "start": 14,
+            "end": 22,
+            "text": "where cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 79,
+            "text": "VSCommunity",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 83,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 115,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 156,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 198,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/caption",
+        "sourceSha256": "c58bf1073401276028490607a3b66ee090ee10a973eddff96d6a22ba5ffd9a64",
+        "spans": [
+          {
+            "start": 90,
+            "end": 107,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 204,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "4dfe683e442e6036c1df993244ef6ae5b8e1d6e0c8de974fdf9e6f8cc9c715c2",
+        "spans": [
+          {
+            "start": 153,
+            "end": 155,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/question",
+        "sourceSha256": "d06217703e28601cb9df2454b93931515ee6c67e4805423123f03ed74a1ecf65",
+        "spans": [
+          {
+            "start": 33,
+            "end": 46,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 73,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 100,
+            "text": "cl.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 131,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/explanation",
+        "sourceSha256": "a68a116b9f14a4b195b3bbcdd6105e8288b70bc04d8d8c948e37faf5658ea02b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/options/0",
+        "sourceSha256": "6a988e11f9334e1cd0ea139b3b27f8750ca840ee0be13a1883b580fcca66c66d",
+        "spans": [
+          {
+            "start": 21,
+            "end": 31,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 89,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/options/1",
+        "sourceSha256": "de05337cfb0627d4afefba94d127ad3f76db99c0d684afb0f1bec7be40c1fd1c",
+        "spans": [
+          {
+            "start": 21,
+            "end": 30,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 88,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/options/2",
+        "sourceSha256": "bcace551ad2d034675bee9a388937bb1c7aa1263b564002806ecd4c399755cfa",
+        "spans": [
+          {
+            "start": 33,
+            "end": 42,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "3529c8d99dac585678bbdb1efcb11c35a7010c02c588fc7b87ba999736d82f2b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "91e53f198a155e33d7c16b9960134fe915ad719ee3271b6d44ffdcb4a108d1e2",
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "b0f15695230c3c7e5af675d6a60e3c86461998ba6200c572f35e4dcd517c0269",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "4d53b9a9114b65b209eac3fbd5fa1b44be41d2716462d0820f59afaea2ac85ec",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/prompt",
+        "sourceSha256": "6c3d75437bb873c021993cca54fd376999511ba3c7ae450ef726088a299b4b1c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/feedback/correct",
+        "sourceSha256": "3871ebe81cb27b08c940d7ba92ff89292d16004282ad35e0a7bc905173046664",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "5f3f59f140aa55bb8caea3fd60f1e54cf25a6b7d715cb941b6202f44e83a633b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "1011d55fe4f3f1494ca28d525fb26e7085030c3a5d71d7e74bac848f62d1bcc5",
+        "spans": [
+          {
+            "start": 28,
+            "end": 41,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "d378ce55f049cbbbcf47ab4e1703807569af34fbbe2be9631e0d663fdc38e366",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "1e7c325d2857d6bbfa1646c8ebfa5f0ec2e90a46de1bea480061116d5f911fed",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "fd1e3bd90cec1db2585e95d0f4cc6d10c33604b8ee587b2a9c1f3cb937f0836e",
+        "spans": [
+          {
+            "start": 74,
+            "end": 76,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "34db67af79e1fdd854cfe25ca9ba2a2e82b779c61f9d0fa1194d40619265ac07",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "64138022667cd92da3f78aa490d1844a09aab6f7523e5abe71bb84852c9dbea6",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "915ebb39280a758e47715f5852edb86680547d17cd83d229046908b7a11e2572",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "c0c87765c363dc4d7809abd4f25119419e3849d931d9919f46a8f2150798d39c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "Modificar",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "ce95f03a2368d96f4759ab63c707d494b62b7d6105816d834a980ae15e8d06aa",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "a41a627df10836d59659f77c2d6caba615f52200f66411785b15cbc70a851e87",
+        "spans": []
+      }
+    ]
+  }
+}

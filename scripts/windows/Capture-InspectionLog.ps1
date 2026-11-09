@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Probe', 'Curriculum')]
-    [string] $Mode = 'Probe'
+    [string] $Mode = 'Curriculum'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -54,7 +54,10 @@ function Wait-Until([string] $Description, [scriptblock] $Condition, [int] $Seco
     }
     throw ("Timed out: " + $Description + '. ' + $qaLastError)
 }
-function Invoke-RecordedProcess([string] $Executable, [string] $Arguments, [string] $Name, [int] $Seconds = 90) {
+function Invoke-RecordedProcess(
+    [string] $Executable, [string] $Arguments, [string] $Name, [int] $Seconds = 90,
+    [int] $ExpectedExit = 0, [string] $StandardInput = ''
+) {
     Assert-Time
     Write-Stage $Name ([ordered]@{ executable = $Executable; arguments = $Arguments; workingDirectory = $qaWorking })
     $qaProcessOptions = @{
@@ -63,6 +66,7 @@ function Invoke-RecordedProcess([string] $Executable, [string] $Arguments, [stri
         RedirectStandardError = Join-Path $qaOutput ($Name + '.stderr.txt')
     }
     if ($Arguments) { $qaProcessOptions.ArgumentList = $Arguments }
+    if ($StandardInput) { $qaProcessOptions.RedirectStandardInput = $StandardInput }
     $qaProcess = Start-Process @qaProcessOptions
     try {
         $null = $qaProcess.Handle
@@ -70,7 +74,9 @@ function Invoke-RecordedProcess([string] $Executable, [string] $Arguments, [stri
         $qaProcess.Refresh()
         $qaExit = $qaProcess.ExitCode
         Write-Stage ($Name + '-exit') $qaExit
-        if ($qaExit -ne 0) { throw ($Name + ' failed with exit code ' + $qaExit + '. See the preserved stdout/stderr.') }
+        if ($qaExit -ne $ExpectedExit) {
+            throw ($Name + ' returned ' + $qaExit + '; expected ' + $ExpectedExit + '. See the preserved stdout/stderr.')
+        }
     }
     finally {
         if (-not $qaProcess.HasExited) {
@@ -78,6 +84,93 @@ function Invoke-RecordedProcess([string] $Executable, [string] $Arguments, [stri
         }
         $qaProcess.Dispose()
     }
+}
+
+function Get-CurricularBlock([string] $Lesson, [string] $Owner, [string] $Field) {
+    $qaRelative = 'app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/' + $Lesson + '.json'
+    $qaLessonPath = Join-Path $qaRepository $qaRelative
+    $qaLesson = [IO.File]::ReadAllText($qaLessonPath) | ConvertFrom-Json
+    $qaMatches = @()
+    for ($qaPage = 0; $qaPage -lt $qaLesson.stateLayout.current.Count; ++$qaPage) {
+        $qaOwners = $qaLesson.stateLayout.current[$qaPage].blocks
+        for ($qaBlock = 0; $qaBlock -lt $qaOwners.Count; ++$qaBlock) {
+            if ($qaOwners[$qaBlock] -ceq $Owner) {
+                $qaValue = $qaLesson.pages[$qaPage].blocks[$qaBlock].$Field
+                if ($qaValue -isnot [string] -or [string]::IsNullOrWhiteSpace($qaValue)) {
+                    throw ('Missing curricular field: ' + $Lesson + '/' + $Owner + '/' + $Field)
+                }
+                $qaMatches += [ordered]@{
+                    lesson = $qaRelative; lessonSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaLessonPath).Hash
+                    owner = $Owner; field = $Field; page = $qaPage; block = $qaBlock; value = $qaValue
+                }
+            }
+        }
+    }
+    if ($qaMatches.Count -ne 1) { throw ('Expected one stable source owner: ' + $Lesson + '/' + $Owner) }
+    return $qaMatches[0]
+}
+function Export-CurricularSource([string] $Lesson, [string] $Owner, [string] $Field, [string] $Destination) {
+    $qaBlockSource = Get-CurricularBlock $Lesson $Owner $Field
+    $qaDestination = Join-Path $qaWorking $Destination
+    $qaPreserved = Join-Path (Join-Path $qaOutput 'sources') $Destination
+    New-Item -ItemType Directory -Force -Path (Split-Path $qaDestination), (Split-Path $qaPreserved) | Out-Null
+    # Preserve the decoded authored field byte for byte as UTF-8, including
+    # whether it has a final newline. No generated solution is substituted.
+    [IO.File]::WriteAllText($qaDestination, $qaBlockSource.value, [Text.UTF8Encoding]::new($false))
+    Copy-Item -LiteralPath $qaDestination -Destination $qaPreserved
+    $qaBlockSource.Remove('value')
+    $qaBlockSource['file'] = $Destination
+    $qaBlockSource['sha256'] = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaDestination).Hash
+    $qaSources.Add($qaBlockSource)
+}
+function Build-InspectionTarget([string] $Name, [string[]] $Sources, [string] $Executable, [switch] $DebugSymbols) {
+    $qaOptions = '/W4 /EHsc'
+    if ($DebugSymbols) { $qaOptions += ' /Zi /Od' }
+    $qaCommand = 'cl ' + $qaOptions + ' ' + ($Sources -join ' ') + ' /Fe:' + $Executable
+    $qaBuild = Join-Path $qaWorking ($Name + '.cmd')
+    @"
+@echo off
+call "$qaDeveloper" -no_logo -arch=x64 -host_arch=x64
+if errorlevel 1 exit /b 21
+cd /d "$qaWorking"
+$qaCommand
+exit /b %ERRORLEVEL%
+"@ | Set-Content -LiteralPath $qaBuild -Encoding ASCII
+    Copy-Item -LiteralPath $qaBuild -Destination $qaOutput
+    Invoke-RecordedProcess $env:ComSpec ('/d /c "' + $qaBuild + '"') $Name
+    $qaBuiltPath = Join-Path $qaWorking $Executable
+    if (-not (Test-Path -LiteralPath $qaBuiltPath)) { throw ('No executable was produced: ' + $Executable) }
+    Write-Stage ($Name + '-binary') ([ordered]@{
+        file = $Executable; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaBuiltPath).Hash
+        sourceFiles = $Sources; command = $qaCommand
+    })
+}
+function Read-RecordedOutput([string] $Name) {
+    return [IO.File]::ReadAllText((Join-Path $qaOutput ($Name + '.stdout.txt'))).Replace(([string][char]13), '').TrimEnd([char]10)
+}
+function Assert-RecordedOutput([string] $Name, [string] $Expected) {
+    $qaActual = Read-RecordedOutput $Name
+    if ($qaActual -cne $Expected.Replace(([string][char]13), '').TrimEnd([char]10)) {
+        throw ('Unexpected actual output: ' + $Name)
+    }
+    Write-Stage ($Name + '-output-verified') $qaActual
+}
+function Assert-CheckOutput([string] $Name, [int] $Count, [string] $Summary, [string[]] $FailedCases = @()) {
+    $qaLines = @((Read-RecordedOutput $Name) -split ([string][char]10))
+    if ($qaLines.Count -ne $Count + 1 -or $qaLines[-1] -cne $Summary) {
+        throw ('Unexpected test count or summary: ' + $Name)
+    }
+    $qaFailures = @()
+    foreach ($qaLine in $qaLines[0..($qaLines.Count - 2)]) {
+        if ($qaLine.EndsWith(': FALLO', [StringComparison]::Ordinal)) { $qaFailures += $qaLine }
+        elseif (-not $qaLine.EndsWith(': OK', [StringComparison]::Ordinal)) {
+            throw ('Unexpected test line in ' + $Name + ': ' + $qaLine)
+        }
+    }
+    if (($qaFailures -join [char]10) -cne ($FailedCases -join [char]10)) {
+        throw ('Unexpected failed cases: ' + $Name)
+    }
+    Write-Stage ($Name + '-checks-verified') ([ordered]@{ count = $Count; failed = $qaFailures; summary = $Summary })
 }
 
 try {
@@ -88,6 +181,7 @@ try {
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
@@ -95,6 +189,7 @@ using System.Text;
 public static class InspectionNative {
     [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
+    [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr hwnd, IntPtr dc, uint flags);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hwnd, int command);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hwnd);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
@@ -105,6 +200,39 @@ public static class InspectionNative {
     [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr hwnd, StringBuilder title, int length);
     [DllImport("ole32.dll")] static extern int CreateBindCtx(uint reserved, out IBindCtx context);
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] struct StartupInfo {
+        public int cb; public string reserved, desktop, title;
+        public int x, y, width, height, charsX, charsY, fill, flags;
+        public short show, reservedCount; public IntPtr reservedBytes, input, output, error;
+    }
+    [StructLayout(LayoutKind.Sequential)] struct ProcessInfo { public IntPtr process, thread; public int processId, threadId; }
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern bool CreateProcess(string application, StringBuilder command, IntPtr processAttributes,
+        IntPtr threadAttributes, bool inheritHandles, uint flags, IntPtr environment, string directory,
+        ref StartupInfo startup, out ProcessInfo process);
+    [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr handle);
+    public static Process StartConsole(string executable, string batch, string directory, string title) {
+        var startup = new StartupInfo { cb = Marshal.SizeOf(typeof(StartupInfo)), title = title, flags = 1, show = 1 };
+        ProcessInfo info;
+        // CREATE_NEW_CONSOLE keeps the real console separate from runner logs.
+        if (!CreateProcess(executable, new StringBuilder("\"" + executable + "\" /d /c \"" + batch + "\""),
+            IntPtr.Zero, IntPtr.Zero, false, 0x10, IntPtr.Zero, directory, ref startup, out info))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        try { return Process.GetProcessById(info.processId); }
+        finally { CloseHandle(info.thread); CloseHandle(info.process); }
+    }
+    public static IntPtr FindTitledWindow(string expectedTitle) {
+        IntPtr result = IntPtr.Zero;
+        EnumWindows((hwnd, unused) => {
+            if (!IsWindowVisible(hwnd)) return true;
+            var title = new StringBuilder(2048);
+            GetWindowText(hwnd, title, title.Capacity);
+            if (title.ToString().IndexOf(expectedTitle, StringComparison.Ordinal) < 0) return true;
+            result = hwnd;
+            return false;
+        }, IntPtr.Zero);
+        return result;
+    }
 
     public static string[] WindowsForProcess(int processId) {
         var names = new List<string>();
@@ -222,6 +350,91 @@ public sealed class InspectionMessageFilter : IInspectionMessageFilter {
         })
         Write-Provenance
     }
+    function Invoke-ActualConsole([string] $Name, [string] $Body, [string[]] $InputLines = @()) {
+        Assert-Time
+        $qaReady = Join-Path $qaWorking ($Name + '.ready')
+        $qaInputReady = Join-Path $qaWorking ($Name + '.input-ready')
+        $qaBatch = Join-Path $qaWorking ($Name + '.cmd')
+        $qaTitle = 'LGAED InspectionLog ' + $Name + ' ' + [Guid]::NewGuid().ToString('N')
+        $qaConsoleBody = $Body.Replace('__INPUT_READY__', $qaInputReady)
+        @"
+@echo off
+mode con cols=110 lines=32
+call "$qaDeveloper" -no_logo -arch=x64 -host_arch=x64
+if errorlevel 1 exit /b 31
+title $qaTitle
+cd /d "$qaWorking"
+cls
+@echo on
+$qaConsoleBody
+@echo completed>"$qaReady"
+@echo off
+pause >nul
+"@ | Set-Content -LiteralPath $qaBatch -Encoding ASCII
+        Copy-Item -LiteralPath $qaBatch -Destination $qaOutput
+        Write-Stage ($Name + '-console-start') ([ordered]@{ batch = $qaBatch; inputLines = $InputLines })
+        $qaConsoleProcess = [InspectionNative]::StartConsole($env:ComSpec, $qaBatch, $qaWorking, $qaTitle)
+        try {
+            if ($InputLines.Count -gt 0) {
+                Wait-Until ($Name + ': console ready for its real standard input') {
+                    if ($qaConsoleProcess.HasExited) { throw 'The command window exited before reading input.' }
+                    return Test-Path -LiteralPath $qaInputReady
+                } 60
+                $qaConsoleWindow = [InspectionNative]::FindTitledWindow($qaTitle)
+                if ($qaConsoleWindow -eq [IntPtr]::Zero) { throw 'No visible console is available for the input.' }
+                [InspectionNative]::SetForegroundWindow($qaConsoleWindow) | Out-Null
+                Start-Sleep -Milliseconds 250
+                if ([InspectionNative]::GetForegroundWindow() -ne $qaConsoleWindow) {
+                    throw 'The isolated command window is not foreground; refusing to send keys elsewhere.'
+                }
+                $qaConsoleKeys = New-Object -ComObject WScript.Shell
+                foreach ($qaInputLine in $InputLines) {
+                    if ($qaInputLine -match '[+^%~(){}]') { throw 'This capture accepts only the fixed simple curricular paths.' }
+                    $qaConsoleKeys.SendKeys($qaInputLine + '{ENTER}')
+                    Start-Sleep -Milliseconds 200
+                }
+            }
+            Wait-Until ($Name + ': console reached the successful capture point') {
+                if ($qaConsoleProcess.HasExited) { throw ('The command window exited early: ' + $qaConsoleProcess.ExitCode) }
+                return Test-Path -LiteralPath $qaReady
+            } 60
+            $qaConsoleWindow = [InspectionNative]::FindTitledWindow($qaTitle)
+            if ($qaConsoleWindow -eq [IntPtr]::Zero) { throw 'The real command window is unavailable.' }
+            [InspectionNative]::ShowWindow($qaConsoleWindow, 9) | Out-Null
+            [InspectionNative]::MoveWindow($qaConsoleWindow, 0, 0, 1000, 680, $true) | Out-Null
+            [InspectionNative]::SetForegroundWindow($qaConsoleWindow) | Out-Null
+            Start-Sleep -Milliseconds 400
+            $qaConsoleRect = New-Object InspectionNative+Rect
+            if (-not [InspectionNative]::GetWindowRect($qaConsoleWindow, [ref] $qaConsoleRect)) {
+                throw 'Cannot read the actual console dimensions.'
+            }
+            $qaWidth = $qaConsoleRect.Right - $qaConsoleRect.Left
+            $qaHeight = $qaConsoleRect.Bottom - $qaConsoleRect.Top
+            if ($qaWidth -lt 700 -or $qaHeight -lt 500) { throw 'The actual console is too small for a legible capture.' }
+            $qaBitmap = [Drawing.Bitmap]::new($qaWidth, $qaHeight)
+            $qaGraphics = [Drawing.Graphics]::FromImage($qaBitmap)
+            $qaPath = Join-Path $qaOutput ($Name + '.png')
+            try {
+                $qaDc = $qaGraphics.GetHdc()
+                try { $qaPrinted = [InspectionNative]::PrintWindow($qaConsoleWindow, $qaDc, 2) }
+                finally { $qaGraphics.ReleaseHdc($qaDc) }
+                if (-not $qaPrinted) { throw 'Windows did not provide the real command-window pixels.' }
+                $qaBitmap.Save($qaPath, [Drawing.Imaging.ImageFormat]::Png)
+            } finally { $qaGraphics.Dispose(); $qaBitmap.Dispose() }
+            $qaCaptures.Add([ordered]@{
+                file = $Name + '.png'; method = 'PrintWindow of the newly created real command window'
+                width = $qaWidth; height = $qaHeight; commandProcessId = $qaConsoleProcess.Id
+                batch = $Name + '.cmd'; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaPath).Hash
+            })
+            Write-Stage ($Name + '-console-captured') 'Commands completed in the real console; native window pixels preserved.'
+        }
+        finally {
+            if (-not $qaConsoleProcess.HasExited) {
+                & (Join-Path $env:WINDIR 'System32\taskkill.exe') /PID $qaConsoleProcess.Id /T /F | Out-Null
+            }
+            $qaConsoleProcess.Dispose()
+        }
+    }
     function Read-DebugExpression([string] $Expression, [string] $Expected) {
         $qaValue = $qaDte.Debugger.GetExpression($Expression, $false, 5000)
         $qaResult = [ordered]@{
@@ -285,9 +498,7 @@ public sealed class InspectionMessageFilter : IInspectionMessageFilter {
     }
     Write-Stage 'visual-studio-located' $qaState.visualStudio
 
-    if ($Mode -eq 'Curriculum') {
-        throw 'Curricular source mapping is not yet available in this recipe. Probe output must not be used as an InspectionLog lesson.'
-    }
+    if ($Mode -eq 'Probe') {
     $qaSource = @'
 #include <iostream>
 
@@ -329,6 +540,102 @@ exit /b %ERRORLEVEL%
         breakpointLine = $qaBreakpointLine
         executableSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaExecutable).Hash
     }
+    }
+    else {
+        $qaSources = [Collections.Generic.List[object]]::new()
+        $qaState['sources'] = $qaSources
+        $qaModelLesson = 'lesson_construir_el_modelo_de_inspectionlog'
+        $qaApplicationLesson = 'lesson_integrar_archivos_y_consola_en_inspectionlog'
+        $qaTestsLesson = 'lesson_probar_conservacion_y_errores_en_inspectionlog'
+        $qaVariantLesson = 'lesson_crear_una_variante_y_documentar_inspectionlog'
+        $qaDebugLesson = 'lesson_depurar_un_fallo_del_informe_en_windows'
+        Export-CurricularSource $qaModelLesson 'block_0003_0002' 'code' 'inspection_log.h'
+        Export-CurricularSource $qaModelLesson 'block_0005_0002' 'code' 'modelo.cpp'
+        Export-CurricularSource $qaModelLesson 'block_0006_0002' 'code' 'prueba_modelo.cpp'
+        Export-CurricularSource $qaApplicationLesson 'block_0004_0002' 'code' 'aplicacion.h'
+        Export-CurricularSource $qaApplicationLesson 'block_0004_0004' 'code' 'informe.cpp'
+        Export-CurricularSource $qaApplicationLesson 'block_0005_0002' 'code' 'archivos.cpp'
+        Export-CurricularSource $qaApplicationLesson 'block_0006_0002' 'code' 'main.cpp'
+        Export-CurricularSource $qaApplicationLesson 'block_0007_0006' 'text' 'ejemplos/base.txt'
+        Export-CurricularSource $qaTestsLesson 'block_0004_0002' 'code' 'pruebas.cpp'
+        Export-CurricularSource $qaVariantLesson 'block_0003_0002' 'code' 'informe_variante.cpp'
+        Export-CurricularSource $qaVariantLesson 'block_0004_0002' 'code' 'pruebas_variante.cpp'
+        Export-CurricularSource $qaDebugLesson 'block_0001_0003' 'code' 'depurar_informe.cpp'
+        Export-CurricularSource $qaDebugLesson 'block_0007_0004' 'code' 'informe_error.cpp'
+        Write-Stage 'curricular-sources-extracted' $qaSources.Count
+        New-Item -ItemType Directory -Force -Path (Join-Path $qaWorking 'resultados'), (Join-Path $qaWorking 'pruebas_tmp') | Out-Null
+
+        Build-InspectionTarget 'compile-model' @('modelo.cpp', 'prueba_modelo.cpp') 'prueba_modelo.exe'
+        Invoke-RecordedProcess (Join-Path $qaWorking 'prueba_modelo.exe') '' 'model-checks' 20
+        Assert-RecordedOutput 'model-checks' (Get-CurricularBlock $qaModelLesson 'block_0006_0004' 'text').value
+
+        Build-InspectionTarget 'compile-application' @('modelo.cpp', 'informe.cpp', 'archivos.cpp', 'main.cpp') 'inspectionlog.exe'
+        $qaInput = Join-Path $qaOutput 'application.stdin.txt'
+        [IO.File]::WriteAllLines($qaInput, @('ejemplos/base.txt', 'resultados/base_guardada.txt'), [Text.UTF8Encoding]::new($false))
+        Invoke-RecordedProcess (Join-Path $qaWorking 'inspectionlog.exe') '' 'application' 20 -StandardInput $qaInput
+        $qaExpectedApplication = (@('InspectionLog', 'Ruta de entrada:', 'Ruta de salida:') -join [char]10) + [char]10
+        $qaExpectedApplication += (Get-CurricularBlock $qaApplicationLesson 'block_0007_0010' 'text').value
+        Assert-RecordedOutput 'application' $qaExpectedApplication
+        $qaSaved = Join-Path $qaWorking 'resultados/base_guardada.txt'
+        if ([IO.File]::ReadAllText($qaSaved) -cne [IO.File]::ReadAllText((Join-Path $qaWorking 'ejemplos/base.txt'))) {
+            throw 'The application did not preserve the complete canonical fixture.'
+        }
+        Copy-Item -LiteralPath $qaSaved -Destination (Join-Path $qaOutput 'base_guardada.txt')
+        Write-Stage 'application-saved-file-verified' (Get-FileHash -Algorithm SHA256 -LiteralPath $qaSaved).Hash
+        Invoke-ActualConsole 'inspection_application_console' @'
+cl /W4 /EHsc modelo.cpp informe.cpp archivos.cpp main.cpp /Fe:inspectionlog.exe
+@if errorlevel 1 exit /b 32
+@echo ready>"__INPUT_READY__"
+.\inspectionlog.exe
+@if errorlevel 1 exit /b 33
+echo %ERRORLEVEL%
+'@ @('ejemplos/base.txt', 'resultados/base_guardada.txt')
+        if ([IO.File]::ReadAllText($qaSaved) -cne [IO.File]::ReadAllText((Join-Path $qaWorking 'ejemplos/base.txt'))) {
+            throw 'The real interactive console run changed the saved fixture.'
+        }
+
+        Build-InspectionTarget 'compile-variant' @('modelo.cpp', 'informe_variante.cpp', 'archivos.cpp', 'pruebas_variante.cpp') 'pruebas_variante.exe'
+        Invoke-RecordedProcess (Join-Path $qaWorking 'pruebas_variante.exe') '' 'variant-checks' 20
+        Assert-CheckOutput 'variant-checks' 9 'Variante: OK'
+        Build-InspectionTarget 'compile-variant-application' @('modelo.cpp', 'informe_variante.cpp', 'archivos.cpp', 'main.cpp') 'inspectionlog_variante.exe'
+        Invoke-RecordedProcess (Join-Path $qaWorking 'inspectionlog_variante.exe') '' 'variant-application' 20 -StandardInput $qaInput
+        $qaExpectedVariant = $qaExpectedApplication.Replace(
+            ('Mayor: rojo 3' + [char]10),
+            ((@('Mayor: rojo 3', 'Registros rojo: 2', 'Registros azul: 0') -join [char]10) + [char]10))
+        Assert-RecordedOutput 'variant-application' $qaExpectedVariant
+        if ([IO.File]::ReadAllText($qaSaved) -cne [IO.File]::ReadAllText((Join-Path $qaWorking 'ejemplos/base.txt'))) {
+            throw 'The variant client did not preserve the complete canonical fixture.'
+        }
+        Write-Stage 'variant-application-saved-file-verified' (Get-FileHash -Algorithm SHA256 -LiteralPath $qaSaved).Hash
+
+        $qaSourceName = 'informe_error.cpp'
+        $qaSourcePath = Join-Path $qaWorking $qaSourceName
+        $qaBugSource = [IO.File]::ReadAllText($qaSourcePath)
+        $qaCorrectSource = [IO.File]::ReadAllText((Join-Path $qaWorking 'informe.cpp'))
+        $qaBugStatement = 'aceptados = registro.recuento.aceptados;'
+        $qaCorrectStatement = 'aceptados += registro.recuento.aceptados;'
+        if ($qaBugSource.Replace($qaBugStatement, $qaCorrectStatement) -cne $qaCorrectSource) {
+            throw 'The authored error copy must differ from the report only by the demonstrated assignment.'
+        }
+        $qaSourceLines = [IO.File]::ReadAllLines($qaSourcePath)
+        $qaBreakpointCandidates = @(for ($qaLine = 0; $qaLine -lt $qaSourceLines.Count; ++$qaLine) {
+            if ($qaSourceLines[$qaLine].Trim() -ceq $qaBugStatement) { $qaLine + 1 }
+        })
+        if ($qaBreakpointCandidates.Count -ne 1) { throw 'The report must contain one unique breakpoint location.' }
+        $qaBreakpointLine = $qaBreakpointCandidates[0]
+        $qaExecutable = Join-Path $qaWorking 'depurar_informe.exe'
+        Build-InspectionTarget 'compile-debug-error' @('modelo.cpp', 'informe_error.cpp', 'depurar_informe.cpp') 'depurar_informe.exe' -DebugSymbols
+        Invoke-RecordedProcess $qaExecutable '' 'debug-error-output' 20
+        Assert-RecordedOutput 'debug-error-output' (@('Grupos: 1', 'Aceptados: 3', 'Rechazados: 1', 'Mayor: verde 5') -join [char]10)
+        # Build the counterexample while the exact authored error source is
+        # still on disk. Its executable is run after the corrected verification.
+        Build-InspectionTarget 'compile-tests-error' @('modelo.cpp', 'informe_error.cpp', 'archivos.cpp', 'pruebas.cpp') 'pruebas_error.exe'
+        $qaState['source'] = [ordered]@{
+            path = $qaSourceName; sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaSourcePath).Hash
+            breakpointLine = $qaBreakpointLine
+            executableSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaExecutable).Hash
+        }
+    }
 
     $qaActivity = Join-Path $qaOutput 'visual-studio-activity.xml'
     $qaVsArgs = '/NoSplash /Log "' + $qaActivity + '" /DebugExe "' + $qaExecutable + '"'
@@ -351,8 +658,9 @@ exit /b %ERRORLEVEL%
     $qaBreakpoints = $qaDte.Debugger.Breakpoints.Add('', $qaSourcePath, $qaBreakpointLine, 1, '', 1, 'C++', '', 1, '', 0, 1)
     if ($qaBreakpoints.Count -lt 1) { throw 'Visual Studio created no breakpoint.' }
     Write-Stage 'breakpoint-created' ([ordered]@{ file = $qaSourcePath; line = $qaBreakpointLine; count = $qaBreakpoints.Count })
-    Save-ActualVsWindow 'probe_breakpoint_configured'
+    Save-ActualVsWindow ($Mode.ToLowerInvariant() + '_breakpoint_configured')
 
+    if ($Mode -eq 'Probe') {
     $qaDte.Debugger.Go($false)
     Wait-Until 'actual native breakpoint' { [int] $qaDte.Debugger.CurrentMode -eq 2 } 90
     Write-Stage 'breakpoint-reached' ([ordered]@{ function = [string] $qaDte.Debugger.CurrentStackFrame.FunctionName })
@@ -374,6 +682,86 @@ exit /b %ERRORLEVEL%
     $qaDte.Debugger.Go($false)
     Wait-Until 'debugged process termination' { [int] $qaDte.Debugger.CurrentMode -eq 1 } 45
     $qaState['observed'] = [ordered]@{ beforeStep = $qaBefore; afterStep = $qaAfter; normalOutput = $qaNormalOutput }
+    }
+    else {
+        function Wait-DebugValue([string] $Expression, [string] $Expected, [string] $Description) {
+            Wait-Until $Description {
+                if ([int] $qaDte.Debugger.CurrentMode -ne 2) { return $false }
+                $qaExpression = $qaDte.Debugger.GetExpression($Expression, $false, 1000)
+                return $qaExpression.IsValidValue -and [string] $qaExpression.Value -ceq $Expected
+            } 60
+        }
+        function Trace-Report([string] $Name, [string] $SecondTotal) {
+            Write-Stage ($Name + '-start') 'Run the real executable and observe the two source breakpoint visits.'
+            $qaDte.Debugger.Go($false)
+            Wait-DebugValue 'registro.id' '6' ($Name + ': first record at the native breakpoint')
+            Write-Stage ($Name + '-first-frame') ([string] $qaDte.Debugger.CurrentStackFrame.FunctionName)
+            $qaFirstBefore = Read-DebugExpression 'aceptados' '0'
+            Read-DebugExpression 'registro.recuento.aceptados' '2' | Out-Null
+            $qaDte.ExecuteCommand('Debug.Locals', '')
+            Start-Sleep -Milliseconds 400
+            Save-ActualVsWindow ($Name + '_first_before')
+            $qaDte.Debugger.StepOver($false)
+            Wait-DebugValue 'aceptados' '2' ($Name + ': first Step Over')
+            $qaFirstAfter = Read-DebugExpression 'aceptados' '2'
+            Save-ActualVsWindow ($Name + '_first_after')
+            $qaDte.Debugger.Go($false)
+            # The record identity distinguishes the second stop from the old
+            # asynchronous break mode with the same accumulator value.
+            Wait-DebugValue 'registro.id' '0' ($Name + ': second record at the native breakpoint')
+            $qaSecondBefore = Read-DebugExpression 'aceptados' '2'
+            Read-DebugExpression 'registro.recuento.aceptados' '3' | Out-Null
+            Save-ActualVsWindow ($Name + '_second_before')
+            $qaDte.Debugger.StepOver($false)
+            Wait-DebugValue 'aceptados' $SecondTotal ($Name + ': second Step Over')
+            $qaSecondAfter = Read-DebugExpression 'aceptados' $SecondTotal
+            Save-ActualVsWindow ($Name + '_second_after')
+            $qaDte.Debugger.Go($false)
+            Wait-Until ($Name + ': debugged process termination') { [int] $qaDte.Debugger.CurrentMode -eq 1 } 45
+            return [ordered]@{
+                firstBefore = $qaFirstBefore; firstAfter = $qaFirstAfter
+                secondBefore = $qaSecondBefore; secondAfter = $qaSecondAfter
+            }
+        }
+        $qaState['observed'] = [ordered]@{}
+        $qaState.observed['error'] = Trace-Report 'inspection_error' '3'
+
+        # Apply the student's one-character correction in the actual IDE
+        # editor, save it, verify the saved file and then rebuild the binary.
+        $qaDocumentWindow.Activate()
+        $qaColumn = $qaSourceLines[$qaBreakpointLine - 1].IndexOf('=') + 1
+        $qaDte.ActiveDocument.Selection.MoveToLineAndOffset($qaBreakpointLine, $qaColumn, $false)
+        $qaDte.ActiveDocument.Selection.Insert('+', 1)
+        $qaDte.ActiveDocument.Save()
+        $qaSavedCorrection = [IO.File]::ReadAllText($qaSourcePath)
+        if ($qaSavedCorrection -cne $qaCorrectSource) {
+            throw 'The actual editor correction differs from the authored correct report.'
+        }
+        Copy-Item -LiteralPath $qaSourcePath -Destination (Join-Path $qaOutput 'informe_error_corrected.cpp')
+        Write-Stage 'editor-correction-saved' ([ordered]@{
+            method = 'TextSelection.MoveToLineAndOffset/Insert and Document.Save in the running IDE'
+            file = $qaSourceName; line = $qaBreakpointLine; column = $qaColumn
+            beforeSha256 = $qaState.source.sha256
+            afterSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $qaSourcePath).Hash
+        })
+        Save-ActualVsWindow 'inspection_correction_saved'
+        Build-InspectionTarget 'compile-debug-corrected' @('modelo.cpp', 'informe_error.cpp', 'depurar_informe.cpp') 'depurar_informe.exe' -DebugSymbols
+        Invoke-RecordedProcess $qaExecutable '' 'debug-corrected-output' 20
+        Assert-RecordedOutput 'debug-corrected-output' (@('Grupos: 1', 'Aceptados: 5', 'Rechazados: 1', 'Mayor: verde 5') -join [char]10)
+        $qaState.observed['corrected'] = Trace-Report 'inspection_corrected' '5'
+
+        Build-InspectionTarget 'compile-tests-corrected' @('modelo.cpp', 'informe_error.cpp', 'archivos.cpp', 'pruebas.cpp') 'pruebas_corregidas.exe'
+        Invoke-RecordedProcess (Join-Path $qaWorking 'pruebas_corregidas.exe') '' 'corrected-checks' 25
+        Assert-CheckOutput 'corrected-checks' 45 'Bateria completa: OK'
+        Invoke-ActualConsole 'inspection_tests_console' @'
+.\pruebas_corregidas.exe
+@if errorlevel 1 exit /b 34
+echo %ERRORLEVEL%
+'@
+        Invoke-RecordedProcess (Join-Path $qaWorking 'pruebas_error.exe') '' 'error-counterexample' 25 -ExpectedExit 1
+        Assert-CheckOutput 'error-counterexample' 45 'Bateria completa: FALLO' @('informe_limite: FALLO')
+        $qaState.observed['counterexample'] = 'The original authored assignment error fails informe_limite and returns exit 1.'
+    }
     $qaState.status = 'passed'
     Write-Stage 'completed' 'Actual MSVC execution, native breakpoint, expression inspection and Step Over completed.'
 }

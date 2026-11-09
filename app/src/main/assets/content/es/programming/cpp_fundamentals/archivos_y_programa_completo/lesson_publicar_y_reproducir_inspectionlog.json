@@ -1,0 +1,1594 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__publicar_y_reproducir_inspectionlog",
+  "title": "Publicar y reproducir InspectionLog",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar una entrega que pueda reconstruirse"
+        },
+        {
+          "type": "paragraph",
+          "text": "La publicación reúne el trabajo que has construido, probado y documentado. El repositorio debe permitir que otra persona obtenga tus fuentes, comprenda su contrato y reproduzca la demostración. Publicaremos los archivos del proyecto desde la web de GitHub, sin exigir todavía instalar ni utilizar un cliente de Git."
+        },
+        {
+          "type": "paragraph",
+          "text": "En la raíz de InspectionLog, revisa los fuentes inspection_log.h, modelo.cpp, aplicacion.h, informe.cpp, archivos.cpp y main.cpp. Añade los comprobadores prueba_modelo.cpp y pruebas.cpp, la variante informe_variante.cpp con pruebas_variante.cpp, el archivo README.md y las reglas .gitignore. La muestra ejemplos/base.txt conserva su carpeta porque el procedimiento de ejecución utiliza esa ruta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si entregas también el ejercicio de depuración, incluye depurar_informe.cpp e informe_error.cpp y describe en el README.md si esa copia contiene el defecto deliberado o la corrección. Las órdenes normales de construcción seleccionan expresamente informe.cpp. Tu variante propia deberá añadir sus archivos y sus órdenes reales a la documentación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de subir, abre los archivos elegidos y comprueba su contenido. Conserva fuera de la entrega los ejecutables, objetos, símbolos, la carpeta resultados y los archivos de pruebas_tmp. Estos resultados se regeneran al seguir las instrucciones. Utiliza únicamente muestras inventadas para la demostración y elimina de la documentación rutas personales que no sean necesarias para reproducirla."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__publicar_y_reproducir_inspectionlog__entrega_fuentes",
+          "question": "¿Qué permite comprobar que la selección contiene lo necesario para reproducir la construcción?",
+          "options": [
+            "Ver únicamente que el ejecutable actual se abre en el equipo del autor.",
+            "Revisar los fuentes nombrados por cada orden, sus cabeceras, la muestra y las instrucciones de preparación.",
+            "Subir todos los archivos temporales para evitar comprobar sus nombres."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada orden nombra los fuentes que utiliza; sus inclusiones requieren las cabeceras correspondientes. La demostración necesita su muestra y las instrucciones indican las herramientas y carpetas. Un ejecutable que ya existe no demuestra que otra persona pueda reconstruirlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear el repositorio de tu proyecto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre https://github.com/ en el navegador y utiliza tu cuenta. Si necesitas crearla, completa el registro que presenta el servicio antes de volver al proyecto. Las credenciales se introducen en el formulario del servicio; no pertenecen a los archivos de demostración ni a las capturas del curso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre el menú de creación de la esquina superior y elige New repository. En Owner selecciona tu cuenta y escribe InspectionLog en Repository name, o el nombre de tu variante. Añade una descripción breve del problema y elige la visibilidad. Para mostrar una pieza pública de portafolio, Public permite compartir su dirección con quien deba revisarla. Verifica esa decisión antes de crearla (GitHub, s. f.-c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este recorrido ya tienes un README.md y un .gitignore propios. Deja desactivada su creación automática y no elijas una plantilla que añada fuentes diferentes. Revisa propietario, nombre y visibilidad; después pulsa Create repository. Debe abrirse el repositorio nuevo con la identificación de tu cuenta y del proyecto (GitHub, s. f.-c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el nombre ya existe en tu cuenta, abre ese repositorio y comprueba primero a qué trabajo pertenece. Continúa sobre él sólo si corresponde a este proyecto; no sustituyas archivos de otro trabajo por coincidencia de nombre. El nombre de una referencia del autor no obliga a que tu variante utilice la misma dirección."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__publicar_y_reproducir_inspectionlog__propietario",
+          "question": "¿Qué dirección debe aparecer en la presentación de tu variante propia?",
+          "options": [
+            "La del repositorio del autor, aunque sólo contenga la referencia guiada.",
+            "Una dirección escrita antes de comprobar que el repositorio exista.",
+            "La del repositorio real en el que publicaste tus archivos y cuya entrega verificaste."
+          ],
+          "correctIndex": 2,
+          "explanation": "El enlace de una pieza propia debe conducir a su entrega real. La referencia puede citarse como material consultado, pero no sustituye la publicación de tu variante ni acredita sus resultados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Subir los archivos de la raíz"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el repositorio vacío abre la opción de cargar archivos existentes. Si ya muestra una lista de archivos, abre Add file → Upload files. Pulsa choose your files y selecciona los fuentes, las cabeceras, los comprobadores y los documentos de la raíz que revisaste. La página muestra los nombres preparados para la carga; compruébalos antes de guardarla (GitHub, s. f.-b)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sube los archivos que pertenecen a la raíz sin envolverlos en otra carpeta InspectionLog. La página principal debe contener directamente README.md, inspection_log.h y los demás nombres que utilizan las órdenes. En esta primera carga deja ejemplos/base.txt para el paso siguiente, que conserva explícitamente su subcarpeta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe un mensaje de guardado que describa el contenido, por ejemplo Publicar fuentes y pruebas de InspectionLog. El guardado crea una revisión identificada por GitHub, llamada commit. Para este repositorio nuevo de trabajo individual, guarda los archivos en la rama inicial que muestra la página. Una rama es una línea de revisiones; conservaremos esa línea para esta primera entrega. Confirma el guardado y espera a que vuelva la lista de archivos (GitHub, s. f.-b)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre README.md desde la lista y revisa su presentación. Comprueba también una cabecera y un fuente: sus nombres, contenido y extensión deben coincidir con los archivos locales que construiste. La selección de archivos es una decisión explícita; no atribuyas a .gitignore la revisión de lo que elegiste cargar mediante el navegador."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__publicar_y_reproducir_inspectionlog__carpeta_de_mas",
+          "question": "La página principal sólo contiene una carpeta InspectionLog y el README está dentro de ella. ¿Qué consecuencia debes resolver?",
+          "options": [
+            "Las órdenes documentadas para la raíz no se corresponden con esa estructura; hay que alinear la entrega y sus instrucciones.",
+            "El compilador dejará de aceptar C++ por el nombre de esa carpeta.",
+            "El contenido queda necesariamente verificado porque todos los nombres siguen existiendo."
+          ],
+          "correctIndex": 0,
+          "explanation": "La ubicación de ejecución forma parte de una orden reproducible. Si las instrucciones parten de la raíz pero los fuentes están en otra carpeta, el lector no encontrará los archivos indicados. En este recorrido se publica directamente la estructura que enseñamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar la ruta de la muestra"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde la raíz del repositorio, abre Add file → Create new file. En el campo del nombre escribe ejemplos/base.txt. La barra separa la carpeta del nombre del archivo. En el editor de contenido pega el texto de tu muestra local; revisa que aparezca completo. Esta operación permite crear un archivo dentro de una subcarpeta desde la web (GitHub, s. f.-d)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la referencia guiada, el contenido exacto es el siguiente. Tu variante puede conservarlo como comprobación básica y añadir otra muestra que revele su función propia."
+        },
+        {
+          "type": "paragraph",
+          "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa Commit changes, escribe un mensaje que describa la incorporación de la muestra y confirma el guardado en la rama de esta entrega. Después abre ejemplos desde la lista y comprueba base.txt. Regresa a la raíz y confirma que el README.md utiliza esa misma ruta (GitHub, s. f.-d)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El archivo publicado puede terminar con un salto de línea: el lector acepta los blancos que siguen al conjunto completo. Ese salto no cambia los grupos ni sus registros. No cambies cantidades ni elimines el grupo vacío para hacer que una salida distinta parezca correcta."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__publicar_y_reproducir_inspectionlog__muestra_y_ruta",
+          "question": "El programa pide una ruta de entrada y el README indica ejemplos\\base.txt. ¿Qué entrega satisface esa instrucción?",
+          "options": [
+            "Un archivo llamado ejemplos_base.txt colocado junto al ejecutable.",
+            "Un archivo base.txt dentro de la carpeta ejemplos, con el contenido de la muestra prevista.",
+            "La salida base_guardada.txt sin incluir ninguna muestra de entrada."
+          ],
+          "correctIndex": 1,
+          "explanation": "La ruta indica una carpeta y un archivo dentro de ella. El nombre parecido de un archivo en la raíz no representa la misma ubicación. Conservar la muestra permite repetir la demostración y comprobar después su salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Descargar la entrega y construir desde sus archivos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la página principal del repositorio pulsa Code y después Download ZIP. El archivo descargado contiene una copia de los fuentes de la revisión seleccionada; no contiene todo el historial del repositorio. Si la rama cambia posteriormente, otra descarga de esa rama puede contener cambios (GitHub, s. f.-e)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el Explorador de archivos de Windows, localiza el ZIP descargado y utiliza Extraer todo. Elige una carpeta de verificación diferente de tu proyecto original y completa la extracción. Abre la carpeta extraída que contiene directamente README.md y modelo.cpp. Comprobar dentro de esa copia evita depender por accidente de un archivo que nunca publicaste."
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde esa carpeta, copia su ruta mediante la barra de direcciones del Explorador. En la consola de herramientas nativas x64 escribe la orden siguiente sustituyendo únicamente RUTA_EXTRAIDA por esa ruta completa, sin retirar las comillas. cd /d cambia carpeta y unidad; dir permite comprobar que has llegado al directorio que contiene los fuentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "cd /d \"RUTA_EXTRAIDA\""
+        },
+        {
+          "type": "paragraph",
+          "text": "dir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea resultados y pruebas_tmp en esa copia, como indica el README.md. Ejecuta desde allí sus órdenes completas de construcción y las tres baterías. No copies ejecutables de la carpeta original. Después ejecuta la demostración con ejemplos\\base.txt, compara el informe y comprueba la salida guardada. La variante debe construirse con sus fuentes y sus pruebas propias."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si falta un archivo, identifica cuál requiere la orden o la inclusión. Corrige la entrega publicada, descarga de nuevo esa revisión y repite la construcción. Si falta la herramienta, vuelve al procedimiento de instalación y preparación de consola. Son causas diferentes: añadir una cabecera no instala el compilador, y disponer del compilador no recupera un fuente que no se publicó."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__publicar_y_reproducir_inspectionlog__reproduccion",
+          "question": "La copia descargada falla porque no encuentra aplicacion.h; el proyecto original sí construye. ¿Qué comprueba esa diferencia?",
+          "options": [
+            "Que el programa original ya demuestra la reproducción de cualquier descarga.",
+            "Que hay que modificar el resultado esperado de las pruebas.",
+            "Que la entrega o su estructura necesita corregirse antes de considerarla reproducible."
+          ],
+          "correctIndex": 2,
+          "explanation": "La construcción publicada depende de una cabecera que la copia no encuentra. El proyecto original puede contener archivos que faltan en la entrega. Por eso se reconstruye desde los archivos descargados y se repite la verificación tras corregirlos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Presentar resultados y una aportación propia"
+        },
+        {
+          "type": "paragraph",
+          "text": "En tu README.md registra la revisión que descargaste, las herramientas empleadas y los resultados que obtuviste. Presenta una entrada de demostración, su informe y las pruebas relevantes. Describe tu indicador propio, el caso que lo distingue de otros indicadores y una decisión sustentada en su código. Incluye también sus límites; una ejecución satisfactoria no demuestra casos que no se comprobaron."
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa la presentación de portafolio con el enlace real de tu repositorio y una descripción breve de la función que implementaste. Por ejemplo, una variante ya construida y verificada puede presentarse como un registro de inspecciones en C++ con validación completa, conservación ante entradas inválidas, informes y pruebas de su indicador. Ajusta esa descripción a tus resultados: la referencia del autor y una función todavía planificada no son aportaciones tuyas ya realizadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el resumen del CV, utiliza el nombre de tu proyecto, su estado comprobado, las tecnologías realmente empleadas, una aportación concreta y el enlace de la entrega. Si todavía estás construyendo la variante, indica ese estado. La publicación de la referencia didáctica no cambia por sí sola el estado del proyecto personal del estudiante."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__publicar_y_reproducir_inspectionlog__evidencia_variante",
+          "question": "¿Qué afirmación está respaldada si sólo se construyó la referencia y todavía no se terminó la variante propia?",
+          "options": [
+            "La referencia fue construida y comprobada; la ampliación personal sigue en desarrollo.",
+            "La ampliación personal ya fue implementada porque existe una idea escrita en el README.",
+            "Toda la referencia es una creación independiente del estudiante aunque se copió para contrastar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Construir y comprobar la referencia aporta práctica verificable, pero no acredita una ampliación que todavía no existe ni cambia su autoría. La presentación debe distinguir esos hechos y enlazar el trabajo que efectivamente se entrega."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "70b6148072d20ea9b7d00fbef7cbefc03a5632d0702c9b790bb56bcf3e93890a"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "2802a240673ccbae0954ce1a690ecbdfb4988aad6be5c2dc3b59f04f4ec63009"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "88aecf0fb17356a8e9aa7c544ea788d6e10debe8c794b946c32b8ed0c39f47cb"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "ea673253487d4ca75d95a1ad0587a06215eddce313d9c467effefd36059aad80"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0008",
+            "sha256": "78088dd567d3e36fe351b502a56319697b41240f519616babde51e444434adb4"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "85abbb5ae427c1e120a70b8dc30bcd3c331d8ae1a98299eef4998b76dce8bd8b"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007",
+          "block_0004_0008"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "5f7f151b923a8dd2ed452883774dfe1f1859584860aebd62b166b7f517190629",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "70b6148072d20ea9b7d00fbef7cbefc03a5632d0702c9b790bb56bcf3e93890a"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "2802a240673ccbae0954ce1a690ecbdfb4988aad6be5c2dc3b59f04f4ec63009"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "88aecf0fb17356a8e9aa7c544ea788d6e10debe8c794b946c32b8ed0c39f47cb"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "ea673253487d4ca75d95a1ad0587a06215eddce313d9c467effefd36059aad80"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "78088dd567d3e36fe351b502a56319697b41240f519616babde51e444434adb4"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "85abbb5ae427c1e120a70b8dc30bcd3c331d8ae1a98299eef4998b76dce8bd8b"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "03863244c2d86e14a3ba8ce9bfc4652bbddd099591b0f3752629fa284f87acc1",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "888cde4b443726cc7e0a633b3691ca7325385340608bc221fbdb6d1e5e5bb1c9",
+        "spans": [
+          {
+            "start": 249,
+            "end": 255,
+            "text": "GitHub",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "10994e7917e705696bdc6460f519e1e82e14f77b72a98a97c5fd34d9a7b23094",
+        "spans": [
+          {
+            "start": 14,
+            "end": 27,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 64,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 76,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 90,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 103,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 117,
+            "text": "archivos.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 128,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 171,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 185,
+            "text": "pruebas.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 219,
+            "text": "informe_variante.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 244,
+            "text": "pruebas_variante.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 266,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 290,
+            "text": ".gitignore",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 320,
+            "text": "ejemplos/base.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "5536c268afed8caf0e3e6213025ff86335207a52ee1c6cad20b6666055ff06dd",
+        "spans": [
+          {
+            "start": 56,
+            "end": 75,
+            "text": "depurar_informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 95,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 122,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 257,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "8823a5af2e9633d0c0787497374db1e5d5c6e4e5b5d565c70039f0d91a748089",
+        "spans": [
+          {
+            "start": 145,
+            "end": 155,
+            "text": "resultados",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 185,
+            "text": "pruebas_tmp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "e8a49f2770110a172fe799652bd6c09b03a7823855d3721010b42ac0b7f8273a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "71e9e1284da95ceaecf6725b4266a0b75934b571e63d83228cbcfc7871accc6d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/0",
+        "sourceSha256": "812ea81186ad07004ae97138c03dad29990f6666fddd0ca10be9685453d7ee57",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/1",
+        "sourceSha256": "d212c3f9fbaf8227962d5efb93a94bfba8a4585663049f9ff67d3959a3fe2586",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/2",
+        "sourceSha256": "5833d37810e7a9a46401eb6ffe71adca62101cdedf4c31addfdb9119084a46e0",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "2f68a31a60737d4ac3adb9ba57a9f85f6faa46b4de79548809fbe756500497de",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "adfadda009c8ba3986a6393ced2c1ab4812ffd74490398ed13c9e5897f19bf10",
+        "spans": [
+          {
+            "start": 5,
+            "end": 24,
+            "text": "https://github.com/",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "5c8751f906e51ae94ac035cb519be1cb6c94ce4781ba1c041c4eabde6584b558",
+        "spans": [
+          {
+            "start": 56,
+            "end": 70,
+            "text": "New repository",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 80,
+            "text": "Owner",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 125,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 144,
+            "text": "Repository name",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 291,
+            "text": "Public",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 405,
+            "text": "(GitHub, s. f.-c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "e6b23cfca10f09c62f55df75b2cb0c2f6dc17008d23d9f7bff05f54cb310d4e7",
+        "spans": [
+          {
+            "start": 31,
+            "end": 40,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 56,
+            "text": ".gitignore",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 235,
+            "text": "Create repository",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 338,
+            "text": "(GitHub, s. f.-c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "7910691e2f193c787c1a979e803ef15f4f55579a0a10fce3fd2bf86a7c2306ec",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "ad7cb7e0d975cfc707285dd718afbccc1d94a13753e8381593cdacdf1fea3648",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "9a86771b7540826a020e36bc865314c504a67893727cd7a281468ccdd29a786c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "c45563acc4b59793628a168e6f76cdb1484c484903fba3d5e6f43ec1f8ea9931",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "02abb73a962c07697c9db377d1e0e5c4a51728f0ae9924e3cc38bb2cc5a6855c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "b34a8cfb18aba1e0cf306025b72ffbee40dc3cb788e766deed9c15ff50738ed8",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "34e5665e93e2ba46860794044013389d9a9437a67da041f6fa4bbe87b8e5c090",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "f976068ec3b0aa0bf0e1f5be7a1feced4a148b5c6948adca6357baa2843380ee",
+        "spans": [
+          {
+            "start": 112,
+            "end": 135,
+            "text": "Add file → Upload files",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 160,
+            "text": "choose your files",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 368,
+            "text": "(GitHub, s. f.-b)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "19ea1a50a64cb3d39d1a7b100faab811e03020618c047008422c2b4bd36a11df",
+        "spans": [
+          {
+            "start": 75,
+            "end": 88,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 146,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 164,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 255,
+            "text": "ejemplos/base.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "508820f4a63f484d8116c287521e5ea46ad2d8825ebaffa79a19fbd8be3c7e36",
+        "spans": [
+          {
+            "start": 70,
+            "end": 113,
+            "text": "Publicar fuentes y pruebas de InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 184,
+            "text": "commit",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 468,
+            "text": "(GitHub, s. f.-b)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "183ddaff88ffd5be103bcfe68e108926d9850bdbcc7dbdbd05202b5300c32ed5",
+        "spans": [
+          {
+            "start": 5,
+            "end": 14,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 270,
+            "text": ".gitignore",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "b23469540983b6ab098313305e29ad60f6d0601950f620012fab1389e377ae67",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "fafcd0e8978fe23a3740c6094125fcfdfc6f263af8d7d2838ab401059dc7c3c2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/0",
+        "sourceSha256": "67a8fac7a34fad13ccd701fe7f8f596932f1841590309361365bd12249c79f91",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/1",
+        "sourceSha256": "fa323fecde6870f3abe1c01069e01a53ca0df0a586f3da2f5445a61e453acca2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/2",
+        "sourceSha256": "f035f90baefef261b7250c5800a79bf1fca99d85fc99c9367efe41c3e07dc561",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "12fcfcdf8e996b50b24439231672374c49f7faefc52d550a86c2f884439efd66",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "22e75c102106a1e8f6363fe49a551412aeba626f407987af292e14c3959fca5b",
+        "spans": [
+          {
+            "start": 36,
+            "end": 62,
+            "text": "Add file → Create new file",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 112,
+            "text": "ejemplos/base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 351,
+            "text": "(GitHub, s. f.-d)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "1f70637178cb975ac1bdc9852843f9b448c9c88dde5e8fc81ba73cdc89b1a027",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "6dd3f7a01112827d403c2d640ec7fe1a18ffc42961f1a8cd350447814e17358a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 56,
+            "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "666964af66a9622373d87e64863c1eea837a140118e3824df9b43a0d913f2b8c",
+        "spans": [
+          {
+            "start": 6,
+            "end": 20,
+            "text": "Commit changes",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 157,
+            "text": "ejemplos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 193,
+            "text": "base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 240,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 281,
+            "text": "(GitHub, s. f.-d)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "c74e738878b1525e25e2518b7210e20f654cc9fc2cc20623c94452ecdcb6479f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/question",
+        "sourceSha256": "db6dc20bf8eef4a04922a6b0ba19a31bf20cab9d41d9a1b4d31a6a45c68b6b8b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/explanation",
+        "sourceSha256": "7d84668195892b44c08afddb052dcf0141a257e7e14ffc04f0bc9c6d0f657a8a",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/options/0",
+        "sourceSha256": "6d719e4dea4574a3a1cbca6719754cfd8f922f7da3c2ccd7c00382b335be0708",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/options/1",
+        "sourceSha256": "f967c770eead6c1bec0246f9d0e1668ca819b0dcf386b43791b5207e33e2664b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/options/2",
+        "sourceSha256": "d9da2307fa182b0884f9efd03ca1613cd8d18d00d6f1fc1584aa7a942d508dae",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "bcbafb0c75fbaa768aac151e4756f0554d84f1f2799556fa51ef81e70322ac42",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "22613830417824fdfa4af5d3f99dbebba3263692c760204d977710da7517dbd6",
+        "spans": [
+          {
+            "start": 45,
+            "end": 49,
+            "text": "Code",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 72,
+            "text": "Download ZIP",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 306,
+            "text": "(GitHub, s. f.-e)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "72a7dcddb2e7f32f3a4440b4be6d3f9458376a8eadb07ad382e496336e423cb5",
+        "spans": [
+          {
+            "start": 78,
+            "end": 90,
+            "text": "Extraer todo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 246,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 259,
+            "text": "modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "8f1812fcb1e08aa2f38481c82ae8dee514bb9b34bda1043be4bd62dd3265b24e",
+        "spans": [
+          {
+            "start": 175,
+            "end": 188,
+            "text": "RUTA_EXTRAIDA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 243,
+            "text": "cd /d",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 272,
+            "text": "dir",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "f47b893bf51f734cad8575d4bf2040113f8bb00247daf44e41ed3caddbf44697",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "cd /d \"RUTA_EXTRAIDA\"",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "2b64c6d9afd8a34ed0dbf35f7de171a8825a50d9f42f05e98fe2b1addf00ab44",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "dir",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "c7d46143769b623d8d6f0102d53d2d00c8d62b8f4155656ba758c6547787813f",
+        "spans": [
+          {
+            "start": 5,
+            "end": 15,
+            "text": "resultados",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 29,
+            "text": "pruebas_tmp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 68,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 247,
+            "text": "ejemplos\\base.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/text",
+        "sourceSha256": "772f1a95061b980446839632de286ddcf12fbd0d149183354ecd6f4423c48fae",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/question",
+        "sourceSha256": "1f0c99852f99376837558c972d47610cf7c13a99f7cac2ec9a1391a287f2ad39",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/explanation",
+        "sourceSha256": "dc13fb8750c0e8cb89071ec5f90ee65a89a7d39f12f94113d7d91dfae1e98285",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/options/0",
+        "sourceSha256": "307b02e9bb8ddfce049f452a9b33170057d4aca49d4a3d8e27d0024f7b8bf047",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/options/1",
+        "sourceSha256": "a3bb67de93301e75f3da7fac01bca716d795fe8a61d2e68782c00a86a8c25194",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/options/2",
+        "sourceSha256": "aed17e130fba1d8dae923441faa062a8cf635b698d3998f285b2fdd9a76af3f9",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "b954bfedf426750c5a96954797eec84960fca65100365b90b69a1fabd6fd708e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "22aaa7ccc35def78ea15be0513f16eaebd3974f14dd396ac676b2493555901b0",
+        "spans": [
+          {
+            "start": 6,
+            "end": 15,
+            "text": "README.md",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "0d3b5b08934a2217fba4d43b628f0ee212682a829773355958da35ef4fdc5793",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "45fd1ca42d9ccf9042526e83d0f7c3d985b1bba36ffdf9f1e7859c1a3517f203",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "fdd16a07f401af28b3b740717c78d765736dc0c907a28bd3081499a919e031c5",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "f14e66d85c2310f5b5fb6cbaba1687c2a011e3930300f956c0cf50672a17655d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/0",
+        "sourceSha256": "d8475c803b135bed86119bb3cacfce7c46dea9ef30c6e816995c6e3fa7111866",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/1",
+        "sourceSha256": "b4c67055dfaf49d81d3c92f7ebdaeb0ec7cfbc4f33616bfb68fa4fc497d90835",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/2",
+        "sourceSha256": "5161c584b6cb4150874955ebd3c6b9f2da1680dea714caea53a845aa9791f404",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "1d5ffa9d4b97c9d2ad9a544c454df0ef1129543bb94d483cec43ce93277a6de1",
+        "spans": [
+          {
+            "start": 22,
+            "end": 35,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
+}

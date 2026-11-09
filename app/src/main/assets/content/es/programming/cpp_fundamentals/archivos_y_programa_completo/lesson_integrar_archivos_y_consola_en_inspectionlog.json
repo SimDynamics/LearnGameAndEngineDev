@@ -1,0 +1,2345 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__integrar_archivos_y_consola_en_inspectionlog",
+  "title": "Integrar archivos y consola en InspectionLog",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dar al modelo un recorrido completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El modelo ya decide si una muestra es válida. Ahora InspectionLog recibirá dos rutas: la entrada que debe leer y la salida que debe crear o sustituir. La persona usuaria verá el informe y sabrá si la copia guardada se recupera sin perder datos. Conservaremos el modelo y añadiremos cuatro archivos: aplicacion.h, informe.cpp, archivos.cpp y main.cpp."
+        },
+        {
+          "type": "paragraph",
+          "text": "El recorrido tendrá tres resultados observables. La terminación 0 significa que se aceptó la muestra, se escribió la salida y se verificó su recuperación. La terminación 2 significa que la muestra se rechazó y que la salida no se abrió para escribir. La terminación 1 identifica un problema técnico y su mensaje indica la etapa. Esta elección pertenece a nuestra aplicación; el comprobador devolverá cero cuando observe exactamente el resultado que esperaba, incluso si el caso probado debía rechazar datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La carga conserva el estado anterior cuando rechaza una muestra. Una vez aceptada, el estado en memoria pasa a ser el nuevo conjunto. Si falla el guardado posterior, el programa informa ese fallo: no promete devolver la memoria al estado anterior ni restaurar un archivo que ya se comenzó a escribir. La protección de la carga y la comprobación del guardado tienen alcances distintos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__integrar_archivos_y_consola_en_inspectionlog__frontera_de_escritura",
+          "question": "La entrada cierra correctamente el conjunto y después contiene la palabra resto. Ya existe una salida anterior. ¿Qué debe ocurrir?",
+          "options": [
+            "Abrir la salida primero para comprobar que hay permiso y rechazar después el texto sobrante.",
+            "Rechazar la muestra completa, conservar el estado anterior y no abrir la salida para escribir.",
+            "Aceptar la parte anterior a resto y sustituir la salida con ese prefijo."
+          ],
+          "correctIndex": 1,
+          "explanation": "La palabra posterior impide aceptar la muestra completa. Abrir un std::ofstream de salida antes de esa decisión podría sustituir el contenido anterior aunque no se llegara a escribir ningún registro. La validación debe preceder a esa apertura."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declarar la aplicación y construir su informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre y guarda los nuevos archivos con el mismo procedimiento de la lección anterior. aplicacion.h incluirá inspection_log.h y <ostream>. Usa una protección INSPECTION_LOG_APLICACION_H. Declara bool mostrar_informe(const Conjunto& conjunto, std::ostream& salida), y int procesar_archivos(const std::string& ruta_entrada, const std::string& ruta_salida, Conjunto& actual, std::ostream& mensajes)."
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad aplicacion.h"
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad informe.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad archivos.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad main.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "En informe.cpp, mostrar_informe comprobará primero la validez del conjunto. Si es inválido, devolverá falso sin presentar un informe. Si es válido, sumará aceptados y rechazados, imprimirá el número de grupos y llamará a seleccionar_mayor. El destino es un std::ostream&: podrá ser la consola o un flujo de cadena del comprobador. Esta elección permite comprobar el texto sin modificar el cálculo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la muestra base, escribe exactamente estas cuatro líneas, cada una con salto final. El máximo se obtiene de la suma por grupo; no del registro individual de mayor cantidad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Grupos: 2\nAceptados: 3\nRechazados: 1\nMayor: rojo 3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin ningún grupo, la última línea será Mayor: ninguno. Con un grupo vacío azul, será Mayor: azul 0. Si hay empate, debe aparecer el primero en el orden guardado. Al terminar, comprueba el estado del flujo de salida y devuelve si continúa correcto. Escribe la función y la cabecera en sus archivos antes de contrastarlas con la referencia."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__integrar_archivos_y_consola_en_inspectionlog__empate_y_vacio",
+          "question": "Un conjunto válido contiene primero azul sin registros y luego rojo con 7[0;0]. ¿Cuál es la última línea del informe?",
+          "options": [
+            "Mayor: ninguno",
+            "Mayor: rojo 0",
+            "Mayor: azul 0"
+          ],
+          "correctIndex": 2,
+          "explanation": "Ambos grupos están presentes y suman cero aceptados. El primero establece el máximo inicial y el segundo empata, sin reemplazarlo. Un grupo presente sin registros participa; no se confunde con la ausencia de todos los grupos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escribir la operación de archivos sin cambios parciales de carga"
+        },
+        {
+          "type": "paragraph",
+          "text": "En archivos.cpp incluye aplicacion.h y <fstream>. Implementa procesar_archivos por etapas. Primero rechaza rutas vacías o dos rutas escritas exactamente iguales con terminación 1. Usa para las pruebas dos archivos distintos de la carpeta del proyecto; esta comprobación textual no identifica todas las maneras posibles de nombrar el mismo archivo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre la entrada como std::ifstream dentro de un bloque local. Si no se abre, informa Error al abrir entrada y devuelve 1. Lee sobre un Conjunto candidato{}, no directamente sobre actual. Si aparece bad(), informa Averia de lectura y devuelve 1. Si no se acepta el texto completo, informa Entrada rechazada. Estado conservado. y devuelve 2. En ambos casos no se crea un flujo de salida para el archivo de destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando la lectura termina correctamente, el flujo de entrada puede cerrarse al salir de su bloque. Asigna el candidato a actual y compón su texto en una cadena. Si la composición falla, informa Error al componer datos y devuelve 1. Sólo después abre la salida con std::ofstream. Comprueba por separado apertura, inserción del texto y close(). Sus mensajes serán Error al abrir salida, Error al escribir salida y Error al cerrar salida, siempre con terminación 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reabre la salida con std::ifstream, interpreta otra muestra completa y compárala con actual mediante mismos_datos. Usa los mensajes Error al reabrir salida, Error al releer salida y Error al comparar recuperacion para distinguir esas etapas. Después presenta Entrada aceptada, el informe y Guardado verificado. Cada mensaje termina con salto de línea. Devuelve 0 únicamente tras completar la comparación y escribir el informe sin fallo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si falla la escritura del informe o su mensaje final, devuelve 1. La copia de disco podría estar verificada aunque falle la consola; el resultado debe reflejar que la operación visible no terminó normalmente. Las comprobaciones del estado de los flujos y de close() recuperan las reglas ya practicadas con los flujos de archivos (Köppe et al., 2023)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__integrar_archivos_y_consola_en_inspectionlog__memoria_y_disco",
+          "question": "La muestra es válida y ya fue aceptada, pero la carpeta de salida no existe. ¿Qué resultado corresponde al contrato de esta operación?",
+          "options": [
+            "Terminación 1 al abrir salida; la memoria puede contener ya la muestra aceptada.",
+            "Terminación 2, porque cualquier error técnico convierte una muestra válida en texto inválido.",
+            "Terminación 0, porque la validez de la entrada basta para acreditar el guardado."
+          ],
+          "correctIndex": 0,
+          "explanation": "La terminación dos se reserva al rechazo del contenido. La entrada de este caso ya fue aceptada y asignada, pero no se puede abrir la salida. Se informa la etapa y se devuelve uno; no se afirma que exista una copia guardada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conectar las rutas de la consola"
+        },
+        {
+          "type": "paragraph",
+          "text": "En main.cpp incluye aplicacion.h e <iostream>. Presenta InspectionLog, después Ruta de entrada: y lee una línea con std::getline. Repite para Ruta de salida:. Escribe cada rótulo en su propia línea. Si falta una de las líneas, presenta Falta la ruta de entrada o Falta la ruta de salida y termina con 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::getline conserva los espacios de la ruta, por lo que no debes introducir comillas cuando el programa te la pide. Las comillas que usamos en las órdenes de cmd pertenecen al intérprete de comandos; aquí la línea completa es el dato leído por C++. Evita espacios añadidos al principio o al final si no forman parte del nombre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prepara Conjunto actual{}, llama a procesar_archivos con las dos rutas y std::cout, y devuelve su resultado desde main. Una ejecución procesa una muestra; para revisar otra, vuelve a ejecutar el programa. Las pruebas posteriores proporcionarán un estado previo no vacío para comprobar la conservación ante rechazo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe y guarda main.cpp. Antes de construirlo, completa esta predicción sobre el enlace entre el resultado de la operación y el resultado del proceso."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__integrar_archivos_y_consola_en_inspectionlog__resultado_y_cantidad",
+          "question": "Este fragmento aísla la decisión de main. ¿Qué línea muestra? El valor devuelto por la operación no es el número de grupos.",
+          "language": "cpp",
+          "code": "#include <iostream>\nint main() {\n    const int resultado{2};\n    const int grupos{1};\n    if (resultado == 0) { std::cout << \"Verificado: \" << grupos << \"\\n\"; }\n    else if (resultado == 2) { std::cout << \"Rechazado\\n\"; }\n    else { std::cout << \"Error tecnico\\n\"; }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado"
+          ],
+          "explanation": "La decisión usa resultado, cuyo valor es 2. Por eso muestra Rechazado. La cantidad de grupos vale 1, pero no participa en la condición que clasifica la operación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la interfaz de aplicación y del informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "aplicacion.h reúne los dos contratos nuevos sin alterar la cabecera del modelo. mostrar_informe recibe un conjunto y un destino; procesar_archivos añade rutas y estado. La cabecera mantiene declaraciones, no copias de sus implementaciones."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef INSPECTION_LOG_APLICACION_H\n#define INSPECTION_LOG_APLICACION_H\n\n#include \"inspection_log.h\"\n#include <ostream>\n\n// Un conjunto invalido se rechaza antes de escribir el informe.\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida);\n\n// 0: aceptado, guardado y verificado; 2: contenido rechazado; 1: fallo tecnico.\n// El rechazo conserva actual y no abre ruta_salida para escribir.\n// Tras aceptar la carga, un fallo de guardado no revierte actual ni el disco.\n// Las rutas deben nombrar archivos distintos, no alias del mismo archivo.\nint procesar_archivos(const std::string& ruta_entrada,\n                      const std::string& ruta_salida,\n                      Conjunto& actual, std::ostream& mensajes);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En informe.cpp, ambos totales se calculan recorriendo todos los registros. Después se presenta el resultado de la selección que ya comprobamos. Un conjunto vacío produce un informe válido con cero grupos y sin mayor."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n\nbool mostrar_informe(const Conjunto& conjunto, std::ostream& salida) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    int aceptados{0};\n    int rechazados{0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados += registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    salida << \"Grupos: \" << conjunto.grupos.size()\n           << \"\\nAceptados: \" << aceptados\n           << \"\\nRechazados: \" << rechazados << \"\\n\";\n    const Informe_mayor mayor = seleccionar_mayor(conjunto);\n    if (mayor.hay_grupo) {\n        std::string nombre;\n        if (!nombre_grupo(mayor.id, nombre)) { return false; }\n        salida << \"Mayor: \" << nombre << ' ' << mayor.aceptados << \"\\n\";\n    } else {\n        salida << \"Mayor: ninguno\\n\";\n    }\n    return static_cast<bool>(salida);\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la operación completa de archivos"
+        },
+        {
+          "type": "paragraph",
+          "text": "archivos.cpp mantiene el candidato hasta aceptar toda la entrada. La apertura de la salida aparece después de componer el texto. La relectura compara los datos, no sólo el tamaño del archivo o los totales; dos archivos distintos pueden tener los mismos totales y aun así perder orden, identificadores o un grupo vacío."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n#include <fstream>\n\nint procesar_archivos(const std::string& ruta_entrada,\n                      const std::string& ruta_salida,\n                      Conjunto& actual, std::ostream& mensajes) {\n    if (ruta_entrada.empty() || ruta_salida.empty()\n        || ruta_entrada == ruta_salida) {\n        mensajes << \"Rutas vacias o iguales\\n\";\n        return 1;\n    }\n\n    Conjunto candidato{};\n    {\n        std::ifstream entrada{ruta_entrada};\n        if (!entrada) {\n            mensajes << \"Error al abrir entrada\\n\";\n            return 1;\n        }\n        const bool aceptado = leer_muestra_completa(entrada, candidato);\n        if (entrada.bad()) {\n            mensajes << \"Averia de lectura\\n\";\n            return 1;\n        }\n        if (!aceptado) {\n            mensajes << \"Entrada rechazada. Estado conservado.\\n\";\n            return 2;\n        }\n    }\n    actual = candidato;\n\n    std::string texto;\n    if (!componer_conjunto(actual, texto)) {\n        mensajes << \"Error al componer datos\\n\";\n        return 1;\n    }\n    std::ofstream guardado{ruta_salida};\n    if (!guardado) {\n        mensajes << \"Error al abrir salida\\n\";\n        return 1;\n    }\n    guardado << texto;\n    if (!guardado) {\n        mensajes << \"Error al escribir salida\\n\";\n        return 1;\n    }\n    guardado.close();\n    if (!guardado) {\n        mensajes << \"Error al cerrar salida\\n\";\n        return 1;\n    }\n\n    Conjunto recuperado{};\n    {\n        std::ifstream comprobacion{ruta_salida};\n        if (!comprobacion) {\n            mensajes << \"Error al reabrir salida\\n\";\n            return 1;\n        }\n        if (!leer_muestra_completa(comprobacion, recuperado)\n            || comprobacion.bad()) {\n            mensajes << \"Error al releer salida\\n\";\n            return 1;\n        }\n    }\n    if (!mismos_datos(actual, recuperado)) {\n        mensajes << \"Error al comparar recuperacion\\n\";\n        return 1;\n    }\n    mensajes << \"Entrada aceptada\\n\";\n    if (!mostrar_informe(actual, mensajes)) { return 1; }\n    mensajes << \"Guardado verificado\\n\";\n    if (!mensajes) { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El mensaje Guardado verificado significa que esta ejecución cerró, reabrió e interpretó la copia y recuperó los mismos datos. No garantiza que una interrupción posterior, una escritura externa o un fallo del dispositivo nunca pueda afectar al archivo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia del punto de entrada"
+        },
+        {
+          "type": "paragraph",
+          "text": "main.cpp reúne la interacción mínima: dos líneas de rutas y la llamada a la operación. Cada línea puede contener espacios. El modelo, el informe y los archivos siguen pudiendo comprobarse desde otro programa sin simular el teclado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"aplicacion.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"InspectionLog\\nRuta de entrada:\\n\";\n    std::string entrada;\n    if (!std::getline(std::cin, entrada)) {\n        std::cout << \"Falta la ruta de entrada\\n\";\n        return 1;\n    }\n    std::cout << \"Ruta de salida:\\n\";\n    std::string salida;\n    if (!std::getline(std::cin, salida)) {\n        std::cout << \"Falta la ruta de salida\\n\";\n        return 1;\n    }\n    Conjunto actual{};\n    return procesar_archivos(entrada, salida, actual, std::cout);\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye desde la raíz del proyecto, en la consola de desarrollo:"
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc modelo.cpp informe.cpp archivos.cpp main.cpp /Fe:inspectionlog.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "La orden incorpora una sola definición de cada función y un solo main. prueba_modelo.cpp tiene su propio punto de entrada: se construye con su orden anterior y no se añade a este ejecutable. /Fe:inspectionlog.exe evita que el nombre dependa del primer fuente (Microsoft, 2025a, 2025b)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar y procesar la primera muestra real"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde la raíz del proyecto crea dos carpetas: ejemplos guardará entradas de práctica y resultados recibirá las salidas. Ejecuta cada orden y abre la muestra con el editor."
+        },
+        {
+          "type": "paragraph",
+          "text": "mkdir ejemplos"
+        },
+        {
+          "type": "paragraph",
+          "text": "mkdir resultados"
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad ejemplos\\base.txt"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guarda exactamente el texto siguiente en ejemplos\\base.txt. Puedes añadir un salto al final. Conserva la extensión .txt y el texto sin caracteres añadidos antes de la primera llave."
+        },
+        {
+          "type": "paragraph",
+          "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta el programa. Cuando aparezca Ruta de entrada:, escribe ejemplos\\base.txt y pulsa Enter. Cuando aparezca Ruta de salida:, escribe resultados\\base_guardada.txt y pulsa Enter. Son rutas relativas a la raíz actual del proyecto; son archivos distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\inspectionlog.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de introducir las dos rutas, debe aparecer:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada aceptada\nGrupos: 2\nAceptados: 3\nRechazados: 1\nMayor: rojo 3\nGuardado verificado"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado inmediato debe ser 0. Examina también el archivo guardado:"
+        },
+        {
+          "type": "paragraph",
+          "text": "type resultados\\base_guardada.txt"
+        },
+        {
+          "type": "paragraph",
+          "text": "Debe conservar los dos grupos, el registro de cantidades cero y el orden. Vuelve a ejecutar el programa usando resultados\\base_guardada.txt como entrada y resultados\\base_recuperada.txt como salida. Debe repetir el mismo informe y verificar de nuevo la copia. La salida anterior pasa a ser una entrada real en esta segunda ejecución."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "daa9f1c97876fdfd83fe80ebe1d6484aca74e1468fce1ef7064908b39bd22af6"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0010",
+            "sha256": "4f0fe87719ea318ecc9bfe2bc18370dfb82aaa4a14406f5913c6110946350269"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "d99bf2cad4d0f09a248bfafd51e5b19d8406278b14f29263fbd01bacfc2834df"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "df3b52b6836593a237e0bbd4a0af501065ad1a22c16861fb6c38729a5178566a"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "0e15804edb8648503f3ae9a895df4708aea10ca419fd5cd96799ce6f8db0e4d9"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "507c2fae29e183d534aa1a7f0017f3ff2fc97c49fd90ef2a8e90a2c64e2459ae"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "53e28fdb0acd56eb41604d6f711669a9dfe15a6c716a6369e810777143af3ec0"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "067281622d72e50931b3cee3ac39454a04d0827b82c701d95a52f4b78d6fa269"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0012",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0013",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0014",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007",
+          "block_0001_0008",
+          "block_0001_0009",
+          "block_0001_0010"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006",
+          "block_0007_0007",
+          "block_0007_0008",
+          "block_0007_0009",
+          "block_0007_0010",
+          "block_0007_0011",
+          "block_0007_0012",
+          "block_0007_0013",
+          "block_0007_0014"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "6ebb7ac824515e1c3a3d4751d0246b3d545a14005d1d1a93cf744bace6215941",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "daa9f1c97876fdfd83fe80ebe1d6484aca74e1468fce1ef7064908b39bd22af6"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0010",
+                "sha256": "4f0fe87719ea318ecc9bfe2bc18370dfb82aaa4a14406f5913c6110946350269"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "d99bf2cad4d0f09a248bfafd51e5b19d8406278b14f29263fbd01bacfc2834df"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "df3b52b6836593a237e0bbd4a0af501065ad1a22c16861fb6c38729a5178566a"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "0e15804edb8648503f3ae9a895df4708aea10ca419fd5cd96799ce6f8db0e4d9"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "507c2fae29e183d534aa1a7f0017f3ff2fc97c49fd90ef2a8e90a2c64e2459ae"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "53e28fdb0acd56eb41604d6f711669a9dfe15a6c716a6369e810777143af3ec0"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "067281622d72e50931b3cee3ac39454a04d0827b82c701d95a52f4b78d6fa269"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0012",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0013",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0014",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "da99fb912ddf37fc51e779a2ca3366ae7a8a77321f01dd439724ceddaeac73ec",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "4a93afb7c94258dc8374a60f528a7d47443fa54d30ab500aedab1f7f1b6d102e",
+        "spans": [
+          {
+            "start": 52,
+            "end": 65,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 311,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 313,
+            "end": 324,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 338,
+            "text": "archivos.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 341,
+            "end": 349,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "13947798d712bf0a9d8638e30cf7f19f7244c3ac2cac59b677b84402ff5fb450",
+        "spans": [
+          {
+            "start": 64,
+            "end": 65,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 267,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "f9db9c7c3c1f7af24e011c5176ba8ede7a23d725dcf4864d4b0d50049690ed7d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "cc15e2fa72f25830e7d08f7c00a3206deeef8986416c763192fe59f06dff7c90",
+        "spans": [
+          {
+            "start": 74,
+            "end": 79,
+            "text": "resto",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "351a33cd2b270c5ccb108defe1be2157d7e436de8cc2fdf56cda71f7a65b386b",
+        "spans": [
+          {
+            "start": 66,
+            "end": 79,
+            "text": "std::ofstream",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "92a69f12ae32d568ea26f49d95350aa34ad5e97d0aa87f5b59ce29a7cb474f0c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "0c68e5c3f1d35e1707fa80c3fb72c4c4d20f0780349d6370b5bad35b00ae4711",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "1cd4ec40d4ab7daab2ecceab30ac5aec7f701e2518335ee9e03b35a96ef4e43d",
+        "spans": [
+          {
+            "start": 28,
+            "end": 33,
+            "text": "resto",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "185fe39b9c29a316747b7eb069df6e93e3014e9095a17162c0a2232677b91952",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "c4b2149e72e9b5702527b17961c40b36ef5c2e4b36dba79242cd1d3b62a39a79",
+        "spans": [
+          {
+            "start": 85,
+            "end": 97,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 123,
+            "text": "inspection_log.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 135,
+            "text": "<ostream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 156,
+            "end": 183,
+            "text": "INSPECTION_LOG_APLICACION_H",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 193,
+            "end": 261,
+            "text": "bool mostrar_informe(const Conjunto& conjunto, std::ostream& salida)",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 265,
+            "end": 393,
+            "text": "int procesar_archivos(const std::string& ruta_entrada, const std::string& ruta_salida, Conjunto& actual, std::ostream& mensajes)",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "b247ac0f0978eef2534718804110592d6db532f4536db0d285e8bdb608135ff8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 20,
+            "text": "notepad aplicacion.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "73321d52613b9c180c1602e33942067df9ef6aabbf4eb309b631e63f11debb6d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "notepad informe.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "c512330bc06f9d762adac8841c06b97b9b9c7242b27f032fdb96e7f6f7a4313b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 20,
+            "text": "notepad archivos.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "3cc0319634e4e8f16e360da6517587594c000665fd034a1c12646f4dc4dade5d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "notepad main.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/text",
+        "sourceSha256": "db96ac58bb31b59c34fc9394b67ea839c38c8329c604fcb9a9e3d2e35d357906",
+        "spans": [
+          {
+            "start": 3,
+            "end": 14,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 31,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 221,
+            "end": 238,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 257,
+            "end": 270,
+            "text": "std::ostream&",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/text",
+        "sourceSha256": "ff979a93321292e90032a67987934dca026a6bb3f2940790da75da6d9d16c344",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/text",
+        "sourceSha256": "a0e99cf254a54db2399f856d0f31fd1a17dfa5cc88ed6c60515b199abe7324f3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 50,
+            "text": "Grupos: 2\nAceptados: 3\nRechazados: 1\nMayor: rojo 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0009",
+        "path": "/text",
+        "sourceSha256": "fc9a6b9f708d95e47db342417d5fbaa8497b52a61988e3cc99291ae2bf43e626",
+        "spans": [
+          {
+            "start": 39,
+            "end": 53,
+            "text": "Mayor: ninguno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 78,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 98,
+            "text": "Mayor: azul 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/question",
+        "sourceSha256": "23e54b321c399363298c28ee81e592c86116cc0d6173e51c3a82005330ab2154",
+        "spans": [
+          {
+            "start": 36,
+            "end": 40,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 67,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 78,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/explanation",
+        "sourceSha256": "16f44f3ec1471655e73921de7aa7ddb0e652927457ea338a574044c2e7519aaa",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/options/0",
+        "sourceSha256": "a5a4dc230cec204205bd730a2924d5b67aa94fecb86fd0bc19daf90895182bbd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Mayor: ninguno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/options/1",
+        "sourceSha256": "9190c953ca89479610f1854903a96b4f20ef2443470982b611d9ddd5dcafa10a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Mayor: rojo 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0010",
+        "path": "/options/2",
+        "sourceSha256": "1185b3bb5bfab376c7a5ee635af286ec7abece2782e7996c65eb17600230afaf",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Mayor: azul 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "88a7d33775dd1531d8e3bb2bddcc20a20c62f12592fb9c7f9831b497491f63e2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "24f3996f9937939aee57b2afd1637711af1d08f0ab4edcca52daab756c626f1a",
+        "spans": [
+          {
+            "start": 3,
+            "end": 15,
+            "text": "archivos.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 36,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 48,
+            "text": "<fstream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 61,
+            "end": 78,
+            "text": "procesar_archivos",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 177,
+            "end": 178,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "82f696501586ecd56fdc1a47e1f5fbc1823e4a6c1f670f381116345572cc3779",
+        "spans": [
+          {
+            "start": 21,
+            "end": 34,
+            "text": "std::ifstream",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 85,
+            "end": 107,
+            "text": "Error al abrir entrada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 155,
+            "text": "Conjunto candidato{}",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 179,
+            "end": 185,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 198,
+            "end": 203,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 213,
+            "end": 230,
+            "text": "Averia de lectura",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 243,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 325,
+            "text": "Entrada rechazada. Estado conservado.",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 338,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "74939754a56ee41cd3cfd8c7678e1991cd43d50c239c7f677e6c4229c9348d5f",
+        "spans": [
+          {
+            "start": 121,
+            "end": 127,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 194,
+            "end": 217,
+            "text": "Error al componer datos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 230,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 277,
+            "text": "std::ofstream",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 334,
+            "end": 341,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 362,
+            "end": 383,
+            "text": "Error al abrir salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 409,
+            "text": "Error al escribir salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 434,
+            "text": "Error al cerrar salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 461,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "0fef364ae49388899d015d64a158deea56998f11ec0f40f74adde23278e9e4bc",
+        "spans": [
+          {
+            "start": 21,
+            "end": 34,
+            "text": "std::ifstream",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 85,
+            "end": 91,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 101,
+            "end": 113,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 132,
+            "end": 155,
+            "text": "Error al reabrir salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 179,
+            "text": "Error al releer salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 212,
+            "text": "Error al comparar recuperacion",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 275,
+            "text": "Entrada aceptada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 309,
+            "text": "Guardado verificado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 362,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "fec54326a9930db09284534443491be09f5d2cbe3813e028aa96b5e59785280f",
+        "spans": [
+          {
+            "start": 63,
+            "end": 64,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 265,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 329,
+            "end": 349,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "7922454cc4141e0bd5121bdceac53dc5ea9d03c851112ee42a41214bb87d6933",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "ce4cf2b0329fe8abbadf3236a5dbcdbf596130aeb1f7966dfcdec907e03ca685",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/0",
+        "sourceSha256": "f3d68cae2c9c0983cbe585741ac5067c457e84a981df26e7f0db7a136351ce24",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/1",
+        "sourceSha256": "0c17d898b8a7214615074814fcb17b89359c6a16ce2ad195cf8228e05d94b6fe",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/2",
+        "sourceSha256": "ce5f852435314138b2b915e620ee059b2e867336d1248a031352b3e87658c264",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "0e8dc86529d506a7cb8648af8afcc9a88d4b0b770fe670a5ac59e3175f1c562e",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "e3a8ecee2ee8492221b031162204331df4838356548510e1a4221bad48596069",
+        "spans": [
+          {
+            "start": 3,
+            "end": 11,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 32,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 45,
+            "text": "<iostream>",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 56,
+            "end": 69,
+            "text": "InspectionLog",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 95,
+            "text": "Ruta de entrada:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 128,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 142,
+            "end": 157,
+            "text": "Ruta de salida:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 260,
+            "text": "Falta la ruta de entrada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 286,
+            "text": "Falta la ruta de salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 302,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "fcfb65d5850b0093a55e60c19747d4694959a9e16a2da43b1c6ff8fd0ca0b582",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 160,
+            "end": 163,
+            "text": "cmd",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "b3b54a2c6cdaf7ca29c63c5434c0eb06f299ef0ee24994b467a1c97c23f209b8",
+        "spans": [
+          {
+            "start": 8,
+            "end": 25,
+            "text": "Conjunto actual{}",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 35,
+            "end": 52,
+            "text": "procesar_archivos",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 114,
+            "end": 118,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "ed046bc12db8b685748822ac32e5fbfd9d1c05dbd1654911cdb95229b275d6e1",
+        "spans": [
+          {
+            "start": 17,
+            "end": 25,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "3ef365ba5228a720534f01c67788651248cf3b138f5de3cb15205c98dbb91df9",
+        "spans": [
+          {
+            "start": 36,
+            "end": 40,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "68276cee1ea0b7c2a3f6e9b0d72f1aa23f80c7f47af1163b6de3bb2743ed2f03",
+        "spans": [
+          {
+            "start": 16,
+            "end": 25,
+            "text": "resultado",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 41,
+            "end": 42,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 69,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 99,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "fb39f2def2e4c3c70a71b3ad3204f8d71733fdfc89d38bd7e5a294f7619fa71d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "370f190ae16efb90e8ab01f7e9bb30c701fc62a1cfe8b70283924856d554f2d2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 95,
+            "text": "mostrar_informe",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 129,
+            "end": 146,
+            "text": "procesar_archivos",
+            "role": "cpp",
+            "reading": "auto"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "960992406596cae23a0d3421dd9ea6dcbe4723cf2c39d7c3b6edf29af108e55c",
+        "spans": [
+          {
+            "start": 3,
+            "end": 14,
+            "text": "informe.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "6dbbd1bd991ab686cf5cf3499d321ea4d6ed829df40f175c60dc003671a21576",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "9fdf7fd5bd4adfb926a0fc82d208dd8fe3ff003f2e5da02a4d9d4348d51cd713",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "archivos.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "481938fd5961139e257678fafc1f82a3108c82e0d837a4a123af58c3ac10cc91",
+        "spans": [
+          {
+            "start": 11,
+            "end": 30,
+            "text": "Guardado verificado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "a8ab421c4982d5de5be9c5525fcf40925ddd0d15a3d78791ccea2a821eeac5ef",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "7b251d984db4f3d2bd5446e869320babf39e84d9eacea8916be3ca6bdc4f4c3b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "d32295be747e95d7e71719a3551d1f9b12ee9ea9e388c4cd5eb0fda913fdc198",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/text",
+        "sourceSha256": "74e0ff69f98e2e75436a049e5c3120dd74fdae59dcb36d1a952d051034af56a2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 79,
+            "text": "cl /W4 /EHsc modelo.cpp informe.cpp archivos.cpp main.cpp /Fe:inspectionlog.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "71aa11a60e36d0f6629456c8551738f153a9fcd4f3095920e71fedd1040312c2",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "main",
+            "role": "cpp",
+            "reading": "auto"
+          },
+          {
+            "start": 71,
+            "end": 88,
+            "text": "prueba_modelo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 212,
+            "text": "/Fe:inspectionlog.exe",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 284,
+            "text": "(Microsoft, 2025a, 2025b)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "38bd3e7d2921a029156004b3fefdf3aa71b38d32a6121564eee7333f525f8774",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "e06fff59ad3f51cbb9850200df4f01d9c605744a8deed04a30c8518573e15c9d",
+        "spans": [
+          {
+            "start": 46,
+            "end": 54,
+            "text": "ejemplos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 97,
+            "text": "resultados",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "90cfdc852e580d573ed215568291a79539dfd9f57df5242f0a2c14f38cfe7c2a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "mkdir ejemplos",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "2ff28c98682df0d2c8560677097e12b92c86a7067d88d09c093e6b052fbba5d8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "mkdir resultados",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/text",
+        "sourceSha256": "715e67c27c5d3d3d920fe31b94733771f2ab2752f2bb761df8d9e552b33588dc",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "notepad ejemplos\\base.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "f2aac9c4e352e477fdc96a9d37ae7687f474c99df038cbc0032d46dc70059caf",
+        "spans": [
+          {
+            "start": 41,
+            "end": 58,
+            "text": "ejemplos\\base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": ".txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/text",
+        "sourceSha256": "6dd3f7a01112827d403c2d640ec7fe1a18ffc42961f1a8cd350447814e17358a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 56,
+            "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0007",
+        "path": "/text",
+        "sourceSha256": "79e651eb7398dcb71a1f39215c64c75403ab42f22ceecf23e895f5aa7a1c7e2e",
+        "spans": [
+          {
+            "start": 37,
+            "end": 53,
+            "text": "Ruta de entrada:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 80,
+            "text": "ejemplos\\base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 127,
+            "text": "Ruta de salida:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 165,
+            "text": "resultados\\base_guardada.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0008",
+        "path": "/text",
+        "sourceSha256": "b20e30678047d726cd4a0e57fb5f2be97bcb41455d7cf5180af90ece8ec9048d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": ".\\inspectionlog.exe",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0009",
+        "path": "/text",
+        "sourceSha256": "763b5600a4a5a3ff4374d3253a0c725d5f5abc417033b2b2532dab7b625440cd",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0010",
+        "path": "/text",
+        "sourceSha256": "f3ee7b10b25a1a1870eea20916991718d8ed365dd69709b88a641b045a075f4c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 87,
+            "text": "Entrada aceptada\nGrupos: 2\nAceptados: 3\nRechazados: 1\nMayor: rojo 3\nGuardado verificado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0011",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0012",
+        "path": "/text",
+        "sourceSha256": "5135c10b82c7603008d8f2422c078b9a080d86f2bb432aa5d5b0a83313e09608",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0013",
+        "path": "/text",
+        "sourceSha256": "29a860ed549e2df3a06f1a652a4eacd56b3400867ba9887d9ad0a86be6dcafc5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 33,
+            "text": "type resultados\\base_guardada.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0014",
+        "path": "/text",
+        "sourceSha256": "c26bc22cb150fcdeb06f2d7d1928fc971122a84c10412a055d850b42ac40646e",
+        "spans": [
+          {
+            "start": 111,
+            "end": 139,
+            "text": "resultados\\base_guardada.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 185,
+            "text": "resultados\\base_recuperada.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "f6fc43a481dedbc17f5131b37db4eded59a1ccc9025b56058ef9d9956ee8ccf6",
+        "spans": [
+          {
+            "start": 31,
+            "end": 44,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ]
+  }
+}
