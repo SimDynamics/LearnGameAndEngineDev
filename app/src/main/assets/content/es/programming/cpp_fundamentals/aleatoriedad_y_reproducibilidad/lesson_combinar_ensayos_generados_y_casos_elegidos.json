@@ -54,7 +54,7 @@
             "Una colección que sólo tenga valores muy superiores al mínimo."
           ],
           "correctIndex": 1,
-          "explanation": "La frontera de igualdad distingue ambas reglas. Una semilla no expresa por sí sola el comportamiento esperado.",
+          "explanation": "Con {4,4} y mínimo 4, la condición dato >= minimo acepta las dos apariciones y el conteo esperado es 2. La condición dato > minimo excluye ambas y devuelve 0. Si todos los datos fueran superiores al mínimo, ambas condiciones los aceptarían y ese caso no distinguiría el defecto. Cambiar la semilla tampoco establece una expectativa.",
           "reviewFeedback": [
             "Identifica qué resultado se espera antes de cambiar la configuración que produce los datos.",
             "Relaciona el caso elegido con el valor que pertenece a una de las dos condiciones y no a la otra.",
@@ -99,7 +99,7 @@
             "La distribución uniforme garantiza que cada frontera apareció alguna vez."
           ],
           "correctIndex": 0,
-          "explanation": "Una muestra finita no demuestra cobertura completa. El conjunto de casos y el contrato deben quedar explícitos.",
+          "explanation": "Las cuarenta comparaciones sólo respaldan los casos que se ejecutaron. Por ejemplo, que la distribución permita tamaño cero no asegura que alguna de esas muestras haya sido vacía. Esa frontera necesita su caso elegido, y todavía quedan otras combinaciones del dominio sin examinar. Que los valores tengan igual probabilidad no convierte una batería finita en un recorrido de todas las posibilidades.",
           "reviewFeedback": [
             "Distingue los casos ejecutados de los casos que admite todo el dominio.",
             "Considera si cuarenta muestras recorren necesariamente cada combinación de tamaño, valores y mínimo.",
@@ -164,7 +164,7 @@
           "answers": [
             "Repeticion:1"
           ],
-          "explanation": "Ambos experimentos preparan y consumen sus distribuciones en el mismo orden. La igualdad de datos no depende de sus valores exactos."
+          "explanation": "Los motores parten de la misma semilla 211 y cada pareja de distribuciones tiene los mismos límites. En cada ensayo obtienen tamaños iguales y realizan la misma cantidad de llamadas a sus distribuciones de valores. Así se conservan las condiciones para repetir el procedimiento en el ensayo siguiente. Las cinco parejas de vectores coinciden y se muestra Repeticion:1, sin fijar cuáles fueron sus elementos ni cuántos valores internos consumió cada distribución."
         },
         {
           "type": "paragraph",
@@ -225,7 +225,7 @@
             "Guardar sólo el tamaño, porque determina cuántos cumplen cualquier mínimo."
           ],
           "correctIndex": 1,
-          "explanation": "Una expectativa independiente del código puede detectar una interpretación equivocada compartida.",
+          "explanation": "Para {4,4} con mínimo 4, el requisito cuenta ambas apariciones: la expectativa manual es 2. Si las dos implementaciones excluyen la igualdad, ambas devuelven 0 y coinciden entre sí, pero discrepan de esa expectativa. Repetir únicamente su comparación con más semillas no corrige la interpretación compartida; el caso elegido la contrasta con el requisito.",
           "reviewFeedback": [
             "Revisa qué ocurriría si las dos implementaciones repiten la misma interpretación errónea del requisito.",
             "Relaciona la expectativa fijada desde el requisito con la igualdad que excluyen ambas versiones.",
@@ -504,7 +504,7 @@
           "answers": [
             "Real:1;Esperado:3;Coincide:0"
           ],
-          "explanation": "El código cuenta sólo el nueve. El requisito incluye los dos cuatros, por lo que la expectativa fija distingue el defecto."
+          "explanation": "Con mínimo 4, la condición estricta acepta sólo el 9 y devuelve 1. El requisito también incluye las dos apariciones de 4, por lo que la expectativa fija es 3. Comparar los resultados da falso, mostrado como 0: la línea completa es Real:1;Esperado:3;Coincide:0."
         },
         {
           "type": "paragraph",
@@ -1569,6 +1569,36 @@
         "id": "block_0005_0000",
         "beforeSha256": "d4cc9832c98dec41722f177ff3a19eed4556c5bafe66473257f2955c0d32b5f5",
         "afterSha256": "b554a6b1f2b7651796c469ad1752021f7284ff20dd0948167159c246892a4a6e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "afe9201a2b8272233a2960103093530c8b6e77b432492d40ba7bc07d8462005f",
+        "afterSha256": "eac55f889d45a7dda2de45e2448cfeae849050e2a395555d7a36f3f0b1f55179"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "dd2c26bfec4559d4f4e7a23ae6d9a358d6cd8d651f5f0220c0a0cdcef9e6bdcb",
+        "afterSha256": "cbd0b18a15ced6d3ebfcdce7eaaf22d08ee7df36d925480165b4491f8d35d6c4"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "27f15def111813b1f042b50693b680167e861c82351a0c7719be76dcd8cb0578",
+        "afterSha256": "c812a468ad8bfe118bc197fa7262965acbccfc4ddab8e9a0f67d624185b81e80"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "64d0ea1303cc854740d1955c197aa7af48d8c655ea3fc255acd370a0f82233fe",
+        "afterSha256": "d59754c05b61ac00d71e6071ad2dd82666c68d1d05d3756f48f76a38f9e37752"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "485725105cf4ed704a3971220066f995d8112b3870143cf98c0c6320ccabab6e",
+        "afterSha256": "1180db036cbba993fdacc93a99c4d5736ffa944c9f60705214599f09708d6e60"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "cbd0b18a15ced6d3ebfcdce7eaaf22d08ee7df36d925480165b4491f8d35d6c4",
+        "afterSha256": "3f2b5f8a96509bcd8eb4d3f9ffb074acd66cafe9380472c381f826f7a140c6d4"
       }
     ]
   },
@@ -1758,8 +1788,51 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "080cd6a91c4f57c2673c405bf6332862d61972f34c5d2d75f1534b9cb20567f8",
-        "spans": []
+        "sourceSha256": "2bff2ea47eb4d1cea468fc4681d4187348992c8b60b617bc8ec9a8832f37e69e",
+        "spans": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "{4,4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 49,
+            "text": "dato >= minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 102,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 130,
+            "text": "dato > minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 156,
+            "end": 157,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1834,8 +1907,23 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "02f1f5445402d558dadcd72eabf66c678a8243f64dd9a028f3011880d241bf96",
-        "spans": []
+        "sourceSha256": "0821f4225a49f85aa9d5dbe28d0774e9e501b71240c7db58652d26e98cbbbbeb",
+        "spans": [
+          {
+            "start": 4,
+            "end": 12,
+            "text": "cuarenta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 123,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1945,8 +2033,30 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "21f97994da07c6c4f89ee270c96c5fbd709f4986bfb60bbf10f7f0d5a37fdc1b",
-        "spans": []
+        "sourceSha256": "78d1de2ae35438ab3c8289d06c6a5b6edf0dcba6386d71bff118e9c186a94c91",
+        "spans": [
+          {
+            "start": 39,
+            "end": 42,
+            "text": "211",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 311,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 367,
+            "text": "Repeticion:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -1964,8 +2074,8 @@
             "start": 137,
             "end": 142,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 200,
@@ -1978,8 +2088,8 @@
             "start": 270,
             "end": 275,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 276,
@@ -2019,8 +2129,37 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "077c3655116ced864f3914719e85d6aceae3cc092280cf7fa599884dfeec44ac",
-        "spans": []
+        "sourceSha256": "8e534625aa81fa59bad64e56b36570319ab32c1a29c395b782fb3daa41847243",
+        "spans": [
+          {
+            "start": 5,
+            "end": 10,
+            "text": "{4,4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2133,6 +2272,13 @@
             "reading": "technical"
           },
           {
+            "start": 185,
+            "end": 191,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 240,
             "end": 246,
             "text": "cuatro",
@@ -2227,8 +2373,8 @@
             "start": 612,
             "end": 617,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2786,20 +2932,55 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "058528ab0da4c3667932eebb2616b2ff6e1f757756c60f8e7b9e14fa03c81b61",
+        "sourceSha256": "7e8761c8e54baedff44305b197f8affd8ab575cbd5d026b0c5501e4ba2e7a0a4",
         "spans": [
           {
-            "start": 25,
-            "end": 30,
-            "text": "nueve",
+            "start": 11,
+            "end": 12,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 52,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 57,
-            "end": 68,
-            "text": "dos cuatros",
+            "start": 119,
+            "end": 120,
+            "text": "4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 157,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 208,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 259,
+            "text": "Real:1;Esperado:3;Coincide:0",
+            "role": "output",
             "reading": "natural"
           }
         ]

@@ -80,7 +80,7 @@
             "Un motor construido con 4 y 8, sin distribución: sus valores ya quedan en ese intervalo."
           ],
           "correctIndex": 0,
-          "explanation": "El motor y el intervalo cumplen funciones distintas. En la distribución entera ambos extremos pertenecen al intervalo.",
+          "explanation": "El motor mt19937 proporciona la secuencia que utiliza la distribución. Los límites 4 y 8 se indican al construir uniform_int_distribution<int>: los resultados permitidos son 4, 5, 6, 7 y 8. Escribir 7 como límite superior excluiría 8. La semilla del motor prepara su estado inicial; no sustituye esos límites.",
           "reviewFeedback": [
             "Relaciona la fuente de la secuencia con el objeto que fija el intervalo de los resultados.",
             "Revisa si la distribución entera incluye el valor escrito como límite superior.",
@@ -124,7 +124,7 @@
           "answers": [
             "motor"
           ],
-          "explanation": "El argumento proporciona la fuente de valores que utiliza la distribución."
+          "explanation": "La declaración anterior crea motor con semilla 47. Al completar reparto(motor), la distribución utiliza ese objeto y devuelve un entero entre 1 y 3, que se guarda en dato. Por eso la comprobación de los límites muestra 1. Los paréntesis invocan la operación del objeto reparto; el argumento identifica qué motor debe utilizar."
         },
         {
           "type": "output_prediction",
@@ -134,7 +134,7 @@
           "answers": [
             "Datos:12;Dentro:1"
           ],
-          "explanation": "Se realizan doce obtenciones. La comprobación pide la propiedad del intervalo, sin exigir una secuencia concreta."
+          "explanation": "El bucle solicita doce resultados a elegir, configurada entre -3 y 2, incluidos. Para cada valor, las dos comparaciones del intervalo son verdaderas. dentro empieza en true y ninguna vuelta lo cambia a falso, por lo que su valor final se imprime como 1. El rótulo y ese valor forman Datos:12;Dentro:1, sin necesitar conocer los doce enteros concretos."
         }
       ]
     },
@@ -174,7 +174,7 @@
             "3, 4, 5, 6."
           ],
           "correctIndex": 2,
-          "explanation": "La distribución incluye tanto el extremo inferior como el superior; no usa un intervalo abierto.",
+          "explanation": "El límite inferior 3 y el superior 6 están incluidos. Entre ellos quedan 4 y 5, de modo que la lista completa es 3, 4, 5, 6. La primera opción omite el extremo superior y la segunda omite el inferior; ambas dejan fuera un resultado permitido.",
           "reviewFeedback": [
             "Comprueba qué ocurre con el entero igual al límite superior escrito.",
             "Comprueba qué ocurre con el entero igual al límite inferior escrito.",
@@ -205,7 +205,7 @@
           "answers": [
             "[7][7][7]"
           ],
-          "explanation": "Un intervalo de un solo entero obliga a ese resultado en cada llamada. Aquí la salida no depende del algoritmo de transformación."
+          "explanation": "Los dos límites son 7, de modo que cada llamada a elegir(motor) devuelve 7. El bucle se ejecuta tres veces y en cada vuelta imprime un corchete de apertura, el resultado y un corchete de cierre. Así se concatenan [7][7][7], sin espacios ni saltos. Este resultado no permite contar cuántas llamadas internas realizó la distribución al motor."
         }
       ]
     },
@@ -245,7 +245,7 @@
             "Los repetidos demuestran que la semilla fue ignorada."
           ],
           "correctIndex": 0,
-          "explanation": "Una distribución uniforme no promete turnos ni ausencia de repetidos. Una muestra corta no certifica ni refuta por sí sola su calidad.",
+          "explanation": "En 1..3, obtener varias veces 2 sigue cumpliendo el intervalo. La distribución puede volver a producir un valor sin haber visitado antes los otros dos. Seis obtenciones no obligan a dos apariciones de cada entero; por eso los repetidos no demuestran un fallo ni que se haya ignorado la semilla. Comprobar que todos pertenecen al intervalo verifica el rango, pero no certifica la calidad de la distribución.",
           "reviewFeedback": [
             "Distingue la repetición observada de la condición de pertenecer al intervalo.",
             "Revisa si la distribución conserva una lista de valores ya usados o permite volver a obtener un mismo entero.",
@@ -312,7 +312,7 @@
             "Coincidir con una lista observada en una biblioteca diferente."
           ],
           "correctIndex": 0,
-          "explanation": "El intervalo limita cada resultado. No obliga a que una muestra finita visite todos sus valores ni a que las frecuencias sean iguales. Comparar una lista de otra biblioteca añade una exigencia que no pertenece a ese contrato.",
+          "explanation": "Cada resultado debe cumplir que es al menos -2 y como máximo 4. Por ejemplo, -2, 0 y 4 están permitidos; 5 queda fuera. Una muestra puede repetir un valor y no contener algún extremo sin incumplir ese requisito. Exigir frecuencias iguales o copiar la lista de otra biblioteca añadiría condiciones que no se deducen de comprobar el intervalo.",
           "reviewFeedback": [
             "Distingue la pertenencia de cada dato de la cobertura de una muestra completa.",
             "Relaciona el rango permitido con lo que puede afirmarse de una cantidad finita de obtenciones.",
@@ -414,7 +414,7 @@
           "answers": [
             "0:1"
           ],
-          "explanation": "No se obtiene ningún valor. No hay elemento que incumpla el rango y el vector permanece vacío."
+          "explanation": "El primer bucle empieza con i igual a 0 y comprueba i < 0, que ya es falso. No llama a elegir ni añade elementos: datos.size() da 0. El segundo recorrido tampoco ejecuta su cuerpo, así que dentro conserva el valor true y se imprime como 1. El carácter separador produce la salida completa 0:1."
         },
         {
           "type": "multiple_choice",
@@ -426,7 +426,7 @@
             "Sólo la cantidad; los límites no intervienen en los datos permitidos."
           ],
           "correctIndex": 1,
-          "explanation": "Cantidad, límites y semilla cumplen funciones diferentes. La batería del editor practicó esos dos intervalos sin confundir el número de datos con el rango permitido.",
+          "explanation": "La primera configuración pide 16 datos entre -2 y 4; la segunda pide 7 entre -4 y -1. Cambian tanto el número de obtenciones como los dos límites de los resultados. La semilla sigue siendo 59 en ambas configuraciones: variar cantidad o intervalo no obliga a cambiar el valor con el que se prepara el motor.",
           "reviewFeedback": [
             "Compara los datos de configuración explícitos antes de inferir un cambio en la semilla.",
             "Identifica por separado cuántos datos se obtienen y qué valores admite cada uno.",
@@ -1304,6 +1304,51 @@
         "id": "block_0005_0000",
         "beforeSha256": "ea18a2953b01e3e00a8ae762bb15f3d25c20300e461246640fdbb0333dae2eb3",
         "afterSha256": "59f741b3784af42f50536916d284f6a657e21299512365eb5ae39e2eefc71723"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "b9462b5543ae762804d8efac838b64dfa9e24729c803deeea0d6e06ec5513759",
+        "afterSha256": "dbbd4b4b2482d50af08df4d4b3989e6c840ecdc59f51e7e298e969d2f34fcd3d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "a1583d55c0d880d1db5b0c1ca8af8ea663c351d3633d28751b7cc7561a9661dc",
+        "afterSha256": "40e125b39519687c26c33440531f04fcd4f2c62404186e4c646fce5579cea767"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "efebb2d74d10c654fc638ed83a4f91094927c0024e88ebbcda41ef332c457af0",
+        "afterSha256": "8719d0bab529fad1f071b7d8046e5fab0fc27897dca04a98a989aae80e594eac"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "ed87ca2f3ec38654fce50e4a80336b548b33a18479c06738d45a659f72ca3003",
+        "afterSha256": "4dc4e68110084268b4b73eade2ae930402e1680f96b643b0a9b679563a5763d6"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "0f7f9537c35f45a72957cdef44441c38c8586246d436cb24a196581563886598",
+        "afterSha256": "7d5b4ab26e02d658519ca2e46a9699a88d2ca83553869e29c4861aa2d02a2665"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "835338571bb92ff521d212125003f36330d2f881729261723c3a0ced03def1bc",
+        "afterSha256": "19c696b58dc49d9e3e23d599afd2bc9f123f9890d3a04f1ed2dbbc1566235da6"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "ba123b932e828ddc2d72c18dc736210b87d0d853a3e4994b7239019860a3da40",
+        "afterSha256": "067cf0b34d66263d1f565c1879f2a8d5faecff66b0488c8693a89c9dba7a78ce"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8ea22d4fa31d097fcd498d1f459fa0cb9b55a9213d93e0d37b4bdfdc188f4d67",
+        "afterSha256": "825673a2edc97f94f134658da63f1c15ddff68ee063e590b438e00ba9eee9549"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "2d1d56fd81a63252e977307d6ab42d9ce20dda547552bc6f823081f133e3a785",
+        "afterSha256": "cb97229a0953739a3e603f3e2759f2aabba5e0a06c701ec3cd730dc03284374d"
       }
     ]
   },
@@ -1445,8 +1490,58 @@
       {
         "block": "block_0000_0005",
         "path": "/explanation",
-        "sourceSha256": "be47f15e73259a1f1fd4db303beb8be8d212f9104dbba5790551aab179a8e820",
-        "spans": []
+        "sourceSha256": "e8a1485409bacdc8c380cabed72aa6e0e8ca273ea9bd38a77e713fe54491c300",
+        "spans": [
+          {
+            "start": 9,
+            "end": 16,
+            "text": "mt19937",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 84,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 142,
+            "text": "uniform_int_distribution<int>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 188,
+            "text": "4, 5, 6, 7 y 8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 200,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 233,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0005",
@@ -1593,8 +1688,65 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "7ebbc1c14bfb03eddd4326005679c253ddeaa84f0f8d8d6640ea1159473e2b31",
-        "spans": []
+        "sourceSha256": "9074d9f9be1421b3c71691811a3ca81f7e55e88fe98303f3276e29df47e8f596",
+        "spans": [
+          {
+            "start": 29,
+            "end": 34,
+            "text": "motor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 49,
+            "text": "47",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 78,
+            "text": "reparto(motor)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 170,
+            "text": "dato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 220,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 276,
+            "text": "reparto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1605,13 +1757,62 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "227c3ed539105843ab8b52145e313d83cb93325a7d0c0e7fe0769f7890e13e05",
+        "sourceSha256": "a42a30a449c0d9e69c2864c8967facd470d8dc5e065402eb13dcf5878bbf76b2",
         "spans": [
           {
-            "start": 12,
-            "end": 16,
-            "text": "doce",
+            "start": 36,
+            "end": 42,
+            "text": "elegir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 64,
+            "text": "-3",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 96,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 156,
+            "text": "dentro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 168,
+            "end": 172,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 252,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 300,
+            "text": "Datos:12;Dentro:1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1688,8 +1889,44 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "a899572b4af9b1677ab0f8316c9aa287ac8305ac6af6fe43e820c1412dbf4ea4",
-        "spans": []
+        "sourceSha256": "cd5d15d5212d84bfadbeef75c61221e110ec07417721fbcb2af70605b26700dd",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 123,
+            "text": "3, 4, 5, 6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1788,8 +2025,37 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "9e89dc73b93e64884159b8de91ec9a58b81740b89b08846475942086ad04ab13",
-        "spans": []
+        "sourceSha256": "8312baa85a69d40fb99b50a68fa8776651d30366a4b7f0cbdc6aacd76076343f",
+        "spans": [
+          {
+            "start": 20,
+            "end": 21,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 63,
+            "text": "elegir(motor)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 222,
+            "text": "[7][7][7]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0000",
@@ -1856,8 +2122,23 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "6ebdd15ebfde92617718832cc507ee92dff9ae64d7819e33258112fe89580527",
-        "spans": []
+        "sourceSha256": "dbf9899d2ca079a86c271c356162c225bea58a11b90f1289b10645d2b922099f",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "1..3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2036,8 +2317,51 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "1c0360651b2dee26aebb395254a21ffe5c70ebf0ef7e6a90d329700947394ebd",
-        "spans": []
+        "sourceSha256": "74f015204c9353c761e12290ba476bd78726a2f497e8de8be73df00297202ec7",
+        "spans": [
+          {
+            "start": 44,
+            "end": 46,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2188,8 +2512,8 @@
             "start": 179,
             "end": 183,
             "text": "true",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 195,
@@ -2243,8 +2567,79 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "fbf8bd3dd4c0e829491d3186e6103a624df35d8cb33c262a06c1c2e0273be992",
-        "spans": []
+        "sourceSha256": "b6be205522a7b6bb2c668f211fd683055555b76519a96cfb24f3f360db47bbc3",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "i",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 57,
+            "text": "i < 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 93,
+            "text": "elegir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 126,
+            "text": "datos.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 131,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 195,
+            "text": "dentro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 218,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 238,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 292,
+            "text": "0:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0002",
@@ -2291,8 +2686,58 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "d7acbedd5b1890769ae1fd3227f40363837141692f6b136850b777e76549f24a",
-        "spans": []
+        "sourceSha256": "8df9e52a9aec1f4f6e6f1744e04c54662dcf2a13178f96c4808e8c544d8c8ac1",
+        "spans": [
+          {
+            "start": 30,
+            "end": 32,
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 47,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "-4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 84,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 191,
+            "text": "59",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0002",

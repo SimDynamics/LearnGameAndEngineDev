@@ -59,7 +59,7 @@
             "Construirla primero y confiar en que lance invalid_argument automáticamente."
           ],
           "correctIndex": 0,
-          "explanation": "La validez del intervalo es una responsabilidad previa del llamador o del servicio que lo construye.",
+          "explanation": "Con minimo igual a 5 y maximo igual a 2, la condición minimo > maximo es verdadera. El servicio debe rechazar esos argumentos antes de construir la distribución y antes de pedirle un dato. Comprobarlos después de construirla ya incumpliría la precondición; el constructor no promete lanzar invalid_argument para corregir ese uso.",
           "reviewFeedback": [
             "Relaciona la precondición del constructor con el momento en que ya deben estar comprobados los límites.",
             "Revisa si la distribución puede utilizarse válidamente antes de haber establecido el orden de sus límites.",
@@ -129,7 +129,7 @@
           "answers": [
             "Fuera del dominio:1"
           ],
-          "explanation": "El mínimo queda fuera del dominio del servicio, aunque el orden de los límites sea correcto. No se ejecuta la obtención."
+          "explanation": "El mínimo -13 queda por debajo del límite permitido, -12, aunque sea menor que el máximo 0. obtener lanza std::invalid_argument en la validación y no llega a solicitar datos. El catch compara el motor con anterior: siguen iguales, por lo que la salida es Fuera del dominio:1."
         }
       ]
     },
@@ -168,7 +168,7 @@
           "answers": [
             "Conservado:1\nCoinciden:1"
           ],
-          "explanation": "Cada llamada recibe el mismo estado del motor original, que no cambia. Usa una distribución nueva con el mismo intervalo en cada copia."
+          "explanation": "Las dos llamadas a obtener_copia reciben por valor el mismo estado del motor de main. Cada llamada utiliza una copia propia y una distribución nueva con límites 0 y 9; ninguna modifica el motor original. Por eso motor == anterior resulta verdadero y ambas obtenciones coinciden. Se muestran Conservado:1 y Coinciden:1 en líneas distintas, sin necesitar conocer el entero obtenido."
         },
         {
           "type": "multiple_choice",
@@ -179,7 +179,7 @@
             "std::mt19937& motor: la obtención puede modificar el objeto de main."
           ],
           "correctIndex": 2,
-          "explanation": "Generar requiere poder avanzar estado. Por valor se conserva el motor del llamador; const no permite ese avance.",
+          "explanation": "Con std::mt19937& motor, el parámetro se refiere al motor de main y las obtenciones pueden modificar ese mismo objeto. Así el llamador conserva el estado alcanzado para la siguiente llamada. Con std::mt19937 motor sólo se modifica una copia; con const std::mt19937& motor no se permiten las operaciones que avanzan el motor.",
           "reviewFeedback": [
             "Relaciona const con una operación que necesita modificar el estado del motor para avanzar.",
             "Sigue sobre qué objeto actúa la función cuando su parámetro recibe una copia del argumento.",
@@ -223,7 +223,7 @@
           "answers": [
             "0:1"
           ],
-          "explanation": "La configuración es válida y el recorrido tiene cero vueltas. Construir la distribución no obtiene ningún dato del motor."
+          "explanation": "Los límites 3 y 3 están ordenados y pertenecen al dominio permitido. La cantidad es 0, por lo que la primera comprobación i < cantidad ya es falsa y no se ejecuta elegir(motor). El vector conserva tamaño 0 y el motor sigue igual a anterior, comparación mostrada como 1. La salida es 0:1; construir la distribución por sí solo no obtiene valores del motor."
         }
       ]
     },
@@ -386,7 +386,7 @@
             "Que el motor vuelva a su semilla inicial aunque ya hubiera avanzado."
           ],
           "correctIndex": 1,
-          "explanation": "Ausencia de llamadas conserva el estado actual; no equivale a reiniciarlo.",
+          "explanation": "Hay que comparar el motor con una copia guardada justo antes de solicitar los cero datos. Como esa llamada válida no necesita ejecutar elegir(motor), ambos motores deben seguir comparando iguales. Reiniciar la semilla cambiaría un estado que ya hubiera avanzado; obtener y descartar un dato también realizaría una operación que esta solicitud no necesita.",
           "reviewFeedback": [
             "Relaciona una solicitud de cero datos con las llamadas que realmente necesita hacer generar.",
             "Distingue conservar el estado actual de preparar otra vez el comienzo del motor.",
@@ -556,6 +556,92 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\" << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la configuración de una muestra vacía"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente editor conserva el contrato de generar, pero su implementación tiene un defecto al solicitar cero datos. Repara únicamente esa función; conserva probar_vacio, main y todas sus llamadas. Una muestra vacía válida debe aceptarse, mientras que los límites invertidos o fuera del dominio deben provocar std::invalid_argument, sin utilizar el motor.\n\nAntes de las comprobaciones, main obtiene una muestra válida de tres datos y descarta ese vector. Así se comprueba la conservación del estado alcanzado después de una generación. No se exige ninguna lista de valores concreta.\n\nCada llamada a probar_vacio guarda una copia del motor y solicita cantidad cero. Si recibe un vector, muestra su tamaño y la comparación de los motores; si captura el rechazo, muestra esa misma comparación. Los cuatro intervalos son -12..12, 5..2, -13..12 y -12..13, en ese orden.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe contener estas cuatro líneas, todas con salto final:\n\nIntervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Rechazo:1\nIntervalo:-12:13;Rechazo:1",
+          "emphasis": [
+            {
+              "text": "Repara únicamente esa función",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "conservación del estado alcanzado",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cantidad cero",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad == 0) { return {}; }\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size() << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Rechazo:1\nIntervalo:-12:13;Rechazo:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La solicitud con límites -12 y 12 devuelve un vector vacío. Las otras tres se rechazan: 5 supera a 2, -13 queda bajo el dominio y 13 queda sobre él. En las cuatro llamadas el motor conserva el estado que tenía justo antes, comprobado como 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Vacio:0;Motor:1\nIntervalo:-13:12;Vacio:0;Motor:1\nIntervalo:-12:13;Vacio:0;Motor:1\n"
+                    ],
+                    "text": "Las cuatro llamadas han devuelto un vector vacío. Comprueba si la función termina al encontrar cantidad cero sin examinar los límites: 5..2, -13..12 y -12..13 deben rechazarse. Conservar el motor no basta para demostrar que una configuración es válida."
+                  },
+                  {
+                    "outputs": [
+                      "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Vacio:0;Motor:1\nIntervalo:-12:13;Vacio:0;Motor:1\n"
+                    ],
+                    "text": "El intervalo 5..2 ya se rechaza, pero -13..12 y -12..13 siguen aceptándose. Ambos están ordenados; sus extremos incumplen el dominio -12..12. La cantidad cero no elimina esas comprobaciones."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comparar ausencia de datos y validez de los límites"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si generar devuelve un vector vacío en cuanto encuentra cantidad cero, la solicitud 5..2 termina sin examinar que el mínimo supera al máximo. El vector está vacío y el motor se conserva, pero el servicio aceptó una configuración que debía rechazar. La prueba de vacío válido de la batería anterior no distinguía ese defecto.\n\nComprobar sólo el orden tampoco basta: -13..12 y -12..13 están ordenados, pero uno de sus extremos queda fuera del dominio. Los casos elegidos comprueban esas condiciones por separado. El intervalo -12..12 asegura además que no se rechacen todas las solicitudes vacías.\n\nLa referencia aplica la validación completa antes del recorrido. Con cantidad cero y límites válidos, el recorrido no obtiene ningún valor. Con límites inválidos, la excepción se lanza antes de construir la distribución. En ambos caminos se conserva el estado actual del motor; no se necesita reiniciar su semilla.",
+          "emphasis": [
+            {
+              "text": "el servicio aceptó una configuración que debía rechazar",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Comprobar sólo el orden tampoco basta",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "validación completa",
+              "style": "bold",
+              "occurrence": 1
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size() << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n    return 0;\n}\n"
         }
       ]
     }
@@ -788,7 +874,13 @@
           "consigna_reparar_motor_compartido",
           "reparar_motor_compartido",
           "razonamiento_motor_compartido",
-          "referencia_motor_compartido"
+          "referencia_motor_compartido",
+          "u10_configuracion_vacia_titulo",
+          "u10_configuracion_vacia_consigna",
+          "u10_configuracion_vacia_comprobacion",
+          "u10_configuracion_vacia_referencia_titulo",
+          "u10_configuracion_vacia_referencia_razonamiento",
+          "u10_configuracion_vacia_referencia"
         ]
       }
     ],
@@ -1303,6 +1395,60 @@
           "block": 4
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "u10_configuracion_vacia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u10_configuracion_vacia_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u10_configuracion_vacia_comprobacion",
+        "sha256": "420fb5c96cb4f378ee99584f0ef4179b80a9d57a79198920bfaf5a8272e7f36d",
+        "storage": {
+          "page": 7,
+          "block": 7
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u10_configuracion_vacia_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 8
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u10_configuracion_vacia_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 9
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u10_configuracion_vacia_referencia",
+        "sha256": "53d34b41333bc1f8164574d367b778ca2010dfc288e02b1ff5fe5f765797cecf",
+        "storage": {
+          "page": 7,
+          "block": 10
+        },
+        "progressPage": "page_0006"
       }
     ],
     "editorial": [
@@ -1395,6 +1541,36 @@
         "id": "block_0004_0002",
         "beforeSha256": "41f79da24a6d4128641eebd57e2007e26c6b557db84ae1e1fc8fa18a5b73591f",
         "afterSha256": "8bad6cdc4c32071afb7f588d18eeed9ad0e482e0fd5d3f2b7968a06b10729b7c"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "981be6d0ff95ea29afc094660f0caef9513e088fff068400c4b28c0efe9a3acb",
+        "afterSha256": "d00fc1cb7bfecca804b5e18f6b80676af7c1ff0c5921f0f9536865e9bcedea4a"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "5b219b83d863221624ef0de016d38ff1c2a32d5e40af1d490d4c4b0566d5601a",
+        "afterSha256": "212d57cdd846b5c0d8337e857614e4c5035446fd5ef500816146c183aa177f4f"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "858ab55e929bdeca1d23ba646ef74b44a4ba3aacb2aa6c28b3422142724cf673",
+        "afterSha256": "d621a06c4c42a8587298b598618f70bf59fb9f498fcd45d3ccc27d9e3119be7e"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "aa396b37fa043445b3c70e2b20bb7e60aad0b813dac85c90ba7aad9d387d5ce9",
+        "afterSha256": "e7678186526d242bd05c4731228d1038237ee4c11c781d3754bf8b21aa95eb8a"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "3ed1ce4dc7ad49e706c543c05257fdaadba4bc4498559683be53840294426c52",
+        "afterSha256": "56fb41934a1d8636dae8580e89c37dad5e5286ff6e0c315e14d758d19a7a8a16"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "3123bc57e4d0e8ac1a92e1458645dd52d39928277f8796c1ef7ee19f1cff6c7d",
+        "afterSha256": "3737c26218f6b55d99cae0af9f9b283afa6ab7cabbfe1f0e01d6a2bbd7243e41"
       }
     ]
   },
@@ -1417,6 +1593,14 @@
         "razonamiento_motor_compartido",
         "referencia_motor_compartido"
       ]
+    },
+    {
+      "activity": "u10_configuracion_vacia_comprobacion",
+      "blocks": [
+        "u10_configuracion_vacia_referencia_titulo",
+        "u10_configuracion_vacia_referencia_razonamiento",
+        "u10_configuracion_vacia_referencia"
+      ]
     }
   ],
   "activityAfter": [
@@ -1424,6 +1608,13 @@
       "activity": "reparar_motor_compartido",
       "requires": [
         "block_0004_0003"
+      ]
+    },
+    {
+      "activity": "u10_configuracion_vacia_comprobacion",
+      "requires": [
+        "block_0004_0003",
+        "reparar_motor_compartido"
       ]
     }
   ],
@@ -1523,8 +1714,51 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "801b6680afa87cd6d4901f896188d121c54ab8a07918ff404d528e585e527ff3",
-        "spans": []
+        "sourceSha256": "cd14568984d917a6a234002d06687bff10617d2776e2c3eac8d720223afd8b58",
+        "spans": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "minimo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 29,
+            "text": "maximo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 69,
+            "text": "minimo > maximo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 306,
+            "text": "invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1648,8 +1882,65 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "9424ec4ee1c08e76f170f3cf94064e9cc80870ba8ea6f8026a2c45a2f207c3f1",
-        "spans": []
+        "sourceSha256": "1465b5b796101267049c6e165dabf099101b04f14114a5ea76daf47729462634",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "-13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 56,
+            "text": "-12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 99,
+            "text": "obtener",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 127,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 183,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 213,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 274,
+            "text": "Fuera del dominio:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0000",
@@ -1708,8 +1999,58 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "a0482f10297f71bb6465516b11d70381f5f84179250a935f3a1f08b734b173aa",
-        "spans": []
+        "sourceSha256": "2bde4d4e3ecb76f60d309d724fa720597373c1a88ca458506f0e8f001a79e861",
+        "spans": [
+          {
+            "start": 19,
+            "end": 32,
+            "text": "obtener_copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 162,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 166,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 229,
+            "text": "motor == anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 303,
+            "text": "Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 317,
+            "text": "Coinciden:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -1728,12 +2069,33 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "46ba03d992e9a880d1de35a96edf5da1baa9e39418b284fec2a558438c81a613",
+        "sourceSha256": "c69e8e150060a66082ae952884f53973c48be4d035a24830c31a5c7623a2a76e",
         "spans": [
           {
-            "start": 84,
-            "end": 89,
-            "text": "const",
+            "start": 4,
+            "end": 23,
+            "text": "std::mt19937& motor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 65,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 213,
+            "text": "std::mt19937 motor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 271,
+            "text": "const std::mt19937& motor",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1894,13 +2256,69 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "bbc68b0ec9fc406462ed3fcef051e1d7fc0f53e31f3252b50b0207843d9d6b8d",
+        "sourceSha256": "64a8478bdf7eeb5f416b58718cf9b247b554457c8981edb71de0173719b0ff90",
         "spans": [
           {
-            "start": 48,
-            "end": 52,
-            "text": "cero",
+            "start": 12,
+            "end": 13,
+            "text": "3",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 17,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 85,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 134,
+            "text": "i < cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 163,
+            "end": 176,
+            "text": "elegir(motor)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 205,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 239,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 268,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 286,
+            "text": "0:1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2205,7 +2623,7 @@
             "start": 152,
             "end": 158,
             "text": "cuatro",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2295,8 +2713,23 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "832b7979b6cacd50a85f7396df5fcb7ff15046a0f329dce8ec63644c4ee82332",
-        "spans": []
+        "sourceSha256": "4cb92c419574f06252c5ad5532eadc8f7388349d314f98a705a4979afe8dd672",
+        "spans": [
+          {
+            "start": 78,
+            "end": 82,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 148,
+            "text": "elegir(motor)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0006_0001",
@@ -2555,6 +2988,312 @@
             "end": 181,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_configuracion_vacia_titulo",
+        "path": "/text",
+        "sourceSha256": "aa5f8c90ba47874fee529ac61d4ec3db49b14150bf3c48f3b74e5427a582733c",
+        "spans": []
+      },
+      {
+        "block": "u10_configuracion_vacia_consigna",
+        "path": "/text",
+        "sourceSha256": "b18b9b5402313ea4b4c67ad32af845cd527a787df76ae049c337d001269fdddd",
+        "spans": [
+          {
+            "start": 44,
+            "end": 51,
+            "text": "generar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 110,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 170,
+            "text": "probar_vacio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 176,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 332,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 387,
+            "end": 391,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 426,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 600,
+            "end": 612,
+            "text": "probar_vacio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 660,
+            "end": 664,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 818,
+            "end": 825,
+            "text": "-12..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 827,
+            "end": 831,
+            "text": "5..2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 833,
+            "end": 840,
+            "text": "-13..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 843,
+            "end": 850,
+            "text": "-12..13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 977,
+            "end": 1087,
+            "text": "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Rechazo:1\nIntervalo:-12:13;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_configuracion_vacia_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "b037053a071c770928233dbfbab783cebb86fc8abc1b2f42c52951fe13bd7753",
+        "spans": [
+          {
+            "start": 25,
+            "end": 28,
+            "text": "-12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "-13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 132,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 240,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_configuracion_vacia_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "07b2aa6836f1e7f31fb5924d99af65f698d9338a5eb87c67b252dfbd5a208cef",
+        "spans": [
+          {
+            "start": 104,
+            "end": 108,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 139,
+            "text": "5..2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 148,
+            "text": "-13..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 158,
+            "text": "-12..13",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_configuracion_vacia_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "7236f5a2daef12b938fb06b0c14a2ea12866749bdde56f9df641b74396cbd7f8",
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "5..2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 45,
+            "text": "-13..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 55,
+            "text": "-12..13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 140,
+            "text": "-12..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 158,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_configuracion_vacia_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "91e198582deb6232de95b3c62f78b5d7c63d69e51a18834b7dbabb2ca234a5e3",
+        "spans": []
+      },
+      {
+        "block": "u10_configuracion_vacia_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "3596b8f7eb1e984848710a50800446c270d25ca6ddffd04ff2b733871a0d726d",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "generar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 69,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "5..2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 372,
+            "text": "-13..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 375,
+            "end": 382,
+            "text": "-12..13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 524,
+            "end": 531,
+            "text": "-12..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 675,
+            "end": 679,
+            "text": "cero",
+            "role": "data",
             "reading": "natural"
           }
         ]

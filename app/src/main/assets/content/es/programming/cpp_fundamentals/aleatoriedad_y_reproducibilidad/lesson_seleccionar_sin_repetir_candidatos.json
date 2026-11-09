@@ -46,7 +46,7 @@
             "Está garantizado si todos los datos pertenecen al intervalo permitido."
           ],
           "correctIndex": 0,
-          "explanation": "Eliminar repeticiones después no garantiza la cantidad solicitada. Es necesario controlar qué candidatos siguen disponibles.",
+          "explanation": "Si los tres datos obtenidos son {6,6,1}, al eliminar el segundo 6 quedan sólo 2 candidatos diferentes. Los tres datos podían pertenecer al intervalo permitido y, aun así, no cumplir la cantidad de personas solicitada. Seleccionar únicamente entre los candidatos que siguen disponibles permite retirar uno distinto en cada extracción, hasta completar las tres.",
           "reviewFeedback": [
             "Revisa si la colección conserva exactamente la cantidad solicitada después de eliminar repeticiones.",
             "Distingue la cantidad de datos generados de la cantidad de identificadores diferentes que quedan.",
@@ -63,7 +63,7 @@
             "Aceptar la configuración eliminando antes una de las dos copias."
           ],
           "correctIndex": 1,
-          "explanation": "Cero no elimina los requisitos de validez del vector. El rechazo ocurre antes de obtener datos.",
+          "explanation": "El vector {2,2} contiene dos apariciones del mismo identificador y no cumple el requisito de candidatos diferentes. Pedir 0 elementos evita las extracciones, pero no convierte ese vector en válido. La función debe lanzar la excepción antes de obtener datos del motor. Eliminar una copia repararía la entrada y cambiaría el contrato, que pide rechazarla.",
           "reviewFeedback": [
             "Revisa qué requisitos se aplican al vector antes de decidir cuántos elementos devolver.",
             "Comprueba el contrato de validez de los candidatos antes de utilizar el motor.",
@@ -130,7 +130,7 @@
             "Dos, que ocupa esa posición del prefijo activo."
           ],
           "correctIndex": 2,
-          "explanation": "El índice identifica una posición disponible. Su elemento es el candidato elegido; las posiciones de la cola no están disponibles.",
+          "explanation": "El prefijo activo contiene las posiciones 0, 1 y 2, con identificadores 9, 2 y 7. Obtener el índice 1 permite leer trabajo.at(1), cuyo valor es 2. El 1 indica dónde mirar; no es el identificador elegido. El 4 sigue almacenado en la posición 3, pero esa posición ya está fuera del prefijo disponible.",
           "reviewFeedback": [
             "El número obtenido se usa como posición; consulta qué elemento está almacenado en ella.",
             "Distingue el tamaño almacenado del prefijo que sigue disponible.",
@@ -205,7 +205,7 @@
             "La cantidad pedida autoriza usarla como ID sin consultar el vector."
           ],
           "correctIndex": 1,
-          "explanation": "Mientras falta una extracción válida, total-extraidos es positivo. El extremo restantes-1 permanece dentro del vector y del conjunto disponible.",
+          "explanation": "Por ejemplo, con total=5, cantidad=3 y extraidos=2, todavía falta una extracción y restantes vale 3. Las posiciones disponibles son 0..2. En general, extraidos < cantidad y cantidad <= total implican que total-extraidos es positivo; por eso el extremo restantes-1 nunca es negativo dentro de una vuelta válida. Cuando se completan las extracciones, la condición del bucle impide construir otro intervalo.",
           "reviewFeedback": [
             "Distingue el tamaño del vector del número de candidatos que siguen disponibles y revisa el último índice permitido.",
             "Relaciona la condición de la vuelta con las posiciones que siguen activas.",
@@ -234,7 +234,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reúne en main estas parejas de candidatos y cantidad, en orden: {6,1,8,3,0} con 3; vacío con 0; {0} con 0 y con 1; {9,2,5} con 1 y con 3; todos los ID 0..9 con 10; {0,3,8,1,6} con 3; vacío con 1; {-1} con 0; {10} con 0; {2,2} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {9,2,5} con -1 y con 4. Pulsa Compilar, ejecutar y comprobar. Las ocho primeras configuraciones son válidas y conservan cantidades 3,0,0,1,1,3,10,3; las siete `restantes` se rechazan. Todos los indicadores pedidos son verdaderos. No imprimas esos indicadores como constantes ni exijas identificadores aleatorios concretos.",
+          "text": "Reúne en main estas parejas de candidatos y cantidad, en orden: {6,1,8,3,0} con 3; vacío con 0; {0} con 0 y con 1; {9,2,5} con 1 y con 3; todos los ID 0..9 con 10; {0,3,8,1,6} con 3; vacío con 1; {-1} con 0; {10} con 0; {2,2} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {9,2,5} con -1 y con 4. Pulsa Compilar, ejecutar y comprobar. Las ocho primeras configuraciones son válidas y conservan cantidades 3,0,0,1,1,3,10,3; las siete restantes se rechazan. Todos los indicadores pedidos son verdaderos. No imprimas esos indicadores como constantes ni exijas identificadores aleatorios concretos.",
           "emphasis": [
             {
               "text": "Todos los indicadores pedidos son verdaderos",
@@ -257,6 +257,57 @@
                   "Cantidad:3;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:0;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:0;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:1;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:1;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:10;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\n"
                 ],
                 "explanation": "La batería separa cantidad y unicidad, reproduce el mismo procedimiento desde copias, conserva el original y rechaza antes de consumir el motor incluso con cantidad cero."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Contrastar dos extracciones con el motor realmente usado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tu función seleccionar antes del cliente de este editor. Mantén la selección mediante el prefijo activo y el contrato anterior. Ahora el resultado esperado se obtiene con dos distribuciones usadas directamente sobre un motor testigo; no se llama otra vez a seleccionar para dar por buena la misma conducta.\n\nEl cliente usa primero {8,0,5,9} y después {6,1,8,3,0}, con dos elecciones en cada llamada. Ambos vectores son válidos y tienen al menos dos candidatos. El motor empieza con semilla 701 y una llamada directa a motor() lo deja en un estado alcanzado antes de seleccionar. Se conserva ese mismo motor para la segunda prueba.\n\nEn el testigo, la primera posición procede de 0..total-1. Tras retirar esa elección, la segunda procede de 0..total-2. Si ambas posiciones son iguales, el segundo ID es el último candidato original que ocupó el hueco; si son diferentes, se lee el ID original de la segunda posición. Así se obtiene la pareja de ID esperada sin repetir el bucle de seleccionar.\n\nConserva las dos llamadas y sus comparaciones: Orden:B;Motor:B;Original:B. Los tres indicadores deben ser verdaderos en ambas líneas. Pulsa «Compilar, ejecutar y comprobar». Se comparan valores y estados calculados en este entorno, sin imponer cuáles serán los índices obtenidos ni cuántos avances internos necesita cada distribución.",
+          "emphasis": [
+            {
+              "text": "motor testigo",
+              "style": "bold"
+            },
+            {
+              "text": "Se conserva ese mismo motor",
+              "style": "bold"
+            },
+            {
+              "text": "valores y estados calculados en este entorno",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nOrden:1;Motor:1;Original:1\nOrden:1;Motor:1;Original:1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui seleccionar, con su motor por referencia y su contrato completo.\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Orden:1;Motor:1;Original:1\nOrden:1;Motor:1;Original:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El testigo realiza directamente las dos obtenciones en los intervalos que corresponden al prefijo. La segunda lectura tiene en cuenta el reemplazo del primer hueco. Los resultados deben conservar el orden, el motor recibido debe llegar al mismo estado que el testigo y los candidatos originales deben seguir intactos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Orden:1;Motor:0;Original:1\nOrden:1;Motor:0;Original:1\n"
+                    ],
+                    "text": "Los ID coinciden, pero Motor:0 muestra que el motor del cliente no avanzó como el testigo. Revisa si la selección está usando una copia local o si su parámetro recibió el motor por valor. Repetir dos veces esa misma función defectuosa no distinguía el problema."
+                  }
+                ]
               }
             ]
           }
@@ -362,6 +413,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid probar(const std::vector<int>& candidatos,int cantidad) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{701};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 repeticion=motor;\n        const std::vector<int> elegidos=seleccionar(motor,candidatos,cantidad);\n        const std::vector<int> repetidos=seleccionar(repeticion,candidatos,cantidad);\n        const bool reproducido=elegidos==repetidos && motor==repeticion;\n        std::mt19937 copia=motor;\n        const int siguientes=candidatos.size()<2 ? static_cast<int>(candidatos.size()):2;\n        const std::vector<int> segundo=seleccionar(motor,candidatos,siguientes);\n        const std::vector<int> repetido=seleccionar(copia,candidatos,siguientes);\n        const bool continuado=segundo==repetido && motor==copia;\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=seleccionar(motor,candidatos,0);\n        std::cout<<\"Cantidad:\"<<elegidos.size()\n                 <<\";Propiedades:\"<<seleccion_correcta(candidatos,elegidos,cantidad)\n                 <<\";Original:\"<<(candidatos==original)\n                 <<\";Reproduccion:\"<<reproducido<<\";Continuacion:\"<<continuado\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalida=seleccionar(motor,{2,2},0);\n            std::cout<<\";Aceptada:\"<<invalida.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({6,1,8,3,0},3);\n    probar({},0);\n    probar({0},0);\n    probar({0},1);\n    probar({9,2,5},1);\n    probar({9,2,5},3);\n    probar({0,1,2,3,4,5,6,7,8,9},10);\n    probar({0,3,8,1,6},3);\n    probar({},1);\n    probar({-1},0);\n    probar({10},0);\n    probar({2,2},0);\n    probar({0,1,2,3,4,5,6,7,8,9,0},0);\n    probar({9,2,5},-1);\n    probar({9,2,5},4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del contraste con un testigo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la primera prueba hay cuatro candidatos. La primera distribución obtiene una posición de 0..3 y la segunda de 0..2. Si la primera posición fuera 1, el ID elegido sería 0 y el 9 del final ocuparía ese hueco. Una segunda posición 1 elegiría entonces 9; cualquier otra posición activa seguiría conteniendo su candidato original. Son ejemplos para interpretar las posiciones, no una secuencia que se exija al generador.\n\nEl testigo calcula los índices en el mismo entorno y desde el mismo estado inicial que la selección. Compara luego ambos ID en orden y los motores finales. Si seleccionar usara una copia local del motor, los valores podrían coincidir y las propiedades anteriores pasarían, pero el objeto del cliente conservaría un estado incorrecto: aquí aparece Motor:0.\n\nLa segunda prueba continúa el motor que dejó la primera y vuelve a empezar con todos los candidatos de su propio vector. Cada distribución puede realizar las llamadas internas que necesite la biblioteca; no se sustituye una extracción por un avance supuesto del motor (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n    return 0;\n}\n"
         }
       ]
     },
@@ -390,7 +454,7 @@
           "answers": [
             "Elegido:3\nActivos: 8 6\nTrabajo: 8 6 6 1"
           ],
-          "explanation": "Se conserva tres antes de reemplazar. Seis sigue disponible en el hueco; su antigua posición queda inactiva. El tamaño del vector completo no cambia.",
+          "explanation": "La posición 1 contiene 3, que se guarda en elegido antes de modificar el vector. El último activo es el 6 de la posición 2: se copia al hueco y restantes baja de 3 a 2. Quedan activos 8 6, mientras el almacenamiento completo es 8 6 6 1. Así se imprimen Elegido:3, Activos: 8 6 y Trabajo: 8 6 6 1, cada uno en su línea. El segundo 6 está en la cola y no sigue disponible.",
           "reviewFeedback": "Sigue por separado el ID guardado, el contador restantes y las posiciones que aún pertenecen al prefijo. No confundas ese prefijo con todo el almacenamiento."
         },
         {
@@ -403,7 +467,7 @@
             "Leer la última posición del vector completo aunque esté fuera del prefijo."
           ],
           "correctIndex": 0,
-          "explanation": "Con restantes=1, el máximo válido es cero. La cola y size() no sustituyen el extremo activo.",
+          "explanation": "Con restantes=1, sólo la posición 0 pertenece al prefijo activo. El intervalo inclusivo 0..0 elige esa posición y trabajo.at(0) consulta el candidato que queda. Usar 0..1 admitiría una posición adicional que ya no está activa. El tamaño total del almacenamiento no cambia al reducir el prefijo y no sirve como límite de lo disponible.",
           "reviewFeedback": [
             "Identifica el último índice de un prefijo que contiene un solo elemento.",
             "Cuenta cuántas posiciones contiene un intervalo inclusivo antes de elegir su extremo superior.",
@@ -419,7 +483,7 @@
           "answers": [
             "Guardado:2\nActivos: 2 0 4"
           ],
-          "explanation": "El siete se pierde antes de copiarlo al resultado; el dos guardado sigue activo. El programa termina y sus accesos son válidos, pero no retira correctamente el candidato que anuncia.",
+          "explanation": "La primera asignación copia el 2 de la posición 3 sobre el 7 de la posición 0. Sólo después se lee esa posición para inicializar guardado, así que se conserva 2, no el candidato anterior. Al reducir restantes a 3, el prefijo queda 2 0 4: el mismo 2 anunciado como elegido sigue disponible. La salida real es Guardado:2 y Activos: 2 0 4 en líneas separadas. Los accesos son válidos; el fallo está en guardar después del reemplazo.",
           "reviewFeedback": "Traza las asignaciones en el orden escrito. Cuando se guarda el valor, comprueba si esa posición conserva todavía su contenido anterior."
         },
         {
@@ -446,7 +510,7 @@
             "Cada resultado es único internamente; entre llamadas pueden compartir ID."
           ],
           "correctIndex": 2,
-          "explanation": "Cada llamada prepara su propia copia de candidatos disponibles. Continuar el motor no cambia ese contrato.",
+          "explanation": "Cada llamada copia otra vez el vector original. Si éste contiene {6,1,8,3,0}, la segunda llamada vuelve a disponer de los cinco ID, incluidos los que salieron en la primera. Por eso ambas selecciones pueden compartir un identificador y hasta coincidir completas. El motor conserva su estado alcanzado, pero no conserva una lista de participantes ya retirados entre llamadas; la ausencia de repeticiones se exige dentro de cada resultado.",
           "reviewFeedback": [
             "Revisa si las dos llamadas comparten la misma copia de trabajo o preparan cada una la suya.",
             "Continuar el estado del motor no garantiza que dos resultados deban ser diferentes.",
@@ -542,7 +606,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye `probar(candidatos,pares)`, con motor nuevo de semilla 809 y copias iniciales de motor y datos. Si acepta, comprueba cantidad, pertenencia y unicidad global. Aplana las parejas en orden primero,segundo y compara ese vector con `seleccionar` de `2*pares` ID desde la copia inicial del motor; compara también los estados finales. Comprueba cero parejas sin consumo y una solicitud imposible de `total/2+1` parejas, que debe rechazarse sin usar el motor.\n\nMuestra una línea por prueba: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B. Si la configuración inicial se rechaza, muestra Configuracion rechazada:B;Original:B comparando estado y datos con sus copias anteriores. Termina siempre con salto. Pulsa Compilar, ejecutar y comprobar. Las siete primeras configuraciones son válidas y producen 2,0,0,1,1,5,2 parejas; las nueve `restantes` se rechazan. Todos los indicadores deben ser uno. El editor conserva `seleccionar` ya conocida: construye el registro `Pareja`, `formar_parejas` y las comprobaciones.",
+          "text": "Construye `probar(candidatos,pares)`, con motor nuevo de semilla 809 y copias iniciales de motor y datos. Si acepta, comprueba cantidad, pertenencia y unicidad global. Aplana las parejas en orden primero,segundo y compara ese vector con `seleccionar` de `2*pares` ID desde la copia inicial del motor; compara también los estados finales. Comprueba cero parejas sin consumo y una solicitud imposible de `total/2+1` parejas, que debe rechazarse sin usar el motor.\n\nMuestra una línea por prueba: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B. Si la configuración inicial se rechaza, muestra Configuracion rechazada:B;Original:B comparando estado y datos con sus copias anteriores. Termina siempre con salto. Pulsa Compilar, ejecutar y comprobar. Las siete primeras configuraciones son válidas y producen 2,0,0,1,1,5,2 parejas; las nueve restantes se rechazan. Todos los indicadores deben ser uno. El editor conserva `seleccionar` ya conocida: construye el registro `Pareja`, `formar_parejas` y las comprobaciones.",
           "emphasis": [
             {
               "text": "compara también los estados finales",
@@ -698,7 +762,7 @@
           "answers": [
             "[9:0][4:7]\nOrden:1"
           ],
-          "explanation": "Se agrupan las posiciones 0/1 y 2/3. Recuperar primero y segundo conserva exactamente 9,0,4,7.",
+          "explanation": "Con i=0, se consultan las posiciones 0 y 1, que contienen 9 y 0. Con i=1, se consultan las posiciones 2 y 3, con 4 y 7. Los registros se imprimen como [9:0][4:7] y después se copian sus miembros primero y segundo a planos. El vector reconstruido es {9,0,4,7}, igual al original, por lo que la segunda línea es Orden:1. El cero ocupa su posición de participante.",
           "reviewFeedback": "Forma cada registro con dos posiciones consecutivas y después recórrelo en el orden primero,segundo. Trata el cero como un ID."
         },
         {
@@ -711,7 +775,7 @@
             "Eliminar una copia de cero y aceptar la configuración reparada."
           ],
           "correctIndex": 1,
-          "explanation": "Pedir cero no cambia el contrato del vector. seleccionar valida candidatos antes de devolver su resultado vacío.",
+          "explanation": "Aunque pares sea 0, seleccionar recibe los candidatos {0,0} y debe comprobarlos antes de devolver un vector vacío. Los dos elementos repiten el identificador 0, de modo que la configuración se rechaza. Como la validación precede a las extracciones, el motor conserva su estado. Aceptar vacío o eliminar una de las copias omitiría el requisito de candidatos distintos.",
           "reviewFeedback": [
             "Comprueba qué requisitos del vector siguen vigentes aunque no se soliciten parejas.",
             "Revisa la validez de candidatos antes de decidir cuántas parejas producir.",
@@ -727,7 +791,7 @@
           "answers": [
             "Locales:1\nGlobales:0"
           ],
-          "explanation": "Las dos parejas tienen miembros diferentes internamente, pero el ID uno aparece en ambas. El contrato exige unicidad de todos los participantes.",
+          "explanation": "Dentro de la primera pareja, 4 y 1 son distintos; dentro de la segunda, 1 y 8 también lo son. Por eso la primera comprobación mantiene locales verdadero y muestra Locales:1. Al recorrer todos los miembros en {4,1,1,8}, se comparan los dos 1 de posiciones diferentes y globales pasa a falso. La segunda línea es Globales:0: comprobar cada pareja por separado no detectaba que una persona participaba en dos parejas.",
           "reviewFeedback": "Separa la comparación dentro de cada pareja de la comparación entre todos los participantes del resultado."
         },
         {
@@ -872,7 +936,7 @@
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0002_0005",
+      "activity": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
       "blocks": [
         "block_0002_0006",
         "block_0003_0000",
@@ -883,7 +947,10 @@
         "block_0003_0005",
         "block_0003_0006",
         "block_0003_0007",
-        "block_0003_0008"
+        "block_0003_0008",
+        "u10_seleccion_testigo_de_dos_extracciones_referencia_titulo",
+        "u10_seleccion_testigo_de_dos_extracciones_referencia_razonamiento",
+        "u10_seleccion_testigo_de_dos_extracciones_referencia_programa"
       ]
     },
     {
@@ -945,6 +1012,12 @@
       "activity": "block_0007_0004",
       "requires": [
         "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
+      "requires": [
+        "block_0002_0005"
       ]
     }
   ],
@@ -1307,6 +1380,10 @@
           "block_0002_0003",
           "block_0002_0004",
           "block_0002_0005",
+          "u10_seleccion_testigo_de_dos_extracciones_titulo",
+          "u10_seleccion_testigo_de_dos_extracciones_consigna",
+          "u10_seleccion_testigo_de_dos_extracciones_salida",
+          "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
           "block_0002_0006"
         ]
       },
@@ -1321,7 +1398,10 @@
           "block_0003_0005",
           "block_0003_0006",
           "block_0003_0007",
-          "block_0003_0008"
+          "block_0003_0008",
+          "u10_seleccion_testigo_de_dos_extracciones_referencia_titulo",
+          "u10_seleccion_testigo_de_dos_extracciones_referencia_razonamiento",
+          "u10_seleccion_testigo_de_dos_extracciones_referencia_programa"
         ]
       },
       {
@@ -2246,7 +2326,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
+        "sha256": "96d0ad38bfa564ab793836b28d22af3a8acad092f67a49ada2230d5600cb13a3",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_referencia_programa",
+        "sha256": "a73cd26e0cffcc7cf83d530fd1c2a9a2cb94ed434404d7a359b10c3a7e7929c7",
+        "storage": {
+          "page": 10,
+          "block": 6
+        },
+        "progressPage": "page_0003"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -2587,6 +2731,94 @@
         "id": "block_0007_0008",
         "beforeSha256": "55cda06f1ad45e76a6465fd3d60fa03607239a3fdf9e15832cf3e5af0307b193",
         "afterSha256": "d87bfc38adc005a4e41b6308ccb3ef8297fb39625e03b34aa0088c9f5a00dcdc"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "74f9f3a9764ff1a19ce1deffce350c6ab80a91b408168546371af2076b5a0439",
+        "afterSha256": "11ca95a8b6e433865a137e5a5e1fc47d09a055c0e54bf673d06c13a2ef840df8"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "833f00c0a80778e9a2a163c63c18fe9b990e3cd9025e05483a7f0f2ca4e3c400",
+        "afterSha256": "85b8e7a866a231102daa2149e26cb3d3f4a241ff57eb096f2fb7561e2b0bd630"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "2ff86d56a4642728c3231cd37d0acd40733f46ab1c232ff6e78848c0ed984caf",
+        "afterSha256": "fd06238d50abbf7c60998f3c21e750a66a06085e22727bc83d4bcf93d5fd8713"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "bf2eb18d286f9540d26d82b25035d232c981f05130f59aff30ecdca0d45ac841",
+        "afterSha256": "08d9a509611e0a35a57099170b650a6d460654fe2d42ac599230b8951aad55a3"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "239e8abd54868adc5ce420d8ce5640f9a21412735893a373be22bc8df2d1e126",
+        "afterSha256": "765811e12209615b0d1b88c4d853ebb6909168fcf910f1f711dc3349ca560200",
+        "returnTo": {
+          "revision": 1,
+          "historySha256": "401f96d9d1b63a0b7ee79780af80e24dd27872a7e6e9dbc40865eb22d1f4dafa",
+          "previousBlock": {
+            "type": "paragraph",
+            "text": "Reúne en main estas parejas de candidatos y cantidad, en orden: {6,1,8,3,0} con 3; vacío con 0; {0} con 0 y con 1; {9,2,5} con 1 y con 3; todos los ID 0..9 con 10; {0,3,8,1,6} con 3; vacío con 1; {-1} con 0; {10} con 0; {2,2} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {9,2,5} con -1 y con 4. Pulsa Compilar, ejecutar y comprobar. Las ocho primeras configuraciones son válidas y conservan cantidades 3,0,0,1,1,3,10,3; las siete `restantes` se rechazan. Todos los indicadores pedidos son verdaderos. No imprimas esos indicadores como constantes ni exijas identificadores aleatorios concretos.",
+            "emphasis": [
+              {
+                "text": "Todos los indicadores pedidos son verdaderos",
+                "style": "bold"
+              },
+              {
+                "text": "No imprimas esos indicadores como constantes",
+                "style": "bold"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "06a58d9b20bdc2ade60802d875518f942fab1edf7d9c2c981e4ec8dac6bdeaf9",
+        "afterSha256": "77591d357012b454b10d04475d3755ceb9435b66cb09928d3870124eae5cfeb1"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "f12893168d98e32f7006823c006ca0bc3457187fbe328e54819df2c3d00a3dd3",
+        "afterSha256": "392d545d022f294060a419ec1fa3e796ca0f99a48bba58b71bef73c1e6f778ae"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "073a2fbdbc671c417197af3d84084d69a9373f7a27b1521014eaa0e6d4ec1644",
+        "afterSha256": "28bfb127abbadfc5bcc27b300f219369eaf29b5490c51bf921973b3f19b5839a"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "38e5db1e4a4abf2f353260766b02c3bc14cb315e15fc9a273ac2db9ceff4a2bd",
+        "afterSha256": "a52105e739fe03493c5e041bd7b013c726228c5b7184727335b7edd7bdd47caf"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "e498acf59f0fd6eea168ca5b22365cac4929b3be50b7105e4d0863800b9ac35d",
+        "afterSha256": "7a32ad6e3e2c7f2ab5999f440d5ddf27ae64c7f764e92ba67a5fd9403969d952"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "5e73c19bb3075e445ac158cbdd70a7eb28f28ed616ce45a82ed2460e171cbbf9",
+        "afterSha256": "aab88bc18538c28d4ebed012c910633f45a4802786e9e8c231542041573d45d9"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "268ffcd476d405f80dee4e7e7b38fd7ae7621b9377fad266ceeb389a398014e5",
+        "afterSha256": "01141c8236e5b7de563a7fc197158a4d187f138c9368f5e020c3beaa49f6048c"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "23396886bc2f40274ba829a7476ee8241d3e78a5e786d83b04d7eea80e4c3f3d",
+        "afterSha256": "414af75825f2054191fefa521aedc4bda259bb069b36c26ce15dae52e075d637"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "aab88bc18538c28d4ebed012c910633f45a4802786e9e8c231542041573d45d9",
+        "afterSha256": "795d5faa4f62f4134432b1a7ebf0ebc8bbb079a844c794a0da06bfabfd666fa0"
       }
     ]
   },
@@ -2700,8 +2932,30 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "1d17967469b5958c97cc73e6f200c45ca1c1ffbbb625ac323e7d226c1bd1a860",
-        "spans": []
+        "sourceSha256": "fa8225e164e28a633fed8cf4f6298a9c54946c258199b327da6f55df626f3375",
+        "spans": [
+          {
+            "start": 32,
+            "end": 39,
+            "text": "{6,6,1}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 79,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -2779,12 +3033,19 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "3c95aa136aef4e47d5809fec3ab0888d7a6538bf19800f50c66f6878fa1b7b0b",
+        "sourceSha256": "0135338f9d4483bab28a0ac197ed91ccd398e2e33561b8d375164335ff3104e5",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
-            "text": "Cero",
+            "start": 10,
+            "end": 15,
+            "text": "{2,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           }
@@ -3010,8 +3271,93 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "44b49b0ca6f94705ba421f24487049f48e3893a1e57c4425fde7d033b7daf632",
-        "spans": []
+        "sourceSha256": "dddb87cebe8882371a3d0843d921d944c56b3c602edde098d11dc849b4796ec8",
+        "spans": [
+          {
+            "start": 42,
+            "end": 43,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 76,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 128,
+            "text": "trabajo.at(1)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 208,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 242,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -3254,18 +3600,74 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "54c0f15d7fee165128b69fc1a515a35a6c467cb8734cb86de6c823f21c8635fa",
+        "sourceSha256": "39101feb3118ba32bfa8eee8faba7fdeaaa8ad7c92678df60eeb0bc95b770b60",
         "spans": [
           {
-            "start": 38,
-            "end": 53,
+            "start": 17,
+            "end": 24,
+            "text": "total=5",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 26,
+            "end": 36,
+            "text": "cantidad=3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 50,
+            "text": "extraidos=2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 92,
+            "text": "restantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 99,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 136,
+            "text": "0..2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 170,
+            "text": "extraidos < cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 190,
+            "text": "cantidad <= total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 219,
             "text": "total-extraidos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 89,
+            "start": 252,
+            "end": 263,
             "text": "restantes-1",
             "role": "cpp",
             "reading": "technical"
@@ -3445,7 +3847,7 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "6f34d5a4e964ebabe153b3aecb37a9f3354dbcdd7ecb7a8a06ca5d9e0d1aaec7",
+        "sourceSha256": "5a845b856a90dfb1a33a93b85e4364e39efc525facaa345c93ab14ccfc0ef12d",
         "spans": [
           {
             "start": 9,
@@ -3644,8 +4046,8 @@
             "reading": "natural"
           },
           {
-            "start": 441,
-            "end": 450,
+            "start": 440,
+            "end": 449,
             "text": "restantes",
             "role": "prose",
             "reading": "natural"
@@ -3873,20 +4275,104 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "7bbd6ec01438b732aed9566ee43aa67f376f53231541032781b1896b398fae02",
+        "sourceSha256": "7b5e80a68e5de861f9cee2463ae28109ceb03cf7c4e95b77d454f58ceef4ce3f",
         "spans": [
           {
             "start": 12,
-            "end": 16,
-            "text": "tres",
+            "end": 13,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 24,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 50,
+            "text": "elegido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 122,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 153,
+            "text": "restantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 163,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 38,
-            "end": 42,
-            "text": "Seis",
-            "role": "data",
+            "start": 184,
+            "end": 187,
+            "text": "8 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 235,
+            "text": "8 6 6 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 253,
+            "end": 262,
+            "text": "Elegido:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 276,
+            "text": "Activos: 8 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 295,
+            "text": "Trabajo: 8 6 6 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 331,
+            "text": "6",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3914,7 +4400,7 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "3877f0009f19bce09e5279824f61ee7ac3e9fc2253589027b006052d380ba270",
+        "sourceSha256": "4f98bc45e775b678312c9dc84b2da105c2224a773865a019f52213e58285e87b",
         "spans": [
           {
             "start": 4,
@@ -3924,18 +4410,32 @@
             "reading": "technical"
           },
           {
-            "start": 37,
-            "end": 41,
-            "text": "cero",
+            "start": 34,
+            "end": 35,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 53,
-            "end": 59,
-            "text": "size()",
+            "start": 88,
+            "end": 92,
+            "text": "0..0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 127,
+            "text": "trabajo.at(0)",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 170,
+            "text": "0..1",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -4006,19 +4506,89 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "439e06c9a54b7abf915b5cf53d4acb2a3d56704071a96eadbaae8696306a3e37",
+        "sourceSha256": "ef70bf8c06e365f8f8c90b678a707993303de04d5dcea7990c115a807a2b89ed",
         "spans": [
           {
-            "start": 3,
-            "end": 8,
-            "text": "siete",
+            "start": 31,
+            "end": 32,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 54,
-            "end": 57,
-            "text": "dos",
+            "start": 48,
+            "end": 49,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 137,
+            "text": "guardado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 160,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 208,
+            "text": "restantes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 211,
+            "end": 212,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 236,
+            "text": "2 0 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 248,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 318,
+            "text": "Guardado:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 335,
+            "text": "Activos: 2 0 4",
             "role": "output",
             "reading": "natural"
           }
@@ -4053,8 +4623,16 @@
       {
         "block": "block_0004_0006",
         "path": "/explanation",
-        "sourceSha256": "47411e9c9f6a41c5759265a74ca0e53db5195858d2a1945a8d7b30bbe98254ae",
-        "spans": []
+        "sourceSha256": "b83a15de9c0314a69a4773b6558b52b2de2f4d4ae5648b5478652193a14faa41",
+        "spans": [
+          {
+            "start": 65,
+            "end": 76,
+            "text": "{6,1,8,3,0}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0006",
@@ -4659,7 +5237,7 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "a7673498a8f86dd4861d5a59aab393db1fc821529bc9477cd567e83dfff9c601",
+        "sourceSha256": "e60ae607ad8287b9d0508b2fe1ade82ef994074a48b4522d060595eed8770836",
         "spans": [
           {
             "start": 11,
@@ -4739,36 +5317,36 @@
             "reading": "natural"
           },
           {
-            "start": 850,
-            "end": 859,
+            "start": 849,
+            "end": 858,
             "text": "restantes",
             "role": "prose",
             "reading": "natural"
           },
           {
-            "start": 906,
-            "end": 909,
+            "start": 904,
+            "end": 907,
             "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 931,
-            "end": 942,
+            "start": 929,
+            "end": 940,
             "text": "seleccionar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 980,
-            "end": 986,
+            "start": 978,
+            "end": 984,
             "text": "Pareja",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 990,
-            "end": 1004,
+            "start": 988,
+            "end": 1002,
             "text": "formar_parejas",
             "role": "cpp",
             "reading": "technical"
@@ -5089,40 +5667,117 @@
       {
         "block": "block_0007_0002",
         "path": "/explanation",
-        "sourceSha256": "bcc62d8075d1a77d6c6d02805c47490618a7c891a0c305f18846616497b8ae2b",
+        "sourceSha256": "6b98de6a7f0ef4f7ec4c81197d733e523714a962a974386028b23a99dd08aade",
         "spans": [
           {
-            "start": 26,
-            "end": 29,
-            "text": "0/1",
+            "start": 4,
+            "end": 7,
+            "text": "i=0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 35,
-            "text": "2/3",
+            "start": 41,
+            "end": 42,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 47,
-            "end": 54,
+            "start": 58,
+            "end": 59,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 72,
+            "text": "i=1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 107,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 118,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 161,
+            "text": "[9:0][4:7]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 202,
             "text": "primero",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 57,
-            "end": 64,
+            "start": 205,
+            "end": 212,
             "text": "segundo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 93,
-            "text": "9,0,4,7",
+            "start": 215,
+            "end": 221,
+            "text": "planos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 258,
+            "text": "{9,0,4,7}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 317,
+            "text": "Orden:1",
             "role": "output",
             "reading": "natural"
           }
@@ -5187,21 +5842,42 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "97a29f87d564d17821ad3a1b9f289d9d1ec9309792a626bd3375153cb2c45aef",
+        "sourceSha256": "68c58d5c83d7df09bd841218d79ddc95bcaac0f1e811ffae12c4d7c2f38cfad0",
         "spans": [
           {
-            "start": 6,
-            "end": 10,
-            "text": "cero",
+            "start": 7,
+            "end": 12,
+            "text": "pares",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 18,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 56,
+            "start": 20,
+            "end": 31,
             "text": "seleccionar",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 59,
+            "text": "{0,0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -5266,13 +5942,76 @@
       {
         "block": "block_0007_0004",
         "path": "/explanation",
-        "sourceSha256": "a0e1fc8cf98387c4edf184e7f53861e78765d455b1361586dc1fda923ac99adf",
+        "sourceSha256": "e9d2fc0a74dfd34ca4c0f71f720856630ee97d90cc15504d192ff3ae7c590397",
         "spans": [
           {
-            "start": 68,
-            "end": 71,
-            "text": "uno",
+            "start": 29,
+            "end": 30,
+            "text": "4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 142,
+            "text": "locales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 163,
+            "end": 172,
+            "text": "Locales:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 217,
+            "text": "{4,1,1,8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 240,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 276,
+            "text": "globales",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 321,
+            "text": "Globales:0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5548,6 +6287,206 @@
         "path": "/text",
         "sourceSha256": "201bc5450ac9abad350752d7acd2e531330f0592517d910a950c83ca1ac72289",
         "spans": []
+      },
+      {
+        "block": "u10_seleccion_testigo_de_dos_extracciones_titulo",
+        "path": "/text",
+        "sourceSha256": "f34f9a20c6bf274600bd188226cde61dccf8d2f5c8d35b1469683a37573a9c9f",
+        "spans": []
+      },
+      {
+        "block": "u10_seleccion_testigo_de_dos_extracciones_consigna",
+        "path": "/text",
+        "sourceSha256": "8f7002effd20cfbaa537634e9d26ce2a97f58f34bc3ca7d31da3c32cc2ea12cc",
+        "spans": [
+          {
+            "start": 17,
+            "end": 28,
+            "text": "seleccionar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 274,
+            "text": "seleccionar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 337,
+            "end": 346,
+            "text": "{8,0,5,9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 357,
+            "end": 368,
+            "text": "{6,1,8,3,0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 496,
+            "end": 499,
+            "text": "701",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 524,
+            "end": 531,
+            "text": "motor()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 684,
+            "end": 694,
+            "text": "0..total-1",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 745,
+            "end": 755,
+            "text": "0..total-2",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 985,
+            "end": 996,
+            "text": "seleccionar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1046,
+            "end": 1072,
+            "text": "Orden:B;Motor:B;Original:B",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_seleccion_testigo_de_dos_extracciones_salida",
+        "path": "/text",
+        "sourceSha256": "5d0702caf81f2a12084bcfac4b261eb1fa781941f6946caea373a092809e9da6",
+        "spans": [
+          {
+            "start": 33,
+            "end": 86,
+            "text": "Orden:1;Motor:1;Original:1\nOrden:1;Motor:1;Original:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "6c0b8f1c8d48bf7b0b80d0fe2c9cd41f88f2900db20680ad292ffd8b71554cef",
+        "spans": [
+          {
+            "start": 23,
+            "end": 30,
+            "text": "Motor:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "13cf092d81674933e621c14221490acf39d29970277f890ad5e9b81ca0ed4a53",
+        "spans": []
+      },
+      {
+        "block": "u10_seleccion_testigo_de_dos_extracciones_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "c0eb4687c9bc47e0e144c0b49bab6ae37377fd6e8932763d1c08414b4dcbb988",
+        "spans": []
+      },
+      {
+        "block": "u10_seleccion_testigo_de_dos_extracciones_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "3ce23d2c0f917d5003d43eb3228baf6633ae0e6827cd25545c30445137a3ec17",
+        "spans": [
+          {
+            "start": 92,
+            "end": 96,
+            "text": "0..3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 117,
+            "text": "0..2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 149,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 179,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 232,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 252,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 579,
+            "end": 590,
+            "text": "seleccionar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 767,
+            "end": 774,
+            "text": "Motor:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1045,
+            "end": 1065,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

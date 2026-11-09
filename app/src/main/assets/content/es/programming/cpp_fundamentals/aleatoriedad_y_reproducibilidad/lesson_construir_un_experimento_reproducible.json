@@ -59,7 +59,7 @@
             "El segundo lote continúa el motor local de la primera llamada, aunque ese objeto terminó."
           ],
           "correctIndex": 1,
-          "explanation": "El contrato construye objetos nuevos desde la misma configuración; no conserva un motor entre llamadas.",
+          "explanation": "Con el mismo Plan, ambas llamadas validan los mismos datos, construyen un motor nuevo con la misma semilla y una distribución nueva con los mismos límites. Después solicitan la misma cantidad de valores, en el mismo orden de llamadas. Por eso las muestras completas coinciden dentro de ese entorno. El motor local de la primera llamada termina al salir de ella; la segunda construye otro desde el comienzo guardado, en lugar de continuar aquel objeto.",
           "reviewFeedback": [
             "Revisa qué preparación se repite al usar el mismo plan y si repetirla exige obtener datos distintos.",
             "Relaciona el comienzo de cada llamada con la comparación de las muestras completas.",
@@ -108,7 +108,7 @@
           "answers": [
             "1:0"
           ],
-          "explanation": "El intervalo degenerado es válido. El otro plan excede el dominio elegido para semilla; se rechaza antes de construir el motor."
+          "explanation": "En uno, la semilla 317 y la cantidad 1 están dentro de sus dominios; los límites 9 y 9 también son válidos y cumplen minimo <= maximo. Por eso plan_valido(uno) devuelve true. En otro, la semilla 1001 supera el máximo 1000, aunque sus demás miembros sean válidos: la segunda llamada devuelve false. La consola representa esos resultados como 1:0. Este programa comprueba los planes; todavía no construye un motor ni genera una muestra."
         },
         {
           "type": "paragraph",
@@ -328,7 +328,7 @@
           "answers": [
             "6:0:6:1"
           ],
-          "explanation": "Todos los datos son cuatro por el intervalo degenerado; la categoría desde incluye la igualdad."
+          "explanation": "El plan solicita 6 datos en el intervalo 4..4, cuyo único valor posible es 4. Al resumir, cada dato está dentro del intervalo, pero ninguno cumple dato < umbral porque el umbral también es 4. Las seis observaciones aumentan desde, que incluye la igualdad. El informe contiene cantidad 6, menores 0, desde 6 y rango verdadero: la salida es 6:0:6:1."
         },
         {
           "type": "output_prediction",
@@ -338,7 +338,7 @@
           "answers": [
             "Rango:0;Conteo:1"
           ],
-          "explanation": "El ocho queda fuera de 2..6. La partición de dos observaciones sigue siendo completa; esa propiedad no reemplaza el rango."
+          "explanation": "El dato 2 pertenece al intervalo 2..6 y es menor que el umbral 4. El dato 8 está fuera del intervalo y no es menor que el umbral. Ambos se cuentan: uno en menores y otro en desde, de modo que menores + desde == cantidad resulta verdadero. El informe de rango es falso por el 8 y la salida queda Rango:0;Conteo:1. Clasificar todas las observaciones no demuestra que todas estén dentro del intervalo."
         },
         {
           "type": "multiple_choice",
@@ -349,7 +349,7 @@
             "Que cada entero apareció igualmente y el experimento certifica calidad estadística."
           ],
           "correctIndex": 2,
-          "explanation": "Las propiedades comprobadas no incluyen una certificación de frecuencias ni de calidad estadística.",
+          "explanation": "Rango comprueba los límites de cada observación; Conteo comprueba que las dos categorías recuperen la cantidad; Repeticion compara las muestras completas. Ninguna de esas operaciones cuenta cuántas veces apareció cada entero del intervalo ni compara sus frecuencias. Por ejemplo, una muestra {2,2,6} pertenece a 2..6 y sus tres observaciones pueden clasificarse y repetirse, aunque varios valores del intervalo no aparezcan. Esos aciertos no añaden una certificación estadística.",
           "reviewFeedback": [
             "Relaciona la comparación de muestras completas con la preparación que repiten esas dos llamadas.",
             "Distingue una afirmación limitada a las comprobaciones observadas de otra propiedad que no se haya medido.",
@@ -436,7 +436,7 @@
             "Los valores repetidos ocupan índices nuevos, por lo que deben borrarse antes de contar."
           ],
           "correctIndex": 0,
-          "explanation": "Diez elementos tienen índices de cero a nueve. Cada observación válida suma uno, aunque su valor ya se haya contado.",
+          "explanation": "Las diez casillas tienen índices 0..9, que coinciden con los valores admitidos. Para {2,0,2,9}, se aumenta primero la casilla 2, después la 0, otra vez la 2 y finalmente la 9. Los conteos no nulos son 0:1, 2:2 y 9:1, y suman 4. La segunda observación de valor 2 vuelve a aumentar la misma casilla; no se elimina ni necesita otro índice. El índice 10 queda fuera de este vector.",
           "reviewFeedback": [
             "Relaciona cada observación con el índice que recibe su aumento y con el total acumulado.",
             "Reconsidera el último índice de una colección de diez elementos y qué representa cada aumento.",
@@ -603,7 +603,7 @@
             "Plan, componentes y llamadas, datos concretos y expectativa que el caso debe cumplir."
           ],
           "correctIndex": 2,
-          "explanation": "La configuración explica el experimento y el caso concreto permite investigarlo sin depender de una transformación idéntica entre bibliotecas.",
+          "explanation": "El plan conserva semilla, cantidad y límites; los componentes y las llamadas explican cómo se usaron. Guardar además los datos concretos y su resultado esperado permite repetir el caso aunque otra biblioteca transforme de otra manera la secuencia del motor. Un histograma pierde el orden: {2,0,2,9} y {9,2,2,0} dan los mismos conteos, pero son muestras diferentes. Por eso los conteos solos no sustituyen el caso que produjo el fallo.",
           "reviewFeedback": [
             "Reconsidera qué información sobre el orden se conserva al reemplazar la muestra por sus conteos.",
             "Distingue la secuencia del motor del algoritmo que utiliza la biblioteca para obtener los datos del intervalo.",
@@ -620,7 +620,7 @@
             "Repetir preparar con el mismo Plan; continuar un motor compartido comparándolo con una copia del mismo punto; conservar una muestra fija con su expectativa."
           ],
           "correctIndex": 2,
-          "explanation": "Reiniciar recupera un comienzo; continuar usa el estado alcanzado. Una muestra fija permite repetir la pregunta concreta sin exigir una transformación idéntica entre bibliotecas.",
+          "explanation": "Cada llamada a preparar construye un motor nuevo desde el mismo Plan: eso comprueba un reinicio. En cambio, copiar un motor después de usarlo conserva el punto alcanzado; las llamadas siguientes desde ambos objetos comparan la continuación de ese punto. El caso fijo {2,8} con límites 2..6 conserva una pregunta distinta: debe detectar el 8 fuera del intervalo sin dejar de contar las dos observaciones. No hay que ordenar ni borrar esa muestra para reproducir su prueba.",
           "reviewFeedback": [
             "Identifica qué estado sobrevive a una llamada y qué evidencia aporta conservar una prueba que ya pasó.",
             "Reconsidera si ordenar conserva la misma secuencia de observaciones que el contrato pide comparar.",
@@ -697,6 +697,75 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Contrastar la continuación y cada condición del resumen"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia en este editor el Informe, resumir y continuar que acabas de construir, antes del cliente preparado. Conserva sus contratos. El cliente compara la continuación con un cálculo que llama directamente a la distribución, sin utilizar continuar para fabricar el resultado esperado.\n\nEl motor se crea con semilla 617 y recibe dos llamadas directas a motor(). Cada una pide un valor bruto al motor y deja alcanzado otro estado, aunque ese valor no se imprima. Desde allí se comprueban lotes de 3 datos en 1..8, de 4 en 2..6 y de 0 en 7..7, conservando el motor entre lotes. Antes de cada lote, testigo copia ese estado. Su distribución usa los mismos límites y realiza la cantidad solicitada de obtenciones. Se comparan el vector completo y el estado final, no un número supuesto de avances internos.\n\nPara resumir, la colección {8,2} usa límites 2..6 y umbral 4. El cliente añade el vacío válido y {0,9} con intervalo 0..9 y umbrales 0 y 9, para comprobar los dos extremos admitidos. Después prueba límites invertidos, umbrales -1 y 10, un mínimo negativo, un máximo mayor que 9 y 21 observaciones. Conserva todas las llamadas del cliente y los datos originales. Pulsa «Compilar, ejecutar y comprobar»; corrige tus funciones si alguna comprobación difiere.",
+          "emphasis": [
+            {
+              "text": "llama directamente a la distribución",
+              "style": "bold"
+            },
+            {
+              "text": "el vector completo y el estado final",
+              "style": "bold"
+            },
+            {
+              "text": "Conserva todas las llamadas",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nLote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui Informe, resumir y continuar, conservando sus contratos.\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                       int umbral) {\n    const std::vector<int> original = datos;\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El cliente obtiene el lote esperado desde una copia del punto alcanzado y contrasta también el estado final del motor. En {8,2}, el 8 deja el rango falso y el 2 posterior no puede restaurarlo; ambos datos se clasifican. El vacío válido produce 0:0:0:1. Con {0,9}, el umbral 0 deja ambos datos en desde y el umbral 9 deja uno en cada categoría. Los argumentos de resumen inválidos se rechazan antes del recorrido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:0\nLote:1;Motor:0\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                    ],
+                    "text": "Los valores coinciden, pero Motor:0 muestra que el motor recibido no alcanzó el estado del testigo. Revisa si continuar consume una copia local o recibe el motor por valor. El cliente necesita continuar el objeto recibido por referencia."
+                  },
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                    ],
+                    "text": "Para {8,2} con intervalo 2..6, el primer dato ya está fuera del rango. El 2 posterior no anula ese fallo. Revisa si estás sustituyendo en_rango por el resultado del último dato en vez de conservar cualquier incumplimiento anterior."
+                  },
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:21:0:21:1;Original:1\n"
+                    ],
+                    "text": "Los seis resúmenes inválidos están siendo aceptados. Antes de recorrer, comprueba tamaño máximo, dominio de ambos límites, su orden y dominio del umbral. Una colección vacía no elimina esas condiciones."
+                  },
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen:0:0:0:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                    ],
+                    "text": "El umbral 10 supera el máximo admitido 9, aunque el vector esté vacío. Revisa que la validación compruebe ambos extremos del dominio del umbral. Los casos con umbrales 0 y 9 deben seguir aceptándose."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -710,6 +779,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nint main() {\n    const Plan plan{83,6,2,6};\n    const std::vector<int> primera=preparar(plan);\n    const std::vector<int> reiniciada=preparar(plan);\n    std::cout<<\"Reinicio:\"<<(primera==reiniciada)<<\"\\n\";\n    std::mt19937 motor{83};\n    const std::vector<int> primer_lote=continuar(motor,2,2,6);\n    std::mt19937 copia=motor;\n    const std::vector<int> siguiente=continuar(motor,4,2,6);\n    const std::vector<int> reproducida=continuar(copia,4,2,6);\n    std::cout<<\"Continuacion:\"<<(primer_lote.size()==2 && siguiente==reproducida && motor==copia)<<\"\\n\";\n    const Informe fijo=resumir({0,2,4,7,9},2,7,4);\n    std::cout<<\"Fijo:\"<<fijo.cantidad<<\":\"<<fijo.menores<<\":\"<<fijo.desde<<\":\"<<fijo.en_rango<<\"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del contraste con un testigo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si continuar consumiera una copia local, dos llamadas defectuosas desde el mismo punto devolverían los mismos valores y dejarían iguales los dos motores externos. La comparación anterior entre esas llamadas podría pasar. Aquí testigo se consume directamente mediante su distribución: para los lotes con datos, se comprueban tanto los valores como el estado que debe conservar el motor del cliente. En el lote vacío no se llama a ninguna de las dos distribuciones.\n\nCon {8,2}, la primera observación está fuera de 2..6 y pertenece a la categoría desde el umbral; la segunda está dentro del intervalo y es menor que 4. El informe es 2:1:1:0. Una asignación que sólo retuviera el resultado del último dato daría rango verdadero y perdería el fallo inicial. El vacío válido conserva 0:0:0:1.\n\nCon {0,9} y umbral 0, ningún dato es menor que el umbral y ambos pertenecen a la otra categoría: el informe es 2:0:2:1. Con umbral 9, sólo el 0 es menor y el 9 se cuenta en desde por igualdad, dando 2:1:1:1. Ambos extremos del dominio son válidos. Los seis casos inválidos se rechazan aunque cinco de ellos no tengan observaciones. El umbral 10 rebasa el dominio y se rechaza incluso para un vector vacío.\n\nLas obtenciones esperadas se calculan con la biblioteca que ejecuta el programa. No se fija una lista universal de valores ni cuántas llamadas internas hace la distribución para obtener cada dato; su algoritmo depende de la implementación (Köppe et al., 2023)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                       int umbral) {\n    const std::vector<int> original = datos;\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n    return 0;\n}\n"
         }
       ]
     }
@@ -1050,14 +1132,21 @@
           "block_0007_0003",
           "block_0007_0004",
           "block_0007_0005",
-          "block_0007_0006"
+          "block_0007_0006",
+          "u10_experimento_testigo_y_resumen_titulo",
+          "u10_experimento_testigo_y_resumen_consigna",
+          "u10_experimento_testigo_y_resumen_salida",
+          "u10_experimento_testigo_y_resumen_comprobacion"
         ]
       },
       {
         "id": "page_0008",
         "blocks": [
           "block_0008_0000",
-          "block_0008_0001"
+          "block_0008_0001",
+          "u10_experimento_testigo_y_resumen_referencia_titulo",
+          "u10_experimento_testigo_y_resumen_referencia_razonamiento",
+          "u10_experimento_testigo_y_resumen_referencia_programa"
         ]
       }
     ],
@@ -1691,7 +1780,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u10_experimento_testigo_y_resumen_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_comprobacion",
+        "sha256": "e69aed2f630f8e179a7eb42e00c53854ad60cbc27d11d7082e946fa382305457",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_referencia_programa",
+        "sha256": "39f49aac7fda3502c88fa990ef8f0c3a0c00a49488264c9a74cecf20b8c017c1",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0008"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1797,6 +1950,46 @@
         "id": "block_0006_0000",
         "beforeSha256": "dcd6be4770419a16041d19313f16d64fec22c5348c0db115400feff502130e12",
         "afterSha256": "2ac98b6de6ad6005323357023f2193921091b144eed53772ac67ceafbaac2b67"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8824ce906f08a79bce25bc0171e300f68e10958f1837d58f8702c877017b918d",
+        "afterSha256": "3820a153737c8be8b3a3ddfa903b849173cf8366a5194dd26693f41b12fb7662"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "2535789473c494a4279f067f69d61b1e97b7367f755166918ddc8704eac6be0e",
+        "afterSha256": "0fa27b79c19d9488745989a3c73cc76c0b2c908b96b58e31ca9972577e882920"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "f37b007fdd4b888d6c42a5cebcbec4c09f230f90f106347562ff7f2a5f35a8df",
+        "afterSha256": "4ec42d4a4a0a06192ddc28be9bb4b36d672614597b9605d17dfae7e84ae5efa3"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "100f37e78e1472e737ce2dd599ac1fd5d712cee7d4194a3f1f4e815906673e08",
+        "afterSha256": "4d11b73dac49079d0c7d8ad205ee4d9a702c67911c63526e854353e60dd54660"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "6bde286d9b6a6f8267819c311d0d7aafdc31573515acd77c4b6cc7fc8db95177",
+        "afterSha256": "687db4f63b670565e58836588eb68ac1cf95acf3c3a6e3e13516720b299391f6"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "98763974795c3f9ab4a8f677e7034f25f76142962f51012674d7be5fd26a36b7",
+        "afterSha256": "59ac2cb543a8bc35f5fca72dcaee6e702f2cb7bf56803297562178311851cdb9"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "4f7131646d0fc686c570abcad68134e121f3627f3286bd013b30436142b4750a",
+        "afterSha256": "c6aadfe8ebc96492a2d21955752195f9b5cc239a7ef11394abdd85a903b15b23"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "6c2b4d1feff9e6d834fccd9fecc4938c08afb231bff13aeea7af7ced01390f72",
+        "afterSha256": "8cd435b5cc40bf71af6f8505ce2f559e3cad85381c06edf76671eb7c9fce4bbb"
       }
     ]
   },
@@ -1832,10 +2025,13 @@
       ]
     },
     {
-      "activity": "block_0007_0006",
+      "activity": "u10_experimento_testigo_y_resumen_comprobacion",
       "blocks": [
         "block_0008_0000",
-        "block_0008_0001"
+        "block_0008_0001",
+        "u10_experimento_testigo_y_resumen_referencia_titulo",
+        "u10_experimento_testigo_y_resumen_referencia_razonamiento",
+        "u10_experimento_testigo_y_resumen_referencia_programa"
       ]
     }
   ],
@@ -1857,6 +2053,12 @@
       "requires": [
         "block_0002_0004",
         "block_0005_0004"
+      ]
+    },
+    {
+      "activity": "u10_experimento_testigo_y_resumen_comprobacion",
+      "requires": [
+        "block_0007_0006"
       ]
     }
   ],
@@ -1998,8 +2200,16 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "9c79a293d5e486b1f50a8d0e971059cb01d3772cf04eb0a8527cffa512b972a6",
-        "spans": []
+        "sourceSha256": "3735422a6fdc258a1d8fba89c2bec74a7b82d87f0ee6ac20115166436af60d54",
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "Plan",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -2094,8 +2304,100 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "4b355dabce4a2aba2546beb8e33954df0d5ec16c22a1db22cdfcff33d388d49d",
-        "spans": []
+        "sourceSha256": "9b57db7534763c64e81f0132b28f7b72181986f7e43f877b2c605a97f18fb4dd",
+        "spans": [
+          {
+            "start": 3,
+            "end": 6,
+            "text": "uno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 22,
+            "text": "317",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 133,
+            "text": "minimo <= maximo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 159,
+            "text": "plan_valido(uno)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 173,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "otro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 199,
+            "text": "1001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 221,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 296,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 341,
+            "end": 344,
+            "text": "1:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -2308,8 +2610,8 @@
             "start": 481,
             "end": 486,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 552,
@@ -2621,8 +2923,8 @@
             "start": 529,
             "end": 534,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2647,21 +2949,98 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "3e5c7181bc40ba09d5b87f707ca6b589db33ab77dd6b26f92555f9f57e2f9364",
+        "sourceSha256": "f3b2895cd3f12ebff8fc2664844c70bcf7651e13521fb6d44c8c9f7562b4a211",
         "spans": [
           {
-            "start": 20,
-            "end": 26,
-            "text": "cuatro",
+            "start": 17,
+            "end": 18,
+            "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 69,
-            "end": 74,
+            "start": 41,
+            "end": 45,
+            "text": "4..4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 76,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 160,
+            "text": "dato < umbral",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 190,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 229,
             "text": "desde",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 276,
+            "end": 284,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 285,
+            "end": 286,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 295,
+            "text": "menores",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 297,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 304,
+            "text": "desde",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 306,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 346,
+            "text": "6:0:6:1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2674,26 +3053,68 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "80f0dc49266b07064b3ef58b87a3d7dbdbbb36be645868c0486b015161d0e5ad",
+        "sourceSha256": "4505ec13466c9e7ca4eb4757bc87dbff62980953f849ea2b9089928246c9bf2a",
         "spans": [
           {
-            "start": 3,
-            "end": 7,
-            "text": "ocho",
+            "start": 8,
+            "end": 9,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 23,
-            "end": 27,
+            "start": 33,
+            "end": 37,
             "text": "2..6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 48,
-            "text": "dos",
+            "start": 63,
+            "end": 64,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 162,
+            "text": "menores",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 178,
+            "text": "desde",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 219,
+            "text": "menores + desde == cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 276,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 311,
+            "text": "Rango:0;Conteo:1",
             "role": "output",
             "reading": "natural"
           }
@@ -2708,8 +3129,44 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "d7365d71fe90815917afac4c9aa106197fb9627641171ef63382742dbff9ef3a",
-        "spans": []
+        "sourceSha256": "1b477b1426fa01f06c819e007014ea828fe5c0b5cb62372d7613ab74913cfc4c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "Rango",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 55,
+            "text": "Conteo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 122,
+            "text": "Repeticion",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 299,
+            "text": "{2,2,6}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 312,
+            "end": 316,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -3092,33 +3549,89 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "79deb9149b322b5bb2242485af9227b50f423e2b69c178e8d9bd2d5bf4404809",
+        "sourceSha256": "54af3091a691c29963ef33f014fc746b1070c7b0ffc85828da9472c60f8f7ec2",
         "spans": [
-          {
-            "start": 0,
-            "end": 4,
-            "text": "Diez",
-            "role": "data",
-            "reading": "natural"
-          },
           {
             "start": 33,
             "end": 37,
-            "text": "cero",
+            "text": "0..9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 40,
-            "end": 45,
-            "text": "nueve",
+            "start": 85,
+            "end": 94,
+            "text": "{2,0,2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 79,
-            "text": "uno",
+            "start": 126,
+            "end": 127,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 141,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 204,
+            "text": "0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 209,
+            "text": "2:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 215,
+            "text": "9:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 226,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 261,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 349,
+            "text": "10",
             "role": "data",
             "reading": "natural"
           }
@@ -3510,8 +4023,23 @@
       {
         "block": "block_0007_0001",
         "path": "/explanation",
-        "sourceSha256": "0faf1b5d20a52e3af8e1fb8b7c230ecd42c5d1b4c880e6b9c6eac2c6c03e226f",
-        "spans": []
+        "sourceSha256": "998028e91c21953521ffc49f262f71cd5612cd55ecfcd7e345d128e0d9840b85",
+        "spans": [
+          {
+            "start": 289,
+            "end": 298,
+            "text": "{2,0,2,9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 310,
+            "text": "{9,2,2,0}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0001",
@@ -3582,8 +4110,44 @@
       {
         "block": "block_0007_0002",
         "path": "/explanation",
-        "sourceSha256": "05ee2b56e2be835b95194068bc6cce2091df9e550f43dd916258035dbcc853c1",
-        "spans": []
+        "sourceSha256": "435a03a141a9a10b8526ec2ca74fc8368bdca35af0827caf0c1cb460e7f7db29",
+        "spans": [
+          {
+            "start": 15,
+            "end": 23,
+            "text": "preparar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 68,
+            "text": "Plan",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 272,
+            "text": "{2,8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 289,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 340,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0002",
@@ -3868,8 +4432,8 @@
             "start": 995,
             "end": 1000,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 1144,
@@ -3941,6 +4505,500 @@
         "path": "/text",
         "sourceSha256": "dd13fe3df9a2165af006ca0063e5206f8ee7d8b2750931738751a4c15293b2f8",
         "spans": []
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_titulo",
+        "path": "/text",
+        "sourceSha256": "55bb337070852ea14e82e2206ca11b2c044fbd9de79a3fb51f280928e6758189",
+        "spans": []
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_consigna",
+        "path": "/text",
+        "sourceSha256": "0553b9656fb5dac5af0d0e40f3b449b09f04a4836f226efe262d38684b81f104",
+        "spans": [
+          {
+            "start": 24,
+            "end": 31,
+            "text": "Informe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 40,
+            "text": "resumir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 52,
+            "text": "continuar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 245,
+            "text": "continuar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 313,
+            "end": 316,
+            "text": "617",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 350,
+            "end": 357,
+            "text": "motor()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 493,
+            "end": 494,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 504,
+            "end": 508,
+            "text": "1..8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 513,
+            "end": 514,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 518,
+            "end": 522,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 528,
+            "end": 529,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 533,
+            "end": 537,
+            "text": "7..7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 593,
+            "end": 600,
+            "text": "testigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 806,
+            "end": 813,
+            "text": "resumir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 828,
+            "end": 833,
+            "text": "{8,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 846,
+            "end": 850,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 860,
+            "end": 861,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 898,
+            "end": 903,
+            "text": "{0,9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 918,
+            "end": 922,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 934,
+            "end": 935,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 938,
+            "end": 939,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1028,
+            "end": 1030,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1033,
+            "end": 1035,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1077,
+            "end": 1078,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1081,
+            "end": 1083,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_salida",
+        "path": "/text",
+        "sourceSha256": "015d4e25e86d4261c2f6bf5525f7321692887bfe8aa3f29db1da7da61e50b4fa",
+        "spans": [
+          {
+            "start": 33,
+            "end": 359,
+            "text": "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "7ed2bd5366b2e53f3a9a7ca7f8c85697063a4cb241f8e8d2dce53d7cebf91bb7",
+        "spans": [
+          {
+            "start": 28,
+            "end": 35,
+            "text": "Motor:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "continuar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "8550f81cb4b74cc644422fd6a9887e0a6dd335b0b4099d03b067d34b4794f6c9",
+        "spans": [
+          {
+            "start": 5,
+            "end": 10,
+            "text": "{8,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 29,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "en_rango",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "754afbf092033d1aa5ebfce3e6eb8d45699667e14dadaa148df4352392211144",
+        "spans": []
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/3/text",
+        "sourceSha256": "31c34a0bba919122495c87e7e79297b7a5a8d10607ce7b865256e6adc24e9f9a",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 169,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "c267b71d82ab1e079cc92f0d80b46484a1c63f15b7f51aa1b5b2a38c11de9274",
+        "spans": [
+          {
+            "start": 122,
+            "end": 127,
+            "text": "{8,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 160,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 251,
+            "text": "0:0:0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 262,
+            "text": "{0,9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 275,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 301,
+            "text": "desde",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 315,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "c0eb4687c9bc47e0e144c0b49bab6ae37377fd6e8932763d1c08414b4dcbb988",
+        "spans": []
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "52e85dfe1b56f995931df57f323e3284628006b69901d8582ffede8812979cff",
+        "spans": [
+          {
+            "start": 3,
+            "end": 12,
+            "text": "continuar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 233,
+            "text": "testigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 469,
+            "end": 474,
+            "text": "{8,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 513,
+            "end": 517,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 614,
+            "end": 615,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 631,
+            "end": 638,
+            "text": "2:1:1:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 779,
+            "end": 786,
+            "text": "0:0:0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 793,
+            "end": 798,
+            "text": "{0,9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 808,
+            "end": 809,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 900,
+            "end": 907,
+            "text": "2:0:2:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 920,
+            "end": 921,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 931,
+            "end": 932,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 947,
+            "end": 948,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 962,
+            "end": 967,
+            "text": "desde",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 988,
+            "end": 995,
+            "text": "2:1:1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1131,
+            "end": 1133,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1435,
+            "end": 1455,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

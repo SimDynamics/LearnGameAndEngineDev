@@ -58,7 +58,7 @@
           "answers": [
             "1:5"
           ],
-          "explanation": "Ambos experimentos comienzan igual y hacen las mismas llamadas. La comparación conserva tamaño, valores y orden."
+          "explanation": "Los motores uno y dos comienzan con semilla 43, y sus distribuciones se preparan para 1..8. En cada vuelta se hace la siguiente obtención de ambos experimentos, sin llamadas adicionales. Los vectores guardan cinco resultados iguales en las posiciones correspondientes, por lo que primera == segunda da true y se imprime 1:5. La comparación no requiere fijar una lista válida para todas las bibliotecas."
         },
         {
           "type": "note",
@@ -113,7 +113,7 @@
           "answers": [
             "1:6"
           ],
-          "explanation": "Las seis llamadas de cada experimento usan su mismo motor y distribución; dividir el bucle no cambia esa secuencia."
+          "explanation": "El primer par obtiene seis datos seguidos. El segundo obtiene dos y conserva dividido y b para las cuatro llamadas siguientes; no los vuelve a construir ni reiniciar entre bucles. Ambos experimentos completan así las mismas seis obtenciones desde la misma preparación. Los vectores tienen igual tamaño, valores y orden: la comparación se imprime como 1 y el tamaño como 6, formando 1:6."
         },
         {
           "type": "multiple_choice",
@@ -124,7 +124,7 @@
             "Volver a sembrar antes de obtener cada dato."
           ],
           "correctIndex": 1,
-          "explanation": "La continuación usa el estado al que ya llegó el experimento. Reconstruir o volver a sembrar cambia el contrato.",
+          "explanation": "Después del primer lote, el motor y la distribución conservan el estado alcanzado por sus llamadas. El segundo lote debe utilizar esos mismos objetos desde ese punto. Construir un motor desde la semilla inicial lo devuelve al comienzo; volver a sembrar antes de cada dato repite esa preparación una y otra vez. Ninguna de esas dos acciones expresa la continuación solicitada.",
           "reviewFeedback": [
             "Distingue el estado al que llegó el primer lote del estado que prepara un constructor nuevo.",
             "Sigue qué objetos deben recibir las llamadas del segundo lote para continuar el primero.",
@@ -168,7 +168,7 @@
           "answers": [
             "1"
           ],
-          "explanation": "El motor vuelve al comienzo y la distribución no depende de obtenciones anteriores. Se repiten las cuatro llamadas en el mismo entorno."
+          "explanation": "Los cuatro resultados de las primeras llamadas quedan guardados en antes. Después motor.seed(97) restablece el comienzo del motor y elegir.reset() elimina la dependencia de obtenciones anteriores de la distribución, cuyos límites siguen siendo -4 y 4. Tras ese reinicio, las cuatro llamadas siguientes repiten el recorrido en el mismo entorno. despues contiene los mismos datos en el mismo orden, por lo que la igualdad muestra 1."
         },
         {
           "type": "multiple_choice",
@@ -179,7 +179,7 @@
             "Reconstruir sólo la distribución hace que el motor existente lea otra vez la variable semilla."
           ],
           "correctIndex": 1,
-          "explanation": "El constructor leyó un valor; no dejó una conexión permanente con la variable. seed es la operación que modifica el estado del motor.",
+          "explanation": "Al construir el motor se utiliza el valor que semilla tiene en ese momento. Asignar después otro número a esa variable cambia la variable, pero no vuelve a ejecutar el constructor ni modifica por sí solo el motor. motor.seed(semilla); lee el valor actual y restablece el motor con él. Reconstruir sólo la distribución actúa sobre otro objeto y no realiza esa operación.",
           "reviewFeedback": [
             "El constructor recibe un valor al ejecutarse. Reconsidera si una asignación posterior a otra variable vuelve a invocar ese constructor.",
             "Relaciona el valor actual de semilla con la operación que restablece el motor existente.",
@@ -219,7 +219,7 @@
             "Las semillas son iguales porque cada semilla tiene su propio entero exclusivo."
           ],
           "correctIndex": 0,
-          "explanation": "Un intervalo pequeño admite coincidencias. La semilla prepara estado, no reserva un resultado exclusivo.",
+          "explanation": "El intervalo 1..3 permite sólo tres resultados: 1, 2 o 3. Se pueden preparar motores con muchas más semillas que esos tres valores, de modo que no corresponde reservar un resultado exclusivo a cada semilla. Una coincidencia del primer entero es compatible con semillas diferentes y no amplía el intervalo. Para saber si hubo un reinicio hay que examinar la preparación y las llamadas del programa.",
           "reviewFeedback": [
             "Distingue lo que informa un resultado coincidente de lo que habría que conocer de la preparación y las llamadas.",
             "El intervalo forma parte de la configuración elegida. Revisa si una coincidencia de datos lo modifica.",
@@ -255,7 +255,7 @@
           "answers": [
             "1:1"
           ],
-          "explanation": "Se comparan motores del mismo tipo con igual comienzo y dos avances directos cada uno; no se exige el valor numérico de esos avances."
+          "explanation": "a y b son motores del mismo tipo y comienzan con semilla 113. Las llamadas a() y b() obtienen el primer valor de cada secuencia; las siguientes obtienen el segundo. Se compara primero con primero y segundo con segundo, por lo que ambas igualdades dan true y se muestra 1:1. No se está comparando el primer valor con el segundo ni pasando los resultados por una distribución."
         }
       ]
     },
@@ -301,7 +301,7 @@
             "Los objetos del motor y de la distribución con el estado que dejaron las obtenciones anteriores."
           ],
           "correctIndex": 2,
-          "explanation": "Continuar utiliza el estado alcanzado. Construir de nuevo desde la semilla expresa un reinicio del procedimiento. No se necesita exigir que las muestras numéricas sean siempre distintas para distinguir esas decisiones.",
+          "explanation": "Las primeras dos llamadas dejan al motor y a la distribución en el estado desde el que deben obtenerse los cuatro datos siguientes. Conservar ambos objetos permite seguir desde ese punto. Si se construyen otra vez desde la semilla, la segunda parte vuelve a comenzar el procedimiento, aunque se guarde en el mismo vector. Esa diferencia se reconoce por las operaciones realizadas; no exige que todos los valores de un reinicio sean distintos de los de una continuación.",
           "reviewFeedback": [
             "Distingue iniciar otra vez desde una configuración de continuar desde el estado ya alcanzado.",
             "Identifica qué objetos producen los siguientes valores, además de dónde se guardan los anteriores.",
@@ -372,7 +372,7 @@
             "Una garantía de que las dos muestras no tienen ningún valor en común."
           ],
           "correctIndex": 0,
-          "explanation": "Los objetos locales se construyen en cada llamada y comienzan otra vez desde esa configuración. La diferencia es de procedimiento; no permite exigir desigualdad de valores ni ausencia de coincidencias.",
+          "explanation": "La primera llamada construye objetos con semilla 53 e intervalo 1..9 y obtiene dos datos. Al terminar, esos objetos locales dejan de existir. La segunda llamada crea otros desde la misma configuración y obtiene cuatro datos empezando de nuevo, sin utilizar el estado que dejaron las dos obtenciones anteriores. Se trata de dos inicios; eso no prohíbe que sus resultados tengan valores en común.",
           "reviewFeedback": [
             "Comprueba dónde y cuándo se construyen los objetos del generador.",
             "Distingue igualdad de una configuración de identidad y conservación de un objeto.",
@@ -405,7 +405,7 @@
             "Motor, distribución con sus límites y cantidad y orden de llamadas, incluso las descartadas."
           ],
           "correctIndex": 2,
-          "explanation": "La historia de consumo forma parte del experimento. Los nombres locales no determinan la secuencia.",
+          "explanation": "La semilla 41 prepara un comienzo, pero no identifica por sí sola el tipo de motor, la distribución ni sus límites. También hay que repetir las llamadas en su orden: una obtención descartada actúa sobre los objetos aunque su resultado no se guarde. Ordenar los valores al final tampoco reconstruye el orden en que se obtuvieron. La reproducción necesita esa configuración y esa historia de llamadas en el mismo entorno.",
           "reviewFeedback": [
             "Sigue el estado que dejan las obtenciones descartadas antes de producir los datos que se conservan.",
             "Distingue el orden en que se obtuvieron los valores de una ordenación posterior de la colección.",
@@ -479,7 +479,7 @@
             "La segunda debe producir algún dato fuera del intervalo, porque volver a sembrar cambia los límites."
           ],
           "correctIndex": 1,
-          "explanation": "En 2..2, cada resultado es dos. Las sumas confirman los datos y las cantidades de esas colecciones, pero no prueban por sí solas la conservación del estado. El procedimiento se distingue siguiendo la construcción de los objetos y las llamadas a seed y reset.",
+          "explanation": "En 2..2, las tres primeras obtenciones son 2, 2 y 2, cuya suma es 6, y las otras dos son 2 y 2, cuya suma es 4. Esos datos aparecen tanto si se conserva el motor como si se restablece antes de cada obtención. Las sumas verifican el resumen de esas colecciones, pero no distinguen los procedimientos. Para hacerlo hay que seguir dónde se construyen los objetos y cuándo se ejecutan seed y reset.",
           "reviewFeedback": [
             "En un intervalo de un único valor, revisa si una misma suma puede proceder de distintas historias de llamadas.",
             "Distingue los datos que se observaron de las decisiones del programa que deben examinarse para explicar cómo se obtuvieron.",
@@ -1419,6 +1419,61 @@
         "id": "block_0005_0000",
         "beforeSha256": "c9905a8965e8e078610784fdabb5fd073e9f03f1391cc0a55e511b05d5a53695",
         "afterSha256": "3ac7321773cb13fd499348cae2667bb6f4f101af13fd4fb37dfd1a9f786a9cd7"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "1eca20f6719cb1795d3bd5a9697f1c1dde8ce1340e4a574e4df4ad18afe40e02",
+        "afterSha256": "4d3e0ceb667b0b152a73bf3964b17ea7a85ef237fb3801c72004d74b84f7aa87"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "943484ac75ef9a5c6d9dd4b49ce40f3785fad00523f2d09f5e8c4b48ce19a0fc",
+        "afterSha256": "64346a317173b90da7273a727d70c5024cb378c1f45a109afbead64c87c58264"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "61d2d83077bcd72769091a8a8ae321197141f85ad3b2d717094aa028bccac71d",
+        "afterSha256": "bddd6cdbf8f7e0a0912af4f4d015cbc7f6c1251153f103c4041db4886cd8a85a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e5ce9cb8a05b4a1938cf7d5494a6636bcf5dbf778080512bd09c257be85d6072",
+        "afterSha256": "ac229c230092365edabd3dbfacb2f550db5c2a87aa2fb597de9828fb4f688a51"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1b07c0efbde3a39b1ea7c779a4d1d6ba7b96178b75aad38a24094a2942e55325",
+        "afterSha256": "b8c7d73fb2f3c371cb4027e8b93d836a9fabd3d84f4015b438ab54d4c1f9c2de"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "79ed7afa61b23f15ccfcb52826ad331785158ad3987be590cd778fada23bb00e",
+        "afterSha256": "88960352a73360c4640df878a8bd1cc605fc68a074969e0215b2ea253c382092"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "2bec838d0d5c8dd8e47591e5407c4d952568163e63e9588309a74cc0d5b70ef6",
+        "afterSha256": "84a60894d4de80c41aab8a2289640d5b0a40cbabc154b358d4a6ec04ddd80636"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "0124c1f92962599255a7cb33729b5b5bc6915db0fb6b3f976213b304c8e2efe1",
+        "afterSha256": "905bb56b4639ff25dd75e4e9413a4ed0b714a91e29339e8a80a37801ba9ca4db"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "19bfd05f70cff28b76e62f3806e69145a1d06871994529bd92cdf3102bba9b45",
+        "afterSha256": "c0a53538c7a92585a93b230c814eb65cc383ab6cd396942b51030a5dee3ee7b7"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "321554f533971975d88c47bbb2d500ad118ff808aa5b0677397b07ce923c4871",
+        "afterSha256": "f221ee9da0b42092187b7029a9272eae50f903cac81a3596a5cdd8af96af1ecc"
+      },
+      {
+        "id": "intervalo_unico_y_evidencia_del_procedimiento",
+        "beforeSha256": "47c864a1bd7e4c16832842407c03ae44b4a6446fc71af91f51782dd86f1887af",
+        "afterSha256": "0961479f5b8502e5183875f7072587348bd11b136279f9f92a529d57ca982833"
       }
     ]
   },
@@ -1489,8 +1544,58 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "7e6097c6a2366c1b58ffeb4517278dd34ea2b96b51ce5183c96b465fd8b1ec0d",
-        "spans": []
+        "sourceSha256": "8961a5aac1b6ce2bb557e22a0e6aba5ed7025ff1cef00569db47deb20d7db93a",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "uno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 18,
+            "end": 21,
+            "text": "dos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 46,
+            "text": "43",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 90,
+            "text": "1..8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 298,
+            "text": "primera == segunda",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 306,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 323,
+            "text": "1:5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -1563,13 +1668,41 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "5229c2042ad040f5ad120d2a50705f50e310abdda855216bf1ebf4175b739ee0",
+        "sourceSha256": "17ba321f26fcee986c4e2a190af1ff4eb2cd71b3f76859a1ee513c2b48984a13",
         "spans": [
           {
-            "start": 4,
-            "end": 8,
-            "text": "seis",
-            "role": "data",
+            "start": 77,
+            "end": 85,
+            "text": "dividido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 351,
+            "end": 352,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 385,
+            "text": "1:6",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1583,7 +1716,7 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "00f9765bbf5e541f345ac37845234782319b6a708d6afbb8ed75a93a21423136",
+        "sourceSha256": "d3a0e9d98648b886d72c2ee383bff5766187ba0bcf920314fa914dabb450e126",
         "spans": []
       },
       {
@@ -1680,13 +1813,55 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "66a9deef07ace8a61b88060b8fc11e392564f34549a8323ddd4c49f72b33b171",
+        "sourceSha256": "3932419657671e84696c66e9b93e80acf98106fea66c84f9075701b89ec30d35",
         "spans": [
           {
-            "start": 99,
-            "end": 105,
-            "text": "cuatro",
+            "start": 67,
+            "end": 72,
+            "text": "antes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 96,
+            "text": "motor.seed(97)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 146,
+            "text": "elegir.reset()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 246,
+            "text": "-4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 250,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 351,
+            "text": "despues",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 428,
+            "end": 429,
+            "text": "1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1722,12 +1897,19 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "93dfb579e87ff369a36eaeeef81f47867b760803758f7db6b04922a2c2b89cfe",
+        "sourceSha256": "4891d605c8933f5880477769c2f3996c957790ac96f24b026521462ef789b4e3",
         "spans": [
           {
-            "start": 79,
-            "end": 83,
-            "text": "seed",
+            "start": 46,
+            "end": 53,
+            "text": "semilla",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 234,
+            "text": "motor.seed(semilla);",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1838,8 +2020,37 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "57a394e4dd85b05ae27eb97aca3603de40c0d6629bbece182e4dd0f0645be259",
-        "spans": []
+        "sourceSha256": "2ace79f0780de5b1cea967a210a526b350ba8db1e6e59907133f39b7a779feae",
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "1..3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 52,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -1921,13 +2132,55 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "94f2389134a7fddb4e5a35899a4f6d47b1eb29eb4668bff75a4485614fc437e3",
+        "sourceSha256": "1ae62768bee54d75ac31e1b89b74509ccbe49c5aac888de5544e7fdf2d554ec7",
         "spans": [
           {
-            "start": 56,
-            "end": 59,
-            "text": "dos",
+            "start": 0,
+            "end": 1,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 4,
+            "end": 5,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "113",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 78,
+            "text": "a()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 84,
+            "text": "b()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 255,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 272,
+            "text": "1:1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2087,7 +2340,7 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "90d91266d6f6944fd1cbed16de6176a2abdcbde27b554ed35846818a442c2f73",
+        "sourceSha256": "f86c0393e1c1f2b83e8122fa4cca2d529afb2d4de42632cd3fec81eeac4e3df3",
         "spans": []
       },
       {
@@ -2253,8 +2506,23 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "249273e86c13bf0f41056bc63bfaba12dc75d1399c3d0a72844570555fe18304",
-        "spans": []
+        "sourceSha256": "cc405d282994d1ac6913c62fa1af8c5854db0b1df69cf591b9f50739ad7846fc",
+        "spans": [
+          {
+            "start": 49,
+            "end": 51,
+            "text": "53",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 68,
+            "text": "1..9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2329,8 +2597,16 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "7c0b858137ea8e00bd1b5961c2cf6273733c6d5cff24768530989b149fe56e92",
-        "spans": []
+        "sourceSha256": "495e119bfcda245707492ca996fdb23e8af8fe4e13b3c19f8e348f34ae1f9359",
+        "spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "41",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0001",
@@ -2517,7 +2793,7 @@
       {
         "block": "intervalo_unico_y_evidencia_del_procedimiento",
         "path": "/explanation",
-        "sourceSha256": "fa94b1c3951da5431a9e828a6fd6e4e6f6be8b759d90347d01ec3b4dadeec6a0",
+        "sourceSha256": "4f8a49fbf929f717f78969b9228eb7a9c15828cc5dd728954a2bd74c1a310eca",
         "spans": [
           {
             "start": 3,
@@ -2527,22 +2803,43 @@
             "reading": "natural"
           },
           {
-            "start": 27,
-            "end": 30,
-            "text": "dos",
+            "start": 43,
+            "end": 51,
+            "text": "2, 2 y 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 245,
-            "end": 249,
+            "start": 66,
+            "end": 67,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 94,
+            "text": "2 y 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 110,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 381,
+            "end": 385,
             "text": "seed",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 252,
-            "end": 257,
+            "start": 388,
+            "end": 393,
             "text": "reset",
             "role": "cpp",
             "reading": "technical"
