@@ -1070,6 +1070,57 @@ std::vector<StateReadingRevision> assignment_reading_revisions(const JsonObject&
     }
     return result;
 }
+std::optional<StateReadingRevision> remainder_reading_revision(const JsonObject& root,const JsonObject& metadata,
+        const JsonArray& pages,const StateLayout& layout,std::string_view lesson_id) {
+    constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete";
+    constexpr std::string_view identity="block_0002_0002",prose_identity="block_0002_0001";
+    if(lesson_id!=owner||layout.version!=2||layout.locale!="es")return {};
+    // These two complete publications can restore only their authentic p3 at
+    // prefix17. A coherent later edit or different authoring is not that source.
+    const auto editorial=array(metadata,"editorial");const auto root_hash=fingerprint(root);
+    const bool published26=editorial.Size()==26
+        &&root_hash=="f48a23a3ba894ce7256211371deee1167675d491bf41992df32f6d4ec19b81d9";
+    const bool published30=editorial.Size()==30
+        &&root_hash=="f1604f89367e7fdc6c946c331390c8d2492d400ecf612c8ed0430f457023a0be";
+    if(!published26&&!published30)return {};
+    if(pages.Size()<=2||layout.origin.size()<=2||layout.current.size()<=2
+        ||layout.origin[2].blocks!=std::vector<std::string>{"block_0002_0000",std::string(prose_identity),std::string(identity),"block_0002_0003"}
+        ||layout.current[2].blocks!=layout.origin[2].blocks
+        ||fingerprint(metadata.GetNamedObject(L"family"))!="fd3affe1046654eecd9e3ad66884bcc925f161e2fef0bdfd10700b659242fd0f"
+        ||fingerprint(array(metadata,"origin"))!="648e2b6ee7937c22a378ceb45a674fc2e0e39c26d9f2a1da9185076ef4b16342"
+        ||fingerprint(array(metadata,"current"))!="43fb175bb9f00a9c000b709fd8af187e75e86d170ed1533df2b34bfa1df68956")return {};
+    JsonArray prefix;for(unsigned index=0;index<17;++index)prefix.Append(editorial.GetAt(index));
+    if(fingerprint(prefix)!="fcd3c0bf5c790fe050ec4b8f5005797ff90ff420cba958ca1dc48fb1359b6694")return {};
+    const auto reconstructed=JsonObject::Parse(pages.GetObjectAt(2).Stringify());
+    const auto blocks=array(reconstructed,"blocks");const auto previous=blocks.GetObjectAt(2);
+    const auto edge=editorial.GetObjectAt(19);
+    constexpr std::string_view before="524e9d5823d04f180a87ea73f34ac891b0d102450036493991026f93ce65ae2e";
+    constexpr std::string_view after="f1d3e2efbfd02a258da6416c5de3ad4590e2130eb4db28283f97c4a05b1270c0";
+    if(edge.Size()!=3||text(edge,"id")!=identity||text(edge,"beforeSha256")!=before
+        ||text(edge,"afterSha256")!=after||fingerprint(previous)!=after)return {};
+    previous.Insert(L"explanation",JsonValue::CreateStringValue(
+        L"La guardia completa se ejecuta antes del operador %. El diagnóstico impide llegar al cálculo cuando el divisor es cero."));
+    if(fingerprint(previous)!=before)return {};
+    StateReadingRevision result;result.editorial_prefix=17;
+    result.previous_blocks.emplace(identity,utf8(previous.Stringify()));
+    if(published30){
+        const auto prose=blocks.GetObjectAt(1),prose_edge=editorial.GetObjectAt(29);
+        constexpr std::string_view prose_before="d8e19c559028ddd9747b6cd42908b2425c6951b4f964fb18904329a6925ad25d";
+        constexpr std::string_view prose_after="90e89b257a2c692159ff77a1f7d53aa627db167753bf41fb817de3272f43b527";
+        if(prose_edge.Size()!=3||text(prose_edge,"id")!=prose_identity||text(prose_edge,"beforeSha256")!=prose_before
+            ||text(prose_edge,"afterSha256")!=prose_after||fingerprint(prose)!=prose_after)return {};
+        prose.Insert(L"text",JsonValue::CreateStringValue(
+            L"C++ no define un resultado para `/` o `%` con divisor cero. Nuestro intérprete comprueba el divisor y, si vale 0, lanza una excepción con el mensaje \"Divisor cero\" antes de ejecutar el operador (Köppe et al., 2023, sección [expr.mul]; Stroustrup, 2024, sección 6.5).\n\n"
+            L"Ejecutar `throw` abandona ese cálculo y transfiere el control al `catch` que trata el rechazo. El mensaje comunica la causa; es el lanzamiento de la excepción el que impide llegar a la operación.\n\n"
+            L"Los límites elegidos también permiten calcular los candidatos antes de comprobar la banda. Con operandos entre -100 y 100, una multiplicación tiene magnitud máxima 10000 y una suma o resta, 200. Dividir por -1 produce como máximo una magnitud de 100. Esos candidatos caben en el rango mínimo garantizado para `int`, ya estudiado; después se comprueba si el resultado pertenece al dominio del intérprete (Köppe et al., 2023, sección [basic.fundamental])."));
+        if(fingerprint(prose)!=prose_before)return {};
+        result.previous_blocks.emplace(prose_identity,utf8(prose.Stringify()));
+    }
+    // The unchanged heading, tail and emphasis must also belong to the old
+    // complete page; the view removes current semantics from changed sources.
+    if(fingerprint(reconstructed)!="f7f392f010b4d8cf734be852937710e2016099d286a6e7b7db75101724f58c72")return {};
+    return result;
+}
 std::optional<StateReadingRevision> session_literal_reading_revision(const JsonObject& metadata,const JsonArray& pages,
         const StateLayout& layout,std::string_view lesson_id) {
     constexpr std::string_view owner="cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado";
@@ -1647,6 +1698,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
         }
     }
     result.reading_revisions=assignment_reading_revisions(metadata,pages,result,lesson_id);
+    if(auto revision=remainder_reading_revision(root,metadata,pages,result,lesson_id))
+        result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=session_literal_reading_revision(metadata,pages,result,lesson_id))
         result.reading_revisions.push_back(std::move(*revision));
     if(auto revision=append_hypothesis_reading_revision(metadata,pages,result,lesson_id))

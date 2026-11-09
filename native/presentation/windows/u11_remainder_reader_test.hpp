@@ -46,6 +46,68 @@ void u11_remainder_editorial_reader(const std::shared_ptr<windows::NarrationWork
         &&before.pages.at(at.page).blocks.at(0).text==after.pages.at(at.page).blocks.at(0).text
         &&before.pages.at(at.page).blocks.at(3).text==after.pages.at(at.page).blocks.at(3).text,
         "Remainder reader lost its unchanged heading/tail or the later preceding-paragraph revision");
+    check(archive->previous_blocks.size()==(published30?2u:1u)&&!archive->positional_page_identity
+        &&!archive->bibliography_only&&archive->previous_explanation_semantics.empty()
+        &&archive->previous_blocks.contains(old_prose.stable_id)==published30,
+        "Remainder reading provenance must own only the changed sources of its original stable page");
+    if(published30)check(test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(archive->previous_blocks.at(old_prose.stable_id))))
+        ==test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(old_prose.raw_json))),
+        "Remainder reading provenance lost the complete original preceding paragraph");
+    const auto published=JsonObject::Parse(winrt::to_hstring(after_bytes));
+    const auto original_page=JsonObject::Parse(winrt::to_hstring(before_bytes)).GetNamedArray(L"pages").GetObjectAt(2);
+    const auto reconstructed=JsonObject::Parse(published.GetNamedArray(L"pages").GetObjectAt(2).Stringify());
+    const auto reconstructed_blocks=reconstructed.GetNamedArray(L"blocks");
+    for(unsigned index=0;index<reconstructed_blocks.Size();++index){
+        const auto found=archive->previous_blocks.find(after.state_layout.current.at(at.page).blocks.at(index));
+        if(found!=archive->previous_blocks.end())reconstructed_blocks.SetAt(index,JsonObject::Parse(winrt::to_hstring(found->second)));
+    }
+    check(test::compile_check_test_fingerprint(reconstructed)==test::compile_check_test_fingerprint(original_page),
+        "Remainder reading provenance combined sources that never formed the original complete page");
+    const auto same_archive=[&](const curriculum::Lesson& loaded){
+        const auto found=std::ranges::find(loaded.state_layout.reading_revisions,std::size_t{17},&curriculum::StateReadingRevision::editorial_prefix);
+        check(found!=loaded.state_layout.reading_revisions.end()&&found->previous_blocks==archive->previous_blocks
+            &&found->positional_page_identity==archive->positional_page_identity&&found->bibliography_only==archive->bibliography_only
+            &&found->previous_explanation_semantics==archive->previous_explanation_semantics,
+            "The full and progress-only loaders must authenticate the same remainder reading sources");
+    };
+    const auto canonical_source=winrt::to_string(published.Stringify());
+    same_archive(windows::parse_lesson_json(canonical_source));
+    same_archive(windows::parse_lesson_progress_metadata(canonical_source));
+    // Coherent QA variants still load normally. They cannot inherit an archive
+    // authenticated for another ordered history, payload or semantic authoring.
+    const auto without_archive=[&](const JsonObject& source,const char* message){
+        const auto absent=[&](const curriculum::Lesson& loaded){
+            check(std::ranges::none_of(loaded.state_layout.reading_revisions,[](const auto& revision){return revision.editorial_prefix==17;}),message);
+        };
+        const auto bytes=winrt::to_string(source.Stringify());
+        absent(windows::parse_lesson_json(bytes));absent(windows::parse_lesson_progress_metadata(bytes));
+    };
+    const auto reordered=JsonObject::Parse(published.Stringify());
+    const auto reordered_edges=reordered.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial");
+    const auto first_edge=reordered_edges.GetAt(0),second_edge=reordered_edges.GetAt(1);
+    check(first_edge.GetObject().GetNamedString(L"id")!=second_edge.GetObject().GetNamedString(L"id"),
+        "The history negative requires independent owner chains");
+    reordered_edges.SetAt(0,second_edge);reordered_edges.SetAt(1,first_edge);
+    without_archive(reordered,"A coherent reordered history inherited the published remainder archive");
+    const auto changed=JsonObject::Parse(published.Stringify());
+    const auto changed_block=changed.GetNamedArray(L"pages").GetObjectAt(2).GetNamedArray(L"blocks").GetObjectAt(2);
+    changed_block.Insert(L"explanation",winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(revised.explanation+" QA")));
+    const auto changed_edge=changed.GetNamedObject(L"stateLayout").GetNamedArray(L"editorial").GetObjectAt(19);
+    check(changed_edge.GetNamedString(L"id")==winrt::to_hstring(old.stable_id),"The explanation negative selected another owner");
+    changed_edge.Insert(L"afterSha256",winrt::Windows::Data::Json::JsonValue::CreateStringValue(
+        winrt::to_hstring(test::compile_check_test_fingerprint(changed_block))));
+    without_archive(changed,"A coherent different explanation inherited the published remainder archive");
+    if(published30){
+        const auto unmarked=JsonObject::Parse(published.Stringify());
+        const auto fields=unmarked.GetNamedObject(L"textSemantics").GetNamedArray(L"fields");bool removed=false;
+        for(unsigned index=0;index<fields.Size();++index){const auto field=fields.GetObjectAt(index);
+            if(field.GetNamedString(L"block")==winrt::to_hstring(old_prose.stable_id)&&field.GetNamedString(L"path")==L"/text"){
+                fields.RemoveAt(index);removed=true;break;
+            }
+        }
+        check(removed,"The semantic negative lost the actual current paragraph descriptor");
+        without_archive(unmarked,"Different semantic authoring inherited the published remainder archive");
+    }
     const auto draft_key=curriculum::draft_key("programming",before,compiler);
     check(compiler.type==curriculum::BlockType::cpp_compiler&&new_compiler.type==compiler.type
         &&draft_key==curriculum::draft_key("programming",after,new_compiler),"Remainder reader changed the independent compiler draft owner");
