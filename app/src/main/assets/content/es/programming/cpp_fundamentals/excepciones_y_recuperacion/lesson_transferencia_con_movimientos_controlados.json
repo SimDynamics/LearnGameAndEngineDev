@@ -122,6 +122,71 @@
         },
         {
           "type": "heading",
+          "text": "Comprobar ambos ejes del tablero de 3 por 3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera tu versión del tablero de 3 por 3, con coordenadas entre 0 y 2. Las órdenes 1 y 2 aumentan y disminuyen x; 3 y 4 aumentan y disminuyen y. Una orden distinta lanza std::invalid_argument; una propuesta que sale del tablero lanza std::out_of_range. Cada rechazo conserva ambas coordenadas.\n\nEl cliente conserva las sesiones anteriores y añade un recorrido horizontal y otro vertical. En el horizontal, y vale 1 al comprobar los límites de x. En el vertical, x vale 1 al comprobar el límite superior de y. Así se comprueba también que el rechazo conserva la otra coordenada. Después de cada límite rechazado hay un movimiento válido.",
+          "emphasis": [
+            {
+              "text": "conserva ambas coordenadas",
+              "style": "bold"
+            },
+            {
+              "text": "un movimiento válido",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia antes de main tus definiciones de mover y de la función que procesa una sesión, junto con sus auxiliares. En este cliente, la función de sesión se llama probar y tiene la interfaz void probar(const std::vector<int>& ordenes). Si utilizaste otro nombre, adapta ese nombre conservando su implementación.\n\nCada llamada a probar crea dos objetos int distintos, x e y, ambos inicialmente en 0. Captura por intento y continúa con la siguiente orden. Muestra A al aceptar, O ante una orden desconocida o L ante un límite; a continuación, las coordenadas separadas por coma y un punto y coma. Termina cada sesión con un salto de línea.\n\nConserva todas las llamadas del cliente y pulsa «Compilar, ejecutar y comprobar». El informe completo debe coincidir con el siguiente. Corrige tus funciones si alguna posición o categoría difiere. Se admiten otras implementaciones que cumplan el contrato; las llamadas deben utilizar las funciones que has construido.",
+          "emphasis": [
+            {
+              "text": "Copia antes de main",
+              "style": "bold"
+            },
+            {
+              "text": "Captura por intento",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\nA0,1;L0,1;A1,1;A2,1;L2,1;A1,1;\nL0,0;A1,0;A1,1;A1,2;L1,2;A1,1;O1,1;A0,1;"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\nA0,1;L0,1;A1,1;A2,1;L2,1;A1,1;\nL0,0;A1,0;A1,1;A1,2;L1,2;A1,1;O1,1;A0,1;\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las mismas funciones conservan las sesiones anteriores y comprueban ambos ejes entre 0 y 2. Los intentos que salen del tablero conservan la otra coordenada y permiten el movimiento válido posterior. La orden 4 disminuye la coordenada y. La orden 0 se rechaza como desconocida. Cada sesión empieza en 0,0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\nA0,1;L0,1;A1,1;A2,1;L2,1;A1,1;\nA0,0;A1,0;A1,1;A1,2;L1,2;A1,2;O1,2;A0,2;\n"
+                    ],
+                    "text": "La orden 4 disminuye y. Desde (0,0) debe producir el registro «L0,0;». Desde una posición con y positiva debe poder bajar una casilla. Revisa ese camino y conserva la posición anterior cuando la propuesta queda fuera del tablero."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
           "text": "Aplicar una ampliación explícita del tablero"
         },
         {
@@ -149,6 +214,71 @@
                   "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\n"
                 ],
                 "explanation": "Cambió la frontera superior, no el significado de las órdenes ni la conservación del estado tras un rechazo."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar ambos ejes del tablero de 4 por 4"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera tu versión del tablero de 4 por 4, con coordenadas entre 0 y 3. Las órdenes 1 y 2 aumentan y disminuyen x; 3 y 4 aumentan y disminuyen y. Una orden distinta lanza std::invalid_argument; una propuesta que sale del tablero lanza std::out_of_range. Cada rechazo conserva ambas coordenadas.\n\nEl cliente conserva las sesiones anteriores y añade un recorrido horizontal y otro vertical. En el horizontal, y vale 1 al comprobar los límites de x. En el vertical, x vale 1 al comprobar el límite superior de y. Así se comprueba también que el rechazo conserva la otra coordenada. Después de cada límite rechazado hay un movimiento válido.",
+          "emphasis": [
+            {
+              "text": "conserva ambas coordenadas",
+              "style": "bold"
+            },
+            {
+              "text": "un movimiento válido",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia antes de main tu definición de mover y sus auxiliares. El cliente llama a la función void probar(const std::vector<int>& ordenes) para procesar cada sesión. Si ya separaste el recorrido en una función, recupera esa definición y adapta su nombre a probar.\n\nSi el recorrido sigue directamente en tu main, crea probar con esa interfaz y traslada a ella las coordenadas locales, el bucle con sus capturas y la salida de la sesión. Recorre el parámetro ordenes para usar la colección que recibe cada llamada. Conserva el main entregado.\n\nCada llamada a probar crea dos objetos int distintos, x e y, ambos inicialmente en 0. Captura por intento y continúa con la siguiente orden. Muestra A al aceptar, O ante una orden desconocida o L ante un límite; a continuación, las coordenadas separadas por coma y un punto y coma. Termina cada sesión con un salto de línea.\n\nConserva todas las llamadas del cliente y pulsa «Compilar, ejecutar y comprobar». El informe completo debe coincidir con el siguiente. Corrige tus funciones si alguna posición o categoría difiere. Se admiten otras implementaciones que cumplan el contrato; las llamadas deben utilizar las funciones que has construido.",
+          "emphasis": [
+            {
+              "text": "Copia antes de main",
+              "style": "bold"
+            },
+            {
+              "text": "Captura por intento",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\nA0,1;L0,1;A1,1;A2,1;A3,1;L3,1;A2,1;\nL0,0;A1,0;A1,1;A1,2;A1,3;L1,3;A1,2;O1,2;A0,2;"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\nA0,1;L0,1;A1,1;A2,1;A3,1;L3,1;A2,1;\nL0,0;A1,0;A1,1;A1,2;A1,3;L1,3;A1,2;O1,2;A0,2;\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las mismas funciones conservan las sesiones anteriores y comprueban ambos ejes entre 0 y 3. Los intentos que salen del tablero conservan la otra coordenada y permiten el movimiento válido posterior. La orden 4 disminuye la coordenada y. La orden 0 se rechaza como desconocida. Cada sesión empieza en 0,0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\nA0,1;L0,1;A1,1;A2,1;A3,1;L3,1;A2,1;\nL0,0;A1,0;A1,1;A1,2;L1,2;L1,2;A1,1;O1,1;A0,1;\n"
+                    ],
+                    "text": "Comprueba la frontera de y en esta ampliación. Desde (1,2), la orden 3 debe alcanzar el registro «A1,3;». El intento de subir una casilla más se rechaza como «L1,3;». Cambiar sólo la frontera de x deja incompleta la ampliación del tablero."
+                  }
+                ]
               }
             ]
           }
@@ -186,7 +316,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los dos editores corresponden a requisitos separados. En el tablero de 4 por 4 cambia la frontera permitida; se conservan el rechazo de órdenes desconocidas y la continuación después del fallo. El puzzle de posiciones de esta página vuelve al contrato de 3 por 3 mostrado en su código. No requiere modificar ninguno de los editores."
+          "text": "Las dos versiones del tablero corresponden a requisitos separados. En el tablero de 4 por 4 cambia la frontera permitida; se conservan el rechazo de órdenes desconocidas y la continuación después del fallo. El puzzle de posiciones de esta página vuelve al contrato de 3 por 3 mostrado en su código. No requiere modificar ninguno de los editores."
         },
         {
           "type": "note",
@@ -260,12 +390,58 @@
         },
         {
           "type": "heading",
+          "text": "Comparar los límites de ambos ejes en 3 por 3"
+        },
+        {
+          "type": "paragraph",
+          "text": "El recorrido horizontal comienza subiendo hasta (0,1). La orden 2 propone (-1,1) y se rechaza con el registro «L0,1;»: y conserva 1. Los avances siguientes alcanzan (2,1). Un avance adicional se rechaza; el retroceso posterior alcanza (1,1).\n\nEl recorrido vertical rechaza primero bajar desde (0,0), luego avanza a (1,0) y sube hasta (1,2). Subir de nuevo debe conservar esa posición. La orden 4 baja a (1,1); la orden desconocida 0 conserva ambas coordenadas, y la orden 2 permite continuar hasta (0,1).\n\nLas funciones mover y probar de la referencia de este tablero sirven para las sesiones ampliadas. El main siguiente sustituye al main de esa referencia, manteniendo las inclusiones y ambas funciones. Cada llamada vuelve a crear sus propias coordenadas; se conserva el mismo tratamiento por intento.",
+          "emphasis": [
+            {
+              "text": "conserva ambas coordenadas",
+              "style": "bold"
+            },
+            {
+              "text": "sustituye al main",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
           "text": "Referencia del tablero de 4 por 4"
         },
         {
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 3.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 3 || siguienteY < 0 || siguienteY > 3) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar los límites de ambos ejes en 4 por 4"
+        },
+        {
+          "type": "paragraph",
+          "text": "El recorrido horizontal comienza subiendo hasta (0,1). La orden 2 propone (-1,1) y se rechaza con el registro «L0,1;»: y conserva 1. Los avances siguientes alcanzan (3,1). Un avance adicional se rechaza; el retroceso posterior alcanza (2,1).\n\nEl recorrido vertical rechaza primero bajar desde (0,0), luego avanza a (1,0) y sube hasta (1,3). Subir de nuevo debe conservar esa posición. La orden 4 baja a (1,2); la orden desconocida 0 conserva ambas coordenadas, y la orden 2 permite continuar hasta (0,2).\n\nLas funciones mover y probar de la referencia de este tablero sirven para las sesiones ampliadas. El main siguiente sustituye al main de esa referencia, manteniendo las inclusiones y ambas funciones. Cada llamada vuelve a crear sus propias coordenadas; se conserva el mismo tratamiento por intento.",
+          "emphasis": [
+            {
+              "text": "conserva ambas coordenadas",
+              "style": "bold"
+            },
+            {
+              "text": "sustituye al main",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n"
         }
       ]
     }
@@ -413,9 +589,19 @@
           "block_0001_0001",
           "block_0001_0002",
           "block_0001_0003",
+          "u8_tablero_3_ambos_ejes_titulo",
+          "u8_tablero_3_ambos_ejes_contrato",
+          "u8_tablero_3_ambos_ejes_consigna",
+          "u8_tablero_3_ambos_ejes_salida",
+          "u8_tablero_3_ambos_ejes_comprobacion",
           "block_0001_0004",
           "block_0001_0005",
-          "block_0001_0006"
+          "block_0001_0006",
+          "u8_tablero_4_ambos_ejes_titulo",
+          "u8_tablero_4_ambos_ejes_contrato",
+          "u8_tablero_4_ambos_ejes_consigna",
+          "u8_tablero_4_ambos_ejes_salida",
+          "u8_tablero_4_ambos_ejes_comprobacion"
         ]
       },
       {
@@ -437,8 +623,14 @@
           "block_0003_0003",
           "block_0003_0004",
           "block_0003_0005",
+          "u8_tablero_3_ambos_ejes_referencia_titulo",
+          "u8_tablero_3_ambos_ejes_referencia_recorridos",
+          "u8_tablero_3_ambos_ejes_referencia_main",
           "block_0003_0006",
-          "block_0003_0007"
+          "block_0003_0007",
+          "u8_tablero_4_ambos_ejes_referencia_titulo",
+          "u8_tablero_4_ambos_ejes_referencia_recorridos",
+          "u8_tablero_4_ambos_ejes_referencia_main"
         ]
       }
     ],
@@ -771,7 +963,152 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u8_tablero_3_ambos_ejes_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 4,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 2
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 3
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_comprobacion",
+        "sha256": "b6db66889ed05d0eb82058365feb4f2219ad2fc4acbe5a67fd0baa263679ebfd",
+        "storage": {
+          "page": 4,
+          "block": 4
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 4,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_referencia_recorridos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 6
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_referencia_main",
+        "sha256": "1a919248530ee031a6e4b7ae74382ad2ff691655955a70ff0a640798cd5d2edd",
+        "storage": {
+          "page": 4,
+          "block": 7
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 4,
+          "block": 8
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 9
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 10
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 11
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_comprobacion",
+        "sha256": "f15768a90b7ea44906cfb2e05105301ba63375ea69a6ea9c092f94e9352ce08d",
+        "storage": {
+          "page": 4,
+          "block": 12
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 4,
+          "block": 13
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_referencia_recorridos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 4,
+          "block": 14
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_referencia_main",
+        "sha256": "a07f2a897a5f1410d56711d7b4443699b2934f5a9741745d460cfbf259454404",
+        "storage": {
+          "page": 4,
+          "block": 15
+        },
+        "progressPage": "page_0003"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -842,26 +1179,37 @@
         "id": "block_0003_0001",
         "beforeSha256": "52bf53beb44ca5937c537dc889df2d280914f7d8b4e2d3fc6cd409aacf2b681c",
         "afterSha256": "1abb5575d14877eb86abb1316f5fb69edfe0af65229ba4640e7736e7463afbc9"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "099303637e683c9d49b72475f1135cf560f55cdd81c98cdf838234dd64475e03",
+        "afterSha256": "df941ee90841a1f77cc158308cd077d53d516cbe1aa2b730b553fd7e620b2dfb"
       }
     ]
   },
   "referenceAfter": [
     {
-      "activity": "block_0001_0003",
+      "activity": "u8_tablero_3_ambos_ejes_comprobacion",
       "blocks": [
         "block_0003_0000",
         "block_0003_0001",
         "block_0003_0002",
         "block_0003_0003",
         "block_0003_0004",
-        "block_0003_0005"
+        "block_0003_0005",
+        "u8_tablero_3_ambos_ejes_referencia_titulo",
+        "u8_tablero_3_ambos_ejes_referencia_recorridos",
+        "u8_tablero_3_ambos_ejes_referencia_main"
       ]
     },
     {
-      "activity": "block_0001_0006",
+      "activity": "u8_tablero_4_ambos_ejes_comprobacion",
       "blocks": [
         "block_0003_0006",
-        "block_0003_0007"
+        "block_0003_0007",
+        "u8_tablero_4_ambos_ejes_referencia_titulo",
+        "u8_tablero_4_ambos_ejes_referencia_recorridos",
+        "u8_tablero_4_ambos_ejes_referencia_main"
       ]
     }
   ],
@@ -869,13 +1217,27 @@
     {
       "activity": "block_0001_0006",
       "requires": [
-        "block_0001_0003"
+        "block_0001_0003",
+        "u8_tablero_3_ambos_ejes_comprobacion"
       ]
     },
     {
       "activity": "block_0002_0001",
       "requires": [
+        "block_0001_0003",
+        "u8_tablero_3_ambos_ejes_comprobacion"
+      ]
+    },
+    {
+      "activity": "u8_tablero_3_ambos_ejes_comprobacion",
+      "requires": [
         "block_0001_0003"
+      ]
+    },
+    {
+      "activity": "u8_tablero_4_ambos_ejes_comprobacion",
+      "requires": [
+        "block_0001_0006"
       ]
     }
   ],
@@ -1587,18 +1949,18 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "7ca76d312e32a421eccf220b6cd57e80df8b6cda0f3a91104cf39dfafe002b1b",
+        "sourceSha256": "fddb80191433606479350e9ba085c372f872cb2da4664f5ccf707153b04c5f85",
         "spans": [
           {
-            "start": 71,
-            "end": 78,
+            "start": 84,
+            "end": 91,
             "text": "4 por 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 255,
-            "end": 262,
+            "start": 268,
+            "end": 275,
             "text": "3 por 3",
             "role": "data",
             "reading": "natural"
@@ -1811,6 +2173,1007 @@
             "text": "4 por 4",
             "role": "data",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_titulo",
+        "path": "/text",
+        "sourceSha256": "dda5df4e0c595549f4183344f9247f21b13142756ef7ae36b8ef3e1f5a88e26d",
+        "spans": [
+          {
+            "start": 36,
+            "end": 43,
+            "text": "3 por 3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_contrato",
+        "path": "/text",
+        "sourceSha256": "26b4fcbd68b04fde35668b3286558ddfc8eed8b664226e61090b63425b8e4f59",
+        "spans": [
+          {
+            "start": 35,
+            "end": 42,
+            "text": "3 por 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 71,
+            "text": "0 y 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 193,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 253,
+            "text": "std::out_of_range",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 416,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 446,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 464,
+            "end": 465,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 471,
+            "end": 472,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 508,
+            "end": 509,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_consigna",
+        "path": "/text",
+        "sourceSha256": "71ffabd92f0b4220ae62ba7029b1e4cb226820c998dba44df736309c31f0813b",
+        "spans": [
+          {
+            "start": 15,
+            "end": 19,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 45,
+            "text": "mover",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 165,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 230,
+            "text": "void probar(const std::vector<int>& ordenes)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 324,
+            "end": 330,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 348,
+            "end": 351,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 364,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 367,
+            "end": 368,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 392,
+            "end": 393,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 458,
+            "end": 459,
+            "text": "A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 473,
+            "text": "O",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 504,
+            "text": "L",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_salida",
+        "path": "/text",
+        "sourceSha256": "9252790d9ebeaa8bf7993feea0e9c1284b18e6b5123d245fbb85e51ce174e41d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 113,
+            "text": "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\nA0,1;L0,1;A1,1;A2,1;L2,1;A1,1;\nL0,0;A1,0;A1,1;A1,2;L1,2;A1,1;O1,1;A0,1;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "3dd78d384b7a10e5d58d8e6a0e0b4cbb7d282bdc5c21caaa1767df2293f4b8b5",
+        "spans": [
+          {
+            "start": 85,
+            "end": 90,
+            "text": "0 y 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 209,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 247,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 303,
+            "text": "0,0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "9bdd74065482364c4446ec14e02b7b35b4c075311b96111c42a0278665a72716",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 22,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 35,
+            "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 68,
+            "text": "L0,0;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 95,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "4dbfad8dbd89c9dd742b71b46f56c8710f42562f9f41ca39c1762ee59aba7af6",
+        "spans": [
+          {
+            "start": 38,
+            "end": 45,
+            "text": "3 por 3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_3_ambos_ejes_referencia_recorridos",
+        "path": "/text",
+        "sourceSha256": "2b0cd7e830bb994b07586a356186e9c5c0b0c299153e52c789830ce133d694e3",
+        "spans": [
+          {
+            "start": 48,
+            "end": 53,
+            "text": "(0,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 80,
+            "text": "(-1,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "L0,1;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 131,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 170,
+            "text": "(2,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 240,
+            "text": "(1,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 298,
+            "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 320,
+            "text": "(1,0)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 339,
+            "text": "(1,2)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 394,
+            "end": 395,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 408,
+            "text": "(1,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 432,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 473,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 503,
+            "text": "(0,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 520,
+            "end": 525,
+            "text": "mover",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 528,
+            "end": 534,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 607,
+            "end": 611,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 635,
+            "end": 639,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_titulo",
+        "path": "/text",
+        "sourceSha256": "a562d769dbfb1d124776180b375b7387c0aca7f1d3f5cd56e6de43b388e4b982",
+        "spans": [
+          {
+            "start": 36,
+            "end": 43,
+            "text": "4 por 4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_contrato",
+        "path": "/text",
+        "sourceSha256": "a40769f5f2bd326b674302c817803b1f38aec02040f827038b04bd7a92cf9186",
+        "spans": [
+          {
+            "start": 35,
+            "end": 42,
+            "text": "4 por 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 71,
+            "text": "0 y 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 193,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 253,
+            "text": "std::out_of_range",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 416,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 446,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 464,
+            "end": 465,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 471,
+            "end": 472,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 508,
+            "end": 509,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_consigna",
+        "path": "/text",
+        "sourceSha256": "3b8db2e7450ee9c8a52f51444f695429eb25f772fe0089f48232a5e0687a0e31",
+        "spans": [
+          {
+            "start": 15,
+            "end": 19,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 42,
+            "text": "mover",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 135,
+            "text": "void probar(const std::vector<int>& ordenes)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 259,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 303,
+            "end": 307,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 320,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 454,
+            "end": 461,
+            "text": "ordenes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 522,
+            "end": 526,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 554,
+            "end": 560,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 578,
+            "end": 581,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 593,
+            "end": 594,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 597,
+            "end": 598,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 622,
+            "end": 623,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 688,
+            "end": 689,
+            "text": "A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 702,
+            "end": 703,
+            "text": "O",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 733,
+            "end": 734,
+            "text": "L",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_salida",
+        "path": "/text",
+        "sourceSha256": "f973ed33a6622b716afdca5f9b33cb4b1cf547849084921230f2b2a6935f1f45",
+        "spans": [
+          {
+            "start": 0,
+            "end": 112,
+            "text": "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\nA0,1;L0,1;A1,1;A2,1;A3,1;L3,1;A2,1;\nL0,0;A1,0;A1,1;A1,2;A1,3;L1,3;A1,2;O1,2;A0,2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "ef457ac781767b548d5d54f4bb11363197e137da4e6d1628cba002317f2c5a45",
+        "spans": [
+          {
+            "start": 85,
+            "end": 90,
+            "text": "0 y 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 209,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 247,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 303,
+            "text": "0,0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "58635ff08bbdc13ed168e2023c43f1b1680f5c199a4240f981021be397a95fd7",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 58,
+            "text": "(1,2)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 103,
+            "text": "A1,3;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 164,
+            "text": "L1,3;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 196,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "ef5fedc533f62b90ad3bb4dfb55799ce8f113676efab9ee7f7677cb4c0ff034a",
+        "spans": [
+          {
+            "start": 38,
+            "end": 45,
+            "text": "4 por 4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u8_tablero_4_ambos_ejes_referencia_recorridos",
+        "path": "/text",
+        "sourceSha256": "78677ed9ebfed0ad9f6c85250f4c4cafe8b389bf98fc185582c014b58f30ea3a",
+        "spans": [
+          {
+            "start": 48,
+            "end": 53,
+            "text": "(0,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 80,
+            "text": "(-1,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "L0,1;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 131,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 170,
+            "text": "(3,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 240,
+            "text": "(2,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 298,
+            "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 320,
+            "text": "(1,0)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 339,
+            "text": "(1,3)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 394,
+            "end": 395,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 408,
+            "text": "(1,2)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 432,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 473,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 503,
+            "text": "(0,2)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 520,
+            "end": 525,
+            "text": "mover",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 528,
+            "end": 534,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 607,
+            "end": 611,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 635,
+            "end": 639,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

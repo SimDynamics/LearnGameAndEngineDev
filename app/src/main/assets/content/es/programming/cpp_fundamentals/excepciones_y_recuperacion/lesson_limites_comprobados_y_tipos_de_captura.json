@@ -130,7 +130,7 @@
         },
         {
           "type": "paragraph",
-          "text": "what() permite consultar el diagnóstico textual de una excepción estándar (Stroustrup, 2024). Ese texto ayuda a investigar el fallo, pero la frase generada por at no es una salida fija que este programa pueda prometer para todas las bibliotecas (Köppe et al., 2023).\n\nDefine por separado un mensaje estable del programa, como Indice invalido. La selección de catch se realiza por el tipo de la excepción; no necesita buscar palabras dentro de what(). En la actividad de diagnóstico se conservarán el mensaje estable en std::cout y el detalle adicional en std::cerr.\n\nstd::cout envía la salida al canal estándar stdout; std::cerr envía su texto al canal estándar de errores stderr (Köppe et al., 2023). Separarlos permite conservar el mensaje del programa sin mezclarlo con el detalle del diagnóstico. En este ejemplo, escribir en std::cerr no lanza otra excepción ni significa que el programa haya terminado con un error: el catch trata el acceso rechazado y permite continuar.",
+          "text": "En catch (const std::out_of_range& error), el parámetro error enlaza mediante una referencia de sólo lectura el objeto de excepción capturado. La llamada error.what() consulta su diagnóstico textual (Stroustrup, 2024). Ese texto ayuda a investigar el fallo, pero la frase generada por at no es una salida fija que este programa pueda prometer para todas las bibliotecas (Köppe et al., 2023).\n\nDefine por separado un mensaje estable del programa, como Indice invalido. La selección de catch se realiza por el tipo de la excepción; no necesita buscar palabras dentro de what(). En la actividad de diagnóstico se conservarán el mensaje estable en std::cout y el detalle adicional en std::cerr.\n\nstd::cout envía la salida al canal estándar stdout; std::cerr envía su texto al canal estándar de errores stderr (Köppe et al., 2023). Separarlos permite conservar el mensaje del programa sin mezclarlo con el detalle del diagnóstico. En este ejemplo, escribir en std::cerr no lanza otra excepción ni significa que el programa haya terminado con un error: el catch trata el acceso rechazado y permite continuar.",
           "emphasis": [
             {
               "text": "diagnóstico textual",
@@ -933,6 +933,11 @@
         "id": "block_0003_0001",
         "beforeSha256": "ca2efa3e0b9068196825e5f4e6112a1313cb64313373362a712d92b1ee661171",
         "afterSha256": "fd7124d1e22b7276e32cceb5f7c8317b552d311920a228dd797723c62f6869f4"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "5ce37c5156b422b621a79fb6dc475e909b08741dc70193790f46746d957e38b0",
+        "afterSha256": "ecb1a95f350e1eec41ce0886185409f1997c3a73af467551e6e6affef2f59a10"
       }
     ]
   },
@@ -1359,116 +1364,130 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "e3fb3ebcb7228fac20e77ebeb8f6c309e8557c63a6f56e39c4abd737e53f4bea",
+        "sourceSha256": "303e42ee5d5bcb85abaaf1bcf505054ffef3fbb07b568d6606a01c3f22fe983b",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
-            "text": "what()",
+            "start": 3,
+            "end": 41,
+            "text": "catch (const std::out_of_range& error)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 74,
-            "end": 92,
+            "start": 56,
+            "end": 61,
+            "text": "error",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 166,
+            "text": "error.what()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 217,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 160,
-            "end": 162,
+            "start": 285,
+            "end": 287,
             "text": "at",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 245,
-            "end": 265,
+            "start": 370,
+            "end": 390,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 341,
+            "start": 451,
+            "end": 466,
             "text": "Indice invalido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 359,
-            "end": 364,
+            "start": 484,
+            "end": 489,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 443,
-            "end": 449,
+            "start": 568,
+            "end": 574,
             "text": "what()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 519,
-            "end": 528,
+            "start": 644,
+            "end": 653,
             "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 555,
-            "end": 564,
-            "text": "std::cerr",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 567,
-            "end": 576,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 611,
-            "end": 617,
-            "text": "stdout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 619,
-            "end": 628,
-            "text": "std::cerr",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 673,
-            "end": 679,
-            "text": "stderr",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 680,
-            "end": 700,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 830,
-            "end": 839,
+            "end": 689,
             "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 925,
-            "end": 930,
+            "start": 692,
+            "end": 701,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 736,
+            "end": 742,
+            "text": "stdout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 744,
+            "end": 753,
+            "text": "std::cerr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 798,
+            "end": 804,
+            "text": "stderr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 805,
+            "end": 825,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 955,
+            "end": 964,
+            "text": "std::cerr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1050,
+            "end": 1055,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"

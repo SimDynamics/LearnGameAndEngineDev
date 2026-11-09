@@ -95,7 +95,7 @@
           "answers": [
             "Fallo:4"
           ],
-          "explanation": "El decremento ocurrió antes del fallo y no se revierte al capturar."
+          "explanation": "pendientes empieza en 5. La instrucción --pendientes lo reduce a 4 antes de llamar a estimar(11). Esa llamada rechaza once piezas y no devuelve un resultado; el catch escribe Fallo: y después se muestra el valor 4 que conserva pendientes. Por eso la salida es Fallo:4. Capturar no deshace el decremento."
         },
         {
           "type": "output_prediction",
@@ -106,7 +106,7 @@
           "answers": [
             "Fallo:5"
           ],
-          "explanation": "La validación falla antes de alcanzar el decremento. El estado anterior se conserva."
+          "explanation": "pendientes empieza en 5. La llamada estimar(11) rechaza el dato antes de que se alcance --pendientes. No se ejecuta el decremento ni la salida de minutos del try. El catch escribe Fallo: y, fuera del tratamiento, se muestra el valor 5 conservado: la salida completa es Fallo:5."
         },
         {
           "type": "multiple_choice",
@@ -161,7 +161,7 @@
             "Devolver cero conserva la distinción sin revisar nada más."
           ],
           "correctIndex": 0,
-          "explanation": "Convertir un fallo en un resultado válido puede esconderlo. Necesitas un contrato que conserve la distinción.",
+          "explanation": "Con cero piezas, estimar devuelve 0 normalmente: el pedido vacío es válido. Con doce piezas, estimar lanza std::invalid_argument; si la función intermedia lo captura y devuelve también 0, el coordinador recibe el mismo resultado que en el caso vacío. Sin otra señal prevista en el contrato, ese resultado no permite distinguir el pedido válido del fallo ocultado.",
           "reviewFeedback": [
             "Relaciona el contrato del resultado con la información que necesita el coordinador.",
             "Comprueba si la excepción se propaga todavía después de que una función la capture y retorne normalmente.",
@@ -916,6 +916,21 @@
         "id": "block_0001_0001",
         "beforeSha256": "8780f235ed0d523396d5d69d8736ac8db9361dc31abd7ed9cf0ac84e73e680ef",
         "afterSha256": "4867c57da36a70a6f677a1e4b8a1fbf590f342cf08c97060c0c208ac50e64884"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "3149aeae832cf187b10c56604da5277b4d1ea4582a96e2381c423030bc54b985",
+        "afterSha256": "5ad80e7cb7b27a7af93ce4232a8b0a624fbe380e00e05ed130af920ef49b0e5d"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "d58ac5fb2930e49cb5f7e1efc3018a6b7e43fd3953a633c2b4570dcf584215a9",
+        "afterSha256": "9401e2ec38f464688c8f920a13e8f4ece5d97a23f9bc74e17f6c13f647fef8de"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "49d79e02ca8fbe0f39b9ab7ac82544bf19faf4ea26be27a75fbcb2cddf9a695b",
+        "afterSha256": "31a4ad1f8657bbdecdc265038406d8d7f969db3b1ba558ac7fffd993b78223d9"
       }
     ]
   },
@@ -1124,8 +1139,86 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "952dbf7735bec000f0f2e46fa28d42874cbf68d93e47b3ae2d02209efccb1f29",
-        "spans": []
+        "sourceSha256": "aaa40bdff22074008573617e56b073cf0f5cccf1335e4ec1168f45a9a2e86743",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 52,
+            "text": "--pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 96,
+            "text": "estimar(11)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 122,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 166,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 181,
+            "text": "Fallo:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 213,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 237,
+            "text": "pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 260,
+            "end": 267,
+            "text": "Fallo:4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1136,8 +1229,79 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "bedcc5fa0608b81f7f9f67690f7ffe6e6bb6be8fc7da9c7361bd2ae1c47080a9",
-        "spans": []
+        "sourceSha256": "3681434ee33b715d7f20fbd1c77a003588224150fa1cea6bd1d660543cf68b85",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 47,
+            "text": "estimar(11)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 100,
+            "text": "--pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 153,
+            "text": "minutos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 161,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 171,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 186,
+            "text": "Fallo:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 234,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 276,
+            "text": "Fallo:5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1299,8 +1463,58 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "104e50d6fb4c92ae5137894cc155319d1682d898c81c9f86379f1f8e07632a19",
-        "spans": []
+        "sourceSha256": "4a148cc0d0f4ad369b39d7c9c69370dc4386527a98b65ef191473fe19ea1edaa",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 24,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 100,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 128,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 186,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",

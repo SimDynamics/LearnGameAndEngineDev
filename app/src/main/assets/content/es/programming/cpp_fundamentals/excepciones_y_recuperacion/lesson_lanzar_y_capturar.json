@@ -10,18 +10,18 @@
         },
         {
           "type": "paragraph",
-          "text": "La política de devolver una señal como -1 exige que el llamador la distinga de los resultados válidos. Las excepciones ofrecen otra forma de informar un fallo: una función ejecuta throw en vez de retornar normalmente, y un tratamiento compatible puede capturarlo mediante catch asociado a un bloque try (Stroustrup, 2024).\n\nLa detección y el tratamiento quedan separados. La función que detecta un argumento no admitido no necesita decidir también cómo presentarlo al usuario o si se abandona una operación más amplia. Esa política corresponde al contexto que trata el fallo (Stroustrup, 2024).",
+          "text": "Un pedido de 11 piezas queda fuera del dominio 0..10: la función estimar no tiene un tiempo válido que devolver. Con la política de la unidad anterior devolvía la señal -1, y el llamador debía comprobarla antes de utilizar el resultado. Otra posibilidad consiste en lanzar una excepción: ejecutar throw con un objeto que identifica el fallo, para que un tratamiento compatible se haga cargo de él (Stroustrup, 2024).\n\nEn el ejemplo siguiente, main coloca la llamada a estimar dentro de un bloque try. Ese bloque contiene las instrucciones de la operación que se intenta realizar. A continuación, catch indica qué tipo de excepción puede recibir y contiene las instrucciones que la tratarán. Si la operación termina normalmente, se omite ese catch; si una excepción sale de la llamada, se busca un tratamiento compatible (Stroustrup, 2024).\n\nAsí se separan la detección y el tratamiento. estimar comprueba la cantidad y señala el rechazo; main decide qué mensaje mostrar y qué hacer después. La función que detecta el argumento inválido no necesita decidir también cómo presentarlo al usuario (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "excepciones",
+              "text": "no tiene un tiempo válido que devolver",
               "style": "bold"
             },
             {
-              "text": "en vez de retornar normalmente",
+              "text": "lanzar una excepción",
               "style": "bold"
             },
             {
-              "text": "detección y el tratamiento",
+              "text": "la detección y el tratamiento",
               "style": "bold"
             }
           ]
@@ -51,14 +51,14 @@
         },
         {
           "type": "paragraph",
-          "text": "En la llamada válida del ejemplo, estimar devuelve 7 y se imprime ese resultado. No se ha lanzado ninguna excepción, por lo que se omite el catch.\n\nSi la llamada ejecuta throw, no se obtiene el valor normal ni se alcanzan las instrucciones posteriores de ese try. Se busca un tratamiento compatible (Stroustrup, 2024). La declaración const std::invalid_argument& error permite tratar el objeto de excepción mediante una referencia de sólo lectura; aquí el cuerpo muestra el mensaje del dominio sin utilizar ese nombre.",
+          "text": "La llamada estimar(2) devuelve 7, porque calcula 3 + 2 × 2 = 7. Ese valor inicializa minutos y se imprime. Como no se lanzó ninguna excepción, se omite el catch. La instrucción posterior al conjunto try/catch añade :Fin: la salida completa es 7:Fin.\n\nEn catch (const std::invalid_argument& error), la declaración enlaza el nombre error con el objeto de excepción mediante una referencia de sólo lectura. El tipo std::invalid_argument identifica las excepciones que este tratamiento puede recibir. Aquí el cuerpo imprime Pedido invalido sin consultar el nombre error; el texto mostrado lo elige el programa (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "se omite el catch",
               "style": "bold"
             },
             {
-              "text": "no se obtiene el valor normal",
+              "text": "la salida completa",
               "style": "bold"
             },
             {
@@ -76,7 +76,7 @@
           "answers": [
             "13:Fin"
           ],
-          "explanation": "La llamada válida retorna 13 y no ejecuta el catch."
+          "explanation": "La llamada estimar(5) acepta el argumento y devuelve 13, calculado como 3 + 2 × 5 = 13. La salida del try muestra ese valor. No se ejecuta el catch, y la instrucción posterior añade :Fin; el resultado completo es 13:Fin."
         }
       ]
     },
@@ -87,6 +87,16 @@
           "text": "El camino fallido no vuelve a la línea que lanzó"
         },
         {
+          "type": "paragraph",
+          "text": "En esta página, los lanzamientos estudiados salen de la función que detecta el fallo: estimar no contiene ningún catch que los trate. La captura está en main. Sigue la ejecución con esa distribución: tras el lanzamiento no se completa normalmente la llamada ni se continúa dentro del try que la contenía.",
+          "emphasis": [
+            {
+              "text": "La captura está en main",
+              "style": "bold"
+            }
+          ]
+        },
+        {
           "type": "output_prediction",
           "id": "llamada_invalida_con_try",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
@@ -95,7 +105,7 @@
           "answers": [
             "Inicio:Invalido:Fin"
           ],
-          "explanation": "La primera salida ya ocurrió. La excepción evita la salida de minutos y Aceptado; después del catch se alcanza Fin."
+          "explanation": "Primero se escribe Inicio:. Después, estimar(11) detecta que 11 supera el máximo admitido y lanza la excepción. Esa llamada no proporciona un valor para minutos, y se omite la instrucción que habría mostrado los minutos y :Aceptado. El catch escribe Invalido; al terminar, la instrucción exterior añade :Fin. La salida ya escrita se conserva, por lo que aparece Inicio:Invalido:Fin."
         },
         {
           "type": "multiple_choice",
@@ -107,7 +117,7 @@
             "Una transferencia excepcional; no existe un resultado normal de esa llamada."
           ],
           "correctIndex": 2,
-          "explanation": "throw no proporciona el valor de retorno que la llamada prometía en el camino normal.",
+          "explanation": "En el caso estudiado, la función no contiene un catch que trate su propio lanzamiento: la excepción sale de ella y el return posterior no se alcanza. El llamador no recibe un valor normal, ni siquiera 0; la ejecución busca un tratamiento compatible. El argumento tampoco se modifica para convertirlo en válido.",
           "reviewFeedback": [
             "Revisa si throw modifica el objeto que se utilizó como argumento o informa que la operación no puede continuar normalmente.",
             "Un valor de retorno necesita un camino normal que lo proporcione. Sigue qué instrucción se ejecuta en este caso.",
@@ -123,7 +133,7 @@
           "answers": [
             "throw"
           ],
-          "explanation": "throw interrumpe el retorno normal y transfiere el tratamiento al catch compatible."
+          "explanation": "Con -1 piezas, la condición de rechazo se cumple. La palabra throw lanza el objeto std::invalid_argument y la llamada sale de estimar antes de sus return. El tratamiento de main muestra Invalido; no se imprime un resultado numérico."
         }
       ]
     },
@@ -135,18 +145,18 @@
         },
         {
           "type": "paragraph",
-          "text": "El tratamiento debe ser compatible con el tipo de la excepción lanzada. En estos ejemplos, el throw y el catch usan std::invalid_argument. Una excepción sin tratamiento puede terminar el programa; ese desenlace no equivale a recuperar la operación fallida (Stroustrup, 2024).\n\nLas prácticas provocan rechazos mediante throw y los capturan de forma deliberada. El programa decide qué se ejecuta después del tratamiento: capturar una excepción no vuelve automáticamente al punto que falló.",
+          "text": "El tratamiento debe ser compatible con el tipo de la excepción lanzada. En estos ejemplos, el throw y el catch usan std::invalid_argument. Si no se encuentra ningún catch compatible para una excepción lanzada, se activa la terminación del programa; ese desenlace no equivale a recuperar la operación fallida (Köppe et al., 2023).\n\nLas prácticas provocan rechazos mediante throw y los capturan de forma deliberada. El programa decide qué se ejecuta después del tratamiento: capturar una excepción no vuelve automáticamente al punto que falló (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "compatible con el tipo",
               "style": "bold"
             },
             {
-              "text": "no equivale a recuperar",
+              "text": "se activa la terminación del programa",
               "style": "bold"
             },
             {
-              "text": "después del tratamiento",
+              "text": "no vuelve automáticamente al punto que falló",
               "style": "bold"
             }
           ]
@@ -160,7 +170,7 @@
           "answers": [
             "0"
           ],
-          "explanation": "El pedido vacío cumple el dominio. La excepción representa datos inválidos, no un resultado igual a cero."
+          "explanation": "La cantidad 0 está dentro del dominio admitido. La condición de rechazo es falsa y el siguiente if hace que estimar devuelva 0. Se imprime ese resultado y se omite el catch. Un tiempo válido de cero no indica que se haya lanzado una excepción."
         },
         {
           "type": "multiple_choice",
@@ -172,7 +182,7 @@
             "Se reejecuta automáticamente la llamada fallida con el mismo dato."
           ],
           "correctIndex": 0,
-          "explanation": "Capturar no reintenta la instrucción que falló. La continuación debe estar diseñada por el programa.",
+          "explanation": "Al terminar normalmente el cuerpo del catch, la ejecución continúa después del conjunto try/catch. En los ejemplos de esta lección, allí está la instrucción que muestra :Fin. Para volver a intentar la operación tendría que existir otra llamada o un recorrido que la ejecutara; capturar por sí solo no vuelve a la llamada fallida.",
           "reviewFeedback": [
             "Localiza la instrucción siguiente al tratamiento que terminó normalmente.",
             "Revisa si existe alguna instrucción que vuelva al inicio del programa.",
@@ -433,6 +443,7 @@
         "id": "page_0001",
         "blocks": [
           "block_0001_0000",
+          "excepcion_contexto_del_lanzamiento",
           "block_0001_0001",
           "block_0001_0002",
           "block_0001_0003"
@@ -840,7 +851,17 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "excepcion_contexto_del_lanzamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 0
+        },
+        "progressPage": "page_0001"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -906,6 +927,51 @@
         "id": "block_0000_0002",
         "beforeSha256": "333e294c2d050758814ac94a516ba8c581b72933d13e9d6da41720c143c53197",
         "afterSha256": "102e2130d22ee41d554a6c428f941372ec0a9790f0c74e193c0136d274264f7e"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "d7433f7b96047fb82960663de0e9ead9fe844a6e84b4842397e2edcb95c0da3d",
+        "afterSha256": "be3286b6312214d60b729724601cadb6e7a6cf95ecfeaa214b06ffc7eb7036ad"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "54b783cc24da3a2c0fa64007635b1b9c90f3213ce797eaadb7c3f2b180a064ce",
+        "afterSha256": "511a5c084e0bc7da7ff67015c9cc9d421d3281168e72dcf5ddb08bc21833bc15"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "28ded12f8453c295e52577e169f31b90263fdb0fd66b9b866a0a3a41f8487db6",
+        "afterSha256": "5f3f0684300f654747c3be69c142d67d0b534a162123817e6ff805ca942bb76d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "358131f80e25ab97debd87805bb1d9977cfadad3f0fd9c29ae50df902bca8606",
+        "afterSha256": "681a601395966d4086d07c603bf368130e0707dc295bc0e5c0a81f8fd5859fe2"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "c6adbd5bb3b0e8d7b8dddd88ac75acdb7a1a5c268642636054db187f22c20b15",
+        "afterSha256": "e28dc038f1bf39ca7207160c647fc5a8eb2eb155c03a39addb643232fdb28e87"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "c5c670aac795984bcc86b3356f4b559e99efb038cf0d76bd6a9b1b232c274459",
+        "afterSha256": "6482df35d96fafcc4643f8fc52f5e7a2ef7d60ad834687c3af77fb262a06a65f"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "9163d59609210d847045e7ec12fb2a4145481437589fbce86a31a355eb896753",
+        "afterSha256": "2473e84eed6c52232b1b9bb15743cc0b3ae0ac181997ccb1db81090dfee5222b"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "0a010fc75ea824a46563c364d85d0d6bba870254c7fcf075b27129b2590fd20e",
+        "afterSha256": "fc19a03013ff7ed7ca23e25ac606c5b7a27f54935a331814c86577d9bb1a807e"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2189ed8c1409f6c414a5af7b251740448b52b1ca54910e19ca50c442d23e8f3e",
+        "afterSha256": "1c64960ce51882237c29404c18471d9ff8bd374b9fe2eb4707bf658a25f200f3"
       }
     ]
   },
@@ -977,46 +1043,109 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "568f97c5d988bcdd580c70c3c5cc1fa2bd7bf767af1909514e31c27fa0eeff0c",
+        "sourceSha256": "80d62b558a0fad6380fe498092992b980e6f53ef069c9bae577ec4233da48e4f",
         "spans": [
           {
-            "start": 39,
-            "end": 41,
-            "text": "-1",
+            "start": 13,
+            "end": 15,
+            "text": "11",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 180,
-            "end": 185,
+            "start": 47,
+            "end": 52,
+            "text": "0..10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 72,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 171,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 302,
             "text": "throw",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 272,
-            "end": 277,
-            "text": "catch",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 299,
-            "end": 302,
-            "text": "try",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 303,
-            "end": 321,
+            "start": 397,
+            "end": 415,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 575,
-            "end": 593,
+            "start": 443,
+            "end": 447,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 468,
+            "end": 475,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 496,
+            "end": 499,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 596,
+            "end": 601,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 741,
+            "end": 746,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 820,
+            "end": 838,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 887,
+            "end": 894,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 938,
+            "end": 942,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1092,
+            "end": 1110,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1026,56 +1155,105 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "0e4343b73128add880f7c831989dc8e9cdd24654b53cec8495ccc47e601b9231",
+        "sourceSha256": "387e7d960a187ea5e3cb68270608224ee61b9f4f73c13b763c27413f022e1c5a",
         "spans": [
           {
-            "start": 34,
-            "end": 41,
-            "text": "estimar",
+            "start": 11,
+            "end": 21,
+            "text": "estimar(2)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 52,
+            "start": 31,
+            "end": 32,
             "text": "7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 140,
-            "end": 145,
+            "start": 49,
+            "end": 62,
+            "text": "3 + 2 × 2 = 7",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 92,
+            "text": "minutos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 160,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 175,
-            "text": "throw",
+            "start": 199,
+            "end": 208,
+            "text": "try/catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 259,
-            "end": 262,
-            "text": "try",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 299,
-            "end": 317,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
+            "start": 215,
+            "end": 219,
+            "text": ":Fin",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 334,
-            "end": 368,
-            "text": "const std::invalid_argument& error",
+            "start": 243,
+            "end": 248,
+            "text": "7:Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 296,
+            "text": "catch (const std::invalid_argument& error)",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "error",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 433,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 520,
+            "end": 535,
+            "text": "Pedido invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 560,
+            "end": 565,
+            "text": "error",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 606,
+            "end": 624,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1088,21 +1266,56 @@
       {
         "block": "block_0000_0005",
         "path": "/explanation",
-        "sourceSha256": "8c716d51ed312fea3892d8711b05fa3abd55b2aa206026533c93038e51cf7498",
+        "sourceSha256": "a86a6cd51953b78ec2f5762913f0e88a5deb99aed49c7b03570cf5bbd823b73a",
         "spans": [
           {
-            "start": 26,
-            "end": 28,
+            "start": 11,
+            "end": 21,
+            "text": "estimar(5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 55,
             "text": "13",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 45,
-            "end": 50,
+            "start": 72,
+            "end": 86,
+            "text": "3 + 2 × 5 = 13",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 105,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 147,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 182,
+            "end": 186,
+            "text": ":Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 219,
+            "text": "13:Fin",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1121,33 +1334,68 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "f54525be70bee153b0844348a605aa0319a4bcc399c1d68b5f9f00eecaafbc8a",
+        "sourceSha256": "a9e6be4de00af2d2e5417573f225f615ef08a4b9e53b77b1ce6b21cfea154094",
         "spans": [
           {
-            "start": 62,
-            "end": 69,
+            "start": 19,
+            "end": 26,
+            "text": "Inicio:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 48,
+            "text": "estimar(11)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 63,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 160,
             "text": "minutos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 72,
-            "end": 80,
-            "text": "Aceptado",
+            "start": 222,
+            "end": 231,
+            "text": ":Aceptado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 94,
-            "end": 99,
+            "start": 236,
+            "end": 241,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 111,
-            "end": 114,
-            "text": "Fin",
+            "start": 250,
+            "end": 258,
+            "text": "Invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 307,
+            "text": ":Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 381,
+            "text": "Inicio:Invalido:Fin",
             "role": "output",
             "reading": "natural"
           }
@@ -1177,14 +1425,28 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "12fcf4d5ef1bbce625e3437e4531f313ce22998a9054d299be0f07ff4e158985",
+        "sourceSha256": "9e6a50da33c774fb936c404bb43fa9dd48fe92e3f71d6e7835a8fbd24b8c0213",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "throw",
+            "start": 48,
+            "end": 53,
+            "text": "catch",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 124,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1203,7 +1465,7 @@
             "start": 25,
             "end": 29,
             "text": "cero",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1249,21 +1511,56 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "a14c76ec003186092a40b2597aa0f9a3202324701add61fd16cbea9c6ff1ae35",
+        "sourceSha256": "8aed2a6f365062bea5d43fa9059f913b6af5ee5e3806f3fb67b952282cc6386a",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
+            "start": 4,
+            "end": 6,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 66,
             "text": "throw",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 71,
-            "text": "catch",
+            "start": 83,
+            "end": 104,
+            "text": "std::invalid_argument",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 133,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 153,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 194,
+            "text": "Invalido",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1284,7 +1581,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "b632912fe1035cb17d8ddadbb513f0783d61548f308ef059d30af7d13811993e",
+        "sourceSha256": "6cfcf0fee4891612fa9902c1e505b05a960ecb0b7f500f4858a343dfc584c1ce",
         "spans": [
           {
             "start": 94,
@@ -1308,18 +1605,32 @@
             "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 274,
-            "text": "(Stroustrup, 2024)",
+            "start": 165,
+            "end": 170,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 308,
+            "end": 328,
+            "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 318,
-            "end": 323,
+            "start": 372,
+            "end": 377,
             "text": "throw",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 541,
+            "end": 559,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1332,11 +1643,46 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "4e3863dfbe13f79ce26172f91cedec0699f49310b83f8cd70a5918579d7306b3",
+        "sourceSha256": "a3f1ea31c4d289763002e545af4c28fbbf600ad36542fde7729e914c42e9b756",
         "spans": [
           {
-            "start": 100,
-            "end": 104,
+            "start": 12,
+            "end": 13,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 98,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 115,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 126,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 172,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 198,
             "text": "cero",
             "role": "output",
             "reading": "natural"
@@ -1374,8 +1720,30 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "785b4afa76f9f78d0f8bf28227f40a1c000416549de0cb7be31620f3dd5184af",
-        "spans": []
+        "sourceSha256": "695173888f2443e32f48a567dc4e7c9c6d8e0aea36749426db9559c0f6064c71",
+        "spans": [
+          {
+            "start": 38,
+            "end": 43,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 97,
+            "text": "try/catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 173,
+            "text": ":Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -1801,6 +2169,41 @@
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "excepcion_contexto_del_lanzamiento",
+        "path": "/text",
+        "sourceSha256": "cd5825c512f8154eb5fa460126299d2d011e17861519b16d50dd63a806205f20",
+        "spans": [
+          {
+            "start": 86,
+            "end": 93,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 118,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 157,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 287,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }
