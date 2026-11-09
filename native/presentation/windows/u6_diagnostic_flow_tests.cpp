@@ -408,10 +408,29 @@ void run_goal(View& f, const test::U6DiagnosticCase& spec) {
         && region.source_text.find(block.compile_check->explanation) != std::string::npos; }),
         "The integrated reader omitted the complete current authored U6 explanation");
     const auto correct_audio = feedback_audio(f.snapshot(), at.block, true);
+    // A fresh answer permits an explicit preview beyond its own feedback, but
+    // that temporary priority grants no listening credit or page completion.
+    const auto before_priority_seek = f.snapshot(); f.reader->seek_seconds(100000); const auto prioritized = f.snapshot();
+    require(prioritized.heard_through == before_priority_seek.heard_through,
+        "Prioritized U6 forward seek credited unheard success feedback");
+    require(!prioritized.finished, "Prioritized U6 forward seek falsely finished the page");
+    require(!prioritized.playing && !prioritized.allocated,
+        "Prioritized U6 forward seek started or allocated paused audio");
+    // Restart removes that explicit answer priority and resets listening. The
+    // ordinary unread-feedback barrier must now retain the compiler's block.
+    f.reader->restart(); f.reader->pause();
+    const auto restarted = f.snapshot();
+    require(restarted.heard_through == 0 && !restarted.finished && !restarted.playing && !restarted.allocated,
+        "U6 reader restart retained listening credit, completion or active audio");
     const auto before_seek = f.snapshot(); f.reader->seek_seconds(100000); const auto sought = f.snapshot();
-    require(sought.segments.at(sought.index).block == at.block && sought.segments.at(sought.index).feedback
-        && sought.heard_through == before_seek.heard_through && !sought.finished && !sought.allocated,
-        "Forward seek credited unheard U6 success feedback or crossed its barrier");
+    require(sought.heard_through == before_seek.heard_through,
+        "Ordinary U6 forward seek credited unheard success feedback");
+    require(!sought.finished && !sought.playing && !sought.allocated,
+        "Ordinary U6 forward seek finished the page or activated paused audio");
+    require(sought.segments.at(sought.index).block == at.block && sought.segments.at(sought.index).feedback,
+        "Ordinary U6 forward seek crossed its unread-feedback barrier: expected block " + std::to_string(at.block)
+            + ", actual block " + std::to_string(sought.segments.at(sought.index).block)
+            + ", segment " + std::to_string(sought.index));
     // Resume from the beginning of the success, not from the end reached by a
     // manual seek: the following explanation must be physically played.
     f.reader->seek_seconds(-100000); f.reader->toggle();

@@ -411,9 +411,12 @@ mediante un commit de `Codex` cuyo mensaje comience por
 `qa-curricular-readers:` o mediante `workflow_dispatch` cuando esté disponible
 en la rama predeterminada. Los pushes ordinarios no lo activan.
 El prefijo `qa-curricular-u11:` selecciona únicamente `U11EditorialReader`,
-con sus diez casos, para comprobar una revisión localizada sin repetir los
-otros grupos. Esta selección tiene su propia cola y conserva las ejecuciones
-generales en curso. Un dispatch manual mantiene siempre los tres grupos.
+con sus diez casos, y `qa-curricular-u6:` selecciona únicamente
+`U6DiagnosticReader`, con sus tres recorridos. Permiten comprobar una revisión
+localizada sin repetir los otros grupos. Cada selección tiene su propia cola
+y conserva las ejecuciones generales y de la otra selección en curso.
+Un dispatch manual mantiene siempre los tres grupos, cualquiera que sea el
+título del commit seleccionado.
 
 Cada job comprueba primero el dispositivo firmado con
 `-Suite NarrationPlayer -VirtualAudio`. Sólo después de superar sus tres
