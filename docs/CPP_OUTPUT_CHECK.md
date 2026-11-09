@@ -116,9 +116,9 @@ Work puede declarar un caso por consumidor, conservando su entrada y salida lite
 }
 ```
 
-La salida del cliente nunca acredita la batería. Un objetivo o entrada sin caso mantiene la ejecución disponible, sin veredicto ni aceptación implícita de otro consumidor. Cambiar el objetivo invalida la comprobación anterior, incluso si todos los archivos siguen iguales; volver al objetivo anterior requiere ejecutar de nuevo. La reapertura conserva el objetivo y los archivos, pero no recupera un veredicto. Configuración, generación, construcción y ejecución conservan sus diagnósticos y no consumen corazones. Las explicaciones y orientaciones opcionales pertenecen a su caso, sin revelar el resultado de otro ejecutable.
+La salida del cliente nunca acredita la batería. Un objetivo o entrada sin caso mantiene la ejecución disponible, sin veredicto ni aceptación implícita de otro consumidor. El veredicto visible corresponde a la ejecución capturada de su objetivo. Los casos ya acreditados se conservan al seleccionar otro ejecutable del mismo proyecto sin editar sus archivos o configuración; completar el objetivo curricular exige las pruebas de todos sus casos. La reapertura conserva esos datos y sus pruebas auténticas, sin inventar una ejecución nueva. Configuración, generación, construcción y ejecución conservan sus diagnósticos y no consumen corazones. Las explicaciones y orientaciones opcionales pertenecen a su caso, sin revelar el resultado de otro ejecutable.
 
-Este contrato prepara las siete prácticas registradas en `CPP_COMPROBACION_POR_OBJETIVO_CMAKE`. Su incorporación curricular corresponde a Work: el motor y las pruebas no añaden `outputCheck` a esos assets.
+Las siete prácticas de `datos_y_listas_de_objetivos` y `reorganizar_la_descripcion_conservando_el_comprobador` que solicitan ambos consumidores declaran dos casos por editor, con entrada vacía, objetivo explícito, stdout literal y retorno cero. Las lecciones requieren completar sus objetivos de compilación. Estas comprobaciones verifican las ejecuciones; los criterios de las actividades también piden inspeccionar las propiedades y la organización de CMake. Obtener la salida correcta no demuestra por sí solo que se haya realizado esa reorganización.
 
 ## Diagnóstico adicional de ejecución en Windows
 

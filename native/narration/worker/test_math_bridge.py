@@ -1,4 +1,4 @@
-"""Windows bridge regressions against the unchanged, real mathematical curriculum."""
+"""Windows bridge regressions against the real mathematical curriculum."""
 from __future__ import annotations
 
 import copy
@@ -52,9 +52,52 @@ def known_answer(spec):
         area = float(Fraction(str(spec["expected"])))
         points = [{"x": 0, "y": 0}, {"x": area, "y": 0}, {"x": area, "y": 1}, {"x": 0, "y": 1}]
         return {"type": "graph", "points": points}
+    if kind == "segment_transport":
+        origin = spec["target"]["origin"]
+        if spec["mode"] == "partition":
+            end = spec["target"]["end"]
+            count = spec["partitionCount"]
+            return {"type": "graph", "points": [
+                {axis: origin[axis] + (end[axis] - origin[axis]) * index / count for axis in ("x", "y")}
+                for index in range(1, count)]}
+        direction = spec["target"]["direction"]
+        magnitude = math.hypot(direction["x"], direction["y"])
+        lengths = {source["id"]: math.hypot(source["to"]["x"] - source["from"]["x"],
+                                                 source["to"]["y"] - source["from"]["y"])
+                   for source in spec["sources"]}
+        distance, points = 0.0, []
+        for identity in spec["steps"]:
+            distance += lengths[identity]
+            points.append({axis: origin[axis] + direction[axis] * distance / magnitude for axis in ("x", "y")})
+        return {"type": "graph", "points": points}
     if kind == "rigid_angle_copy":
-        raise AssertionError("This fixture needs its explicit geometric placement")
+        def first_side(figure):
+            points = {point["id"]: point for point in figure["diagram"]["points"]}
+            vertex = points[figure["vertex"]]
+            side = next(item for item in figure["diagram"]["objects"] if item["id"] == figure["sides"][0])
+            endpoint = points[side["through"][1]]
+            return vertex, math.atan2(endpoint["y"] - vertex["y"], endpoint["x"] - vertex["x"])
+        vertex, reference_direction = first_side(spec["reference"])
+        _, copy_direction = first_side(spec["copy"])
+        return {"type": "rigid_angle", "x": vertex["x"], "y": vertex["y"],
+                "rotation": reference_direction - copy_direction}
     return {"type": "text", "value": str(spec["expected"])}
+
+
+FREE_CONSTRUCTION_IDS = {
+    "transportar_una_longitud_sobre_semirrecta",
+    "transportar_longitud_con_otro_sentido",
+    "componer_dos_longitudes_libremente",
+    "componer_tres_longitudes_en_otra_orientacion",
+    "construir_tres_copias_con_la_misma_apertura",
+    "construir_cuatro_intervalos_consecutivos",
+    "construir_cinco_partes_congruentes",
+    "construir_un_punto_medio_libremente",
+    "superponer_angulos_con_marcas_a_distinta_distancia",
+    "alinear_una_copia_dentro_de_la_referencia",
+    "alinear_una_copia_que_contiene_la_referencia",
+    "superponer_una_region_con_correspondencia_explicita",
+}
 
 
 class WindowsMathBridgeTest(unittest.TestCase):
@@ -310,6 +353,54 @@ class WindowsMathBridgeTest(unittest.TestCase):
                 self.assertTrue(result["evaluable"], result)
                 self.assertTrue(result["correct"], result)
                 self.assertEqual("correct", result["feedbackKind"])
+
+    def test_15_authored_free_constructions_reject_incomplete_and_wrong_placements(self):
+        selected = [(path, block) for path, block in self.blocks if block.get("id") in FREE_CONSTRUCTION_IDS]
+        self.assertEqual(FREE_CONSTRUCTION_IDS, {block["id"] for _, block in selected})
+        self.assertEqual(len(FREE_CONSTRUCTION_IDS), len(selected))
+        for path, block in selected:
+            with self.subTest(lesson=path.name, block=block["id"]):
+                response, = responses(block)
+                spec = response["validator"]
+                correct = known_answer(spec)
+                self.assertTrue(self.evaluate(block, {response["id"]: correct})["correct"])
+                self.assertNotIn("expected", spec)
+                if spec["type"] == "segment_transport":
+                    self.assertNotIn("initial", spec, "A free construction must begin without solved points")
+                    partial = {"type": "graph", "points": correct["points"][:-1]}
+                    result = self.evaluate(block, {response["id"]: partial})
+                    self.assertFalse(result["correct"], result)
+                    self.assertFalse(result["evaluable"], result)
+                    # Keep all other endpoints, including the final total, but move
+                    # the first point perpendicular to the required straight line.
+                    wrong = copy.deepcopy(correct)
+                    target = spec["target"]
+                    direction = target.get("direction") or {
+                        axis: target["end"][axis] - target["origin"][axis] for axis in ("x", "y")}
+                    norm = math.hypot(direction["x"], direction["y"])
+                    displacement = max(spec["positionTolerance"], spec["lengthTolerance"]) * 10
+                    wrong["points"][0]["x"] -= direction["y"] * displacement / norm
+                    wrong["points"][0]["y"] += direction["x"] * displacement / norm
+                    result = self.evaluate(block, {response["id"]: wrong})
+                    self.assertTrue(result["evaluable"], result)
+                    self.assertFalse(result["correct"], result)
+                    if len(correct["points"]) > 1:
+                        wrong = copy.deepcopy(correct)
+                        wrong["points"][0]["x"] += direction["x"] * displacement / norm
+                        wrong["points"][0]["y"] += direction["y"] * displacement / norm
+                        self.assertFalse(self.evaluate(block, {response["id"]: wrong})["correct"],
+                                         "A correct final endpoint must not compensate for distorted parts")
+                else:
+                    initial = {"type": "rigid_angle", **spec["initial"]}
+                    self.assertFalse(self.evaluate(block, {response["id"]: initial})["correct"])
+                    opposite = dict(correct, rotation=correct["rotation"] + math.pi)
+                    result = self.evaluate(block, {response["id"]: opposite})
+                    self.assertTrue(result["evaluable"], result)
+                    self.assertFalse(result["correct"], result)
+                    displaced = dict(correct, x=correct["x"] + spec["positionTolerance"] * 4)
+                    self.assertFalse(self.evaluate(block, {response["id"]: displaced})["correct"])
+                    full_turn = dict(correct, rotation=correct["rotation"] + 2 * math.pi)
+                    self.assertTrue(self.evaluate(block, {response["id"]: full_turn})["correct"])
 
     def test_03_arithmetic_wrong_missing_and_localized_feedback(self):
         block = self.sandbox[0]
