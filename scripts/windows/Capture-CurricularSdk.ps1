@@ -242,10 +242,7 @@ function Select-SdkDesktopFeatures([System.Windows.Automation.AutomationElement]
     if ($qaTarget.Count -ne 1 -or $qaTarget[0].name -notmatch '(?i)Desktop C\+\+.*(x64|amd64)') {
         throw 'The SDK feature tree did not identify exactly one Desktop C++ x64/amd64 checkbox.'
     }
-    if ($qaTarget[0].state -eq 'Off' -and $qaTarget[0].enabled) {
-        $qaTarget[0].toggle.Toggle()
-        Start-Sleep -Milliseconds 150
-    }
+    $qaEvidence.featureActions = @()
     foreach ($qaId in $qaKnownIds) {
         if ($qaId -eq $qaTargetId) { continue }
         $qaChoice = @(Read-SdkFeatureChoices $qaRoot | Where-Object { $_.id -eq $qaId })
@@ -253,22 +250,55 @@ function Select-SdkDesktopFeatures([System.Windows.Automation.AutomationElement]
         if ($qaChoice.Count -eq 1 -and $qaChoice[0].enabled -and $qaChoice[0].state -eq 'On') {
             $qaChoice[0].toggle.Toggle()
             Start-Sleep -Milliseconds 150
+            $qaObserved = @(Read-SdkFeatureChoices $qaRoot)
+            $qaEvidence.featureActions += [ordered]@{
+                id = $qaId; requested = 'Off'
+                observed = ($qaObserved | Where-Object { $_.id -eq $qaId } | Select-Object -First 1).state
+                targetState = ($qaObserved | Where-Object { $_.id -eq $qaTargetId } | Select-Object -First 1).state
+            }
+            Save-Evidence
         }
     }
+    # This installer can clear amd64 when another selected checkbox is cleared.
+    # Select the requested target last, then record any other boxes the installer
+    # activates. Their internal dependency relationship is not inferred here.
+    $qaBeforeTarget = @(Read-SdkFeatureChoices $qaRoot)
+    foreach ($qaChoice in $qaBeforeTarget) {
+        if ($qaChoice.id -ne $qaTargetId -and $qaChoice.enabled -and $qaChoice.state -ne 'Off') {
+            throw "The SDK retains an unexpected optional selection before choosing amd64: $($qaChoice.id)."
+        }
+    }
+    $qaTarget = @($qaBeforeTarget | Where-Object { $_.id -eq $qaTargetId })
+    if ($qaTarget.Count -ne 1) { throw 'The SDK target checkbox disappeared during selection.' }
+    if ($qaTarget[0].state -eq 'Off' -and $qaTarget[0].enabled) {
+        $qaTarget[0].toggle.Toggle()
+        Start-Sleep -Milliseconds 300
+        $qaEvidence.featureActions += [ordered]@{id = $qaTargetId; requested = 'On'}
+    }
     $qaAfter = @(Read-SdkFeatureChoices $qaRoot)
+    $qaActivatedWithTarget = @($qaAfter | Where-Object {
+        $qaRow = $_
+        $qaPrior = $qaBeforeTarget | Where-Object { $_.id -eq $qaRow.id } | Select-Object -First 1
+        $qaRow.id -ne $qaTargetId -and $qaRow.state -eq 'On' -and $qaPrior.state -eq 'Off'
+    })
+    $qaEvidence.installerActivatedWithTarget = @($qaActivatedWithTarget | ForEach-Object {
+        [ordered]@{id = $_.id; name = $_.name; enabled = $_.enabled; state = $_.state}
+    })
     $qaEvidence.featureSelection = @($qaAfter | ForEach-Object {
         $qaRow = $_
         $qaPrevious = $qaBefore | Where-Object { $_.id -eq $qaRow.id } | Select-Object -First 1
+        $qaPriorTarget = $qaBeforeTarget | Where-Object { $_.id -eq $qaRow.id } | Select-Object -First 1
         [ordered]@{id = $qaRow.id; name = $qaRow.name; enabled = $qaRow.enabled
-            before = $qaPrevious.state; after = $qaRow.state}
+            before = $qaPrevious.state; beforeTargetSelection = $qaPriorTarget.state; after = $qaRow.state}
     })
     $qaEvidence.featureSelectionAtUtc = [DateTime]::UtcNow.ToString('o')
     Save-Evidence
     $qaSelectedTarget = @($qaAfter | Where-Object { $_.id -eq $qaTargetId -and $_.state -eq 'On' })
     if ($qaSelectedTarget.Count -ne 1) { throw 'The Desktop C++ amd64 feature is not selected after applying the choices.' }
     foreach ($qaChoice in $qaAfter) {
-        if ($qaChoice.id -ne $qaTargetId -and $qaChoice.enabled -and $qaChoice.state -ne 'Off') {
-            throw "The SDK still selects an optional feature: $($qaChoice.id). No unobserved or required feature was cleared."
+        if ($qaChoice.id -ne $qaTargetId -and $qaChoice.enabled -and $qaChoice.state -ne 'Off' -and
+            $qaChoice.id -notin @($qaActivatedWithTarget | ForEach-Object { $_.id })) {
+            throw "The SDK retains an optional selection not activated with the target: $($qaChoice.id)."
         }
     }
 }
