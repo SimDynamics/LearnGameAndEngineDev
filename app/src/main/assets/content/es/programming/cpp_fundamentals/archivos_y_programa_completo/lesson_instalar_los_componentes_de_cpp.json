@@ -193,7 +193,7 @@
           "type": "image",
           "imageId": "p1_windows_cpp_incorporado",
           "src": "images/programming1/p1_windows_cpp_incorporado.png",
-          "alt": "Workloads de la misma instancia de Community. La tarjeta Desktop development with C++ aparece ahora marcada; el panel derecho muestra la selección de MSVC Build Tools para x64.",
+          "alt": "Workloads de la misma instancia de Community. La tarjeta Desktop development with C++ aparece ahora marcada; el panel derecho muestra MSVC Build Tools for x64/x86 (Latest) seleccionado.",
           "caption": "Estado posterior real de la misma instancia de Community. El registro de componentes confirmó que ahora incluía el compilador solicitado."
         },
         {
@@ -232,6 +232,145 @@
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Incorporar un Windows SDK que falta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la revisión detectó que falta el SDK de Windows que necesitas, puedes incorporarlo desde Componentes individuales del instalador de Visual Studio o mediante el instalador independiente del SDK. El recorrido siguiente muestra esta segunda vía. Conserva las versiones que necesitan tus otros proyectos. Una versión compatible que ya permite construir InspectionLog no necesita sustituirse solo para que sus cifras coincidan con una captura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comprobar esta vía se añadió el SDK 10.0.28000.0 a un equipo de prueba con Windows Server 2025, Visual Studio Enterprise y el SDK 10.0.26100.0 ya instalados. La versión nueva estaba ausente y la anterior se conservó. Este ensayo del 9 de noviembre de 2026 acredita la incorporación de esa versión y su uso posterior; el punto de partida no era un Windows 11 vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para consultar las carpetas de cabeceras antes de instalar, abre Inicio, escribe cmd y abre Símbolo del sistema. Ejecuta la orden siguiente desde cualquier carpeta: utiliza una ruta absoluta y no modifica archivos. dir enumera el contenido y /b muestra solo los nombres. Si elegiste una ubicación diferente para Windows Kits, sustituye únicamente la ruta entre comillas por su carpeta Include. Un nombre de versión indica que existe esa carpeta; por sí solo no prueba que el SDK esté completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "dir /b \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\""
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_sdk_versiones_previas",
+          "src": "images/programming1/p1_windows_sdk_versiones_previas.png",
+          "alt": "Consola real antes del cambio: dir /b enumera Include dentro de Windows Kits y muestra únicamente 10.0.26100.0.",
+          "caption": "Estado inicial del ensayo: las cabeceras de 10.0.26100.0 ya estaban presentes y no aparecía la carpeta 10.0.28000.0. La comprobación posterior debía distinguir la nueva versión de la anterior."
+        },
+        {
+          "type": "heading",
+          "text": "Obtener el instalador y elegir el destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el navegador abre https://learn.microsoft.com/en-us/windows/apps/windows-sdk/ y sigue Download Windows SDK para acceder a las descargas oficiales. En la fila de la versión elegida, Installer descarga el iniciador que instala sus componentes; ISO corresponde a otro formato de distribución. La prueba mostrada utilizó el instalador de Windows SDK 10.0.28000.2957. Abre winsdksetup.exe y comprueba que el editor identificado por Windows sea Microsoft Corporation antes de autorizar la instalación (Microsoft, 2026d)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Specify Location, selecciona la primera opción, Install the Windows Software Development Kit… to this computer, para instalar en este equipo. La otra opción descarga archivos para una instalación en otro equipo. Revisa Install Path y pulsa Next. En la prueba se conservó C:\\Program Files (x86)\\Windows Kits\\10\\, que ya era la ubicación común de Windows Kits; no se creó una copia alternativa del SDK anterior."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_sdk_destino",
+          "src": "images/programming1/p1_windows_sdk_destino.png",
+          "alt": "Página Specify Location del instalador de Windows SDK 10.0.28000.2957. Está seleccionada la instalación en este equipo y Install Path muestra C:\\Program Files (x86)\\Windows Kits\\10\\. Next está abajo a la derecha.",
+          "caption": "Destino real de la instalación. La opción superior instala los componentes en el equipo actual; la inferior prepara una descarga para otro equipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Windows Kits Privacy, lee la pregunta sobre el envío de información de uso y elige tu preferencia. Para reproducir la elección del ensayo, marca No y pulsa Next. Esta elección afecta a la participación indicada por el instalador; no selecciona las herramientas de C++."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_sdk_privacidad",
+          "src": "images/programming1/p1_windows_sdk_privacidad.png",
+          "alt": "Página Windows Kits Privacy: la opción No está seleccionada bajo la pregunta sobre la recopilación de información de uso. Next permite continuar.",
+          "caption": "La instalación de referencia continuó con No. La pantalla advierte que esa preferencia se aplica a los Windows Kits instalados en el equipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La pantalla siguiente presenta los términos de licencia. Léelos; si aceptas esas condiciones y deseas continuar con la instalación, pulsa Accept. Después se abre la selección de características. Una aceptación de la licencia todavía no indica que los paquetes estén instalados."
+        },
+        {
+          "type": "heading",
+          "text": "Seleccionar los componentes de escritorio para x64"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Select the features you want to install, localiza Windows SDK for Desktop C++ amd64 Apps. Aquí amd64 identifica el destino x64 de 64 bits usado en esta práctica. Marca esa casilla y revisa la selección completa antes de pulsar Install. En el ensayo se dejaron desmarcadas las características opcionales que no se iban a utilizar y se marcó amd64 al final. Al hacerlo, el instalador activó también Signing Tools, UWP Managed Apps, UWP C++ Apps y Desktop C++ x86 Apps. La captura muestra esas cinco casillas activas; describe la selección observada en esta versión, sin atribuir a cada paquete una dependencia interna que no se ha comprobado."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_sdk_componentes",
+          "src": "images/programming1/p1_windows_sdk_componentes.png",
+          "alt": "Selección real del SDK. Están marcadas Windows SDK Signing Tools for Desktop Apps, Windows SDK for UWP Managed Apps, Windows SDK for UWP C++ Apps, Windows SDK for Desktop C++ x86 Apps y Windows SDK for Desktop C++ amd64 Apps. El botón Install aparece abajo a la derecha.",
+          "caption": "Revisión inmediatamente anterior a instalar: amd64 quedó seleccionado y el instalador activó también las otras cuatro casillas indicadas. El tamaño estimado depende de esa selección y del estado del equipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pulsa Install y espera a que termine la descarga y aplicación de componentes. Si se solicita elevación, comprueba el editor Microsoft Corporation. Si aparece un error o un reinicio pendiente, resuelve la condición indicada antes de usar el SDK. En la ejecución mostrada, el instalador terminó con código 0 y presentó una pantalla Welcome… con el botón Close. Pulsa Close para cerrar esa ventana; la comprobación de archivos y herramientas se realiza después."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_sdk_finalizado",
+          "src": "images/programming1/p1_windows_sdk_finalizado.png",
+          "alt": "Pantalla final real: Welcome to the Windows Software Development Kit - Windows 10.0.28000.2957! y el botón Close abajo a la derecha.",
+          "caption": "El recorrido del instalador terminó en esta pantalla y el proceso devolvió 0. La verificación posterior encontró las cabeceras, bibliotecas y herramientas de la versión instalada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al repetir la consulta de Include en el equipo de prueba aparecieron 10.0.26100.0 y 10.0.28000.0. También se comprobó la presencia de las cabeceras Windows.h y stdio.h, las bibliotecas kernel32.lib y ucrt.lib, y las herramientas rc.exe y mt.exe de la versión nueva. Estas dos herramientas declararon la versión de archivo 10.0.28000.2957. La carpeta y la selección del entorno usan 10.0.28000.0; la revisión del instalador y de esas herramientas añade 2957. Son identificaciones distintas del mismo SDK instalado."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar qué SDK selecciona la consola"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cierra las consolas de desarrollo que estuvieran abiertas antes de instalar. Desde Inicio, abre x64 Native Tools Command Prompt for VS 2026 de la instalación que utilizarás; el nombre puede estar traducido. Esa consola prepara las rutas del compilador, las cabeceras y las bibliotecas. Ejecuta las dos órdenes siguientes por separado, desde cualquier carpeta: solo consultan el entorno de esa ventana. La siguiente lección desarrolla la preparación de la consola y la construcción completa del programa de prueba."
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %WindowsSDKVersion%"
+        },
+        {
+          "type": "paragraph",
+          "text": "where rc"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %WindowsSDKVersion% muestra el identificador que seleccionó la consola. where rc localiza el ejecutable del compilador de recursos de Windows, una herramienta que forma parte del SDK. En el ensayo se preparó explícitamente el entorno de Enterprise para 10.0.28000.0 y se obtuvo una ruta de rc.exe dentro de esa versión. No se atribuye esta segunda comprobación al compilador nuevo de Community: utiliza la instalación que ya estaba disponible en el equipo."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_sdk_seleccionado",
+          "src": "images/programming1/p1_windows_sdk_seleccionado.png",
+          "alt": "Consola real del ensayo SDK: la selección muestra 10.0.28000.0\\ y where rc encuentra rc.exe bajo Windows Kits\\10\\bin\\10.0.28000.0\\x64. cl identifica la versión 19.51.36260 para x64, construye comprobar_entorno.cpp y la ejecución escribe Entorno preparado, seguida de código 0.",
+          "caption": "Comprobación funcional con el SDK recién añadido y el compilador de Enterprise que ya estaba instalado. El archivo de comandos muestra echo 0 porque expandió echo %ERRORLEVEL% después de la ejecución correcta. La siguiente lección enseña a crear, guardar, compilar y ejecutar este programa pequeño."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el valor de WindowsSDKVersion sigue correspondiendo a otra versión, todavía no has comprobado que esta ventana utilice el SDK recién añadido. Revisa que abriste la consola de la instalación elegida y compara sus rutas con la versión que necesitas. Si una consola nueva no encuentra rc, revisa la instalación de los componentes y la preparación del entorno antes de continuar. La prueba final será construir de nuevo la fuente y ejecutar el resultado; un programa que existía antes del cambio no verifica las herramientas recién seleccionadas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__instalar_los_componentes_de_cpp__sdk_evidencia",
+          "question": "En un equipo ya había Visual Studio y el SDK 10.0.26100.0. Después se añade 10.0.28000.0, ambas carpetas permanecen y una consola preparada para la versión nueva construye y ejecuta el programa de prueba. ¿Qué acredita esta secuencia?",
+          "options": [
+            "Que se reprodujo la preparación de un Windows vacío desde la instalación de todas sus herramientas.",
+            "Que se incorporó y utilizó la nueva versión del SDK con un compilador que ya estaba instalado.",
+            "Que el SDK anterior se sustituyó, aunque su carpeta siga presente después de la instalación."
+          ],
+          "correctIndex": 1,
+          "explanation": "La versión nueva estaba ausente y después se comprobó en archivos, selección de entorno y construcción. La versión anterior se conservó y el compilador ya existía. Por tanto, la evidencia corresponde a incorporar y utilizar ese SDK en ese punto de partida; no demuestra instalar desde cero las demás herramientas.",
+          "reviewFeedback": [
+            "El punto de partida ya incluía Visual Studio y otra versión del SDK.",
+            "Relaciona la versión inicialmente ausente con los archivos y la construcción observados después.",
+            "La consulta posterior encontró las dos versiones; conservar una carpeta no es una sustitución demostrada."
+          ]
+        },
         {
           "type": "heading",
           "text": "Elegir el siguiente paso según la evidencia"
@@ -542,6 +681,33 @@
       {
         "id": "page_0005",
         "blocks": [
+          "sdk_objetivo",
+          "sdk_decision",
+          "sdk_alcance",
+          "sdk_consultar_versiones",
+          "sdk_comando_versiones",
+          "sdk_imagen_versiones",
+          "sdk_obtener_titulo",
+          "sdk_obtener",
+          "sdk_destino",
+          "sdk_imagen_destino",
+          "sdk_privacidad",
+          "sdk_imagen_privacidad",
+          "sdk_licencia",
+          "sdk_componentes_titulo",
+          "sdk_componentes",
+          "sdk_imagen_componentes",
+          "sdk_aplicar",
+          "sdk_imagen_finalizado",
+          "sdk_archivos",
+          "sdk_comprobar_titulo",
+          "sdk_consola",
+          "sdk_comando_entorno",
+          "sdk_comando_rc",
+          "sdk_interpretar_consola",
+          "sdk_imagen_seleccionado",
+          "sdk_si_difiere",
+          "sdk_evaluar_evidencia",
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002"
@@ -725,8 +891,258 @@
         ]
       }
     },
-    "additions": [],
-    "editorial": []
+    "additions": [
+      {
+        "id": "sdk_objetivo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_decision",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_alcance",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_consultar_versiones",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_comando_versiones",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_imagen_versiones",
+        "sha256": "40450baa92c5358041bdfebd86bae0151b8b4f8a678701841a3b0cc85fb9cdea",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_obtener_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_obtener",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_destino",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_imagen_destino",
+        "sha256": "d43cacc9edac258534f1ba43a652d6c085ed6fcccf274449353f66acec784c69",
+        "storage": {
+          "page": 6,
+          "block": 9
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_privacidad",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 10
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_imagen_privacidad",
+        "sha256": "765c8f08f32897f19b2cd4d3bb62cdc6903405cc2b47343aa0ba3b2aeb62413f",
+        "storage": {
+          "page": 6,
+          "block": 11
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_licencia",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 12
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_componentes_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 13
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_componentes",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 14
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_imagen_componentes",
+        "sha256": "b597c2c1ce05fc1d25635814b090f9a4697d744f11813623788826a215c5b073",
+        "storage": {
+          "page": 6,
+          "block": 15
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_aplicar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 16
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_imagen_finalizado",
+        "sha256": "123cb560901494db4d3ae51f6a7dfdf644ab73a57feab7a493ade1363f11b8af",
+        "storage": {
+          "page": 6,
+          "block": 17
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_archivos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 18
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_comprobar_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 19
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_consola",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 20
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_comando_entorno",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 21
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_comando_rc",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 22
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_interpretar_consola",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 23
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_imagen_seleccionado",
+        "sha256": "4d2827d1e3c32488cca48fe65935c7811d87b233fac2ec323f9e0b9eb9066123",
+        "storage": {
+          "page": 6,
+          "block": 24
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_si_difiere",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 25
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "sdk_evaluar_evidencia",
+        "sha256": "cccf13a82c3ca9940bd059ac5f6a33fa93e34894fbd2a9ebe46448d9875363a6",
+        "storage": {
+          "page": 6,
+          "block": 26
+        },
+        "progressPage": "page_0005"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "f73876215f7ff06605f5fa0d520a44d3ccf41a8000ac8c8efb8d1beeec610712",
+        "afterSha256": "84a5f550f7cc9e4b7907b16f86fba97b1a22d73afe5e988531a7e808b825bd54"
+      }
+    ]
   },
   "textSemantics": {
     "version": 1,
@@ -1703,7 +2119,7 @@
       {
         "block": "block_0004_0002",
         "path": "/alt",
-        "sourceSha256": "f1ef3d20492fe54787e1b91ee813817240c50f8225b6bbf3ddd9492eaff424c4",
+        "sourceSha256": "408bf75b709b1a3b89aaa1e2259af2e5ad01c898331320f119371cdd5a894a25",
         "spans": [
           {
             "start": 0,
@@ -1727,16 +2143,9 @@
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 166,
-            "text": "MSVC Build Tools",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 172,
-            "end": 175,
-            "text": "x64",
+            "start": 134,
+            "end": 171,
+            "text": "MSVC Build Tools for x64/x86 (Latest)",
             "role": "data",
             "reading": "natural"
           }
@@ -2105,6 +2514,1268 @@
         "block": "block_0005_0002",
         "path": "/text",
         "sourceSha256": "ce95f03a2368d96f4759ab63c707d494b62b7d6105816d834a980ae15e8d06aa",
+        "spans": []
+      },
+      {
+        "block": "sdk_objetivo",
+        "path": "/text",
+        "sourceSha256": "16c34cbc9810d5e37a724f734655962d74b77545225561caf01aada5fd06e55e",
+        "spans": [
+          {
+            "start": 14,
+            "end": 25,
+            "text": "Windows SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_decision",
+        "path": "/text",
+        "sourceSha256": "c2f2bfc6b2aaef9cca80780cbe6accf8f7e4e7c6da7976ab490c91e81a55610b",
+        "spans": [
+          {
+            "start": 36,
+            "end": 39,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 50,
+            "text": "Windows",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 116,
+            "text": "Componentes individuales",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 148,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 365,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_alcance",
+        "path": "/text",
+        "sourceSha256": "4cb15be40e6c802e602ecb9d2b906250eac967eea3505b600ba4351daa61aa32",
+        "spans": [
+          {
+            "start": 37,
+            "end": 40,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 53,
+            "text": "10.0.28000.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 99,
+            "text": "Windows Server 2025",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 125,
+            "text": "Visual Studio Enterprise",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 134,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 147,
+            "text": "10.0.26100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 362,
+            "text": "Windows 11",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_consultar_versiones",
+        "path": "/text",
+        "sourceSha256": "470486193286ba96c76584b71e59f3982f99dbc6d8855f97abfba73255867a3a",
+        "spans": [
+          {
+            "start": 65,
+            "end": 71,
+            "text": "Inicio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 84,
+            "text": "cmd",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 111,
+            "text": "Símbolo del sistema",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 218,
+            "text": "dir",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 244,
+            "text": "/b",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 312,
+            "end": 324,
+            "text": "Windows Kits",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 392,
+            "text": "Include",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 475,
+            "end": 478,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_comando_versiones",
+        "path": "/text",
+        "sourceSha256": "d54e5fc733654394fbd63f665febb6905be156f5554b9db75ff7f0be3e39f987",
+        "spans": [
+          {
+            "start": 0,
+            "end": 55,
+            "text": "dir /b \"C:\\Program Files (x86)\\Windows Kits\\10\\Include\"",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_versiones",
+        "path": "/alt",
+        "sourceSha256": "b9dea32b2ca197b310bbbdb4fe0e40d133ff005daebc3e93726a0a37c2ea3b2a",
+        "spans": [
+          {
+            "start": 31,
+            "end": 37,
+            "text": "dir /b",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 53,
+            "text": "Include",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 76,
+            "text": "Windows Kits",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 110,
+            "text": "10.0.26100.0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_versiones",
+        "path": "/caption",
+        "sourceSha256": "24bf69cfc5f24ae1e4d5d03933103352e94d5cf7b3e3234d643735a9599f3b53",
+        "spans": [
+          {
+            "start": 44,
+            "end": 56,
+            "text": "10.0.26100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 115,
+            "text": "10.0.28000.0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_obtener_titulo",
+        "path": "/text",
+        "sourceSha256": "b9439095fa10cdbff4c2bf4afb47309f29cec456c38262faed62769d2a9650c7",
+        "spans": []
+      },
+      {
+        "block": "sdk_obtener",
+        "path": "/text",
+        "sourceSha256": "106803603ae827fa1f88af43c36e2702352e19e232618268fa1608811a2cb5bd",
+        "spans": [
+          {
+            "start": 21,
+            "end": 80,
+            "text": "https://learn.microsoft.com/en-us/windows/apps/windows-sdk/",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 109,
+            "text": "Download Windows SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 193,
+            "text": "Installer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 248,
+            "text": "ISO",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 364,
+            "text": "Windows SDK 10.0.28000.2957",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 386,
+            "text": "winsdksetup.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 437,
+            "text": "Windows",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 463,
+            "text": "Microsoft Corporation",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 516,
+            "text": "(Microsoft, 2026d)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_destino",
+        "path": "/text",
+        "sourceSha256": "970fcd81e19af8741a8bed130d64b774468e25446a1e773b0510959c3f4b12b9",
+        "spans": [
+          {
+            "start": 3,
+            "end": 19,
+            "text": "Specify Location",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 113,
+            "text": "Install the Windows Software Development Kit… to this computer",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 234,
+            "text": "Install Path",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 243,
+            "end": 247,
+            "text": "Next",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 313,
+            "text": "C:\\Program Files (x86)\\Windows Kits\\10\\",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 360,
+            "text": "Windows Kits",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 402,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_destino",
+        "path": "/alt",
+        "sourceSha256": "9a9c059fed33c73cd54a5b29e16906cf7d30f3d505ccc469e79243d3d3e4e642",
+        "spans": [
+          {
+            "start": 7,
+            "end": 23,
+            "text": "Specify Location",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 69,
+            "text": "Windows SDK 10.0.28000.2957",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 133,
+            "text": "Install Path",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 181,
+            "text": "C:\\Program Files (x86)\\Windows Kits\\10\\",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 187,
+            "text": "Next",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_destino",
+        "path": "/caption",
+        "sourceSha256": "6afb4eb76a18020b407147ba633f40f4062c422193c149f42bff8384418efab3",
+        "spans": []
+      },
+      {
+        "block": "sdk_privacidad",
+        "path": "/text",
+        "sourceSha256": "8fbff2ade4831e20e3764f9f01dee2a81fb4754b97d48c46e951b6f21fff9323",
+        "spans": [
+          {
+            "start": 3,
+            "end": 23,
+            "text": "Windows Kits Privacy",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 150,
+            "text": "No",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 163,
+            "text": "Next",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_privacidad",
+        "path": "/alt",
+        "sourceSha256": "0440f21218d3bed4c1acd83b9e3aacafe171a546cbad05767a6e9e9acb3f4383",
+        "spans": [
+          {
+            "start": 7,
+            "end": 27,
+            "text": "Windows Kits Privacy",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "text": "No",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "Next",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_privacidad",
+        "path": "/caption",
+        "sourceSha256": "a6458859c2e0e3cf6903fed019c5147820bdd68bdfab0b067c96508a89aa68c4",
+        "spans": [
+          {
+            "start": 42,
+            "end": 44,
+            "text": "No",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 115,
+            "text": "Windows Kits",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_licencia",
+        "path": "/text",
+        "sourceSha256": "917f398e21e122218f36820deb492ffb9bcfd95b33c9aa2971bf73e078f7c7a1",
+        "spans": [
+          {
+            "start": 138,
+            "end": 144,
+            "text": "Accept",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_componentes_titulo",
+        "path": "/text",
+        "sourceSha256": "9a92b45f8fd5ba79819d3a716137db8d939bd8a278ed3ea80e412a67635498c5",
+        "spans": [
+          {
+            "start": 47,
+            "end": 50,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_componentes",
+        "path": "/text",
+        "sourceSha256": "f21cc39f8bbc7b667a8e29af8b85ae5d1eda44c97209e104a268383311451bb4",
+        "spans": [
+          {
+            "start": 3,
+            "end": 42,
+            "text": "Select the features you want to install",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 91,
+            "text": "Windows SDK for Desktop C++ amd64 Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 103,
+            "text": "amd64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 129,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 237,
+            "text": "Install",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 348,
+            "text": "amd64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 413,
+            "text": "Signing Tools",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 415,
+            "end": 431,
+            "text": "UWP Managed Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 445,
+            "text": "UWP C++ Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 468,
+            "text": "Desktop C++ x86 Apps",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_componentes",
+        "path": "/alt",
+        "sourceSha256": "31917f251a2f0e6babfad79f849f94d596a5a87a21dd67f195a0646f1516eaf9",
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 81,
+            "text": "Windows SDK Signing Tools for Desktop Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 115,
+            "text": "Windows SDK for UWP Managed Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 145,
+            "text": "Windows SDK for UWP C++ Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 183,
+            "text": "Windows SDK for Desktop C++ x86 Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 224,
+            "text": "Windows SDK for Desktop C++ amd64 Apps",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 242,
+            "text": "Install",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_componentes",
+        "path": "/caption",
+        "sourceSha256": "39b9bf10c9160bd05e71e4b2c78022d92fd956947713e46d113d006dab0b276d",
+        "spans": [
+          {
+            "start": 45,
+            "end": 50,
+            "text": "amd64",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_aplicar",
+        "path": "/text",
+        "sourceSha256": "ab9599b0dd3db20c2537191736b17f7fa34d4d49420853294b648975b0a30568",
+        "spans": [
+          {
+            "start": 6,
+            "end": 13,
+            "text": "Install",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 145,
+            "text": "Microsoft Corporation",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 243,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 305,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 338,
+            "text": "Welcome…",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 357,
+            "text": "Close",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 370,
+            "text": "Close",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_finalizado",
+        "path": "/alt",
+        "sourceSha256": "bb5a5b9100ecadf230d398d148a1c6b46b719163bc829ab2ddf49fb9beac59a1",
+        "spans": [
+          {
+            "start": 21,
+            "end": 95,
+            "text": "Welcome to the Windows Software Development Kit - Windows 10.0.28000.2957!",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 112,
+            "text": "Close",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_finalizado",
+        "path": "/caption",
+        "sourceSha256": "a82b449ed6ec9126fbbb57e2d45f1311a4acbf505dcd0e4829185d34a4e6620e",
+        "spans": [
+          {
+            "start": 75,
+            "end": 76,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_archivos",
+        "path": "/text",
+        "sourceSha256": "b10333277cbb5ec5079d60554f81813a2f665fccecef030342edb42d23167516",
+        "spans": [
+          {
+            "start": 26,
+            "end": 33,
+            "text": "Include",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 81,
+            "text": "10.0.26100.0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 96,
+            "text": "10.0.28000.0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 157,
+            "text": "Windows.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 167,
+            "text": "stdio.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 197,
+            "text": "kernel32.lib",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 208,
+            "text": "ucrt.lib",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 235,
+            "text": "rc.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 244,
+            "text": "mt.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 337,
+            "text": "10.0.28000.2957",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 394,
+            "text": "10.0.28000.0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 452,
+            "end": 456,
+            "text": "2957",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 499,
+            "end": 502,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_comprobar_titulo",
+        "path": "/text",
+        "sourceSha256": "a8b8e43511e839439421d43537260de4ee89bc10236112eb0a816cba56b51281",
+        "spans": [
+          {
+            "start": 14,
+            "end": 17,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_consola",
+        "path": "/text",
+        "sourceSha256": "90d952868e801805d40cc8238924df422e0d8d3cd661208f7f2cac35529dcadd",
+        "spans": [
+          {
+            "start": 83,
+            "end": 89,
+            "text": "Inicio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 139,
+            "text": "x64 Native Tools Command Prompt for VS 2026",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_comando_entorno",
+        "path": "/text",
+        "sourceSha256": "659399e5d09fb2a32eadbb0c72c2bb95878d16bd714922f2c567814de0616d58",
+        "spans": [
+          {
+            "start": 0,
+            "end": 24,
+            "text": "echo %WindowsSDKVersion%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "sdk_comando_rc",
+        "path": "/text",
+        "sourceSha256": "8cea75459800c9ea8f9c6c873563084834d1c0e6973dd920417ff06213bef672",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "where rc",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "sdk_interpretar_consola",
+        "path": "/text",
+        "sourceSha256": "69316712445d15a6307719acf253a7f87e127bd77a2118faf2f011eebd40e769",
+        "spans": [
+          {
+            "start": 0,
+            "end": 24,
+            "text": "echo %WindowsSDKVersion%",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 85,
+            "text": "where rc",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 146,
+            "text": "Windows",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 187,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 252,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 270,
+            "text": "10.0.28000.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 301,
+            "text": "rc.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 389,
+            "end": 398,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_seleccionado",
+        "path": "/alt",
+        "sourceSha256": "1cd821a6120785bd88751a6f37f2ab63020a99ab8d43dbdeab1a61bd950ed8ef",
+        "spans": [
+          {
+            "start": 50,
+            "end": 63,
+            "text": "10.0.28000.0\\",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 74,
+            "text": "where rc",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 91,
+            "text": "rc.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 133,
+            "text": "Windows Kits\\10\\bin\\10.0.28000.0\\x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 137,
+            "text": "cl",
+            "role": "cpp"
+          },
+          {
+            "start": 160,
+            "end": 171,
+            "text": "19.51.36260",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 213,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 254,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 275,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_imagen_seleccionado",
+        "path": "/caption",
+        "sourceSha256": "7ee2d39ba177997d7414939c10722a705965d0c39a8c6310029e9155dcf74561",
+        "spans": [
+          {
+            "start": 30,
+            "end": 33,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 78,
+            "text": "Enterprise",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 141,
+            "text": "echo 0",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 175,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "sdk_si_difiere",
+        "path": "/text",
+        "sourceSha256": "9b780fb67be858f26fb6d709ac4e0ad61c7d733e2299e59afbd193dd94716f84",
+        "spans": [
+          {
+            "start": 15,
+            "end": 32,
+            "text": "WindowsSDKVersion",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 128,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 287,
+            "text": "rc",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/question",
+        "sourceSha256": "e93bbb28e1282fba6b39050f236a71c22c9a01b726acc189d27c3f1c4856dc1f",
+        "spans": [
+          {
+            "start": 22,
+            "end": 35,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 44,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 57,
+            "text": "10.0.26100.0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 88,
+            "text": "10.0.28000.0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/explanation",
+        "sourceSha256": "aa781d6b8317644d2f7d672bb2d7d2b082b95074422806e76515476580af0519",
+        "spans": [
+          {
+            "start": 228,
+            "end": 231,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/options/0",
+        "sourceSha256": "de56bd9f8ae26353b08d2b4ddbc891d933c514ba1bf30939a4f08c3e78bc3f94",
+        "spans": [
+          {
+            "start": 38,
+            "end": 45,
+            "text": "Windows",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/options/1",
+        "sourceSha256": "bbfb319d4e9f9040ac808e3e85ef84a44661364a5b26a4b1a623cd0a78cb6a81",
+        "spans": [
+          {
+            "start": 48,
+            "end": 51,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/options/2",
+        "sourceSha256": "dae8eb7002d39ff90c391b050835c8c0df5a543038bc356b6466ccf0582ec6d8",
+        "spans": [
+          {
+            "start": 7,
+            "end": 10,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "5ff19abcb2dd4b288f75c9146519f05c6958ea18cbc510b5679aba99717f97c4",
+        "spans": [
+          {
+            "start": 31,
+            "end": 44,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "text": "SDK",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "e08aae74c762e7a7e0cc9939ce876515eddc1592dd711457b2471b049d8db333",
+        "spans": []
+      },
+      {
+        "block": "sdk_evaluar_evidencia",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "caf0a792f1d335b9d9c089a7a39ea8fbfb41507405606e8079a3e07172334cde",
         "spans": []
       }
     ],

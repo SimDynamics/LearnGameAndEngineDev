@@ -126,6 +126,13 @@
           "text": "Haz clic en el margen izquierdo junto a aceptados = registro.recuento.aceptados;, o coloca el cursor en esa instrucción y pulsa F9. Debe aparecer un punto de interrupción en esa línea. Su función es detener la ejecución antes de realizar la instrucción señalada (Microsoft, 2025c)."
         },
         {
+          "type": "image",
+          "imageId": "p1_inspectionlog_punto_interrupcion",
+          "src": "images/programming1/p1_inspectionlog_punto_interrupcion.png",
+          "alt": "Visual Studio muestra informe_error.cpp. Un círculo rojo en el margen izquierdo señala un punto de interrupción en la línea 9, junto a aceptados = registro.recuento.aceptados;.",
+          "caption": "Punto de interrupción colocado en la copia que contiene el defecto deliberado, en Visual Studio Enterprise 2026. La imagen muestra la preparación del punto; la ejecución todavía no está detenida en él."
+        },
+        {
           "type": "paragraph",
           "text": "Pulsa F5 o elige Depurar → Iniciar depuración; en inglés, Debug → Start Debugging. Cuando se alcance el punto, la flecha de ejecución señalará la instrucción que está a punto de ejecutarse. No confundas colocar el punto con haberlo alcanzado: el programa tiene que iniciarse y recorrer esa parte."
         },
@@ -152,6 +159,10 @@
         {
           "type": "paragraph",
           "text": "Con la ejecución detenida, abre Depurar → Ventanas → Variables locales; en inglés, Debug → Windows → Locals. Localiza aceptados. El registro actual es registro; despliega recuento dentro de él para observar sus cantidades. También puedes mantener el puntero sobre esas expresiones en el editor para consultar sus valores (Microsoft, 2025c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Variables locales puede incluir filas internas de los recorridos además de tus variables. Desplaza la lista hasta encontrar la fila aceptados y lee su columna Valor; en la interfaz inglesa, la ventana es Locals y la columna es Value. Si registro no queda visible, sigue desplazándote y despliega recuento dentro de él. Distingue el acumulador aceptados del informe y el miembro aceptados del registro: son dos elementos distintos que la comparación necesita observar."
         },
         {
           "type": "paragraph",
@@ -182,8 +193,36 @@
           "text": "Relacionar el síntoma con su causa"
         },
         {
+          "type": "image",
+          "imageId": "p1_inspectionlog_error_primera_parada",
+          "src": "images/programming1/p1_inspectionlog_error_primera_parada.png",
+          "alt": "Visual Studio está detenido en informe_error.cpp. La flecha de ejecución señala la línea 9, aceptados = registro.recuento.aceptados;. En Locals, la fila aceptados muestra 0 y el tipo int.",
+          "caption": "Primera parada real del caso de dos registros, antes de ejecutar la asignación. En la parte inferior izquierda, la columna Value muestra 0 para el acumulador aceptados."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_inspectionlog_error_primer_paso",
+          "src": "images/programming1/p1_inspectionlog_error_primer_paso.png",
+          "alt": "La ejecución de informe_error.cpp se ha detenido ahora en la línea 10. La asignación de la línea 9 ya se ejecutó y la fila aceptados de Locals muestra 2.",
+          "caption": "Estado posterior al primer paso sobre la asignación, la acción que realizas con F10. La flecha señala la siguiente instrucción y el acumulador aceptados vale 2."
+        },
+        {
           "type": "paragraph",
           "text": "La primera iteración por sí sola no distinguía los procedimientos: asignar 2 al acumulador que vale 0, o añadirle 2, produce el mismo resultado. La segunda iteración sí los distingue porque el acumulador ya contiene una aportación anterior."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_inspectionlog_error_segunda_parada",
+          "src": "images/programming1/p1_inspectionlog_error_segunda_parada.png",
+          "alt": "Segunda detención en la línea 9 de informe_error.cpp, sobre aceptados = registro.recuento.aceptados;. La fila aceptados de Locals conserva el valor 2.",
+          "caption": "Después de continuar hasta la siguiente visita al punto de interrupción, la ejecución vuelve a detenerse antes de la asignación. El acumulador visible aún vale 2."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_inspectionlog_error_segundo_paso",
+          "src": "images/programming1/p1_inspectionlog_error_segundo_paso.png",
+          "alt": "Después del paso de la segunda visita, la flecha de ejecución señala la línea 10 de informe_error.cpp. La fila aceptados de Locals muestra 3.",
+          "caption": "La segunda pareja de capturas documenta el cambio del acumulador de 2 a 3 al ejecutar la asignación. La instrucción y la posición de la flecha permiten relacionar ambos estados con el mismo punto del informe."
         },
         {
           "type": "paragraph",
@@ -218,6 +257,13 @@
           "text": "Detén la depuración con Mayús+F5 o Depurar → Detener depuración. En informe_error.cpp, sustituye la asignación por aceptados += registro.recuento.aceptados; y guarda. Ejecuta la orden de construcción de esta página. Guardar el texto no actualiza el programa que estabas depurando."
         },
         {
+          "type": "image",
+          "imageId": "p1_inspectionlog_correccion_guardada",
+          "src": "images/programming1/p1_inspectionlog_correccion_guardada.png",
+          "alt": "El editor de Visual Studio muestra informe_error.cpp guardado. En la línea 9 aparece aceptados += registro.recuento.aceptados; y permanece el punto de interrupción del margen izquierdo.",
+          "caption": "La copia del informe ya contiene la acumulación corregida y está guardada. Los pasos siguientes reconstruyen ese archivo y comprueban el resultado del ejecutable correspondiente."
+        },
+        {
           "type": "paragraph",
           "text": "cl /W4 /EHsc /Zi /Od modelo.cpp informe_error.cpp depurar_informe.cpp /Fe:depurar_informe.exe"
         },
@@ -238,6 +284,20 @@
           "text": "Al alcanzar la segunda visita, el valor anterior de aceptados debe seguir siendo 2 y el registro debe aportar 3. Después de F10, el acumulador debe valer 5. Esta observación comprueba la hipótesis de corrección en el mismo caso que detectó el fallo."
         },
         {
+          "type": "image",
+          "imageId": "p1_inspectionlog_corregido_segunda_parada",
+          "src": "images/programming1/p1_inspectionlog_corregido_segunda_parada.png",
+          "alt": "La nueva construcción está detenida en la segunda visita a la línea 9 de informe_error.cpp. Ahora la instrucción es aceptados += registro.recuento.aceptados;. Locals muestra 2 en la fila aceptados.",
+          "caption": "Segunda parada de la construcción corregida, antes del paso. La fuente visible contiene += y el acumulador aceptados conserva 2; corresponde al estado previo con el que se compara el siguiente resultado."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_inspectionlog_corregido_segundo_paso",
+          "src": "images/programming1/p1_inspectionlog_corregido_segundo_paso.png",
+          "alt": "Tras ejecutar la instrucción corregida de la segunda visita, la flecha señala la línea 10 de informe_error.cpp. La fila aceptados de Locals muestra 5 y la línea 9 conserva la suma +=.",
+          "caption": "Estado posterior real de esa segunda visita: el acumulador pasa de 2 a 5. Esta pareja comprueba la corrección en el caso observado; a continuación se ejecuta la batería completa."
+        },
+        {
           "type": "paragraph",
           "text": "Construye y ejecuta después el comprobador de la lección de pruebas con la copia informe_error.cpp que acabas de corregir. Conserva pruebas_tmp, la carpeta de archivos de prueba que preparaste en esa lección. Mantén la selección explícita de fuentes y utiliza el nombre pruebas_corregidas.exe para distinguir esta ejecución de la batería original. Las cuarenta y cinco comprobaciones deben pasar y el proceso debe devolver 0: no basta con obtener cinco en un único caso."
         },
@@ -252,6 +312,13 @@
         {
           "type": "paragraph",
           "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "image",
+          "imageId": "p1_inspectionlog_pruebas",
+          "src": "images/programming1/p1_inspectionlog_pruebas.png",
+          "alt": "El tramo final de la consola muestra casos de entrada, informe, archivos y flujos cerrados terminados en OK. El resumen indica Bateria completa: OK y debajo aparece el código de terminación 0.",
+          "caption": "Final de la batería ejecutada con pruebas_corregidas.exe, construido con la copia del informe corregida. Las cuarenta y cinco comprobaciones pasaron y el proceso devolvió cero. La orden echo %ERRORLEVEL% aparece expandida como echo 0 en esta ejecución por lotes."
         },
         {
           "type": "paragraph",
@@ -753,6 +820,7 @@
           "block_0002_0003",
           "block_0002_0004",
           "block_0002_0005",
+          "image_inspectionlog_punto_interrupcion",
           "block_0002_0006",
           "block_0002_0007"
         ]
@@ -762,6 +830,7 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
+          "locals_localizar_fila",
           "block_0003_0002",
           "block_0003_0003",
           "block_0003_0004"
@@ -771,7 +840,11 @@
         "id": "page_0004",
         "blocks": [
           "block_0004_0000",
+          "locals_error_primera_parada",
+          "locals_error_primer_paso",
           "block_0004_0001",
+          "locals_error_segunda_parada",
+          "locals_error_segundo_paso",
           "block_0004_0002",
           "block_0004_0003",
           "block_0004_0004"
@@ -782,15 +855,19 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
+          "image_inspectionlog_correccion_guardada",
           "block_0005_0002",
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
           "block_0005_0006",
+          "locals_corregido_segunda_parada",
+          "locals_corregido_segundo_paso",
           "block_0005_0007",
           "block_0005_0008",
           "block_0005_0009",
           "block_0005_0010",
+          "image_inspectionlog_pruebas_corregidas",
           "block_0005_0011",
           "block_0005_0012",
           "block_0005_0013",
@@ -1169,7 +1246,98 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "image_inspectionlog_punto_interrupcion",
+        "sha256": "c5c98f31d84b84844e03f360e3cddaa6be5a3707510e04abb6fafeba6d7541d3",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "image_inspectionlog_correccion_guardada",
+        "sha256": "80c20db5ae172902fd09165cbb1a150e7e1c6ce88a00eef7bda9b44675ede26e",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "image_inspectionlog_pruebas_corregidas",
+        "sha256": "80cb04caccd48769252dd6bd08fc96b766a2b92fa6c4e354d9f520c699f5670b",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "locals_localizar_fila",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "locals_error_primera_parada",
+        "sha256": "08a9bac9747e54ad12e08658dfbe6936b8ea1eda1878188581a29a87497058b3",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "locals_error_primer_paso",
+        "sha256": "91c12b584184553f356347e1699a3bcb4afc3eeb7ba78fc9b2b9e800f9b1687c",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "locals_error_segunda_parada",
+        "sha256": "fad58e09177d9d980415a0207a1cf67e7427fb6c2c2cd5149678e136bf1bc0ee",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "locals_error_segundo_paso",
+        "sha256": "d5e960c3ff6f158d56f6034f1f8b6fcc022049a5f07b06674e0a72bad563056e",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "locals_corregido_segunda_parada",
+        "sha256": "ee1818e6a6353c17ae2992568e70142ce05595dc5f0ff7199a619a16265a8a09",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "locals_corregido_segundo_paso",
+        "sha256": "acdf24f05619b87c0587f2a5150f25270ee74c4cc08822915d94b807646dba7e",
+        "storage": {
+          "page": 10,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": []
   },
   "textSemantics": {
@@ -2914,6 +3082,654 @@
             "end": 343,
             "text": "informe.cpp",
             "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "image_inspectionlog_punto_interrupcion",
+        "path": "/alt",
+        "sourceSha256": "257e1df71a8e96fe1b6e17080a74b5c7baa35fbc9a5b36f445480b59216cc850",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 39,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 125,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 175,
+            "text": "aceptados = registro.recuento.aceptados;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "image_inspectionlog_punto_interrupcion",
+        "path": "/caption",
+        "sourceSha256": "067920e279badcdc763724d0b8e4ab51d3c588ff53849b52c7c510834bf9f9fe",
+        "spans": [
+          {
+            "start": 82,
+            "end": 111,
+            "text": "Visual Studio Enterprise 2026",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "image_inspectionlog_correccion_guardada",
+        "path": "/alt",
+        "sourceSha256": "67322d5e35cf5a2624c1c98091e10231cb076a6e47fdd17867ad280a8f024a8f",
+        "spans": [
+          {
+            "start": 13,
+            "end": 26,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 52,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 76,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 126,
+            "text": "aceptados += registro.recuento.aceptados;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "image_inspectionlog_correccion_guardada",
+        "path": "/caption",
+        "sourceSha256": "6c2d5f93f8324dc064057bec3d7097c07c2fa40a299ff641cf3fc6500a5cf125",
+        "spans": []
+      },
+      {
+        "block": "image_inspectionlog_pruebas_corregidas",
+        "path": "/alt",
+        "sourceSha256": "e50097ea5881c0493b2b80a355defe9821eeb204501671e6953486944c04d5c4",
+        "spans": [
+          {
+            "start": 105,
+            "end": 107,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 147,
+            "text": "Bateria completa: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 191,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "image_inspectionlog_pruebas_corregidas",
+        "path": "/caption",
+        "sourceSha256": "72249863442bfd563042828521f5b2ee3349e330e86452c5215530d6c583b352",
+        "spans": [
+          {
+            "start": 34,
+            "end": 56,
+            "text": "pruebas_corregidas.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 203,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 227,
+            "end": 233,
+            "text": "echo 0",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "locals_localizar_fila",
+        "path": "/text",
+        "sourceSha256": "9b6e174a704255a6d3a209c47e8005d8c13403737d2e5787ec23e634ad80bf6f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Variables locales",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 159,
+            "end": 164,
+            "text": "Valor",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 210,
+            "text": "Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 232,
+            "text": "Value",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 245,
+            "text": "registro",
+            "role": "cpp"
+          },
+          {
+            "start": 296,
+            "end": 304,
+            "text": "recuento",
+            "role": "cpp"
+          },
+          {
+            "start": 343,
+            "end": 352,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 378,
+            "end": 387,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 392,
+            "end": 400,
+            "text": "registro",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_primera_parada",
+        "path": "/alt",
+        "sourceSha256": "9f0579f6ce4b2f1acedd4c51bb8152683c3736b76a9f8d19e2e0bc64fbd0dfd3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 48,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 132,
+            "text": "aceptados = registro.recuento.aceptados;",
+            "role": "cpp"
+          },
+          {
+            "start": 137,
+            "end": 143,
+            "text": "Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 162,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 186,
+            "text": "int",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_primera_parada",
+        "path": "/caption",
+        "sourceSha256": "ae55143e434726b4d45a8b9a7821a05fb7a4b05e76ba1983494d3ef91e0114db",
+        "spans": [
+          {
+            "start": 123,
+            "end": 128,
+            "text": "Value",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 138,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 167,
+            "text": "aceptados",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_primer_paso",
+        "path": "/alt",
+        "sourceSha256": "0ef032cc2fe706e2789cff2dda23a31b9847f9a6083b0f4ed4d2876c6775083a",
+        "spans": [
+          {
+            "start": 16,
+            "end": 33,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 69,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 98,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 132,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 136,
+            "end": 142,
+            "text": "Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_primer_paso",
+        "path": "/caption",
+        "sourceSha256": "04e9c87ecc23e791694d5925cfd7e7aa400064690a15b6ee43f8a6694af00d6f",
+        "spans": [
+          {
+            "start": 80,
+            "end": 83,
+            "text": "F10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 152,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_segunda_parada",
+        "path": "/alt",
+        "sourceSha256": "d82463f2e5f663fd333c7ed4bf1bd844ad5739c715254a16e856b7c9b934cdcd",
+        "spans": [
+          {
+            "start": 30,
+            "end": 31,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 52,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 100,
+            "text": "aceptados = registro.recuento.aceptados;",
+            "role": "cpp"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 123,
+            "end": 129,
+            "text": "Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 149,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_segunda_parada",
+        "path": "/caption",
+        "sourceSha256": "6aee42f0693b007d0937143c9f184704b996c012573ed057511f02e645a402cb",
+        "spans": [
+          {
+            "start": 160,
+            "end": 161,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_segundo_paso",
+        "path": "/alt",
+        "sourceSha256": "b0b196b278311f8da086ff5ef37e860c7de5c2ac8d51dcc29f600e43d31277cf",
+        "spans": [
+          {
+            "start": 78,
+            "end": 80,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 101,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 120,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "locals_error_segundo_paso",
+        "path": "/caption",
+        "sourceSha256": "6bdcec492c2fe3ac3cf308fd2b898bd4a9f12cd6385b4afa370bcf61567bb27d",
+        "spans": [
+          {
+            "start": 68,
+            "end": 69,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "locals_corregido_segunda_parada",
+        "path": "/alt",
+        "sourceSha256": "cec31c194034b3299818ea64bdb34e6a42002ccafc3e32ba0cb90d78a49d1006",
+        "spans": [
+          {
+            "start": 68,
+            "end": 69,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 90,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 157,
+            "text": "aceptados += registro.recuento.aceptados;",
+            "role": "cpp"
+          },
+          {
+            "start": 159,
+            "end": 165,
+            "text": "Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 175,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 196,
+            "text": "aceptados",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "locals_corregido_segunda_parada",
+        "path": "/caption",
+        "sourceSha256": "e3c0510dedf948907ab4c298c2ccf258e253f5b4b80c6486b73b6e6ffa5b20f2",
+        "spans": [
+          {
+            "start": 88,
+            "end": 90,
+            "text": "+=",
+            "role": "cpp"
+          },
+          {
+            "start": 107,
+            "end": 116,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 126,
+            "end": 127,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "locals_corregido_segundo_paso",
+        "path": "/alt",
+        "sourceSha256": "9885ec8d2052316ab9cf3f5851492cf7b6f9c31a5ac65d3d53f4c7e442aa1764",
+        "spans": [
+          {
+            "start": 87,
+            "end": 89,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 110,
+            "text": "informe_error.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 129,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 133,
+            "end": 139,
+            "text": "Locals",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 149,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 162,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 182,
+            "text": "+=",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "locals_corregido_segundo_paso",
+        "path": "/caption",
+        "sourceSha256": "27249adee5f3abb23fdfa90f7d7ed9e2443ea1a32dbc4f9187422805c3f7699a",
+        "spans": [
+          {
+            "start": 67,
+            "end": 68,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 72,
+            "text": "5",
+            "role": "output",
             "reading": "natural"
           }
         ]
