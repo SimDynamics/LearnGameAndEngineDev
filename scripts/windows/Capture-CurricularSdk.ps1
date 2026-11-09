@@ -263,17 +263,35 @@ try {
             $qaButtons = @($qaVisible | Where-Object {
                 $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button -and $_.Current.IsEnabled
             })
+            $qaButtonOptions = foreach ($qaCandidate in $qaButtons) {
+                $qaLabels = @($qaCandidate.Current.Name.Replace('_', '').Trim())
+                # The observed privacy-page button is named "Next Page" in
+                # UI Automation while its actual child caption reads "Next".
+                # Read that caption from the same native button instead of
+                # assuming all pages use identical accessibility names.
+                $qaLabelNodes = $qaCandidate.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+                    [System.Windows.Automation.PropertyCondition]::new(
+                        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+                        [System.Windows.Automation.ControlType]::Text))
+                foreach ($qaLabelNode in $qaLabelNodes) {
+                    $qaLabels += $qaLabelNode.Current.Name.Replace('_', '').Trim()
+                }
+                [pscustomobject]@{element = $qaCandidate; labels = $qaLabels}
+            }
             $qaButton = $null
             foreach ($qaWanted in @('Accept', 'Next', 'Next >', 'Install', 'Finish', 'Close')) {
-                $qaButton = $qaButtons | Where-Object { $_.Current.Name.Replace('_', '').Trim() -eq $qaWanted } | Select-Object -First 1
-                if ($null -ne $qaButton) { break }
+                $qaOption = $qaButtonOptions | Where-Object { $qaWanted -in $_.labels } | Select-Object -First 1
+                if ($null -ne $qaOption) {
+                    $qaButton = $qaOption.element
+                    $qaButtonName = $qaWanted
+                    break
+                }
             }
             $qaProgress = @($qaVisible | Where-Object {
                 $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::ProgressBar
             }).Count -ne 0
             if ($qaProgress) { $qaLastRecognized = [DateTime]::UtcNow }
             if ($null -ne $qaButton) {
-                $qaButtonName = $qaButton.Current.Name.Replace('_', '').Trim()
                 if ($qaButtonName -in @('Close', 'Finish') -and $qaVisibleText -notmatch '(?i)complete|successfully installed|installation was successful') {
                     $qaButton = $null
                 }
