@@ -35,6 +35,7 @@
 #include <iostream>
 #include <optional>
 #include <set>
+#include <source_location>
 #include <stdexcept>
 #include <thread>
 
@@ -190,7 +191,34 @@ struct Fixture{
     }
     ~Fixture(){reader.reset();if(view){(void)flush_lesson_view(view);DestroyWindow(view);}if(host)DestroyWindow(host);}
     LessonReaderSnapshot snapshot(){auto result=reader->snapshot();check(result.error.empty(),"Real reader error: "+result.error);return result;}
-    void ready(){wait([&]{const auto value=snapshot();return value.planned&&!value.segments.empty()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});},"real page synthesis/word alignment");}
+    void ready(const std::source_location& caller=std::source_location::current()){
+        const auto started=GetTickCount64();
+        try{wait([&]{const auto value=snapshot();return value.planned&&!value.segments.empty()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});},"real page synthesis/word alignment");}
+        catch(...){
+            // Observe the existing state without pumping, retrying, or masking
+            // the original failure (snapshot() deliberately rejects errors).
+            try{
+                const auto value=reader->snapshot();
+                const auto quoted=[](std::string_view text){return winrt::to_string(
+                    winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(text)).Stringify());};
+                std::cerr<<"READY_FAILURE "<<caller.file_name()<<':'<<caller.line()<<" function="<<caller.function_name()
+                    <<" elapsed_ms="<<GetTickCount64()-started<<" page="<<lesson_page_state(view).index
+                    <<" planned="<<value.planned<<" preparing="<<value.preparing<<" suspended="<<value.preparation_suspended
+                    <<" playing="<<value.playing<<" allocated="<<value.allocated<<" waiting="<<value.waiting_gate
+                    <<" finished="<<value.finished<<" index="<<value.index<<" offset="<<value.offset<<" heard="<<value.heard_through
+                    <<" available="<<std::ranges::count_if(value.segments,[](const auto& part){return part.available;})
+                    <<'/'<<value.segments.size()<<" key="<<quoted(value.key)<<" error="<<quoted(value.error)<<'\n';
+                for(std::size_t index=0;index<value.segments.size();++index){const auto& part=value.segments[index];
+                    std::cerr<<"READY_SEGMENT index="<<index<<" block="<<part.block<<" range="<<part.start<<':'<<part.end
+                        <<" available="<<part.available<<" feedback="<<part.feedback<<" correct="<<part.correct
+                        <<" duration_ms="<<part.duration_ms<<" timings="<<part.timings.size()
+                        <<" region="<<quoted(part.region)<<" source="<<quoted(part.source)<<" spoken="<<quoted(part.spoken)<<'\n';
+                }
+                std::cerr.flush();
+            }catch(...){std::cerr<<"READY_FAILURE diagnostic unavailable\n";}
+            throw;
+        }
+    }
     void answer(std::string_view text,std::size_t block=1){const auto edit=child(view,1002+static_cast<int>(block)*100);const auto value=wide(text);CHARRANGE range{0,-1};
         SendMessageW(edit,EM_EXSETSEL,0,reinterpret_cast<LPARAM>(&range));SendMessageW(edit,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(value.c_str()));
         SendMessageW(child(view,1003+static_cast<int>(block)*100),BM_CLICK,0,0);reader->pause();ready();
