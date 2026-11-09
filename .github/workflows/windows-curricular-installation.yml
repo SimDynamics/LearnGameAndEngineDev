@@ -1,0 +1,40 @@
+name: Windows curricular component installation
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/windows-curricular-installation.yml
+      - scripts/windows/Capture-CurricularInstallation.ps1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-curricular-installation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  installation:
+    name: Install an isolated Community instance and add its missing C++ tools
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the installation and capture recipe
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install and verify missing components on the disposable runner
+        run: .\scripts\windows\Capture-CurricularInstallation.ps1
+      - name: Preserve actual installer captures and diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: curricular-installation-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: out/qa/curricular-installation/**
