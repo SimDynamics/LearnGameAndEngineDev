@@ -148,6 +148,22 @@ try {
     }, $true))
     if ($qaNativeLiteral.Count -ne 1) { throw 'Expected the one verified native capture helper.' }
     Add-Type -TypeDefinition $qaNativeLiteral[0].Value
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class PublicationPointer {
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll", SetLastError = true)] static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] static extern void mouse_event(uint flags, uint x, uint y, uint data, UIntPtr extra);
+    public static void Click(IntPtr expectedWindow, int x, int y) {
+        if (GetForegroundWindow() != expectedWindow) throw new InvalidOperationException("The extraction dialog is not foreground.");
+        if (!SetCursorPos(x, y)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        if (GetForegroundWindow() != expectedWindow) throw new InvalidOperationException("The extraction dialog lost foreground.");
+        mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
+        mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
+    }
+}
+'@
     Write-Stage 'helpers-imported-without-running-debugger' ([ordered]@{
         file = 'Capture-InspectionLog.ps1'; sha256 = (Get-FileHash -LiteralPath $qaRecipe -Algorithm SHA256).Hash
     })
@@ -250,25 +266,37 @@ while ([DateTime]::UtcNow -lt $limit -and -not (Test-Path -LiteralPath '__COMPLE
             return $false
         } 30
         Save-PublicationControls $qaExtractionDialog 'extraction-dialog-controls'
-        $qaEdits = @($qaExtractionDialog.FindAll([Windows.Automation.TreeScope]::Descendants,
-            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Edit)) |
-            Where-Object { -not $_.Current.IsOffscreen -and $_.Current.IsEnabled })
-        if ($qaEdits.Count -ne 1) { throw 'The extraction dialog has no unique visible destination field.' }
-        $qaDestinationPattern = $null
-        if (-not $qaEdits[0].TryGetCurrentPattern([Windows.Automation.ValuePattern]::Pattern, [ref] $qaDestinationPattern)) {
-            throw 'The actual extraction destination does not expose ValuePattern.'
+        # This native wizard exposes its Edit and CCPushButton as raw Panes
+        # without Value/Invoke patterns. Use the identifiers actually observed.
+        $qaEdits = @($qaExtractionDialog.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.Condition]::TrueCondition) |
+            Where-Object { -not $_.Current.IsOffscreen -and $_.Current.IsEnabled -and
+                $_.Current.ControlType -eq [Windows.Automation.ControlType]::Pane -and
+                $_.Current.ClassName -ceq 'Edit' -and $_.Current.AutomationId -ceq '1045' })
+        if ($qaEdits.Count -ne 1) { throw 'The observed extraction destination field is unavailable.' }
+        $qaExtracted = [IO.Path]::GetFullPath([string] $qaEdits[0].Current.Name)
+        $qaExpectedDestination = [IO.Path]::GetFullPath((Join-Path $qaDownloads 'InspectionLog'))
+        if ($qaExtracted -ine $qaExpectedDestination -or (Test-Path -LiteralPath $qaExtracted)) {
+            throw 'The observed default extraction destination is not the new expected QA path.'
         }
-        $qaDestinationPattern.SetValue($qaExtracted)
-        if ($qaDestinationPattern.Current.Value -cne $qaExtracted) { throw 'The extraction destination did not change.' }
+        Write-Stage 'observed-extraction-destination' $qaExtracted
         $qaDialogHandle = [IntPtr] $qaExtractionDialog.Current.NativeWindowHandle
         Save-PublicationWindow $qaDialogHandle 'inspection_published_extract_dialog'
-        $qaButtons = @($qaExtractionDialog.FindAll([Windows.Automation.TreeScope]::Descendants,
-            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Button)) |
-            Where-Object { -not $_.Current.IsOffscreen -and $_.Current.IsEnabled -and $_.Current.Name.Replace('&', '').Trim() -ieq 'Extract' })
-        if ($qaButtons.Count -ne 1) { throw 'The extraction dialog has no unique observed Extract button.' }
-        $qaInvoke = $null
-        if (-not $qaButtons[0].TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern, [ref] $qaInvoke)) { throw 'The Extract button has no InvokePattern.' }
-        $qaInvoke.Invoke()
+        # Read the button bounds after moving/capturing the actual dialog.
+        $qaButtons = @($qaExtractionDialog.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.Condition]::TrueCondition) |
+            Where-Object { -not $_.Current.IsOffscreen -and $_.Current.IsEnabled -and
+                $_.Current.ControlType -eq [Windows.Automation.ControlType]::Pane -and
+                $_.Current.ClassName -ceq 'CCPushButton' -and $_.Current.AutomationId -ceq 'finishbutton' -and $_.Current.Name -ceq 'Extract' })
+        if ($qaButtons.Count -ne 1) { throw 'The observed native Extract button is unavailable.' }
+        $qaButtonBounds = $qaButtons[0].Current.BoundingRectangle
+        $qaDialogBounds = $qaExtractionDialog.Current.BoundingRectangle
+        if ($qaButtonBounds.Width -lt 10 -or $qaButtonBounds.Height -lt 10 -or -not $qaDialogBounds.Contains($qaButtonBounds) -or
+            [InspectionNative]::GetForegroundWindow() -ne $qaDialogHandle) { throw 'The actual Extract button cannot be safely clicked.' }
+        $qaClickX = [int] [Math]::Round($qaButtonBounds.Left + $qaButtonBounds.Width / 2)
+        $qaClickY = [int] [Math]::Round($qaButtonBounds.Top + $qaButtonBounds.Height / 2)
+        [PublicationPointer]::Click($qaDialogHandle, $qaClickX, $qaClickY)
+        Write-Stage 'observed-extract-button-clicked' ([ordered]@{
+            name = 'Extract'; id = 'finishbutton'; class = 'CCPushButton'; x = $qaClickX; y = $qaClickY; bounds = [string] $qaButtonBounds
+        })
         $qaWorking = Join-Path $qaExtracted $qaArchiveRoot
         Wait-Until 'all 15 files extracted by the actual Explorer dialog' {
             if (-not (Test-Path -LiteralPath $qaWorking)) { return $false }
