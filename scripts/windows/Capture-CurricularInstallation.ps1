@@ -169,8 +169,17 @@ function Find-InstallerWindow {
 function Save-InstallerSnapshot([string] $qaName) {
     $qaHandle = Find-InstallerWindow
     if ($qaHandle -eq [IntPtr]::Zero) { return $false }
-    Save-ActualWindow $qaHandle (Join-Path $qaOutput ($qaName + '.png'))
-    return $true
+    try {
+        Save-ActualWindow $qaHandle (Join-Path $qaOutput ($qaName + '.png'))
+        return $true
+    } catch {
+        # A bootstrapper progress window may disappear or be replaced while
+        # its native handle is being captured. Keep the diagnostic and retry
+        # later. The required final selection captures still fail normally.
+        $qaEvidence.lastProgressCaptureDiagnostic = $_.Exception.Message
+        Save-Evidence
+        return $false
+    }
 }
 function Invoke-Installer([string] $qaPhase, [string[]] $qaArguments) {
     $qaRecord = [ordered]@{
