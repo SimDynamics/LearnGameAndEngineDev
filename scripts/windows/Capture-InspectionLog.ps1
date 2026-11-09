@@ -447,6 +447,32 @@ pause >nul
         }
         return $qaResult
     }
+    function Show-ReportLocals {
+        $qaDte.ExecuteCommand('Debug.Locals', '')
+        $qaLocalsWindow = $null
+        for ($qaWindowIndex = 1; $qaWindowIndex -le $qaDte.Windows.Count; ++$qaWindowIndex) {
+            $qaCandidate = $qaDte.Windows.Item($qaWindowIndex)
+            if ([string] $qaCandidate.Caption -ceq 'Locals') { $qaLocalsWindow = $qaCandidate; break }
+        }
+        if (-not $qaLocalsWindow) { throw 'The actual Locals tool window is unavailable.' }
+        # The first curricular run showed the compiler-generated range-for
+        # locals above aceptados in a shallow pane. Enlarge the actual docked
+        # frame so the scalar and the source statement fit in the same image.
+        $qaPreviousHeight = [int] $qaLocalsWindow.Height
+        $qaLocalsFrame = $qaLocalsWindow.LinkedWindowFrame
+        if ($qaLocalsFrame) { $qaLocalsFrame.Height = 360 }
+        else { $qaLocalsWindow.Height = 360 }
+        $qaLocalsWindow.Activate()
+        Start-Sleep -Milliseconds 500
+        Write-Stage 'locals-window-sized' ([ordered]@{
+            caption = [string] $qaLocalsWindow.Caption
+            previousHeight = $qaPreviousHeight; height = [int] $qaLocalsWindow.Height
+            frameHeight = $(if ($qaLocalsFrame) { [int] $qaLocalsFrame.Height } else { $null })
+        })
+        if ([int] $qaLocalsWindow.Height -lt 300) {
+            throw 'Visual Studio did not enlarge Locals enough to expose the actual accumulator.'
+        }
+    }
     function Complete-OptionalFirstLaunch {
         # The first captured runner showed this optional account screen before
         # DTE was registered. Invoke only the named, visible offline controls;
@@ -698,8 +724,7 @@ echo %ERRORLEVEL%
             Write-Stage ($Name + '-first-frame') ([string] $qaDte.Debugger.CurrentStackFrame.FunctionName)
             $qaFirstBefore = Read-DebugExpression 'aceptados' '0'
             Read-DebugExpression 'registro.recuento.aceptados' '2' | Out-Null
-            $qaDte.ExecuteCommand('Debug.Locals', '')
-            Start-Sleep -Milliseconds 400
+            Show-ReportLocals
             Save-ActualVsWindow ($Name + '_first_before')
             $qaDte.Debugger.StepOver($false)
             Wait-DebugValue 'aceptados' '2' ($Name + ': first Step Over')
