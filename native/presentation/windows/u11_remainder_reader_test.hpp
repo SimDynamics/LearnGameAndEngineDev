@@ -53,8 +53,8 @@ void u11_remainder_editorial_reader(const std::shared_ptr<windows::NarrationWork
     if(published30)check(test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(archive->previous_blocks.at(old_prose.stable_id))))
         ==test::compile_check_test_fingerprint(JsonObject::Parse(winrt::to_hstring(old_prose.raw_json))),
         "Remainder reading provenance lost the complete original preceding paragraph");
-    const auto published=JsonObject::Parse(winrt::to_hstring(after_bytes));
-    const auto original_page=JsonObject::Parse(winrt::to_hstring(before_bytes)).GetNamedArray(L"pages").GetObjectAt(2);
+    const auto published=JsonObject::Parse(winrt::to_hstring(after.raw_json));
+    const auto original_page=JsonObject::Parse(winrt::to_hstring(before.raw_json)).GetNamedArray(L"pages").GetObjectAt(2);
     const auto reconstructed=JsonObject::Parse(published.GetNamedArray(L"pages").GetObjectAt(2).Stringify());
     const auto reconstructed_blocks=reconstructed.GetNamedArray(L"blocks");
     for(unsigned index=0;index<reconstructed_blocks.Size();++index){
