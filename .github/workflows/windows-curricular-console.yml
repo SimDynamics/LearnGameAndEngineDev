@@ -1,0 +1,40 @@
+name: Windows curricular console captures
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/windows-curricular-console.yml
+      - scripts/windows/Capture-CurricularConsole.ps1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-curricular-console-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    name: Capture actual command windows with installed MSVC
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the lesson capture recipe
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Run and capture the actual Windows console
+        run: .\scripts\windows\Capture-CurricularConsole.ps1
+      - name: Preserve native screenshots and exact commands
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: curricular-console-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: out/qa/curricular-console/**
