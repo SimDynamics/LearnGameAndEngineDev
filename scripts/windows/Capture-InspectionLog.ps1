@@ -447,84 +447,125 @@ pause >nul
         }
         return $qaResult
     }
-    function Show-ReportLocals {
+    function Show-ReportLocals([string] $CaptureName, [string] $Expected) {
         $qaDte.ExecuteCommand('Debug.Locals', '')
-        Start-Sleep -Milliseconds 400
+        $qaVsHandle = [InspectionNative]::FindWindowForProcess($qaVsProcess.Id)
+        $qaNativeRoot = [Windows.Automation.AutomationElement]::FromHandle($qaVsHandle)
+        # These names and control types were observed in the real debugger UI.
+        $qaTreeCondition = [Windows.Automation.AndCondition]::new(
+            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'Locals'),
+            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Tree))
+        $qaRowCondition = [Windows.Automation.AndCondition]::new(
+            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'aceptados'),
+            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::TreeItem))
+        Wait-Until 'the observed Locals tree in the actual debugger' {
+            $script:qaLocatedLocalsTree = $qaNativeRoot.FindFirst([Windows.Automation.TreeScope]::Descendants, $qaTreeCondition)
+            return $qaLocatedLocalsTree -and -not $qaLocatedLocalsTree.Current.IsOffscreen
+        } 20
+        $qaScrollItemTried = $false
+        $qaSelectionTried = $false
+        $qaScrollStarted = $false
+        $qaKeyboardStarted = $false
+        $qaActions = [Collections.Generic.List[string]]::new()
         try {
-        $qaNativeRoot = [Windows.Automation.AutomationElement]::FromHandle(
-            [InspectionNative]::FindWindowForProcess($qaVsProcess.Id))
-        $qaUiItems = $qaNativeRoot.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.Condition]::TrueCondition)
-        $qaUiInventory = @()
-        foreach ($qaUiItem in $qaUiItems) {
-            $qaUiCurrent = $qaUiItem.Current
-            if ($qaUiCurrent.IsOffscreen) { continue }
-            $qaUiInventory += [ordered]@{
-                name = $qaUiCurrent.Name; id = $qaUiCurrent.AutomationId
-                type = $qaUiCurrent.ControlType.ProgrammaticName
-                bounds = [string] $qaUiCurrent.BoundingRectangle
-            }
-        }
-        $qaUiInventory | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qaOutput 'debugger-visible-ui.json') -Encoding UTF8
-        }
-        catch { Write-Stage 'uia-window-diagnostic' $_.Exception.Message }
-        $qaWindowInventory = @()
-        for ($qaWindowIndex = 1; $qaWindowIndex -le $qaDte.Windows.Count; ++$qaWindowIndex) {
-            $qaCandidate = $qaDte.Windows.Item($qaWindowIndex)
-            $qaWindowInventory += [ordered]@{
-                caption = [string] $qaCandidate.Caption; kind = [string] $qaCandidate.ObjectKind
-                height = [int] $qaCandidate.Height
-            }
-        }
-        Write-Stage 'dte-window-inventory' ([ordered]@{ count = $qaDte.Windows.Count; windows = $qaWindowInventory })
-        # Resolve the IDE's own constant, instead of depending on captions or
-        # a GUID copied from another SDK version.
-        if (-not $script:qaLocalsKind) {
-            foreach ($qaAssemblyRelative in @(
-                'Common7\IDE\PublicAssemblies\EnvDTE.dll',
-                'Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Interop.dll',
-                'Common7\IDE\PrivateAssemblies\EnvDTE.dll',
-                'Common7\IDE\PrivateAssemblies\Microsoft.VisualStudio.Interop.dll'
-            )) {
-                $qaAssemblyPath = Join-Path $qaInstance.installationPath $qaAssemblyRelative
-                if (-not (Test-Path -LiteralPath $qaAssemblyPath)) { continue }
-                try {
-                    $qaInterop = [Reflection.Assembly]::LoadFrom($qaAssemblyPath)
-                    $qaConstants = $qaInterop.GetType('EnvDTE.Constants', $false)
-                    if (-not $qaConstants) { continue }
-                    $qaField = $qaConstants.GetField('vsWindowKindLocals')
-                    if (-not $qaField) { continue }
-                    $script:qaLocalsKind = [string] $qaField.GetRawConstantValue()
-                    Write-Stage 'locals-kind-resolved' ([ordered]@{
-                        assembly = $qaAssemblyPath; identity = $qaInterop.FullName; value = $qaLocalsKind
-                    })
-                    break
+            for ($qaAttempt = 0; $qaAttempt -le 16; ++$qaAttempt) {
+                Assert-Time
+                if ([int] $qaDte.Debugger.CurrentMode -ne 2) { throw 'The debugger left break mode while exposing Locals.' }
+                $qaTree = $qaNativeRoot.FindFirst([Windows.Automation.TreeScope]::Descendants, $qaTreeCondition)
+                if (-not $qaTree) { throw 'The observed Locals tree disappeared.' }
+                $qaRow = $qaTree.FindFirst([Windows.Automation.TreeScope]::Children, $qaRowCondition)
+                if ($qaRow) {
+                    $qaRowBounds = $qaRow.Current.BoundingRectangle
+                    $qaTreeBounds = $qaTree.Current.BoundingRectangle
+                    # The observed complete rows are 19 pixels tall. A partially
+                    # clipped bottom row can report IsOffscreen=false and 16px.
+                    if (-not $qaRow.Current.IsOffscreen -and $qaRowBounds.Height -ge 18 -and
+                        $qaTreeBounds.Contains($qaRowBounds)) {
+                        $qaUiValue = $qaRow.GetCurrentPropertyValue([Windows.Automation.ValuePattern]::ValueProperty, $true)
+                        if ($qaUiValue -eq [Windows.Automation.AutomationElement]::NotSupported) { $qaUiValue = $null }
+                        Write-Stage 'locals-accumulator-visible' ([ordered]@{
+                            capture = $CaptureName; expectedDebuggerValue = $Expected
+                            name = $qaRow.Current.Name; bounds = [string] $qaRowBounds
+                            uiValue = $qaUiValue; treeBounds = [string] $qaTreeBounds
+                            rowPatterns = @($qaRow.GetSupportedPatterns() | ForEach-Object { $_.ProgrammaticName })
+                            actions = @($qaActions)
+                        })
+                        Save-ActualVsWindow $CaptureName
+                        return
+                    }
+                    $qaItemPattern = $null
+                    if (-not $qaScrollItemTried -and $qaRow.TryGetCurrentPattern([Windows.Automation.ScrollItemPattern]::Pattern, [ref] $qaItemPattern)) {
+                        $qaScrollItemTried = $true
+                        try { $qaItemPattern.ScrollIntoView(); $qaActions.Add('ScrollItemPattern.ScrollIntoView: aceptados') }
+                        catch { $qaActions.Add('ScrollItemPattern: ' + $_.Exception.Message) }
+                        Start-Sleep -Milliseconds 200
+                        continue
+                    }
+                    $qaSelectionPattern = $null
+                    if (-not $qaSelectionTried -and $qaRow.TryGetCurrentPattern([Windows.Automation.SelectionItemPattern]::Pattern, [ref] $qaSelectionPattern)) {
+                        $qaSelectionTried = $true
+                        try { $qaSelectionPattern.Select(); $qaActions.Add('SelectionItemPattern.Select: aceptados') }
+                        catch { $qaActions.Add('SelectionItemPattern: ' + $_.Exception.Message) }
+                        Start-Sleep -Milliseconds 200
+                        continue
+                    }
                 }
-                catch { Write-Stage 'locals-assembly-diagnostic' $_.Exception.Message }
+                $qaScrollPattern = $null
+                if ($qaTree.TryGetCurrentPattern([Windows.Automation.ScrollPattern]::Pattern, [ref] $qaScrollPattern) -and
+                    $qaScrollPattern.Current.VerticallyScrollable) {
+                    if (-not $qaScrollStarted) {
+                        $qaScrollPattern.SetScrollPercent([Windows.Automation.ScrollPattern]::NoScroll, 0)
+                        $qaActions.Add('ScrollPattern: start of Locals')
+                        $qaScrollStarted = $true
+                    }
+                    else {
+                        $qaScrollPattern.ScrollVertical([Windows.Automation.ScrollAmount]::SmallIncrement)
+                        $qaActions.Add('ScrollPattern: one small vertical increment')
+                    }
+                }
+                else {
+                    # Some native VS trees expose selection but no scroll
+                    # provider. Navigate only this observed, focused tree;
+                    # Home/Down select rows and cannot edit a variable value.
+                    [InspectionNative]::SetForegroundWindow($qaVsHandle) | Out-Null
+                    $qaTree.SetFocus()
+                    $qaFocusCondition = [Windows.Automation.PropertyCondition]::new(
+                        [Windows.Automation.AutomationElement]::HasKeyboardFocusProperty, $true)
+                    $qaFocused = $qaTree.FindFirst([Windows.Automation.TreeScope]::Subtree, $qaFocusCondition)
+                    if (-not $qaFocused -or [InspectionNative]::GetForegroundWindow() -ne $qaVsHandle) {
+                        throw 'Keyboard focus is not inside the observed Locals tree.'
+                    }
+                    if (-not $qaKeyboardStarted) {
+                        [Windows.Forms.SendKeys]::SendWait('{HOME}')
+                        $qaActions.Add('Home in the focused Locals tree')
+                        $qaKeyboardStarted = $true
+                    }
+                    else {
+                        [Windows.Forms.SendKeys]::SendWait('{DOWN}')
+                        $qaActions.Add('Down in the focused Locals tree')
+                    }
+                }
+                Start-Sleep -Milliseconds 200
             }
+            throw 'The actual aceptados row could not be made fully visible in Locals.'
         }
-        if (-not $qaLocalsKind) { throw 'The installed IDE exposes no resolvable vsWindowKindLocals constant.' }
-        $qaLocalsWindow = $null
-        Wait-Until 'Locals window lookup by the installed IDE constant' {
-            $script:qaLocatedLocals = $qaDte.Windows.Item($qaLocalsKind)
-            return $null -ne $qaLocatedLocals
-        } 30
-        $qaLocalsWindow = $qaLocatedLocals
-        # The first curricular run showed the compiler-generated range-for
-        # locals above aceptados in a shallow pane. Enlarge the actual docked
-        # frame so the scalar and the source statement fit in the same image.
-        $qaPreviousHeight = [int] $qaLocalsWindow.Height
-        $qaLocalsFrame = $qaLocalsWindow.LinkedWindowFrame
-        if ($qaLocalsFrame) { $qaLocalsFrame.Height = 360 }
-        else { $qaLocalsWindow.Height = 360 }
-        $qaLocalsWindow.Activate()
-        Start-Sleep -Milliseconds 500
-        Write-Stage 'locals-window-sized' ([ordered]@{
-            caption = [string] $qaLocalsWindow.Caption
-            previousHeight = $qaPreviousHeight; height = [int] $qaLocalsWindow.Height
-            frameHeight = $(if ($qaLocalsFrame) { [int] $qaLocalsFrame.Height } else { $null })
-        })
-        if ([int] $qaLocalsWindow.Height -lt 300) {
-            throw 'Visual Studio did not enlarge Locals enough to expose the actual accumulator.'
+        catch {
+            $qaCaptureFailure = $_
+            try {
+                $qaInventory = @()
+                foreach ($qaControl in $qaNativeRoot.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.Condition]::TrueCondition)) {
+                    $qaInventory += [ordered]@{
+                        name = $qaControl.Current.Name; id = $qaControl.Current.AutomationId
+                        type = $qaControl.Current.ControlType.ProgrammaticName
+                        offscreen = $qaControl.Current.IsOffscreen; bounds = [string] $qaControl.Current.BoundingRectangle
+                        patterns = @($qaControl.GetSupportedPatterns() | ForEach-Object { $_.ProgrammaticName })
+                    }
+                }
+                $qaInventory | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qaOutput ($CaptureName + '-locals-ui.json')) -Encoding UTF8
+                Write-Stage 'locals-scroll-diagnostic' ([ordered]@{ capture = $CaptureName; actions = @($qaActions) })
+            }
+            catch { Write-Stage 'locals-ui-diagnostic-error' $_.Exception.Message }
+            throw $qaCaptureFailure
         }
     }
     function Complete-OptionalFirstLaunch {
@@ -778,23 +819,22 @@ echo %ERRORLEVEL%
             Write-Stage ($Name + '-first-frame') ([string] $qaDte.Debugger.CurrentStackFrame.FunctionName)
             $qaFirstBefore = Read-DebugExpression 'aceptados' '0'
             Read-DebugExpression 'registro.recuento.aceptados' '2' | Out-Null
-            Show-ReportLocals
-            Save-ActualVsWindow ($Name + '_first_before')
+            Show-ReportLocals ($Name + '_first_before') '0'
             $qaDte.Debugger.StepOver($false)
             Wait-DebugValue 'aceptados' '2' ($Name + ': first Step Over')
             $qaFirstAfter = Read-DebugExpression 'aceptados' '2'
-            Save-ActualVsWindow ($Name + '_first_after')
+            Show-ReportLocals ($Name + '_first_after') '2'
             $qaDte.Debugger.Go($false)
             # The record identity distinguishes the second stop from the old
             # asynchronous break mode with the same accumulator value.
             Wait-DebugValue 'registro.id' '0' ($Name + ': second record at the native breakpoint')
             $qaSecondBefore = Read-DebugExpression 'aceptados' '2'
             Read-DebugExpression 'registro.recuento.aceptados' '3' | Out-Null
-            Save-ActualVsWindow ($Name + '_second_before')
+            Show-ReportLocals ($Name + '_second_before') '2'
             $qaDte.Debugger.StepOver($false)
             Wait-DebugValue 'aceptados' $SecondTotal ($Name + ': second Step Over')
             $qaSecondAfter = Read-DebugExpression 'aceptados' $SecondTotal
-            Save-ActualVsWindow ($Name + '_second_after')
+            Show-ReportLocals ($Name + '_second_after') $SecondTotal
             $qaDte.Debugger.Go($false)
             Wait-Until ($Name + ': debugged process termination') { [int] $qaDte.Debugger.CurrentMode -eq 1 } 45
             return [ordered]@{
