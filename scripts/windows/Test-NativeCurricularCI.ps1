@@ -3,6 +3,8 @@ param(
     [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader')]
     [string] $Suite = 'StateImport',
+    [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
+    [string] $CompilerHistoryGroup = 'All',
     [switch] $VirtualAudio
 )
 
@@ -16,6 +18,9 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
 }
 if ($VirtualAudio -and $Suite -ne 'NarrationPlayer') {
     throw 'Evaluate the virtual audio endpoint with the real NarrationPlayer tests first.'
+}
+if ($CompilerHistoryGroup -ne 'All' -and $Suite -ne 'CompilerHistoricalReader') {
+    throw 'A compiler-history selection requires the CompilerHistoricalReader suite.'
 }
 
 $qaRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
@@ -331,6 +336,30 @@ if ($qaActualTests.Count -ne $qaExpected.Count -or
     throw "The focused $Suite configuration must register exactly its $($qaExpected.Count) declared tests."
 }
 
+# Keep the complete fourteen-case registration intact. An explicit focal run
+# validates its exact four original names before using the same CTest filter.
+$qaCTestSelection = @()
+if ($CompilerHistoryGroup -ne 'All') {
+    $qaSelectedExpected = if ($CompilerHistoryGroup -eq 'DeclarationsAssignments') {
+        @('native.u11_declarations_historical_reader_0', 'native.u11_declarations_historical_reader_1',
+          'native.u11_assignments_historical_reader_0', 'native.u11_assignments_historical_reader_1')
+    } else {
+        @('native.u12_characters_historical_reader_0', 'native.u12_characters_historical_reader_1',
+          'native.u12_characters_historical_reader_2', 'native.u12_characters_historical_reader_3')
+    }
+    $qaSelectionPattern = '^(' + (($qaSelectedExpected | ForEach-Object { [regex]::Escape($_) }) -join '|') + ')$'
+    $qaCTestSelection = @('-R', $qaSelectionPattern)
+    $qaSelectedText = & $qaCTest --test-dir $qaBuild --show-only=json-v1 @qaCTestSelection
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the selected original compiler-history tests.' }
+    $qaSelectedListing = ($qaSelectedText -join "`n") | ConvertFrom-Json
+    $qaSelectedActual = @($qaSelectedListing.tests | ForEach-Object { $_.name })
+    if ($qaSelectedActual.Count -ne 4 -or
+        (Compare-Object -ReferenceObject $qaSelectedExpected -DifferenceObject $qaSelectedActual)) {
+        throw "The $CompilerHistoryGroup selection must contain exactly its four original tests."
+    }
+    Write-Host "Original compiler-history selection: $CompilerHistoryGroup ($($qaSelectedActual -join ', '))"
+}
+
 if ($Suite -in @('NarrationPlayer', 'U12Reader', 'U11EditorialReader',
     'CompilerHistoricalReader', 'U6DiagnosticReader')) {
     # Observe the actual ephemeral machine. Starting an existing, enabled audio
@@ -372,7 +401,7 @@ if ($VirtualAudio) {
         -SignToolPath $qaSignTool -LogDirectory (Join-Path $qaBuild 'virtual-audio')
 }
 
-& $qaCTest --test-dir $qaBuild --parallel 1 --verbose --output-on-failure --no-tests=error `
+& $qaCTest --test-dir $qaBuild @qaCTestSelection --parallel 1 --verbose --output-on-failure --no-tests=error `
     --output-junit (Join-Path $qaBuild "$($qaSuiteConfig.Results)-results.xml") `
     --output-log (Join-Path $qaBuild "$($qaSuiteConfig.Results)-results.log")
 if ($LASTEXITCODE -ne 0) { throw "The native $Suite tests failed. Preserve the CTest output." }

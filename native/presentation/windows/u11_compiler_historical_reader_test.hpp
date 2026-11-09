@@ -171,15 +171,20 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend,const His
 
     auto spec=selected;spec.token=source.token;spec.folder=source.folder;spec.preference=source.preference;
     std::vector<OrdinaryProof> prerequisites;
+    std::cout<<"PHASE "<<selected.label<<" historical "<<phase<<": opening original reader\n";
     Harness f(backend,spec,before_path,source.before_sha,[&](state::StateData& data,const curriculum::Lesson& lesson){
         prerequisites=prepare_original_entry(data,lesson,source);
     });
+    std::cout<<"PHASE original first recording ready; preparing complete original page\n";
     f.ready();f.privacy();
+    std::cout<<"PHASE complete original page ready\n";
     const auto program=correct?reference.code:old_compiler.initial_code;
     if(correct)f.edit(old_compiler_index,10,program);
     const auto old_run=f.compile(old_compiler_index,program);
     const auto expected_feedback=correct?std::string("✓ Correcto"):std::string("✗ Incorrecto");
+    std::cout<<"PHASE verifying original compiler feedback PCM\n";
     (void)feedback_parts(f,old_compiler_index,expected_feedback);
+    std::cout<<"PHASE original compiler feedback PCM verified\n";
     windows::CppRunRequest capture;capture.source_utf8=program;
     const auto recorded=f.saved();
     require(windows::compiler_puzzle_completed(recorded,before,old_compiler)==correct
@@ -210,9 +215,11 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend,const His
 
     f.reader->restart();f.reader->pause();const auto planned=f.snapshot();
     const auto source_regions=lesson_reading_regions(f.view);
+    std::cout<<"PHASE verifying complete original page PCM: "<<planned.segments.size()<<" segments\n";
     for(const auto& part:planned.segments){const auto region=std::ranges::find(source_regions,part.region,&LessonReadingRegion::key);
         require(region!=source_regions.end(),"A historical compiler recording has no actual original reading region");
         f.verify_audio(part,!region->passive_label);}
+    std::cout<<"PHASE complete original page PCM verified; starting actual old passage\n";
     const std::size_t old_passage=correct?1u:0u;const auto target=f.control(old_passage,0);
     std::vector<std::size_t> candidates;
     for(std::size_t index=0;index<planned.segments.size();++index){const auto& part=planned.segments[index];
@@ -232,7 +239,13 @@ void exercise(const std::shared_ptr<windows::NarrationWorker>& backend,const His
         &&old_history.entries.front().position.milliseconds==paused.offset&&!paused.playing&&!paused.allocated&&!paused.finished,
         "The old compiler pause is not one released positional bookmark earned from actual PCM");
 
-    f.close();f.asset=after_path;f.original_asset=after_bytes;f.lesson=after;f.open(page_index);f.ready();f.privacy();
+    std::cout<<"PHASE adoption begins after the actual original PCM pause\n";
+    f.close();f.asset=after_path;f.original_asset=after_bytes;f.lesson=after;
+    std::cout<<"PHASE opening revised page and authenticating its saved history\n";
+    f.open(page_index);
+    std::cout<<"PHASE revised selected recording ready; preparing complete revised page\n";
+    f.ready();f.privacy();
+    std::cout<<"PHASE complete revised page ready; verifying adoption\n";
     const auto mapped=f.snapshot();const auto current_target=f.control(old_passage,0);
     const auto first=std::ranges::find_if(mapped.segments,[&](const auto& part){return part.block==old_passage&&part.target==current_target&&!part.feedback;});
     require(first!=mapped.segments.end()&&(!correct||first!=mapped.segments.begin()),"The revised compiler passage is missing or aliases the title");

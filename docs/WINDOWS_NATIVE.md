@@ -411,12 +411,23 @@ mediante un commit de `Codex` cuyo mensaje comience por
 `qa-curricular-readers:` o mediante `workflow_dispatch` cuando esté disponible
 en la rama predeterminada. Los pushes ordinarios no lo activan.
 El prefijo `qa-curricular-u11:` selecciona únicamente `U11EditorialReader`,
-con sus diez casos, y `qa-curricular-u6:` selecciona únicamente
-`U6DiagnosticReader`, con sus tres recorridos. Permiten comprobar una revisión
+con sus diez casos; `qa-curricular-u6:` selecciona únicamente
+`U6DiagnosticReader`, con sus tres recorridos; y `qa-curricular-compilers:`
+selecciona `CompilerHistoricalReader`, con sus catorce casos. Permiten comprobar una revisión
 localizada sin repetir los otros grupos. Cada selección tiene su propia cola
-y conserva las ejecuciones generales y de la otra selección en curso.
+y conserva las ejecuciones generales y de las otras selecciones en curso.
 Un dispatch manual mantiene siempre los tres grupos, cualquiera que sea el
 título del commit seleccionado.
+
+Para un diagnóstico focal, `qa-curricular-u11-compilers:` ejecuta las cuatro
+fases originales de declaraciones y asignaciones; `qa-curricular-u12-compilers:`
+ejecuta las cuatro de caracteres. Ambas selecciones tienen colas independientes.
+El script usa `-CompilerHistoryGroup DeclarationsAssignments` o
+`-CompilerHistoryGroup Characters` exclusivamente con `CompilerHistoricalReader`;
+el valor predeterminado `All` conserva los catorce recorridos. Primero comprueba
+el registro completo y después los cuatro nombres seleccionados, que conserva
+también en el log. Los argumentos, fuentes, aserciones y límites de cada prueba
+siguen siendo los originales.
 
 Cada job comprueba primero el dispositivo firmado con
 `-Suite NarrationPlayer -VirtualAudio`. Sólo después de superar sus tres

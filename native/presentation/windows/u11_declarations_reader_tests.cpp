@@ -150,9 +150,9 @@ curriculum::StatePosition position(const curriculum::Lesson& lesson, std::string
     require(result.has_value(), "An audited current compiler reader identity is missing"); return *result;
 }
 
-std::string printable(std::string_view value) {
+std::string printable(std::string_view value, std::size_t maximum = 180) {
     std::string result = "\""; constexpr char hex[] = "0123456789abcdef";
-    const auto count = std::min<std::size_t>(value.size(), 180);
+    const auto count = std::min(value.size(), maximum);
     for (std::size_t index = 0; index < count; ++index) {
         const auto byte = static_cast<unsigned char>(value[index]);
         if (byte == '\n') result += "\\n";
@@ -280,11 +280,34 @@ struct Harness {
         const auto value = reader->snapshot(); require(value.error.empty(), "Real " + std::string(spec.label) + " reader error: " + value.error); return value;
     }
     void ready(bool all = true) const {
-        wait([&] {
-            const auto value = snapshot();
-            return value.planned && !value.segments.empty() && value.index < value.segments.size()
-                && (all ? std::ranges::all_of(value.segments, [](const auto& part) { return part.available; }) : value.segments[value.index].available);
-        }, "actual current compiler speech preparation and word alignment");
+        try {
+            wait([&] {
+                const auto value = snapshot();
+                return value.planned && !value.segments.empty() && value.index < value.segments.size()
+                    && (all ? std::ranges::all_of(value.segments, [](const auto& part) { return part.available; }) : value.segments[value.index].available);
+            }, "actual current compiler speech preparation and word alignment");
+        } catch (const std::exception& failure) {
+            const auto value = reader->snapshot();
+            std::cout << "PREPARATION failure " << spec.label << " all=" << all << " reason=" << printable(failure.what())
+                << " planned=" << value.planned << " preparing=" << value.preparing
+                << " suspended=" << value.preparation_suspended << " index=" << value.index
+                << " available=" << std::ranges::count_if(value.segments, [](const auto& part) { return part.available; })
+                << '/' << value.segments.size() << " playing=" << value.playing << " allocated=" << value.allocated
+                << " finished=" << value.finished << " waiting_gate=" << value.waiting_gate
+                << " error=" << printable(value.error) << " key=" << printable(value.key) << '\n';
+            std::size_t pending_shown = 0;
+            for (std::size_t index = 0; index < value.segments.size(); ++index) {
+                const auto& part = value.segments[index];
+                if (index != value.index && (part.available || pending_shown >= 6)) continue;
+                if (!part.available) ++pending_shown;
+                std::cout << "PREPARATION segment=" << index << " block=" << part.block << " region=" << printable(part.region)
+                    << " range=" << part.start << ':' << part.end << " available=" << part.available
+                    << " feedback=" << part.feedback << " correct=" << part.correct << " duration_ms=" << part.duration_ms
+                    << " timings=" << part.timings.size() << " source=" << printable(part.source, part.source.size())
+                    << " spoken=" << printable(part.spoken, part.spoken.size()) << '\n';
+            }
+            throw;
+        }
     }
     void open(std::size_t expected_page) {
         require(!view && !reader, "Close the earlier declarations QA view before reopening");
@@ -348,16 +371,48 @@ struct Harness {
         const auto u16 = [&](std::size_t at) { return unsigned(data[at]) | (unsigned(data[at + 1]) << 8); };
         const auto u32 = [&](std::size_t at) { return u16(at) | (u16(at + 2) << 16); };
         const auto tag = [&](std::size_t at, std::string_view value) { return std::equal(value.begin(), value.end(), data.begin() + at); };
-        require(data.size() > 44 && tag(0, "RIFF") && tag(8, "WAVE") && tag(12, "fmt ") && tag(36, "data")
+        const bool valid_pcm = data.size() > 44 && tag(0, "RIFF") && tag(8, "WAVE") && tag(12, "fmt ") && tag(36, "data")
             && u16(20) == 1 && u16(22) == 1 && u32(24) == 24000 && u16(34) == 16 && u32(40) == data.size() - 44
             && (data.size() - 44) % 2 == 0 && std::ranges::any_of(data.begin() + 44, data.end(), [](auto sample) { return sample != 0; })
-            && std::abs(part.duration_ms - (data.size() - 44) / 48.) <= 1 && (!require_word_timings || !part.timings.empty()),
+            && std::abs(part.duration_ms - (data.size() - 44) / 48.) <= 1 && (!require_word_timings || !part.timings.empty());
+        if (!valid_pcm) {
+            const bool header = data.size() > 44;
+            const auto current = reader->snapshot();
+            const auto found = std::ranges::find_if(current.segments, [&](const auto& candidate) {
+                return candidate.region == part.region && candidate.start == part.start && candidate.end == part.end
+                    && candidate.recording == part.recording;
+            });
+            const auto recording = utf8(part.recording.native());
+            std::cout << "PCM failure " << spec.label << " segment=" << (found - current.segments.begin())
+                << '/' << current.segments.size() << " selected=" << current.index
+                << " block=" << part.block << " region=" << printable(part.region)
+                << " range=" << part.start << ':' << part.end << " feedback=" << part.feedback << " correct=" << part.correct
+                << " source=" << printable(part.source, part.source.size()) << " spoken=" << printable(part.spoken, part.spoken.size())
+                << " recording=" << printable(recording, recording.size()) << '\n';
+            std::cout << "PCM predicates size_gt_44=" << header << " riff=" << (header && tag(0, "RIFF"))
+                << " wave=" << (header && tag(8, "WAVE")) << " fmt=" << (header && tag(12, "fmt "))
+                << " data=" << (header && tag(36, "data")) << " pcm=" << (header && u16(20) == 1)
+                << " mono=" << (header && u16(22) == 1) << " rate_24000=" << (header && u32(24) == 24000)
+                << " bits_16=" << (header && u16(34) == 16) << " payload_size=" << (header && u32(40) == data.size() - 44)
+                << " even_payload=" << (header && (data.size() - 44) % 2 == 0)
+                << " non_silent=" << (header && std::ranges::any_of(data.begin() + 44, data.end(), [](auto sample) { return sample != 0; }))
+                << " duration_matches=" << (header && std::abs(part.duration_ms - (data.size() - 44) / 48.) <= 1)
+                << " required_timings=" << (!require_word_timings || !part.timings.empty())
+                << " bytes=" << data.size() << " duration_ms=" << part.duration_ms << " timings=" << part.timings.size() << '\n';
+        }
+        require(valid_pcm,
             "The narration lacks actual non-silent mono 24 kHz PCM16 and source-bound word timings");
         double previous = 0;
         for (const auto& timing : part.timings) {
-            require(timing.start < timing.end && timing.end <= wide(part.source).size() && timing.start_ms >= previous
+            const bool valid_timing = timing.start < timing.end && timing.end <= wide(part.source).size() && timing.start_ms >= previous
                 && std::isfinite(timing.start_ms) && std::isfinite(timing.end_ms) && timing.end_ms >= timing.start_ms
-                && timing.end_ms <= part.duration_ms + 1, "The actual timing does not address its displayed UTF-16 source");
+                && timing.end_ms <= part.duration_ms + 1;
+            if (!valid_timing)
+                std::cout << "TIMING failure " << spec.label << " block=" << part.block << " region=" << printable(part.region)
+                    << " source=" << printable(part.source, part.source.size()) << " range=" << timing.start << ':' << timing.end
+                    << " source_utf16=" << wide(part.source).size() << " start_ms=" << timing.start_ms << " end_ms=" << timing.end_ms
+                    << " previous_start_ms=" << previous << " duration_ms=" << part.duration_ms << '\n';
+            require(valid_timing, "The actual timing does not address its displayed UTF-16 source");
             previous = timing.start_ms;
         }
         recordings.try_emplace(part.recording, Recording{state::sha256(data), std::filesystem::last_write_time(part.recording)});

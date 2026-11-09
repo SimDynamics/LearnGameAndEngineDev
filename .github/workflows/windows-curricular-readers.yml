@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-curricular-readers-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u11:') && '-u11' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u6:') && '-u6' || '' }}
+  group: windows-curricular-readers-${{ github.ref }}${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u11:') && '-u11' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u6:') && '-u6' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-compilers:') && '-compilers' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u11-compilers:') && '-u11-compilers' || github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u12-compilers:') && '-u12-compilers' || '' }}
   cancel-in-progress: false
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
     name: Original readers (${{ matrix.suite }})
     # Each group evaluates the signed endpoint on a fresh, disposable runner.
     # This opt-in does not authorize recurring professional use of VB-CABLE.
-    if: github.ref == 'refs/heads/Codex' && (github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'qa-curricular-readers:') || startsWith(github.event.head_commit.message, 'qa-curricular-u11:') || startsWith(github.event.head_commit.message, 'qa-curricular-u6:'))
+    if: github.ref == 'refs/heads/Codex' && (github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'qa-curricular-readers:') || startsWith(github.event.head_commit.message, 'qa-curricular-u11:') || startsWith(github.event.head_commit.message, 'qa-curricular-u6:') || startsWith(github.event.head_commit.message, 'qa-curricular-compilers:') || startsWith(github.event.head_commit.message, 'qa-curricular-u11-compilers:') || startsWith(github.event.head_commit.message, 'qa-curricular-u12-compilers:'))
     runs-on: windows-2025-vs2026
     timeout-minutes: ${{ matrix.timeout }}
     strategy:
@@ -31,6 +31,12 @@ jobs:
             && '[{"suite":"U11EditorialReader","directory":"u11-editorial-reader-ci","results":"u11-editorial-reader","timeout":70}]'
             || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u6:'))
             && '[{"suite":"U6DiagnosticReader","directory":"u6-diagnostic-reader-ci","results":"u6-diagnostic-reader","timeout":60}]'
+            || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-compilers:'))
+            && '[{"suite":"CompilerHistoricalReader","directory":"compiler-historical-reader-ci","results":"compiler-historical-reader","timeout":150}]'
+            || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u11-compilers:'))
+            && '[{"suite":"CompilerHistoricalReader","history":"DeclarationsAssignments","directory":"compiler-historical-reader-ci","results":"compiler-historical-reader","timeout":45}]'
+            || (github.event_name == 'push' && startsWith(github.event.head_commit.message, 'qa-curricular-u12-compilers:'))
+            && '[{"suite":"CompilerHistoricalReader","history":"Characters","directory":"compiler-historical-reader-ci","results":"compiler-historical-reader","timeout":60}]'
             || '[{"suite":"U11EditorialReader","directory":"u11-editorial-reader-ci","results":"u11-editorial-reader","timeout":70},{"suite":"CompilerHistoricalReader","directory":"compiler-historical-reader-ci","results":"compiler-historical-reader","timeout":150},{"suite":"U6DiagnosticReader","directory":"u6-diagnostic-reader-ci","results":"u6-diagnostic-reader","timeout":60}]'
           ) }}
     defaults:
@@ -49,7 +55,7 @@ jobs:
       - name: Verify signatures, install the endpoint and run the three original player tests
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite NarrationPlayer -VirtualAudio
       - name: Run the original reader tests with fresh Kokoro resources
-        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ${{ matrix.suite }}
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ${{ matrix.suite }} -CompilerHistoryGroup ${{ matrix.history || 'All' }}
       - name: Preserve installation, sources, build and native test evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
