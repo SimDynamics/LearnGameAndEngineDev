@@ -128,7 +128,7 @@ function Invoke-PublishedConsole([string] $Name, [string] $Executable, [string[]
     $qaBody += '.\' + $Executable + [Environment]::NewLine
     $qaBody += '@set "qaProgramExit=%ERRORLEVEL%"' + [Environment]::NewLine
     $qaBody += 'echo %qaProgramExit%' + [Environment]::NewLine
-    $qaBody += '@echo %qaProgramExit%>"' + $qaExitFile + '"' + [Environment]::NewLine
+    $qaBody += '@>"' + $qaExitFile + '" echo %qaProgramExit%' + [Environment]::NewLine
     $qaBody += '@if not "%qaProgramExit%"=="0" exit /b 34' + [Environment]::NewLine
     Invoke-ActualConsole $Name $qaBody $InputLines
     $qaProgramExit = [IO.File]::ReadAllText($qaExitFile).Trim()
@@ -209,20 +209,37 @@ try {
         $qaExtractVerbs = @($qaVerbs | Where-Object { (([string] $_.Name).Replace('&', '').Trim() -replace '(?:\.{3}|\u2026)$', '').Trim() -ieq 'Extract All' })
         if ($qaExtractVerbs.Count -ne 1) { throw 'Explorer exposes no unique Extract All verb for this ZIP.' }
         $qaVerbName = [string] $qaExtractVerbs[0].Name
-        # A shell extension may keep the invocation modal. A separate STA
-        # process lets this capturer inspect and operate its actual dialog.
+        # The observed Explorer exposes a real Extract all AppBarButton.
+        # Invoke that UI control, without depending on the Shell verb behavior.
+        $qaExplorerRoot = [Windows.Automation.AutomationElement]::FromHandle($qaExplorerHandle)
+        $qaExtractButtons = @($qaExplorerRoot.FindAll([Windows.Automation.TreeScope]::Descendants,
+            [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Button)) |
+            Where-Object { -not $_.Current.IsOffscreen -and $_.Current.IsEnabled -and $_.Current.Name -ceq 'Extract all' })
+        if ($qaExtractButtons.Count -ne 1) { throw 'Explorer no longer exposes the observed Extract all button.' }
+        $qaExtractionComplete = Join-Path $qaOutput 'extraction-ui-complete.marker'
         $qaChildSource = @'
 $ErrorActionPreference = 'Stop'
-$shell = New-Object -ComObject Shell.Application
-$item = $shell.NameSpace('__FOLDER__').ParseName('InspectionLog.zip')
-$verbs = @($item.Verbs() | Where-Object { [string] $_.Name -ceq '__VERB__' })
-if ($verbs.Count -ne 1) { throw 'The observed extraction verb changed.' }
-$verbs[0].DoIt()
+Add-Type -AssemblyName UIAutomationClient
+Add-Type -AssemblyName UIAutomationTypes
+$root = [Windows.Automation.AutomationElement]::FromHandle([IntPtr]::new(__HANDLE__))
+$condition = [Windows.Automation.AndCondition]::new(
+    [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::NameProperty, 'Extract all'),
+    [Windows.Automation.PropertyCondition]::new([Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Button))
+$button = $root.FindFirst([Windows.Automation.TreeScope]::Descendants, $condition)
+if (-not $button -or $button.Current.IsOffscreen -or -not $button.Current.IsEnabled) { throw 'The observed Extract all button is unavailable.' }
+$invoke = $null
+if (-not $button.TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern, [ref] $invoke)) { throw 'Extract all has no InvokePattern.' }
+Write-Output 'Invoking the observed Explorer Extract all button.'
+$invoke.Invoke()
+Write-Output 'The Extract all invocation returned.'
+$limit = [DateTime]::UtcNow.AddSeconds(100)
+while ([DateTime]::UtcNow -lt $limit -and -not (Test-Path -LiteralPath '__COMPLETE__')) { Start-Sleep -Milliseconds 200 }
 '@
-        $qaChildSource = $qaChildSource.Replace('__FOLDER__', $qaDownloads.Replace("'", "''")).Replace('__VERB__', $qaVerbName.Replace("'", "''"))
+        $qaChildSource = $qaChildSource.Replace('__HANDLE__', $qaExplorerHandle.ToInt64().ToString()).Replace('__COMPLETE__', $qaExtractionComplete.Replace("'", "''"))
         $qaEncoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($qaChildSource))
         $qaWindowsPowerShell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
-        $qaVerbProcess = Start-Process -FilePath $qaWindowsPowerShell -ArgumentList ('-NoLogo -NoProfile -NonInteractive -STA -EncodedCommand ' + $qaEncoded) -PassThru
+        $qaVerbProcess = Start-Process -FilePath $qaWindowsPowerShell -ArgumentList ('-NoLogo -NoProfile -NonInteractive -STA -EncodedCommand ' + $qaEncoded) -PassThru `
+            -RedirectStandardOutput (Join-Path $qaOutput 'extraction-control.stdout.txt') -RedirectStandardError (Join-Path $qaOutput 'extraction-control.stderr.txt')
         Wait-Until 'the actual compressed-folder extraction dialog' {
             $qaWindows = [Windows.Automation.AutomationElement]::RootElement.FindAll([Windows.Automation.TreeScope]::Children, [Windows.Automation.Condition]::TrueCondition)
             foreach ($qaWindow in $qaWindows) {
@@ -258,8 +275,9 @@ $verbs[0].DoIt()
             $null = Assert-PublishedFiles $qaWorking -ExactFileCount
             return $true
         } 45
+        New-Item -ItemType File -Path $qaExtractionComplete -Force | Out-Null
         $qaState.manualExtractionVerified = $true
-        $qaState['extraction'] = [ordered]@{ method = 'Observed Explorer Extract All verb and actual Extract dialog'; destination = $qaExtracted; verb = $qaVerbName }
+        $qaState['extraction'] = [ordered]@{ method = 'Observed Explorer Extract all button and actual Extract dialog'; destination = $qaExtracted; observedVerb = $qaVerbName }
     }
     catch {
         # Preserve functional verification even if this runner changes its
