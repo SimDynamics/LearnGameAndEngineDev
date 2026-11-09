@@ -48,6 +48,57 @@ using System.Runtime.InteropServices;
 using System.Text;
 public static class CurricularWindowCapture {
     [StructLayout(LayoutKind.Sequential)] public struct Rect { public int Left, Top, Right, Bottom; }
+    // DEVMODEW uses its display union, not its printer union.
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct DisplayMode {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string deviceName;
+        public ushort specVersion, driverVersion, size, driverExtra;
+        public uint fields;
+        public int positionX, positionY;
+        public uint orientation, fixedOutput;
+        public short color, duplex, yResolution, ttOption, collate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string formName;
+        public ushort logPixels;
+        public uint bitsPerPel, width, height, flags, frequency;
+        public uint icmMethod, icmIntent, mediaType, ditherType, reserved1, reserved2, panningWidth, panningHeight;
+    }
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    static extern bool EnumDisplaySettings(string deviceName, int modeNumber, ref DisplayMode mode);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    static extern int ChangeDisplaySettings(ref DisplayMode mode, uint flags);
+    static DisplayMode NewDisplayMode() {
+        return new DisplayMode { size = (ushort)Marshal.SizeOf(typeof(DisplayMode)) };
+    }
+    public static string PrepareCaptureDisplay(int minimumWidth, int minimumHeight) {
+        var before = NewDisplayMode();
+        if (!EnumDisplaySettings(null, -1, ref before))
+            throw new InvalidOperationException("Cannot observe the disposable runner display mode.");
+        if (before.width >= minimumWidth && before.height >= minimumHeight)
+            return String.Format("Unchanged supported mode: {0}x{1}", before.width, before.height);
+        var modes = new System.Collections.Generic.List<DisplayMode>();
+        for (int index = 0; index < 4096; ++index) {
+            var mode = NewDisplayMode();
+            if (!EnumDisplaySettings(null, index, ref mode)) break;
+            if (mode.width >= minimumWidth && mode.height >= minimumHeight && mode.bitsPerPel == 32)
+                modes.Add(mode);
+        }
+        modes.Sort((left, right) => ((long)left.width * left.height).CompareTo((long)right.width * right.height));
+        foreach (var available in modes) {
+            var candidate = available;
+            // DM_PELSWIDTH | DM_PELSHEIGHT. CDS_TEST checks a real enumerated
+            // mode first. Flags=0 changes only this disposable desktop now,
+            // without writing display settings into the registry.
+            candidate.fields = 0x180000;
+            if (ChangeDisplaySettings(ref candidate, 2) != 0) continue;
+            int result = ChangeDisplaySettings(ref candidate, 0);
+            var actual = NewDisplayMode();
+            if (result == 0 && EnumDisplaySettings(null, -1, ref actual) &&
+                actual.width >= minimumWidth && actual.height >= minimumHeight)
+                return String.Format("Observed {0}x{1}; selected supported {2}x{3}; actual {4}x{5}",
+                    before.width, before.height, candidate.width, candidate.height, actual.width, actual.height);
+        }
+        throw new InvalidOperationException("No supported display mode can fit the actual Visual Studio installer.");
+    }
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindow(string name, string title);
     delegate bool WindowVisitor(IntPtr window, IntPtr parameter);
     [DllImport("user32.dll")] static extern bool EnumWindows(WindowVisitor visitor, IntPtr parameter);
@@ -94,6 +145,15 @@ public static class CurricularWindowCapture {
     }
 }
 '@
+
+# The installer has a minimum width larger than the runner's initial desktop.
+# Select and verify a supported mode before any installation starts. This
+# script's github-hosted guard excludes the user's own Windows display.
+# APIs: learn.microsoft.com/windows/win32/api/winuser/nf-winuser-enumdisplaysettingsw
+#       learn.microsoft.com/windows/win32/api/winuser/nf-winuser-changedisplaysettingsw
+$qaEvidence.captureDisplay = [CurricularWindowCapture]::PrepareCaptureDisplay(1280, 900)
+Save-Evidence
+Start-Sleep -Milliseconds 500
 
 function Save-ActualWindow([IntPtr] $qaWindow, [string] $qaPath,
                            [int] $qaTargetWidth = 1000, [int] $qaTargetHeight = 640) {
