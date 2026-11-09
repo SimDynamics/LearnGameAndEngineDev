@@ -644,6 +644,15 @@ def windows_reading_source(name: str, code: str) -> str:
         code = exact(code,
                      '''            val prosePunctuation = ".,!?;:—–-…()«»\\"“”¡¿'•"''',
                      '''            val prosePunctuation = ".,!?;:—–-…()«»\\"“”¡¿'•_"''', count=2)
+        # A residual percent sign already has a production reading. Observe its
+        # existing expansion as unowned operator words, exactly like the other
+        # supported signs, without changing normalization or synthesis.
+        code = exact(code,
+                     r'''            val normalizationOperators = "=+×÷·<>≤≥≠≈/\\−-"''',
+                     r'''            val normalizationOperators = "=+×÷·<>≤≥≠≈%/\\−-"''')
+        code = exact(code,
+                     r'''            val items = Regex("//|${pattern.pattern}|[=+×÷·<>≤≥≠≈/\\\\−-]")''',
+                     r'''            val items = Regex("//|${pattern.pattern}|[=+×÷·<>≤≥≠≈%/\\\\−-]")''')
         code = exact(code,
                      '''            // maintaining another operator-name table. Only one uniquely attributable
             // insertion is accepted; structured fractions and ambiguous rewrites retain

@@ -32,18 +32,33 @@ def historical_cases() -> list[dict]:
         block = lesson["pages"][5]["blocks"][2]
         if block.get("type") != "paragraph":
             raise AssertionError("The authentic U12L20 p6b3 source changed")
-        cases.append(dict(label=f"u12l20/{stage}/p6b3", source=block["text"], mode="auto"))
+        cases.append(dict(publication=f"u12l20/{stage}", label=f"u12l20/{stage}/p6b3",
+                          source=block["text"], mode="auto"))
     for stage in remainder.COMMITS:
         lesson = json.loads(remainder.published_bytes(stage))
         block = lesson["pages"][2]["blocks"][2]
         if block.get("type") != "order_code" or "resultado_en_dominio" not in block["question"]:
             raise AssertionError("The authentic U11L16 p3b3 question changed")
-        cases.append(dict(label=f"u11l16/{stage}/p3b3/question", source=block["question"], mode="cpp"))
+        cases.append(dict(publication=f"u11l16/{stage}", label=f"u11l16/{stage}/p3b3/question",
+                          source=block["question"], mode="cpp"))
+        side = "before" if stage == "before" else "after"
+        if block.get("explanation") != remainder.EXPLANATIONS[side]:
+            raise AssertionError("The authentic U11L16 p3b3 explanation changed")
+        cases.append(dict(publication=f"u11l16/{stage}", label=f"u11l16/{stage}/p3b3/explanation",
+                          source=block["explanation"], modes=["auto", "cpp"],
+                          # Exact empty-lexicon production phones from 8259a709,
+                          # before observing residual percent expansion.
+                          sentencePhoneSha256=[
+                              "e0668db8e9a2cb6e528746a66a063ded3db525a5ee2fec49217abc7ee3464abc",
+                              "ba69dd9af28d3001384b2f07ad7937b1caf2494c43f966cafd438d4506caf3b1"
+                              if side == "before" else
+                              "93f85e5d1b5bbf90b0ea323a0169d9fdcf0ccfe70afb7b80b0d4864b7c846e28",
+                          ]))
     lesson = json.loads(compiler.published_bytes("u11l19", "before"))
     block = lesson["pages"][4]["blocks"][4]
     if block.get("type") != "paragraph" or "duplicados/ausencia/mala" not in block["text"]:
         raise AssertionError("The authentic U11L19 p5b5 criterion changed")
-    cases.append(dict(label="u11l19/before/p5b5", source=block["text"], mode="auto",
+    cases.append(dict(publication="u11l19/before", label="u11l19/before/p5b5", source=block["text"], mode="auto",
                       phoneSentence=1,
                       # Captured from the unchanged production frontend before
                       # the Windows trace fix, using the same empty lexicon.

@@ -13,6 +13,8 @@ fun main(args: Array<String>) {
         assertions++
         check(condition) { message }
     }
+    fun phoneSha256(phones: String) = MessageDigest.getInstance("SHA-256").digest(phones.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it.toInt() and 255) }
     fun checked(source: String, label: String, mode: String = "auto"): List<String> {
         val prepared = SpanishTechnicalSpeech.prepareForKokoro(source, mode).text
         val live = SpanishTechnicalSpeech.prepareForReading(source, mode) { _, _, _ -> }.text
@@ -83,6 +85,32 @@ fun main(args: Array<String>) {
             "Ambiguous or structured notation acquired invented phone ownership: $source")
     }
 
+    // These exact production phonemes were captured on 8259a709 before the
+    // percent observer change. A residual sign consumes its spoken words but
+    // must not invent a source lexeme or alter explicit C++ remainder speech.
+    val percentCases = listOf(
+        "La guardia completa se ejecuta antes del operador %." to
+            "e0668db8e9a2cb6e528746a66a063ded3db525a5ee2fec49217abc7ee3464abc",
+        "La señal % permanece visible." to
+            "2b4f1476b1885db5fb0e8e658cffcd3c0ef0d7e6aa610561984c7cd91b0e4bab",
+        "El porcentaje 25% conserva el dato." to
+            "32eada8ff65ef42b764595389372ea462b4de546b3ef383ebc2d8222d5b828cb",
+        "El signo % acompaña a `std::cout`." to
+            "8174c66c51ca599974adba822d0c770dc6040d091be2ed1c1891f6b662b4c74c",
+        "El cálculo `17 % 5` conserva el operador." to
+            "aef18add77296a28dda9809169d98e4e6d8e68573a89098a97b0b5b22d74b1c0",
+        "Los signos % y % conservan la lectura." to
+            "9c497c55a9099a981660b5454ba360cb08282cbc4b259076b343e6fe8e7c68c4"
+    )
+    for ((source, previousPhones) in percentCases) for (mode in listOf("auto", "cpp")) {
+        val parts = checked(source, "percent/$mode/$source", mode)
+        verify(parts.size == 1, "A percent observation changed the original sentence boundary")
+        verify(phoneSha256(MixedSpanishG2P.phonemizePrepared(parts.single(), emptyMap())) == previousPhones,
+            "Observing a percent sign changed its existing production phonemes: $source")
+        if ('`' !in source) verify(ManualEnglishSpeech.strip(parts.single()) == source,
+            "Residual percent prose changed its original preparation or recording identity: $source")
+    }
+
     // Explicit references and actual source syntax keep their original code
     // reading; a historical bookmark still authenticates its previous words.
     for (source in listOf("El valor `nombre_total` permanece.", "`int nombre_total = 12;` conserva el dato.",
@@ -113,17 +141,30 @@ fun main(args: Array<String>) {
     }
 
     val historical = JSONArray(File(args.single()).readText())
-    verify(historical.length() == 6, "Missing authentic U12/U11 publication")
+    verify(historical.length() == 9, "Missing authentic U12/U11 source field")
+    val publications = mutableSetOf<String>()
     for (index in 0 until historical.length()) {
         val item = historical.getJSONObject(index)
-        val parts = checked(item.getString("source"), item.getString("label"), item.getString("mode"))
-        if (item.has("phoneSha256")) {
-            val phones = MixedSpanishG2P.phonemizePrepared(parts[item.getInt("phoneSentence")], emptyMap())
-            val digest = MessageDigest.getInstance("SHA-256").digest(phones.toByteArray(Charsets.UTF_8))
-                .joinToString("") { "%02x".format(it.toInt() and 255) }
-            verify(digest == item.getString("phoneSha256"), "The historical criterion's production phonemes changed")
+        publications += item.getString("publication")
+        val modes = item.optJSONArray("modes")?.let { values ->
+            (0 until values.length()).map { values.getString(it) }
+        } ?: listOf(item.getString("mode"))
+        for (mode in modes) {
+            val parts = checked(item.getString("source"), item.getString("label") + "/" + mode, mode)
+            if (item.has("phoneSha256")) {
+                val phones = MixedSpanishG2P.phonemizePrepared(parts[item.getInt("phoneSentence")], emptyMap())
+                verify(phoneSha256(phones) == item.getString("phoneSha256"), "The historical criterion's production phonemes changed")
+            }
+            item.optJSONArray("sentencePhoneSha256")?.let { previous ->
+                verify(parts.size == previous.length(), "The historical explanation's sentence boundaries changed")
+                parts.forEachIndexed { partIndex, part ->
+                    verify(phoneSha256(MixedSpanishG2P.phonemizePrepared(part, emptyMap())) == previous.getString(partIndex),
+                        "The historical explanation's production phonemes changed")
+                }
+            }
         }
     }
-    println("PASS $assertions assertions, $sentences real frontend sentences, 6 authenticated publications")
+    verify(publications.size == 6, "Historical fields do not belong to the six authentic publications")
+    println("PASS $assertions assertions, $sentences real frontend sentences, 9 source fields from 6 authenticated publications")
     println("Scope: text preparation, G2P and phone ownership only; no PCM, playback or human listening claim")
 }

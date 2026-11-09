@@ -82,13 +82,15 @@ COLORREF pending_color(HWND target,LONG offset){
     const auto actual_surface=background(offset);const auto grays=reader_theme::unread_colors(surface,semantic_surface);
     return actual_surface==semantic_surface?grays.second:actual_surface==surface?grays.first:reader_theme::unread_color(actual_surface);
 }
-std::string verify_feedback_recording(const LessonReaderSegmentSnapshot& part) {
+std::string verify_feedback_recording(const LessonReaderSegmentSnapshot& part,
+        const std::source_location& caller=std::source_location::current()) {
     const auto bytes = state::read_bytes(part.recording);
     const auto u16 = [&](std::size_t at) { return unsigned(bytes[at]) | (unsigned(bytes[at + 1]) << 8); };
     const auto u32 = [&](std::size_t at) { return u16(at) | (u16(at + 2) << 16); };
     const auto marker = [&](std::size_t at, std::string_view expected) {
         return std::equal(expected.begin(), expected.end(), bytes.begin() + at);
     };
+    try {
     check(bytes.size() > 44 && marker(0, "RIFF") && marker(8, "WAVE") && marker(12, "fmt ")
         && marker(36, "data") && u16(20) == 1 && u16(22) == 1 && u32(24) == 24000
         && u16(34) == 16 && u32(40) == bytes.size() - 44 && (bytes.size() - 44) % 2 == 0,
@@ -106,6 +108,47 @@ std::string verify_feedback_recording(const LessonReaderSegmentSnapshot& part) {
         previous = timing.start_ms;
     }
     return state::sha256(bytes);
+    } catch(const std::exception& failure) {
+        // Report the observed bytes and source without retrying synthesis,
+        // changing the recording, or replacing any validation failure.
+        try {
+            const auto quoted=[](std::string_view text){return winrt::to_string(
+                winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(text)).Stringify());};
+            const bool header=bytes.size()>44;
+            std::cerr<<"FEEDBACK_PCM_FAILURE "<<caller.file_name()<<':'<<caller.line()<<" function="<<caller.function_name()
+                <<" reason="<<quoted(failure.what())<<" block="<<part.block<<" region="<<quoted(part.region)
+                <<" range="<<part.start<<':'<<part.end<<" available="<<part.available
+                <<" feedback="<<part.feedback<<" correct="<<part.correct
+                <<" source="<<quoted(part.source)<<" spoken="<<quoted(part.spoken)
+                <<" recording="<<quoted(utf8(part.recording.native()))<<'\n';
+            std::cerr<<"FEEDBACK_PCM_PREDICATES size_gt_44="<<header<<" riff="<<(header&&marker(0,"RIFF"))
+                <<" wave="<<(header&&marker(8,"WAVE"))<<" fmt="<<(header&&marker(12,"fmt "))
+                <<" data="<<(header&&marker(36,"data"))<<" pcm="<<(header&&u16(20)==1)
+                <<" mono="<<(header&&u16(22)==1)<<" rate_24000="<<(header&&u32(24)==24000)
+                <<" bits_16="<<(header&&u16(34)==16)<<" payload_size="<<(header&&u32(40)==bytes.size()-44)
+                <<" even_payload="<<(header&&(bytes.size()-44)%2==0)
+                <<" non_silent="<<(header&&std::ranges::any_of(bytes.begin()+44,bytes.end(),[](auto sample){return sample!=0;}))
+                <<" duration_matches="<<(header&&std::abs(part.duration_ms-(bytes.size()-44)/48.)<=1)
+                <<" required_timings="<<!part.timings.empty()<<" bytes="<<bytes.size()
+                <<" duration_ms="<<part.duration_ms<<" timings="<<part.timings.size()<<'\n';
+            const auto source_size=wide(part.source).size();double previous=0;
+            for(std::size_t index=0;index<part.timings.size();++index){const auto& timing=part.timings[index];
+                const bool source_bounds=timing.start<timing.end&&timing.end<=source_size;
+                const bool finite=std::isfinite(timing.start_ms)&&std::isfinite(timing.end_ms);
+                const bool ordered=timing.start_ms>=previous&&timing.end_ms>=timing.start_ms;
+                const bool within_audio=timing.end_ms<=part.duration_ms+1;
+                if(!source_bounds||!finite||!ordered||!within_audio){
+                    std::cerr<<"FEEDBACK_TIMING_FAILURE index="<<index<<" range="<<timing.start<<':'<<timing.end
+                        <<" source_utf16="<<source_size<<" start_ms="<<timing.start_ms<<" end_ms="<<timing.end_ms
+                        <<" previous_start_ms="<<previous<<" source_bounds="<<source_bounds<<" finite="<<finite
+                        <<" ordered="<<ordered<<" within_audio="<<within_audio<<'\n';break;
+                }
+                previous=timing.start_ms;
+            }
+            std::cerr.flush();
+        } catch(...) {std::cerr<<"FEEDBACK_PCM_FAILURE diagnostic unavailable\n";}
+        throw;
+    }
 }
 void pointer_message(HWND target,UINT message,WPARAM keys,LPARAM point,bool touch){
     const auto previous=SetMessageExtraInfo(touch?static_cast<LPARAM>(0xff515780u):0);

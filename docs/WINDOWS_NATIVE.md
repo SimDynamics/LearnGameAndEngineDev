@@ -429,6 +429,12 @@ el registro completo y después los cuatro nombres seleccionados, que conserva
 también en el log. Los argumentos, fuentes, aserciones y límites de cada prueba
 siguen siendo los originales.
 
+El prefijo `qa-curricular-u11-remainders:` selecciona los cuatro retornos
+editoriales de resto mediante `-Suite U11EditorialReader -EditorialGroup Remainder`.
+Conserva el registro completo de diez casos y verifica los cuatro nombres antes
+de aplicar el mismo filtro a la ejecución. Su cola es independiente; `All`
+sigue siendo el valor predeterminado y el dispatch manual conserva los tres grupos.
+
 Cada job comprueba primero el dispositivo firmado con
 `-Suite NarrationPlayer -VirtualAudio`. Sólo después de superar sus tres
 pruebas prepara un runtime nuevo y ejecuta la suite asignada. Los jobs no
