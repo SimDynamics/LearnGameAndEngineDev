@@ -240,6 +240,67 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar los extremos con las funciones construidas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera las definiciones completas de estimar y procesar, junto con las funciones auxiliares que utilice tu solución anterior. Sustituye las dos declaraciones sin cuerpo por las definiciones correspondientes y añade las auxiliares necesarias. Conserva las inclusiones y el main proporcionado, que contiene las nuevas llamadas; no añadas otro main.\n\nLa primera colección es {-1,0,1,10,11}: reúne los extremos aceptados, los primeros valores rechazados a ambos lados y el primer pedido no vacío. La segunda llamada procesa una colección vacía. Los cálculos y la comprobación de la señal deben seguir en tus funciones.\n\nPulsa «Compilar, ejecutar y comprobar». Debe aparecer este informe completo, con un salto al final de cada línea, incluida la última. Mantén el mismo programa entre las llamadas y corrige las funciones si una línea no coincide.",
+          "emphasis": [
+            {
+              "text": "Recupera las definiciones completas",
+              "style": "bold"
+            },
+            {
+              "text": "este informe completo",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Piezas=-1:Invalido\nPiezas=0:0\nPiezas=1:5\nPiezas=10:23\nPiezas=11:Invalido\nTotal=28\nTotal=0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye estas declaraciones por las definiciones completas de tus funciones.\nint estimar(int piezas);\nvoid procesar(const std::vector<int>& pedidos);\n\nint main() {\n    procesar({-1, 0, 1, 10, 11});\n    procesar({});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=-1:Invalido\nPiezas=0:0\nPiezas=1:5\nPiezas=10:23\nPiezas=11:Invalido\nTotal=28\nTotal=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe acepta los dos extremos del dominio, 0 y 10, y trata -1 y 11 como pedidos inválidos. Los minutos válidos son 0, 5 y 23; su total es 28. La sesión vacía siguiente muestra Total=0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Piezas=-1:Invalido\nPiezas=0:0\nPiezas=1:5\nPiezas=10:Invalido\nPiezas=11:Invalido\nTotal=5\nTotal=0\n"
+                    ],
+                    "text": "Este informe coincide con el rechazo indebido del extremo superior admitido. Diez piezas todavía pertenecen al dominio: deben producir 23 minutos. Al tratarlas como inválidas, sólo se suman los 5 minutos del pedido de una pieza. Revisa la comparación del límite superior y conserva el rechazo de once piezas."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La colección del primer editor no contenía diez piezas. Rechazar por error con piezas >= 10 podía conservar aquel informe: los pedidos de once y menos uno seguirían rechazados, y los de cero, dos y cinco seguirían aceptados. La predicción de la primera página mostraba el límite correcto, pero utilizaba otro programa.\n\nLa nueva llamada exige aceptar diez piezas. Su tiempo es 3 + 2 * 10 = 23 minutos. El pedido de una pieza requiere 5 y el pedido vacío requiere 0; por eso esta sesión suma 28. Las señales de error no se suman. Después, la sesión vacía muestra Total=0 porque su total comienza de nuevo en cero.",
+          "emphasis": [
+            {
+              "text": "utilizaba otro programa",
+              "style": "bold"
+            },
+            {
+              "text": "exige aceptar diez piezas",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -255,14 +316,14 @@
         },
         {
           "type": "paragraph",
-          "text": "estimar devuelve -1 para datos fuera de 0 a 10, 0 para cero y 3+2*piezas para los demás datos válidos. En la colección {0,2,11,-1,5}, los resultados válidos son 0, 7 y 13: el total es 20 minutos. Las cantidades 11 y -1 se informan como Invalido y no se suman.\n\nEl primer programa muestra una sola colección y el total sin salto final. La referencia conjunta posterior corresponde al objetivo completo del editor: procesar esa colección y una vacía en llamadas separadas, terminando cada línea con un salto. El total local de la colección vacía permanece en cero.",
+          "text": "estimar devuelve -1 para datos fuera de 0 a 10, 0 para cero y 3+2*piezas para los demás datos válidos. En la colección {0,2,11,-1,5}, los resultados válidos son 0, 7 y 13: el total es 20 minutos. Las cantidades 11 y -1 se informan como Invalido y no se suman.\n\nEl primer programa muestra una sola colección y el total sin salto final. La referencia conjunta posterior corresponde al objetivo completo del primer editor: procesar esa colección y una vacía en llamadas separadas, terminando cada línea con un salto. El total local de la colección vacía permanece en cero.",
           "emphasis": [
             {
               "text": "no se suman",
               "style": "bold"
             },
             {
-              "text": "objetivo completo del editor",
+              "text": "objetivo completo del primer editor",
               "style": "bold"
             },
             {
@@ -298,6 +359,10 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Piezas=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 2, 11, -1, 5});\n    procesar({});\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia conjunta conserva los datos del primer editor. Para reproducir el informe de fronteras a partir de ella, sustituye únicamente su main por el main ya proporcionado en el editor complementario. Conserva las inclusiones y las definiciones de estimar y procesar.\n\nLa estimación acepta el intervalo completo, incluido diez; el procesamiento comprueba la señal antes de sumar y crea un total local para cada sesión. El cliente cambia las colecciones, mientras estas responsabilidades se conservan."
         }
       ]
     }
@@ -478,7 +543,12 @@
           "block_0003_0001",
           "block_0003_0002",
           "block_0003_0003",
-          "block_0003_0004"
+          "block_0003_0004",
+          "reporte_fronteras_titulo",
+          "reporte_fronteras_consigna",
+          "reporte_fronteras_salida",
+          "reporte_fronteras_compilador",
+          "reporte_fronteras_comparacion"
         ]
       },
       {
@@ -490,7 +560,8 @@
           "block_0004_0003",
           "block_0004_0004",
           "block_0004_0005",
-          "block_0004_0006"
+          "block_0004_0006",
+          "reporte_fronteras_referencia"
         ]
       }
     ],
@@ -894,7 +965,62 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "reporte_fronteras_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 5,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "reporte_fronteras_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "reporte_fronteras_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "reporte_fronteras_compilador",
+        "sha256": "18a2702e70e70f9a17b695e141de06ca483ac42ff668f08010b730acb11a905d",
+        "storage": {
+          "page": 5,
+          "block": 3
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "reporte_fronteras_comparacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "reporte_fronteras_referencia",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 5
+        },
+        "progressPage": "page_0004"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -950,20 +1076,27 @@
         "id": "block_0004_0001",
         "beforeSha256": "241f9b0cd88718111176b53220973f961a0cf74c6edc8697e53d32694574c238",
         "afterSha256": "97961d2fb36b8f993dc6eba4d9f153bdfc062417c0988e9ac201ac4decff6bfd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "41fcfe7cb571b020fa7bc415f61c35f3fa6de41f453c783ab6175bf9adbeaa24",
+        "afterSha256": "3dcee6a62a15219e4b4a983d516f62f3aa1404bd8cef2c0ce0cc42262b7a0927"
       }
     ]
   },
   "referenceAfter": [
     {
-      "activity": "block_0003_0004",
+      "activity": "reporte_fronteras_compilador",
       "blocks": [
+        "reporte_fronteras_comparacion",
         "block_0004_0000",
         "block_0004_0001",
         "block_0004_0002",
         "block_0004_0003",
         "block_0004_0004",
         "block_0004_0005",
-        "block_0004_0006"
+        "block_0004_0006",
+        "reporte_fronteras_referencia"
       ]
     }
   ],
@@ -1569,7 +1702,7 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "12f015edf98cf944641add3d1a7f4592975af79d049d6a91da0caab843a0e310",
+        "sourceSha256": "70f304ebf21a1c9daff7e7c7ea56d3a4c864a60a21d40727b5adc30b19f3d100",
         "spans": [
           {
             "start": 0,
@@ -1649,8 +1782,8 @@
             "reading": "natural"
           },
           {
-            "start": 557,
-            "end": 561,
+            "start": 564,
+            "end": 568,
             "text": "cero",
             "role": "output",
             "reading": "natural"
@@ -1690,6 +1823,271 @@
         "path": "/text",
         "sourceSha256": "6ac5b1ab1e1ad900abd81f21f2410a36ded5318d2420fd48b4bf5c9d952b119b",
         "spans": []
+      },
+      {
+        "block": "reporte_fronteras_titulo",
+        "path": "/text",
+        "sourceSha256": "1fb440c5570c3b0a859b33d1265db52ba83fb0a9dbb086e8a693b13dfa1444b5",
+        "spans": []
+      },
+      {
+        "block": "reporte_fronteras_consigna",
+        "path": "/text",
+        "sourceSha256": "aeaa13268043152711fa3d082099c658bd5d5ba3f27d68c882104d5dfabf803c",
+        "spans": [
+          {
+            "start": 39,
+            "end": 46,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 57,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 278,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 343,
+            "end": 347,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 374,
+            "end": 388,
+            "text": "{-1,0,1,10,11}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "reporte_fronteras_salida",
+        "path": "/text",
+        "sourceSha256": "7b5e8295f4ff7d5fc92277d93de60e4110082ecfa5db851c7198eb8f66dfe470",
+        "spans": [
+          {
+            "start": 0,
+            "end": 89,
+            "text": "Piezas=-1:Invalido\nPiezas=0:0\nPiezas=1:5\nPiezas=10:23\nPiezas=11:Invalido\nTotal=28\nTotal=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "reporte_fronteras_compilador",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "37d670ca37c3b3ad7351382816a4bf54a79306dc047b4bc4e7351d6bd02e0063",
+        "spans": [
+          {
+            "start": 48,
+            "end": 54,
+            "text": "0 y 10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 71,
+            "text": "-1 y 11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 129,
+            "text": "0, 5 y 23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "text": "28",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 188,
+            "text": "Total=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "reporte_fronteras_compilador",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "f14b865628cb031de6f80e05f6eaa3ea5aa89960e1976377338eee6b0fd6601d",
+        "spans": [
+          {
+            "start": 77,
+            "end": 81,
+            "text": "Diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 137,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 195,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 300,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "reporte_fronteras_comparacion",
+        "path": "/text",
+        "sourceSha256": "09fe55c1e5de9d90cc54b3c764de955208d34d8cd164f441d9d12490f55f454b",
+        "spans": [
+          {
+            "start": 43,
+            "end": 47,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 91,
+            "text": "piezas >= 10",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 154,
+            "text": "once y menos uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 203,
+            "text": "cero, dos y cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 355,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 377,
+            "end": 392,
+            "text": "3 + 2 * 10 = 23",
+            "role": "math",
+            "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 435,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 464,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 491,
+            "end": 493,
+            "text": "28",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 562,
+            "end": 569,
+            "text": "Total=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 607,
+            "end": 611,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "reporte_fronteras_referencia",
+        "path": "/text",
+        "sourceSha256": "89a319d4cd3f348cf2b28607bfa01262d9d2240426d99739de8b84f981015f59",
+        "spans": [
+          {
+            "start": 143,
+            "end": 147,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 159,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 260,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 271,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 331,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1699,5 +2097,13 @@
         "spans": []
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "reporte_fronteras_compilador",
+      "requires": [
+        "block_0003_0004"
+      ]
+    }
+  ]
 }

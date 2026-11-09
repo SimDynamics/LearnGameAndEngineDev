@@ -244,6 +244,67 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el informe con datos sin ordenar"
+        },
+        {
+          "type": "paragraph",
+          "text": "El contrato permite cualquier orden de los datos. Las colecciones no vacías anteriores estaban ordenadas de menor a mayor; ahora comprobarás también {4,10,0,1,5}. El mínimo debe ser el menor valor de toda la colección y el máximo, el mayor, con independencia de sus posiciones.\n\nSe conserva el dominio: como máximo cinco enteros entre 0 y 10. El caso vacío sigue mostrando Sin datos; los demás conservan suma, media, mínimo, máximo y comprobación de rango.",
+          "emphasis": [
+            {
+              "text": "cualquier orden de los datos",
+              "style": "bold"
+            },
+            {
+              "text": "con independencia de sus posiciones",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tu definición completa de informar del editor anterior al lugar indicado, antes de main. Si utiliza funciones auxiliares, cópialas también. Conserva las cinco llamadas del cliente: repiten las cuatro colecciones anteriores y añaden la colección sin ordenar. Cada llamada debe terminar su línea con un salto.\n\nPulsa «Compilar, ejecutar y comprobar». Debe aparecer el informe completo siguiente. Si hay diferencias, corrige tu función y vuelve a ejecutar las mismas llamadas. Se admiten otras implementaciones que respeten el contrato; no se exige reproducir las instrucciones de la referencia.",
+          "emphasis": [
+            {
+              "text": "Copia tu definición completa",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\nSuma=20 Media=4 Minimo=0 Maximo=10 Dentro=1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Copia aqui tu definicion completa de informar y sus auxiliares.\n// Conserva las cinco llamadas de main.\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\nSuma=20 Media=4 Minimo=0 Maximo=10 Dentro=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La misma función conserva los cuatro casos anteriores y procesa la colección sin ordenar. Para {4,10,0,1,5}, la suma es 20, la media 4, el mínimo 0 y el máximo 10. Los dos extremos están en posiciones interiores; comprobar sólo el primero y el último no obtiene esos valores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\nSuma=20 Media=4 Minimo=4 Maximo=5 Dentro=1\n"
+                    ],
+                    "text": "Los valores Minimo=4 y Maximo=5 coinciden con el primero y el último de esta colección. Revisa cómo obtienes los extremos de todos los datos: 0 y 10 están en su interior. La media 4 también queda entre 4 y 5, por lo que Dentro=1 no basta para demostrar que esos extremos son correctos."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -302,6 +363,25 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n\nvoid informar(const std::vector<int>& datos) {\n    if (datos.empty()) {\n        std::cout << \"Sin datos\\n\";\n        return;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro << \"\\n\";\n}\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar también los extremos interiores"
+        },
+        {
+          "type": "paragraph",
+          "text": "En {4,10,0,1,5}, la suma es 4 + 10 + 0 + 1 + 5 = 20 y la media es 20 / 5 = 4. La función informar de la referencia anterior inicia ambos extremos con el primer dato, 4. Al recorrer 10, actualiza el máximo a 10; al recorrer 0, actualiza el mínimo a 0. Los valores posteriores 1 y 5 no cambian esos extremos.\n\nTomar directamente el primero y el último produciría Minimo=4 y Maximo=5. La media 4 quedaría dentro de ese intervalo incorrecto y todavía se mostraría Dentro=1. La comparación exacta de los extremos permite detectar el error.\n\nEl main siguiente sustituye al main de la referencia anterior, manteniendo sus inclusiones y la definición de informar. Reúne las cinco llamadas de la comprobación complementaria; otras formas de calcular los extremos son válidas si conservan el contrato y las salidas.",
+          "emphasis": [
+            {
+              "text": "La comparación exacta de los extremos permite detectar el error",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n    return 0;\n}\n"
         }
       ]
     }
@@ -477,7 +557,12 @@
         "blocks": [
           "block_0003_0000",
           "block_0003_0001",
-          "block_0003_0002"
+          "block_0003_0002",
+          "u7_informe_orden_libre_titulo",
+          "u7_informe_orden_libre_contrato",
+          "u7_informe_orden_libre_consigna",
+          "u7_informe_orden_libre_salida",
+          "u7_informe_orden_libre_comprobacion"
         ]
       },
       {
@@ -489,7 +574,10 @@
           "block_0004_0003",
           "block_0004_0004",
           "block_0004_0005",
-          "block_0004_0006"
+          "block_0004_0006",
+          "u7_informe_orden_libre_referencia_titulo",
+          "u7_informe_orden_libre_referencia_calculo",
+          "u7_informe_orden_libre_referencia_main"
         ]
       }
     ],
@@ -881,7 +969,80 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u7_informe_orden_libre_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 5,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u7_informe_orden_libre_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u7_informe_orden_libre_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u7_informe_orden_libre_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 3
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u7_informe_orden_libre_comprobacion",
+        "sha256": "fb5bf2b7071c76cb5bc7b19938677e2848b489f248e63036c9848b8c9c9f6703",
+        "storage": {
+          "page": 5,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u7_informe_orden_libre_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 5,
+          "block": 5
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u7_informe_orden_libre_referencia_calculo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 6
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u7_informe_orden_libre_referencia_main",
+        "sha256": "0c385853b069bc6f4b0f5d8e0205b53c37de66e1a184a5ee8f405be5a1eb36fe",
+        "storage": {
+          "page": 5,
+          "block": 7
+        },
+        "progressPage": "page_0004"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -967,7 +1128,7 @@
   },
   "referenceAfter": [
     {
-      "activity": "block_0003_0002",
+      "activity": "u7_informe_orden_libre_comprobacion",
       "blocks": [
         "block_0004_0000",
         "block_0004_0001",
@@ -975,7 +1136,10 @@
         "block_0004_0003",
         "block_0004_0004",
         "block_0004_0005",
-        "block_0004_0006"
+        "block_0004_0006",
+        "u7_informe_orden_libre_referencia_titulo",
+        "u7_informe_orden_libre_referencia_calculo",
+        "u7_informe_orden_libre_referencia_main"
       ]
     }
   ],
@@ -1803,6 +1967,340 @@
         "path": "/text",
         "sourceSha256": "14881d0e924a4879cd1d154b428415cd3c02b43751ac3e3b833df9fdf2cdab9e",
         "spans": []
+      },
+      {
+        "block": "u7_informe_orden_libre_titulo",
+        "path": "/text",
+        "sourceSha256": "badf196ef9402147537a4f26638a6ec79b2fdbdf1145d9b7dd2cebe44968d658",
+        "spans": []
+      },
+      {
+        "block": "u7_informe_orden_libre_contrato",
+        "path": "/text",
+        "sourceSha256": "0efa951123b5767f60a1e6f88d992719586eaaff206065d3bb2f2df88908d68c",
+        "spans": [
+          {
+            "start": 149,
+            "end": 161,
+            "text": "{4,10,0,1,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 320,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 341,
+            "text": "0 y 10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 382,
+            "text": "Sin datos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u7_informe_orden_libre_consigna",
+        "path": "/text",
+        "sourceSha256": "8f6409a5795fdce13e76881e5168ad579dd6e2b1ffb3037cc7ff2ca9a805bcf4",
+        "spans": [
+          {
+            "start": 32,
+            "end": 40,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 164,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 205,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u7_informe_orden_libre_salida",
+        "path": "/text",
+        "sourceSha256": "500b9fecd7191c067f446bbdf6a06e483bad3e5a3c4269b838bee46e2a374491",
+        "spans": [
+          {
+            "start": 0,
+            "end": 182,
+            "text": "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\nSuma=20 Media=4 Minimo=0 Maximo=10 Dentro=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u7_informe_orden_libre_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "e7a8fef9e381cada604fed9039439d95cf3c7196ce218d83babbe74bcc41b8a6",
+        "spans": [
+          {
+            "start": 30,
+            "end": 36,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 107,
+            "text": "{4,10,0,1,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 122,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 134,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 162,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u7_informe_orden_libre_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "ddc7865add13d4debe461f855c8b0e86fc375f8fcb47850453bc636ae98216a0",
+        "spans": [
+          {
+            "start": 12,
+            "end": 20,
+            "text": "Minimo=4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 31,
+            "text": "Maximo=5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 148,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 181,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 207,
+            "text": "4 y 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 228,
+            "text": "Dentro=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u7_informe_orden_libre_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "20362be337c0f18bda2f6f2d635d7357212db0f695a72366188b0b4f4fcd7fd7",
+        "spans": []
+      },
+      {
+        "block": "u7_informe_orden_libre_referencia_calculo",
+        "path": "/text",
+        "sourceSha256": "5a18fb08d6628d3d848a688da29adab7ecaf8938e6e272f90b522aa8f88de155",
+        "spans": [
+          {
+            "start": 3,
+            "end": 15,
+            "text": "{4,10,0,1,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 51,
+            "text": "4 + 10 + 0 + 1 + 5 = 20",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 76,
+            "text": "20 / 5 = 4",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 97,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 183,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 209,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 224,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 249,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 280,
+            "text": "1 y 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 369,
+            "text": "Minimo=4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 380,
+            "text": "Maximo=5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 392,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 468,
+            "text": "Dentro=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 539,
+            "end": 543,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 567,
+            "end": 571,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 646,
+            "end": 654,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 666,
+            "end": 671,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1812,5 +2310,13 @@
         "spans": []
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "u7_informe_orden_libre_comprobacion",
+      "requires": [
+        "block_0003_0002"
+      ]
+    }
+  ]
 }

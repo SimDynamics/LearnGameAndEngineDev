@@ -710,6 +710,67 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la frontera inferior y un intervalo de un solo valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la definición completa de contar_en_intervalo y las funciones auxiliares de las que dependa tu solución anterior. Sustituye la declaración sin cuerpo por la definición de esa función y añade las auxiliares necesarias. Conserva las inclusiones, probar y main ya entregados. Una definición incluye la firma y el cuerpo entre llaves; no copies otro programa completo.\n\nEl cliente comprueba {4} y {3,8} con límites 4..7, y después {4,5,5,6} y una colección vacía con límites 5..5. El contrato permite límites iguales: ese intervalo contiene un único valor, cinco, y cada aparición cuenta por separado. Todos los datos y límites cumplen las precondiciones ya establecidas.\n\nPulsa «Compilar, ejecutar y comprobar» para obtener el informe completo siguiente. Cada línea, incluida la última, termina con un salto. Si necesitas corregir la función, vuelve a ejecutar todos los casos conservando el cliente.",
+          "emphasis": [
+            {
+              "text": "Recupera la definición completa",
+              "style": "bold"
+            },
+            {
+              "text": "el informe completo",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro:1;Datos:1\nDentro:0;Datos:2\nDentro:2;Datos:4\nDentro:0;Datos:0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye esta declaracion por la definicion completa de tu funcion.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior);\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({4}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({4, 5, 5, 6}, 5, 5);\n    probar({}, 5, 5);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dentro:1;Datos:1\nDentro:0;Datos:2\nDentro:2;Datos:4\nDentro:0;Datos:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe obtiene 1, 0, 2 y 0 con las mismas funciones. El valor situado en el extremo inferior cuenta, los valores exteriores no cuentan y el intervalo 5..5 admite las dos apariciones de cinco. La colección vacía conserva el resultado 0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Dentro:0;Datos:1\nDentro:0;Datos:2\nDentro:0;Datos:4\nDentro:0;Datos:0\n"
+                    ],
+                    "text": "Este informe coincide con un conteo que excluye la igualdad con el extremo inferior. En el intervalo 4..7, la colección {4} debe contar 1. Cuando los dos límites valen 5, cada aparición de cinco también debe contar. Revisa la condición sin cambiar los datos ni excluir la igualdad del contrato."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Ninguna de las cinco colecciones de la recuperación anterior contenía el valor 4. Una condición que utilizara valor > inferior podía producir aquellas cinco respuestas y seguir excluyendo indebidamente el extremo inferior. La prueba {4}, con límites 4..7, distingue las dos reglas: el contrato exige 1 y esa comparación estricta obtiene 0.\n\nCon límites 5..5, el único valor permitido es cinco. En {4,5,5,6} cuentan sus dos apariciones: el resultado es 2; cuatro y seis quedan fuera. Excluir la igualdad con cualquiera de los extremos deja el contador en 0. La colección vacía también debe devolver 0, de modo que añadir siempre una unidad no repararía el contrato.",
+          "emphasis": [
+            {
+              "text": "distingue las dos reglas",
+              "style": "bold"
+            },
+            {
+              "text": "Excluir la igualdad con cualquiera de los extremos",
+              "style": "bold"
+            }
+          ]
         }
       ]
     },
@@ -727,6 +788,10 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({7}, 4, 7);\n    probar({5}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({7, 7}, 4, 7);\n    probar({}, 4, 7);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia conserva el programa de cinco colecciones con límites 4..7. Su función contar_en_intervalo compara cada valor con los dos límites recibidos y también sirve para la comprobación complementaria.\n\nPara reproducir el nuevo informe partiendo de esa referencia, sustituye únicamente su main por el main proporcionado en el editor complementario. Conserva las inclusiones y las definiciones de contar_en_intervalo y probar; las nuevas llamadas son las que incorporan el extremo inferior y el intervalo 5..5."
         }
       ]
     }
@@ -1061,7 +1126,12 @@
           "block_0007_0004",
           "block_0007_0005",
           "block_0007_0006",
-          "block_0007_0007"
+          "block_0007_0007",
+          "intervalo_fronteras_iguales_titulo",
+          "intervalo_fronteras_iguales_consigna",
+          "intervalo_fronteras_iguales_salida",
+          "intervalo_fronteras_iguales_compilador",
+          "intervalo_fronteras_iguales_comparacion"
         ]
       },
       {
@@ -1069,7 +1139,8 @@
         "blocks": [
           "block_0008_0000",
           "block_0008_0001",
-          "block_0008_0002"
+          "block_0008_0002",
+          "intervalo_fronteras_iguales_referencia"
         ]
       }
     ],
@@ -1747,7 +1818,62 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "intervalo_fronteras_iguales_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "intervalo_fronteras_iguales_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "intervalo_fronteras_iguales_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "intervalo_fronteras_iguales_compilador",
+        "sha256": "4f03f0aa4efc289a62900f15f5808c01fda28dec3075bab150df4227846313fc",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "intervalo_fronteras_iguales_comparacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "intervalo_fronteras_iguales_referencia",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0008"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1852,11 +1978,13 @@
       ]
     },
     {
-      "activity": "block_0007_0007",
+      "activity": "intervalo_fronteras_iguales_compilador",
       "blocks": [
+        "intervalo_fronteras_iguales_comparacion",
         "block_0008_0000",
         "block_0008_0001",
-        "block_0008_0002"
+        "block_0008_0002",
+        "intervalo_fronteras_iguales_referencia"
       ]
     }
   ],
@@ -1871,6 +1999,12 @@
       "activity": "block_0007_0002",
       "requires": [
         "block_0005_0004"
+      ]
+    },
+    {
+      "activity": "intervalo_fronteras_iguales_compilador",
+      "requires": [
+        "block_0007_0007"
       ]
     }
   ],
@@ -3944,6 +4078,327 @@
         "path": "/text",
         "sourceSha256": "95092c747a516eef25d65d427475e7c94d62178db7058ff63d7974edd818bf8a",
         "spans": []
+      },
+      {
+        "block": "intervalo_fronteras_iguales_titulo",
+        "path": "/text",
+        "sourceSha256": "22535e78e3bf565f395c3402d1c240e0decc9ade0784f1e4c1538af99f3931b2",
+        "spans": []
+      },
+      {
+        "block": "intervalo_fronteras_iguales_consigna",
+        "path": "/text",
+        "sourceSha256": "f1f7afcb7572a2512514e871d2cca17f5bbcedf2685694f79ca87c112b640254",
+        "spans": [
+          {
+            "start": 35,
+            "end": 54,
+            "text": "contar_en_intervalo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 259,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 266,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 399,
+            "text": "{4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 407,
+            "text": "{3,8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 420,
+            "end": 424,
+            "text": "4..7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 436,
+            "end": 445,
+            "text": "{4,5,5,6}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 484,
+            "text": "5..5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 562,
+            "end": 567,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "intervalo_fronteras_iguales_salida",
+        "path": "/text",
+        "sourceSha256": "17e4910858edf6c94760bc543dda8b8a8bce28c334e3f9ab72a1b9936dbf9228",
+        "spans": [
+          {
+            "start": 0,
+            "end": 67,
+            "text": "Dentro:1;Datos:1\nDentro:0;Datos:2\nDentro:2;Datos:4\nDentro:0;Datos:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "intervalo_fronteras_iguales_compilador",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "68aad3f8b0b70fce2a22d2d35735821a1b729b9b666de072197cb2b8f8e12b0d",
+        "spans": [
+          {
+            "start": 19,
+            "end": 30,
+            "text": "1, 0, 2 y 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 158,
+            "text": "5..5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 194,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 238,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "intervalo_fronteras_iguales_compilador",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "9595a4128afc87c374053b83b2db01eeed40fe7841b446c8084c609409f5be37",
+        "spans": [
+          {
+            "start": 101,
+            "end": 105,
+            "text": "4..7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 123,
+            "text": "{4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 137,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 169,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 194,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "intervalo_fronteras_iguales_comparacion",
+        "path": "/text",
+        "sourceSha256": "b7d2e3150c5214962530f1b07c593c2c6f5fd440e2d85837fad3eec9c66028b3",
+        "spans": [
+          {
+            "start": 79,
+            "end": 80,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 126,
+            "text": "valor > inferior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 236,
+            "text": "{4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 254,
+            "text": "4..7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 301,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 338,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 357,
+            "text": "5..5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 392,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 397,
+            "end": 406,
+            "text": "{4,5,5,6}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 452,
+            "end": 453,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 455,
+            "end": 468,
+            "text": "cuatro y seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 554,
+            "end": 555,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 598,
+            "end": 599,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "intervalo_fronteras_iguales_referencia",
+        "path": "/text",
+        "sourceSha256": "9c322dc71e743c263546add9a20eb4d1bb7d385ac77545e4f152b07ccb0bf210",
+        "spans": [
+          {
+            "start": 68,
+            "end": 72,
+            "text": "4..7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 104,
+            "text": "contar_en_intervalo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 298,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 306,
+            "end": 310,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 401,
+            "end": 420,
+            "text": "contar_en_intervalo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 423,
+            "end": 429,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 509,
+            "end": 513,
+            "text": "5..5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

@@ -46,7 +46,7 @@
             "Un pedido rechazado más."
           ],
           "correctIndex": 0,
-          "explanation": "El requisito distingue un pedido vacío válido de un dato fuera del dominio."
+          "explanation": "La cantidad 0 pertenece al dominio admitido. Por eso aumenta en uno el contador de válidos y aporta cero minutos. El rechazo corresponde a una cantidad fuera del intervalo, no a que el tiempo calculado sea cero."
         },
         {
           "type": "multiple_choice",
@@ -58,7 +58,7 @@
             "Reiniciar siempre todo el resumen al rechazar 11."
           ],
           "correctIndex": 0,
-          "explanation": "La política rechaza el dato fallido, no los válidos anteriores ni los siguientes."
+          "explanation": "El pedido de 2 piezas aporta 7 minutos. Al rechazar 11, aumenta en uno el contador de rechazados y se conservan el pedido válido y sus 7 minutos. Después, 3 aporta 9 minutos; el resumen de la sesión queda 2:1:16."
         }
       ]
     },
@@ -145,7 +145,7 @@
             "El total ya incorporó la señal de error como si fuera tiempo."
           ],
           "correctIndex": 2,
-          "explanation": "La decisión debe preceder a la actualización que usa el resultado como dato válido.",
+          "explanation": "Por ejemplo, después de aceptar 2 piezas hay 7 minutos. Para el dato 11, estimar devuelve la señal -1; sumarla antes de comprobarla dejaría 6 minutos, aunque ningún pedido válido se haya retirado. Hay que decidir si el resultado representa un tiempo válido antes de añadirlo al total.",
           "reviewFeedback": [
             "El contrato permite recorrer la colección sin imponer un recorrido por índice. Revisa el orden entre decidir si un resultado es válido y usarlo.",
             "El caso vacío ya tiene un tiempo válido. Sigue qué representa resultado cuando indica un rechazo.",
@@ -260,6 +260,42 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar los rechazos que deben conservarse"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera aquí las funciones de tu ampliación a 0..12. Sustituye la declaración de procesar por su definición y añade las auxiliares que utiliza antes de main. Conserva el main entregado: realiza las tres llamadas anteriores y después procesa {2,-1,0,12,13,3} y una colección vacía. Cada llamada debe comenzar con contadores nuevos.\n\nLa cantidad 0 sigue siendo válida y requiere cero minutos; para los demás pedidos admitidos se conservan 3 minutos de preparación más 2 por pieza. Una cantidad negativa o superior a 12 sólo aumenta los rechazos. Su registro muestra Invalido y el recorrido continúa.\n\nPulsa «Compilar, ejecutar y comprobar». La salida completa debe coincidir con el informe siguiente, incluido el salto final. Si hay diferencias, corrige tus funciones y vuelve a ejecutar todas las llamadas con ellas. Las llamadas deben utilizar los cálculos y decisiones de tus funciones; no las sustituyas por líneas de salida escritas a mano."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dato=1:5\nDato=12:27\nDato=4:11\nDato=0:0\n4:0:43\nDato=13:Invalido\n0:1:0\nDato=11:25\nDato=2:7\n2:0:32\nDato=2:7\nDato=-1:Invalido\nDato=0:0\nDato=12:27\nDato=13:Invalido\nDato=3:9\n4:2:43\n0:0:0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Recupera tu definicion de procesar y sus auxiliares.\nvoid procesar(const std::vector<int>& piezas);\n\nint main() {\n    procesar({1, 12, 4, 0});\n    procesar({13});\n    procesar({11, 2});\n    procesar({2, -1, 0, 12, 13, 3});\n    procesar({});\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dato=1:5\nDato=12:27\nDato=4:11\nDato=0:0\n4:0:43\nDato=13:Invalido\n0:1:0\nDato=11:25\nDato=2:7\n2:0:32\nDato=2:7\nDato=-1:Invalido\nDato=0:0\nDato=12:27\nDato=13:Invalido\nDato=3:9\n4:2:43\n0:0:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe coincide con las cinco sesiones. En la sesión mixta se aceptan 2,0,12,3 y se rechazan -1 y 13: el resumen es 4:2:43. El último 0:0:0 corresponde a una llamada nueva con una colección vacía.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Dato=1:5\nDato=12:27\nDato=4:11\nDato=0:0\n4:0:43\nDato=13:Invalido\n0:1:0\nDato=11:25\nDato=2:7\n2:0:32\nDato=2:7\nDato=-1:1\nDato=0:0\nDato=12:27\nDato=13:Invalido\nDato=3:9\n5:1:44\n0:0:0\n"
+                    ],
+                    "text": "Esta salida coincide con aceptar indebidamente el dato -1 y asignarle 1 minuto. Por eso la sesión mixta termina en 5:1:44 en vez de 4:2:43. Revisa el límite inferior de la validación: ampliar el máximo a 12 mantiene el rechazo de las cantidades negativas."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -325,6 +361,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 12;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& piezas) {\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        std::cout << \"Dato=\" << cantidad << \":\";\n        if (resultado == -1) {\n            ++rechazados;\n            std::cout << \"Invalido\\n\";\n        } else {\n            ++validos;\n            minutos += resultado;\n            std::cout << resultado << \"\\n\";\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos << \"\\n\";\n}\n\nint main() {\n    procesar({1, 12, 4, 0});\n    procesar({13});\n    procesar({11, 2});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar la ampliación con los rechazos anteriores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las tres primeras llamadas no contienen cantidades negativas. Una validación que sólo comprobara piezas <= 12 produciría el mismo informe en esas llamadas, aunque aceptara indebidamente valores menores que 0. Seleccionar también entradas incorrectas forma parte de la búsqueda sistemática de errores (Stroustrup, 2024).\n\nLa nueva sesión comienza con 2 piezas, que aportan 7 minutos. El dato -1 debe rechazarse sin alterar ese tiempo. El pedido vacío añade cero minutos y 12 piezas añaden 27; después del rechazo de 13 se conservan 34 minutos. El último pedido, de 3 piezas, añade 9 y deja 4:2:43. Así se comprueba la continuación después de ambos rechazos.\n\nSi se aceptara -1, la fórmula 3 + 2 * piezas devolvería 1, que no es la señal de rechazo. El dato se contaría como válido y el resumen sería 5:1:44. Esa diferencia hace visible el error que antes no se ejercitaba. La llamada vacía final debe mostrar 0:0:0, porque su resumen no hereda los contadores de la sesión anterior.\n\nEl programa siguiente es una implementación posible. Reúne las mismas llamadas y el mismo formato que la comprobación de tus funciones."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 12;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& piezas) {\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        std::cout << \"Dato=\" << cantidad << \":\";\n        if (resultado == -1) {\n            ++rechazados;\n            std::cout << \"Invalido\\n\";\n        } else {\n            ++validos;\n            minutos += resultado;\n            std::cout << resultado << \"\\n\";\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos << \"\\n\";\n}\n\nint main() {\n    procesar({1, 12, 4, 0});\n    procesar({13});\n    procesar({11, 2});\n    procesar({2, -1, 0, 12, 13, 3});\n    procesar({});\n    return 0;\n}\n"
         }
       ]
     }
@@ -518,7 +567,11 @@
           "block_0003_0005",
           "block_0003_0006",
           "block_0003_0007",
-          "block_0003_0008"
+          "block_0003_0008",
+          "sesion_ampliada_regresion_titulo",
+          "sesion_ampliada_regresion_consigna",
+          "sesion_ampliada_regresion_salida",
+          "sesion_ampliada_regresion_propia"
         ]
       },
       {
@@ -532,7 +585,10 @@
           "block_0004_0005",
           "block_0004_0006",
           "block_0004_0007",
-          "block_0004_0008"
+          "block_0004_0008",
+          "sesion_ampliada_regresion_referencia_titulo",
+          "sesion_ampliada_regresion_comparacion",
+          "sesion_ampliada_regresion_referencia"
         ]
       }
     ],
@@ -932,7 +988,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "sesion_ampliada_regresion_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 5,
+          "block": 0
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "sesion_ampliada_regresion_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 1
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "sesion_ampliada_regresion_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "sesion_ampliada_regresion_propia",
+        "sha256": "5906f771182f2904532f4f3732129374ecdcdf48172ef8382e64a2f59b40bf7f",
+        "storage": {
+          "page": 5,
+          "block": 3
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "sesion_ampliada_regresion_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 5,
+          "block": 4
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "sesion_ampliada_regresion_comparacion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 5
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "sesion_ampliada_regresion_referencia",
+        "sha256": "664f9836c29de417358c433ec37aa4e8408c107ad84c6a31daf5ec9a378db020",
+        "storage": {
+          "page": 5,
+          "block": 6
+        },
+        "progressPage": "page_0004"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1013,6 +1133,21 @@
         "id": "block_0004_0001",
         "beforeSha256": "8f171d7655c899a52eaaabcd8d152fd0dddad944572b3bb50275e018d63170e7",
         "afterSha256": "3206949c804f4b41d8f8194339c792a6b60313975260269840b65b2c33415cc1"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "147518b599541bc9306405c30a9ce6db9cf113a590e87eea7cc0020e11cc1f7a",
+        "afterSha256": "9cbe2d12c176e1fca01492d58a7dfc21768ed49278425bb23bc35ad8a6d0bd27"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "e3ab0a5306bd3adebe1fcd7ac7353a39f84c92d1cabe7ac9823a1a682093bbf4",
+        "afterSha256": "a7946414e972f715c265b94ec896b0c2f10d292ed0c62fcccd779468c93c4faa"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "718a60b25f4e4525a1e7015fdbd22da072b227181c298f5181361ffd4a8c2fd5",
+        "afterSha256": "ef246878fdf8d5fdaf233279c1db16d7df17347aaa105ed3e440a4cdb4e15be6"
       }
     ]
   },
@@ -1030,10 +1165,13 @@
       ]
     },
     {
-      "activity": "block_0003_0008",
+      "activity": "sesion_ampliada_regresion_propia",
       "blocks": [
         "block_0004_0007",
-        "block_0004_0008"
+        "block_0004_0008",
+        "sesion_ampliada_regresion_referencia_titulo",
+        "sesion_ampliada_regresion_comparacion",
+        "sesion_ampliada_regresion_referencia"
       ]
     }
   ],
@@ -1054,6 +1192,12 @@
       "activity": "block_0002_0002",
       "requires": [
         "block_0001_0002"
+      ]
+    },
+    {
+      "activity": "sesion_ampliada_regresion_propia",
+      "requires": [
+        "block_0003_0008"
       ]
     }
   ],
@@ -1182,8 +1326,37 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "d1375e89a0d9d4942b1f8ddbd3f5d02fd8231b77437d61a1bff672490a3964a6",
-        "spans": []
+        "sourceSha256": "292fcdc16a87a299d731dc712f52ca86f0f5406c0e4ae13e8ed6a2213824666f",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 112,
+            "text": "cero minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 210,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1243,8 +1416,65 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "98628aaaf55e520ba0461ab1ed6e4a5fb34020052c20bde30a32a13bab8bf97b",
-        "spans": []
+        "sourceSha256": "97902a36ea212442777ad4576cd16414c6cc69e332a30d8f64ae95332ab4d3cc",
+        "spans": [
+          {
+            "start": 13,
+            "end": 14,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 38,
+            "text": "7 minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 54,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 70,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 144,
+            "text": "7 minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 173,
+            "text": "9 minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 211,
+            "text": "2:1:16",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -1545,8 +1775,51 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "d6826a07529c674535dca51b6167e47404698bb965acdb7c37ec169ef5e81087",
-        "spans": []
+        "sourceSha256": "6dee136f8f89ac9f6e9b1c687a6457ed31e9d9853d9261d09ef5cd376fb8feb3",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 54,
+            "text": "7 minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 71,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 80,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 101,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 149,
+            "text": "6 minutos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -2166,6 +2439,354 @@
             "end": 34,
             "text": "doce",
             "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sesion_ampliada_regresion_titulo",
+        "path": "/text",
+        "sourceSha256": "19742aa163e79b97be6d27fdecd0fb453b76d538c054f9a052bb8fb5c49fea40",
+        "spans": []
+      },
+      {
+        "block": "sesion_ampliada_regresion_consigna",
+        "path": "/text",
+        "sourceSha256": "b70200156d8418b866175f91b7c05652a3704aefbe0fe3e92d6108704a90c140",
+        "spans": [
+          {
+            "start": 47,
+            "end": 52,
+            "text": "0..12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 90,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 157,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 175,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 203,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 258,
+            "text": "{2,-1,0,12,13,3}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 346,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 390,
+            "text": "cero minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 439,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 467,
+            "end": 468,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 515,
+            "end": 517,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 565,
+            "end": 573,
+            "text": "Invalido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sesion_ampliada_regresion_salida",
+        "path": "/text",
+        "sourceSha256": "500984326d6a7ed0636fd46a3c13a55c2c00537ad11d4e30a47ce7d36a8df60d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 180,
+            "text": "Dato=1:5\nDato=12:27\nDato=4:11\nDato=0:0\n4:0:43\nDato=13:Invalido\n0:1:0\nDato=11:25\nDato=2:7\n2:0:32\nDato=2:7\nDato=-1:Invalido\nDato=0:0\nDato=12:27\nDato=13:Invalido\nDato=3:9\n4:2:43\n0:0:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sesion_ampliada_regresion_propia",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "dc3df7d7f3898c6424b0df223fa578bafe357c7eb8bd0b845b786d06cecdbe93",
+        "spans": [
+          {
+            "start": 28,
+            "end": 33,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 82,
+            "text": "2,0,12,3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 104,
+            "text": "-1 y 13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 126,
+            "text": "4:2:43",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 143,
+            "text": "0:0:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sesion_ampliada_regresion_propia",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "0514d302608510c6a508bc06ddda0e9f5a1d0b0ddcac323db56fbf1567e45865",
+        "spans": [
+          {
+            "start": 55,
+            "end": 57,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 78,
+            "text": "1 minuto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 121,
+            "text": "5:1:44",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 138,
+            "text": "4:2:43",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 206,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "sesion_ampliada_regresion_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "86d5fc0f446a5def26f19a85e5983e516c6a10426d391d6de7aab39fac26d03a",
+        "spans": []
+      },
+      {
+        "block": "sesion_ampliada_regresion_comparacion",
+        "path": "/text",
+        "sourceSha256": "8aac62e780a598e486efb203beace39234436df735cd6ccf06baa0822b1db38c",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 109,
+            "text": "piezas <= 12",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 207,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 318,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 350,
+            "end": 351,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 381,
+            "text": "7 minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 393,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 468,
+            "text": "cero minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 473,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 490,
+            "text": "27",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 515,
+            "end": 517,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 531,
+            "end": 541,
+            "text": "34 minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 565,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 580,
+            "end": 581,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 589,
+            "end": 595,
+            "text": "4:2:43",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 673,
+            "end": 675,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 688,
+            "end": 702,
+            "text": "3 + 2 * piezas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 714,
+            "end": 715,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 799,
+            "end": 805,
+            "text": "5:1:44",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 908,
+            "end": 913,
+            "text": "0:0:0",
+            "role": "output",
             "reading": "natural"
           }
         ]

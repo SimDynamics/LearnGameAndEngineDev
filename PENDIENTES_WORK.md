@@ -2,7 +2,7 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar la revisión pedagógica de Programación 1 desde U7L1, «Precisar requisitos y construir una primera versión», en `app/src/main/assets/content/es/programming/cpp_fundamentals/errores_y_construccion_gradual/lesson_requisitos_casos_y_primera_version.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
+Continuar la revisión pedagógica de Programación 1 desde U8L1, «Lanzar y capturar una excepción», en `app/src/main/assets/content/es/programming/cpp_fundamentals/excepciones_y_recuperacion/lesson_lanzar_y_capturar.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
 
 ## Base conservada
 
