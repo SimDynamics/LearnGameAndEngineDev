@@ -83,6 +83,8 @@ function Invoke-RecordedProcess([string] $Executable, [string] $Arguments, [stri
 try {
     Add-Type -AssemblyName System.Drawing
     Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;
@@ -232,6 +234,35 @@ public sealed class InspectionMessageFilter : IInspectionMessageFilter {
         }
         return $qaResult
     }
+    function Complete-OptionalFirstLaunch {
+        # The first captured runner showed this optional account screen before
+        # DTE was registered. Invoke only the named, visible offline controls;
+        # never enter credentials or infer a successful debugger connection.
+        $qaWindow = [InspectionNative]::FindWindowForProcess($qaVsProcess.Id)
+        if ($qaWindow -eq [IntPtr]::Zero) { return }
+        $qaRoot = [Windows.Automation.AutomationElement]::FromHandle($qaWindow)
+        foreach ($qaAction in @(
+            @{ name = 'Skip and add accounts later.'; image = 'visual_studio_optional_account' },
+            @{ name = 'Start Visual Studio'; image = 'visual_studio_first_settings' }
+        )) {
+            $qaCondition = [Windows.Automation.PropertyCondition]::new(
+                [Windows.Automation.AutomationElement]::NameProperty, $qaAction.name)
+            $qaControl = $qaRoot.FindFirst([Windows.Automation.TreeScope]::Descendants, $qaCondition)
+            if (-not $qaControl -or -not $qaControl.Current.IsEnabled -or $qaControl.Current.IsOffscreen) { continue }
+            $qaPattern = $null
+            if (-not $qaControl.TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern, [ref] $qaPattern)) {
+                throw ('The visible first-use control has no Invoke pattern: ' + $qaAction.name)
+            }
+            Save-ActualVsWindow $qaAction.image
+            Write-Stage 'first-use-control' ([ordered]@{
+                name = $qaControl.Current.Name
+                automationId = $qaControl.Current.AutomationId
+                action = 'Invoke visible optional account/setup control; no account used.'
+            })
+            ([Windows.Automation.InvokePattern] $qaPattern).Invoke()
+            return
+        }
+    }
 
     Write-Stage 'environment' ([ordered]@{
         os = (Get-CimInstance Win32_OperatingSystem).Caption
@@ -306,6 +337,7 @@ exit /b %ERRORLEVEL%
     Wait-Until 'DTE registration for the launched Visual Studio process' {
         if ($qaVsProcess.HasExited) { throw 'The launched Visual Studio process exited.' }
         $script:qaDte = [InspectionNative]::DteForProcess($qaVsProcess.Id)
+        if (-not $qaDte) { Complete-OptionalFirstLaunch }
         return $null -ne $qaDte
     } 180
     $qaDte.SuppressUI = $true
