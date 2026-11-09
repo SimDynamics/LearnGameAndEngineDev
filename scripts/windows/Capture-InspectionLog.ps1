@@ -449,12 +449,66 @@ pause >nul
     }
     function Show-ReportLocals {
         $qaDte.ExecuteCommand('Debug.Locals', '')
-        $qaLocalsWindow = $null
+        Start-Sleep -Milliseconds 400
+        try {
+        $qaNativeRoot = [Windows.Automation.AutomationElement]::FromHandle(
+            [InspectionNative]::FindWindowForProcess($qaVsProcess.Id))
+        $qaUiItems = $qaNativeRoot.FindAll([Windows.Automation.TreeScope]::Descendants, [Windows.Automation.Condition]::TrueCondition)
+        $qaUiInventory = @()
+        foreach ($qaUiItem in $qaUiItems) {
+            $qaUiCurrent = $qaUiItem.Current
+            if ($qaUiCurrent.IsOffscreen) { continue }
+            $qaUiInventory += [ordered]@{
+                name = $qaUiCurrent.Name; id = $qaUiCurrent.AutomationId
+                type = $qaUiCurrent.ControlType.ProgrammaticName
+                bounds = [string] $qaUiCurrent.BoundingRectangle
+            }
+        }
+        $qaUiInventory | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qaOutput 'debugger-visible-ui.json') -Encoding UTF8
+        }
+        catch { Write-Stage 'uia-window-diagnostic' $_.Exception.Message }
+        $qaWindowInventory = @()
         for ($qaWindowIndex = 1; $qaWindowIndex -le $qaDte.Windows.Count; ++$qaWindowIndex) {
             $qaCandidate = $qaDte.Windows.Item($qaWindowIndex)
-            if ([string] $qaCandidate.Caption -ceq 'Locals') { $qaLocalsWindow = $qaCandidate; break }
+            $qaWindowInventory += [ordered]@{
+                caption = [string] $qaCandidate.Caption; kind = [string] $qaCandidate.ObjectKind
+                height = [int] $qaCandidate.Height
+            }
         }
-        if (-not $qaLocalsWindow) { throw 'The actual Locals tool window is unavailable.' }
+        Write-Stage 'dte-window-inventory' ([ordered]@{ count = $qaDte.Windows.Count; windows = $qaWindowInventory })
+        # Resolve the IDE's own constant, instead of depending on captions or
+        # a GUID copied from another SDK version.
+        if (-not $script:qaLocalsKind) {
+            foreach ($qaAssemblyRelative in @(
+                'Common7\IDE\PublicAssemblies\EnvDTE.dll',
+                'Common7\IDE\PublicAssemblies\Microsoft.VisualStudio.Interop.dll',
+                'Common7\IDE\PrivateAssemblies\EnvDTE.dll',
+                'Common7\IDE\PrivateAssemblies\Microsoft.VisualStudio.Interop.dll'
+            )) {
+                $qaAssemblyPath = Join-Path $qaInstance.installationPath $qaAssemblyRelative
+                if (-not (Test-Path -LiteralPath $qaAssemblyPath)) { continue }
+                try {
+                    $qaInterop = [Reflection.Assembly]::LoadFrom($qaAssemblyPath)
+                    $qaConstants = $qaInterop.GetType('EnvDTE.Constants', $false)
+                    if (-not $qaConstants) { continue }
+                    $qaField = $qaConstants.GetField('vsWindowKindLocals')
+                    if (-not $qaField) { continue }
+                    $script:qaLocalsKind = [string] $qaField.GetRawConstantValue()
+                    Write-Stage 'locals-kind-resolved' ([ordered]@{
+                        assembly = $qaAssemblyPath; identity = $qaInterop.FullName; value = $qaLocalsKind
+                    })
+                    break
+                }
+                catch { Write-Stage 'locals-assembly-diagnostic' $_.Exception.Message }
+            }
+        }
+        if (-not $qaLocalsKind) { throw 'The installed IDE exposes no resolvable vsWindowKindLocals constant.' }
+        $qaLocalsWindow = $null
+        Wait-Until 'Locals window lookup by the installed IDE constant' {
+            $script:qaLocatedLocals = $qaDte.Windows.Item($qaLocalsKind)
+            return $null -ne $qaLocatedLocals
+        } 30
+        $qaLocalsWindow = $qaLocatedLocals
         # The first curricular run showed the compiler-generated range-for
         # locals above aceptados in a shallow pane. Enlarge the actual docked
         # frame so the scalar and the source statement fit in the same image.
