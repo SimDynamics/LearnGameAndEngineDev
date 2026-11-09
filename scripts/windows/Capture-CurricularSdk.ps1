@@ -195,6 +195,84 @@ function Read-SdkWindow([IntPtr] $qaWindow, [string] $qaName) {
     return $qaText -join "`n"
 }
 
+function Read-SdkFeatureChoices([System.Windows.Automation.AutomationElement] $qaRoot) {
+    $qaTree = $qaRoot.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+        [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+            'UserOptionSelectionPageTreeView'))
+    if ($null -eq $qaTree) { throw 'The observed SDK feature tree is unavailable.' }
+    $qaItems = $qaTree.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+        [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+            [System.Windows.Automation.ControlType]::TreeItem))
+    foreach ($qaItem in $qaItems) {
+        $qaId = $qaItem.Current.AutomationId
+        if ($qaId -notlike 'OptionId.*') { continue }
+        $qaCheck = $qaItem.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+            [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+                [System.Windows.Automation.ControlType]::CheckBox))
+        $qaToggle = $null
+        if ($null -eq $qaCheck -or -not $qaCheck.TryGetCurrentPattern(
+            [System.Windows.Automation.TogglePattern]::Pattern, [ref] $qaToggle)) {
+            throw "The observed SDK feature $qaId has no readable native checkbox."
+        }
+        [pscustomobject]@{
+            id = $qaId; name = $qaCheck.Current.Name
+            enabled = $qaItem.Current.IsEnabled -and $qaCheck.Current.IsEnabled
+            state = $qaToggle.Current.ToggleState.ToString(); toggle = $qaToggle
+        }
+    }
+}
+
+function Select-SdkDesktopFeatures([System.Windows.Automation.AutomationElement] $qaRoot) {
+    # These IDs were read from this signed installer's actual feature tree.
+    # Only enabled optional checkboxes in that observed list may be cleared.
+    $qaKnownIds = @(
+        'OptionId.WindowsPerformanceToolkit', 'OptionId.WindowsDesktopDebuggers',
+        'OptionId.AvrfExternal', 'OptionId.NetFxSoftwareDevelopmentKit',
+        'OptionId.WindowsSoftwareLogoToolkit', 'OptionId.IpOverUsb',
+        'OptionId.MSIInstallTools', 'OptionId.SigningTools', 'OptionId.UWPManaged',
+        'OptionId.UWPCPP', 'OptionId.UWPLocalized', 'OptionId.DesktopCPPx86',
+        'OptionId.DesktopCPPx64', 'OptionId.DesktopCPParm64'
+    )
+    $qaTargetId = 'OptionId.DesktopCPPx64'
+    $qaBefore = @(Read-SdkFeatureChoices $qaRoot)
+    $qaTarget = @($qaBefore | Where-Object { $_.id -eq $qaTargetId })
+    if ($qaTarget.Count -ne 1 -or $qaTarget[0].name -notmatch '(?i)Desktop C\+\+.*(x64|amd64)') {
+        throw 'The SDK feature tree did not identify exactly one Desktop C++ x64/amd64 checkbox.'
+    }
+    if ($qaTarget[0].state -eq 'Off' -and $qaTarget[0].enabled) {
+        $qaTarget[0].toggle.Toggle()
+        Start-Sleep -Milliseconds 150
+    }
+    foreach ($qaId in $qaKnownIds) {
+        if ($qaId -eq $qaTargetId) { continue }
+        $qaChoice = @(Read-SdkFeatureChoices $qaRoot | Where-Object { $_.id -eq $qaId })
+        if ($qaChoice.Count -gt 1) { throw "The SDK feature $qaId is ambiguous." }
+        if ($qaChoice.Count -eq 1 -and $qaChoice[0].enabled -and $qaChoice[0].state -eq 'On') {
+            $qaChoice[0].toggle.Toggle()
+            Start-Sleep -Milliseconds 150
+        }
+    }
+    $qaAfter = @(Read-SdkFeatureChoices $qaRoot)
+    $qaEvidence.featureSelection = @($qaAfter | ForEach-Object {
+        $qaRow = $_
+        $qaPrevious = $qaBefore | Where-Object { $_.id -eq $qaRow.id } | Select-Object -First 1
+        [ordered]@{id = $qaRow.id; name = $qaRow.name; enabled = $qaRow.enabled
+            before = $qaPrevious.state; after = $qaRow.state}
+    })
+    $qaEvidence.featureSelectionAtUtc = [DateTime]::UtcNow.ToString('o')
+    Save-Evidence
+    $qaSelectedTarget = @($qaAfter | Where-Object { $_.id -eq $qaTargetId -and $_.state -eq 'On' })
+    if ($qaSelectedTarget.Count -ne 1) { throw 'The Desktop C++ amd64 feature is not selected after applying the choices.' }
+    foreach ($qaChoice in $qaAfter) {
+        if ($qaChoice.id -ne $qaTargetId -and $qaChoice.enabled -and $qaChoice.state -ne 'Off') {
+            throw "The SDK still selects an optional feature: $($qaChoice.id). No unobserved or required feature was cleared."
+        }
+    }
+}
+
 Invoke-Capture 'p1_windows_sdk_antes' @"
 dir /b "$qaSdkRoot\Include"
 "@
@@ -292,7 +370,16 @@ try {
             }).Count -ne 0
             if ($qaProgress) { $qaLastRecognized = [DateTime]::UtcNow }
             if ($null -ne $qaButton) {
-                if ($qaButtonName -in @('Close', 'Finish') -and $qaVisibleText -notmatch '(?i)complete|successfully installed|installation was successful') {
+                # The observed terminal page says "Welcome". Its title and
+                # Close control identify the final page, not installation success.
+                # The process exit code and every file/build gate remain required.
+                $qaTerminalTitle = @($qaVisible | Where-Object {
+                    $_.Current.AutomationId -eq 'FinishedPageTitle' -and
+                    $_.Current.Name -like 'Welcome to the Windows Software Development Kit*'
+                }).Count -eq 1
+                $qaTerminalControl = $qaTerminalTitle -and $qaButton.Current.AutomationId -eq 'FinishedPageClose'
+                if ($qaButtonName -in @('Close', 'Finish') -and -not $qaTerminalControl -and
+                    $qaVisibleText -notmatch '(?i)complete|successfully installed|installation was successful') {
                     $qaButton = $null
                 }
             }
@@ -301,28 +388,19 @@ try {
                 if ($qaActionSignature -ne $qaLastActionSignature) {
                     if ($qaActionCount -ge 8) { throw 'The SDK wizard exceeded its bounded known sequence.' }
                     $qaName = 'p1_windows_sdk_paso_{0:d2}' -f ($qaActionCount + 1)
+                    if ($qaButtonName -eq 'Install') {
+                        Select-SdkDesktopFeatures $qaRoot
+                    }
+                    # Capture the verified choices, after changing the real controls.
                     Save-ActualWindow $qaWindow (Join-Path $qaOutput ($qaName + '.png')) 0 0
                     Read-SdkWindow $qaWindow $qaName | Out-Null
-                    if ($qaButtonName -eq 'Install') {
-                        # Read the actual feature page before applying it. Only
-                        # the x64 desktop feature requested on the command line
-                        # is needed; do not accept an unrelated installation UI.
-                        $qaFeature = $qaVisible | Where-Object {
-                            $_.Current.Name -match '(?i)Desktop C\+\+.*(x64|amd64)'
-                        } | Select-Object -First 1
-                        if ($null -eq $qaFeature) { throw 'The SDK feature page did not identify Desktop C++ x64/amd64.' }
-                        $qaToggle = $null
-                        if ($qaFeature.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref] $qaToggle) -and
-                            $qaToggle.Current.ToggleState -eq [System.Windows.Automation.ToggleState]::Off) {
-                            $qaToggle.Toggle()
-                        }
-                    }
                     $qaInvoke = $null
                     if (-not $qaButton.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref] $qaInvoke)) {
                         throw 'The observed SDK button does not expose its native invocation action.'
                     }
                     $qaEvidence.uiActions += [ordered]@{button = $qaButtonName; screenshot = $qaName + '.png'; atUtc = [DateTime]::UtcNow.ToString('o')}
                     Save-Evidence
+                    Write-Host "SDK wizard action: $qaButtonName ($($qaButton.Current.AutomationId))"
                     $qaInvoke.Invoke()
                     $qaLastActionSignature = $qaActionSignature
                     $qaActionCount++
