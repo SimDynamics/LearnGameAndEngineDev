@@ -644,6 +644,85 @@ def windows_reading_source(name: str, code: str) -> str:
         code = exact(code,
                      '''            val prosePunctuation = ".,!?;:—–-…()«»\\"“”¡¿'•"''',
                      '''            val prosePunctuation = ".,!?;:—–-…()«»\\"“”¡¿'•_"''', count=2)
+        code = exact(code,
+                     '''            // maintaining another operator-name table. Only one uniquely attributable
+            // insertion is accepted; structured fractions and ambiguous rewrites retain
+            // their conservative fallback. Every other original word must still match.''',
+                     '''            // maintaining another operator-name table. Each residual slash must have
+            // one uniquely attributable insertion, in source order and without overlap.
+            // Structured fractions and ambiguous rewrites retain their conservative
+            // fallback. Every other original word must still match.''')
+        code = exact(code, '''            if (words(normalized) != expected && residualSlashes.size == 1) {
+                val (range, first, count) = residualSlashes.single()
+                val whole = words(normalized)
+                val without = words(normalizeText(source.replaceRange(range, " ")))
+                val added = whole.size - without.size
+                if (added > 0) {
+                    var prefix = 0
+                    while (prefix < without.size && whole[prefix] == without[prefix]) prefix++
+                    var suffix = 0
+                    while (suffix < without.size && whole[whole.lastIndex - suffix] == without[without.lastIndex - suffix]) suffix++
+                    // Valid insertion positions form this closed interval. A single
+                    // pass avoids searching/rebuilding every candidate in long prose.
+                    val firstPosition = without.size - suffix
+                    if (firstPosition == prefix) {
+                        val position = firstPosition
+                        val contextualWords = whole.subList(position, position + added)
+                        val candidate = expected.take(first) + contextualWords + expected.drop(first + count)
+                        if (candidate == whole) {
+                            repeat(count) { expected.removeAt(first); owners.removeAt(first) }
+                            expected.addAll(first, contextualWords)
+                            owners.addAll(first, List(contextualWords.size) { -1 })
+                        }
+                    }
+                }
+            }''', '''            if (words(normalized) != expected && residualSlashes.isNotEmpty()) {
+                data class SlashObservation(val first: Int, val count: Int, val position: Int, val words: List<String>)
+                val whole = words(normalized)
+                val observations = mutableListOf<SlashObservation>()
+                var precise = true
+                for ((range, first, count) in residualSlashes) {
+                    val without = words(normalizeText(source.replaceRange(range, " ")))
+                    val added = whole.size - without.size
+                    if (added <= 0) { precise = false; break }
+                    var prefix = 0
+                    while (prefix < without.size && whole[prefix] == without[prefix]) prefix++
+                    var suffix = 0
+                    while (suffix < without.size && whole[whole.lastIndex - suffix] == without[without.lastIndex - suffix]) suffix++
+                    // The deletion must reveal one insertion position, not a
+                    // choice among repeated words or a wider grammatical rewrite.
+                    val position = without.size - suffix
+                    if (position != prefix || observations.lastOrNull()?.let {
+                            position < it.position + it.words.size
+                        } == true) { precise = false; break }
+                    observations += SlashObservation(first, count, position, whole.subList(position, position + added))
+                }
+                if (precise) {
+                    var shift = 0
+                    for (observation in observations) {
+                        if (observation.position != observation.first + shift) { precise = false; break }
+                        shift += observation.words.size - observation.count
+                    }
+                }
+                if (precise) {
+                    val candidate = expected.toMutableList()
+                    val candidateOwners = owners.toMutableList()
+                    // Reverse source order preserves every original first/count
+                    // offset while replacing only independently observed words.
+                    for (observation in observations.asReversed()) {
+                        repeat(observation.count) {
+                            candidate.removeAt(observation.first)
+                            candidateOwners.removeAt(observation.first)
+                        }
+                        candidate.addAll(observation.first, observation.words)
+                        candidateOwners.addAll(observation.first, List(observation.words.size) { -1 })
+                    }
+                    if (candidate == whole) {
+                        expected.clear(); expected.addAll(candidate)
+                        owners.clear(); owners.addAll(candidateOwners)
+                    }
+                }
+            }''')
     if name == "ManualEnglishTerms":
         code = exact(code, 'object ManualEnglishTerms {', '''object ManualEnglishTerms {
     // Keep the historical dictionary/parser exact, but require actual code

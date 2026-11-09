@@ -280,15 +280,63 @@ struct Harness {
         const auto value = reader->snapshot(); require(value.error.empty(), "Real " + std::string(spec.label) + " reader error: " + value.error); return value;
     }
     void ready(bool all = true) const {
+        const auto started = GetTickCount64();
+        auto progressed = started;
+        std::string progress_key;
+        std::size_t progress_total = 0, most_available = 0;
+        bool reported_plan_change = false;
         try {
-            wait([&] {
+            const auto complete = [&] {
                 const auto value = snapshot();
+                if (all && value.planned && !value.key.empty() && !value.segments.empty()) {
+                    const auto now = GetTickCount64();
+                    const auto available = static_cast<std::size_t>(std::ranges::count_if(
+                        value.segments, [](const auto& part) { return part.available; }));
+                    if (progress_key.empty()) {
+                        progress_key = value.key; progress_total = value.segments.size(); most_available = available;
+                        std::cout << "PREPARATION baseline " << spec.label << " elapsed_ms=" << now - started
+                            << " available=" << most_available << '/' << progress_total
+                            << " key=" << printable(progress_key) << '\n';
+                    } else if (value.key == progress_key && value.segments.size() == progress_total) {
+                        if (available > most_available) {
+                            const auto delta = now - progressed;
+                            most_available = available; progressed = now;
+                            std::cout << "PREPARATION progress " << spec.label << " elapsed_ms=" << now - started
+                                << " delta_ms=" << delta << " available=" << most_available << '/' << progress_total
+                                << " key=" << printable(progress_key) << '\n';
+                        }
+                    } else if (!reported_plan_change) {
+                        reported_plan_change = true;
+                        std::cout << "PREPARATION changed plan without extending wait " << spec.label
+                            << " elapsed_ms=" << now - started << " idle_ms=" << now - progressed
+                            << " available=" << available << '/' << value.segments.size()
+                            << " key=" << printable(value.key) << '\n';
+                    }
+                }
                 return value.planned && !value.segments.empty() && value.index < value.segments.size()
                     && (all ? std::ranges::all_of(value.segments, [](const auto& part) { return part.available; }) : value.segments[value.index].available);
-            }, "actual current compiler speech preparation and word alignment");
+            };
+            constexpr std::string_view description = "actual current compiler speech preparation and word alignment";
+            if (!all) {
+                wait(complete, description);
+            } else {
+                // Whole-page synthesis can exceed the first-recording budget.
+                // Only a new available-recording maximum in the original plan
+                // extends this inactivity limit; CTest still bounds the case.
+                // A new plan, retry or recovered count never resets the clock.
+                do {
+                    pump(); if (complete()) return;
+                    MsgWaitForMultipleObjects(0, nullptr, FALSE, 5, QS_ALLINPUT);
+                } while (GetTickCount64() - progressed < 120000);
+                throw std::runtime_error("Timeout: " + std::string(description));
+            }
         } catch (const std::exception& failure) {
             const auto value = reader->snapshot();
+            const auto now = GetTickCount64();
             std::cout << "PREPARATION failure " << spec.label << " all=" << all << " reason=" << printable(failure.what())
+                << " elapsed_ms=" << now - started << " idle_ms=" << now - progressed
+                << " progress_available=" << most_available << '/' << progress_total
+                << " progress_key=" << printable(progress_key)
                 << " planned=" << value.planned << " preparing=" << value.preparing
                 << " suspended=" << value.preparation_suspended << " index=" << value.index
                 << " available=" << std::ranges::count_if(value.segments, [](const auto& part) { return part.available; })

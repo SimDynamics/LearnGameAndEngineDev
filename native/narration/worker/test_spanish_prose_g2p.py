@@ -39,6 +39,15 @@ def historical_cases() -> list[dict]:
         if block.get("type") != "order_code" or "resultado_en_dominio" not in block["question"]:
             raise AssertionError("The authentic U11L16 p3b3 question changed")
         cases.append(dict(label=f"u11l16/{stage}/p3b3/question", source=block["question"], mode="cpp"))
+    lesson = json.loads(compiler.published_bytes("u11l19", "before"))
+    block = lesson["pages"][4]["blocks"][4]
+    if block.get("type") != "paragraph" or "duplicados/ausencia/mala" not in block["text"]:
+        raise AssertionError("The authentic U11L19 p5b5 criterion changed")
+    cases.append(dict(label="u11l19/before/p5b5", source=block["text"], mode="auto",
+                      phoneSentence=1,
+                      # Captured from the unchanged production frontend before
+                      # the Windows trace fix, using the same empty lexicon.
+                      phoneSha256="2e3b3ffe8b5e2d698cc7c5b072faf1fd7dfb588d772b67df101281f9d9e965d2"))
     return cases
 
 
