@@ -237,9 +237,11 @@ struct Fixture{
     LessonReaderSnapshot snapshot(){auto result=reader->snapshot();check(result.error.empty(),"Real reader error: "+result.error);return result;}
     void ready(const std::source_location& caller=std::source_location::current()){
         const auto started=GetTickCount64();
+        auto progressed=started;std::string progress_key;
+        std::size_t progress_total=0,most_available=0;
         const auto sequence=observe_ready?++ready_sequence:0;
-        std::optional<std::string> observed_key;std::size_t observed_total=0,observed_available=0;
-        bool observed_planned=false,observed_preparing=false,observed_suspended=false;
+        std::optional<std::string> observed_key;std::size_t observed_total=0,observed_available=0,observed_maximum=0;
+        bool observed_planned=false,observed_preparing=false,observed_suspended=false,observed_baseline=false;
         ULONGLONG observed_elapsed=0;
         const auto observe=[&](std::string_view event,const LessonReaderSnapshot& value){
             if(!observe_ready)return;
@@ -247,13 +249,17 @@ struct Fixture{
                 const auto available=static_cast<std::size_t>(std::ranges::count_if(value.segments,[](const auto& part){return part.available;}));
                 if(event=="PROGRESS"&&observed_key&&*observed_key==value.key&&observed_total==value.segments.size()
                     &&observed_available==available&&observed_planned==value.planned
-                    &&observed_preparing==value.preparing&&observed_suspended==value.preparation_suspended)return;
-                const auto elapsed=GetTickCount64()-started;
-                const auto quoted_key=winrt::to_string(winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(value.key)).Stringify());
+                    &&observed_preparing==value.preparing&&observed_suspended==value.preparation_suspended
+                    &&observed_baseline==!progress_key.empty()&&observed_maximum==most_available)return;
+                const auto now=GetTickCount64(),elapsed=now-started;
+                const auto quoted=[](std::string_view text){return winrt::to_string(
+                    winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(text)).Stringify());};
                 std::cout<<"READY_"<<event<<" sequence="<<sequence<<" caller="<<caller.file_name()<<':'<<caller.line()
-                    <<" elapsed_ms="<<elapsed<<" delta_ms="<<elapsed-observed_elapsed<<" page="<<lesson_page_state(view).index
+                    <<" elapsed_ms="<<elapsed<<" delta_ms="<<elapsed-observed_elapsed<<" idle_ms="<<now-progressed
+                    <<" progress_ms="<<progressed-started<<" baseline_available="<<most_available<<'/'<<progress_total
+                    <<" baseline_key="<<quoted(progress_key)<<" page="<<lesson_page_state(view).index
                     <<" planned="<<value.planned<<" preparing="<<value.preparing<<" suspended="<<value.preparation_suspended
-                    <<" available="<<available<<'/'<<value.segments.size()<<" selected="<<value.index<<" key="<<quoted_key;
+                    <<" available="<<available<<'/'<<value.segments.size()<<" selected="<<value.index<<" key="<<quoted(value.key);
                 const auto pending=std::ranges::find_if(value.segments,[](const auto& part){return !part.available;});
                 if(pending==value.segments.end())std::cout<<" first_pending=none";
                 else std::cout<<" first_pending="<<static_cast<std::size_t>(pending-value.segments.begin())
@@ -261,23 +267,46 @@ struct Fixture{
                 std::cout<<'\n';
                 observed_key=value.key;observed_total=value.segments.size();observed_available=available;
                 observed_planned=value.planned;observed_preparing=value.preparing;observed_suspended=value.preparation_suspended;
+                observed_baseline=!progress_key.empty();observed_maximum=most_available;
                 observed_elapsed=elapsed;
             }catch(...){std::cerr<<"READY_OBSERVATION unavailable\n";}
         };
         try{
             if(observe_ready)observe("BEGIN",reader->snapshot());
-            wait([&]{const auto value=snapshot();observe("PROGRESS",value);return value.planned&&!value.segments.empty()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});},"real page synthesis/word alignment");
-            if(observe_ready)observe("COMPLETE",reader->snapshot());
+            const auto complete=[&]{const auto value=snapshot();
+                if(value.planned&&!value.key.empty()&&!value.segments.empty()){
+                    const auto available=static_cast<std::size_t>(std::ranges::count_if(value.segments,[](const auto& part){return part.available;}));
+                    if(progress_key.empty()){
+                        progress_key=value.key;progress_total=value.segments.size();most_available=available;
+                    }else if(value.key==progress_key&&value.segments.size()==progress_total&&available>most_available){
+                        most_available=available;progressed=GetTickCount64();
+                    }
+                }
+                observe("PROGRESS",value);
+                return value.planned&&!value.segments.empty()&&std::ranges::all_of(value.segments,[](const auto& part){return part.available;});
+            };
+            // Only a new available-recording maximum in the first coherent
+            // plan renews this idle budget. CTest still bounds the whole case.
+            do{
+                pump();if(complete()){
+                    if(observe_ready)observe("COMPLETE",reader->snapshot());return;
+                }
+                MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);
+            }while(GetTickCount64()-progressed<60000);
+            throw std::runtime_error("Timeout: real page synthesis/word alignment");
         }
         catch(...){
             // Observe the existing state without pumping, retrying, or masking
             // the original failure (snapshot() deliberately rejects errors).
             try{
                 const auto value=reader->snapshot();
+                const auto now=GetTickCount64();
                 const auto quoted=[](std::string_view text){return winrt::to_string(
                     winrt::Windows::Data::Json::JsonValue::CreateStringValue(winrt::to_hstring(text)).Stringify());};
                 std::cerr<<"READY_FAILURE "<<caller.file_name()<<':'<<caller.line()<<" function="<<caller.function_name()
-                    <<" elapsed_ms="<<GetTickCount64()-started<<" page="<<lesson_page_state(view).index
+                    <<" elapsed_ms="<<now-started<<" idle_ms="<<now-progressed<<" progress_ms="<<progressed-started
+                    <<" baseline_available="<<most_available<<'/'<<progress_total<<" baseline_key="<<quoted(progress_key)
+                    <<" page="<<lesson_page_state(view).index
                     <<" planned="<<value.planned<<" preparing="<<value.preparing<<" suspended="<<value.preparation_suspended
                     <<" playing="<<value.playing<<" allocated="<<value.allocated<<" waiting="<<value.waiting_gate
                     <<" finished="<<value.finished<<" index="<<value.index<<" offset="<<value.offset<<" heard="<<value.heard_through

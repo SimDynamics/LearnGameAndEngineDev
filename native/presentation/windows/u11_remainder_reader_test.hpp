@@ -126,7 +126,7 @@ void u11_remainder_editorial_reader(const std::shared_ptr<windows::NarrationWork
         // Select Spanish interface verdicts independently of the narration voice/runtime.
         data.preferences["native_windows"]["ui_language"]=std::string("es");
         state::put_draft(data,draft_key,draft);
-        data.preferences["u11_remainder_reader_qa"]["opaque"]=std::string("\t conservar\r\n保存");},cache);
+        data.preferences["u11_remainder_reader_qa"]["opaque"]=std::string("\t conservar\r\n保存");},cache,false,true);
     struct FailureShutdown{std::shared_ptr<windows::NarrationWorker> worker;
         ~FailureShutdown(){if(std::uncaught_exceptions())worker->shutdown();}} shutdown{backend};
     check(!IsWindowVisible(f.host)&&lesson_page_state(f.view).index==at.page

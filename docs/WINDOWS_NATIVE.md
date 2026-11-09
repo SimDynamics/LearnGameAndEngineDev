@@ -440,11 +440,19 @@ Para observar la primera preparación de la página 3 de asignaciones,
 `native.u11_assignment_published_reader_2`, mediante `-EditorialGroup AssignmentP3`.
 Conserva la comprobación del registro de diez casos, valida el nombre exacto
 seleccionado y aplica el mismo filtro al listar y ejecutar; tiene su propia cola.
-La fase 2 registra `READY_BEGIN`, `READY_PROGRESS` y `READY_COMPLETE`, con tiempos,
-clave de plan, grabaciones disponibles y primer segmento pendiente, desde la
-espera inicial del fixture. `READY_FAILURE` conserva el estado y las fuentes al
-fallar. La observación mantiene el predicado original, el límite absoluto de
-60 segundos de cada espera y los 240 segundos de CTest.
+La fase 2 y los cuatro casos de resto registran `READY_BEGIN`, `READY_PROGRESS`
+y `READY_COMPLETE`, con tiempos, clave de plan, grabaciones disponibles y primer
+segmento pendiente, desde la espera inicial del fixture. `READY_FAILURE`
+conserva el estado y las fuentes al fallar. Las trazas incluyen el tiempo sin
+progreso y la clave, cantidad y máximo de disponibilidad del primer plan.
+
+La espera de página completa conserva su predicado: el plan debe estar listo,
+tener segmentos y disponer de todas sus grabaciones. Su límite es de 60 segundos
+sin aumentar el máximo de grabaciones disponibles del mismo plan, identificado
+por su clave y número de segmentos. Fijar ese primer plan, cambiarlo o volver a
+una cantidad ya observada no renueva el límite. La primera planificación sin
+progreso también queda acotada a 60 segundos. CTest conserva los límites
+absolutos de 240 segundos para asignaciones y 300 para resto.
 
 Cada job comprueba primero el dispositivo firmado con
 `-Suite NarrationPlayer -VirtualAudio`. Sólo después de superar sus tres
