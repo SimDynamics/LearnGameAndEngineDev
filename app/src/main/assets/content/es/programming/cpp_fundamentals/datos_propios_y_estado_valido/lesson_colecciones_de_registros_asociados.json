@@ -57,7 +57,7 @@
           "answers": [
             "Norte:3;Sur:7;"
           ],
-          "explanation": "La salida es la que produce el código, pero no conserva las parejas originales Sur/3 y Norte/7."
+          "explanation": "Antes de ordenar, Sur está asociado a 3 y Norte a 7. std::sort deja las etiquetas en el orden Norte, Sur, pero el vector de cantidades sigue en 3, 7. El índice 0 combina entonces Norte:3 y el índice 1, Sur:7. Son los valores que imprime el programa, aunque ya no describen las observaciones iniciales."
         },
         {
           "type": "multiple_choice",
@@ -68,7 +68,7 @@
             "Que sort no puede ordenar cadenas."
           ],
           "correctIndex": 1,
-          "explanation": "La corrección del dominio no garantiza que los campos sigan describiendo el mismo registro."
+          "explanation": "Los dos vectores siguen teniendo dos elementos: acceder a los índices 0 y 1 no sale de sus límites. El error está en que sólo cambió el orden de las etiquetas. Ahora Norte se consulta junto a 3, aunque su cantidad original era 7. Un acceso válido no demuestra que la pareja de datos sea correcta."
         },
         {
           "type": "paragraph",
@@ -100,7 +100,7 @@
           "answers": [
             "Sala:8;Patio:2;"
           ],
-          "explanation": "Se intercambian objetos completos; cada sitio viaja con su propia cantidad."
+          "explanation": "Primero temporal copia Patio y 2. Después el elemento de la posición 0 recibe juntos Sala y 8. Por último, la posición 1 recibe la observación guardada en temporal. El recorrido muestra Sala:8;Patio:2;: se intercambiaron las observaciones completas."
         },
         {
           "type": "multiple_choice",
@@ -129,7 +129,7 @@
           "answers": [
             "3 12"
           ],
-          "explanation": "Tres observaciones suman doce personas; una etiqueta repetida no elimina la observación."
+          "explanation": "Hay tres elementos, por lo que registros.size() da 3. El acumulador visita sus cantidades en orden y calcula 4 + 6 + 2 = 12. Las dos observaciones con etiqueta Este siguen siendo elementos distintos y ambas se suman. La salida es 3 12."
         },
         {
           "type": "fill_code",
@@ -168,7 +168,7 @@
           "answers": [
             "Patio:5;Sala:5;"
           ],
-          "explanation": "auto& permite cambiar el miembro de la observación que pertenece al vector."
+          "explanation": "En el primer recorrido, registro enlaza por referencia cada elemento del vector. Sólo la observación Patio cumple la condición y su cantidad cambia de 2 a 5, mediante 2 + 3 = 5. Sala conserva su cantidad inicial, que ya era 5. El segundo recorrido lee los elementos almacenados y muestra Patio:5;Sala:5;."
         },
         {
           "type": "multiple_choice",
@@ -179,7 +179,7 @@
             "Sólo el cambio de la primera visita."
           ],
           "correctIndex": 0,
-          "explanation": "La copia por valor también se aplica a objetos con varios miembros."
+          "explanation": "Con auto registro, cada visita crea una copia del elemento. La copia de Patio pasaría de 2 a 5, pero ese cambio no se escribiría en el vector. Al recorrer después los elementos originales, la salida sería Patio:2;Sala:5;."
         }
       ]
     },
@@ -197,7 +197,7 @@
           "answers": [
             "0:0"
           ],
-          "explanation": "No se crea una observación inventada para representar la ausencia."
+          "explanation": "El vector vacío tiene tamaño 0. El recorrido no visita ningún elemento, así que total conserva el valor inicial 0. Se muestran el tamaño y la suma separados por dos puntos: 0:0. No hace falta crear un registro para representar la colección vacía."
         },
         {
           "type": "output_prediction",
@@ -207,7 +207,7 @@
           "answers": [
             "1 0"
           ],
-          "explanation": "Existe una observación de cero personas, pero no cumple el filtro positivo."
+          "explanation": "registros contiene una observación: Sur con cantidad 0. La condición registro.personas > 0 es falsa para ella y no se añade ningún elemento a elegidos. Por eso los tamaños son 1 y 0: una observación de cantidad cero y la ausencia de observaciones son situaciones distintas."
         },
         {
           "type": "paragraph",
@@ -260,6 +260,63 @@
                   "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\n"
                 ],
                 "explanation": "Cada registro conserva su asociación y su posición, aunque otro repita el código. El filtrado selecciona registros completos y el caso vacío conserva un total cero."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el límite del filtro y los códigos repetidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el Registro y la función procesar que acabas de construir. Copia sus definiciones, junto con los auxiliares que necesites, antes del main de este editor. La función utiliza la interfaz void procesar(const std::vector<Registro>& registros). Conserva su regla: suma todos los registros y selecciona los que tengan al menos 4 unidades, sin eliminar observaciones por repetir el código.\n\nEl cliente conserva las cuatro colecciones anteriores y añade {{T,3},{U,4},{U,6},{V,3}}. Las cantidades 3 quedan justo por debajo del mínimo y 4 lo alcanza. Los dos registros U representan observaciones diferentes y ambos deben conservarse si cumplen el filtro.\n\nMantén las cinco llamadas. Cada una presenta las tres líneas Datos:, Total: y Elegidos:, con los mismos formatos y saltos de línea de la construcción anterior. Pulsa «Compilar, ejecutar y comprobar» y corrige tu función si algún registro, total u orden difiere. Las llamadas deben utilizar la implementación que has construido.",
+          "emphasis": [
+            {
+              "text": "al menos 4 unidades",
+              "style": "bold"
+            },
+            {
+              "text": "ambos deben conservarse",
+              "style": "bold"
+            },
+            {
+              "text": "Mantén las cinco llamadas",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nDatos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:U:4;U:6;"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui Registro, procesar y los auxiliares que necesites.\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:U:4;U:6;\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las cuatro colecciones anteriores conservan sus resultados. En la quinta, 3 no alcanza el mínimo 4, mientras que 4 y 6 sí lo cumplen. Los dos registros con código U permanecen en la selección. La suma incluye los cuatro registros y da 16.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:T:3;U:4;U:6;V:3;\n"
+                    ],
+                    "text": "La selección está admitiendo cantidades de 3. La consigna pide al menos 4: revisa la condición del filtro para excluir T:3 y V:3, conservando U:4 y U:6. La suma total sí incluye las cuatro observaciones."
+                  },
+                  {
+                    "outputs": [
+                      "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:U:4;\n"
+                    ],
+                    "text": "La selección debe conservar ambas observaciones con código U: una tiene 4 unidades y la otra 6. Repetir el código no elimina un registro. Revisa si estás suprimiendo una observación por coincidir su código con otro que ya fue elegido."
+                  }
+                ]
               }
             ]
           }
@@ -410,7 +467,7 @@
           "answers": [
             "Sala:4 9"
           ],
-          "explanation": "La copia del vector contiene copias de sus Lectura; conserva la asociación y el estado anterior."
+          "explanation": "La copia del vector recibe su propio registro con Sala y 4. La asignación posterior cambia únicamente original.at(0).personas a 9. Al consultar primero los miembros de la copia y después la cantidad del original, aparece Sala:4 9."
         },
         {
           "type": "multiple_choice",
@@ -421,7 +478,7 @@
             "Comprobar sólo que coincidan el número de registros y el total."
           ],
           "correctIndex": 1,
-          "explanation": "Un total puede quedar igual incluso cuando dos cantidades se asocian a sitios equivocados."
+          "explanation": "Las observaciones Sur:3 y Norte:7 suman 10. Si se mezclan sus cantidades y quedan Sur:7 y Norte:3, la suma sigue siendo 10 y todavía hay dos registros. Sólo revisar cada pareja permite descubrir que ambas asociaciones cambiaron."
         },
         {
           "type": "paragraph",
@@ -445,6 +502,33 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid procesar(const std::vector<Registro>& registros) {\n    int total = 0;\n    std::vector<Registro> elegidos;\n    std::cout << \"Datos:\";\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar el filtro con su límite y con dos observaciones del mismo código"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la quinta llamada, las cuatro cantidades suman 3 + 4 + 6 + 3 = 16. El recorrido presenta todas las observaciones en Datos: y las suma todas en Total:16. La selección deja fuera las dos cantidades de 3, conserva U:4 y después U:6, de modo que su línea es Elegidos:U:4;U:6;.\n\nUna condición que admitiera desde 3 daría los mismos resultados con las cuatro colecciones anteriores: ninguna contenía esa cantidad. El nuevo caso permite distinguirla. Asimismo, antes no coincidían dos códigos dentro de una misma selección; ahora ambas observaciones U cumplen el filtro y deben aparecer.\n\nLa función procesar de la referencia anterior sirve también para estos datos. Sustituye únicamente su main por el siguiente, conservando las inclusiones, Registro y la función. Cada llamada crea su propio acumulador y su propio vector de selección.",
+          "emphasis": [
+            {
+              "text": "ninguna contenía esa cantidad",
+              "style": "bold"
+            },
+            {
+              "text": "ambas observaciones U",
+              "style": "bold"
+            },
+            {
+              "text": "Cada llamada",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -710,6 +794,10 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
+          "u9_informe_umbral_y_repetidos_titulo",
+          "u9_informe_umbral_y_repetidos_consigna",
+          "u9_informe_umbral_y_repetidos_salida",
+          "u9_informe_umbral_y_repetidos_comprobacion",
           "block_0006_0003",
           "block_0006_0004",
           "block_0006_0005"
@@ -725,6 +813,9 @@
           "block_0007_0004",
           "block_0007_0005",
           "block_0007_0006",
+          "u9_informe_umbral_y_repetidos_referencia_titulo",
+          "u9_informe_umbral_y_repetidos_referencia_razonamiento",
+          "u9_informe_umbral_y_repetidos_referencia_main",
           "block_0007_0007",
           "block_0007_0008"
         ]
@@ -1263,7 +1354,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u9_informe_umbral_y_repetidos_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_comprobacion",
+        "sha256": "118a16117bbcc88881d29e4bc3cd32d733d06dc11ee1476a52c4bbf9833fc8fa",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_referencia_main",
+        "sha256": "a350c083c2564a941ad43c9fac72a6cb600b326c9bc2f8516ac71c7f7c7f519c",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1309,18 +1464,71 @@
         "id": "block_0006_0001",
         "beforeSha256": "fb810e0100dc871b617e6a022bcbdffca5d0b78d2bd6db9f9d51c370d00ed500",
         "afterSha256": "e508cd4b50f81acbefd7a223ac75c5b251303ef374aed046800ee86984790185"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "bc4deb6742efdbf10b631ec0ccc9560dce961763c8978e769dfeb88c31ebcf7b",
+        "afterSha256": "23e7df5d72cf6b4a89ad768ad86c1fca4bf0a500ad89f0fce6d05dc8d1c97567"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "d72788e665fe2108cc827254bcd6b8d3c13dd132437fd5644b2c98e2c927780e",
+        "afterSha256": "72e3136063f661bbe13cfb1888a652a720bcc14adb7daa8bc84ee874837a8386"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "26f47be9158177f7fdb81b5583957f506e117fcbf982b9d5d840e03cf1f91cf6",
+        "afterSha256": "9a97ef91a61b207a1c52875da2b8086299af6025e8d7a16e0c97d6e8df06766b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "d34fc82a278a10e22f72d3b5ab1d662cbe99b7ecbf0da01cc9a42b9face501b8",
+        "afterSha256": "a2faed2a0bdf67b645c8841cea593f64a9cccfced8b2cb6bde8638f1d7f79a9c"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "1692675954aef93afed3d6a9252925821a4292d3943faf8375fdf2e3b6e778ee",
+        "afterSha256": "c9496d275ed2cea6113ea47348563f96f6cae0a569c8aab10f64153f49ef6d63"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "5f7c1e21b317037d97a9a9eaf0e103d9b79031fc5715eafe95007c12ee286add",
+        "afterSha256": "51b29c2a5fed473ad59d0139ea46b0f76c8b5bc2afa11b7f710569a9fee2553a"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "b13f88db368b0dd2f066adc8dccb5cb8fd229e2e861a21e202f3ff16b60815a8",
+        "afterSha256": "2f21b622578747eb157077cdf1fb3d7a074042edc6d09bac670b19e0b1ca7d9b"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ca4f8837903204bde614c9b5867d97623f2b55873ec488d671adb17fcfbd3578",
+        "afterSha256": "3654d069b11e17d34a690228159c86695e90212ecfa223ac5977b61a8c61b090"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "adba1e15c12503caa94d0e3f171c5d925e3b0a97a4e53c093d5be11b37212960",
+        "afterSha256": "1da8a499ca332ee767f206ef6d0e3eb3166b50241cf7d8e1752d77f84b52c882"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "6a9cb6d433b9a13674d9d4cd4f3aa240609147389aa4325635b89fd534f7864d",
+        "afterSha256": "4cc2798e70a2d8e335a68c044fe951a30659748ff031d59bd0d4253144ddf308"
       }
     ]
   },
   "referenceAfter": [
     {
-      "activity": "block_0006_0002",
+      "activity": "u9_informe_umbral_y_repetidos_comprobacion",
       "blocks": [
         "block_0007_0000",
         "block_0007_0001",
         "block_0007_0004",
         "block_0007_0005",
-        "block_0007_0006"
+        "block_0007_0006",
+        "u9_informe_umbral_y_repetidos_referencia_titulo",
+        "u9_informe_umbral_y_repetidos_referencia_razonamiento",
+        "u9_informe_umbral_y_repetidos_referencia_main"
       ]
     },
     {
@@ -1335,13 +1543,20 @@
     {
       "activity": "block_0006_0005",
       "requires": [
-        "block_0006_0002"
+        "block_0006_0002",
+        "u9_informe_umbral_y_repetidos_comprobacion"
       ]
     },
     {
       "activity": "block_0007_0002",
       "requires": [
         "block_0006_0005"
+      ]
+    },
+    {
+      "activity": "u9_informe_umbral_y_repetidos_comprobacion",
+      "requires": [
+        "block_0006_0002"
       ]
     }
   ],
@@ -1440,20 +1655,83 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "74e6d4b5075e83b9a1688c796c0aa55546142e9ea0d35e0af75dfe051296b1a2",
+        "sourceSha256": "bdf2460382f3ca9132033262d1514e0f99a724eeb1479236b3c8530d151d0b2d",
         "spans": [
           {
-            "start": 79,
-            "end": 84,
-            "text": "Sur/3",
+            "start": 18,
+            "end": 21,
+            "text": "Sur",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 94,
-            "text": "Norte/7",
+            "start": 38,
+            "end": 39,
+            "text": "3",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 47,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 62,
+            "text": "std::sort",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 104,
+            "text": "Norte, Sur",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 148,
+            "text": "3, 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 186,
+            "text": "Norte:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 200,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 207,
+            "text": "Sur:7",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1467,8 +1745,44 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "8961286de86136b5b297c83a9a5138822083cdf19e161a08cd5acf6ca225d438",
-        "spans": []
+        "sourceSha256": "1fb1728a3306eca88894a52163e9314e46fbf4612302950c7f2d1cd1e00ba047",
+        "spans": [
+          {
+            "start": 70,
+            "end": 71,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 171,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 228,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1525,8 +1839,72 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "7b98d5469ca06637964da5923713fa681787623652276e45bf8d0d9b8c017ae2",
-        "spans": []
+        "sourceSha256": "9b7fa46443386427964b864de053eb33d47727bcd374df45d52dd5d6182c09c0",
+        "spans": [
+          {
+            "start": 8,
+            "end": 16,
+            "text": "temporal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 23,
+            "end": 28,
+            "text": "Patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 32,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 89,
+            "text": "Sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 163,
+            "text": "temporal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 201,
+            "text": "Sala:8;Patio:2;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1573,19 +1951,40 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "eae8c7b593b4c3e7b6d4a23c2b269a94a88118ddfaa7eb303b394f2e8912d3dc",
+        "sourceSha256": "753384981f7ca0ae83b72bf6a1572f754dcecd682526340c87e6902da297bf8c",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
-            "text": "Tres",
+            "start": 31,
+            "end": 47,
+            "text": "registros.size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 52,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 123,
+            "text": "4 + 6 + 2 = 12",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 164,
+            "text": "Este",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 25,
-            "end": 29,
-            "text": "doce",
+            "start": 230,
+            "end": 234,
+            "text": "3 12",
             "role": "output",
             "reading": "natural"
           }
@@ -1656,14 +2055,63 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "f8835c6d3f31e8bdd3bd995ccb4adf914c6a1d12900da2c1ac00abc881405c6c",
+        "sourceSha256": "2a15dd3fd2ebf41bed762a1872070770ffa0f56913625e530638b197d9b5e3ca",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "auto&",
+            "start": 24,
+            "end": 32,
+            "text": "registro",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 106,
+            "text": "Patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 176,
+            "text": "2 + 3 = 5",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "Sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 225,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 303,
+            "text": "Patio:5;Sala:5;",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1684,8 +2132,44 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "3c9da6247812614a2a4de2beb5b85b30a9d960d7d060768849923873c48cd05d",
-        "spans": []
+        "sourceSha256": "96c27d66c17bba613f4fbb66c4daf116051e945aa761278f310cb54aa91ab271",
+        "spans": [
+          {
+            "start": 4,
+            "end": 17,
+            "text": "auto registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 77,
+            "text": "Patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 220,
+            "text": "Patio:2;Sala:5;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -1720,8 +2204,37 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "f74bbbfe5d6ce739f88244f98646d88450f9a52156e3ea8a22507284b0bfe64f",
-        "spans": []
+        "sourceSha256": "c79b744e12a60cbfa85e45a8c685540d4b54340780480b1d18e972c3cdd6d6a0",
+        "spans": [
+          {
+            "start": 29,
+            "end": 30,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 85,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 176,
+            "text": "0:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -1732,13 +2245,55 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "1f1540c8980f720abeab817876b286b3ba4c011358f1efd2055ed3003f248a6b",
+        "sourceSha256": "63aa88367e33cf52ffca3e77cf4d9ed93a37da8c481a21e04e72e08cc3e1a16e",
         "spans": [
           {
-            "start": 26,
-            "end": 30,
-            "text": "cero",
+            "start": 0,
+            "end": 9,
+            "text": "registros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 39,
+            "text": "Sur",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 54,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 90,
+            "text": "registro.personas > 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 150,
+            "text": "elegidos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 177,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 181,
+            "text": "0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2223,14 +2778,42 @@
       {
         "block": "block_0007_0002",
         "path": "/explanation",
-        "sourceSha256": "0df8b7dd63dfd814ea0f7cd94a7e7a3997fe3b9a4ee6412e75e428b98a66425c",
+        "sourceSha256": "40fbae68298e798664f887b95b7d4fa080d954ed6dddc5d68da4ff8dcb22cea7",
         "spans": [
           {
-            "start": 43,
-            "end": 50,
-            "text": "Lectura",
+            "start": 50,
+            "end": 54,
+            "text": "Sala",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 125,
+            "text": "original.at(0).personas",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 229,
+            "text": "Sala:4 9",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2243,8 +2826,51 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "b5af184363f7f30938ffe5745aad168a54da866ca1bac17764ffe1d979575820",
-        "spans": []
+        "sourceSha256": "1982d3d994b1d669b1abe86a1b4735a5fcd9010266841efc463ba1b94e6ec013",
+        "spans": [
+          {
+            "start": 18,
+            "end": 23,
+            "text": "Sur:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 33,
+            "text": "Norte:7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 42,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 87,
+            "text": "Sur:7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 97,
+            "text": "Norte:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 122,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -2289,6 +2915,340 @@
         "path": "/text",
         "sourceSha256": "6f3937960da56789ff772d3a335100fad2904d5cb2dae9e5d1e2b36236b8bdc6",
         "spans": []
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_titulo",
+        "path": "/text",
+        "sourceSha256": "a490b2d0b8d06a302cd43c30c3573ba4a235ba10e3ae3da5f539515ed8bc7728",
+        "spans": []
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_consigna",
+        "path": "/text",
+        "sourceSha256": "227ecfb7230835405092cd90988ac7d13863c74e4f857439fc3ed7c051b6e3f0",
+        "spans": [
+          {
+            "start": 12,
+            "end": 20,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 42,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 146,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 247,
+            "text": "void procesar(const std::vector<Registro>& registros)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 330,
+            "end": 331,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 455,
+            "end": 480,
+            "text": "{{T,3},{U,4},{U,6},{V,3}}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 498,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 537,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 568,
+            "end": 569,
+            "text": "U",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 717,
+            "end": 723,
+            "text": "Datos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 725,
+            "end": 731,
+            "text": "Total:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 734,
+            "end": 743,
+            "text": "Elegidos:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_salida",
+        "path": "/text",
+        "sourceSha256": "8a25eef410e5eb4ee022e4c05604637d22133925995e90dad48daf44516a865b",
+        "spans": [
+          {
+            "start": 33,
+            "end": 219,
+            "text": "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:U:4;U:6;",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "271ebdb52c416536c3ed225c5b10a182220b6c07777cad93a8c77c197b278274",
+        "spans": [
+          {
+            "start": 74,
+            "end": 75,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 98,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 118,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 164,
+            "text": "U",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 237,
+            "text": "16",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "9c7d65eef0be3c7a125ba4158240179dfeae9f35cf926d00b497e6a8382fb160",
+        "spans": [
+          {
+            "start": 43,
+            "end": 44,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 122,
+            "text": "T:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 128,
+            "text": "V:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 145,
+            "text": "U:4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 151,
+            "text": "U:6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "4da6393d50ca209320437b14a5622334579ad361702bedb30f71eb1df68a6a69",
+        "spans": [
+          {
+            "start": 59,
+            "end": 60,
+            "text": "U",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "b1f793902b3e5c3f713cb9cc3360a0207d3afaf19bd4d376fd389d7ebb0a2511",
+        "spans": []
+      },
+      {
+        "block": "u9_informe_umbral_y_repetidos_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "6e43ac19aebdac8f7482f97aa5c419e3436d62dd30c465bc5a72856d35e10e86",
+        "spans": [
+          {
+            "start": 50,
+            "end": 68,
+            "text": "3 + 4 + 6 + 3 = 16",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 125,
+            "text": "Datos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 154,
+            "text": "Total:16",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 203,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 217,
+            "text": "U:4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 231,
+            "text": "U:6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 274,
+            "text": "Elegidos:U:4;U:6;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 312,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 546,
+            "end": 547,
+            "text": "U",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 596,
+            "end": 604,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 687,
+            "end": 691,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 739,
+            "end": 747,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

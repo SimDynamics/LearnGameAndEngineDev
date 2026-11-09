@@ -68,7 +68,7 @@
           "answers": [
             "2 1"
           ],
-          "explanation": "Cada llamada opera sobre el objeto indicado antes del punto."
+          "explanation": "Ambos objetos empiezan en 0. Las dos llamadas a a.sumar_uno() dejan el contador de a en 2; la llamada a b.sumar_uno() deja el de b en 1. Las consultas leen esos contadores distintos, por lo que la salida es 2 1."
         },
         {
           "type": "multiple_choice",
@@ -113,7 +113,7 @@
             "Llamar marcador.puntos()."
           ],
           "correctIndex": 2,
-          "explanation": "La función pública consulta la representación; el literal sólo imprimiría texto."
+          "explanation": "marcador.puntos() llama a la consulta pública, cuyo cuerpo puede leer puntos_. En cambio, el literal \"marcador.puntos_\" mostraría el texto marcador.puntos_, sin consultar el contador. Asignar antes a marcador.puntos_ tampoco autoriza el acceso: ese miembro sigue siendo privado."
         },
         {
           "type": "paragraph",
@@ -143,7 +143,7 @@
           "answers": [
             "0 20"
           ],
-          "explanation": "La operación adicional se rechaza antes del incremento y conserva veinte."
+          "explanation": "Las 20 llamadas del recorrido llevan el contador desde 0 hasta 20. En la llamada adicional, puntos_ >= 20 se cumple y return false; termina antes de ++puntos_. El resultado lógico se imprime como 0 y la consulta conserva 20: aparece 0 20."
         },
         {
           "type": "multiple_choice",
@@ -227,7 +227,11 @@
           "answers": [
             "1 2"
           ],
-          "explanation": "La copia conserva el miembro del momento en que se creó; sus operaciones posteriores son independientes."
+          "explanation": "La primera llamada a original.sumar_uno() deja su contador en 1. Al crear copia, se copia ese valor; el inicializador = 0 no lo sustituye. La segunda llamada cambia sólo original a 2. Por eso las consultas muestran 1 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la pregunta siguiente, considera una declaración sin argumentos, como Marcador marcador;. Se distingue de crear una copia a partir de otro objeto, como se hizo en el ejemplo anterior."
         },
         {
           "type": "multiple_choice",
@@ -238,7 +242,7 @@
             "Que cada objeto empieza con el valor escrito antes de su primera consulta."
           ],
           "correctIndex": 2,
-          "explanation": "Inicializar prepara el estado; todavía hay que comprobar las operaciones que lo cambian."
+          "explanation": "En una declaración como Marcador marcador;, el inicializador = 0 prepara puntos_ antes de la primera consulta. Cada objeto así creado tiene su propio contador. Esto no garantiza que sumar_uno() esté bien implementada: su comprobación del límite sigue siendo necesaria."
         }
       ]
     },
@@ -568,6 +572,7 @@
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
+          "u9_marcador_contexto_inicializador",
           "block_0005_0003"
         ]
       },
@@ -1121,7 +1126,17 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u9_marcador_contexto_inicializador",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1177,6 +1192,31 @@
         "id": "block_0007_0002",
         "beforeSha256": "364ae82369de099a0eaca161a26b38a1e76af791eaccbc7c36d2386b4926aacb",
         "afterSha256": "8d54c0796a1066a3e030448694faf4e7739cf6769ad71811c17cdcbdd468f8f2"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "1b4f5c1623968162a04a84be3b3ed8276aa452e8386d43a54cc926d9b12a58e7",
+        "afterSha256": "07e3e0d77eecd4f87ef07e62b16aaea8924d17262bf2060a2e3ac1aed6ff0102"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "c342872beedcd7dc9ebe29f9e093db0d81f3777670fc1980ef487df496e2fb9b",
+        "afterSha256": "c5e2e5452b008b2f91cef1d557d2c3ab245fccd16eb1d58be18723119a618dc8"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "2fb1f0e5bdf72607b14074abab182c07c1816260a4020e938f4436214f972e3f",
+        "afterSha256": "593b76da03af758f31ab059309df93d779b7219175ece7e0a596023e415ecb55"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "784bb78207ca5b6c2654c7f78c09121afdba6f7a10a3fb28f46d8397418c0064",
+        "afterSha256": "2162dc41f9f98372bc77a9bac0f42c609641de6d439a73539eb5297dee09b804"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "f1f343e8cb3a1820497a4575727fc3ed8cf67e723e847674d786bee787521788",
+        "afterSha256": "7d0f3ab5dd4f8aa884217b208f9ecbb756215bc37d511dc2f75a4cf5add35d3f"
       }
     ]
   },
@@ -1407,8 +1447,65 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "4910365d859c8d99b5c8ab5cc1933fc7bb6b10483c03348700ee45c81bc6c355",
-        "spans": []
+        "sourceSha256": "8ebe579e056d6a87e2c266a2fa0a366f3fe53990c8c8f8c4b87f947663a967d6",
+        "spans": [
+          {
+            "start": 26,
+            "end": 27,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 61,
+            "text": "a.sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 83,
+            "end": 84,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 117,
+            "text": "b.sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 210,
+            "text": "2 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1498,8 +1595,44 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "106654907dcbbfd4b681617764b46a57efa5720dc314577a565e9d917169fe91",
-        "spans": []
+        "sourceSha256": "80cd1a1c63daa985bd5806aef305676478eb8c9791f9b653f42480b941b8042a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "marcador.puntos()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 77,
+            "text": "puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 119,
+            "text": "\"marcador.puntos_\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 155,
+            "text": "marcador.puntos_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 216,
+            "text": "marcador.puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1586,12 +1719,68 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "70a39b7c65cf1fad3d5fc527325a8f2ac576be910170e8838af17a47e2233ac4",
+        "sourceSha256": "d13b7b8c540b405d0817bceb81a85019abdc5b182cc7e61d1e7bc0b6091b39ad",
         "spans": [
           {
-            "start": 66,
-            "end": 72,
-            "text": "veinte",
+            "start": 4,
+            "end": 6,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 105,
+            "text": "puntos_ >= 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 131,
+            "text": "return false;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 158,
+            "text": "++puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 197,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 223,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 237,
+            "text": "0 20",
             "role": "output",
             "reading": "natural"
           }
@@ -1884,8 +2073,58 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "b4a7a93d86725eae15c22dabed49e4fba4772ba5ee8194bd3dbce0bae880e16a",
-        "spans": []
+        "sourceSha256": "c85fb6382a609c8417040b1775fcc2337f40ae3ba74ec6f35e744bef9faed495",
+        "spans": [
+          {
+            "start": 21,
+            "end": 41,
+            "text": "original.sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 79,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 121,
+            "text": "= 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 178,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 182,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 218,
+            "text": "1 2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -1904,8 +2143,37 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "7592097de7e5c1814eea5777f5d673d2317487d0ff2b0decc3bd64a99fa68d53",
-        "spans": []
+        "sourceSha256": "397ef9eaba14d56efdd03d820fdac81367671266739638576e0c1b45db68611f",
+        "spans": [
+          {
+            "start": 24,
+            "end": 42,
+            "text": "Marcador marcador;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 64,
+            "text": "= 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 80,
+            "text": "puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 182,
+            "end": 193,
+            "text": "sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2161,6 +2429,20 @@
         "path": "/text",
         "sourceSha256": "ac1d492fc99811742c763f8f472a9d654481bceebb3e83ed2c1c9973ab7632a1",
         "spans": []
+      },
+      {
+        "block": "u9_marcador_contexto_inicializador",
+        "path": "/text",
+        "sourceSha256": "035a4116d85bc2d28aaa6d96e27e50adf082c835b02d48fac6f56fa11a668c55",
+        "spans": [
+          {
+            "start": 75,
+            "end": 93,
+            "text": "Marcador marcador;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

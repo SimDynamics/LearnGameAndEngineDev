@@ -56,7 +56,7 @@
           "answers": [
             "B:4 B:5"
           ],
-          "explanation": "La asignación copia el valor completo de a en b; el cambio posterior es independiente.",
+          "explanation": "La asignación b = a; sustituye el código C y las 7 unidades de b por el código B, las 4 unidades y el estado preparado de a. Después, a.cambiar_unidades(5) modifica sólo a. Al consultar ambos, b muestra B:4 y a muestra B:5.",
           "reviewFeedback": "Sigue primero qué miembros recibe b en la asignación y después qué objeto se modifica. Identifica de cuál de los dos se lee cada parte de la salida."
         },
         {
@@ -121,7 +121,7 @@
           "answers": [
             "1 1"
           ],
-          "explanation": "La función envía su copia local; el objeto del llamador permanece preparado.",
+          "explanation": "enviar_copia(pedido) crea su parámetro copiando el pedido preparado. enviar() actúa sobre ese objeto local y devuelve true, mostrado como 1. El pedido de main conserva el estado preparado; su comparación también produce 1. Los dos unos describen objetos distintos.",
           "reviewFeedback": "Localiza cómo se recibe el parámetro de enviar_copia. Separa el resultado de esa llamada del estado que conserva el pedido de main."
         },
         {
@@ -156,7 +156,7 @@
           "answers": [
             "1 1"
           ],
-          "explanation": "La referencia permite aplicar la operación al objeto recibido del llamador.",
+          "explanation": "El parámetro Pedido& pedido se refiere al pedido de main. enviar() cambia ese mismo objeto a Estado::enviado y devuelve true, mostrado como 1. La consulta posterior observa el cambio en el pedido del llamador y produce el segundo 1.",
           "reviewFeedback": "Comprueba a qué objeto se refiere el parámetro de enviar_original y sobre cuál actúa la llamada a enviar(). Sigue después la consulta de main."
         },
         {
@@ -186,7 +186,7 @@
           "answers": [
             "1 0"
           ],
-          "explanation": "La función consulta el estado actual y no modifica el pedido.",
+          "explanation": "La primera llamada consulta el pedido preparado y devuelve true, mostrado como 1. Después, main llama a cancelar(). La segunda consulta encuentra el estado cancelado y devuelve false, mostrado como 0. La diferencia procede de esa cancelación, no de un cambio realizado por la función de consulta.",
           "reviewFeedback": "La función consulta el estado que tiene el pedido en cada llamada. Sitúa la cancelación entre ambas consultas y conserva el orden de presentación."
         },
         {
@@ -221,7 +221,7 @@
           "answers": [
             "3 9"
           ],
-          "explanation": "El vector contiene la copia añadida en ese momento; no un enlace permanente al original.",
+          "explanation": "registros.push_back(original) añade una copia cuando original tiene 3 unidades. La llamada posterior original.cambiar_unidades(9) cambia el original, pero no el elemento del vector. Sus consultas muestran, en ese orden, 3 y 9.",
           "reviewFeedback": "Sitúa cuándo se añadió el elemento al vector y cuándo se cambió el original. Identifica qué objeto consulta cada expresión de salida."
         },
         {
@@ -232,7 +232,7 @@
           "answers": [
             "I:1;J:1;"
           ],
-          "explanation": "Las referencias modifican los pedidos del vector y las consultas const presentan sus estados.",
+          "explanation": "En el primer recorrido, auto& pedido se refiere a cada elemento del vector. Sus llamadas a enviar() dejan enviados los pedidos I y J. El segundo recorrido utiliza const auto& para consultar esos mismos elementos: ambas comparaciones producen 1 y forman I:1;J:1;.",
           "reviewFeedback": "Revisa cómo accede cada recorrido a sus elementos: primero se solicitan envíos y después se consultan sus estados en el mismo orden."
         }
       ]
@@ -1233,6 +1233,36 @@
         "id": "block_0007_0003",
         "beforeSha256": "a8ba8e1b30c99e2512b58d980f37724acaa45836d032a3c3cb886153deba5973",
         "afterSha256": "99eead8a120bad6a0158226259507d07f4ac2f093b441cfb0872a4ce665b3b02"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "d8e62c687c6d8167342fe9a51360afbf867a94adbd77e5d0c7a4795fd5b253e8",
+        "afterSha256": "cf67113eee11dfbdabf357356db95760f3042386bddaec4a60b35cb1a1d17d21"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ba7ea41eb5a0d4716f037252c304a772d8305bfc1eddd4c6c9b9aa63f2bed174",
+        "afterSha256": "e70e66f00ba90d2780ec9655e85777f65c4867f1f0f7a759a5a6a927c38890be"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "88285446eb5d7aa8cfa3fdd142983a6989d18868b6291f4b4c19713a859bc11d",
+        "afterSha256": "0276fed7f1bf8b7f23eee9bf41788fac3e6bcc73eedd00bbdae7aa11f02e91a4"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "13cc0ab839a0e7e8d802416888a3588a6dce8b50dd776cef0d5e11c30de17c32",
+        "afterSha256": "38749c79f7c291062d313efc3d5ad15e1b836684725d489c953d76397854431f"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "583036f1383877e4cc112d3a074ba9e8ba05117ed25f54e613ff4939a4517542",
+        "afterSha256": "16f8188f351f56b01bb3355a9a1513ec9dec7df617596cd898e0e56781a1afe9"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "4725ab02426605e905dafe386c78eab38c9d91407272419bae9d6197f40a8792",
+        "afterSha256": "5735eca26719f85a2f1eddd7482857777100a8c240b9a0de865dc9123bcbcc5b"
       }
     ]
   },
@@ -1374,21 +1404,98 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "a7f27c990607aa75d110ead7af57f7234780667bdde8ceae10d1ae55fd554318",
+        "sourceSha256": "468567eeff2a0ef7d886a36099cc4762ed09b8adeb748e2e2ac34ceef3980a7c",
         "spans": [
+          {
+            "start": 14,
+            "end": 20,
+            "text": "b = a;",
+            "role": "cpp",
+            "reading": "technical"
+          },
           {
             "start": 41,
             "end": 42,
+            "text": "C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 87,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
             "text": "a",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 46,
-            "end": 47,
+            "start": 134,
+            "end": 155,
+            "text": "a.cambiar_unidades(5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 193,
+            "end": 194,
             "text": "b",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 206,
+            "text": "B:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 210,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 222,
+            "text": "B:5",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1661,8 +1768,51 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "029de326a189b0e156f4de83dd2a6b665fd1cfc5949807c1afb20ed4b1186193",
-        "spans": []
+        "sourceSha256": "58d1e3263e28f886455bc60671445813722b64eebd2105ceefed822d57e8e30b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 20,
+            "text": "enviar_copia(pedido)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 77,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 122,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 139,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 158,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0001",
@@ -1787,8 +1937,58 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "8450ea974f4f0da7d3cc785b001106dc7f3141c2ed3d8b83672d6db5cfcef248",
-        "spans": []
+        "sourceSha256": "deb6ada8a9ed6cc59187197e6960cb13a167a87298d44f11dd8627be970880ec",
+        "spans": [
+          {
+            "start": 13,
+            "end": 27,
+            "text": "Pedido& pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 56,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 66,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 108,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 124,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 141,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 231,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
@@ -1867,8 +2067,51 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "6b02f2d82a017ad2c318ab512d063d8411f16eda593668f1b1a08a11467554b6",
-        "spans": []
+        "sourceSha256": "6fbdea85f54f89604b1c77f1bc9f1e20485d7ba22311a685f931de4b9ceabc38",
+        "spans": [
+          {
+            "start": 59,
+            "end": 63,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 95,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 114,
+            "text": "cancelar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 182,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 199,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0001",
@@ -1979,8 +2222,51 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "4399e56cffeda73c424cb1bf234fbba6e909e480eec6037477e55104b0261f26",
-        "spans": []
+        "sourceSha256": "e92cb3ef08319e0eee1d2ce2b41e3f9bc49a9c61914e81f5ed9bffbab0db4668",
+        "spans": [
+          {
+            "start": 0,
+            "end": 29,
+            "text": "registros.push_back(original)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 61,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 129,
+            "text": "original.cambiar_unidades(9)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 225,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0001",
@@ -1997,14 +2283,56 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "dee079fb7d3f16072b5f812a9d6c165fd03ecd1229a8f4346051f48351daab47",
+        "sourceSha256": "67e38e40dfd53ad1f24705e6fe70e6a0c178f2dc2bfb201d0bec14d482ac13c8",
         "spans": [
           {
-            "start": 65,
-            "end": 70,
-            "text": "const",
+            "start": 24,
+            "end": 36,
+            "text": "auto& pedido",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 99,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 128,
+            "text": "I",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": "J",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 174,
+            "text": "const auto&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 243,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 253,
+            "end": 261,
+            "text": "I:1;J:1;",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

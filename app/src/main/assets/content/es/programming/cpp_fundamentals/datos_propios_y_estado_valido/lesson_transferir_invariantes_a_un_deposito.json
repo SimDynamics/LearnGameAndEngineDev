@@ -271,6 +271,63 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Comprobar cantidades parciales"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera las definiciones que construiste de Capacidad, Existencias, DepositoInvalido y Deposito. Cópialas antes de informar en este editor. Conserva las consultas y las operaciones del modelo; corrige su implementación si las comprobaciones revelan un incumplimiento.\n\nEl main proporcionado empieza con capacidad 8 y existencias 3. Después solicita agregar 2, retirar 1, agregar 5, retirar 5 y agregar 1, en ese orden y sobre el mismo objeto. Cada aceptación debe cambiar las existencias exactamente en la cantidad solicitada. Cada rechazo debe conservar capacidad y existencias.\n\nLa primera línea muestra Inicio:capacidad:existencias:disponibles. La función informar recibe el resultado ya obtenido y consulta el objeto después de la operación; presenta paso:resultado:capacidad:existencias:disponibles. Los resultados bool se muestran como 0 o 1. Todas las líneas terminan con un salto.\n\nConserva informar y las llamadas del cliente. Pulsa «Compilar, ejecutar y comprobar» y contrasta el informe con la salida requerida. Los resultados deben proceder de tus operaciones y consultas.",
+          "emphasis": [
+            {
+              "text": "sobre el mismo objeto",
+              "style": "bold"
+            },
+            {
+              "text": "exactamente en la cantidad solicitada",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Inicio:8:3:5\nAgregar 2:1:8:5:3\nRetirar 1:1:8:4:4\nAgregar 5:0:8:4:4\nRetirar 5:0:8:4:4\nAgregar 1:1:8:5:3"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui Capacidad, Existencias, DepositoInvalido y tu clase Deposito.\n\nvoid informar(const std::string& paso, bool resultado, const Deposito& deposito) {\n    std::cout << paso << \":\" << resultado << \":\" << deposito.capacidad()\n              << \":\" << deposito.existencias() << \":\" << deposito.disponibles() << \"\\n\";\n}\n\nint main() {\n    Deposito deposito{Capacidad{8}, Existencias{3}};\n    std::cout << \"Inicio:\" << deposito.capacidad() << \":\" << deposito.existencias()\n              << \":\" << deposito.disponibles() << \"\\n\";\n    bool resultado = deposito.agregar(2);\n    informar(\"Agregar 2\", resultado, deposito);\n    resultado = deposito.retirar(1);\n    informar(\"Retirar 1\", resultado, deposito);\n    resultado = deposito.agregar(5);\n    informar(\"Agregar 5\", resultado, deposito);\n    resultado = deposito.retirar(5);\n    informar(\"Retirar 5\", resultado, deposito);\n    resultado = deposito.agregar(1);\n    informar(\"Agregar 1\", resultado, deposito);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Inicio:8:3:5\nAgregar 2:1:8:5:3\nRetirar 1:1:8:4:4\nAgregar 5:0:8:4:4\nRetirar 5:0:8:4:4\nAgregar 1:1:8:5:3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Desde 3 existencias, agregar 2 deja 5 y retirar 1 deja 4. Los dos intentos siguientes de 5 se rechazan y conservan 4. Agregar 1 después de esos rechazos deja 5. La capacidad permanece en 8 y cada llamada a disponibles() refleja el espacio restante.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Inicio:8:3:5\nAgregar 2:1:8:8:0\nRetirar 1:1:8:7:1\nAgregar 5:0:8:7:1\nRetirar 5:1:8:2:6\nAgregar 1:1:8:8:0\n"
+                    ],
+                    "text": "Comprueba cuánto añade agregar(2) al estado inicial de 3 existencias. Debe dejar 5 de las 8 plazas ocupadas y 3 disponibles. Aceptar una cantidad no significa llenar siempre el depósito."
+                  },
+                  {
+                    "outputs": [
+                      "Inicio:8:3:5\nAgregar 2:1:8:5:3\nRetirar 1:1:8:0:8\nAgregar 5:1:8:5:3\nRetirar 5:1:8:0:8\nAgregar 1:1:8:1:7\n"
+                    ],
+                    "text": "Después de agregar hay 5 existencias. retirar(1) debe dejar 4 y 4 plazas disponibles. Aceptar un retiro no significa vaciar siempre el depósito."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
           "type": "paragraph",
           "text": "Las cuatro operaciones iniciales producen 1:5, 0:5, 1:0 y 0:0. Las dos primeras construcciones se aceptan y las otras cuatro lanzan DepositoInvalido.\n\nLos cuatro intentos sobre Vacio conservan cero existencias y los cuatro sobre Lleno conservan cinco; todos devuelven false. La capacidad permanece en cinco en ambos objetos. Un rechazo de construcción impide completar ese objeto; un rechazo de operación conserva un objeto válido que ya existía.",
           "emphasis": [
@@ -344,6 +401,33 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nvoid probar_construccion(int capacidad, int existencias) {\n    try {\n        const Deposito deposito{Capacidad{capacidad}, Existencias{existencias}};\n        std::cout << \"Construccion:\" << deposito.capacidad() << \":\" << deposito.existencias();\n    } catch (const DepositoInvalido&) {\n        std::cout << \"Construccion:Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    Deposito deposito{Capacidad{5}, Existencias{2}};\n    bool resultado = deposito.agregar(3);\n    std::cout << resultado << \":\" << deposito.existencias() << \"\\n\";\n    resultado = deposito.agregar(1);\n    std::cout << resultado << \":\" << deposito.existencias() << \"\\n\";\n    resultado = deposito.retirar(5);\n    std::cout << resultado << \":\" << deposito.existencias() << \"\\n\";\n    resultado = deposito.retirar(1);\n    std::cout << resultado << \":\" << deposito.existencias() << \"\\n\";\n    probar_construccion(1, 0);\n    probar_construccion(20, 20);\n    probar_construccion(0, 0);\n    probar_construccion(21, 0);\n    probar_construccion(5, -1);\n    probar_construccion(5, 6);\n    Deposito vacio{Capacidad{5}, Existencias{0}};\n    std::cout << \"Vacio:\";\n    resultado = vacio.retirar(1);\n    std::cout << resultado << \":\" << vacio.existencias() << \";\";\n    for (int cantidad : std::vector<int>{0, -1, 21}) {\n        resultado = vacio.agregar(cantidad);\n        std::cout << resultado << \":\" << vacio.existencias() << \";\";\n    }\n    Deposito lleno{Capacidad{5}, Existencias{5}};\n    std::cout << \"\\nLleno:\";\n    resultado = lleno.agregar(1);\n    std::cout << resultado << \":\" << lleno.existencias() << \";\";\n    for (int cantidad : std::vector<int>{0, -1, 21}) {\n        resultado = lleno.retirar(cantidad);\n        std::cout << resultado << \":\" << lleno.existencias() << \";\";\n    }\n    std::cout << \"\\nCapacidades:\" << vacio.capacidad() << \":\" << lleno.capacidad()\n              << \";Disponibles:\" << vacio.disponibles() << \":\" << lleno.disponibles();\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar los cambios parciales y los rechazos"
+        },
+        {
+          "type": "paragraph",
+          "text": "La capacidad inicial es 8 y las existencias son 3. agregar(2) acepta porque hay 5 plazas libres y deja 5 existencias. Después, retirar(1) acepta y deja 4. Así se comprueba que las operaciones aplican la cantidad recibida: esos cambios no llenan ni vacían el depósito.\n\nAhora quedan 4 existencias y 4 plazas libres. Agregar 5 y retirar 5 se rechazan por motivos diferentes: falta espacio para el ingreso y faltan existencias para el retiro. Ambos conservan las 4 existencias. La última solicitud, agregar 1, vuelve a aceptarse y deja 5 existencias con 3 plazas libres.\n\nConserva los tipos y la clase Deposito de la referencia anterior. El código siguiente reúne informar y el main que sustituye al de aquella referencia. informar sólo consulta un objeto mediante const Deposito&; cada operación se ejecuta antes de llamarla. La comprobación inicial y ésta utilizan las mismas reglas de construcción y de operación.",
+          "emphasis": [
+            {
+              "text": "aplican la cantidad recibida",
+              "style": "bold"
+            },
+            {
+              "text": "por motivos diferentes",
+              "style": "bold"
+            },
+            {
+              "text": "cada operación se ejecuta antes",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "void informar(const std::string& paso, bool resultado, const Deposito& deposito) {\n    std::cout << paso << \":\" << resultado << \":\" << deposito.capacidad()\n              << \":\" << deposito.existencias() << \":\" << deposito.disponibles() << \"\\n\";\n}\n\nint main() {\n    Deposito deposito{Capacidad{8}, Existencias{3}};\n    std::cout << \"Inicio:\" << deposito.capacidad() << \":\" << deposito.existencias()\n              << \":\" << deposito.disponibles() << \"\\n\";\n    bool resultado = deposito.agregar(2);\n    informar(\"Agregar 2\", resultado, deposito);\n    resultado = deposito.retirar(1);\n    informar(\"Retirar 1\", resultado, deposito);\n    resultado = deposito.agregar(5);\n    informar(\"Agregar 5\", resultado, deposito);\n    resultado = deposito.retirar(5);\n    informar(\"Retirar 5\", resultado, deposito);\n    resultado = deposito.agregar(1);\n    informar(\"Agregar 1\", resultado, deposito);\n    return 0;\n}\n"
         }
       ]
     },
@@ -2510,6 +2594,10 @@
           "block_0001_0000",
           "block_0001_0001",
           "block_0001_0002",
+          "u9_deposito_cantidades_parciales_titulo",
+          "u9_deposito_cantidades_parciales_consigna",
+          "u9_deposito_cantidades_parciales_salida",
+          "u9_deposito_cantidades_parciales_comprobacion",
           "block_0001_0003"
         ]
       },
@@ -2521,7 +2609,10 @@
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004",
-          "block_0002_0005"
+          "block_0002_0005",
+          "u9_deposito_cantidades_parciales_referencia_titulo",
+          "u9_deposito_cantidades_parciales_referencia_traza",
+          "u9_deposito_cantidades_parciales_referencia_cliente"
         ]
       },
       {
@@ -3933,6 +4024,69 @@
           "block": 0
         },
         "progressPage": "page_0004"
+      },
+      {
+        "id": "u9_deposito_cantidades_parciales_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 16,
+          "block": 1
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u9_deposito_cantidades_parciales_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 16,
+          "block": 2
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u9_deposito_cantidades_parciales_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 16,
+          "block": 3
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u9_deposito_cantidades_parciales_comprobacion",
+        "sha256": "d0551c3c59db5fa229e345379d7aa5b75e53dd6e5f29169c4c30ec30432b93ff",
+        "storage": {
+          "page": 16,
+          "block": 4
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u9_deposito_cantidades_parciales_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 16,
+          "block": 5
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u9_deposito_cantidades_parciales_referencia_traza",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 16,
+          "block": 6
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u9_deposito_cantidades_parciales_referencia_cliente",
+        "sha256": "d3ad5a7b768bcbd2673ee3c677f4da454d87c106a2782629ba7cec398d061345",
+        "storage": {
+          "page": 16,
+          "block": 7
+        },
+        "progressPage": "page_0002"
       }
     ],
     "editorial": [
@@ -4175,7 +4329,7 @@
   },
   "referenceAfter": [
     {
-      "activity": "block_0001_0002",
+      "activity": "u9_deposito_cantidades_parciales_comprobacion",
       "blocks": [
         "block_0001_0003",
         "block_0002_0000",
@@ -4185,7 +4339,10 @@
         "block_0002_0004",
         "block_0002_0005",
         "block_0003_0001",
-        "retiro_con_limites_antes_de_restar"
+        "retiro_con_limites_antes_de_restar",
+        "u9_deposito_cantidades_parciales_referencia_titulo",
+        "u9_deposito_cantidades_parciales_referencia_traza",
+        "u9_deposito_cantidades_parciales_referencia_cliente"
       ]
     },
     {
@@ -4310,6 +4467,12 @@
       "activity": "block_0014_0002",
       "requires": [
         "block_0009_0006"
+      ]
+    },
+    {
+      "activity": "u9_deposito_cantidades_parciales_comprobacion",
+      "requires": [
+        "block_0001_0002"
       ]
     }
   ],
@@ -9392,6 +9555,487 @@
             "end": 54,
             "text": "Deposito",
             "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_titulo",
+        "path": "/text",
+        "sourceSha256": "926fbabe488fbbf4acb014fea3fc932a0bbe6ee13d433b4241e2f735354b1b5d",
+        "spans": []
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_consigna",
+        "path": "/text",
+        "sourceSha256": "9e2828206bc54a4fcc043c371a916d7c4396edd53850fef798e6090378279900",
+        "spans": [
+          {
+            "start": 45,
+            "end": 54,
+            "text": "Capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 67,
+            "text": "Existencias",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 85,
+            "text": "DepositoInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 96,
+            "text": "Deposito",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 124,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 273,
+            "end": 277,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 315,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 331,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 359,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 370,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 381,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 392,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 404,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 607,
+            "end": 647,
+            "text": "Inicio:capacidad:existencias:disponibles",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 660,
+            "end": 668,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 756,
+            "end": 804,
+            "text": "paso:resultado:capacidad:existencias:disponibles",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 821,
+            "end": 825,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 843,
+            "end": 844,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 847,
+            "end": 848,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 900,
+            "end": 908,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_salida",
+        "path": "/text",
+        "sourceSha256": "c69df7469002ea5ececd450f9fc8ac71da6a5003c1da2929c9531a4373229bd0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 102,
+            "text": "Inicio:8:3:5\nAgregar 2:1:8:5:3\nRetirar 1:1:8:4:4\nAgregar 5:0:8:4:4\nRetirar 5:0:8:4:4\nAgregar 1:1:8:5:3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "f510a950fa2454bb8fde74c74e2a78f1529240d9ec22b0f69d1a79e1efbd7a03",
+        "spans": [
+          {
+            "start": 6,
+            "end": 7,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 116,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 127,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 219,
+            "text": "disponibles()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "4b43da8c9287e43fb9bdc356fb43a278820721328b46df7b1fa9640e0eea4539",
+        "spans": [
+          {
+            "start": 23,
+            "end": 33,
+            "text": "agregar(2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "e8936dc48b3a8a5692fbb9e65033adac1bf52039caa607789a20637a0dcb8cf3",
+        "spans": [
+          {
+            "start": 23,
+            "end": 24,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 48,
+            "text": "retirar(1)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "3103dd1212b1532c23533ebf2a9e42cfae729ec130b33f4422222dcf5d0fdbd6",
+        "spans": []
+      },
+      {
+        "block": "u9_deposito_cantidades_parciales_referencia_traza",
+        "path": "/text",
+        "sourceSha256": "c0c867ae4d66b44c14754f0ee1c3c60eaf524ef5f2353cd06150f6c359a13da9",
+        "spans": [
+          {
+            "start": 24,
+            "end": 25,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 61,
+            "text": "agregar(2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 137,
+            "text": "retirar(1)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 153,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 282,
+            "end": 283,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 299,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 324,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 336,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 461,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 504,
+            "end": 505,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 533,
+            "end": 534,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 551,
+            "end": 552,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 599,
+            "end": 607,
+            "text": "Deposito",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 661,
+            "end": 669,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 675,
+            "end": 679,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 720,
+            "end": 728,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 762,
+            "end": 777,
+            "text": "const Deposito&",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

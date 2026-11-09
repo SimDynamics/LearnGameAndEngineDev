@@ -77,7 +77,7 @@
           "answers": [
             "3,7 8,1"
           ],
-          "explanation": "La copia constante conserva el valor anterior y la consulta permite observarla."
+          "explanation": "const Punto copia = punto; crea otro objeto con las coordenadas 3 y 7. Después, punto.mover_a(8, 1) cambia sólo punto. Las consultas leen primero copia y luego punto, de modo que aparece 3,7 8,1. La independencia procede de haber creado una copia; const restringe las modificaciones de esa copia."
         }
       ]
     },
@@ -101,7 +101,7 @@
             "La operación es modificadora y el objeto está declarado const."
           ],
           "correctIndex": 2,
-          "explanation": "La restricción pertenece al modo de usar el objeto, no a esas cantidades."
+          "explanation": "punto se declaró const, mientras que mover_a es una función miembro no const. La llamada se rechaza al compilar y su cuerpo no llega a cambiar las coordenadas. Que los argumentos 3 y 4 sean cantidades admitidas no concede permiso para modificar ese objeto."
         },
         {
           "type": "paragraph",
@@ -158,7 +158,7 @@
           "answers": [
             "1 0"
           ],
-          "explanation": "La función consulta x sin copiar ni modificar el punto; el bool guardado conserva el resultado de la primera llamada."
+          "explanation": "En la primera llamada, punto.x() devuelve 0, por lo que en_eje_vertical(punto) devuelve true y ese resultado se guarda en primero. Tras mover el punto a (2,6), la segunda llamada consulta 2 y devuelve false. primero conserva su resultado anterior: al imprimir ambos valores lógicos aparece 1 0."
         },
         {
           "type": "multiple_choice",
@@ -1122,6 +1122,21 @@
         "id": "block_0006_0005",
         "beforeSha256": "5ee9e4550469ca26d9e23612fc417f24762466634fc2b7b1aa3422956903d172",
         "afterSha256": "c71e5d50433c4066156bf53ea4ca62807ed7ee28ec7131d3807e813566cd71e0"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "7011e5ed342fdd5cb4b7fb896933bb6ef8d8f42a76346ca30d36fa7de910204c",
+        "afterSha256": "d0b5600be83e08e900c5d38f3f2dc570d909b062ff3a5523940e48571d784a38"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e30102e9751694c956f2e4a678aa344b56c515be6ebd627352b691703f124e0b",
+        "afterSha256": "c63441b1797ea34f072460469a54a3f5c61e31cee749b92d0411467e17fbd6a1"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "af3ec616c540a48eb099ed3ee5dc9ce8c0500b2b3918b294dfe3f3779e548793",
+        "afterSha256": "17918b03f966ca2f53f53614dc69f63bc6e3cfad4012cdc1f273f8aedf59b8de"
       }
     ]
   },
@@ -1391,8 +1406,72 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "65b433968c26826d91ab9aafe69f272c977b4141adf01becd879e9b9fd911eb3",
-        "spans": []
+        "sourceSha256": "dbd2b4d1c66f5aaa456db2ac01395410c7e227e4793739d5aaaf8ebc47a750b3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 26,
+            "text": "const Punto copia = punto;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 99,
+            "text": "punto.mover_a(8, 1)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 117,
+            "text": "punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 151,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 165,
+            "text": "punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 194,
+            "text": "3,7 8,1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 253,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0000",
@@ -1409,8 +1488,51 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "844e87a27004b6ea47ed8ecfaa6a7bf005032ea878769a16944135d54ce93a86",
-        "spans": []
+        "sourceSha256": "a9e1cc89074e3f7d500738d9a7644cf2059390c1df787c40c718742302658b50",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 22,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 44,
+            "text": "mover_a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 76,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 180,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 184,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1600,21 +1722,77 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "1dbbb3cbdabf2f165849d844151ae67f108553bf79ab64ba34bc6abcc9f2e186",
+        "sourceSha256": "65c2dafff9301648086e5fab279a65249a103b060471f50304ceb558e172401a",
         "spans": [
           {
-            "start": 20,
-            "end": 21,
-            "text": "x",
+            "start": 23,
+            "end": 32,
+            "text": "punto.x()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 63,
-            "text": "bool",
+            "start": 42,
+            "end": 43,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 78,
+            "text": "en_eje_vertical(punto)",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 129,
+            "text": "primero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 158,
+            "text": "(2,6)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 189,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 206,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 215,
+            "text": "primero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 293,
+            "text": "1 0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

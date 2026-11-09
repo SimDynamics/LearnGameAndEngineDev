@@ -2,7 +2,7 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar la revisión pedagógica de Programación 1 desde U9L1, «Asociar datos en un struct», en `app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_asociar_datos_en_un_struct.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
+Continuar la revisión pedagógica de Programación 1 desde U10L1, «Producir enteros en un intervalo», en `app/src/main/assets/content/es/programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/lesson_producir_enteros_en_un_intervalo.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
 
 ## Base conservada
 

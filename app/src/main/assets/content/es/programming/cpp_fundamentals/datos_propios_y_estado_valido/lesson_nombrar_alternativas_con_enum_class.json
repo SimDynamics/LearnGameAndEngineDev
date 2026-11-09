@@ -82,7 +82,7 @@
           "answers": [
             "1 0"
           ],
-          "explanation": "La asignación cambia una variable Estado; las comparaciones producen bool."
+          "explanation": "La asignación cambia a de Estado::preparado a Estado::enviado. b conserva Estado::cancelado. La primera comparación resulta verdadera y la segunda falsa; en esta salida se representan como 1 y 0, separados por un espacio."
         }
       ]
     },
@@ -167,7 +167,7 @@
           "answers": [
             "0"
           ],
-          "explanation": "El valor convertido no coincide con ninguna de las alternativas nombradas."
+          "explanation": "La conversión crea el valor de tipo Estado cuya representación es 9. Los enumeradores preparado, enviado y cancelado corresponden a 0, 1 y 2. Ninguna de las tres comparaciones es verdadera, de modo que reconocido es falso y se imprime 0. Convertir el número no lo hizo coincidir con una alternativa nombrada."
         },
         {
           "type": "multiple_choice",
@@ -347,7 +347,7 @@
           "answers": [
             "1 0"
           ],
-          "explanation": "La copia conserva el Estado original aunque cambie otro objeto."
+          "explanation": "copia recibe el código A3 y el estado Estado::preparado que tenía el original al copiarlo. Después sólo original.estado cambia a Estado::enviado. Comparar el estado de la copia con Estado::preparado produce verdadero; hacer esa misma comparación con el original produce falso. La salida es 1 0."
         },
         {
           "type": "multiple_choice",
@@ -1349,6 +1349,21 @@
         "id": "block_0002_0004",
         "beforeSha256": "333d1f7e680f30db4059a2106cf4fcf00999470f4cd08e0c6ef084a0ccab3ad7",
         "afterSha256": "e0be4cfe45e06696829ddcaeac97298acb4f1a0c34b1c90f31735da354dbcd88"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "04c6eb17959ee1e676f1c7d62b2ade7f32cd430a1586e38608fd17fcd3740a42",
+        "afterSha256": "02f834ac565d80c7a5178c639b9b8e1f7daef82a51e7975b18d449f1b6111eec"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f24c9e34be29bcde25ff2a5c56380b0c9cc256170c3f7965314be4a57361963f",
+        "afterSha256": "8e740084951f8e4fad58082c4205be9ed88fea2660500f4c830f9547b77cc342"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "dc19a1f6aacd9c742d82ea3e2afa8e529907c5d0b72eb699509c06fe43b0b201",
+        "afterSha256": "7bcca4ca57a8aaa371a92c210c15b3fdf7e9c53484523ee91f2241bf212d779c"
       }
     ]
   },
@@ -1579,21 +1594,56 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "93b02d4a6afd557322b56e7268ce11e559de06389849428479336b311b15cb0f",
+        "sourceSha256": "47e7915ef7f1cf5d1851ef3a37794e6a33faeec1f19d0a29c3e9dc338fce7c22",
         "spans": [
           {
-            "start": 34,
-            "end": 40,
-            "text": "Estado",
+            "start": 21,
+            "end": 22,
+            "text": "a",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 73,
-            "text": "bool",
+            "start": 26,
+            "end": 43,
+            "text": "Estado::preparado",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 61,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 91,
+            "text": "Estado::cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 190,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 194,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1869,8 +1919,79 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "f4ce8410eb45a0eb3b816659cbe0905ab24995c1d00b9c306c104b3136d5d0a5",
-        "spans": []
+        "sourceSha256": "c458aa53616de859fbdd731b01650788a4ae3e002d22150a12d2ff7ef2f96275",
+        "spans": [
+          {
+            "start": 36,
+            "end": 42,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 95,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 97,
+            "end": 104,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 116,
+            "text": "cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 136,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 212,
+            "text": "reconocido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 236,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2477,14 +2598,56 @@
       {
         "block": "block_0007_0002",
         "path": "/explanation",
-        "sourceSha256": "462ab0d8afb56cdddafbc1defdf65870293b662b7c39857adc2d80322272ef7f",
+        "sourceSha256": "9f6e92d9b47eb81e50e8e12932074d81c7fe25dbfc1be71bffa55b171232c662",
         "spans": [
           {
-            "start": 21,
-            "end": 27,
-            "text": "Estado",
+            "start": 0,
+            "end": 5,
+            "text": "copia",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 23,
+            "end": 25,
+            "text": "A3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 55,
+            "text": "Estado::preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 119,
+            "text": "original.estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 144,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 198,
+            "text": "Estado::preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 293,
+            "text": "1 0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

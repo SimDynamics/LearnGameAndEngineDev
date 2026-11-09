@@ -110,7 +110,7 @@
           "answers": [
             "Rechazado"
           ],
-          "explanation": "El constructor lanza antes de terminar; la instrucción posterior a la construcción no se ejecuta."
+          "explanation": "La cantidad 0 cumple unidades_ < 1, por lo que el constructor lanza PedidoInvalido{}. La construcción no termina normalmente y la instrucción que habría mostrado Creado se omite. El catch correspondiente escribe Rechazado."
         },
         {
           "type": "output_prediction",
@@ -138,7 +138,7 @@
           "answers": [
             "Codigo no valido"
           ],
-          "explanation": "El número válido no compensa un código vacío."
+          "explanation": "La cantidad 4 está dentro de 1..20, pero codigo_.empty() es true. Basta esa condición del if para lanzar PedidoInvalido{}: no se consulta la cantidad del objeto rechazado. El tratamiento escribe Codigo no valido."
         },
         {
           "type": "multiple_choice",
@@ -282,6 +282,63 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Comprobar todo el intervalo admitido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera tu tipo LoteInvalido, tu clase Lote y la función que prueba una construcción. El código debe ser una cadena no vacía y la cantidad debe pertenecer a 1..5. Las consultas codigo() y cantidad() son const y conservan los valores recibidos.\n\nCopia esas definiciones antes del main suministrado. El cliente llama probar a tu función de prueba; si utilizaste otro nombre, ajusta ese nombre conservando las llamadas y sus argumentos. En cada llamada, intenta construir dentro de try, consulta ambos miembros sólo si la construcción termina normalmente y trata LoteInvalido con catch fuera del constructor.\n\nSe conservan los seis intentos anteriores. Después de sus rechazos se prueban M con 2 unidades, Zona B con 3 y R7 con 4. Usa el mismo constructor y la misma función para los nueve intentos. Muestra codigo:cantidad al aceptar o Rechazado al rechazar; cada línea termina con un salto, incluida la última. Pulsa «Compilar, ejecutar y comprobar» y compara el informe completo.",
+          "emphasis": [
+            {
+              "text": "antes del main",
+              "style": "bold"
+            },
+            {
+              "text": "los nueve intentos",
+              "style": "bold"
+            },
+            {
+              "text": "incluida la última",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nM:2\nZona B:3\nR7:4"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui tus definiciones de LoteInvalido, Lote y probar.\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nM:2\nZona B:3\nR7:4\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las cantidades 1 y 5 son las fronteras del intervalo; 2, 3 y 4 también son válidas. El constructor conserva cada código no vacío y cada cantidad aceptada. Los rechazos anteriores no impiden construir y consultar los tres lotes siguientes.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nRechazado\nRechazado\nRechazado\n"
+                    ],
+                    "text": "El intervalo admitido incluye todas las cantidades desde 1 hasta 5, también 2, 3 y 4. Revisa si tu condición está admitiendo únicamente las dos fronteras. Los tres códigos nuevos no están vacíos."
+                  },
+                  {
+                    "outputs": [
+                      "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nL:2\nL:3\nL:4\n"
+                    ],
+                    "text": "Las cantidades se conservan, pero los tres códigos nuevos aparecen sustituidos por L. Revisa qué valor guarda cada objeto y qué devuelve codigo(). La consulta debe recuperar el código de ese lote, incluidos los espacios que contiene Zona B."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
           "type": "paragraph",
           "text": "Rechazar la construcción y cambiar sus argumentos para aceptarlos son políticas diferentes. En esta actividad, lanzar la señal impide completar ese objeto inválido; tratarla fuera permite que la siguiente llamada de prueba se realice con sus propios argumentos.",
           "emphasis": [
@@ -323,7 +380,7 @@
           "answers": [
             "A Rechazado"
           ],
-          "explanation": "La primera construcción y su salida ocurrieron; la segunda lanza y no ejecuta su salida posterior."
+          "explanation": "Pedido a{\"A\", 1}; cumple las condiciones y permite escribir A  con su espacio. En cambio, Pedido b{\"B\", 21}; supera el máximo y lanza antes de que se escriba B. El catch añade Rechazado; la salida ya escrita se conserva y queda A Rechazado."
         },
         {
           "type": "heading",
@@ -333,6 +390,29 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nvoid probar(const std::string& codigo, int cantidad) {\n    try {\n        const Lote lote{codigo, cantidad};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia del intervalo completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia completa anterior define LoteInvalido, Lote y probar. Conserva esas definiciones y sustituye sólo su main por el siguiente.\n\nLos primeros seis intentos conservan sus resultados. Después, 2, 3 y 4 pertenecen al intervalo: sus construcciones se aceptan y las consultas producen M:2, Zona B:3 y R7:4. Junto con los casos anteriores, se han consultado las cinco cantidades enteras admitidas.\n\nProbar únicamente las fronteras no distinguiría una condición que aceptara sólo 1 o 5 de otra que aceptara todo 1..5. Los códigos distintos comprueban además que la consulta recupera el miembro de cada objeto. Cada llamada trata su propio rechazo; una construcción fallida no reemplaza los argumentos de la siguiente.",
+          "emphasis": [
+            {
+              "text": "las cinco cantidades enteras admitidas",
+              "style": "bold"
+            },
+            {
+              "text": "el miembro de cada objeto",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n    return 0;\n}\n"
         }
       ]
     }
@@ -579,6 +659,10 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
+          "u9_lote_intervalo_completo_titulo",
+          "u9_lote_intervalo_completo_consigna",
+          "u9_lote_intervalo_completo_salida",
+          "u9_lote_intervalo_completo_comprobacion",
           "block_0006_0003"
         ]
       },
@@ -590,7 +674,10 @@
           "block_0007_0002",
           "block_0007_0003",
           "block_0007_0004",
-          "block_0007_0005"
+          "block_0007_0005",
+          "u9_lote_intervalo_completo_referencia_titulo",
+          "u9_lote_intervalo_completo_referencia_razonamiento",
+          "u9_lote_intervalo_completo_referencia_main"
         ]
       }
     ],
@@ -1123,7 +1210,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u9_lote_intervalo_completo_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_comprobacion",
+        "sha256": "5ffa3f8df411812a91712a763fc43298dff886f5dfffb7af9677eed0cb50d1ff",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_referencia_main",
+        "sha256": "660d7b8d9020ba3e2ca460a6e48a586449076527c015b0968a5c5f83bc11b020",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1189,19 +1340,37 @@
         "id": "block_0004_0001",
         "beforeSha256": "489b14b249743c2e26b28c158bcf6424240a3bb508f4049d33354d2f08d5cdbf",
         "afterSha256": "4a1c71fc7f93a0f34a9539e8e5b955022e93ab57a66d2e491f55e7c337c4c170"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "1f8bfc7db4857feb899e06c8858c111c4481dd4b76881cfbeae8a86ffdc00b9d",
+        "afterSha256": "75b065a48f96ca8f81d8be339b8fad2eed6a75900ec6493a1e10a06849f0171c"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "dfbba6da3abbfe7f9a5bc236826870f3508f89587d23510f2cff18365a34edba",
+        "afterSha256": "029906974dfbf61e71c3b9cd6f0fcaeb16ced2195e2fabaf30afdf89b22f838c"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "2a49892879c22e837660af783a0fe66d0251d3ae26dc9a5692c4f0d9cd365fb0",
+        "afterSha256": "e8b864b17ba6ab44fd18a019b86a9bbaae191210b158662b0c135baa86364a4b"
       }
     ]
   },
   "referenceAfter": [
     {
-      "activity": "block_0006_0002",
+      "activity": "u9_lote_intervalo_completo_comprobacion",
       "blocks": [
         "block_0006_0003",
         "block_0007_0000",
         "block_0007_0001",
         "block_0007_0002",
         "block_0007_0004",
-        "block_0007_0005"
+        "block_0007_0005",
+        "u9_lote_intervalo_completo_referencia_titulo",
+        "u9_lote_intervalo_completo_referencia_razonamiento",
+        "u9_lote_intervalo_completo_referencia_main"
       ]
     }
   ],
@@ -1582,8 +1751,51 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "22bf210c806ce101926c0654152f40cade1db97d9feb12de4c1612227e2a69d1",
-        "spans": []
+        "sourceSha256": "8194f06972579f1efb910f8c654249968fa8aa9a89b1b8edfcbf1ee45c61f71f",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 34,
+            "text": "unidades_ < 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 84,
+            "text": "PedidoInvalido{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 168,
+            "text": "Creado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 187,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 221,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -1620,8 +1832,58 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "a4a4fa569966417e8814dbaebfa2503ee3d39274677289606ea2da43d5b93009",
-        "spans": []
+        "sourceSha256": "7bd44efd71e6a5be0243f6920b3bc9de8eadc989608c3d1d37cb696079742af3",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 34,
+            "text": "1..20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 56,
+            "text": "codigo_.empty()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 64,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 92,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 121,
+            "text": "PedidoInvalido{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 211,
+            "text": "Codigo no valido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2199,14 +2461,440 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "3b820c4fa4b7ee6684c2cc09898a01802dc3fc2cd0c8ab799aec9c92af95e81a",
-        "spans": []
+        "sourceSha256": "84a4f5210c393debaac44b99f6860f84103b2d84c3be8821c55d46b8eebdbcf2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Pedido a{\"A\", 1};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 62,
+            "text": "A ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 108,
+            "text": "Pedido b{\"B\", 21};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 169,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 185,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 239,
+            "text": "A Rechazado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
         "path": "/text",
         "sourceSha256": "8bc457b1b890dd5cbbb8f1cf2f8d347245a490823f5364d2f58ab2527f25423c",
         "spans": []
+      },
+      {
+        "block": "u9_lote_intervalo_completo_titulo",
+        "path": "/text",
+        "sourceSha256": "9cff4c65f3841ed71c8e02f95751a5d07d04b9985623fb75db61d008165a9316",
+        "spans": []
+      },
+      {
+        "block": "u9_lote_intervalo_completo_consigna",
+        "path": "/text",
+        "sourceSha256": "94cbc8a494c517284b0dd98e36ae91d9bb595129eae3b938b9cec62a50a85854",
+        "spans": [
+          {
+            "start": 17,
+            "end": 29,
+            "text": "LoteInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 44,
+            "text": "Lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 162,
+            "text": "1..5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 186,
+            "text": "codigo()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 199,
+            "text": "cantidad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 209,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 284,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 322,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 480,
+            "end": 483,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 561,
+            "end": 573,
+            "text": "LoteInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 578,
+            "end": 583,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 686,
+            "end": 687,
+            "text": "M",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 692,
+            "end": 693,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 704,
+            "end": 710,
+            "text": "Zona B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 715,
+            "end": 716,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 719,
+            "end": 721,
+            "text": "R7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 726,
+            "end": 727,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 806,
+            "end": 821,
+            "text": "codigo:cantidad",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 835,
+            "end": 844,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_salida",
+        "path": "/text",
+        "sourceSha256": "55515ab0707dd4a9e7b1a273ea00312b15db11d9dc3110a22122664ff4077c29",
+        "spans": [
+          {
+            "start": 0,
+            "end": 65,
+            "text": "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nM:2\nZona B:3\nR7:4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "9d8dbc007bebec32004982e2dd79eb81f104ffdf0a83fe49a9203834828d965e",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "ca7d73d64f5617d0ff89fc1f527372991543dd5bcaf13f8031e68ee8e9c59ead",
+        "spans": [
+          {
+            "start": 57,
+            "end": 58,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 84,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "039481cf3b64ca448b014af477cd8afea925968f99518135665d0f4e08fc66a0",
+        "spans": [
+          {
+            "start": 83,
+            "end": 84,
+            "text": "L",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 145,
+            "text": "codigo()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 239,
+            "text": "Zona B",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "678056aa6a37ce854fd36675eec973ff01bf8dbaa0d48611f94234a78732097d",
+        "spans": []
+      },
+      {
+        "block": "u9_lote_intervalo_completo_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "f0369e098a6bc5803024596dc64d6f62beccdcc2f12f3a69ad4175862fec3874",
+        "spans": [
+          {
+            "start": 39,
+            "end": 51,
+            "text": "LoteInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 57,
+            "text": "Lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 66,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 205,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 209,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 293,
+            "text": "M:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 303,
+            "text": "Zona B:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 310,
+            "text": "R7:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 483,
+            "end": 484,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 487,
+            "end": 488,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 515,
+            "end": 519,
+            "text": "1..5",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2216,5 +2904,13 @@
         "spans": []
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "u9_lote_intervalo_completo_comprobacion",
+      "requires": [
+        "block_0006_0002"
+      ]
+    }
+  ]
 }

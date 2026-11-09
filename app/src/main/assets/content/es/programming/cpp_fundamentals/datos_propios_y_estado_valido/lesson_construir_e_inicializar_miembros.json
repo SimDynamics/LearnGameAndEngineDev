@@ -70,7 +70,7 @@
             "El constructor que recibe ambos argumentos."
           ],
           "correctIndex": 2,
-          "explanation": "Los datos se entregan al construir el objeto, antes de usarlo.",
+          "explanation": "Al ejecutar Punto punto{4, 1};, el constructor recibe 4 en el parámetro x y 1 en y. La lista : x_{x}, y_{y} prepara ambos miembros antes del cuerpo. Una llamada posterior a x() consulta un objeto que ya quedó construido; no inicia esa preparación.",
           "reviewFeedback": [
             "La llamada x() se realiza sobre un objeto que ya existe. Sigue la declaración Punto punto{4, 1}; e identifica qué acción utiliza los argumentos de las llaves antes de esa consulta.",
             "Las declaraciones int x_; e int y_; indican qué datos contiene el tipo. Revisa dónde se reciben los valores concretos 4 y 1 al crear este objeto.",
@@ -85,7 +85,7 @@
           "answers": [
             "2 -1"
           ],
-          "explanation": "Cada objeto se construye con sus propias coordenadas.",
+          "explanation": "a se construye con 6 en x_ y 2 en y_; b, con -1 en x_ y 5 en y_. Primero se consulta a.y(), que devuelve 2, y después b.x(), que devuelve -1. El espacio escrito entre ambas consultas produce 2 -1.",
           "reviewFeedback": "Identifica el objeto situado antes de cada punto y el miembro que devuelve esa consulta. Lee sus valores iniciales respetando el orden de las dos consultas y conserva el espacio entre los resultados."
         }
       ]
@@ -116,7 +116,7 @@
           "answers": [
             "x_"
           ],
-          "explanation": "x_ es el miembro y x es el argumento que entrega su valor."
+          "explanation": "x_ es el miembro que debe inicializarse; x es el parámetro del constructor que recibe el primer argumento. En Punto punto{2, 7};, ese argumento es 2. La expresión x_{x} prepara x_ con ese valor, y punto.x() devuelve 2."
         },
         {
           "type": "paragraph",
@@ -152,7 +152,7 @@
             "Punto punto{0, 4};"
           ],
           "correctIndex": 2,
-          "explanation": "Se deben entregar los argumentos requeridos por el constructor."
+          "explanation": "El primer argumento inicializa x_ y el segundo, y_. Punto punto{0, 4}; conserva las coordenadas solicitadas. Punto punto{4, 0}; invierte sus posiciones, mientras que Punto punto{}; no entrega ninguno de los dos argumentos requeridos."
         },
         {
           "type": "paragraph",
@@ -230,7 +230,7 @@
           "answers": [
             "1,9 4,5"
           ],
-          "explanation": "La copia conserva los miembros anteriores; la asignación recibe otro Punto ya construido."
+          "explanation": "Al crear copia, original contiene las coordenadas 1 y 9, que se copian en otro objeto. Después, original = Punto{4, 5}; reemplaza las dos coordenadas de original por 4 y 5. copia conserva las anteriores; por eso se imprime 1,9 4,5."
         },
         {
           "type": "multiple_choice",
@@ -1210,6 +1210,31 @@
         "id": "block_0001_0002",
         "beforeSha256": "d193cab042ceea520e862cd6a2bedabaf109aa0dedf081c6a7139a0040e9d924",
         "afterSha256": "416f29efba86bb1213fadc9f9b0b857cb17ff85b47facca64a34f089c917986e"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "416f29efba86bb1213fadc9f9b0b857cb17ff85b47facca64a34f089c917986e",
+        "afterSha256": "36a2b1cd43d35721940589a7322f4d4399b847680264615f8f218259d6c19bfe"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "f8425e8966104f0d608f213245d2c2d6a0fe9783f987e50eb3fb7fef1600ffa7",
+        "afterSha256": "5ebb31a9cd888d3c81b58765f0ca6def53f285c5fa1ce58923a7bd202fb003d0"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "c0b19c030829ffba512d9695fd71aa0410e01e7c55ae4406f60a31e083562a58",
+        "afterSha256": "319eb1e0e072af912d96ff9ef6b98b48982dada6bc500d3c259972b9fc02bf32"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "804aeda3a7e00cd25d61ade9477d7443d5cc7a405ab846b69f314488db494459",
+        "afterSha256": "fedd9f9983bf0c9f9a94b1e46100786e06f8d903ede2a7a383dd83e0023b40de"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "b12f111de6bf6b0227dd94fcbe2477bb2d88bfd9d36b4e2be768429878458282",
+        "afterSha256": "009cad6f2efe4ba9836c589dbdf60d8a72ba9edb88732ec5ed334d98813f9f10"
       }
     ]
   },
@@ -1503,8 +1528,58 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "fd0d0226a9dcdf5da7375631e7359220a96c216cc0807d7fd505176604e1e8eb",
-        "spans": []
+        "sourceSha256": "9f5cb63f6e1ae3e9a17d85d8da5c57ec72a2d01db7601d461efeb0cc2fa28f3d",
+        "spans": [
+          {
+            "start": 12,
+            "end": 30,
+            "text": "Punto punto{4, 1};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 107,
+            "text": ": x_{x}, y_{y}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 176,
+            "text": "x()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1603,8 +1678,114 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "5ab398ba337e7249563656349ba7d65fefcb83e38ba8802cea273fc10f6f79bb",
-        "spans": []
+        "sourceSha256": "dcc6d95973fcd2ed7f548a724ff3eeef71a3cd775869e6759693dc29ce61353e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 26,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 36,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 47,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 53,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 63,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 90,
+            "text": "a.y()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 123,
+            "text": "b.x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 195,
+            "text": "2 -1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1677,7 +1858,7 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "ed45ab3ed4fd38b752d2a49ff5da2bc270902bf73fcd3090a156d4acf3f6b703",
+        "sourceSha256": "e2d5a3a9acb7cabc41b135043ef28006392ce395edccb886d98260faf6953dc1",
         "spans": [
           {
             "start": 0,
@@ -1687,11 +1868,53 @@
             "reading": "technical"
           },
           {
-            "start": 19,
-            "end": 20,
+            "start": 41,
+            "end": 42,
             "text": "x",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 128,
+            "text": "Punto punto{2, 7};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 168,
+            "text": "x_{x}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 179,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 206,
+            "text": "punto.x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 217,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1760,8 +1983,44 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "ee4a4c96d1150f88225593e1b89ee22abc72659016a36cedac04bd96f8ea7747",
-        "spans": []
+        "sourceSha256": "323776e2b6cadcd2c89e9e33d847cc20f34e2d7ac0b91a388e67647ad4470157",
+        "spans": [
+          {
+            "start": 31,
+            "end": 33,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 50,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 70,
+            "text": "Punto punto{0, 4};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 127,
+            "text": "Punto punto{4, 0};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 180,
+            "text": "Punto punto{};",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2020,14 +2279,77 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "95ada871f8f416614bef8872f67994fbb4281abea907001d6a043079cf792b85",
+        "sourceSha256": "a6f9c98d5a4637d6c2da7e99127d7457353ad9bf70f01ba3d027918e35a8ea2c",
         "spans": [
           {
-            "start": 69,
-            "end": 74,
-            "text": "Punto",
+            "start": 9,
+            "end": 14,
+            "text": "copia",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 16,
+            "end": 24,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 119,
+            "text": "original = Punto{4, 5};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 161,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 178,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 230,
+            "text": "1,9 4,5",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

@@ -53,7 +53,7 @@
           "answers": [
             "0 4 1"
           ],
-          "explanation": "La condición rechaza cero antes de asignar y conserva todos los datos del pedido."
+          "explanation": "cambiar_unidades(0) encuentra 0 fuera del dominio y ejecuta return false; antes de asignar. Por eso aceptado se muestra como 0, las unidades siguen siendo 4 y la comparación con Estado::preparado produce 1. La salida completa es 0 4 1."
         },
         {
           "type": "multiple_choice",
@@ -64,7 +64,7 @@
             "Porque una solicitud rechazada podría dejar temporal o definitivamente el dato inválido, y habría que deshacerla."
           ],
           "correctIndex": 2,
-          "explanation": "La comprobación previa hace directa la garantía de no modificar en caso de rechazo."
+          "explanation": "Si se escribiera primero unidades_ = nuevas; con 0, el pedido perdería su cantidad válida antes de comprobarla. Devolver false después no restauraría las 4 unidades que tenía. En la versión mostrada, el rechazo termina la llamada antes de alcanzar la asignación, por lo que el objeto conserva sus miembros."
         },
         {
           "type": "fill_code",
@@ -74,7 +74,7 @@
           "answers": [
             "return"
           ],
-          "explanation": "Se devuelve false antes de realizar la transición."
+          "explanation": "return false; termina enviar sin alcanzar la asignación a estado_ cuando el pedido no está preparado. En el main de este ejercicio, el pedido R sí empieza preparado: se omite ese rechazo, se cambia a Estado::enviado y se devuelve true, mostrado como 1."
         }
       ]
     },
@@ -92,7 +92,7 @@
           "answers": [
             "1 0 1"
           ],
-          "explanation": "La primera llamada cambia el estado; la segunda ya no encuentra un pedido preparado."
+          "explanation": "La primera llamada a enviar() encuentra el pedido preparado, cambia su estado a Estado::enviado y devuelve true. La segunda encuentra ese estado enviado y devuelve false sin modificarlo. Se muestran 1 y 0; la comparación final confirma el estado enviado con 1."
         },
         {
           "type": "multiple_choice",
@@ -121,7 +121,7 @@
           "answers": [
             "1 0 0 6"
           ],
-          "explanation": "Cancelar primero deja un estado que rechaza ambas solicitudes posteriores."
+          "explanation": "cancelar() acepta el pedido preparado y devuelve true. Después, cambiar_unidades(8) y enviar() encuentran el estado cancelado y devuelven false. Las unidades conservan 6: la solicitud de 8 no llegó a asignarse. Los cuatro datos impresos forman 1 0 0 6."
         },
         {
           "type": "output_prediction",
@@ -206,7 +206,7 @@
           "answers": [
             "1 0 20"
           ],
-          "explanation": "Veinte se acepta; veintiuno se rechaza conservando la cantidad anterior."
+          "explanation": "cambiar_unidades(20) acepta la frontera superior y deja 20 unidades. La llamada con 21 devuelve false antes de asignar, de modo que no recupera las 9 iniciales ni deja 21: conserva el último valor válido, 20. Así se obtiene 1 0 20."
         },
         {
           "type": "paragraph",
@@ -461,6 +461,67 @@
               "text": "la cantidad, el código y el estado"
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar todos los miembros después de cada solicitud"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera tu definición de Pedido, junto con Estado y PedidoInvalido, y colócala antes de main en el editor siguiente. Conserva el cliente ya escrito. Las consultas públicas permiten comprobar los miembros después de cada solicitud sin acceder directamente a su representación.\n\nEl pedido C, con 4 unidades, solicita cancelar dos veces, enviar y cambiar a 1. El pedido independiente R, con 7 unidades, solicita enviar dos veces, cancelar y cambiar a 1. Cada llamada ocurre antes de presentar su resultado y consultar el objeto.",
+          "emphasis": [
+            {
+              "text": "después de cada solicitud",
+              "style": "bold"
+            },
+            {
+              "text": "Conserva el cliente ya escrito",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada línea presenta el resultado lógico, un espacio, el código y la cantidad separados por dos puntos, otro espacio y la comparación del estado. Para C, se compara con Estado::cancelado; para R, con Estado::enviado. Los resultados lógicos se muestran como 0 o 1.\n\nCompila, ejecuta y comprueba las ocho líneas siguientes, todas terminadas con salto. Tanto la operación aceptada como cada rechazo deben conservar código y unidades. La repetición de una cancelación también debe devolver false, porque el pedido ya dejó de estar preparado.",
+          "emphasis": [
+            {
+              "text": "todas terminadas con salto",
+              "style": "bold"
+            },
+            {
+              "text": "conservar código y unidades",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "1 C:4 1\n0 C:4 1\n0 C:4 1\n0 C:4 1\n1 R:7 1\n0 R:7 1\n0 R:7 1\n0 R:7 1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui tus definiciones de Estado, PedidoInvalido y Pedido.\n\nint main() {\n    Pedido cancelado{\"C\", 4};\n    bool aceptado = cancelado.cancelar();\n    std::cout << aceptado << \" \" << cancelado.codigo() << \":\"\n              << cancelado.unidades() << \" \"\n              << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n    aceptado = cancelado.cancelar();\n    std::cout << aceptado << \" \" << cancelado.codigo() << \":\"\n              << cancelado.unidades() << \" \"\n              << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n    aceptado = cancelado.enviar();\n    std::cout << aceptado << \" \" << cancelado.codigo() << \":\"\n              << cancelado.unidades() << \" \"\n              << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n    aceptado = cancelado.cambiar_unidades(1);\n    std::cout << aceptado << \" \" << cancelado.codigo() << \":\"\n              << cancelado.unidades() << \" \"\n              << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n\n    Pedido enviado{\"R\", 7};\n    aceptado = enviado.enviar();\n    std::cout << aceptado << \" \" << enviado.codigo() << \":\"\n              << enviado.unidades() << \" \"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n    aceptado = enviado.enviar();\n    std::cout << aceptado << \" \" << enviado.codigo() << \":\"\n              << enviado.unidades() << \" \"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n    aceptado = enviado.cancelar();\n    std::cout << aceptado << \" \" << enviado.codigo() << \":\"\n              << enviado.unidades() << \" \"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n    aceptado = enviado.cambiar_unidades(1);\n    std::cout << aceptado << \" \" << enviado.codigo() << \":\"\n              << enviado.unidades() << \" \"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1 C:4 1\n0 C:4 1\n0 C:4 1\n0 C:4 1\n1 R:7 1\n0 R:7 1\n0 R:7 1\n0 R:7 1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera solicitud cambia el estado de cada pedido y devuelve true. Las otras tres se rechazan sin modificarlo. El código y las unidades conservan C:4 y R:7 en todas las consultas; comprobar sólo el resultado lógico o sólo el estado no demostraría esa conservación.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "1 Otro:4 1\n0 Otro:4 1\n0 Otro:4 1\n0 Otro:4 1\n1 R:7 1\n0 R:7 1\n0 R:7 1\n0 R:7 1\n"
+                    ],
+                    "text": "La cancelación cambia únicamente el estado. El informe del pedido C debe seguir consultando su código C y sus 4 unidades. Revisa las asignaciones de la operación aceptada: conservar una cantidad válida y devolver true no permite sustituir el código."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -506,6 +567,24 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"Q\", 4};\n    bool a = pedido.cambiar_unidades(6);\n    bool b = pedido.enviar();\n    bool c = pedido.cambiar_unidades(7);\n    bool d = pedido.cancelar();\n    std::cout << a << \" \" << b << \" \" << c << \" \" << d << \"\\n\";\n    std::cout << pedido.codigo() << \":\" << pedido.unidades() << \" \"\n              << (pedido.estado() == Estado::enviado) << \"\\n\";\n    Pedido cancelado{\"C\", 4};\n    a = cancelado.cancelar();\n    b = cancelado.enviar();\n    c = cancelado.cambiar_unidades(1);\n    std::cout << \"Cancelado:\" << a << \":\" << b << \":\" << c\n              << \";Estado:\" << (cancelado.estado() == Estado::cancelado)\n              << \";Unidades:\" << cancelado.unidades() << \"\\n\";\n    Pedido repetido{\"R\", 4};\n    a = repetido.enviar();\n    b = repetido.enviar();\n    std::cout << \"Enviados:\" << a << \":\" << b << \";Estado:\"\n              << (repetido.estado() == Estado::enviado) << \"\\n\";\n    Pedido limites{\"L\", 4};\n    std::cout << \"Limites:\";\n    for (int cantidad : std::vector<int>{1, 20, 0, 21}) {\n        a = limites.cambiar_unidades(cantidad);\n        std::cout << a << \":\" << limites.unidades() << \";\";\n    }\n    std::cout << \"\\nConservado:\" << limites.codigo() << \":\"\n              << (limites.estado() == Estado::preparado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Qué revela la observación de cada miembro"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las definiciones de la referencia anterior sirven también con el main del nuevo editor. La primera llamada de C devuelve true y cambia únicamente estado_ a Estado::cancelado. Por eso se presenta 1 C:4 1. Las tres solicitudes siguientes devuelven false y cada una conserva el mismo pedido; sus líneas son 0 C:4 1.\n\nEl pedido R acepta el primer envío y después conserva el código, las 7 unidades y el estado enviado. Cambiar las unidades durante un segundo envío rechazado alteraría las consultas posteriores aunque su resultado lógico siguiera siendo false.\n\nUna implementación que cambiara el código al cancelar podría conservar la cantidad y el estado esperado. Las nuevas consultas del código permiten distinguir ese fallo. Comparar el resultado de la llamada con todos los miembros observables comprueba la conservación prometida.",
+          "emphasis": [
+            {
+              "text": "cada una conserva el mismo pedido",
+              "style": "bold"
+            },
+            {
+              "text": "todos los miembros observables",
+              "style": "bold"
+            }
+          ]
         }
       ]
     }
@@ -747,7 +826,12 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
-          "block_0006_0003"
+          "block_0006_0003",
+          "u9_pedido_conservacion_por_solicitud_titulo",
+          "u9_pedido_conservacion_por_solicitud_objetivo",
+          "u9_pedido_conservacion_por_solicitud_consigna",
+          "u9_pedido_conservacion_por_solicitud_salida",
+          "u9_pedido_conservacion_por_solicitud_comprobacion"
         ]
       },
       {
@@ -758,7 +842,9 @@
           "block_0007_0002",
           "block_0007_0003",
           "block_0007_0004",
-          "block_0007_0005"
+          "block_0007_0005",
+          "u9_pedido_conservacion_por_solicitud_referencia_titulo",
+          "u9_pedido_conservacion_por_solicitud_referencia"
         ]
       }
     ],
@@ -1271,7 +1357,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u9_pedido_conservacion_por_solicitud_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_pedido_conservacion_por_solicitud_objetivo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_pedido_conservacion_por_solicitud_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_pedido_conservacion_por_solicitud_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_pedido_conservacion_por_solicitud_comprobacion",
+        "sha256": "df11709346d7d5e9a78cb81aec6bedeff3745200821fcb740cc25387dc562ede",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u9_pedido_conservacion_por_solicitud_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u9_pedido_conservacion_por_solicitud_referencia",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1317,6 +1467,36 @@
         "id": "block_0007_0002",
         "beforeSha256": "947e8cb756bb4342957a91fa5047a606bd5e1c0141b5993c2bcea1b89dcd2408",
         "afterSha256": "ca2081f2bf454754bab361eeb65de0586a9bea3ffbff56775708d26e03202260"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "af6606f26b08a15c910c817ec6647da417782a9995e13714526cca1a086f89cf",
+        "afterSha256": "405eb8ba8b68a18f6f2f074bf83e9416004b439aeef5f087be1811fc312ef37b"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "4a1fd4a4772e40dde0169ea5faea949954e2d5d719ce8dd28bca5a0338899829",
+        "afterSha256": "d864afc1ffeaad049b6f98a66bf83b7695e378c7c866b8fe2d24069a0c039b4f"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "1148c53206a3d8297fe7dd848074f460a6892fea206d1ee321e1ca8ee61c70bd",
+        "afterSha256": "58cd356fb5fdeb97e2357526eb04b8424008922c1e7674380b0b3e7f17633cf7"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "8d201e35b6a4dd2ada365cfcc849b70fbea9f99e397c91ca9b9f77ad982cd494",
+        "afterSha256": "cbf5c6f4fb0f018801ea2318fa9417e59b587eace9307a015f1c9d83da33b7bd"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "7c048d29ee075cadc4d9532a74b4fa72bcf3c7d3dade2f90809846a2068e6b0a",
+        "afterSha256": "6f28ae86bf6e4ca2d6d17727c651bf2125393635000017c0e4ef37af41c8a65d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "9bb1a676bd7e10ec99f6ef45381a926d4f964c38d6838842448e69e2b64f69a3",
+        "afterSha256": "637339c9e9988d713d353ec0f9a2ebb7628778bfebd2452f3b692c297545ce7f"
       }
     ]
   },
@@ -1324,12 +1504,19 @@
     {
       "activity": "block_0006_0002",
       "blocks": [
-        "block_0006_0003",
+        "block_0006_0003"
+      ]
+    },
+    {
+      "activity": "u9_pedido_conservacion_por_solicitud_comprobacion",
+      "blocks": [
         "block_0007_0000",
         "block_0007_0001",
         "block_0007_0002",
         "block_0007_0004",
-        "block_0007_0005"
+        "block_0007_0005",
+        "u9_pedido_conservacion_por_solicitud_referencia_titulo",
+        "u9_pedido_conservacion_por_solicitud_referencia"
       ]
     }
   ],
@@ -1421,13 +1608,69 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "7d49960621e73adbf933dbab469f90567812ab661d2200f50adb57668579ce08",
+        "sourceSha256": "314e1cac656799823392d0cccddf3033cac5803749095ca079648cb9584a3e16",
         "spans": [
           {
-            "start": 21,
-            "end": 25,
-            "text": "cero",
+            "start": 0,
+            "end": 19,
+            "text": "cambiar_unidades(0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "text": "0",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 73,
+            "text": "return false;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 108,
+            "text": "aceptado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 126,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 195,
+            "text": "Estado::preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 205,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 234,
+            "text": "0 4 1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1449,8 +1692,37 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "b4b5ab7eb685fec85140010dbf48bf1abb73de02bbe32114b0513973aa5d333e",
-        "spans": []
+        "sourceSha256": "71264eea5d3b91720d5518113fc6477563de80e53a6e00d9081d7b57e0f4675a",
+        "spans": [
+          {
+            "start": 25,
+            "end": 44,
+            "text": "unidades_ = nuevas;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 126,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1482,8 +1754,8 @@
             "start": 16,
             "end": 21,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1502,14 +1774,63 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "c022848515d0ef6ff0635d7763f2c1f1e5a690d6d0ee786c664509af4c273c47",
+        "sourceSha256": "47b4425e1bd88846c422c60c8d207c348a8ecbd0ddec771c8d20ebeab70f9e66",
         "spans": [
           {
-            "start": 12,
-            "end": 17,
-            "text": "false",
+            "start": 0,
+            "end": 13,
+            "text": "return false;",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 22,
+            "end": 28,
+            "text": "enviar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 65,
+            "text": "estado_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 112,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 215,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 234,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 251,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1528,8 +1849,58 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "efc517e06be3865b4b4187d3e3e90c04ef02012c01a2de7dbc4c6aa976890d35",
-        "spans": []
+        "sourceSha256": "6f56e759eb6fec87439d697b40913fa38d24aabbbae8446e88b7524444dcf67c",
+        "spans": [
+          {
+            "start": 21,
+            "end": 29,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 95,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 169,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 200,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 204,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 259,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1584,8 +1955,65 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "5b0b02301e5079e6c690b685e6bdbf1e0561d46497a9254ed047dba41d924653",
-        "spans": []
+        "sourceSha256": "73f4279f6d2fa47f7209bf02c05bf230f2c69b85383f66c88ef5b1eba8d9f587",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "cancelar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 53,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 83,
+            "text": "cambiar_unidades(8)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 94,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 143,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 169,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 251,
+            "text": "1 0 0 6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -1753,20 +2181,62 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "fd0faf5ba28fe511db03ab1a24458ce8d4acbd9c3dbcbaa9491e7984c55a6967",
+        "sourceSha256": "8196dfebb0140bba152a044bea66ad02b06149cee24710d9d979dde545fd4e15",
         "spans": [
           {
             "start": 0,
-            "end": 6,
-            "text": "Veinte",
+            "end": 20,
+            "text": "cambiar_unidades(20)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 58,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 86,
+            "text": "21",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 18,
-            "end": 27,
-            "text": "veintiuno",
+            "start": 96,
+            "end": 101,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 149,
+            "text": "9",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 170,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 207,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 230,
+            "text": "1 0 20",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2663,6 +3133,312 @@
         "path": "/text",
         "sourceSha256": "75ce06bd6cfd77fce86d6615bbb173eab948d6e4c4d2a1a50f7f8d58e814a388",
         "spans": []
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_titulo",
+        "path": "/text",
+        "sourceSha256": "6ab2c73f13e0bfc86a0a3d12fd9c854786fd972a974e9d74ae66fe6f635e8a3d",
+        "spans": []
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_objetivo",
+        "path": "/text",
+        "sourceSha256": "0decd5ddf29aeaee5de414bb485b457873afee522e92184b49ff710bd8eae7df",
+        "spans": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 50,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 67,
+            "text": "PedidoInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 289,
+            "text": "C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 296,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 356,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 383,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 389,
+            "end": 390,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 450,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_consigna",
+        "path": "/text",
+        "sourceSha256": "c5bff8839e297773ea9aeb6f268869badf313591e85595d379d664a2a674d406",
+        "spans": [
+          {
+            "start": 150,
+            "end": 151,
+            "text": "C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 185,
+            "text": "Estado::cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 214,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 256,
+            "end": 257,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 261,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 485,
+            "end": 490,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_salida",
+        "path": "/text",
+        "sourceSha256": "e4e6d67a856c04f1b2ccbff6dd1aa7e1d81d3ffa04f03665f1d6d89308768e0e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 63,
+            "text": "1 C:4 1\n0 C:4 1\n0 C:4 1\n0 C:4 1\n1 R:7 1\n0 R:7 1\n0 R:7 1\n0 R:7 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "177dae46de352642783f084fc98240112f25f4b52fdde91ac9478f85ada8eac5",
+        "spans": [
+          {
+            "start": 64,
+            "end": 68,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 152,
+            "text": "C:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 158,
+            "text": "R:7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "c8480e7f6f6a60aa86c6c4997d9b0f3c35d85e9e7c85bce94451bc78e6a5d979",
+        "spans": [
+          {
+            "start": 66,
+            "end": 67,
+            "text": "C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "C",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 217,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "c706ed129b858bbbdd4c067de4e604906594f0b06c43921f1700d34cfe21cb9f",
+        "spans": []
+      },
+      {
+        "block": "u9_pedido_conservacion_por_solicitud_referencia",
+        "path": "/text",
+        "sourceSha256": "bd2483e3434e48906f9c1990f01e0ee244a391de7439491b6a2d5725296e55fc",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "C",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 125,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 153,
+            "text": "estado_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 156,
+            "end": 173,
+            "text": "Estado::cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 202,
+            "text": "1 C:4 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 251,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 311,
+            "text": "0 C:4 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 325,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 384,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 550,
+            "end": 555,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2672,5 +3448,13 @@
         "spans": []
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "u9_pedido_conservacion_por_solicitud_comprobacion",
+      "requires": [
+        "block_0006_0002"
+      ]
+    }
+  ]
 }
