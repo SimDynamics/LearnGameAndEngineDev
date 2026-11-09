@@ -4,6 +4,7 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/reading_gate_policy.hpp"
 #include "presentation/windows/narration_legacy_policy.hpp"
+#include "presentation/windows/narration_recording_identity.hpp"
 #include "presentation/windows/bibliography_resume_policy.hpp"
 #include "presentation/windows/reading_shade.hpp"
 #include "presentation/windows/reader_theme.hpp"
@@ -234,12 +235,14 @@ struct LessonReader::Impl {
     void push(Result result){const std::lock_guard lock(result_mutex);results.push_back(std::move(result));}
     static bool audio_file(const windows::NarrationAudio& audio){std::error_code file_status_error;return std::filesystem::is_regular_file(audio.wav,file_status_error);}
     static std::string recording_fingerprint(std::string_view page,const Part& part,const windows::NarrationAudio& audio,std::string_view wav_hash){
-        std::string material="lgaed-heard-prefix-v1";
-        const auto append=[&](std::string_view value){material+=std::to_string(value.size())+':';material.append(value);};
-        append(page);append(part_id(part));append(part.sentence.text);append(audio.key);
+        auto source=part.sentence.text;
+        if(part.region.text_semantics&&!part.sentence.displayed_ranges.empty()){
+            const auto decoded=wide(source);
+            source=utf8(narration_recording::semantic_source_v1(std::wstring_view(decoded),part.sentence.displayed_ranges));
+        }
         // This runs once in the preparation thread, never in a UI checkpoint.
         // Neither a cache filename nor a bookmark offset proves which PCM ran.
-        append(wav_hash);return state::sha256(material);
+        return state::sha256(narration_recording::fingerprint_material_v1(page,part_id(part),source,audio.key,wav_hash));
     }
     static std::string locked_recording_hash(HANDLE file,std::stop_token stop){
         struct Hash{BCRYPT_ALG_HANDLE algorithm=nullptr;BCRYPT_HASH_HANDLE value=nullptr;

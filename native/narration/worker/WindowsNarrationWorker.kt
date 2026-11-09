@@ -173,7 +173,7 @@ private class Backend(private val resources: File, private val englishResources:
         fun original(range: ReadingTextRange) = ReadingTextRange(
             if (range.start == 0) 0 else range.start + iconPrefix, range.endExclusive + iconPrefix)
         var cursor = 0
-        return prepared.mapIndexed { index, sentence ->
+        val portions = prepared.mapIndexed { index, sentence ->
             val body = sentence.removePrefix(ManualEnglishSpeech.PREPARED.toString())
             val start = projection.text.indexOf(body,cursor)
             check(start >= cursor) { "Sentence split no longer matches original normalization" }
@@ -187,9 +187,23 @@ private class Backend(private val resources: File, private val englishResources:
                         original(NarrationSourceProjection.owner(projection.owners.subList(start + it.start - prefix,start + it.endExclusive - prefix)))
                     })
                 }
-            val first = mapping?.displayed?.minOfOrNull { it.start } ?: owner.start
-            val last = mapping?.displayed?.maxOfOrNull { it.endExclusive } ?: owner.endExclusive
+            val lexicalFirst = mapping?.displayed?.minOfOrNull { it.start } ?: owner.start
+            val lexicalLast = mapping?.displayed?.maxOfOrNull { it.endExclusive } ?: owner.endExclusive
+            // Exact semantic word ranges do not own sentence punctuation. Keep
+            // the complete projection envelope without widening those words.
+            // Historical bookmark and unmarked planning retain their bounds.
+            val currentSemantics = semantics != null && !originalSemantics
+            val first = if (currentSemantics) minOf(owner.start,lexicalFirst) else lexicalFirst
+            val last = if (currentSemantics) maxOf(owner.endExclusive,lexicalLast) else lexicalLast
             require(first in 0 until source.length && last in first + 1..source.length) { "Sentence has no original visible owner" }
+            Triple(ReadingTextRange(first,last),sentence,mapping)
+        }
+        val owners = portions.map { it.first }
+        val envelopes = if (semantics != null && !originalSemantics)
+            WindowsTextSemantics.sourceEnvelopes(semantics,owners) else owners
+        return portions.mapIndexed { index, (_,sentence,mapping) ->
+            val first = envelopes[index].start
+            val last = envelopes[index].endExclusive
             val segment = Segment(source.substring(first,last),sentence,mapping?.spoken.orEmpty(),
                 mapping?.displayed?.map { ReadingTextRange(it.start - first,it.endExclusive - first) }.orEmpty())
             if (!originalSemantics) plans[planKey(language,segment.source,segment.prepared)] = segment

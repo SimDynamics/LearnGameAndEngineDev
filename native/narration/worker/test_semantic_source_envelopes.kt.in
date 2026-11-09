@@ -1,0 +1,142 @@
+package lgaed.narration.windows
+
+import com.learngraphicsprogramming.app.narration.*
+import java.io.File
+import java.security.MessageDigest
+import org.json.JSONArray
+import org.json.JSONObject
+
+/** Stable public-plan serialization; object key iteration never defines a pin. */
+private fun signature(plan: JSONArray, speechOnly: Boolean): String {
+    val rows = JSONArray()
+    for (index in 0 until plan.length()) {
+        val part = plan.getJSONObject(index)
+        val start = part.getInt("sourceStart")
+        fun ranges(key: String, absolute: Boolean): JSONArray {
+            val values = part.getJSONArray(key)
+            return JSONArray((0 until values.length()).map { at ->
+                val range = values.getJSONObject(at)
+                val offset = if (absolute) start else 0
+                listOf(range.getInt("start") + offset, range.getInt("end") + offset)
+            })
+        }
+        val row = JSONArray()
+        if (!speechOnly) row.put(start).put(part.getInt("sourceEnd")).put(part.getString("text"))
+        row.put(part.getString("preparedText")).put(part.getString("spokenText"))
+            .put(ranges("spokenRanges", false)).put(ranges("displayedRanges", speechOnly))
+            .put(part.getString("key"))
+        rows.put(row)
+    }
+    return MessageDigest.getInstance("SHA-256").digest(rows.toString().toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it.toInt() and 255) }
+}
+
+private fun request(item: JSONObject, policy: String): JSONObject {
+    val value = JSONObject().put("text", item.getString("source")).put("language", "es")
+        .put("voice", "ef_dora").put("readingContext", "auto").put("mathMode", "auto")
+    if (policy != "unmarked") value.put("textSemantics", item.getJSONObject("semantics"))
+    if (policy == "original") value.put("semanticProjectionPolicy", "original")
+    return value
+}
+
+fun main(args: Array<String>) {
+    val backend = SemanticPlanBackend()
+    var assertions = 0
+    var sentences = 0
+    fun verify(condition: Boolean, message: String) {
+        assertions++
+        check(condition) { message }
+    }
+    fun boundary(source: String, at: Int) = at in 0..source.length &&
+        !(at > 0 && at < source.length && source[at - 1].isHighSurrogate() && source[at].isLowSurrogate())
+    val cases = JSONArray(File(args.single()).readText())
+    var authenticated = 0
+    for (caseIndex in 0 until cases.length()) {
+        val item = cases.getJSONObject(caseIndex)
+        val label = item.getString("label")
+        val source = item.getString("source")
+        val semantics = item.getJSONObject("semantics")
+        val unchanged = semantics.toString()
+        val baseline = item.getJSONObject("baseline")
+        val current = backend.plan(request(item, "current")).getJSONArray("segments")
+        verify(current.length() > 0, "$label lost its current sentences")
+        verify(signature(current, true) == baseline.getString("speech"),
+            "$label changed prepared speech, absolute word ownership or recording keys")
+        val covered = IntArray(source.length)
+        var previousEnd = 0
+        for (index in 0 until current.length()) {
+            sentences++
+            val part = current.getJSONObject(index)
+            val first = part.getInt("sourceStart")
+            val last = part.getInt("sourceEnd")
+            verify(first >= previousEnd && first < last && boundary(source, first) && boundary(source, last),
+                "$label introduced overlapping or invalid UTF-16 source envelopes")
+            verify(part.getString("text") == source.substring(first, last), "$label rewrote an original source interval")
+            for (at in first until last) covered[at]++
+            val spoken = part.getJSONArray("spokenRanges")
+            val displayed = part.getJSONArray("displayedRanges")
+            verify(spoken.length() == displayed.length(), "$label changed the word mapping cardinality")
+            for (word in 0 until displayed.length()) {
+                val range = displayed.getJSONObject(word)
+                val start = range.getInt("start")
+                val end = range.getInt("end")
+                verify(start >= 0 && start < end && end <= last - first &&
+                    boundary(source, first + start) && boundary(source, first + end),
+                    "$label has a word outside its exact original source interval")
+            }
+            previousEnd = last
+        }
+        for (at in source.indices) if (!source[at].isWhitespace())
+            verify(covered[at] == 1, "$label omitted or duplicated authored UTF-16 unit $at")
+        for (policy in listOf("original", "unmarked")) {
+            val historical = backend.plan(request(item, policy)).getJSONArray("segments")
+            verify(signature(historical, false) == baseline.getString(policy),
+                "$label changed the complete $policy planning contract")
+        }
+        verify(semantics.toString() == unchanged, "$label changed authored roles, readings or ranges")
+        verify(signature(backend.plan(request(item, "current")).getJSONArray("segments"), false) == signature(current, false),
+            "$label changed after a historical or unmarked request")
+        if (item.optBoolean("authenticated")) authenticated++
+    }
+    verify(authenticated == 6, "The authentic U12/U11 criterion/feedback coverage changed")
+
+    // At adjacent closing/opening runs, source-order allocation claims each
+    // invisible delimiter exactly once without taking the next visible word.
+    for (delimiter in listOf("`", "```")) {
+        val source = delimiter + "Uno." + delimiter + delimiter + " Dos." + delimiter
+        val one = source.indexOf("Uno.")
+        val two = source.indexOf("Dos.")
+        val field = WindowsTextSemantics.Field(source, emptyList())
+        val owners = listOf(ReadingTextRange(one, one + 4), ReadingTextRange(two, two + 4))
+        val expanded = WindowsTextSemantics.sourceEnvelopes(field, owners)
+        verify(expanded == listOf(ReadingTextRange(0, two - 1), ReadingTextRange(two, source.length)),
+            "Adjacent hidden delimiters were lost, shared or extended over visible content")
+        verify(field == WindowsTextSemantics.Field(source, emptyList()) && owners[0].start == one,
+            "Expanding source envelopes mutated authored ownership")
+    }
+
+    // The existing presentation mask is authoritative. These literal or
+    // protected delimiters are not eligible for source-envelope expansion.
+    for (source in listOf("`\\(x+y\\)`", "`\$x+y\$`", "`dato", "dato`", "`  `", "**dato**",
+                          "https://ejemplo.test/dato`")) {
+        val first = if (source.startsWith('`')) 1 else if (source.startsWith("**")) 2 else 0
+        val last = if (source.endsWith('`')) source.length - 1 else if (source.endsWith("**")) source.length - 2 else source.length
+        val owner = ReadingTextRange(first, last)
+        verify(WindowsTextSemantics.sourceEnvelopes(WindowsTextSemantics.Field(source, emptyList()), listOf(owner)) == listOf(owner),
+            "A literal, mathematical or URL delimiter acquired invented presentation ownership")
+    }
+    val mathematical = "`x+y`"
+    val mathOwner = ReadingTextRange(1, mathematical.length - 1)
+    val mathField = WindowsTextSemantics.Field(mathematical, listOf(
+        WindowsTextSemantics.Span(1, mathematical.length - 1, "x+y", "math", "natural")))
+    verify(WindowsTextSemantics.sourceEnvelopes(mathField, listOf(mathOwner)) == listOf(mathOwner),
+        "An explicitly authored mathematical span lost delimiter protection")
+    val url = "`https://ejemplo.test/dato`"
+    verify(WindowsTextSemantics.sourceEnvelopes(WindowsTextSemantics.Field(url, emptyList()),
+        listOf(ReadingTextRange(1, url.length - 1))) == listOf(ReadingTextRange(0, url.length)),
+        "A real complete URL wrapper lost its existing hidden presentation")
+    verify(WindowsTextSemantics.sourceEnvelopes(WindowsTextSemantics.Field("", emptyList()), emptyList()).isEmpty(),
+        "An empty envelope list acquired an invented source owner")
+    println("PASS: $assertions semantic-envelope assertions; $sentences current sentences; " +
+        "$authenticated authenticated curricular fields; original/unmarked plans and WAV keys preserved")
+}

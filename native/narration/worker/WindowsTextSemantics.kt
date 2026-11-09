@@ -276,6 +276,24 @@ internal object WindowsTextSemantics {
         }
         return hidden
     }
+    /** Sentence envelopes may include adjacent hidden presentation, without
+     * widening any spoken word or authored role. A shared delimiter run belongs
+     * once to the first adjacent sentence in source order, never to both. */
+    fun sourceEnvelopes(field: Field, owners: List<ReadingTextRange>): List<ReadingTextRange> {
+        val hidden = hiddenPresentation(field)
+        var previousEnd = 0
+        return owners.mapIndexed { index, owner ->
+            require(boundary(field.source,owner.start) && boundary(field.source,owner.endExclusive) &&
+                owner.start < owner.endExclusive) { "Invalid original sentence envelope" }
+            var first = owner.start
+            var last = owner.endExclusive
+            while (first > previousEnd && hidden[first - 1]) first--
+            val nextStart = owners.getOrNull(index + 1)?.start ?: hidden.size
+            while (last < nextStart && hidden[last]) last++
+            previousEnd = maxOf(previousEnd,last)
+            ReadingTextRange(first,last)
+        }
+    }
     /** One semantic frontend serves direct plans and anticipatory extraction. */
     fun projection(field: Field, language: NarrationLanguage): NarrationSourceProjection.Projection {
         val hidden = hiddenPresentation(field)
