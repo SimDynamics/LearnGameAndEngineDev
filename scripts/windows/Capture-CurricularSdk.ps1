@@ -42,6 +42,7 @@ $qaVcVars = Join-Path $qaVsRoot 'VC\Auxiliary\Build\vcvarsall.bat'
 $qaEnvironmentSetup = 'call "' + $qaVcVars + '" x64'
 
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type -TypeDefinition @'
 using System;
 using System.Diagnostics;
@@ -70,6 +71,7 @@ public static class CurricularSdkCapture {
     [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr window, uint message, IntPtr wparam, IntPtr lparam);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr window, int command);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr window, int x, int y, int width, int height, bool repaint);
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)] struct StartupInfo {
         public int cb; public string reserved, desktop, title;
@@ -98,11 +100,18 @@ public static class CurricularSdkCapture {
 function Save-ActualWindow([IntPtr] $qaWindow, [string] $qaPath,
                            [int] $qaTargetWidth = 1000, [int] $qaTargetHeight = 640) {
     [CurricularSdkCapture]::ShowWindow($qaWindow, 9) | Out-Null
+    $qaScreen = [Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     if ($qaTargetWidth -gt 0 -and $qaTargetHeight -gt 0) {
-        [CurricularSdkCapture]::MoveWindow($qaWindow, 0, 0, $qaTargetWidth, $qaTargetHeight, $true) | Out-Null
+        [CurricularSdkCapture]::MoveWindow($qaWindow, $qaScreen.Left, $qaScreen.Top,
+            [Math]::Min($qaTargetWidth, $qaScreen.Width), [Math]::Min($qaTargetHeight, $qaScreen.Height), $true) | Out-Null
+    } else {
+        $qaOriginalRect = New-Object CurricularSdkCapture+Rect
+        [CurricularSdkCapture]::GetWindowRect($qaWindow, [ref] $qaOriginalRect) | Out-Null
+        [CurricularSdkCapture]::MoveWindow($qaWindow, $qaScreen.Left, $qaScreen.Top,
+            $qaOriginalRect.Right - $qaOriginalRect.Left, $qaOriginalRect.Bottom - $qaOriginalRect.Top, $true) | Out-Null
     }
     [CurricularSdkCapture]::SetForegroundWindow($qaWindow) | Out-Null
-    Start-Sleep -Milliseconds 300
+    Start-Sleep -Milliseconds 700
     $qaRect = New-Object CurricularSdkCapture+Rect
     if (-not [CurricularSdkCapture]::GetWindowRect($qaWindow, [ref] $qaRect)) { throw 'Cannot locate the real console window.' }
     $qaWidth = $qaRect.Right - $qaRect.Left
@@ -111,10 +120,13 @@ function Save-ActualWindow([IntPtr] $qaWindow, [string] $qaPath,
     $qaBitmap = [System.Drawing.Bitmap]::new($qaWidth, $qaHeight)
     $qaGraphics = [System.Drawing.Graphics]::FromImage($qaBitmap)
     try {
-        $qaDc = $qaGraphics.GetHdc()
-        try { $qaPrinted = [CurricularSdkCapture]::PrintWindow($qaWindow, $qaDc, 2) }
-        finally { $qaGraphics.ReleaseHdc($qaDc) }
-        if (-not $qaPrinted) { throw 'Windows did not provide the real console pixels.' }
+        if ([CurricularSdkCapture]::GetForegroundWindow() -ne $qaWindow) {
+            throw 'The SDK or command window is not foreground; refusing an unrelated desktop capture.'
+        }
+        if ($qaRect.Right -gt $qaScreen.Right -or $qaRect.Bottom -gt $qaScreen.Bottom) {
+            throw 'The real SDK window does not fit the display; no clipped screenshot is claimed.'
+        }
+        $qaGraphics.CopyFromScreen($qaRect.Left, $qaRect.Top, 0, 0, $qaBitmap.Size)
         $qaBitmap.Save($qaPath, [System.Drawing.Imaging.ImageFormat]::Png)
     }
     finally { $qaGraphics.Dispose(); $qaBitmap.Dispose() }
@@ -202,7 +214,8 @@ $qaEvidence.installer = [ordered]@{
 }
 Save-Evidence
 
-# Read the signed installer's own help before using its visible passive mode.
+# Read the signed installer's own help. This SDK supports a visible wizard and
+# /quiet, but its observed help does not document /passive.
 $qaHelp = Start-Process -FilePath $qaInstaller -ArgumentList '/?' -PassThru
 try {
     $qaLimit = [DateTime]::UtcNow.AddSeconds(45)
@@ -217,14 +230,16 @@ try {
     $qaHelpText = Read-SdkWindow $qaWindow 'p1_windows_sdk_ayuda'
     $qaHelpText | Set-Content -LiteralPath (Join-Path $qaOutput 'sdk-help.txt') -Encoding utf8
     [CurricularSdkCapture]::PostMessage($qaWindow, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null
-    if ($qaHelpText -notmatch '(?i)[/-]passive') {
-        throw 'The observed SDK help did not confirm the passive option; inspect its real screenshot before continuing.'
+    if ($qaHelpText -notmatch '/features' -or $qaHelpText -notmatch '/norestart' -or $qaHelpText -notmatch '/ceip') {
+        throw 'The observed SDK help did not confirm the requested documented options.'
     }
     if (-not $qaHelp.WaitForExit(10000)) { throw 'The SDK help process did not close.' }
 } finally { $qaHelp.Dispose() }
 
-$qaArguments = @('/passive', '/norestart', '/ceip', 'off', '/features', 'OptionId.DesktopCPPx64')
+$qaArguments = @('/norestart', '/ceip', 'off', '/features', 'OptionId.DesktopCPPx64')
 $qaEvidence.arguments = $qaArguments
+$qaEvidence.captureMethod = 'CopyFromScreen of the foreground installer or command window'
+$qaEvidence.uiActions = @()
 $qaEvidence.installStartedAtUtc = [DateTime]::UtcNow.ToString('o')
 Save-Evidence
 $qaInstall = Start-Process -FilePath $qaInstaller -WorkingDirectory $qaWorking -ArgumentList $qaArguments -PassThru
@@ -232,11 +247,72 @@ try {
     $qaLimit = [DateTime]::UtcNow.AddMinutes(14)
     $qaNextCapture = [DateTime]::UtcNow.AddSeconds(2)
     $qaCaptureCount = 0
+    $qaActionCount = 0
+    $qaLastActionSignature = ''
+    $qaLastRecognized = [DateTime]::UtcNow
     while (-not $qaInstall.HasExited) {
         if ([DateTime]::UtcNow -gt $qaLimit) { throw 'The SDK installation exceeded its bounded test duration.' }
-        if ($qaCaptureCount -lt 12 -and [DateTime]::UtcNow -gt $qaNextCapture) {
-            $qaWindow = Find-SdkWindow
-            if ($qaWindow -ne [IntPtr]::Zero) {
+        $qaWindow = Find-SdkWindow
+        if ($qaWindow -ne [IntPtr]::Zero) {
+            $qaRoot = [System.Windows.Automation.AutomationElement]::FromHandle($qaWindow)
+            $qaNodes = $qaRoot.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+                                      [System.Windows.Automation.Condition]::TrueCondition)
+            $qaVisible = @($qaNodes | Where-Object { -not $_.Current.IsOffscreen })
+            $qaNames = @($qaVisible | ForEach-Object { $_.Current.Name })
+            $qaVisibleText = $qaNames -join "`n"
+            $qaButtons = @($qaVisible | Where-Object {
+                $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::Button -and $_.Current.IsEnabled
+            })
+            $qaButton = $null
+            foreach ($qaWanted in @('Accept', 'Next', 'Next >', 'Install', 'Finish', 'Close')) {
+                $qaButton = $qaButtons | Where-Object { $_.Current.Name.Replace('_', '').Trim() -eq $qaWanted } | Select-Object -First 1
+                if ($null -ne $qaButton) { break }
+            }
+            $qaProgress = @($qaVisible | Where-Object {
+                $_.Current.ControlType -eq [System.Windows.Automation.ControlType]::ProgressBar
+            }).Count -ne 0
+            if ($qaProgress) { $qaLastRecognized = [DateTime]::UtcNow }
+            if ($null -ne $qaButton) {
+                $qaButtonName = $qaButton.Current.Name.Replace('_', '').Trim()
+                if ($qaButtonName -in @('Close', 'Finish') -and $qaVisibleText -notmatch '(?i)complete|successfully installed|installation was successful') {
+                    $qaButton = $null
+                }
+            }
+            if ($null -ne $qaButton) {
+                $qaActionSignature = $qaButtonName + "`n" + $qaVisibleText
+                if ($qaActionSignature -ne $qaLastActionSignature) {
+                    if ($qaActionCount -ge 8) { throw 'The SDK wizard exceeded its bounded known sequence.' }
+                    $qaName = 'p1_windows_sdk_paso_{0:d2}' -f ($qaActionCount + 1)
+                    Save-ActualWindow $qaWindow (Join-Path $qaOutput ($qaName + '.png')) 0 0
+                    Read-SdkWindow $qaWindow $qaName | Out-Null
+                    if ($qaButtonName -eq 'Install') {
+                        # Read the actual feature page before applying it. Only
+                        # the x64 desktop feature requested on the command line
+                        # is needed; do not accept an unrelated installation UI.
+                        $qaFeature = $qaVisible | Where-Object {
+                            $_.Current.Name -match '(?i)Desktop C\+\+.*(x64|amd64)'
+                        } | Select-Object -First 1
+                        if ($null -eq $qaFeature) { throw 'The SDK feature page did not identify Desktop C++ x64/amd64.' }
+                        $qaToggle = $null
+                        if ($qaFeature.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref] $qaToggle) -and
+                            $qaToggle.Current.ToggleState -eq [System.Windows.Automation.ToggleState]::Off) {
+                            $qaToggle.Toggle()
+                        }
+                    }
+                    $qaInvoke = $null
+                    if (-not $qaButton.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref] $qaInvoke)) {
+                        throw 'The observed SDK button does not expose its native invocation action.'
+                    }
+                    $qaEvidence.uiActions += [ordered]@{button = $qaButtonName; screenshot = $qaName + '.png'; atUtc = [DateTime]::UtcNow.ToString('o')}
+                    Save-Evidence
+                    $qaInvoke.Invoke()
+                    $qaLastActionSignature = $qaActionSignature
+                    $qaActionCount++
+                    $qaLastRecognized = [DateTime]::UtcNow
+                    Start-Sleep -Milliseconds 500
+                }
+            }
+            if ($qaCaptureCount -lt 12 -and [DateTime]::UtcNow -gt $qaNextCapture) {
                 $qaName = 'p1_windows_sdk_instalacion_{0:d2}' -f ($qaCaptureCount + 1)
                 try {
                     Save-ActualWindow $qaWindow (Join-Path $qaOutput ($qaName + '.png')) 0 0
@@ -249,8 +325,12 @@ try {
                     $qaEvidence.lastCaptureDiagnostic = $_.Exception.Message
                     Save-Evidence
                 }
+                $qaNextCapture = [DateTime]::UtcNow.AddSeconds(15)
             }
-            $qaNextCapture = [DateTime]::UtcNow.AddSeconds(15)
+            if ([DateTime]::UtcNow -gt $qaLastRecognized.AddSeconds(45)) {
+                Read-SdkWindow $qaWindow 'sdk-unrecognized-state' | Out-Null
+                throw 'The SDK wizard has no recognized continuation or progress; inspect its actual controls.'
+            }
         }
         Start-Sleep -Milliseconds 250
         $qaInstall.Refresh()
