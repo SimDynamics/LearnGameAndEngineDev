@@ -1,0 +1,2288 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_la_consola_y_comprobar_el_compilador",
+  "title": "Preparar la consola y comprobar el compilador",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar la ventana que utilizará las herramientas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La revisión anterior identificó los componentes instalados. Ahora comprobaremos si una ventana de comandos encuentra el compilador y si éste puede construir un programa pequeño. Esta práctica comienza con Visual Studio y la carga de C++ instalados; si faltan, sigue pendiente completar esa instalación. El programa de prueba sirve para revisar el entorno antes de construir InspectionLog."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Windows, cada proceso utiliza un entorno: un conjunto de valores que, entre otras cosas, indica dónde buscar herramientas, cabeceras y bibliotecas. La consola de desarrollo prepara esos valores para MSVC. Una consola ordinaria puede no encontrar el compilador aunque esté instalado. Microsoft recomienda abrir el acceso directo de consola de desarrollo correspondiente a la instalación que vas a utilizar (Microsoft, 2026c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre Inicio y busca x64 Native Tools Command Prompt for VS 2026. Selecciona el acceso correspondiente a Visual Studio 2026. El nombre puede estar traducido; identifica la consola de herramientas nativas x64. Aquí x64 designa el destino de 64 bits. Conserva esa ventana durante la práctica: abrir después una consola ordinaria no garantiza que tenga el mismo entorno."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esa ventana escribe las dos órdenes siguientes, una por vez, y pulsa Enter después de cada una. where cl busca el ejecutable en las ubicaciones de búsqueda de esa consola. cl, sin un archivo fuente, presenta la identificación y el uso del compilador; todavía no construye nuestro programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "where cl"
+        },
+        {
+          "type": "paragraph",
+          "text": "cl"
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_consola_compilador",
+          "src": "images/programming1/p1_windows_consola_compilador.png",
+          "alt": "Consola real: where cl identifica cl.exe dentro de Visual Studio Enterprise 2026. cl muestra la versión 19.51.36260 para x64 y su sintaxis de uso.",
+          "caption": "Comprobación automatizada real del 9 de noviembre de 2026 en Windows Server 2025, con Visual Studio Enterprise 2026 ya instalado. El entorno x64 se preparó con el archivo de comandos de esa instalación. No es una captura de Windows 11 ni de una instalación inicial de Community."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu ruta puede contener Community y tu versión puede diferir. Compara la función del resultado: un ejecutable localizado y la identificación del compilador. La ruta C:\\LGAED-CurricularQA de la captura pertenece a la prueba del autor; no es una carpeta que debas copiar. El prefijo Administrator también pertenece a ese entorno de prueba: trabajar en una carpeta personal no requiere abrir la consola como administrador."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_la_consola_y_comprobar_el_compilador__entorno",
+          "question": "Una consola ordinaria no reconoce cl, pero el instalador muestra los componentes de C++. ¿Qué conviene comprobar primero?",
+          "options": [
+            "Borrar el archivo fuente, porque su contenido impide localizar el compilador.",
+            "Abrir la consola de desarrollo de esa instalación y comprobar allí cl.",
+            "Repetir la ejecución del programa anterior, aunque todavía no se haya construido el nuevo."
+          ],
+          "correctIndex": 1,
+          "explanation": "El síntoma trata de localizar una herramienta desde esa consola. Abrir el entorno de desarrollo permite comprobar esa condición antes de atribuir el fallo al código o concluir que falta toda la instalación. Si tampoco funciona allí, corresponde revisar los componentes y su diagnóstico.",
+          "reviewFeedback": [
+            "La búsqueda de cl ocurre antes de analizar el archivo fuente; no elimines un archivo para solucionar una ruta de herramientas.",
+            "Relaciona el síntoma con el entorno de la ventana y comprueba la herramienta en la consola preparada.",
+            "Un ejecutable anterior no comprueba que la consola encuentre el compilador para construir las fuentes actuales."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear una carpeta para la prueba"
+        },
+        {
+          "type": "paragraph",
+          "text": "Separaremos este programa pequeño en una carpeta propia. En la consola de desarrollo ejecuta las dos órdenes siguientes. %USERPROFILE% se sustituye por la ruta de tu carpeta de usuario. Las comillas conservan la ruta como un solo argumento aunque contenga espacios. LGAED_Pruebas y ComprobarEntorno son nombres de carpetas para este ejercicio."
+        },
+        {
+          "type": "paragraph",
+          "text": "mkdir \"%USERPROFILE%\\LGAED_Pruebas\\ComprobarEntorno\""
+        },
+        {
+          "type": "paragraph",
+          "text": "cd /d \"%USERPROFILE%\\LGAED_Pruebas\\ComprobarEntorno\""
+        },
+        {
+          "type": "paragraph",
+          "text": "mkdir crea la carpeta y las carpetas intermedias que falten. Si ya existe, identifica si contiene una prueba anterior antes de reutilizar sus archivos. cd cambia el directorio de trabajo; /d permite cambiar también de unidad. Estas órdenes no compilan. Los nombres relativos que emplearemos después, como comprobar_entorno.cpp, se interpretan desde esta carpeta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe la siguiente orden en la misma ventana. Abre Bloc de notas para editar el archivo indicado. Si pregunta si deseas crear un archivo nuevo, acepta. Mantén el nombre completo comprobar_entorno.cpp: la extensión .cpp identifica aquí un archivo fuente de C++ (Microsoft, 2026c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "notepad comprobar_entorno.cpp"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_la_consola_y_comprobar_el_compilador__carpeta",
+          "question": "Guardaste comprobar_entorno.cpp en ComprobarEntorno, pero ejecutas la orden de compilación desde otra carpeta sin indicar su ruta. El compilador informa que no encuentra ese archivo. ¿Qué condición debes revisar?",
+          "options": [
+            "Que el directorio de trabajo coincida con la carpeta del archivo, o que la orden indique su ruta correcta.",
+            "Que la frase que imprime el programa tenga más caracteres.",
+            "Que exista ya un ejecutable anterior con el mismo nombre."
+          ],
+          "correctIndex": 0,
+          "explanation": "El compilador debe localizar la fuente que recibe. Un nombre relativo se resuelve desde el directorio de trabajo. La carpeta correcta o una ruta completa identifican el archivo que quieres construir; un ejecutable anterior no sustituye esa fuente.",
+          "reviewFeedback": [
+            "Identifica la carpeta real del archivo y la carpeta actual de la consola antes de repetir la orden.",
+            "El mensaje del programa sólo se analiza después de localizar el archivo fuente; su longitud no explica este fallo.",
+            "El archivo que falta es la entrada de la construcción, no el ejecutable que se obtendrá al terminar."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escribir, guardar y comprobar la fuente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Introduce este programa en Bloc de notas. Sus elementos ya se han practicado: la cabecera permite utilizar la salida estándar, main contiene el comienzo de la ejecución, std::cout escribe una línea y return 0; comunica una terminación de éxito."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main()\n{\n    std::cout << \"Entorno preparado\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guarda con Ctrl+S o con Archivo → Guardar. Si aparece Guardar como, elige la carpeta ComprobarEntorno, escribe comprobar_entorno.cpp y selecciona Todos los archivos cuando el editor ofrezca ese filtro. Comprueba que el nombre no haya terminado en .cpp.txt. El aspecto de Bloc de notas puede variar entre versiones de Windows; las acciones relevantes siguen siendo editar ese archivo y guardar su contenido (Microsoft, 2026c)."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_archivo_fuente",
+          "src": "images/programming1/p1_windows_archivo_fuente.png",
+          "alt": "Bloc de notas real muestra comprobar_entorno.cpp con la inclusión de iostream, main, la escritura de Entorno preparado y return 0. La barra de estado muestra UTF-8.",
+          "caption": "Archivo escrito y guardado mediante el editor en el mismo Windows Server 2025 de la prueba. Después de guardar se comparó el contenido del archivo con el programa mostrado. La interfaz del Bloc de notas de Windows 11 puede ser distinta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Regresa a la consola de desarrollo y ejecuta la siguiente orden. type muestra el texto del archivo guardado. Compara cada línea con tu editor; así compruebas el archivo que recibirá el compilador, no sólo un cambio todavía visible en la pantalla del editor."
+        },
+        {
+          "type": "paragraph",
+          "text": "type comprobar_entorno.cpp"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_la_consola_y_comprobar_el_compilador__guardado",
+          "question": "Cambiaste la frase en el editor, pero type comprobar_entorno.cpp todavía muestra la frase anterior. ¿Cuál es el siguiente paso que responde a esa observación?",
+          "options": [
+            "Cambiar el nombre del compilador sin revisar el archivo.",
+            "Ejecutar varias veces el mismo ejecutable anterior.",
+            "Guardar el archivo correcto y comprobar otra vez su contenido desde la consola."
+          ],
+          "correctIndex": 2,
+          "explanation": "La orden está leyendo el archivo en disco. Si muestra la redacción anterior, hay que revisar el guardado y la ubicación del archivo editado. Repetir la ejecución de un programa anterior no traslada el cambio del editor al archivo fuente.",
+          "reviewFeedback": [
+            "La observación trata del contenido guardado, antes de utilizar el compilador.",
+            "Ejecutar no guarda el texto del editor ni reconstruye el programa.",
+            "Comprueba el guardado y que ambas aplicaciones estén utilizando el mismo archivo."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y ejecutar el programa guardado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde la misma carpeta y en la misma consola de desarrollo, ejecuta esta orden completa. cl recibe el archivo fuente. /W4 solicita un nivel amplio de advertencias del compilador. /EHsc selecciona el comportamiento de manejo de excepciones estándar de C++; mantenemos esa opción también en esta prueba pequeña. La orden traduce la fuente y llama al enlazador para obtener el ejecutable (Microsoft, 2026c)."
+        },
+        {
+          "type": "paragraph",
+          "text": "cl /W4 /EHsc comprobar_entorno.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una construcción correcta aparecen los mensajes del compilador y del enlazador. Se crean comprobar_entorno.obj, con el código objeto, y comprobar_entorno.exe, el programa ejecutable. El nombre de un archivo en esos mensajes no es todavía la salida del programa: hasta ahora lo estamos construyendo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la construcción termina sin errores, ejecuta la siguiente orden. El prefijo .\\ identifica el ejecutable dentro del directorio actual. Esta operación utiliza el archivo construido; no vuelve a compilar la fuente."
+        },
+        {
+          "type": "paragraph",
+          "text": ".\\comprobar_entorno.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida esperada es una sola línea:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entorno preparado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Inmediatamente después, ejecuta echo %ERRORLEVEL%. En cmd, %ERRORLEVEL% se sustituye por el código de salida del último programa y echo lo muestra. Aquí se espera 0, por return 0;. Consulta ese valor antes de ejecutar otra herramienta que pueda reemplazarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "image",
+          "imageId": "p1_windows_consola_construccion",
+          "src": "images/programming1/p1_windows_consola_construccion.png",
+          "alt": "Consola real muestra la fuente, la orden cl /W4 /EHsc comprobar_entorno.cpp, los archivos objeto y ejecutable, y la ejecución que escribe Entorno preparado. Después muestra el código de salida 0.",
+          "caption": "Construcción y ejecución reales con MSVC 19.51.36260 para x64. La receta automatizada muestra echo 0 después de sustituir %ERRORLEVEL%; la orden que debes introducir para consultar ese valor es echo %ERRORLEVEL%."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_la_consola_y_comprobar_el_compilador__resultado",
+          "question": "¿Qué conjunto de observaciones comprueba esta prueba de entorno?",
+          "options": [
+            "Que se abre el editor y que el instalador enumera sus componentes.",
+            "Que la fuente guardada se construye, el ejecutable obtenido imprime la línea prevista y termina con cero.",
+            "Que un archivo de cualquier carpeta tiene extensión .exe, aunque no corresponda a la fuente revisada."
+          ],
+          "correctIndex": 1,
+          "explanation": "La comprobación enlaza la fuente guardada con su construcción y con la ejecución del resultado. La línea prevista y el código de salida pertenecen a ese programa. Esto verifica el recorrido mínimo del entorno; todavía no comprueba las funciones de InspectionLog.",
+          "reviewFeedback": [
+            "Esas observaciones son útiles como preparación, pero no incluyen la construcción y ejecución de la fuente.",
+            "Relaciona cada resultado con la fuente y el ejecutable que realmente acabas de utilizar.",
+            "La extensión por sí sola no identifica la versión ni el comportamiento del programa."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localizar en qué etapa aparece un fallo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee el primer diagnóstico pertinente y relaciónalo con la operación que acabas de realizar. Si la consola no reconoce cl, revisa el entorno de desarrollo. Si no encuentra comprobar_entorno.cpp, revisa el nombre, la extensión y la carpeta. Si identifica una línea de C++ con un error, revisa esa línea y su contexto, guarda la corrección y construye de nuevo. No continúes ejecutando una construcción anterior como prueba de una corrección que aún no se pudo construir."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_la_consola_y_comprobar_el_compilador__etapas",
+          "prompt": "Relaciona cada observación con la condición que debes comprobar primero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "etapas",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "herramienta",
+                  "label": "La consola no reconoce cl."
+                },
+                {
+                  "id": "archivo",
+                  "label": "El compilador no encuentra comprobar_entorno.cpp."
+                },
+                {
+                  "id": "guardado",
+                  "label": "El editor muestra un cambio, pero type presenta el texto anterior."
+                },
+                {
+                  "id": "version",
+                  "label": "La fuente cambió y se guardó, pero se ejecutó un .exe anterior sin reconstruir."
+                }
+              ],
+              "targets": [
+                {
+                  "id": "disco",
+                  "label": "El guardado y la identidad del archivo abierto en el editor."
+                },
+                {
+                  "id": "entorno",
+                  "label": "La preparación de la consola que debe localizar la herramienta."
+                },
+                {
+                  "id": "construccion",
+                  "label": "La correspondencia entre la fuente actual y el ejecutable utilizado."
+                },
+                {
+                  "id": "ruta",
+                  "label": "El nombre y la ubicación de la fuente respecto de la carpeta actual."
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "herramienta": "entorno",
+                  "archivo": "ruta",
+                  "guardado": "disco",
+                  "version": "construccion"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las observaciones pertenecen a etapas diferentes. Localizar la herramienta depende del entorno; localizar la fuente depende de su ruta; leer su texto actual depende del guardado; ejecutar el cambio requiere construir esa fuente y usar el ejecutable correspondiente.",
+            "incorrect": "Identifica qué elemento no coincide con lo esperado: la herramienta, el archivo de entrada, el contenido guardado o la versión ejecutada. Revisa primero esa relación sin borrar otros archivos."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "No todos los fallos se explican por el mismo motivo. Conserva el mensaje completo cuando la revisión no baste: una cabecera o una biblioteca ausente, un componente incorrecto y un error en el programa necesitan diagnósticos distintos. Que cl presente su identificación no demuestra por sí solo que cualquier programa pueda construirse (Microsoft, 2026c)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repetir el recorrido con un cambio propio"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el archivo de esta práctica, cambia únicamente el texto entre comillas para que el programa escriba Entorno comprobado. Conserva el salto de línea y la terminación con cero. Guarda, verifica el archivo con type, vuelve a ejecutar la orden de construcción y ejecuta después el programa obtenido. Comprueba la nueva línea y el código de salida en tu consola."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entorno comprobado"
+        },
+        {
+          "type": "paragraph",
+          "text": "En tu carpeta deben distinguirse la fuente .cpp, el archivo objeto .obj y el ejecutable .exe. Puedes volver a abrir la fuente para seguir trabajando. Cerrar el editor no borra el archivo guardado; modificarlo después tampoco cambia por sí solo el ejecutable. Las preguntas de la app comprueban la interpretación de este recorrido; el resultado externo se comprueba con tu archivo, tu construcción y tu consola."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__archivos_y_programa_completo__preparar_la_consola_y_comprobar_el_compilador__cambio",
+          "question": "Guardaste el cambio que debe escribir Entorno comprobado, pero ejecutaste directamente el programa anterior y todavía aparece Entorno preparado. ¿Qué falta para comprobar el cambio?",
+          "options": [
+            "Cerrar y abrir el editor, sin volver a construir.",
+            "Cambiar únicamente el nombre del archivo ejecutable anterior.",
+            "Construir la fuente guardada y ejecutar el resultado de esa construcción."
+          ],
+          "correctIndex": 2,
+          "explanation": "Guardar actualiza la fuente. Para obtener un ejecutable con el nuevo mensaje hace falta construir esa versión y ejecutar su resultado. Renombrar el archivo anterior o volver a abrir el editor no traduce el cambio.",
+          "reviewFeedback": [
+            "Abrir el editor permite revisar texto, pero no actualiza el ejecutable por sí solo.",
+            "El nombre nuevo no cambia las instrucciones del ejecutable anterior.",
+            "Comprueba en orden el archivo guardado, la construcción correcta y el ejecutable que se está ejecutando."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La prueba mínima prepara el trabajo posterior de InspectionLog. Su modelo de datos, la carga y el guardado, los informes, las pruebas de conservación y la publicación necesitarán sus propias etapas. No se atribuyen a este programa de una sola línea."
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0007",
+            "sha256": "9e98c1c06951f280bfbbafdcde9ca6c9f0ac4f6090758c03860d7a7bcaa4d335"
+          },
+          {
+            "id": "block_0000_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0009",
+            "sha256": "192f58f2539b107599136d22f4e9db89827dbca67f4fc51367925358f874d9f2"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "79b2a9dd3f3d2035ac63434affb7fcb5810390af5c8ab50b3d32f535e848fad5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "f2d07ba2a1680da3031c9e340e90a281d361141645ffbcafd6f8ff781ca3f7c3"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "c66779cb92a7e4f35a352a1dc39ea11e691f167d62a0518337c87f22a527d95e"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0007",
+            "sha256": "3a28ce9a41ffc56c6c0db1644a0d5408bba44b89aeb9b8e24d34184a58a6eae7"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0009",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0010",
+            "sha256": "765c3bbd752c79052cde908459151157d5c59f380c8f60f0f3028176b2650755"
+          },
+          {
+            "id": "block_0003_0011",
+            "sha256": "18380a768163f6043b96948c86b1cfbfe6f9696c228eb7e5000c4fd7eda9558b"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "45a7d8302487878dd2dd9082747a017b1fcf2156b5d0fdbada5e76037e01731d"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "b6811be488becf0ab6a8b64c35b0201b73fda4ea7b6b67abacf4b0568f23a7f8"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005",
+          "block_0000_0006",
+          "block_0000_0007",
+          "block_0000_0008",
+          "block_0000_0009"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006",
+          "block_0002_0007"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007",
+          "block_0003_0008",
+          "block_0003_0009",
+          "block_0003_0010",
+          "block_0003_0011"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "85a9c0b007c24a728191ce643b5fc8fd6b5289c294ed67abb131e2b38b67b9c4",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0007",
+                "sha256": "9e98c1c06951f280bfbbafdcde9ca6c9f0ac4f6090758c03860d7a7bcaa4d335"
+              },
+              {
+                "id": "block_0000_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0009",
+                "sha256": "192f58f2539b107599136d22f4e9db89827dbca67f4fc51367925358f874d9f2"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "79b2a9dd3f3d2035ac63434affb7fcb5810390af5c8ab50b3d32f535e848fad5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "f2d07ba2a1680da3031c9e340e90a281d361141645ffbcafd6f8ff781ca3f7c3"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "c66779cb92a7e4f35a352a1dc39ea11e691f167d62a0518337c87f22a527d95e"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0007",
+                "sha256": "3a28ce9a41ffc56c6c0db1644a0d5408bba44b89aeb9b8e24d34184a58a6eae7"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0009",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0010",
+                "sha256": "765c3bbd752c79052cde908459151157d5c59f380c8f60f0f3028176b2650755"
+              },
+              {
+                "id": "block_0003_0011",
+                "sha256": "18380a768163f6043b96948c86b1cfbfe6f9696c228eb7e5000c4fd7eda9558b"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "45a7d8302487878dd2dd9082747a017b1fcf2156b5d0fdbada5e76037e01731d"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "b6811be488becf0ab6a8b64c35b0201b73fda4ea7b6b67abacf4b0568f23a7f8"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "ece3bd1d8c9b2145071e2e7e958fcacf9cfd7cee96c2b0e058c6eb4204053b56",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "275623c2786a4940fbe01498cb48ef2f95dbdb833e32dffa4cb5f1cc09ca645e",
+        "spans": [
+          {
+            "start": 374,
+            "end": 387,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "bd1b8e0addadf3766214a2c3b12af73bdeb966bdf74a99b0a3d58ab3eaed2ac9",
+        "spans": [
+          {
+            "start": 202,
+            "end": 206,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 426,
+            "text": "(Microsoft, 2026c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "77fbc94376443221f7bbf3d5d334a9f6c8ca20cc485f1933a5f81090ecaec0b1",
+        "spans": [
+          {
+            "start": 20,
+            "end": 63,
+            "text": "x64 Native Tools Command Prompt for VS 2026",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 122,
+            "text": "Visual Studio 2026",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 206,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 216,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 241,
+            "text": "64",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "16a6e90e37e7e244cbde55966ee6fc9346586039f2acb829c30dada6dde6f1d1",
+        "spans": [
+          {
+            "start": 99,
+            "end": 107,
+            "text": "where cl",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 175,
+            "end": 177,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/text",
+        "sourceSha256": "778f047ecf6d0b5f164f2fb177411a0973fe25f87923ef008b78a7a9a2faeeee",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "where cl",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0006",
+        "path": "/text",
+        "sourceSha256": "d192375885ec7d50df1287cb5e19b55d4a79f1cdd1597b9cc52fd59e05da6730",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0007",
+        "path": "/alt",
+        "sourceSha256": "840f279543b517312e23e2374267adfe1b8bdc5c69f4686139e93b09e9b13a86",
+        "spans": [
+          {
+            "start": 14,
+            "end": 22,
+            "text": "where cl",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 34,
+            "end": 40,
+            "text": "cl.exe",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 80,
+            "text": "Visual Studio Enterprise 2026",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 84,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 115,
+            "text": "19.51.36260",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 124,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0007",
+        "path": "/caption",
+        "sourceSha256": "5719e3fb87a735b6069d3b474c33262c90de2fac5eca727d820a00051ff2914f",
+        "spans": [
+          {
+            "start": 61,
+            "end": 80,
+            "text": "Windows Server 2025",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 115,
+            "text": "Visual Studio Enterprise 2026",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 144,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 234,
+            "text": "Windows 11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 277,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0008",
+        "path": "/text",
+        "sourceSha256": "74d5c83c5a2f1e5c39ee09c47a72549fb73b04094a40c1c350e436fc991d5101",
+        "spans": [
+          {
+            "start": 23,
+            "end": 32,
+            "text": "Community",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 185,
+            "text": "C:\\LGAED-CurricularQA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 293,
+            "text": "Administrator",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/question",
+        "sourceSha256": "0da91d599dfe7e6d509a84ac24092349f5536f1a944e32224de4890bcd1f58d2",
+        "spans": [
+          {
+            "start": 34,
+            "end": 36,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/explanation",
+        "sourceSha256": "455cca826fd8807ebc241a913da5608f6647976ea28fda5ba8183a9f151229fd",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/options/0",
+        "sourceSha256": "7b92c2edd1e975869b3fa83eb26c31e59cc80cc24cafb5f89caf06ed63981bc1",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/options/1",
+        "sourceSha256": "fc8293cd39e567ff87a9583eb8118e9d4b7dd82f4e89631c8a3b126917a73b1c",
+        "spans": [
+          {
+            "start": 67,
+            "end": 69,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/options/2",
+        "sourceSha256": "b6053c6f2ca0442708070d6fa2e46f30319ce67c659b4eef41654a636d111a17",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "97136b786bd3ae803601d927423bba0095e6bbf9a0c18be0fa483cdadd016178",
+        "spans": [
+          {
+            "start": 15,
+            "end": 17,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d90c9c1eafd1b20a862a48620d6dd560b9604305f2b3bc9991c2fc9bbccf54bd",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0009",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "365445250e2a9f3bafdd980c994c804f7837230a3cecc99acf0dca98fb692eb3",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "96fbb8a61a9337eed28ccb708c4f66f00492d6627ecdd15fcbc4755f64430886",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "23919cabc638a3d401a0c5c186a88ec91adb469c71689978fc3d0ccb9e50e7af",
+        "spans": [
+          {
+            "start": 121,
+            "end": 134,
+            "text": "%USERPROFILE%",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 279,
+            "text": "LGAED_Pruebas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 282,
+            "end": 298,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "18e8eebaf97ccccc7b2f6b9263e337f73b2bf95a3682b9be52f6501b3c531057",
+        "spans": [
+          {
+            "start": 0,
+            "end": 52,
+            "text": "mkdir \"%USERPROFILE%\\LGAED_Pruebas\\ComprobarEntorno\"",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "eb757585fceaa952912521d25f65eff2b517c9be1176fd0804c9cee4e96c4b8c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 52,
+            "text": "cd /d \"%USERPROFILE%\\LGAED_Pruebas\\ComprobarEntorno\"",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "148306b427411257e1789e99d855fe98ee89c21a98edcb6f9bb054e6d3712bcf",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "mkdir",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 154,
+            "text": "cd",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 190,
+            "text": "/d",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 326,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "4828c9a336c306443921f87d5e66a7715278ecaf5535a8bd49151283572ed854",
+        "spans": [
+          {
+            "start": 180,
+            "end": 201,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 220,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 280,
+            "text": "(Microsoft, 2026c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0006",
+        "path": "/text",
+        "sourceSha256": "47bc3c2658c125f16ae1532be71fed2b732ef73187ce424f58517b58c609dbef",
+        "spans": [
+          {
+            "start": 0,
+            "end": 29,
+            "text": "notepad comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/question",
+        "sourceSha256": "139655384e1d69ae92f3e1edfd4e8d24df724257da4e2b8e0afd905777203cfd",
+        "spans": [
+          {
+            "start": 10,
+            "end": 31,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 51,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/explanation",
+        "sourceSha256": "a77da1fee75eff6d718cfa72060c5e4f91a00d2245c4cae87d5ee582eeda107f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/0",
+        "sourceSha256": "d94ea0588f0a18c57de1207e199475b01c445b70b5d7b9fdb3fb983023669763",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/1",
+        "sourceSha256": "f4685fa0da6b1ea287c93ac4bc348a249379286d03450e9e4bc2bdcb7a6e80e5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/2",
+        "sourceSha256": "d8754c39e1dc4587bf832e9aa4a33e2844e085390f7ce3656302525316308189",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "2190366465a7297e083bcd4f61054f68640e21ea69a22d4363daf4736be4ebb0",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d4536729c0295a1ee122fdd6f89507f73293202489c1c8cab765c526376a431d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "b4d5dcf02702171b71443832f1dac7b314af0c7b30cce1571a651812c52ecd62",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "803c6cf73c938c4800c0cde78039f4e986f70b7f95e750a0af1de74c5d5dd5e9",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "96c91fc71ab7ba78e38796237e0a317e83ead9bb8956edad89b36774125eb666",
+        "spans": [
+          {
+            "start": 127,
+            "end": 131,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 179,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 200,
+            "end": 209,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "afc8f1127568316116ff308881dde5a43ce53de6fa1e66b4c5f167fb19556baa",
+        "spans": [
+          {
+            "start": 11,
+            "end": 17,
+            "text": "Ctrl+S",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 41,
+            "text": "Archivo → Guardar",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 66,
+            "text": "Guardar como",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 101,
+            "text": "ComprobarEntorno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 132,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 164,
+            "text": "Todos los archivos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 255,
+            "text": ".cpp.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 406,
+            "end": 424,
+            "text": "(Microsoft, 2026c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/alt",
+        "sourceSha256": "df7726a4a4f0f108ff9993f855a2ee1274b2b1f6f5a3ad6e2c8bffe29289c100",
+        "spans": [
+          {
+            "start": 27,
+            "end": 48,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 83,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 118,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 163,
+            "text": "UTF-8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/caption",
+        "sourceSha256": "920eda71391d4cdd177a4c6a75827f2f7a350bd19d683b42cd4459a134943410",
+        "spans": [
+          {
+            "start": 58,
+            "end": 77,
+            "text": "Windows Server 2025",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 216,
+            "text": "Windows 11",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "26a159aa0d3f0a89a72a99ce0c355ddf4e0e5e72054154e6c0cac92722da1d67",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "type",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/text",
+        "sourceSha256": "b39c4c2d8bf43b07f5b442ed2459408554b005481c325c5508720fc13625ea58",
+        "spans": [
+          {
+            "start": 0,
+            "end": 26,
+            "text": "type comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/question",
+        "sourceSha256": "8a19d822b90bf00bedcc7bf5328a25d34b5cea7858c3b8795516fab56c38bc74",
+        "spans": [
+          {
+            "start": 38,
+            "end": 64,
+            "text": "type comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/explanation",
+        "sourceSha256": "13de2784095e51629992de5d29c95029bbef64d2c00dff1b9a5476ab1d4fc69f",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/options/0",
+        "sourceSha256": "4e92d2f6c5601457e5176652921470b4a047097285c3c755a08601b9354c1c57",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/options/1",
+        "sourceSha256": "2445c2c5e075344cd39faab170dd703461e6ad250cd0f93e15c97c69f85dd819",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/options/2",
+        "sourceSha256": "4f4b103c471014a110bf3c8a98684b609a57fdfdadffa2f420daf7816a704e12",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "b9a2735355fe4c530e237956573d1e90fcb84db3c0c9862ccd03285b011e5a45",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "b08c901e2c61e2c35f2331e43a5df1991f16da1f7cdc0ec9044d0d56e7207536",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0007",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "2cd9ffcf05f2074af7dfea95b3ed127a2fa3b81a587e90f88fe73841e7db30c8",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "b2df7d3d1f59b389e06a06066e6a8bd93b436de76166513592d26fd619c14ae6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "3874b46bc51ffd937ac0e3572075f62e4f1a6d10483666eba08299e15987e287",
+        "spans": [
+          {
+            "start": 89,
+            "end": 91,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 121,
+            "text": "/W4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 184,
+            "text": "/EHsc",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 403,
+            "text": "(Microsoft, 2026c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "8f3bf4fa39d988891792856858fb5f6201e8152eb03a7a035e0cdd95a46da812",
+        "spans": [
+          {
+            "start": 0,
+            "end": 34,
+            "text": "cl /W4 /EHsc comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "3f7a0fb328d25955eef04bc3a6ca6c1338ce06e79b6942b2493b3bfb0da26d29",
+        "spans": [
+          {
+            "start": 92,
+            "end": 113,
+            "text": "comprobar_entorno.obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 160,
+            "text": "comprobar_entorno.exe",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "08ad072ea64713bd0804793debec72800d3c98cc8c391296bd7bf963762987a6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "a539789de054e3ddd77da3917f0f2de00599cadcda983e67baed82738edc7221",
+        "spans": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": ".\\comprobar_entorno.exe",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "64dcc0bd4c5c794ee0c56bfba18ba699f3bc6580d1f6fe5686f396f31a54bdee",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/text",
+        "sourceSha256": "b54b6adaaad0fca46d78d3d1d4d08d5d06b5de96fd9cffbdb68251289ab69619",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0008",
+        "path": "/text",
+        "sourceSha256": "d95c37b7c175d9d36b2202319c507167970717466e33255827244270d66bebbe",
+        "spans": [
+          {
+            "start": 32,
+            "end": 49,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 54,
+            "end": 57,
+            "text": "cmd",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 71,
+            "text": "%ERRORLEVEL%",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 135,
+            "text": "echo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 164,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 179,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0009",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0010",
+        "path": "/alt",
+        "sourceSha256": "e4e57da7879927e9e0195ae635d51003f1ee0c26aee388372632fc810740b39b",
+        "spans": [
+          {
+            "start": 41,
+            "end": 75,
+            "text": "cl /W4 /EHsc comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 138,
+            "end": 155,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 194,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0010",
+        "path": "/caption",
+        "sourceSha256": "96e1b3758b0495fd96f0378df3cdd502c640e4db5ef138a6121a8e88b2deac6e",
+        "spans": [
+          {
+            "start": 36,
+            "end": 40,
+            "text": "MSVC",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 52,
+            "text": "19.51.36260",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "x64",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 100,
+            "text": "echo 0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 122,
+            "end": 134,
+            "text": "%ERRORLEVEL%",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 211,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/question",
+        "sourceSha256": "20e4f8e4027d8a042988661c24322501479b75d254c8cff4b69e521792811b9b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/explanation",
+        "sourceSha256": "b176899a13773234a1cee3b19bcae64efa96c89e433e04838761612f7421ae18",
+        "spans": [
+          {
+            "start": 248,
+            "end": 261,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/options/0",
+        "sourceSha256": "9bdab0316927352f154ccc66d2e91f8d82171532d5068ba1c374684dca04d802",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/options/1",
+        "sourceSha256": "f644bccd90aaf2fde14d72d775fd6f301dfdcafeda773f1986c28ee4aea47bd6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/options/2",
+        "sourceSha256": "a15dfb46a96326d9654d2150639ebdce79ee4875693dca8a711e680ace65005a",
+        "spans": [
+          {
+            "start": 52,
+            "end": 56,
+            "text": ".exe",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "1af18405503899da95d341df5d83966386b535bfb3b3eec7f9a5cdf16ebcdef3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "2efad64b78ca1147ce2ea31acc591601faaf2b35d4f822b389dcb98b4a217139",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0011",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "6ddf21b2a6afefad3c528ee00d267644fea89346fb53b742ea1f31562fd52e6d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "77cfb43e50e4eb60c3c1b4b078ed784dc7e3d38ef9715a23e3478b00e23f30fa",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "c6a720270608f03cc2a06b9587ea6c0ce6a139850ef4b0d29eb9c6375f7b7123",
+        "spans": [
+          {
+            "start": 118,
+            "end": 120,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 192,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/prompt",
+        "sourceSha256": "822eda378a8cf9f61d6d6c977f1b53bdba3aa082fa62806e190c42edfcd8811a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/feedback/correct",
+        "sourceSha256": "f78caaecec5ea6732bf787c74cf556a20bc0c73aac0c277c1ca1dcd6d34ca88a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "ecc0ca8d03cde12754cac23a9aa54a6165d5f667431341ffb97dc2f97d6c5a15",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "20df203aa9aa95610914f4b62016916851757fd65f44203b8c56c5bcb98d3368",
+        "spans": [
+          {
+            "start": 23,
+            "end": 25,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "e279f6c6fd1118ca170ba09683312a330ca7e2d30123bc60694b7853171499ba",
+        "spans": [
+          {
+            "start": 27,
+            "end": 48,
+            "text": "comprobar_entorno.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "0c0f81e249b0918901c41f9a93036747eebf0735b90ea1486800d68d175736cc",
+        "spans": [
+          {
+            "start": 34,
+            "end": 38,
+            "text": "type",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "4fd99fd5a3995709871fca0e3b9b76bc076e0429d3d38830a816e3877fc791f6",
+        "spans": [
+          {
+            "start": 49,
+            "end": 53,
+            "text": ".exe",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "e86d24837c21f5cf31a6a11f9efa46913c28d51cd8848280d9f44e9046b39966",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "2ea8a65eee7c2906ec5d1da316029fe49f59b619155b9025f12baf2c2df0e83d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "83ae8f8c2c750115c33f39fbda84e7690fff14bbba15637a31ba22167a0e11f9",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "e5c80bdcf5eca6ff9db23ed6bec0b387941b4aba6b31dc794aaf2327677edad3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "371fbe793aef984ecde4c5f4fd7759b1c87372911df9e53f56293c412c505d15",
+        "spans": [
+          {
+            "start": 239,
+            "end": 241,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 353,
+            "text": "(Microsoft, 2026c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "184e24c9562b97755d0161bd06aff66b9d147f208ebe4aeffcf5974f3a0578eb",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "1dfccb0af4be06cec9ecfac82e7c1ee734da33a172b14b90a4f5b5a9c4408e4f",
+        "spans": [
+          {
+            "start": 103,
+            "end": 121,
+            "text": "Entorno comprobado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 213,
+            "text": "type",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "2f67ecb81e34a2e0e27c081ece21d2202fbcafa6c5e9e146fbe78461f3adcab7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "Entorno comprobado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "ce522914d9187a46936fe90bad4957d4f696e9004d042bbccfed037dff45fbfc",
+        "spans": [
+          {
+            "start": 43,
+            "end": 47,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 71,
+            "text": ".obj",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": ".exe",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "49f4dd275c4c161df924eead4d02498430663ee77d5b3ed4ceb451758f28018d",
+        "spans": [
+          {
+            "start": 38,
+            "end": 56,
+            "text": "Entorno comprobado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 143,
+            "text": "Entorno preparado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "4d2e25d441c8dc31a83025117c2d772a7b25bc81613946e4aaa86d6bfb73d5a8",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/0",
+        "sourceSha256": "dcc3fdbed8a3905db406c7bc8ce5115bc3e57a95f153d28eb38f3c564f216ef4",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/1",
+        "sourceSha256": "21cedc4126dc41d148b688ae6f8cc374569d123bf2074bb171f0b24282f613ab",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/2",
+        "sourceSha256": "b24f05eedeceb57e4e4e92f08bfbc9468d8ebc40dfaad7aff0da081e8262762d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "dd181dba28ff7f16eb674eb5a62f5a0d53cbfce21f28db3abcd78582b66091ee",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "3a7036ef3358f64d046049e148bbccdd412e5802947b3dd8d1c97dbef9fc2f5b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d58168babb8259f6e905f5118a31c6f3425512a7d942af6e881c7c0e49a2cc3e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "2e41ca9d2e91dbd04f78ee30f455a213c3ccbed29e7feb5417eefb4d93219b33",
+        "spans": [
+          {
+            "start": 49,
+            "end": 62,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "4dd6630f782557344b40743c95313e596ea355f5950c7a8546dec83b0b9a79f3",
+        "spans": []
+      }
+    ]
+  }
+}

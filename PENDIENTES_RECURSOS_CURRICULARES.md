@@ -13,8 +13,8 @@ Las capturas que faltan para enseñar los pasos del proyecto de Programación 1 
 ### WIN_IMAGENES_CURRICULARES_Y_CAPTURAS
 
 - **PENDIENTE_ID / ESTADO:** WIN_IMAGENES_CURRICULARES_Y_CAPTURAS / CREADO_PENDIENTE_DE_INTEGRACION para los pasos del proyecto aún por desarrollar por Work.
-- **UBICACIONES:** Programación 1, archivos_y_programa_completo; continuación posterior a U12L28, lesson_comprobar_las_herramientas_instaladas.json.
-- **TRABAJO CURRICULAR RESTANTE:** obtener e instalar o completar las herramientas, crear/configurar el proyecto, construir, ejecutar, depurar, probar y publicar, con capturas reales durante sus pasos. Enseñar también los casos de componentes ausentes de un equipo nuevo; no considerar esas etapas cubiertas por la revisión de una instalación existente. Las rutas futuras se activan sólo al existir sus recursos.
+- **UBICACIONES:** Programación 1, archivos_y_programa_completo; continuación posterior a U12L29, lesson_preparar_la_consola_y_comprobar_el_compilador.json.
+- **TRABAJO CURRICULAR RESTANTE:** obtener e instalar o completar las herramientas ausentes y enseñar la creación/configuración, construcción, ejecución, depuración, pruebas y publicación del proyecto InspectionLog, con capturas reales durante esos pasos. Comprobar los casos de componentes ausentes de un equipo nuevo. Las rutas futuras se activan sólo al existir sus recursos.
 - **INTEGRACIÓN:** seguir docs/CURRICULAR_IMAGES.md: image con imageId, src, alt y caption opcional; recursos locales bajo content/images/, con nombre y firma coherentes. Work incorpora los bloques y sus identidades estables, texto alternativo y pie pertinentes; marca /alt y /caption con el contrato semántico existente.
 - **CRITERIOS:** acciones y resultados reproducibles, recursos reales legibles y ampliables, datos personales protegidos y errores explicados. Ver una captura no acredita realizar un paso. Conservar fuentes, identidades, progreso, borradores y pausas. No cerrar la enseñanza manual sin sus capturas y comprobaciones.
 
