@@ -732,6 +732,25 @@ def windows_reading_source(name: str, code: str) -> str:
                     }
                 }
             }''')
+        # The real contextual preparation also expands compound operators.
+        # Observe its exact source callbacks under the existing single-owner,
+        # ordered-word and whole-phoneme proof, without a phrase/notation gate.
+        # Unsupported or ambiguous rewrites still return the original fallback.
+        code = exact(code, r'''            // A residual relation can enter the production technical pass contextually
+            // (e.g. an already spoken operand before '= 600 ...;'). Observe that exact
+            // pass only when independent token expansion cannot prove its ownership.
+            // Audio still comes exclusively from the existing whole-context normalizer.
+            if (words(normalized) != expected) {
+                // Limit this observer to the reported partially verbalized equality.
+                // Other raw identifiers/complex notation retain their existing fallback.
+                if (!Regex("(?<![\\p{L}\\p{N}_])\\p{L}{2,}\\s*=\\s*[−-]?\\d")
+                        .containsMatchIn(source)) return null''', '''            // Contextual preparation can expand a compound operator differently
+            // from its isolated pieces. Observe the real source callbacks only
+            // when independent expansion cannot prove exact word ownership.
+            // Audio still comes exclusively from the existing whole-context normalizer.
+            if (words(normalized) != expected) {
+                // Every changed callback must have at most one original owner;
+                // ordered lexical coverage and exact complete phones remain mandatory.''')
     if name == "ManualEnglishTerms":
         code = exact(code, 'object ManualEnglishTerms {', '''object ManualEnglishTerms {
     // Keep the historical dictionary/parser exact, but require actual code

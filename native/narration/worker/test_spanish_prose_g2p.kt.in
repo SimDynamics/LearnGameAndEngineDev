@@ -1,9 +1,11 @@
 package com.learngraphicsprogramming.app.narration
 
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
+import lgaed.narration.windows.SemanticPlanBackend
 import java.io.File
 import java.security.MessageDigest
 import org.json.JSONArray
+import org.json.JSONObject
 
 /** Real generated Windows normalization, continuous G2P and observed phone ranges. */
 fun main(args: Array<String>) {
@@ -15,28 +17,30 @@ fun main(args: Array<String>) {
     }
     fun phoneSha256(phones: String) = MessageDigest.getInstance("SHA-256").digest(phones.toByteArray(Charsets.UTF_8))
         .joinToString("") { "%02x".format(it.toInt() and 255) }
+    fun checkedPrepared(part: String, label: String): String {
+        sentences++
+        val phones = MixedSpanishG2P.phonemizePrepared(part, emptyMap())
+        verify(phones.isNotBlank(), "$label has no real phonemes: $part")
+        val trace = MixedSpanishG2P.traceWordsPrepared(part)
+            ?: error("$label lost real phone provenance: $part")
+        verify(trace.phonemes == phones, "$label changed synthesis while observing word ranges")
+        verify(trace.words.map { it.word } == NarrationSpokenWords.lexemes(part).map { it.canonical },
+            "$label lost or invented original lexical words: $part")
+        var previous = 0
+        for (word in trace.words) {
+            verify(word.start >= previous && word.start < word.endExclusive && word.endExclusive <= phones.length,
+                "$label has invalid observed phone range for " + word.word)
+            previous = word.endExclusive
+        }
+        return phones
+    }
     fun checked(source: String, label: String, mode: String = "auto"): List<String> {
         val prepared = SpanishTechnicalSpeech.prepareForKokoro(source, mode).text
         val live = SpanishTechnicalSpeech.prepareForReading(source, mode) { _, _, _ -> }.text
         verify(prepared == live, "$label changed foreground/background preparation")
         val parts = NarrationSegments.sentences(listOf(prepared))
         verify(parts.isNotEmpty(), "$label has no original sentence")
-        for (part in parts) {
-            sentences++
-            val phones = MixedSpanishG2P.phonemizePrepared(part, emptyMap())
-            verify(phones.isNotBlank(), "$label has no real phonemes: $part")
-            val trace = MixedSpanishG2P.traceWordsPrepared(part)
-                ?: error("$label lost real phone provenance: $part")
-            verify(trace.phonemes == phones, "$label changed synthesis while observing word ranges")
-            verify(trace.words.map { it.word } == NarrationSpokenWords.lexemes(part).map { it.canonical },
-                "$label lost or invented original lexical words: $part")
-            var previous = 0
-            for (word in trace.words) {
-                verify(word.start >= previous && word.start < word.endExclusive && word.endExclusive <= phones.length,
-                    "$label has invalid observed phone range for " + word.word)
-                previous = word.endExclusive
-            }
-        }
+        for (part in parts) checkedPrepared(part, label)
         return parts
     }
 
@@ -141,8 +145,9 @@ fun main(args: Array<String>) {
     }
 
     val historical = JSONArray(File(args.single()).readText())
-    verify(historical.length() == 9, "Missing authentic U12/U11 source field")
+    verify(historical.length() == 10, "Missing authentic U12/U11 source field")
     val publications = mutableSetOf<String>()
+    val backend = SemanticPlanBackend()
     for (index in 0 until historical.length()) {
         val item = historical.getJSONObject(index)
         publications += item.getString("publication")
@@ -150,6 +155,35 @@ fun main(args: Array<String>) {
             (0 until values.length()).map { values.getString(it) }
         } ?: listOf(item.getString("mode"))
         for (mode in modes) {
+            if (item.has("semantics")) {
+                val semantics = item.getJSONObject("semantics")
+                val originalSemantics = semantics.toString()
+                val request = JSONObject().put("text", item.getString("source")).put("language", "es")
+                    .put("voice", "ef_dora").put("readingContext", mode).put("mathMode", "auto")
+                    .put("textSemantics", semantics)
+                val parts = backend.plan(request).getJSONArray("segments")
+                val previousPrepared = item.getJSONArray("preparedSha256")
+                val previousPhones = item.getJSONArray("sentencePhoneSha256")
+                val previousKeys = item.getJSONArray("recordingKeys")
+                verify(parts.length() == previousPrepared.length() && parts.length() == previousPhones.length()
+                    && parts.length() == previousKeys.length(), "The authentic semantic feedback changed its sentence boundaries")
+                for (partIndex in 0 until parts.length()) {
+                    val segment = parts.getJSONObject(partIndex)
+                    val prepared = segment.getString("preparedText")
+                    verify(phoneSha256(prepared) == previousPrepared.getString(partIndex)
+                        && segment.getString("key") == previousKeys.getString(partIndex),
+                        "Observing semantic feedback changed its real prepared text or recording key")
+                    val phones = checkedPrepared(prepared, item.getString("label") + "/" + mode + "/" + partIndex)
+                    verify(phoneSha256(phones) == previousPhones.getString(partIndex),
+                        "Observing semantic feedback changed its existing production phonemes")
+                }
+                val focal = parts.getJSONObject(1)
+                verify(focal.getInt("sourceStart") == 68 && focal.getInt("sourceEnd") == 130 &&
+                    focal.getString("preparedText") == "\ue002abc9_, abc9_, --7 y ABC9_, en ese orden y en líneas separadas.",
+                    "The regression bypassed the authentic output/natural preparation")
+                verify(semantics.toString() == originalSemantics, "The observer changed authored semantic roles or ranges")
+                continue
+            }
             val parts = checked(item.getString("source"), item.getString("label") + "/" + mode, mode)
             if (item.has("phoneSha256")) {
                 val phones = MixedSpanishG2P.phonemizePrepared(parts[item.getInt("phoneSentence")], emptyMap())
@@ -165,6 +199,6 @@ fun main(args: Array<String>) {
         }
     }
     verify(publications.size == 6, "Historical fields do not belong to the six authentic publications")
-    println("PASS $assertions assertions, $sentences real frontend sentences, 9 source fields from 6 authenticated publications")
+    println("PASS $assertions assertions, $sentences real frontend sentences, 10 source fields from 6 authenticated publications")
     println("Scope: text preparation, G2P and phone ownership only; no PCM, playback or human listening claim")
 }
