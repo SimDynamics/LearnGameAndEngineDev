@@ -130,7 +130,7 @@ pause >nul
     finally { if (-not $qaProcess.HasExited) { Stop-Process -Id $qaProcess.Id -Force } }
 }
 
-@'
+$qaProbeSource = @'
 #include <iostream>
 
 int main()
@@ -138,7 +138,36 @@ int main()
     std::cout << "Entorno preparado\n";
     return 0;
 }
-'@ | Set-Content -LiteralPath (Join-Path $qaWorking 'comprobar_entorno.cpp') -Encoding ascii
+'@
+$qaSourcePath = Join-Path $qaWorking 'comprobar_entorno.cpp'
+# Exercise the editor and its real save action before compiling the file.
+# The empty file fixes its name; the C++ contents are entered through Notepad.
+[System.IO.File]::WriteAllText($qaSourcePath, '')
+$qaEditor = Start-Process -FilePath (Join-Path $env:WINDIR 'system32\notepad.exe') -ArgumentList $qaSourcePath -PassThru
+$qaEditorWindow = [IntPtr]::Zero
+try {
+    $qaEditorLimit = [DateTime]::UtcNow.AddSeconds(20)
+    while ($qaEditorWindow -eq [IntPtr]::Zero -and [DateTime]::UtcNow -lt $qaEditorLimit) {
+        $qaEditorWindow = [CurricularWindowCapture]::FindTitledWindow('comprobar_entorno.cpp')
+        Start-Sleep -Milliseconds 100
+    }
+    if ($qaEditorWindow -eq [IntPtr]::Zero) { throw 'The real Notepad editor is unavailable.' }
+    $qaKeys = New-Object -ComObject WScript.Shell
+    if (-not $qaKeys.AppActivate('comprobar_entorno.cpp')) { throw 'Cannot activate the source editor.' }
+    Set-Clipboard -Value $qaProbeSource
+    $qaKeys.SendKeys('^a')
+    $qaKeys.SendKeys('^v')
+    Start-Sleep -Milliseconds 200
+    $qaKeys.SendKeys('^s')
+    $qaSaveLimit = [DateTime]::UtcNow.AddSeconds(10)
+    do {
+        Start-Sleep -Milliseconds 100
+        $qaSavedSource = [System.IO.File]::ReadAllText($qaSourcePath)
+    } while ($qaSavedSource.TrimEnd() -cne $qaProbeSource.TrimEnd() -and [DateTime]::UtcNow -lt $qaSaveLimit)
+    if ($qaSavedSource.TrimEnd() -cne $qaProbeSource.TrimEnd()) { throw 'The editor did not save the exact entered C++ source.' }
+    Save-ActualWindow $qaEditorWindow (Join-Path $qaOutput 'p1_windows_archivo_fuente.png')
+}
+finally { if (-not $qaEditor.HasExited) { Stop-Process -Id $qaEditor.Id -Force } }
 Copy-Item -LiteralPath (Join-Path $qaWorking 'comprobar_entorno.cpp') -Destination $qaOutput
 
 Invoke-Capture 'p1_windows_consola_compilador' @'
@@ -149,7 +178,7 @@ cl
 
 Invoke-Capture 'p1_windows_consola_construccion' @'
 type comprobar_entorno.cpp
-cl /nologo /EHsc /W4 /std:c++23preview /Fe:comprobar_entorno.exe comprobar_entorno.cpp
+cl /W4 /EHsc comprobar_entorno.cpp
 @if errorlevel 1 exit /b 12
 .\comprobar_entorno.exe
 @if errorlevel 1 exit /b 13
@@ -172,5 +201,5 @@ $qaOs = Get-CimInstance Win32_OperatingSystem
     source = 'comprobar_entorno.cpp'
     standardOutput = $qaActual
     exitCode = 0
-    captures = @('p1_windows_consola_compilador.png', 'p1_windows_consola_construccion.png')
+    captures = @('p1_windows_archivo_fuente.png', 'p1_windows_consola_compilador.png', 'p1_windows_consola_construccion.png')
 } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qaOutput 'provenance.json') -Encoding utf8
