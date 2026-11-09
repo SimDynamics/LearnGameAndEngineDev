@@ -631,6 +631,19 @@ def windows_reading_source(name: str, code: str) -> str:
     Only generated Windows sources change. Exact anchors fail closed if Android's
     implementation moves, rather than silently leaving one preparation path stale.
     """
+    if name == "SpanishFluidG2P":
+        # Unmarked prose retains its source spelling and recording key. Once
+        # explicit code has been verbalized, a residual underscore separates
+        # ordinary lexical words; it must not restore implicit code reading.
+        # The final tokenizer still rejects unnormalized digits/identifiers.
+        code = exact(code, '            .replace("-", "—")\n',
+                     '            .replace("-", "—")\n'
+                     "            .replace('_', ' ')\n")
+        # Observe the same lexical boundary in both real phoneme traces. This
+        # adds no phone or duration and keeps the exact whole-utterance check.
+        code = exact(code,
+                     '''            val prosePunctuation = ".,!?;:—–-…()«»\\"“”¡¿'•"''',
+                     '''            val prosePunctuation = ".,!?;:—–-…()«»\\"“”¡¿'•_"''', count=2)
     if name == "ManualEnglishTerms":
         code = exact(code, 'object ManualEnglishTerms {', '''object ManualEnglishTerms {
     // Keep the historical dictionary/parser exact, but require actual code
@@ -959,6 +972,8 @@ def host_sources() -> list[Path]:
     for name in PHONEMES + ["KokoroOnnxEngine", "KokoroDurationModel"]:
         path = APP / "narration" / ("phonemes" if name in PHONEMES else "") / f"{name}.kt"
         code = path.read_text(encoding="utf-8-sig")
+        if name == "SpanishFluidG2P":
+            code = windows_reading_source(name, code)
         if "import android.os.Looper" in code:
             code = exact(code, "import android.os.Looper", "import lgaed.narration.windows.WindowsWorkerThread")
             code = code.replace("Looper.myLooper() != Looper.getMainLooper()", "WindowsWorkerThread.isWorker()")

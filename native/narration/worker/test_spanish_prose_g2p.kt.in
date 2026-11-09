@@ -1,0 +1,101 @@
+package com.learngraphicsprogramming.app.narration
+
+import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
+import java.io.File
+import org.json.JSONArray
+
+/** Real generated Windows normalization, continuous G2P and observed phone ranges. */
+fun main(args: Array<String>) {
+    var assertions = 0
+    var sentences = 0
+    fun verify(condition: Boolean, message: String) {
+        assertions++
+        check(condition) { message }
+    }
+    fun checked(source: String, label: String, mode: String = "auto"): List<String> {
+        val prepared = SpanishTechnicalSpeech.prepareForKokoro(source, mode).text
+        val live = SpanishTechnicalSpeech.prepareForReading(source, mode) { _, _, _ -> }.text
+        verify(prepared == live, "$label changed foreground/background preparation")
+        val parts = NarrationSegments.sentences(listOf(prepared))
+        verify(parts.isNotEmpty(), "$label has no original sentence")
+        for (part in parts) {
+            sentences++
+            val phones = MixedSpanishG2P.phonemizePrepared(part, emptyMap())
+            verify(phones.isNotBlank(), "$label has no real phonemes: $part")
+            val trace = MixedSpanishG2P.traceWordsPrepared(part)
+                ?: error("$label lost real phone provenance: $part")
+            verify(trace.phonemes == phones, "$label changed synthesis while observing word ranges")
+            verify(trace.words.map { it.word } == NarrationSpokenWords.lexemes(part).map { it.canonical },
+                "$label lost or invented original lexical words: $part")
+            var previous = 0
+            for (word in trace.words) {
+                verify(word.start >= previous && word.start < word.endExclusive && word.endExclusive <= phones.length,
+                    "$label has invalid observed phone range for " + word.word)
+                previous = word.endExclusive
+            }
+        }
+        return parts
+    }
+
+    val prose = listOf(
+        "El carácter y_el continúa.",
+        "La selección_útil continúa.",
+        "El dato nombre__total y _inicio_ conservan el texto.",
+        "El registro datos_12 contiene 27 unidades."
+    )
+    for (source in prose) {
+        val parts = checked(source, source)
+        verify(parts.joinToString(" ") { ManualEnglishSpeech.strip(it) } == source,
+            "Unmarked prose changed its original preparation or recording identity: $source")
+        verify(parts.none { "guion bajo" in it || ManualEnglishSpeech.spans(it).isNotEmpty() },
+            "An unmarked prose underscore inferred technical pronunciation: $source")
+        val normalized = SpanishFluidG2P.normalizeText(source)
+        verify('_' !in normalized && normalized.none(Char::isDigit), "G2P left raw notation: $normalized")
+    }
+    // A separator has no phoneme of its own. Both inputs must preserve the
+    // same Spanish words and contextual joining in the continuous frontend.
+    val conjunction = prose.first()
+    val plain = conjunction.replace('_', ' ')
+    verify(MixedSpanishG2P.phonemizePrepared(SpanishTechnicalSpeech.prepareForKokoro(conjunction).text, emptyMap()) ==
+        MixedSpanishG2P.phonemizePrepared(SpanishTechnicalSpeech.prepareForKokoro(plain).text, emptyMap()),
+        "The residual prose separator inserted a technical sound")
+    checked("El dato nombre_total acompaña a `std::cout << 12;`.", "mixed prose and explicit code")
+
+    // Explicit references and actual source syntax keep their original code
+    // reading; a historical bookmark still authenticates its previous words.
+    for (source in listOf("El valor `nombre_total` permanece.", "`int nombre_total = 12;` conserva el dato.",
+            "foo_bar()", "int nombre_total = 12;")) {
+        val current = checked(source, source)
+        val previous = WindowsNarrationSpeechRules.withPreviousProseInference(true) {
+            SpanishTechnicalSpeech.prepareForKokoro(source).text
+        }
+        verify(current == NarrationSegments.sentences(listOf(previous)), "Explicit code changed its historical preparation")
+        verify(current.any { "guion bajo" in ManualEnglishSpeech.strip(it) }, "Explicit code lost underscore pronunciation")
+    }
+    val previousProse = WindowsNarrationSpeechRules.withPreviousProseInference(true) {
+        SpanishTechnicalSpeech.prepareForKokoro(conjunction).text
+    }
+    verify(previousProse == "\ue002El carácter i griega guion bajo el continúa.",
+        "The exact previous prose/bookmark contract changed")
+    checked(previousProse, "already prepared previous prose")
+    verify(SpanishTechnicalSpeech.prepareForKokoro(conjunction).text == "\ue002$conjunction",
+        "Previous prose policy leaked into a new plan")
+
+    // The tokenizer remains strict: callers may not bypass normalization with
+    // an unspoken number or identifier. The Windows fix belongs before it.
+    for (invalid in listOf("7", "nombre_total")) {
+        val failure = runCatching { SpanishFluidG2P.phonemizeNormalized(invalid) }.exceptionOrNull()
+        verify(failure is IllegalArgumentException &&
+            failure.message == "La normalización española dejó un número o identificador sin pronunciar",
+            "Unnormalized input bypassed the original tokenizer guard: $invalid")
+    }
+
+    val historical = JSONArray(File(args.single()).readText())
+    verify(historical.length() == 5, "Missing authentic U12/U11 publication")
+    for (index in 0 until historical.length()) {
+        val item = historical.getJSONObject(index)
+        checked(item.getString("source"), item.getString("label"), item.getString("mode"))
+    }
+    println("PASS $assertions assertions, $sentences real frontend sentences, 5 authenticated publications")
+    println("Scope: text preparation, G2P and phone ownership only; no PCM, playback or human listening claim")
+}

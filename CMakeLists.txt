@@ -1214,6 +1214,9 @@ if(BUILD_TESTING)
     add_test(NAME native.spanish_prose_boundaries COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_spanish_prose_boundaries.py")
     set_tests_properties(native.spanish_prose_boundaries PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
+    add_test(NAME native.spanish_prose_g2p COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_SOURCE_DIR}/native/narration/worker/test_spanish_prose_g2p.py")
+    set_tests_properties(native.spanish_prose_g2p PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     add_test(NAME native.cpp_numeric_context COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_SOURCE_DIR}/native/narration/worker/test_cpp_numeric_context.py")
     set_tests_properties(native.cpp_numeric_context PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
