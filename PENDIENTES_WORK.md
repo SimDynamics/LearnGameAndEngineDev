@@ -2,7 +2,7 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar la revisión pedagógica de Programación 1 desde U11L1, «Palabras y lecturas condicionadas», en `app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_palabras_y_lecturas_condicionadas.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
+Continuar la revisión pedagógica de Programación 1 desde U11L8, «Tokens con categoría y valor», en `app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_tokens_con_categoria_y_valor.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
 
 ## Base conservada
 

@@ -77,7 +77,7 @@
           "answers": [
             "1:<brisa>\n2:<puente>"
           ],
-          "explanation": "Cada extracción omite el espacio en blanco y avanza una palabra. La segunda continúa después de brisa; camino queda disponible para una lectura posterior.",
+          "explanation": "La primera extracción omite el tabulador inicial y guarda brisa en palabra. La salida añade el número, los delimitadores y un salto, formando 1:<brisa>. La segunda extracción continúa desde allí, omite el salto de línea del origen y guarda puente; por eso muestra 2:<puente>. camino queda pendiente porque el programa sólo realiza dos extracciones.",
           "reviewFeedback": "Sigue cada extracción desde la posición donde terminó la anterior y separa los caracteres añadidos por cout de las palabras obtenidas."
         },
         {
@@ -99,7 +99,7 @@
             "La cadena alto-bajo+medio completa, porque no contiene espacio en blanco."
           ],
           "correctIndex": 2,
-          "explanation": "La lectura de string separa por espacio en blanco. Los signos no adquieren un significado de operación por aparecer dentro del texto; habrá que definir y construir esa interpretación.",
+          "explanation": "Entre alto, bajo y medio hay signos, pero no espacios en blanco. La extracción a std::string conserva esos signos y obtiene alto-bajo+medio como una sola palabra. El guion y el signo más son caracteres de la entrada; esta operación no los interpreta como separadores ni ejecuta con ellos una resta o una suma.",
           "reviewFeedback": [
             "Revisa qué separadores reconoce una extracción a string. Que un signo aparezca en el texto no le da por sí mismo una función de separador.",
             "Distingue los signos almacenados dentro de una cadena de los operadores escritos como parte del código C++.",
@@ -136,7 +136,7 @@
           "answers": [
             "Par incompleto"
           ],
-          "explanation": "Falta la segunda palabra. La condición conjunta falla y la alternativa muestra un diagnóstico sin utilizar el par incompleto.",
+          "explanation": "La primera extracción obtiene cauce y lo guarda en origen. La segunda ya no encuentra otra palabra, de modo que la condición conjunta falla y se ejecuta else, que muestra Par incompleto. El programa no utiliza destino como si contuviera una segunda palabra válida. Comprobar las dos lecturas juntas tampoco deshace la primera: origen ya recibió cauce.",
           "reviewFeedback": "Evalúa las lecturas en orden y después decide qué rama de la condición puede ejecutarse. No utilices un par que no se haya obtenido por completo."
         },
         {
@@ -147,7 +147,7 @@
           "answers": [
             ">>"
           ],
-          "explanation": "El resultado de la cadena es el flujo después de ambas operaciones. La condición exige que no haya fallado la extracción necesaria.",
+          "explanation": "Al completar >>, la primera extracción guarda norte en izquierda y devuelve el flujo. Sobre ese mismo flujo, la segunda extracción continúa hasta sur y lo guarda en derecha. Ambas tienen éxito, por lo que el cuerpo muestra norte / sur. La condición comprueba el estado después de las dos lecturas; no obtiene ni imprime una palabra por sí sola.",
           "reviewFeedback": "El primer paso debe obtener una palabra desde entrada. Distingue la dirección de la extracción de la inserción en una salida."
         }
       ]
@@ -192,7 +192,7 @@
             "Después del bucle, una vez por cada carácter que no se pudo leer."
           ],
           "correctIndex": 0,
-          "explanation": "Cada ejecución del cuerpo corresponde a una palabra válida. El intento final que termina el bucle no debe contarse como dato.",
+          "explanation": "Con el texto del ejemplo, el cuerpo se ejecuta para cobre, después para plata y finalmente para oro. Un incremento dentro del cuerpo lleva el contador de 0 a 3, una vez por cada palabra obtenida. El intento posterior sólo encuentra el espacio final y el fin del texto: la condición falla y ese intento no añade una cuarta palabra.",
           "reviewFeedback": [
             "Relaciona cada ejecución del cuerpo con la obtención de un dato nuevo.",
             "Un intento de lectura puede no producir una palabra. Revisa qué representa el contador solicitado.",
@@ -231,7 +231,7 @@
             "La primera contiene una palabra, porque todo el texto llega en una string."
           ],
           "correctIndex": 0,
-          "explanation": "La extracción separa por blancos, sin analizar sílabas. Un espacio entre una y dos separa lecturas; su ausencia conserva una sola palabra.",
+          "explanation": "En \"una dos\", la primera extracción obtiene una y se detiene ante el espacio; la siguiente omite ese separador y obtiene dos. En \"unodos\" no hay ningún separador entre esas letras, por lo que una sola extracción obtiene unodos. El tamaño de la cadena de origen o sus sílabas no determina cuántas palabras extrae el flujo.",
           "reviewFeedback": [
             "Aplica a ambos textos la regla de separación de esta extracción.",
             "La extracción no analiza sílabas; revisa qué caracteres delimitan lo que obtiene.",
@@ -308,7 +308,7 @@
           "answers": [
             "1:<uno>\n2:<dos-tres>\nTotal: 2"
           ],
-          "explanation": "El salto, el tabulador y los espacios separan. El guion sigue dentro de dos-tres, por lo que sólo hay dos lecturas válidas.",
+          "explanation": "La primera lectura obtiene uno, incrementa cantidad a 1 y escribe 1:<uno> con su salto final. La siguiente omite el salto, el tabulador y los espacios del origen, y obtiene dos-tres como una sola palabra: el guion no la divide. El contador pasa a 2 y se escribe 2:<dos-tres> con otro salto. El intento final no ejecuta el cuerpo; el resumen queda Total: 2.",
           "reviewFeedback": "Recorre las palabras delimitadas por espacio en blanco. Incrementa el contador sólo cuando la lectura permite ejecutar el cuerpo."
         }
       ]
@@ -328,7 +328,7 @@
             "Obtiene la frase completa y elimina únicamente el espacio final."
           ],
           "correctIndex": 1,
-          "explanation": "La unidad de >> para string es una palabra delimitada por espacio en blanco. Leer una línea completa permitirá conservar los espacios internos y después decidir qué significan.",
+          "explanation": "La extracción empieza en Taller del rio, guarda Taller y se detiene ante el primer espacio. Las partes del y rio quedan para lecturas posteriores; no se reúnen automáticamente con la primera palabra. Si la etiqueta debe conservarse completa con sus espacios, una sola extracción mediante >> a std::string no cumple ese objetivo. La lectura por línea permitirá conservar esa unidad completa.",
           "reviewFeedback": [
             "Revisa el tipo del destino de esta extracción y qué clase de dato intenta obtener.",
             "Comprueba qué ocurre cuando la extracción encuentra un espacio dentro de la etiqueta.",
@@ -1276,6 +1276,46 @@
         "id": "block_0000_0001",
         "beforeSha256": "cf63ac74f0358f5394d135dc815fcec11910b28b6ef40f38d58171aaa71fcc43",
         "afterSha256": "49716b628b2e9d6f49a91754b746c38cb95bbb455ed628337b239aac759ed59e"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "954b3e02a51673a3e876d16559e57d7fe03257ae306959cb54bdac382cbd580b",
+        "afterSha256": "1b315373bcd5781ff43fe692276d8abfcefd89c61b014144f7b2b36f7a797699"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "fd4d6270d139c5700ae9da9e23cf96cda5321144814c69fa56d4ea141a348b91",
+        "afterSha256": "1ebd840493bfef4aabffd7655e6186519625d8daa28da0ccd74c977e7c645be5"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "179b95e4871962b58695cc3f09c3d726fa867d8def32c29d245d30d1f7bafae7",
+        "afterSha256": "7c23b43c18b7a1244d3d47415c57bab4297990a0a9145cf48c9d669c50207e60"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "2a4ac0f3c0f3eb5edcede199a2b67bac28c2dee90c825001d49cb6bcd8c718f7",
+        "afterSha256": "8071c3719266af2f2d62cfedb3616cd38e0fbe6a02cbbd249dba3f08ab628593"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "e8517cc81f19632407d5530cc003be630bad4bf35d79784a0aaf298527fd629a",
+        "afterSha256": "87ddf822eec58d80f8df52f3bd482f6ef0b9bb32cc72e4bda9fdb85b158ca143"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "bc7d7b64b78dcefe8f4ba1607e3d55222fc6df34047593e3991fc03c76e95091",
+        "afterSha256": "18165043d06cf6ecc6b46a69c0e7a58a4b7901ec690889fc516d1c6590ca4036"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "71619e43d06805534358de4feb102c76a158aed6908667c0f9a00d7203e372a3",
+        "afterSha256": "00f426e8bc6af477d3614d6eb5da618dddcc9f8955e8b7863d561c117b11074c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "625f90522107ee439de8f24c6a5a0b7c17c41f4908154291bd3d954b2bdccbcd",
+        "afterSha256": "e3fcd32a11a6606a0432b42cb46aaaf022f61655b6259c984cbd1239e1fa9a76"
       }
     ]
   },
@@ -1470,18 +1510,46 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "a36e60084290a2aa7f9dd4c253382dbb201d64873e21e0868d9d6302f6cea508",
+        "sourceSha256": "23f3f21c940c6e10b3d9af0ec1749f0d4f3058aea925ce3480cccfbf6a20eac3",
         "spans": [
           {
-            "start": 96,
-            "end": 101,
+            "start": 58,
+            "end": 63,
             "text": "brisa",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 103,
-            "end": 109,
+            "start": 67,
+            "end": 74,
+            "text": "palabra",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 151,
+            "text": "1:<brisa>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 246,
+            "text": "puente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 274,
+            "text": "2:<puente>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 282,
             "text": "camino",
             "role": "data",
             "reading": "natural"
@@ -1542,13 +1610,42 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "22681cb0201119a5fa8299b8359f6ee2b849257d21623ce6f1fc2c5a638ebf44",
+        "sourceSha256": "140b7f220878206558616fe3f472507acee9db8181f8fb09d47ee7b8ff865bff",
         "spans": [
           {
-            "start": 14,
-            "end": 20,
-            "text": "string",
-            "role": "cpp"
+            "start": 6,
+            "end": 10,
+            "text": "alto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 12,
+            "end": 16,
+            "text": "bajo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 24,
+            "text": "medio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 92,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 139,
+            "text": "alto-bajo+medio",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1646,8 +1743,58 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "2702cb591f32025d2052e40d9c1211c52a1738123c0bbafa3269865a2f9f4855",
-        "spans": []
+        "sourceSha256": "23812016233ad3836d867581d18c7d66640b0262609a5909546490976951f924",
+        "spans": [
+          {
+            "start": 30,
+            "end": 35,
+            "text": "cauce",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 57,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 157,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 185,
+            "text": "Par incompleto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 217,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 327,
+            "end": 333,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 350,
+            "text": "cauce",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1677,8 +1824,51 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "4e156632f7692b3ac0a14d445d7c39ea6ea44803d2ca37da977156811f0f32fc",
-        "spans": []
+        "sourceSha256": "533be87c0ed8e379a3f9e10988a954632dca652562c43e6cd334b88584e6ee7a",
+        "spans": [
+          {
+            "start": 13,
+            "end": 15,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "text": "norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 64,
+            "text": "izquierda",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 149,
+            "text": "sur",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 172,
+            "text": "derecha",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 234,
+            "text": "norte / sur",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -1742,8 +1932,44 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "f295babd1de99ab53c8b9cdc1ff94d6fc63f3fadf47b3e0c5519f9fb8c3448b5",
-        "spans": []
+        "sourceSha256": "ca9d63fce072d71057d4c00e730489c36d7fbb08e25ef96e1a6daf1cc9af2668",
+        "spans": [
+          {
+            "start": 52,
+            "end": 57,
+            "text": "cobre",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 77,
+            "text": "plata",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 99,
+            "text": "oro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -1927,20 +2153,41 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "1ea8c5a688b54cc2045601cec8c794b3dd757626109ef1853eeb2b59bba45dba",
+        "sourceSha256": "9e99d278f62fc28cf70a1a8f3890d1ae566ffbc582c8bacdca265ca5be1bbaea",
         "spans": [
           {
-            "start": 73,
-            "end": 76,
+            "start": 3,
+            "end": 12,
+            "text": "\"una dos\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 47,
             "text": "una",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 82,
+            "start": 121,
+            "end": 124,
             "text": "dos",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 137,
+            "text": "\"unodos\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 226,
+            "text": "unodos",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2075,13 +2322,62 @@
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "25c00ad7231707f5aeaa90d2eec5c5be4321a4e32084daee68e4f646eb6fcfd1",
+        "sourceSha256": "ee0104eb8103a033da761c5b346bdd9821ba465fe75e5caa0495a4ad41d3d8c4",
         "spans": [
           {
-            "start": 72,
-            "end": 80,
+            "start": 27,
+            "end": 30,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 51,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 73,
+            "text": "1:<uno>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 181,
             "text": "dos-tres",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 248,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 274,
+            "text": "2:<dos-tres>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 355,
+            "text": "Total: 2",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2127,19 +2423,49 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "f045b738410c564222b070cf335510244595631568bdcc4145a7489e24b8fbfe",
+        "sourceSha256": "99f513ac1dc002a3a765042c97ed726eb1561562cce767dadb57c485a87155a2",
         "spans": [
           {
-            "start": 13,
-            "end": 15,
-            "text": ">>",
-            "role": "cpp"
+            "start": 25,
+            "end": 39,
+            "text": "Taller del rio",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 21,
-            "end": 27,
-            "text": "string",
-            "role": "cpp"
+            "start": 48,
+            "end": 54,
+            "text": "Taller",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 106,
+            "text": "del",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 112,
+            "text": "rio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 290,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 304,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },

@@ -42,7 +42,7 @@
             "Nada: el éxito de >> garantiza cualquier contrato del programa."
           ],
           "correctIndex": 1,
-          "explanation": "La extracción comprueba una representación de int; el contrato del problema establece un dominio adicional. Son validaciones diferentes.",
+          "explanation": "El flujo reconoce los caracteres de la entrada y obtiene el entero 9. Esa conversión permite usar el valor, pero el problema admite sólo cantidades de 1 a 6. Como 9 supera ese máximo, el programa debe rechazarlo por su dominio. Reconocer una representación de int y decidir si el valor sirve para esta operación son comprobaciones distintas.",
           "reviewFeedback": [
             "La extracción ya reconoció un entero. Revisa qué condición adicional impone el problema al valor obtenido.",
             "Distingue reconocer la representación de un dato de comprobar el intervalo permitido.",
@@ -116,7 +116,7 @@
           "answers": [
             "Primero: 6\nSin segundo\neof: 1 fail: 1"
           ],
-          "explanation": "La primera lectura obtiene 6 y llega al final. El segundo intento no puede obtener otro entero y activa también el estado de fallo. No se usa segundo en la alternativa de éxito.",
+          "explanation": "La primera extracción obtiene 6 y encuentra el final al completar ese entero. Tiene éxito, por lo que se imprime Primero: 6, aunque ya esté activo el indicador de fin.\n\nEl segundo intento no puede obtener otro entero y deja también el indicador de fallo. Se ejecuta la alternativa que imprime Sin segundo, sin utilizar el destino como si contuviera un dato nuevo. Al consultar ambos indicadores, aparecen eof: 1 fail: 1.",
           "reviewFeedback": "Sigue los dos intentos por separado. Decide si cada uno obtuvo un dato antes de elegir su alternativa y consulta al final los indicadores que hayan quedado activados."
         },
         {
@@ -128,7 +128,7 @@
             "eof() siempre permanece falso mientras exista un destino int."
           ],
           "correctIndex": 0,
-          "explanation": "La extracción válida permite usar 7. El final y el éxito de esa lectura pueden coexistir; el siguiente intento falla al no encontrar otro dato.",
+          "explanation": "El primer intento obtiene 2. El siguiente obtiene 7 y encuentra el final al completar esa conversión. Como no falló la extracción, la condición de while (entrada >> valor) es verdadera y el cuerpo procesa 7. Sólo el intento posterior, sin otro entero disponible, termina el bucle. El indicador de fin no es una predicción que permita omitir la última lectura válida.",
           "reviewFeedback": [
             "Separa el resultado de la extracción del estado que deja registrado al terminar.",
             "El bucle decide a partir del resultado de cada extracción. No conoce por anticipado lo que devolverá una operación que todavía no ha realizado.",
@@ -176,7 +176,7 @@
           "answers": [
             "4\n9\neof: 0 fail: 1"
           ],
-          "explanation": "Obtiene 4 y luego el prefijo entero 9. El intento siguiente encuentra x donde esperaba un entero y falla sin llegar al final; 3 todavía no se ha obtenido.",
+          "explanation": "La primera extracción obtiene 4. Después, >> reconoce los dígitos de 9x hasta obtener 9 y deja x pendiente. Ambas conversiones tienen éxito y el bucle imprime 4 y 9, cada uno en su línea.\n\nEl intento siguiente encuentra esa x donde debe comenzar otro entero. Falla sin consumirla ni llegar al final del texto: quedan x 3 por delante. Por eso la consulta final muestra eof: 0 fail: 1; el entero 3 no se ha obtenido.",
           "reviewFeedback": "Sigue dónde se detiene cada extracción numérica y qué carácter queda para el intento siguiente. Procesa el destino sólo cuando ese intento tenga éxito; distingue encontrar un formato inesperado de llegar al final."
         }
       ]
@@ -221,7 +221,7 @@
             "Hace falta una política del origen y del problema; borrar un indicador no demuestra que el daño desapareció."
           ],
           "correctIndex": 2,
-          "explanation": "El estado comunica un fallo. Cambiar un destino o borrar el indicador no repara por sí mismo el problema que lo produjo.",
+          "explanation": "bad() informa de que está activo el indicador de fallo grave del flujo. Si su causa fuera un problema del origen, asignar otro valor al destino o intentar leer un std::string no demostraría que ese origen volvió a funcionar. Tampoco basta que eof() sea falso: sólo dice que no se ha señalado el final. Una recuperación requiere conocer la causa y las operaciones que ese origen permite realizar; borrar sus indicadores no realiza por sí solo esas operaciones.",
           "reviewFeedback": [
             "Cambiar el tipo del destino no elimina la causa de un problema grave del origen. Distingue interpretar un dato de reparar el flujo.",
             "Un indicador de final desactivado no describe todos los posibles problemas del flujo. Revisa el estado grave señalado en la pregunta.",
@@ -268,7 +268,7 @@
             "Dato: 0 y Formato invalido, porque el destino estaba inicializado."
           ],
           "correctIndex": 1,
-          "explanation": "No se obtiene el primer entero ni se recupera todavía el texto inválido. La variable inicializada no representa una extracción nueva y 6 queda sin procesar.",
+          "explanation": "El primer intento encuentra x y no obtiene un entero válido. La condición del bucle es falsa desde ese intento, por lo que no se imprime ninguna línea de datos. Como el flujo no llegó al final ni señala un fallo grave, el diagnóstico es Formato invalido.\n\nEl contrato aún no descarta el texto rechazado ni busca otro entero: 6 queda sin procesar. El valor inicial del destino tampoco acredita una lectura, así que no corresponde imprimir Dato: 0.",
           "reviewFeedback": [
             "El contrato se detiene cuando falla una extracción. Revisa si el programa tiene alguna operación que descarte el carácter que impide leer.",
             "Decide primero si se obtuvo algún dato nuevo; después aplica la política de diagnóstico.",
@@ -349,7 +349,7 @@
             "La entrada necesita siempre un espacio después de 10 para que la última extracción sea válida."
           ],
           "correctIndex": 0,
-          "explanation": "El éxito de la extracción permite procesar el último entero aunque eof() ya esté activo. good() es más estricto y puede omitirlo.",
+          "explanation": "La extracción de 4 deja datos por leer y permite imprimir Dato: 4. La extracción siguiente obtiene correctamente 10, pero al completarla encuentra el final. En ese momento el flujo aún se evalúa como verdadero porque la extracción no falló; en cambio, good() es falso porque ya está activo el indicador de fin.\n\nSi se exige good() para procesar el destino, se descarta ese 10 válido y luego se imprime Fin. La condición debe comprobar el éxito de la extracción para que el último entero también se procese; no necesita añadir un espacio después de él.",
           "reviewFeedback": [
             "Compara qué exige la condición que deja usar el dato con lo que consulta good().",
             "Cambiar el orden de los mensajes no explica por qué falta un dato reconocido. Revisa la condición que permite procesarlo.",
@@ -1435,6 +1435,41 @@
         "id": "block_0007_0002",
         "beforeSha256": "3ea39cb025d610b3c3f275fd357b937cb52c5694a9fef3b364120bc07fc82d45",
         "afterSha256": "a85e0fee88feb6f62ca3f2dfce31b0d152a69db7a5da26500513357ae73e4823"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "fb6cc8264d860e1c69338adaef989c49aaf42514a70bfef53af7d1b13a2c3d30",
+        "afterSha256": "3f8b091a03eb4bed52f378a73518df0a5a52b1dd3df2f69e3ce2c5f90f0c2070"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "f47bc891c2e44a26fd9d343a3760303329da41d99f8f4c539001aed4323c5f30",
+        "afterSha256": "41d510236df68ccc09c977526bfd38000579886c2427b410c2b5515faf047a58"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "8e77207326c0cc2896a6cfcc7cec0a3114b8cdb2287f7330c580c99fda3a225e",
+        "afterSha256": "d2de3b7b995ca47db744861f5cfdfd406b0c3d3a93b91dc7ffb1a73bb70d3599"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "645962472e870afea2beedc22af1329d973e86e36039d40c924b18ce0289d91d",
+        "afterSha256": "331d3dc332a6a09f14c8a5347d028413648b08b4365703cc1ad399f0a4aa52ea"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "1c4a44ef56a905e660cab03c30d1700b5e7b27380e4bd7680f03e535e9fd8a1d",
+        "afterSha256": "fdf31c407d97e1ce40849c6c808da2c49ae5c75e95011f97485f64890a84385f"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "8c7c81d5b985a96e48b0d966a4ae737a760a251f183b11727f13c62ccb03cfa2",
+        "afterSha256": "9089bf1f99dfb8725ee7584ba4804c8fce1bdea24611dafe3528b6126f42012e"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "0853764d61cd61df3f1ab10f310ff237a8ee4b057151d5c37e99490963589d3d",
+        "afterSha256": "0310590690aee268a57642e26513b44b4ba347eac4cd40b9834ff1ca35d99df9"
       }
     ],
     "choiceRevisions": [
@@ -1867,13 +1902,42 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "c27896021d5d34bf1b1649d545ec1d7b0b17823afcc69feb4c1758fffdf4a225",
+        "sourceSha256": "73cb63f9ca67a7d36f3eb155dca2f7186ae3a07614854d8195e6f8b75720d7de",
         "spans": [
           {
-            "start": 46,
-            "end": 49,
+            "start": 67,
+            "end": 68,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 164,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 263,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1995,26 +2059,35 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "6396ecaea25cc5ee4786129a53aa53ae9b7e708ddb8e0310a582864fa887fe6c",
+        "sourceSha256": "2fc9ef8cbcbb97f18843daec8a10c8aa991a4578acde21956089f50344f661ea",
         "spans": [
           {
-            "start": 27,
-            "end": 28,
+            "start": 30,
+            "end": 31,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 50,
-            "end": 57,
-            "text": "segundo",
-            "role": "cpp"
+            "start": 113,
+            "end": 123,
+            "text": "Primero: 6",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 142,
-            "end": 149,
-            "text": "segundo",
-            "role": "cpp"
+            "start": 293,
+            "end": 304,
+            "text": "Sin segundo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 419,
+            "text": "eof: 1 fail: 1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2047,13 +2120,34 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "cc3678f5d9c8dd9531779e72de03203f95b2c544abd1ac1fa951a44e37c4d302",
+        "sourceSha256": "81b7f270f3858e5a385bede019f37cbc0c5ddc52463c72977aa19f0d39fbf390",
         "spans": [
           {
-            "start": 34,
-            "end": 35,
+            "start": 26,
+            "end": 27,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
             "text": "7",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 171,
+            "text": "while (entrada >> valor)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "7",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2170,32 +2264,81 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "b78f85532e2bd70f1e2a1690f23e24d6d7c2008407423f7a8a799f1e87af686b",
+        "sourceSha256": "04ec51c9d75c20ac65477f0ceb4769cac1f8903efc468ba41424d06cc56069f8",
         "spans": [
           {
-            "start": 8,
-            "end": 9,
+            "start": 30,
+            "end": 31,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 37,
+            "start": 42,
+            "end": 44,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 71,
+            "text": "9x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 87,
             "text": "9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 70,
-            "end": 71,
+            "start": 95,
+            "end": 96,
             "text": "x",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 127,
+            "start": 159,
+            "end": 160,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 164,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 225,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 320,
+            "text": "x 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 368,
+            "end": 382,
+            "text": "eof: 0 fail: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 394,
+            "end": 395,
             "text": "3",
             "role": "data",
             "reading": "natural"
@@ -2230,8 +2373,30 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "02d7cbb075756faf819099dc953ce432190f06c83d3b1978267630302ab4a8a3",
-        "spans": []
+        "sourceSha256": "f15862d249472636870b2ee994dea30b0a5887dae3c17585f0c53dd98e011239",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 163,
+            "end": 174,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 248,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -2470,13 +2635,34 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "d1383a20f97cb0ff50aea27d9495f817e3cd9884ab8bdbbbf56b67356eefb52b",
+        "sourceSha256": "bf8d085918f40b776c31606568aa8c83ecb1c9340d5dbeb7fc7904f5c4b217b2",
         "spans": [
           {
-            "start": 135,
-            "end": 136,
+            "start": 28,
+            "end": 29,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 253,
+            "text": "Formato invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 326,
             "text": "6",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 438,
+            "end": 445,
+            "text": "Dato: 0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2658,19 +2844,56 @@
       {
         "block": "block_0006_0004",
         "path": "/explanation",
-        "sourceSha256": "c092b8252e3d91ada4bc749c9b62c97482409747d752907d13a35cfc86557e04",
+        "sourceSha256": "65abe5080ce1ad33979a71b7ab96425097580857cbc2c17f82b03205d8e67a99",
         "spans": [
           {
-            "start": 67,
-            "end": 72,
-            "text": "eof()",
-            "role": "cpp"
+            "start": 17,
+            "end": 18,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 95,
+            "start": 58,
+            "end": 65,
+            "text": "Dato: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 115,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 258,
             "text": "good()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 324,
+            "end": 330,
+            "text": "good()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 375,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 405,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

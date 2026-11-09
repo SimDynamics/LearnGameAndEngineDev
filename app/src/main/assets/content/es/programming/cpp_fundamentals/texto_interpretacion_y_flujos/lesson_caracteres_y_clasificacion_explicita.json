@@ -82,7 +82,7 @@
           "answers": [
             "S+E4"
           ],
-          "explanation": "get conserva el salto, el signo, el espacio y el dígito, en ese orden. Las condiciones sustituyen sólo el salto por S y el espacio por E.",
+          "explanation": "La primera llamada obtiene el salto de línea y la rama correspondiente escribe S. La siguiente obtiene +, que llega a la alternativa final y se escribe como +. Después, el espacio hace escribir E; por último, el dígito 4 se escribe como 4. Las cuatro salidas se concatenan en S+E4, sin añadir espacios ni saltos. get leyó los cuatro caracteres; las condiciones eligieron cómo presentar cada uno.",
           "reviewFeedback": "Recorre los caracteres del literal en su orden. En cada vuelta identifica si se ejecuta la rama del espacio, la del salto o la alternativa final; distingue el carácter leído de la etiqueta que se escribe."
         }
       ]
@@ -131,7 +131,7 @@
             "Presentar el carácter con cout y volver a leer la salida."
           ],
           "correctIndex": 1,
-          "explanation": "La distancia de un dígito respecto de '0' produce su valor de 0 a 9. El reconocimiento previo evita aplicar esa regla a otros caracteres.",
+          "explanation": "En la secuencia de dígitos, '7' está siete posiciones después de '0'. La expresión actual - '0' resta sus representaciones y obtiene el entero 7. La condición previa comprobó que actual pertenecía al intervalo de dígitos; la misma resta aplicada a otro carácter no lo convertiría en un dígito. Escribir el carácter con cout sólo lo presenta, sin realizar esa conversión.",
           "reviewFeedback": [
             "Revisa qué representa el valor almacenado de un carácter y si sumar dos representaciones permite recuperar la cantidad escrita.",
             "Relaciona la conversión con la posición que ocupa el dígito dentro del intervalo reconocido.",
@@ -155,7 +155,7 @@
             "Que el segundo dígito es inválido porque get sólo admite un carácter en todo el flujo."
           ],
           "correctIndex": 0,
-          "explanation": "Cada get obtiene un carácter. Construir una unidad de varios caracteres requiere una regla y estado adicional; será parte de la lectura de tokens.",
+          "explanation": "La primera lectura obtiene 1 y la segunda obtiene 2: se han reconocido dos dígitos. Incluso si se convierte cada uno por separado, se obtienen los valores 1 y 2, no una acumulación que haya construido 12. Para formar un solo número hacen falta instrucciones que combinen sus posiciones. Una llamada a get obtiene un carácter; el bucle puede repetirla para obtener el siguiente.",
           "reviewFeedback": [
             "Distingue la lectura de caracteres del estado necesario para construir un número.",
             "Obtener caracteres no incorpora automáticamente una acumulación numérica. Revisa qué instrucciones ejecuta realmente el bucle.",
@@ -218,7 +218,7 @@
             "3 dígitos, 0 separadores y 1 otro, porque el lector omite el tabulador."
           ],
           "correctIndex": 0,
-          "explanation": "Se clasifican caracteres: los tres dígitos cuentan por separado; get conserva el tabulador y el guion pertenece a otros.",
+          "explanation": "El texto contiene dos apariciones de 0 y una de 1: cada una aumenta el contador de dígitos, que termina en 3. get también entrega el tabulador; cuenta como 1 separador. El guion no pertenece a ninguna de esas categorías y cuenta como 1 otro. Se clasifican cinco caracteres, sin reunir 001 como un único número.",
           "reviewFeedback": [
             "Cuenta lo que obtiene cada lectura, de acuerdo con las tres categorías definidas.",
             "El objetivo cuenta caracteres del texto, aunque varias cifras juntas representen un mismo número. Revisa cuál es la unidad que consume cada lectura.",
@@ -234,6 +234,65 @@
                 "standardInput": "",
                 "outputs": [
                   "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el último dígito y los caracteres excluidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia la función probar que acabas de construir antes del main de este editor, junto con los auxiliares que necesites. Su interfaz es void probar(const std::string& texto). Conserva el contrato: dígitos de '0' a '9', incluidos ambos; separadores exactamente espacio, tabulador y LF; todos los demás caracteres cuentan en otros.\n\nEl cliente mantiene las seis llamadas anteriores y añade el texto del literal \"09:Z\\r \\t\\n\". Las escrituras \\r, \\t y \\n representan respectivamente CR, tabulador y LF; cada una produce un carácter dentro del texto. El espacio escrito entre \\r y \\t también forma parte del dato. El texto se construye dentro del programa, sin entrada externa.\n\nMantén las siete llamadas y usa en todas la misma función. Cada llamada crea su flujo y sus contadores desde cero, presenta las tres líneas Digitos: N, Separadores: N y Otros: N, y termina cada línea con un salto. Pulsa «Compilar, ejecutar y comprobar»; si los resultados difieren, revisa qué categoría asigna tu función a cada carácter.",
+          "emphasis": [
+            {
+              "text": "separadores exactamente espacio, tabulador y LF",
+              "style": "bold"
+            },
+            {
+              "text": "Mantén las siete llamadas",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nDigitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 3\nOtros: 3"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui probar y los auxiliares que necesites.\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 3\nOtros: 3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las seis llamadas anteriores conservan sus resultados. En la séptima, 0 y 9 son dígitos; el espacio, el tabulador y LF son separadores. Los dos puntos, Z y CR pertenecen a otros: ninguno figura en las otras dos categorías del contrato. Los recuentos son 2, 3 y 3, cuya suma coincide con los ocho caracteres del texto.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 1\nSeparadores: 3\nOtros: 4\n"
+                    ],
+                    "text": "La séptima llamada presenta 1 dígito y 4 otros. Revisa si la condición está dejando fuera 9: el intervalo incluye su extremo superior, de modo que 0 y 9 deben contar en la misma categoría."
+                  },
+                  {
+                    "outputs": [
+                      "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 4\nSeparadores: 3\nOtros: 1\n"
+                    ],
+                    "text": "La séptima llamada presenta 4 dígitos y 1 otro. Revisa si la condición sólo comprueba el límite inferior: en ASCII, también aceptaría los dos puntos y Z, cuyos valores superan el del carácter '9'. El reconocimiento necesita comprobar ambos límites."
+                  },
+                  {
+                    "outputs": [
+                      "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 4\nOtros: 2\n"
+                    ],
+                    "text": "La séptima llamada presenta 4 separadores y 2 otros. Revisa si CR está contando como separador: el formato sólo admite espacio, tabulador y LF en esa categoría. CR debe aumentar otros, aunque una clasificación más amplia lo considere espacio en blanco."
+                  }
                 ]
               }
             ]
@@ -290,7 +349,7 @@
           "answers": [
             "Digitos: 2\nSeparadores: 2\nOtros: 1"
           ],
-          "explanation": "El tabulador y el espacio son separadores; 0 y 9 son dígitos incluidos en las fronteras; el guion pertenece a otros.",
+          "explanation": "El recorrido obtiene, en orden, un tabulador, 0, -, 9 y un espacio. El tabulador y el espacio aumentan separadores; 0 y 9 cumplen los dos extremos incluidos del intervalo de dígitos; el guion aumenta otros. Por eso las tres líneas son Digitos: 2, Separadores: 2 y Otros: 1. Cada carácter se contó una sola vez.",
           "reviewFeedback": "Separa los caracteres de la entrada, incluidos los separadores. Para cada uno sigue una sola alternativa y actualiza únicamente su contador; comprueba también el orden de las etiquetas de salida."
         },
         {
@@ -307,6 +366,29 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') ++digitos;\n        else if (actual == ' ' || actual == '\\t' || actual == '\\n') ++separadores;\n        else ++otros;\n    }\n    std::cout << \"Digitos: \" << digitos << \"\\nSeparadores: \" << separadores\n              << \"\\nOtros: \" << otros << \"\\n\";\n}\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar las fronteras de la clasificación"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la séptima llamada, 0 y 9 cumplen las dos comparaciones del intervalo, incluidos sus extremos. Los dos puntos y Z no son dígitos. CR tampoco lo es y no aparece en la lista de tres separadores; por tanto, esos tres caracteres aumentan otros. El espacio, el tabulador y LF aumentan separadores. El informe es Digitos: 2, Separadores: 3 y Otros: 3, cada uno en su línea.\n\nLos seis textos anteriores no contenían 9, letras ni CR. Una condición que excluyera el último dígito podía acertarlos; en el séptimo daría 1 dígito y 4 otros. En este dominio ASCII, una condición que sólo comprobara el límite inferior también aceptaría los dos puntos y Z como dígitos: daría 4 dígitos y 1 otro. Por último, añadir CR a los separadores produciría 4 separadores y 2 otros. El caso añadido distingue esos errores sin cambiar las categorías solicitadas.\n\nLa función probar de la referencia anterior cumple también el nuevo caso. Sustituye únicamente su main por el siguiente, conservando las inclusiones y la definición de la función. Los siete informes se calculan de forma independiente porque cada llamada crea su propio flujo y sus contadores.",
+          "emphasis": [
+            {
+              "text": "incluidos sus extremos",
+              "style": "bold"
+            },
+            {
+              "text": "sin cambiar las categorías solicitadas",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n    return 0;\n}\n"
         }
       ]
     },
@@ -335,7 +417,7 @@
             "Conservar el signo para que pueda entregarse como la siguiente unidad."
           ],
           "correctIndex": 2,
-          "explanation": "El signo no pertenece al número, pero sí a la entrada. La lectura de una unidad debe dejar disponible lo que pertenece a la siguiente.",
+          "explanation": "Los caracteres 1 y 2 pertenecen al número que se está reuniendo. El siguiente carácter, +, indica que ese número ha terminado, pero sigue perteneciendo a la expresión. Si se descarta, ya no podrá entregarse después como operador. El lector debe conservarlo para la siguiente unidad; no debe transformarlo en dígito ni confundir el fin del número con el fin de toda la entrada.",
           "reviewFeedback": [
             "La categoría del signo debe respetarse; cambiar su significado no resuelve la frontera entre unidades.",
             "Distingue el final de una unidad del final de todo el texto: el formato admite elementos de categorías diferentes.",
@@ -563,6 +645,10 @@
           "block_0004_0001",
           "block_0004_0002",
           "block_0004_0003",
+          "u11_clasificacion_limites_y_cr_titulo",
+          "u11_clasificacion_limites_y_cr_consigna",
+          "u11_clasificacion_limites_y_cr_salida",
+          "u11_clasificacion_limites_y_cr_comprobacion",
           "block_0004_0004"
         ]
       },
@@ -575,7 +661,10 @@
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
-          "block_0005_0006"
+          "block_0005_0006",
+          "u11_clasificacion_limites_y_cr_referencia_titulo",
+          "u11_clasificacion_limites_y_cr_referencia_razonamiento",
+          "u11_clasificacion_limites_y_cr_referencia_main"
         ]
       },
       {
@@ -1089,7 +1178,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_clasificacion_limites_y_cr_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 0
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 2
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_comprobacion",
+        "sha256": "d56ea89a229db8d2881bccc336b11a5d4d778ad4cffcfa7172c3b310f0ebd891",
+        "storage": {
+          "page": 7,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 7,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_referencia_main",
+        "sha256": "f12a850987f7fa7e32c4026d8007899ad45d23c8a513a62d01103c083a008a2e",
+        "storage": {
+          "page": 7,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0000",
@@ -1240,13 +1393,43 @@
         "id": "block_0003_0003",
         "beforeSha256": "343da9e288c2167239bc729eed9587be25d6ea5bc354d7ab782b9c0e73107095",
         "afterSha256": "b242662c36324d38fc52e4ed53fbaf5c400949580ddf0988b6ef20b72ce6cd2c"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "26c9dd765bbcda04e91a6e544264993e8334d91b4bd7a28f403f5f0e06656d61",
+        "afterSha256": "74a8a0f21a1317458f68dca8f291191c35cf658c8a6b2e959ba187140e460142"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "b180d307ed700aec1ad4ab24c98c420138d20e8ef984adf7908e593383b5a859",
+        "afterSha256": "e09b157d9f9c4dd2bc53c411bad69fe93a54aa27b9a9d6a1a492d8dcf4f247e2"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "2da29485cab6f83627ede23a056c3abe97b32a77320f5461cae256b8315ae63b",
+        "afterSha256": "3a5b942f0ab2e2a81cea0eef251c923706bb7989e6ff9725e5cbe9cd058531fb"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "52a0499cd41c36dbc9edeb06387d98a0c58168c1cadf578a441d541dc50012d4",
+        "afterSha256": "d90e90f25c22f3cd6e7a3b5f67843c657726a078f83f98a3c9dbc7a844caee54"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "7c2b0eaaf9adf38feb6f2730ceaaed77c1efa1e78aa0cb24e5fdad8141f456de",
+        "afterSha256": "00352377e3fc196d90d97fc5482ef91b4c2499f7000165b03362cfae9b4cd99f"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "41221bd253b32b426cc01f8d0118bb946eb6ec938d48347d33032081a5104702",
+        "afterSha256": "826d40a1d4b611c9f2a5513874c9ff33a7d3287853e396f6e9ac8bd37564034e"
       }
     ]
   },
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0004_0003",
+      "activity": "u11_clasificacion_limites_y_cr_comprobacion",
       "blocks": [
         "block_0004_0004",
         "block_0005_0000",
@@ -1254,13 +1437,23 @@
         "block_0005_0002",
         "block_0005_0003",
         "block_0005_0005",
-        "block_0005_0006"
+        "block_0005_0006",
+        "u11_clasificacion_limites_y_cr_referencia_titulo",
+        "u11_clasificacion_limites_y_cr_referencia_razonamiento",
+        "u11_clasificacion_limites_y_cr_referencia_main"
       ]
     }
   ],
   "activityAfter": [
     {
       "activity": "block_0005_0004",
+      "requires": [
+        "block_0004_0003",
+        "u11_clasificacion_limites_y_cr_comprobacion"
+      ]
+    },
+    {
+      "activity": "u11_clasificacion_limites_y_cr_comprobacion",
       "requires": [
         "block_0004_0003"
       ]
@@ -1597,27 +1790,63 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "b90f39c8bc6c20e5ea7ce00ad0fad3d5e351620fd8a40a6379c3c9f76f5a2228",
+        "sourceSha256": "43b7962aca994200739e9c5fcca2ded8372a4989cbd1ad5d49da35facd37e70a",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
-            "text": "get",
-            "role": "cpp"
-          },
-          {
-            "start": 116,
-            "end": 117,
+            "start": 79,
+            "end": 80,
             "text": "S",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 136,
+            "start": 103,
+            "end": 104,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 194,
+            "end": 195,
             "text": "E",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 220,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 238,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 280,
+            "text": "S+E4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 313,
+            "end": 316,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1648,7 +1877,8 @@
             "start": 62,
             "end": 63,
             "text": "8",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 250,
@@ -1692,7 +1922,7 @@
             "start": 112,
             "end": 113,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1700,27 +1930,49 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "d3b014d22ad218a354f49df57efa17384c5cf558badfded5fe4cde16ffcb03ce",
+        "sourceSha256": "b15bd524a9736dc04f34282dc2718e938873f3d8f4c82b151ee4ab75763b1872",
         "spans": [
           {
-            "start": 38,
-            "end": 41,
+            "start": 28,
+            "end": 31,
+            "text": "'7'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 68,
             "text": "'0'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 63,
-            "text": "0",
+            "start": 83,
+            "end": 95,
+            "text": "actual - '0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 144,
+            "text": "7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 66,
-            "end": 67,
-            "text": "9",
-            "role": "output",
-            "reading": "natural"
+            "start": 179,
+            "end": 185,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 319,
+            "end": 323,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1810,13 +2062,56 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "abe0a461d9aa8f72fc6dbcfbf994bda3d7989e30916009ff7f2c344797c0bb2f",
+        "sourceSha256": "756cb2ddfe7860ed5dc8f3d2f84c94caa92183ee45df586ec128a567b54cdbed",
         "spans": [
           {
-            "start": 5,
-            "end": 8,
+            "start": 27,
+            "end": 28,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 82,
+            "text": "dos dígitos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 160,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 203,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 304,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1835,7 +2130,7 @@
             "start": 47,
             "end": 49,
             "text": "12",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2026,13 +2321,56 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "dbb502443dc0ef54ef5ba18a3849005f4b548dc1a0834ed00692ff979bcda930",
+        "sourceSha256": "6a8eeb3d13b331bd36e24410a8a479aa727f895509fbd77a9c0b1e5f66445d0a",
         "spans": [
           {
-            "start": 65,
-            "end": 68,
+            "start": 37,
+            "end": 38,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 113,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 156,
+            "end": 167,
+            "text": "1 separador",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 240,
+            "text": "1 otro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 288,
+            "text": "001",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2181,20 +2519,62 @@
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "d5e67f364fb2994f6d67f1bd012dc4c365e88bc81bb2ace22398a5bfb937c3df",
+        "sourceSha256": "7df69181bed9b17ec2206296cda3940ce1ce4ff4237bf357a77a1f6442931dcf",
         "spans": [
           {
-            "start": 43,
-            "end": 44,
+            "start": 46,
+            "end": 47,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 47,
-            "end": 48,
+            "start": 49,
+            "end": 50,
+            "text": "-",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 52,
+            "end": 53,
             "text": "9",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 245,
+            "text": "Digitos: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 261,
+            "text": "Separadores: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 272,
+            "text": "Otros: 1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2299,8 +2679,30 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "a78e60d606e4c8fdec4b1854c9f973bef7b924ba217d1e92418f87fbdd5f1e1c",
-        "spans": []
+        "sourceSha256": "a0ad1d283d04b837ac65fcb186560b700ec1bb4659e357944560dc10f3fa5ce3",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "+",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0002",
@@ -2345,6 +2747,403 @@
         "path": "/reviewFeedback/2",
         "sourceSha256": "bc7c644fc0581cafbf5c885335864c7d08b26dba8775396244b781e10a659895",
         "spans": []
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_titulo",
+        "path": "/text",
+        "sourceSha256": "7c47609fa0463abd9e494c07edc643a0f794b7617e17b68e9439820fe4de239c",
+        "spans": []
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_consigna",
+        "path": "/text",
+        "sourceSha256": "17f01f02282d24d3ace67a4ba857665e11c1232e9a3a31905b72aa885ff1f5af",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 171,
+            "text": "void probar(const std::string& texto)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 209,
+            "text": "'0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 215,
+            "text": "'9'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 407,
+            "end": 420,
+            "text": "\"09:Z\\r \\t\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 437,
+            "end": 439,
+            "text": "\\r",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 443,
+            "text": "\\t",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 446,
+            "end": 448,
+            "text": "\\n",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 569,
+            "end": 571,
+            "text": "\\r",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 574,
+            "end": 576,
+            "text": "\\t",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 812,
+            "end": 822,
+            "text": "Digitos: N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 824,
+            "end": 838,
+            "text": "Separadores: N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 841,
+            "end": 849,
+            "text": "Otros: N",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_salida",
+        "path": "/text",
+        "sourceSha256": "663ecf934415d723b7815604b43ab852406fc396cb18d6d09674e5a1520b7c3e",
+        "spans": [
+          {
+            "start": 33,
+            "end": 277,
+            "text": "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 3\nOtros: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "177457a6daadb1e352058c79e1232bd314f9c1ff091c907899868f4d642b654e",
+        "spans": [
+          {
+            "start": 70,
+            "end": 71,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 153,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 255,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "dd6bd5ac5cb81d30d6c5b8ab7aff568f9253b132bb869031be1de18a4cb698b7",
+        "spans": [
+          {
+            "start": 28,
+            "end": 36,
+            "text": "1 dígito",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 46,
+            "text": "4 otros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "ec2a77dd580b82dc9a59721aaaf8577c58fe6360cf1bf01186bd40074c7e8d4a",
+        "spans": [
+          {
+            "start": 28,
+            "end": 37,
+            "text": "4 dígitos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 46,
+            "text": "1 otro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "'9'",
+            "role": "string",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "ae1aaf611e6288d9677f4da0a85e45e36ac9c63cf070d50d6a4d76257b3cc814",
+        "spans": [
+          {
+            "start": 28,
+            "end": 41,
+            "text": "4 separadores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 51,
+            "text": "2 otros",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "afad57f48474e97295470319512e25488180598d7e075078837ec204c86b9536",
+        "spans": []
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "32bbcca826d30b12016e3e517849d1f815eeebfadd5cd22842e4b5f8c3a1afe0",
+        "spans": [
+          {
+            "start": 23,
+            "end": 24,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 116,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 320,
+            "text": "Digitos: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 336,
+            "text": "Separadores: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 347,
+            "text": "Otros: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 413,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 512,
+            "end": 520,
+            "text": "1 dígito",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 523,
+            "end": 530,
+            "text": "4 otros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 643,
+            "end": 644,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 665,
+            "end": 674,
+            "text": "4 dígitos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 677,
+            "end": 683,
+            "text": "1 otro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 736,
+            "end": 749,
+            "text": "4 separadores",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 752,
+            "end": 759,
+            "text": "2 otros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 852,
+            "end": 858,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 939,
+            "end": 943,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

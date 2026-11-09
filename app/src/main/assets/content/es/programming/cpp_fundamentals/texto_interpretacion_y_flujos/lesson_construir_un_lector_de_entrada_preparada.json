@@ -48,7 +48,7 @@
             "Una cadena dentro del código; cin obtiene automáticamente esa cadena."
           ],
           "correctIndex": 0,
-          "explanation": "El texto del campo Entrada se entrega a cin. Cambiar la presentación no cambia esos datos, y una string local no alimenta cin por sí sola. Cada ejecución vuelve a comenzar con su estado inicial.",
+          "explanation": "El lector obtiene sus caracteres de std::cin, que recibe el texto preparado en el campo Entrada. Para probar otra secuencia, conserva el programa y cambia ese campo; la nueva ejecución vuelve a empezar con 3 plazas ocupadas y 0 aceptadas.\n\nCambiar un rótulo de std::cout sólo modifica lo que se presenta. Declarar una cadena local tampoco la convierte en la entrada de std::cin: el programa tendría que usar expresamente esa cadena como otro origen.",
           "reviewFeedback": [
             "Distingue los datos que recibe el lector del código que procesa esos datos.",
             "Cambiar lo que escribe cout modifica la presentación, no los caracteres que recibe cin. Revisa dónde se prepara la entrada de la ejecución.",
@@ -117,7 +117,7 @@
             "Datos adicionales; ocupación 5."
           ],
           "correctIndex": 2,
-          "explanation": "El residuo aviso se detecta antes de comprobar el dominio de las cantidades. La línea se rechaza completa y no publica 9 ni cambia el estado anterior 5.",
+          "explanation": "El análisis obtiene 4, el separador : y 0, pero después encuentra aviso. Según la prioridad indicada, ese texto adicional determina el diagnóstico Datos adicionales antes de comprobar si 4 pertenece al dominio.\n\nLa línea completa se rechaza. No se aplica su suma y la ocupación conserva 5; 9 sería un resultado de aceptar parcialmente una operación que no pasó la validación.",
           "reviewFeedback": [
             "Un motivo de rechazo puede ser verdadero sin ser el primero que debe diagnosticarse. Sigue el orden del contrato antes de elegir una etiqueta.",
             "Calcular una candidata no autoriza a publicarla. Comprueba qué requisitos deben completarse antes de aceptar la línea.",
@@ -165,7 +165,7 @@
           "answers": [
             "1 1 0 1 1"
           ],
-          "explanation": "getline obtiene los caracteres 1: antes de EOF, por lo que su lectura se evalúa como verdadera. El análisis local no encuentra el segundo entero: alcanza EOF y marca fallo. La línea existe, pero la operación está incompleta.",
+          "explanation": "getline obtiene los dos caracteres 1: antes de encontrar el final del origen. Hay una línea obtenida, aunque falte el salto final: la lectura se evalúa como verdadera y el indicador de fin exterior queda activo. De ahí salen los primeros dos valores, 1 1.\n\nEl flujo local reconoce 1 y :, pero no encuentra el segundo entero. La extracción conjunta falla y el flujo local señala tanto fin como fallo: los tres valores restantes son 0 1 1. La salida completa 1 1 0 1 1 distingue obtener el texto de una línea de aceptar su operación.",
           "reviewFeedback": "Evalúa por separado la obtención de la línea y la extracción de sus campos. Consulta después los indicadores del objeto correspondiente; encontrar EOF no responde por sí solo si la operación solicitada se completó."
         },
         {
@@ -520,7 +520,7 @@
             "Aceptadas: 2 y Ocupadas: -1."
           ],
           "correctIndex": 1,
-          "explanation": "0:0 es completo, está en el dominio y conserva un resultado válido: se acepta y cuenta. 0:4 incumple el dominio de salidas y no cambia ni el contador ni la ocupación.",
+          "explanation": "La ejecución empieza con 3 plazas ocupadas y 0 aceptadas. 0:0 aporta ambos enteros, no deja residuo y cumple sus dominios. Su ocupación candidata es 3 + 0 - 0 = 3, dentro de la capacidad: se acepta y el contador pasa a 1, aunque la ocupación no cambie.\n\nEn 0:4, la cantidad de salidas 4 supera el máximo permitido 3. Esa línea se rechaza antes de aplicar el movimiento. El resumen conserva Aceptadas: 1 y Ocupadas: 3.",
           "reviewFeedback": [
             "El contador registra decisiones de aceptación. Revisa si un movimiento completo y válido tiene que cambiar obligatoriamente el valor para ser aceptado.",
             "Distingue las operaciones aceptadas de los cambios que dejan en el estado.",
@@ -536,11 +536,218 @@
               "style": "bold"
             }
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar movimientos compensados en los extremos de capacidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia en este editor el lector completo que has construido, con sus inclusiones, funciones y main. Conserva el estado inicial, el orden de los diagnósticos y el formato de salida. Repite aquí las veintiuna entradas de la batería anterior y comprueba también la nueva secuencia que aparece en el campo Entrada. Tras preparar cada entrada, pulsa «Compilar, ejecutar y comprobar»: cada pulsación ejecuta y comprueba únicamente la entrada actual. Mantén el mismo código para todos los casos; si lo corriges, vuelve a comprobarlos con esa versión.\n\nEn esta secuencia hay movimientos que incorporan y retiran la misma cantidad cuando la ocupación está en un extremo. Sigue aplicándose el contrato ya definido: cada cantidad pertenece a 0..3 y se comprueba la ocupación candidata después de sumar las entradas y restar las salidas. No se exige una ocupación intermedia entre esas dos operaciones.\n\nCompila, ejecuta y comprueba el programa. Revisa tanto el diagnóstico de cada línea como el contador final: un movimiento aceptado cuenta aunque deje la ocupación igual. La última línea de Entrada termina en 1:0, sin un salto posterior; todas las líneas de salida sí deben terminar con salto.",
+          "emphasis": [
+            {
+              "text": "cada pulsación ejecuta y comprueba únicamente la entrada actual",
+              "style": "bold"
+            },
+            {
+              "text": "la ocupación candidata",
+              "style": "bold"
+            },
+            {
+              "text": "un movimiento aceptado cuenta",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la nueva secuencia, la salida completa esperada es:\n\nAceptada | Ocupadas: 6\nAceptada | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 6\nOcupadas: 1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu lector completo.\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "3:0\n3:3\n0:3\n0:3\n3:3\n1:0",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "\n",
+                "outputs": [
+                  "Sin datos | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nSin datos | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "q:1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2;1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1x",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1 0",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "-1:0",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:4",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "+2 : 01",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "3:0\n1:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptadas: 1\nOcupadas: 6\n"
+                ]
+              },
+              {
+                "standardInput": "0:3\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptadas: 1\nOcupadas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "q:2\n1:0",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "1:0\n1:0 resto\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nAceptada | Ocupadas: 3\nAceptadas: 2\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n0:4",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4:0 aviso",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4;0 aviso",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "3:0\n3:3\n0:3\n0:3\n3:3\n1:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 6\nAceptada | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 6\nOcupadas: 1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Desde 3, las ocupaciones aceptadas son 6, 6, 3, 0, 0 y 1. Los dos movimientos 3:3 conservan respectivamente 6 y 0 porque las entradas y las salidas se compensan. Las seis líneas cumplen el contrato, por lo que el resumen es Aceptadas: 6 y Ocupadas: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 5\nOcupadas: 1\n"
+                    ],
+                    "text": "Se está rechazando 3:3 cuando hay 6 plazas ocupadas. Sumar sólo las entradas produce 9, pero aún falta restar las 3 salidas del mismo movimiento: la candidata es 6. Revisa si estás exigiendo una capacidad intermedia que el contrato no establece. Ese movimiento debe aceptarse y contarse."
+                  },
+                  {
+                    "outputs": [
+                      "Aceptada | Ocupadas: 6\nAceptada | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 5\nOcupadas: 1\n"
+                    ],
+                    "text": "Se está rechazando 3:3 cuando la ocupación es 0. Este contrato admite el efecto conjunto: las 3 entradas compensan las 3 salidas y la candidata sigue siendo 0. Revisa si comparas las salidas con la ocupación anterior sin incluir las entradas del mismo movimiento. Esa condición adicional impide contar una operación válida."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar capacidad final y comprobaciones intermedias"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera línea, 3:0, lleva la ocupación de 3 a 6. La siguiente, 3:3, calcula 6 + 3 - 3 = 6 y también se acepta. Rechazar al obtener el subtotal 9 añadiría una restricción sobre un estado intermedio que este formato no exige.\n\nLos dos movimientos 0:3 reducen después la ocupación a 3 y a 0. En ese extremo, 3:3 calcula 0 + 3 - 3 = 0: sus salidas se compensan con sus entradas. Exigir que las salidas no superen la ocupación anterior rechazaría indebidamente esta quinta línea. La última, 1:0, deja 1 plaza ocupada. Las seis operaciones se aceptan y se cuentan, incluidas las que conservan la ocupación.\n\nLas veintiuna entradas anteriores no incluían esos movimientos compensados en los extremos. Por ello, podían pasar las dos implementaciones con restricciones intermedias. El nuevo caso observa los diagnósticos y el contador, además de la ocupación final, que por sí sola no descubre esos dos rechazos.\n\nEl siguiente fragmento pertenece al final de aplicar_linea, después de comprobar los campos completos, el residuo y los dominios individuales. Primero se calcula la candidata con ambas cantidades; sólo después de comprobarla se modifica ocupadas. El resto del lector de referencia permanece igual.",
+          "emphasis": [
+            {
+              "text": "Las seis operaciones se aceptan y se cuentan",
+              "style": "bold"
+            },
+            {
+              "text": "la ocupación final, que por sí sola no descubre esos dos rechazos",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n    ocupadas = candidata;\n    return Resultado::aceptada;\n"
+        },
         {
           "type": "heading",
           "text": "La recuperación conserva la frontera del formato"
@@ -869,12 +1076,19 @@
           "block_0006_0001",
           "block_0006_0002",
           "block_0006_0003",
-          "block_0006_0004"
+          "block_0006_0004",
+          "u11_movimientos_compensados_en_los_extremos_titulo",
+          "u11_movimientos_compensados_en_los_extremos_consigna",
+          "u11_movimientos_compensados_en_los_extremos_salida",
+          "u11_movimientos_compensados_en_los_extremos_comprobacion"
         ]
       },
       {
         "id": "page_0007",
         "blocks": [
+          "u11_movimientos_compensados_en_los_extremos_referencia_titulo",
+          "u11_movimientos_compensados_en_los_extremos_referencia_razonamiento",
+          "u11_movimientos_compensados_en_los_extremos_referencia_codigo",
           "block_0007_0000",
           "block_0007_0001",
           "block_0007_0002",
@@ -1523,7 +1737,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+        "sha256": "cec2118ac9486050b1b3e6232ddce15b1c5266dda91181a122e49150230ab663",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_referencia_codigo",
+        "sha256": "a6a6863526175453b792027720dba68485f79d633e1234c3aa6b42cf34183032",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1749,6 +2027,26 @@
         "id": "block_0007_0003",
         "beforeSha256": "4763a51f9b9c7a803f08885cdac901411d0667e79b25a7ac343d7d960817901d",
         "afterSha256": "2fe463c538dbfe363e858ee9e9c3807bec8b76e0e46bc9e7fa5dae62cd14f652"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "35964088aa38c6231c8febb7b1a00da3a8389e4f1605112af426d03cde09d360",
+        "afterSha256": "d50c31cb3a4d9b3722f7d6d231b0bb9eb97aa46b8f0d68e17bf7a7fdfae0620a"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "de5647f4d8d40238b65b35ef499ef8c6dca2beab284d9b13f8a9e85038dbea87",
+        "afterSha256": "28778cb64069227923e038c2cfdcfac5cf9d33be3845d41e5500e6ce68dcf6d0"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "f993a0065000a322fb521015524a53f9d8f7f6936ad84778b9b1aab8e231b656",
+        "afterSha256": "4d7c0764f6f96e721661c0ab234c8709bc9a6f7e85251c8737dada90f95ef059"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "dc8f8dd8e44ee7c2aaf730b5a28e6f3be4fc398b57b5aab92f62d088cefa62a5",
+        "afterSha256": "8684751e389f596e8189773f0390c332e4f06f9a37d8e2df2102eb288ba294fb"
       }
     ],
     "choiceRevisions": [
@@ -1921,6 +2219,14 @@
         "block_0006_0001",
         "block_0006_0002",
         "block_0006_0004"
+      ]
+    },
+    {
+      "activity": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+      "blocks": [
+        "u11_movimientos_compensados_en_los_extremos_referencia_titulo",
+        "u11_movimientos_compensados_en_los_extremos_referencia_razonamiento",
+        "u11_movimientos_compensados_en_los_extremos_referencia_codigo"
       ]
     }
   ],
@@ -2211,25 +2517,42 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "5e7896c7a10a70d91dc98208588024aee4d96a8e93763078a21f7b89e058f179",
+        "sourceSha256": "eed5213be48489e065f505b3bfd76357f13efaab038d4579726bd2b1d634c1d5",
         "spans": [
           {
-            "start": 40,
-            "end": 43,
-            "text": "cin",
-            "role": "cpp"
+            "start": 36,
+            "end": 44,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 97,
-            "end": 103,
-            "text": "string",
-            "role": "cpp"
+            "start": 206,
+            "end": 207,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 125,
-            "text": "cin",
-            "role": "cpp"
+            "start": 226,
+            "end": 227,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 270,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 369,
+            "end": 377,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2503,27 +2826,62 @@
       {
         "block": "block_0001_0005",
         "path": "/explanation",
-        "sourceSha256": "57cd211638d83d7a9b5baa0c334929af229707ee9bcd6c4165ad05d5d2129ac8",
+        "sourceSha256": "dec0500bd701a48e75f61dc5bd84ecee71a5cab1d496cd3dac9970a6aa92188f",
         "spans": [
           {
-            "start": 11,
-            "end": 16,
+            "start": 20,
+            "end": 21,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": ":",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 71,
             "text": "aviso",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 119,
-            "end": 120,
-            "text": "9",
+            "start": 147,
+            "end": 164,
+            "text": "Datos adicionales",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 151,
+            "start": 287,
+            "end": 288,
             "text": "5",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 291,
+            "text": "9",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2645,19 +3003,55 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "431c64e28e96b468c0704674290b61034789c159f5cb6fde7d7432fd04b47979",
+        "sourceSha256": "79022f490e702f798169774d67bfc1c8aca3eb182f99da0d01ca1a22ac24ba0f",
         "spans": [
           {
             "start": 0,
             "end": 7,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 31,
-            "end": 33,
+            "start": 35,
+            "end": 37,
             "text": "1:",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 251,
+            "end": 254,
+            "text": "1 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 282,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 286,
+            "text": ":",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 431,
+            "end": 436,
+            "text": "0 1 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 466,
+            "text": "1 1 0 1 1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3556,20 +3950,76 @@
       {
         "block": "block_0006_0003",
         "path": "/explanation",
-        "sourceSha256": "e94d1c174a712b0aa895993f04148567191c94a06e203b150963f7b9da00aa29",
+        "sourceSha256": "d12de49f6c8bd0d70aa8abd119c28c36eb4e1df8817b20c95e5febdc3867e1cf",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
+            "start": 25,
+            "end": 26,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
             "text": "0:0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 88,
-            "end": 91,
+            "start": 149,
+            "end": 162,
+            "text": "3 + 0 - 0 = 3",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 220,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 260,
             "text": "0:4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 286,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 315,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 402,
+            "text": "Aceptadas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 416,
+            "text": "Ocupadas: 3",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3794,6 +4244,312 @@
         "path": "/text",
         "sourceSha256": "560c87fd51be44353e5cf1b557f81afd26c372d493f948fd39719945245f80d8",
         "spans": []
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_titulo",
+        "path": "/text",
+        "sourceSha256": "afa65451be48dd31df7ec77036cf55f30ead66151c101aae4ed2bb2a9da746ca",
+        "spans": []
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_consigna",
+        "path": "/text",
+        "sourceSha256": "6dac9ead44d57ad420a5cc4b356568b202acb5e6c52785db76b1f84dad2de23f",
+        "spans": [
+          {
+            "start": 93,
+            "end": 97,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 730,
+            "end": 734,
+            "text": "0..3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1099,
+            "end": 1102,
+            "text": "1:0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_salida",
+        "path": "/text",
+        "sourceSha256": "e19fb0435a7f30e071ed9f424361302f5bdf66508570ade6067d1ef2e215d3e6",
+        "spans": [
+          {
+            "start": 58,
+            "end": 220,
+            "text": "Aceptada | Ocupadas: 6\nAceptada | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 6\nOcupadas: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+        "path": "/outputCheck/cases/21/explanation",
+        "sourceSha256": "fbf2646a9858177e9996767123bb47aa3a0f454884c27109ac4ef68d50967123",
+        "spans": [
+          {
+            "start": 6,
+            "end": 7,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 56,
+            "text": "6, 6, 3, 0, 0 y 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 81,
+            "text": "3:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 236,
+            "text": "Aceptadas: 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 250,
+            "text": "Ocupadas: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+        "path": "/outputCheck/cases/21/reviewFeedback/0/text",
+        "sourceSha256": "b6bb2c7a87135b60e3d5ff2f617c4e974e2f9708ebdf8acddb21a7a975f018fc",
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "3:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 115,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 163,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+        "path": "/outputCheck/cases/21/reviewFeedback/1/text",
+        "sourceSha256": "12f3e75f9fc6a7229c1715fd424cc442c6ff0302f630454d7039026bc53687c1",
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "3:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 95,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "21d96f1b1657e976868859d02da173928353e66cccc26fbef45340548bd4f632",
+        "spans": []
+      },
+      {
+        "block": "u11_movimientos_compensados_en_los_extremos_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "48bde254496460eb8af1a2f48f8b3a8e72679717de1936df199af88f27a05806",
+        "spans": [
+          {
+            "start": 18,
+            "end": 21,
+            "text": "3:0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "text": "3:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 92,
+            "text": "6 + 3 - 3 = 6",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 251,
+            "text": "0:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 284,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 290,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 311,
+            "text": "3:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 333,
+            "text": "0 + 3 - 3 = 0",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 489,
+            "end": 492,
+            "text": "1:0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 499,
+            "end": 500,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 953,
+            "end": 966,
+            "text": "aplicar_linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1145,
+            "end": 1153,
+            "text": "ocupadas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -3803,5 +4559,13 @@
         "spans": []
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+      "requires": [
+        "block_0003_0005"
+      ]
+    }
+  ]
 }

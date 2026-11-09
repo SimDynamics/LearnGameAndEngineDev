@@ -81,7 +81,7 @@
           "answers": [
             "1:<Puerta 4>\n2:<>\n3:<  Rampa>\nTotal: 3"
           ],
-          "explanation": "Hay tres líneas. El segundo salto termina una línea vacía; la tercera conserva dos espacios iniciales y se obtiene antes de llegar al final del texto.",
+          "explanation": "La primera llamada obtiene Puerta 4 y consume su salto de línea. La segunda encuentra inmediatamente otro salto: lo consume y obtiene una cadena vacía, que se presenta como 2:<>. La tercera conserva los dos espacios antes de Rampa y obtiene la última línea aunque no termine con otro salto; su salida es 3:<  Rampa>. Las tres lecturas ejecutan el cuerpo y el resumen muestra Total: 3.",
           "reviewFeedback": "Sigue cada delimitador en orden. Distingue la línea de longitud cero de la que conserva espacios y cuenta únicamente las lecturas válidas."
         },
         {
@@ -107,7 +107,7 @@
             "Dos: una por el salto y otra por el final del texto."
           ],
           "correctIndex": 1,
-          "explanation": "El salto permite obtener una línea vacía válida. El siguiente intento no dispone de caracteres ni de otro delimitador, por lo que termina el bucle.",
+          "explanation": "El texto contiene un solo carácter de salto de línea. La primera llamada a std::getline lo consume y obtiene una línea de cero caracteres; esa lectura válida ejecuta el cuerpo una vez. En el intento siguiente ya no queda ningún carácter ni otro delimitador, así que la condición falla. Una línea vacía obtenida y un intento fallido no son el mismo caso.",
           "reviewFeedback": [
             "Distingue una cadena de longitud cero de una lectura fallida. Comprueba si existe un delimitador que la función pueda consumir.",
             "Sigue el flujo hasta el delimitador disponible y después considera qué queda para otra lectura.",
@@ -130,7 +130,7 @@
           "answers": [
             "2"
           ],
-          "explanation": "Los saltos terminan A y B. Después no queda un delimitador que produzca otra línea vacía ni caracteres para una línea nueva.",
+          "explanation": "La primera lectura obtiene A, consume su salto y aumenta cantidad a 1. La segunda obtiene B, consume el siguiente salto y aumenta el contador a 2. El intento posterior ya no puede consumir caracteres ni un delimitador, de modo que no ejecuta el cuerpo. Por eso se imprime 2; el salto que cerró B no crea por sí mismo otra lectura válida.",
           "reviewFeedback": "Distingue los delimitadores consumidos de los caracteres que quedan después del último salto. El contador aumenta dentro del cuerpo de cada lectura válida."
         },
         {
@@ -155,7 +155,7 @@
           "answers": [
             "getline"
           ],
-          "explanation": "getline obtiene una línea completa, conserva los espacios y permite procesar también una línea vacía leída válidamente.",
+          "explanation": "La llamada std::getline(entrada, linea) obtiene primero Paso alto, conservando el espacio interno. El salto inmediato siguiente permite una segunda lectura válida de una línea vacía, y la última llamada válida obtiene Paso bajo aunque no haya un salto al final. El cuerpo escribe <Paso alto>, <> y <Paso bajo>, cada uno en su propia línea. Una extracción de palabra no conservaría esas tres unidades.",
           "reviewFeedback": "Busca la función de lectura completa ya utilizada con este flujo y este destino. Debe conservar los espacios que pertenecen a la línea."
         }
       ]
@@ -204,7 +204,7 @@
             "Perder líneas vacías que forman parte de los datos."
           ],
           "correctIndex": 2,
-          "explanation": "Los saltos también son espacio en blanco. Si se eliminan todos, una línea vacía significativa desaparece antes de la lectura que debía conservarla. Consumir blancos no obtiene una palabra: se detiene al llegar al primer carácter que no es blanco.",
+          "explanation": "Una línea vacía aporta un salto de línea que std::getline puede consumir como delimitador de un dato válido. Si antes se eliminan todos los blancos, ese salto también desaparece y la siguiente lectura comienza más adelante: se pierde la línea que debía conservarse. La eliminación se detiene ante el primer carácter que no es blanco, por lo que el problema no consiste en consumir la primera palabra de la etiqueta.",
           "reviewFeedback": [
             "Revisa qué caracteres se incluyen en espacio en blanco y cuál delimita las líneas.",
             "Consumir espacio en blanco se detiene ante un carácter que no lo sea. Distingue esa operación de leer una palabra.",
@@ -251,7 +251,7 @@
             "Dos líneas: A y una línea vacía."
           ],
           "correctIndex": 2,
-          "explanation": "El primer LF termina A. El segundo termina una línea vacía. Después no hay caracteres ni delimitador para obtener una tercera línea.",
+          "explanation": "En el texto \"A\\n\\n\", la primera llamada guarda A y consume el primer salto. La siguiente encuentra el segundo salto sin caracteres delante, lo consume y obtiene una línea vacía. Después de esas dos lecturas no queda nada para una tercera. Por eso el informe debe contar 2 líneas en total y 1 vacía.",
           "reviewFeedback": [
             "Decide qué ocurre con el delimitador que sigue inmediatamente al que cierra A.",
             "Comprueba si después del último salto queda algún carácter o delimitador que otra lectura pueda consumir.",
@@ -323,7 +323,7 @@
             "Porque la extracción a string conserva siempre los blancos iniciales."
           ],
           "correctIndex": 0,
-          "explanation": "getline usa el salto como delimitador y no omite los espacios del contenido. Una eliminación general de blancos cambiaría el dato y el contrato.",
+          "explanation": "Después de la línea vacía, el flujo está situado ante dos espacios seguidos de Muelle. std::getline guarda ambos espacios y las letras hasta el salto que cierra esa línea. Al imprimir el destino entre los delimitadores se obtiene <  Muelle>. El contador sólo añade su número; no crea esos espacios. Eliminarlos antes de leer cambiaría los caracteres que el informe debe conservar.",
           "reviewFeedback": [
             "Relaciona la regla de lectura con los caracteres situados antes del salto.",
             "Revisa qué instrucciones añaden caracteres a la salida y cuáles sólo llevan la cuenta de las lecturas.",
@@ -338,7 +338,7 @@
           "answers": [
             "Lineas: 3\nVacias: 1"
           ],
-          "explanation": "La primera línea está vacía, la segunda contiene un espacio y la tercera contiene Fin. Sólo una de las tres tiene cero caracteres.",
+          "explanation": "El primer salto permite una lectura válida de una cadena vacía: total pasa a 1 y vacias a 1. La segunda línea contiene un espacio, así que aumenta el total a 2 pero no el contador de vacías. La tercera obtiene Fin sin necesitar un salto final y deja el total en 3. Los resúmenes son Lineas: 3 y Vacias: 1, en líneas separadas.",
           "reviewFeedback": "Sigue por separado el total de lecturas válidas y la condición sobre la longitud del destino. Un espacio también es un carácter."
         }
       ]
@@ -372,7 +372,7 @@
             "Convertir automáticamente cada palabra de la línea en un número."
           ],
           "correctIndex": 0,
-          "explanation": "La lectura de línea obtiene una unidad de texto. Validar su estructura y convertir sus partes son responsabilidades posteriores.",
+          "explanation": "La primera fase debe guardar los caracteres de cada línea en su destino para que puedan analizarse después. Por ejemplo, agregar tres puede obtenerse correctamente como texto, pero esa lectura no convierte tres en cifras ni demuestra que la operación cumpla su formato. Separar ambas decisiones permite conservar el dato leído y aplicar luego las reglas concretas de aceptación.",
           "reviewFeedback": [
             "Distingue la obtención del texto de las comprobaciones que decidirán si su contenido es admisible.",
             "Una lectura válida no aplica automáticamente las reglas particulares de una orden. Revisa qué conserva esta primera fase.",
@@ -1309,6 +1309,51 @@
         "id": "block_0005_0000",
         "beforeSha256": "238b1e48213eb0834f058b6dcbe09dedf741acfe2ff8fe2b57a3713f76d3c1ff",
         "afterSha256": "744b4232b5af4b26a919da1914fae629070814cf0abb5a4a1bea4ab2dde665b3"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "2d5e05dd849599f4fe9d3b35df2c431bc15b99e5e66fdc88fe9ee94dd4ad4445",
+        "afterSha256": "03a553e00e3a4c95fcbef1f5b63668c26ef6ad9058ddcecd7799d6f6b1e5de48"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "2f478f4b9b8b241b41b3cf191e1a62d28ea2b7fc289c20dcdddaab25064a8244",
+        "afterSha256": "9f90b98201fef5eb85f438eb5d2c110685b79a0995514a47cfd46f5f01737972"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "7ed6f5a644a10e2475e68b4fafae1ee668046d7f30c290dacfaedf3f39e06fe7",
+        "afterSha256": "abb1e6ad9e4c47933561148a917b5edb285881fbaefe809a6420586e3bbdc1c7"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1b7d995637586ec1af8f7413b5db625cc6694326a115089ae583406ed3b52f1f",
+        "afterSha256": "d9c5644b2e418157d43aa151b47acd78a5f4d133adf2bc7b50903ff4645eb261"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "bab069c083eb69089f0d0e736cd9472f0b14feec13c1aa7f2a506356084ade01",
+        "afterSha256": "a49f257f31525be47af8cd36db250f4f7c88c3bfd0d2da4a9277f77e61536df0"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "d48a8ec2fecbc370b9a02cfb55ccee72f2878ee6e2cebcd4983e36437a5dd2a6",
+        "afterSha256": "230663d1c057b502fbaca2ff7626dc37109219f32490f65df3602c02fc6c3549"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "2e128c0df8d525124803e2303661723c02a7ac7e95142dadfc7c03847f329dc4",
+        "afterSha256": "dc4aab75c552e4e3ef72b5315df965c72a259fc84c72499dc93feea746975b5f"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "8fa2656ca6ff3a0d0e81b0880b0a664cde19a67e0a092a4ad87951777d3bac6c",
+        "afterSha256": "a1afe8fd6e69704d52f3d30151036496e0281fd6bb062028bb4bbaaaf7cbebaa"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "f1f2c475f3f9fdf6af294dae78c8232efa6c06cfe8fc7298422615902c1b7ccf",
+        "afterSha256": "b7a8f42a16a0e36331b71b6f5bfe0593e06b4762ddbabc246c51c862dabefc92"
       }
     ]
   },
@@ -1455,8 +1500,44 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "a70a87720b4503759cbfbbb73683a9a2d503665483569cecec826c3272954186",
-        "spans": []
+        "sourceSha256": "44bbcab351f8ec8c9e3ee6bf48155a97233d3ffc775f951dc81f13bc09b61d40",
+        "spans": [
+          {
+            "start": 27,
+            "end": 35,
+            "text": "Puerta 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "2:<>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 230,
+            "text": "Rampa",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 315,
+            "text": "3:<  Rampa>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 375,
+            "end": 383,
+            "text": "Total: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1479,7 +1560,8 @@
             "start": 26,
             "end": 30,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 70,
@@ -1526,8 +1608,16 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "5823bd1a8d146c89107c97ea9fd82a02810c367759eccd0ef013f3740e444daa",
-        "spans": []
+        "sourceSha256": "2f424c42ca3452780ca463e078effb55a3f5c16cbef56641a8f9c9f113016caf",
+        "spans": [
+          {
+            "start": 75,
+            "end": 87,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1580,18 +1670,53 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "8f2690cb31eeb47a323df14b2549e1c1121a62f122cb118191f78655c314902b",
+        "sourceSha256": "e625678722c1deee0bd2027ea144ac74d7118754d83e8231149d0d2a636eb0a3",
         "spans": [
           {
-            "start": 20,
-            "end": 21,
+            "start": 27,
+            "end": 28,
             "text": "A",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 24,
-            "end": 25,
+            "start": 57,
+            "end": 65,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 273,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 295,
             "text": "B",
             "role": "data",
             "reading": "natural"
@@ -1633,13 +1758,49 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "8b77a3a8a419d959506d9a506d766e37f72748c11ff57c3a1691101ae4af4d54",
+        "sourceSha256": "acb120d7ee95ec1c317c622664402286625f30b3348f60ec560bbd40d5921394",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
-            "text": "getline",
-            "role": "cpp"
+            "start": 11,
+            "end": 39,
+            "text": "std::getline(entrada, linea)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 65,
+            "text": "Paso alto",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 227,
+            "text": "Paso bajo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 291,
+            "text": "<Paso alto>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 295,
+            "text": "<>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 309,
+            "text": "<Paso bajo>",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1743,8 +1904,16 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "6aba4c5930f63656c57c5deeb3a12ee1c3a7358307e52ec142d2a66daf64471e",
-        "spans": []
+        "sourceSha256": "9fa40191108c15d7d9dcfc621efd2339d5e318a4a8cd935fed9e9443ab849cd1",
+        "spans": [
+          {
+            "start": 45,
+            "end": 57,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -1910,13 +2079,34 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "39ce0444d93d27c72fe8fcae4420bbb28d19e3ffea61dad7737e189bdaf47a29",
+        "sourceSha256": "b582d7806db30dd73763980dce25b4f4dcdbb4eb47ea522198b5cfb4b37369d7",
         "spans": [
           {
-            "start": 21,
-            "end": 22,
+            "start": 12,
+            "end": 19,
+            "text": "\"A\\n\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 48,
             "text": "A",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 291,
+            "text": "1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2037,13 +2227,28 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "0ce58fe2626136631b50711137d6a3871216846c652121db9e6e7a348722d2cd",
+        "sourceSha256": "390285fc4c71fbfd30a2cfb42009ee3d4ef808b8c76fcb130e03273c95a64da4",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
-            "text": "getline",
-            "role": "cpp"
+            "start": 79,
+            "end": 85,
+            "text": "Muelle",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 99,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 230,
+            "end": 240,
+            "text": "<  Muelle>",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2119,13 +2324,69 @@
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "0057877ab1298ab40647a47a90602b4193384327dfb3f5fb5d1c80763b6327bd",
+        "sourceSha256": "d4c02c5c5cf0db435e0dd7255c1e9280748cc055e0a158d8c259bbd580bb8bba",
         "spans": [
           {
-            "start": 82,
-            "end": 85,
+            "start": 64,
+            "end": 69,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 87,
+            "text": "vacias",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 213,
             "text": "Fin",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 263,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 292,
+            "text": "Lineas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 304,
+            "text": "Vacias: 1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2184,8 +2445,23 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "4ea3ee93b9659469afd71848c61e0d7367a6cdaf538e7aaa1ad79be6a87aeac6",
-        "spans": []
+        "sourceSha256": "bd1c3367d26b9bf65265803bd4792f564c218fd4ce45f1b195350dff8d1d44ed",
+        "spans": [
+          {
+            "start": 121,
+            "end": 133,
+            "text": "agregar tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 210,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0002",

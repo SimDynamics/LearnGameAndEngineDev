@@ -56,7 +56,7 @@
             "Marcar las posiciones uno y tres porque tienen la misma escritura."
           ],
           "correctIndex": 1,
-          "explanation": "Los vecinos son rio/sol y sol/rio. La igualdad entre primera y tercera posición no constituye una repetición adyacente.",
+          "explanation": "La primera palabra, rio, todavía no tiene una anterior. Al obtener sol, se compara con rio y son distintas. Al obtener el último rio, su vecina anterior es sol y tampoco coincide. Por eso no se marca ninguna posición. La igualdad entre las palabras primera y tercera no forma un par de vecinos.",
           "reviewFeedback": [
             "Revisa qué palabra está inmediatamente antes de la última. Haber aparecido en otro lugar no basta para formar un par vecino.",
             "Comprueba los dos pares consecutivos sin reunir apariciones de posiciones separadas.",
@@ -73,7 +73,7 @@
             "Dos y tres: hay dos pares y la primera no tiene palabra anterior."
           ],
           "correctIndex": 2,
-          "explanation": "Se comparan las posiciones uno/dos y dos/tres. La posición dos pertenece a ambos pares con papeles distintos.",
+          "explanation": "La palabra de la posición 2 coincide con la de la posición 1, por lo que se marca 2. Después, la palabra de la posición 3 coincide con la de la posición 2 y se marca 3. La palabra central cierra el primer par y empieza el segundo; eso no elimina ninguno de los dos. La posición 1 no tiene palabra anterior y no se marca.",
           "reviewFeedback": [
             "Una palabra puede cerrar un par y empezar el siguiente. Revisa los vecinos de la tercera posición.",
             "Cada posición marcada debe tener una palabra anterior con la que comparar.",
@@ -131,7 +131,7 @@
             "Una cadena vacía, para empezar una historia nueva tras cada diferencia."
           ],
           "correctIndex": 0,
-          "explanation": "La palabra anterior a la tercera es la obtenida en la posición dos: b. Conservar a después de una diferencia dejaría de representar la observación inmediatamente anterior.",
+          "explanation": "Tras leer a, se conserva esa palabra. Al obtener la primera b, ambas son distintas, pero la copia anterior debe actualizarse igualmente a b. Así, cuando llega la tercera palabra, se compara b con b y se reconoce el par vecino. Conservar a después de la diferencia impediría reconocerlo.",
           "reviewFeedback": [
             "Conserva el valor de la última lectura válida hasta compararlo con la que llega después.",
             "Después de una diferencia también habrá una palabra inmediatamente anterior en el siguiente paso. Comprueba cuál será.",
@@ -204,7 +204,7 @@
             "Se convierte automáticamente en una observación vacía válida."
           ],
           "correctIndex": 1,
-          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo.",
+          "explanation": "La entrada inicial contiene seis palabras. Cada lectura válida permite entrar al cuerpo una vez; el siguiente intento no consigue una séptima palabra y su condición es falsa. Por eso el cuerpo no vuelve a comparar ni incrementa los contadores. El contenido que tenga el destino tras ese intento fallido no acredita una palabra nueva.",
           "reviewFeedback": [
             "Un destino conservado después de un fallo no representa un dato recién obtenido.",
             "La condición debe autorizar el cuerpo sólo cuando se obtiene otra palabra.",
@@ -354,7 +354,7 @@
           "answers": [
             "Repetida: 4\nPalabras: 5\nRepeticiones: 1"
           ],
-          "explanation": "Sólo las dos apariciones contiguas de eco. coinciden literalmente. Eco no coincide con eco ni con eco.; la última Eco no tiene a la primera como vecina.",
+          "explanation": "Se obtienen cinco palabras. Eco y eco difieren en la mayúscula; eco y eco. difieren en el punto. Las palabras tercera y cuarta contienen ambas eco., de modo que se muestra Repetida: 4. La última Eco difiere de su vecina eco., aunque coincida con la primera. Los resúmenes son Palabras: 5 y Repeticiones: 1.",
           "reviewFeedback": "Compara el contenido literal de cada palabra con el de su vecina anterior. Conserva mayúsculas y puntuación."
         },
         {
@@ -376,7 +376,7 @@
           "answers": [
             "Repetida: 1\nRepetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 3"
           ],
-          "explanation": "Copia actual antes de preguntar y compara cada palabra consigo misma. Incluso marca la primera. El encargo para sal roca sal no contiene pares iguales; mover la copia después de la comparación restablece el significado de anterior.",
+          "explanation": "En la primera vuelta, actual contiene sal y anterior = actual; copia ese valor antes de comparar. La condición compara entonces sal consigo misma y muestra Repetida: 1. Sucede lo mismo con roca en la segunda vuelta y con sal en la tercera: aparecen también Repetida: 2 y Repetida: 3. Por eso ambos contadores terminan en 3.\n\nEl contrato de vecinos no encontraría ninguna repetición en sal roca sal. Mover la copia después de la comparación permitiría conservar la palabra anterior hasta haberla comparado con la nueva.",
           "reviewFeedback": "Traza la asignación y después la condición, en el orden en que están escritas. Predice esa versión, no una reparación imaginada."
         },
         {
@@ -445,7 +445,7 @@
             "Se convierte automáticamente en una observación vacía válida."
           ],
           "correctIndex": 1,
-          "explanation": "La condición de la repetición utiliza el éxito de la lectura. El destino conservado tras un fallo no constituye un dato nuevo.",
+          "explanation": "La entrada inicial permite obtener seis líneas, incluida la última sin LF. Esas seis lecturas entran al cuerpo una vez cada una. El siguiente intento no obtiene otra línea y la condición es falsa, así que no compara de nuevo ni aumenta los contadores. El contenido que tenga actual tras ese intento fallido no acredita una línea nueva; tampoco convierte el fallo en una línea vacía válida.",
           "reviewFeedback": [
             "Distingue la última línea obtenida de un intento que ya no consigue otra.",
             "Comprueba que la condición autorice el cuerpo sólo tras una lectura válida.",
@@ -601,7 +601,7 @@
           "answers": [
             "Repetida: 3\nLineas: 3\nRepeticiones: 1"
           ],
-          "explanation": "getline elimina cada LF delimitador, pero conserva el CR literal de la primera línea. A con CR difiere de A. Las líneas segunda y tercera sí coinciden; el LF final no inventa una cuarta lectura.",
+          "explanation": "getline extrae cada LF delimitador sin añadirlo al dato. La primera línea conserva dos caracteres, A y CR; la segunda contiene sólo A, por lo que no coinciden. La tercera vuelve a contener sólo A y sí coincide con la segunda: aparece Repetida: 3. El LF final ya cerró esa tercera línea; el intento posterior no obtiene ningún carácter ni delimitador. Los resúmenes quedan en Lineas: 3 y Repeticiones: 1.",
           "reviewFeedback": "Distingue el CR que forma parte del dato del LF que delimita cada lectura. Cuenta sólo los pares vecinos con contenidos iguales."
         },
         {
@@ -623,7 +623,7 @@
           "answers": [
             "Repetida: 2\nRepetida: 5\nLineas: 6\nRepeticiones: 2"
           ],
-          "explanation": "Las dos primeras líneas contienen dos espacios seguidos de x. Las líneas cuarta y quinta contienen x seguido de un espacio. La tercera x y la sexta tabulador seguido de x tienen otros contenidos literales; no se eliminan esos caracteres para compararlos.",
+          "explanation": "Las líneas primera y segunda contienen dos espacios seguidos de x; su igualdad produce Repetida: 2. La tercera contiene sólo x y la cuarta añade un espacio después: cada una difiere de su vecina anterior. La quinta vuelve a contener x seguido de un espacio, así que aparece Repetida: 5. La sexta contiene un tabulador seguido de x, distinto del contenido de la quinta.\n\nLa última línea se obtiene aunque no termine en LF. Se cuentan las seis lecturas y los dos pares iguales: Lineas: 6 y Repeticiones: 2.",
           "reviewFeedback": "Conserva todos los caracteres de cada línea, incluidos espacios y tabuladores; después compara únicamente vecinos."
         },
         {
@@ -636,7 +636,7 @@
             "El primero no tiene líneas; el segundo tiene dos líneas vacías y una repetición."
           ],
           "correctIndex": 2,
-          "explanation": "getline obtiene una línea vacía por cada delimitador disponible aquí. La primera tiene ausencia previa; la segunda sí tiene una línea vacía anterior igual.",
+          "explanation": "Con texto vacío no hay caracteres ni delimitadores que permitan obtener una línea: se cuentan 0 líneas y 0 repeticiones. En \"\\n\\n\", cada LF disponible permite obtener una línea vacía. La primera no tiene anterior; después de guardarla, ya existe una observación previa aunque su contenido sea vacío. La segunda coincide con ella, de modo que se cuentan 2 líneas y 1 repetición.",
           "reviewFeedback": [
             "Distingue una observación de longitud cero de la ausencia de observaciones.",
             "Sigue los delimitadores disponibles y decide en qué posición ya existe una línea anterior.",
@@ -2052,6 +2052,56 @@
         "id": "block_0003_0001",
         "beforeSha256": "9a8ce56ee1b15a3f509aaeaa5b8e114b2f3236193a341589a9bc8c0bf10d0df1",
         "afterSha256": "d5ace983ba29e175eaa3e87487c6350f6e91257ef9ac798e19f4c15cc68e494a"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "e6fd6c485487c6dff8c3620b778576e364230507f930d41b4e29b099d396041d",
+        "afterSha256": "76d200f0f39effc24239bed119099fc05b0d22c5c855bdf63d009fd750b31ad5"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "ac3b4200aa210a97f7abdcdc0444466e2a1767256c16c38309196c6927bb3c7d",
+        "afterSha256": "9cb86bef66b51d8b36b9ea1dcb01b99cf78718dfa456f2d7dd21aad08f78345e"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "9588d94bdbb51f8bed6e5541403c403b98725c1843fcd6b9c8d4551e3ad8db8a",
+        "afterSha256": "1fab9e64941058f1cab99bfb66a2915aad6ec6bdc69c08201db0111433a9772b"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "06e6a451f4917e48da74f62673490090d8b5fa5c55f7324034cd347e2fe8282c",
+        "afterSha256": "2c9e64415d1c1ae8b4fb0b397914bd87d58ecb4ad9f442eff0209f9ad51ab50a"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "ef7c66c1cc30198425530abdf37a667307a30e7f7dcdb82a649eaf2b60b67bda",
+        "afterSha256": "e8338e8f66a6e5a34022a83e15d01d07670eff3e46c529bf0e502b94a666e94d"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "65443153c4768ec50becea6fbf276268a35445180537511eca59601e59cf44d9",
+        "afterSha256": "efddc33d5f8f5c1d425000bfda0a0fb02b867ef4c3a62b94dc4beda45b9f02a5"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "828406600d6d732844fd998b163c65c7336834598532e5a51c765ab3633ca41e",
+        "afterSha256": "d20db99540cad7dcd487d5416b08f7467d5c17e917994c9d3d8789862e3d5742"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "0197188aefa644135909a1d83b7f82b0861e417801210c5d1405eda18ef97c02",
+        "afterSha256": "d18f30ac5679bde7306453d845326184ca5b0ed3085c40f51a44e8b79804efeb"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "e521b63a3f77984722d7e70bba3167fc4266d954bc731c69498276708e4a8277",
+        "afterSha256": "7eb2f9a1ac7fbbf6972663feb1a12064f1301be9a862c5dff08024ad8ee17906"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "86d882669df6048a86113ac1dfd9e771b1f26b386727cce0a7f26a4e00229467",
+        "afterSha256": "80b873c6efe731c8fec2363717e4625368d53b914363f13476a4c12bba7bf29f"
       }
     ]
   },
@@ -2226,19 +2276,40 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "3e4208d0c0eb8a51c6097f6c6f8139c6a8ede955531243c5048658456764556d",
+        "sourceSha256": "c47aeaa5b14fbfe05ab45fb51c75be7c5b89b871a2952c190180ac91b12d0628",
         "spans": [
           {
-            "start": 16,
+            "start": 20,
             "end": 23,
-            "text": "rio/sol",
+            "text": "rio",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 26,
-            "end": 33,
-            "text": "sol/rio",
+            "start": 67,
+            "end": 70,
+            "text": "sol",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 90,
+            "text": "rio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "text": "rio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 159,
+            "text": "sol",
             "role": "data",
             "reading": "natural"
           }
@@ -2305,8 +2376,58 @@
       {
         "block": "block_0000_0005",
         "path": "/explanation",
-        "sourceSha256": "eb01b4dd7763075b854ce0b8da1f1af9a316e54b771424851b1d19611ac72806",
-        "spans": []
+        "sourceSha256": "7d2213cad9e30cdeb6c4c3308f6ee57738e592a26e82a913ce521c2c476d2613",
+        "spans": [
+          {
+            "start": 26,
+            "end": 27,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 60,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 83,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 154,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 279,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0005",
@@ -2385,7 +2506,8 @@
             "start": 40,
             "end": 45,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 62,
@@ -2398,7 +2520,8 @@
             "start": 74,
             "end": 78,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 95,
@@ -2447,18 +2570,46 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "3ffadb7992fbcd496b959365f29e96f510d083e6b31d9f83a84082b938f54bc5",
+        "sourceSha256": "583fbfb8f3e65fa2886091c62f69fc24792db7e5759a61b7761f019515e83c91",
         "spans": [
           {
-            "start": 68,
-            "end": 69,
+            "start": 10,
+            "end": 11,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 61,
             "text": "b",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 81,
-            "end": 82,
+            "start": 138,
+            "end": 139,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 191,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 197,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 238,
             "text": "a",
             "role": "data",
             "reading": "natural"
@@ -2679,7 +2830,7 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "5b27f01be0bce6f69251539281e58eb459bc5c63337f40ae07d387ebad6e16e9",
+        "sourceSha256": "f506db74eba69d3b901270c68baedcdd518c6289f8bc57c035c4e358abdc548c",
         "spans": []
       },
       {
@@ -2843,13 +2994,15 @@
             "start": 195,
             "end": 198,
             "text": "N=1",
-            "role": "math"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 201,
             "end": 204,
             "text": "R=0",
-            "role": "math"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 223,
@@ -2967,41 +3120,76 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "6eb0624a3777ad773882a56e5b8641d312d0222b30530be24c6a0a6587669ddb",
+        "sourceSha256": "3dec643a6d6f444c62ec8b1de96b1c008afb2130cb49606d1e7718f536f40a37",
         "spans": [
           {
-            "start": 38,
-            "end": 42,
-            "text": "eco.",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 67,
-            "end": 70,
+            "start": 28,
+            "end": 31,
             "text": "Eco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 90,
+            "start": 34,
+            "end": 37,
             "text": "eco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 102,
+            "start": 64,
+            "end": 67,
+            "text": "eco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 74,
             "text": "eco.",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 117,
+            "start": 143,
+            "end": 147,
+            "text": "eco.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 183,
+            "text": "Repetida: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 198,
             "text": "Eco",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 224,
+            "text": "eco.",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 287,
+            "text": "Palabras: 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 305,
+            "text": "Repeticiones: 1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3059,26 +3247,84 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "62f12a6f9c2492f76ae68771dba2f2c9c2cc9cd2d1d116a607d3cc01cffd2858",
+        "sourceSha256": "26d0187b3e80aee5fb5043f0d816daa092ccd0937e13ab84b87888c76a54220d",
         "spans": [
           {
-            "start": 6,
-            "end": 12,
+            "start": 22,
+            "end": 28,
             "text": "actual",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 112,
-            "end": 124,
-            "text": "sal roca sal",
+            "start": 38,
+            "end": 41,
+            "text": "sal",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 222,
-            "end": 230,
-            "text": "anterior",
-            "role": "cpp"
+            "start": 44,
+            "end": 62,
+            "text": "anterior = actual;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 131,
+            "text": "sal",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 167,
+            "text": "Repetida: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 193,
+            "text": "roca",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 224,
+            "text": "sal",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 268,
+            "text": "Repetida: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 282,
+            "text": "Repetida: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 322,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 397,
+            "text": "sal roca sal",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3233,8 +3479,16 @@
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "5b27f01be0bce6f69251539281e58eb459bc5c63337f40ae07d387ebad6e16e9",
-        "spans": []
+        "sourceSha256": "af6c6ffbd373e84b1ee517e0629790037d16c31d989259beacef2a27e8ef0982",
+        "spans": [
+          {
+            "start": 275,
+            "end": 281,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -3503,26 +3757,55 @@
       {
         "block": "block_0007_0002",
         "path": "/explanation",
-        "sourceSha256": "337c89935517860d98faf6e171d8460e2cea112d5549c0f291b95e598f2195d1",
+        "sourceSha256": "fc2e271562af6aa4d4fd3511fa0bfa1fe8b010957a36e79890e076435eb5cebf",
         "spans": [
           {
             "start": 0,
             "end": 7,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 87,
+            "start": 99,
+            "end": 100,
             "text": "A",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 106,
-            "end": 107,
+            "start": 132,
+            "end": 133,
             "text": "A",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 195,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 245,
+            "text": "Repetida: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 375,
+            "end": 384,
+            "text": "Lineas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 402,
+            "text": "Repeticiones: 1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3548,34 +3831,62 @@
       {
         "block": "block_0007_0004",
         "path": "/explanation",
-        "sourceSha256": "8050dcc3c8200844b6e8d89258ab57f13ae8f1093e8b37c7789c433c05775ec0",
+        "sourceSha256": "34e359d2787aa27c85aeee97f2c6ee9fb9c62d803df2c522d495507d84b23b42",
         "spans": [
           {
-            "start": 59,
-            "end": 60,
+            "start": 64,
+            "end": 65,
             "text": "x",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 99,
-            "end": 100,
+            "start": 87,
+            "end": 98,
+            "text": "Repetida: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 126,
             "text": "x",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 136,
+            "start": 233,
+            "end": 234,
             "text": "x",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 169,
-            "end": 170,
+            "start": 274,
+            "end": 285,
+            "text": "Repetida: 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 330,
             "text": "x",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 476,
+            "end": 485,
+            "text": "Lineas: 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 503,
+            "text": "Repeticiones: 2",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3602,13 +3913,42 @@
       {
         "block": "block_0007_0005",
         "path": "/explanation",
-        "sourceSha256": "9f130eb112de98a1a1bd4b26d1367bcec86aaada37b385f49cb9a32289adfc5c",
+        "sourceSha256": "bfe8a07de1d85af36453c3506d149f3528d0f5d2509da4dee388710ef052d2b3",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
-            "text": "getline",
-            "role": "cpp"
+            "start": 94,
+            "end": 102,
+            "text": "0 líneas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 119,
+            "text": "0 repeticiones",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "\"\\n\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 353,
+            "end": 361,
+            "text": "2 líneas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 376,
+            "text": "1 repetición",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

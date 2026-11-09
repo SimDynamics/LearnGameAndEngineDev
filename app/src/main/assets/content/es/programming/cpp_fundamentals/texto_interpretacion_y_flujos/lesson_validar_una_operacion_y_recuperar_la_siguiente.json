@@ -79,7 +79,7 @@
             "Leer y descartar el resto de la línea mediante getline."
           ],
           "correctIndex": 2,
-          "explanation": "clear permite volver a operar; getline es la operación que consume el texto rechazado y su delimitador. Cambiar sólo el destino no modifica la posición del flujo.",
+          "explanation": "La extracción numérica se detiene ante x y deja pendiente x 4 en la primera línea. clear() restablece los indicadores para permitir otra lectura, pero no cambia esa posición. Después, getline obtiene y descarta x 4 y consume el salto de línea que lo sigue. El intento siguiente puede alcanzar 7, que pertenece a la segunda línea. Asignar otro número al destino no consume ninguno de esos caracteres.",
           "reviewFeedback": [
             "El destino y el flujo son objetos distintos. Revisa qué operación cambia la posición desde la que se intentará leer.",
             "Restablecer los indicadores habilita operaciones, pero no elimina por sí solo los caracteres pendientes. Localiza qué lectura avanza hasta la frontera elegida.",
@@ -173,7 +173,7 @@
           "answers": [
             "0 4\n0 4\n1 9"
           ],
-          "explanation": "15 incumple el dominio; 7x deja un residuo. Ningún rechazo asigna al resultado. La tercera operación es completa y válida, así que cambia cantidad a 9.",
+          "explanation": "El resultado del llamador empieza en 4. La primera llamada reconoce 15, pero lo rechaza porque el dominio permitido es de 1 a 12; no asigna al resultado y se imprime 0 4. La segunda obtiene el prefijo 7 de 7x, encuentra el residuo x y también conserva el resultado: otra línea 0 4.\n\nLa tercera llamada obtiene 9, comprueba su dominio y encuentra sólo el espacio permitido después del entero. Ahora sí realiza la asignación y devuelve verdadero: la última línea es 1 9.",
           "reviewFeedback": "Sigue el valor del llamador de una llamada a la siguiente. Distingue el booleano que devuelve la función de la asignación al argumento de salida y localiza qué retornos ocurren antes de esa asignación."
         }
       ]
@@ -226,7 +226,7 @@
             "Nivel: 5: la lectura debe omitir por completo la línea incorrecta."
           ],
           "correctIndex": 0,
-          "explanation": "La frontera de getline consume la primera línea. Su analizador local falla sin inutilizar el lector exterior, y la segunda línea se analiza de forma independiente.",
+          "explanation": "El primer getline obtiene la línea x y consume el salto que la separa de 5. Su analizador local no puede obtener un entero, de modo que esa operación produce Operacion invalida.\n\nEl lector exterior ya está situado ante la segunda línea. La obtiene aunque no termine con otro salto; el nuevo analizador reconoce 5, comprueba el dominio y la ausencia de residuo, y produce Nivel: 5. El rechazo anterior no borra ni consume esa operación siguiente.",
           "reviewFeedback": [
             "Considera cada línea como una operación y sigue por separado el estado del lector exterior y el análisis local.",
             "El fallo del análisis pertenece al flujo local. Revisa si ese fallo afecta al objeto que obtiene la línea siguiente.",
@@ -303,7 +303,7 @@
             "Porque el bucle vuelve a construir el flujo exterior en cada vuelta."
           ],
           "correctIndex": 1,
-          "explanation": "Cada objeto conserva su propio estado. El flujo exterior avanzó hasta la frontera de la línea y no sufrió el fallo de extracción del flujo local.",
+          "explanation": "El lector exterior obtiene la línea x mediante getline. Después se construye un std::istringstream con ese texto, y es la extracción numérica de ese segundo objeto la que falla. Sus indicadores pertenecen al analizador local; no se trasladan al lector exterior.\n\nLa siguiente vuelta pide otra línea al mismo lector exterior y crea un analizador local nuevo. No necesita limpiar un fallo numérico que el objeto exterior nunca sufrió, ni volver a construirlo desde el principio.",
           "reviewFeedback": [
             "Una lectura fallida no cambia las reglas del tipo int. Distingue la representación solicitada de los objetos que conservan el estado de lectura.",
             "Distingue qué objeto obtiene las líneas de cuál interpreta sus caracteres.",
@@ -326,7 +326,7 @@
           "answers": [
             "Nivel: 5\nOperacion invalida\nOperacion invalida\nNivel: 6"
           ],
-          "explanation": "Los espacios alrededor de 5 se permiten. La línea vacía no contiene un entero; -1 está fuera del dominio. Ambos rechazos conservan la posibilidad de leer 6.",
+          "explanation": "La primera línea contiene 5 con espacios alrededor. El analizador obtiene ese entero, permite el espacio restante y presenta Nivel: 5. La línea vacía siguiente no contiene ningún entero; -1 sí se convierte, pero queda fuera de 0..6. Cada una produce Operacion invalida por un motivo distinto.\n\nAmbas líneas ya se obtuvieron completas del lector exterior. Sus rechazos locales no consumen la última línea, cuyo 6 cumple el contrato y produce Nivel: 6.",
           "reviewFeedback": "Separa primero las líneas que obtiene getline, incluidas las vacías. En cada análisis comprueba conversión, dominio y residuo; un rechazo local no impide obtener la línea siguiente."
         },
         {
@@ -339,17 +339,97 @@
             "7 deja residuo y 3x excede el máximo numérico."
           ],
           "correctIndex": 1,
-          "explanation": "La extracción, el dominio y la ausencia de texto adicional son comprobaciones diferentes. Ninguna puede sustituirse por las otras.",
+          "explanation": "Con 3x, la extracción obtiene el entero 3, que sí pertenece a 0..6. El rechazo se debe a que todavía queda x en una línea que debía contener sólo el entero y espacio opcional.\n\nCon 7, la conversión también tiene éxito y no queda texto adicional, pero el valor supera el máximo 6. Comprobar sólo la conversión aceptaría indebidamente ambos textos; comprobar sólo el dominio dejaría pasar 3x.",
           "reviewFeedback": [
             "Obtener un entero y aceptar toda la línea son condiciones distintas. Revisa si la extracción puede reconocer sólo un prefijo.",
             "Comprueba por separado la cantidad reconocida y el texto que queda después.",
             "Distingue el valor del prefijo numérico de los caracteres que quedan sin consumir. Aplica la comprobación del dominio y la de residuo a cada texto por separado."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el resultado conservado y otras representaciones del nivel"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la función de análisis y probar que acabas de construir. Copia sus definiciones y los auxiliares necesarios antes del main de este editor. El cliente llama analizar_nivel a la función con parámetros const std::string& e int& y resultado bool. Si elegiste otro nombre, adapta las llamadas a ese nombre; conserva los textos, su orden y el formato de salida.\n\nEl cliente conserva la batería anterior y añade cuatro análisis directos, sin reiniciar resultado entre ellos: 7, +6, -1 y 0005. Sigue vigente el contrato: exactamente un entero de 0 a 6, con el espacio en blanco opcional que omite >>, y asignación al resultado sólo cuando se acepta la línea completa. Los signos y los ceros iniciales reconocidos por la extracción no añaden campos a la operación.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe conservar los informes anteriores y presentar también las cuatro parejas nuevas. Cada pareja muestra el booleano devuelto y el resultado del llamador separados por :, sin espacios y con salto final. Si una comprobación falla, corrige la función y vuelve a ejecutar el mismo cliente completo.",
+          "emphasis": [
+            {
+              "text": "sin reiniciar resultado",
+              "style": "bold"
+            },
+            {
+              "text": "sólo cuando se acepta la línea completa",
+              "style": "bold"
+            },
+            {
+              "text": "el mismo cliente completo",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nNivel: 2\nOperacion invalida\nOperacion invalida\nNivel: 0\nNivel: 6\nOperacion invalida\nOperacion invalida\nOperacion invalida\nNivel: 4\nOperacion invalida\nOperacion invalida\nNivel: 5\n0:3\n1:5\n0:5\n1:6\n0:6\n1:5"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu funcion de analisis, probar y los auxiliares necesarios.\n\nint main() {\n    probar(\"2\\nx\\n6 ruido\\n0\\n\");\n    probar(\"6\");\n    probar(\"7\");\n    probar(\"-1\");\n    probar(\"3x\");\n    probar(\" 4 \");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"x\\n5\");\n    int resultado = 3;\n    bool valida = analizar_nivel(\"4 extra\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    valida = analizar_nivel(\"5\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    valida = analizar_nivel(\"7\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    valida = analizar_nivel(\"+6\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    valida = analizar_nivel(\"-1\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    valida = analizar_nivel(\"0005\", resultado);\n    std::cout << valida << ':' << resultado << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Nivel: 2\nOperacion invalida\nOperacion invalida\nNivel: 0\nNivel: 6\nOperacion invalida\nOperacion invalida\nOperacion invalida\nNivel: 4\nOperacion invalida\nOperacion invalida\nNivel: 5\n0:3\n1:5\n0:5\n1:6\n0:6\n1:5\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La batería anterior deja resultado en 5. El rechazo de 7 debe conservarlo y mostrar 0:5. +6 es una representación válida de 6 y produce 1:6. El rechazo de -1 conserva ahora 6 y muestra 0:6. Finalmente, 0005 representa 5, se acepta y produce 1:5.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Nivel: 2\nOperacion invalida\nOperacion invalida\nNivel: 0\nNivel: 6\nOperacion invalida\nOperacion invalida\nOperacion invalida\nNivel: 4\nOperacion invalida\nOperacion invalida\nNivel: 5\n0:3\n1:5\n0:7\n1:6\n0:-1\n1:5\n"
+                    ],
+                    "text": "Las parejas de los rechazos muestran que el resultado cambia a 7 o -1, aunque la función devuelva falso. Revisa cuándo se asigna al argumento del llamador: comprobar que no quede residuo todavía no acredita el dominio 0..6. Cada rechazo debe conservar el resultado de la última operación aceptada."
+                  },
+                  {
+                    "outputs": [
+                      "Nivel: 2\nOperacion invalida\nOperacion invalida\nNivel: 0\nNivel: 6\nOperacion invalida\nOperacion invalida\nOperacion invalida\nNivel: 4\nOperacion invalida\nOperacion invalida\nNivel: 5\n0:3\n1:5\n0:5\n0:5\n0:5\n0:5\n"
+                    ],
+                    "text": "Las entradas +6 y 0005 representan enteros admitidos por >> y pertenecen al dominio 0..6. Rechazarlas por no ser una sola cifra añade una restricción que este contrato no exige. Comprueba el valor obtenido y la ausencia de otro campo, conservando las representaciones permitidas."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar rechazo, conservación y representación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al terminar las comprobaciones originales, el llamador conserva 5. El análisis de 7 debe devolver falso sin sustituirlo: 0:5. Después, +6 cambia ese resultado a 6. El rechazo de -1 debe conservar el nuevo valor y producir 0:6. Son dos observaciones del argumento después de un rechazo por dominio.\n\nUna función que asignara al resultado después de descartar el residuo, pero antes de comprobar el dominio, pasaría la batería anterior. Las llamadas exteriores sólo imprimían el diagnóstico al rechazar 7 y -1; no mostraban el valor del argumento. Ahora, imprimir ese valor permite detectar la asignación prematura.\n\nPor su parte, +6 y 0005 deben aceptarse como 6 y 5. Los casos válidos anteriores usaban una sola cifra, así que no distinguían una validación del entero de una restricción artificial de su escritura. Esta función de referencia conserva el mismo contrato en ambas baterías. Se integra antes del main proporcionado, junto con probar y las inclusiones del editor.",
+          "emphasis": [
+            {
+              "text": "imprimir ese valor",
+              "style": "bold"
+            },
+            {
+              "text": "una restricción artificial de su escritura",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool analizar_nivel(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n    if (cantidad < 0 || cantidad > 6) {\n        return false;\n    }\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n    resultado = cantidad;\n    return true;\n}\n"
+        },
         {
           "type": "heading",
           "text": "Cambiar la política sin esconder la frontera"
@@ -653,12 +733,19 @@
         "blocks": [
           "block_0006_0000",
           "block_0006_0001",
-          "block_0006_0002"
+          "block_0006_0002",
+          "u11_nivel_conservacion_y_representaciones_titulo",
+          "u11_nivel_conservacion_y_representaciones_consigna",
+          "u11_nivel_conservacion_y_representaciones_salida",
+          "u11_nivel_conservacion_y_representaciones_comprobacion"
         ]
       },
       {
         "id": "page_0007",
         "blocks": [
+          "u11_nivel_conservacion_y_representaciones_referencia_titulo",
+          "u11_nivel_conservacion_y_representaciones_referencia_razonamiento",
+          "u11_nivel_conservacion_y_representaciones_referencia_codigo",
           "block_0007_0000",
           "block_0007_0001",
           "block_0007_0002"
@@ -1242,7 +1329,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_comprobacion",
+        "sha256": "d61173cc926086c6c472f1e5d62043d3626c2b4f812fa2c9ac9c4b8e1f8f5e64",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_nivel_conservacion_y_representaciones_referencia_codigo",
+        "sha256": "8596a09c555756e78e4aaf083b0136eafd8eb58da3a48db00714c1707468c4da",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0000",
@@ -1413,6 +1564,36 @@
         "id": "block_0005_0003",
         "beforeSha256": "24bf89ae2e4598b99bda22d380074779972445625306b1551dd4ad4cc557026a",
         "afterSha256": "4f8114853b3148f1f0f219558bf51f594bde294ac1ddf0fdebec14ffcb7a891b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "5015e708d7f7c5129f65cae63f4acb0e967486373bcb65bb4e35654ad65dcfe1",
+        "afterSha256": "e44364b211531c39ba707d137f0ad62481f23628a3c23b18037a1844ed68072a"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "114c31b1749e8945c6e8c0af9cefe549eedbf39a93771498457c12825719aa6b",
+        "afterSha256": "9147694292ba34a02a1393ae72fcb80387d1b9d73769303167dd657ebe366013"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "0a8bb2f61395434d9cf487891a822c563a54d842d5ec99fdf8ed159915bed97e",
+        "afterSha256": "e8f3cb85dd7a1601c461150203d7128adf3a412c14913f4df26dc0fb8cd2dc50"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "5dfe0ec554c75abe71df341c5fda4a0c68fa41747bb2d9bbefb753ef0f636713",
+        "afterSha256": "da3bd07cb4f9b7efc295e5f8ab4d07e61de815717bb67b1afd99b03d712b49bd"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "d342c26bd5f8d84418bc553df1e2a0f109fea2b10f01e6789b380da28d13310e",
+        "afterSha256": "b1f4a4c9b4b31085e71ac2019b4df0d089533027f968fdc8e09b46a627b42aee"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "2c1fc45d16f8c4abbd3d1913f359f8e3245a201386a310596946827effa47166",
+        "afterSha256": "defe9029626c0838d401e2463fe0ae8972315d9452852a1c0f4496503f539d9c"
       }
     ],
     "choiceRevisions": [
@@ -1450,11 +1631,25 @@
         "block_0008_0000",
         "block_0008_0001"
       ]
+    },
+    {
+      "activity": "u11_nivel_conservacion_y_representaciones_comprobacion",
+      "blocks": [
+        "u11_nivel_conservacion_y_representaciones_referencia_titulo",
+        "u11_nivel_conservacion_y_representaciones_referencia_razonamiento",
+        "u11_nivel_conservacion_y_representaciones_referencia_codigo"
+      ]
     }
   ],
   "activityAfter": [
     {
       "activity": "block_0006_0001",
+      "requires": [
+        "block_0004_0004"
+      ]
+    },
+    {
+      "activity": "u11_nivel_conservacion_y_representaciones_comprobacion",
       "requires": [
         "block_0004_0004"
       ]
@@ -1678,19 +1873,49 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "2b118b7a84fb0b208a7b88ecff182a20450702b2e868519fb8192863f87d8d95",
+        "sourceSha256": "dce03b290434e15b6434aac2cba19a7bc0d74968cd9efbb83d56780db19958b5",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "clear",
-            "role": "cpp"
+            "start": 39,
+            "end": 40,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 31,
-            "end": 38,
+            "start": 58,
+            "end": 61,
+            "text": "x 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 90,
+            "text": "clear()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 191,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 211,
+            "end": 214,
+            "text": "x 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 294,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1843,7 +2068,8 @@
             "start": 320,
             "end": 325,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 449,
@@ -1887,7 +2113,8 @@
             "start": 232,
             "end": 237,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1907,33 +2134,83 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "cdce399e088e58dc0bc06ab8ce3bafe4cf9cd558768658684673eee24c714c86",
+        "sourceSha256": "f94aa1e06bdd1ad38bf01de0da19bca9b4400edd2817689511b0644260729203",
         "spans": [
           {
-            "start": 0,
-            "end": 2,
+            "start": 37,
+            "end": 38,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 70,
             "text": "15",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 24,
-            "end": 26,
+            "start": 122,
+            "end": 123,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 128,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 169,
+            "text": "0 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 208,
             "text": "7x",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 138,
-            "end": 146,
-            "text": "cantidad",
-            "role": "cpp"
+            "start": 231,
+            "end": 232,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 149,
-            "end": 150,
+            "start": 277,
+            "end": 280,
+            "text": "0 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 311,
             "text": "9",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 464,
+            "end": 467,
+            "text": "1 9",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2171,13 +2448,49 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "37dbac701fe52a6d1b570bac82e25bdd299424baec921a783ac7541f905adc02",
+        "sourceSha256": "65981730843fa5366d4f0d63d93e58efd40a479b77b9e43b6d4a43def6a87ba9",
         "spans": [
           {
-            "start": 15,
-            "end": 22,
+            "start": 10,
+            "end": 17,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 176,
+            "text": "Operacion invalida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 312,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 379,
+            "text": "Nivel: 5",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2336,8 +2649,30 @@
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "c3d5013ed031a32b43dda2d22744d6314189385c938ea5f469f17416b54e7704",
-        "spans": []
+        "sourceSha256": "12816ca21fa341b8bc7f01c32cd49f8badde434e027968733a98027c3fb517e7",
+        "spans": [
+          {
+            "start": 36,
+            "end": 37,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 54,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 98,
+            "text": "std::istringstream",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -2418,7 +2753,7 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "2584622eb08b8b752ff6c601facdaaa8ebfde0dc3f6624a0138bb3c25c7e6c42",
+        "sourceSha256": "3a3b60d5c049b086190b6ac10514b0e2469607535da7c69d63b86394ad85ab46",
         "spans": [
           {
             "start": 26,
@@ -2428,17 +2763,45 @@
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 81,
+            "start": 125,
+            "end": 133,
+            "text": "Nivel: 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 189,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 155,
+            "start": 227,
+            "end": 231,
+            "text": "0..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 268,
+            "text": "Operacion invalida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 410,
+            "end": 411,
             "text": "6",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 441,
+            "end": 449,
+            "text": "Nivel: 6",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2487,8 +2850,58 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "2da8b6283f0500177931270482a8a1e72a24879ac14ca3692b3360650e9bd8e0",
-        "spans": []
+        "sourceSha256": "84927284b6c89aef92423d2bb7e293dab7ae08660c4d6a9e3527574f89be9e03",
+        "spans": [
+          {
+            "start": 4,
+            "end": 6,
+            "text": "3x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 66,
+            "text": "0..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 182,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 278,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 389,
+            "text": "3x",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0002",
@@ -2590,7 +3003,8 @@
             "start": 77,
             "end": 82,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2599,6 +3013,417 @@
         "path": "/text",
         "sourceSha256": "709bc596e5a097468e354be3e2af14a8b2641787d1619fce779e71c72cca23b8",
         "spans": []
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_titulo",
+        "path": "/text",
+        "sourceSha256": "8ffcb14e19f298591c2444f4af88d365303389461e00b7d479dd6885ca75461e",
+        "spans": []
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_consigna",
+        "path": "/text",
+        "sourceSha256": "68ee247775d76751d2eae2cd62bb025b5bf1e7ae8cc594212b40dec3340aa9ea",
+        "spans": [
+          {
+            "start": 34,
+            "end": 40,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 131,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 179,
+            "text": "analizar_nivel",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 226,
+            "text": "const std::string&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 233,
+            "text": "int&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 250,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 454,
+            "end": 463,
+            "text": "resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 477,
+            "end": 478,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 482,
+            "text": "+6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 484,
+            "end": 486,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 489,
+            "end": 493,
+            "text": "0005",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 547,
+            "end": 548,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 551,
+            "end": 552,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 598,
+            "end": 600,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 986,
+            "end": 987,
+            "text": ":",
+            "role": "output",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_salida",
+        "path": "/text",
+        "sourceSha256": "abd594723199228c9ae125c279cc1babd55e4c723174c0faa6baae5f13c2ac30",
+        "spans": [
+          {
+            "start": 33,
+            "end": 234,
+            "text": "Nivel: 2\nOperacion invalida\nOperacion invalida\nNivel: 0\nNivel: 6\nOperacion invalida\nOperacion invalida\nOperacion invalida\nNivel: 4\nOperacion invalida\nOperacion invalida\nNivel: 5\n0:3\n1:5\n0:5\n1:6\n0:6\n1:5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "770713406f5f3d350aa9b89c2d41cd018b8827881843b7650fdfb8a39458878e",
+        "spans": [
+          {
+            "start": 25,
+            "end": 34,
+            "text": "resultado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 87,
+            "text": "0:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 91,
+            "text": "+6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 125,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 139,
+            "text": "1:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 157,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 188,
+            "text": "0:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 206,
+            "text": "0005",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 219,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 244,
+            "text": "1:5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "cc870cfc496b794dc06c0b7e0138077c27be063f0eb7f9d7713ea689a4cd7816",
+        "spans": [
+          {
+            "start": 63,
+            "end": 64,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 69,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 222,
+            "text": "0..6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "931f5cc8135fd59b3f7c3b81b4bb4493f5ceb2fc703ea2512442bdc96682b69c",
+        "spans": [
+          {
+            "start": 13,
+            "end": 15,
+            "text": "+6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 22,
+            "text": "0005",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 59,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "0..6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "bde08158eb8309a11c7c77f9a3e2edd0f4d3e9178dedd89e815a7e871d2f8558",
+        "spans": []
+      },
+      {
+        "block": "u11_nivel_conservacion_y_representaciones_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "6d4691cf8db10828f6bec1fc87241e67c528761a1f886268e20945f5cd0484a8",
+        "spans": [
+          {
+            "start": 64,
+            "end": 65,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 83,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 124,
+            "text": "0:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 137,
+            "text": "+6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 162,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 180,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 225,
+            "text": "0:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 501,
+            "end": 502,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 505,
+            "end": 507,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 629,
+            "end": 631,
+            "text": "+6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 634,
+            "end": 638,
+            "text": "0005",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 660,
+            "end": 661,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 664,
+            "end": 665,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 909,
+            "end": 913,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 939,
+            "end": 945,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
