@@ -317,11 +317,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Los otros pares de cantidades se prueban después con un cliente que recibe los datos desde Entrada. El procedimiento y sus reglas se conservan entre casos. Las pruebas de archivos y de cada etapa tienen también sus propios proyectos, sin cambiar este intento ni restaurarlo para poder continuar."
+          "text": "La siguiente comprobación utiliza tus mismas funciones con distintos pares de cantidades. Su cliente ya está preparado y ejecuta todos los casos en una sola vez; tú recuperarás la cabecera y las dos fuentes auxiliares que acabas de escribir. Los editores de los fallos de construcción siguen siendo proyectos separados."
         },
         {
           "type": "paragraph",
-          "text": "Criterios del proyecto: cabecera con sus dependencias, definiciones concordantes, un cuerpo por función ordinaria, descripción que reutiliza el cálculo y validación antes de calcular. Selecciona los tres .cpp.\n\nPara las cantidades (4,3), se ocupan 23 espacios y corresponde Pesado. Los otros casos del contrato se comprueban después con un cliente que lee los datos.",
+          "text": "Criterios del proyecto: cabecera con sus dependencias, definiciones concordantes, un cuerpo por función ordinaria, descripción que reutiliza el cálculo y validación antes de calcular. Selecciona las tres fuentes .cpp.\n\nPara las cantidades (4,3), se ocupan 23 espacios y corresponde Pesado. La comprobación siguiente contrasta también el vacío, los límites y el rechazo de cada cantidad.",
           "emphasis": [
             {
               "text": "validación antes de calcular",
@@ -335,7 +335,64 @@
         },
         {
           "type": "note",
-          "text": "Intenta construir y probar antes de avanzar a la referencia. Hay varias implementaciones válidas; los criterios de comportamiento y organización permiten compararlas sin exigir un único texto de código."
+          "text": "Conserva tu desarrollo en el editor anterior. El cliente de pruebas siguiente cambia los datos y presenta un informe; la regla de ocupación y las categorías deben seguir en tus funciones, compartidas por todas sus llamadas."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar las funciones que has construido"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente entregado llama a mostrar_caso con cada par. Esta función muestra las dos cantidades y consulta cantidades_validas. Si la respuesta es false, muestra Cantidades invalidas. La instrucción return; termina sólo esa llamada a mostrar_caso; main continúa con el siguiente par. Si las cantidades son válidas, muestra los resultados de espacios_ocupados y descripcion_carga.\n\nmostrar_caso utiliza void porque su acción es mostrar una línea, sin devolver un valor. Los cálculos permanecen en tus auxiliares; no hay que escribir otra regla de ocupación en el cliente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia de tu construcción estante.h, conteo.cpp y estado.cpp a los archivos correspondientes de este editor. Conserva el main.cpp entregado y selecciona las tres fuentes. Cada línea del informe empieza con las cantidades de cajas pequeñas y grandes, seguidas de dos puntos; después muestra ocupación y categoría, o el aviso de rechazo.\n\nPulsa «Compilar, ejecutar y comprobar». Debe aparecer el informe completo siguiente, con salto final opcional. Si hay diferencias, corrige tus funciones y vuelve a ejecutar todos los casos con ellas; no sustituyas las llamadas por resultados escritos a mano."
+        },
+        {
+          "type": "paragraph",
+          "text": "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 5 Ligero\n7 1: 19 Ligero\n0 4: 20 Ligero\n10 0: 20 Ligero\n8 1: 21 Pesado\n4 3: 23 Pesado\n0 10: 50 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Recupera las tres declaraciones de tu interfaz.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tus definiciones de cantidades_validas y espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tu definicion de descripcion_carga.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 5 Ligero\n7 1: 19 Ligero\n0 4: 20 Ligero\n10 0: 20 Ligero\n8 1: 21 Pesado\n4 3: 23 Pesado\n0 10: 50 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+                  "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 5 Ligero\n7 1: 19 Ligero\n0 4: 20 Ligero\n10 0: 20 Ligero\n8 1: 21 Pesado\n4 3: 23 Pesado\n0 10: 50 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe completo coincide: distingue 0 Vacio, los pesos aislados 2 y 5, los resultados 19, 20 y 21 alrededor de la frontera, los extremos admitidos y los cuatro rechazos. El cliente ejecutó todos los pares con las mismas funciones."
+              }
+            ]
+          }
         }
       ]
     },
@@ -396,7 +453,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Compara esta solución con la tuya después de intentar el proyecto. En estante.h, <string> proporciona el tipo que aparece en la interfaz. La guarda delimita el contenido que se incluye una vez por unidad de traducción."
+          "text": "En estante.h, <string> proporciona el tipo que aparece en la interfaz. La guarda evita volver a incorporar el contenido protegido al procesar una segunda inclusión en la misma unidad de traducción (Köppe et al., 2023)."
         },
         {
           "type": "code",
@@ -440,7 +497,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si tu implementación es diferente, revisa las mismas pruebas y responsabilidades. Obtener 23 en el caso inicial no basta: también deben ser correctos el vacío, la igualdad en 20, el primer caso por encima y los rechazos de cada cantidad."
+          "text": "El caso inicial (4,3) ocupa 23 espacios: 2 × 4 + 5 × 3 = 23. Mostrar siempre ese número acertaría aquel caso y fallaría los demás. Las llamadas con (1,0) y (0,1) aíslan los pesos: sus resultados deben ser 2 y 5, respectivamente.\n\nLos pares (7,1), (0,4) y (8,1) producen 19, 20 y 21. La igualdad todavía pertenece a Ligero; el siguiente valor pertenece a Pesado. El vacío se distingue con (0,0), que debe producir 0 Vacio.\n\nLos pares (10,0), (0,10) y (10,10) conservan el extremo admitido de cada cantidad. Los cuatro rechazos cambian un solo argumento cada vez: un valor negativo o superior al límite debe impedir el cálculo aunque el otro argumento sea válido. Pasar las pruebas con tus funciones y ejecutar después esta referencia son comprobaciones de programas distintos."
         }
       ]
     },
@@ -630,7 +687,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El caso inicial de este editor contiene cero cajas pequeñas y seis grandes. Pulsa «Compilar, ejecutar y comprobar»: deben aparecer Espacios: 24 y Carga: Ligero, con salto final opcional. Los otros datos de esta política se comprueban después mediante Entrada.",
+          "text": "El caso inicial de este editor contiene cero cajas pequeñas y seis grandes. Pulsa «Compilar, ejecutar y comprobar»: deben aparecer Espacios: 24 y Carga: Ligero, con salto final opcional. Después contrastarás tus mismas funciones con un cliente que incluye también cajas pequeñas y las fronteras de la política nueva.",
           "emphasis": [
             {
               "text": "cero cajas pequeñas y seis grandes",
@@ -680,6 +737,68 @@
         {
           "type": "paragraph",
           "text": "Criterios: mismas firmas y permisos, regla de ocupación escrita una vez, descripción que reutiliza ese cálculo, validación antes de calcular y salidas correctas para ambas fronteras. Cambiar la clasificación sin cambiar los pesos no cumple esta segunda versión."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar ambos pesos y la frontera nueva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera en este editor tu cabecera y tus auxiliares de la versión nueva: cada caja pequeña ocupa 3 espacios, cada grande 4 y una ocupación positiva de hasta 24 es ligera. Conserva el cliente entregado, que usa mostrar_caso y el mismo formato de informe.\n\nSelecciona conteo.cpp, estado.cpp y main.cpp. Pulsa «Compilar, ejecutar y comprobar» para obtener todas las líneas siguientes, con salto final opcional. Los casos con cajas de un solo tamaño, las ocupaciones próximas a la frontera y los rechazos deben usar las mismas definiciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "0 0: 0 Vacio\n1 0: 3 Ligero\n0 1: 4 Ligero\n5 2: 23 Ligero\n0 6: 24 Ligero\n8 0: 24 Ligero\n7 1: 25 Pesado\n2 3: 18 Ligero\n10 0: 30 Pesado\n0 10: 40 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n    mostrar_caso(10, 0);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Recupera las tres declaraciones de tu interfaz.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tus definiciones de cantidades_validas y espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tu definicion de descripcion_carga.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n    mostrar_caso(10, 0);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0 0: 0 Vacio\n1 0: 3 Ligero\n0 1: 4 Ligero\n5 2: 23 Ligero\n0 6: 24 Ligero\n8 0: 24 Ligero\n7 1: 25 Pesado\n2 3: 18 Ligero\n10 0: 30 Pesado\n0 10: 40 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+                  "0 0: 0 Vacio\n1 0: 3 Ligero\n0 1: 4 Ligero\n5 2: 23 Ligero\n0 6: 24 Ligero\n8 0: 24 Ligero\n7 1: 25 Pesado\n2 3: 18 Ligero\n10 0: 30 Pesado\n0 10: 40 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las mismas funciones producen el informe completo de la política nueva. Los casos (1,0) y (0,1) comprueban los pesos por separado; 23 Ligero, 24 Ligero y 25 Pesado distinguen la frontera. El vacío y los cuatro rechazos conservan sus propios resultados.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 4 Ligero\n5 2: 18 Ligero\n0 6: 24 Ligero\n8 0: 16 Ligero\n7 1: 18 Ligero\n2 3: 16 Ligero\n10 0: 20 Ligero\n0 10: 40 Pesado\n10 10: 60 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+                      "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 4 Ligero\n5 2: 18 Ligero\n0 6: 24 Ligero\n8 0: 16 Ligero\n7 1: 18 Ligero\n2 3: 16 Ligero\n10 0: 20 Ligero\n0 10: 40 Pesado\n10 10: 60 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas\n"
+                    ],
+                    "text": "Revisa el peso de las cajas pequeñas en espacios_ocupados. Para (1,0), el informe debe mostrar 3 Ligero; la salida 2 Ligero conserva el peso anterior. El caso (0,6) no lo detecta porque no contiene ninguna caja pequeña."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -709,7 +828,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este main comprueba la igualdad en 24. La siguiente actividad utiliza un cliente con Entrada para contrastar otros pares sin cambiar la política ni regresar a esta construcción. Con (2,3), por ejemplo, se ocupan 18 espacios y corresponde Ligero."
+          "text": "Este main muestra Espacios: 24 y Carga: Ligero, en dos líneas, para (0,6). Como la cantidad de cajas pequeñas es cero, este caso no distingue entre el peso antiguo y el nuevo de esas cajas: su contribución al total es cero en ambos cálculos.\n\nEl informe de tu construcción añade (1,0), cuya ocupación debe ser 3, y (8,0), cuya ocupación es 24. Si se conserva el peso pequeño de 2, se obtienen 2 y 16, aunque el caso inicial siga pasando. Los pares (5,2) y (7,1) producen 23 Ligero y 25 Pesado: junto con la igualdad en 24, permiten comprobar la frontera.\n\nLa actividad posterior utiliza un cliente con Entrada para explorar la referencia con otros pares. Ese proyecto trae las funciones completas; la comprobación de la construcción propia ya se hizo con las auxiliares que escribiste."
         },
         {
           "type": "code",
@@ -965,11 +1084,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comprobar la guarda del proyecto"
+          "text": "Doble inclusión y alcance de la comprobación"
         },
         {
           "type": "paragraph",
-          "text": "Este cliente incluye dos veces la cabecera. Conserva la guarda y las tres fuentes seleccionadas. Pulsa «Compilar, ejecutar y comprobar»: el objetivo permanece `Espacios: 23` y `Carga: Pesado`, con salto final opcional."
+          "text": "Este cliente incluye dos veces estante.h. Conserva la guarda y las tres fuentes seleccionadas. Pulsa «Compilar, ejecutar y comprobar»: el objetivo permanece Espacios: 23 y Carga: Pesado, con salto final opcional. Después distinguiremos el mecanismo de la guarda de lo que permite concluir esta ejecución."
         },
         {
           "type": "cpp_compiler",
@@ -1009,6 +1128,26 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "En este proyecto, CPP_FUNDAMENTALS_ESTANTE_H es una macro: un nombre que aquí utiliza el preprocesador para recordar que ya ha procesado el contenido protegido. En la primera inclusión, #ifndef CPP_FUNDAMENTALS_ESTANTE_H comprueba que ese nombre todavía no está definido; #define CPP_FUNDAMENTALS_ESTANTE_H lo define y se incorpora el contenido hasta #endif.\n\nEn la segunda inclusión de la misma unidad, el nombre ya está definido y se omite ese contenido. Al procesar por separado otra fuente, su primera inclusión vuelve a aportar las declaraciones. La guarda actúa durante el preprocesamiento de cada unidad, no durante el enlace (Köppe et al., 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La ejecución correcta muestra que este proyecto se construye y obtiene la salida prevista con la inclusión repetida. Por sí sola, esa salida no demuestra que la guarda esté presente o sea la causa de que compile.\n\nLa cabecera de este proyecto contiene una inclusión de <string> y tres declaraciones de funciones compatibles, sin sus cuerpos. Repetir esas declaraciones está permitido; declarar otra vez int espacios_ocupados(int pequenas, int grandes); no vuelve a definir su cálculo (Stroustrup, 2024). Por eso, al quitar únicamente la guarda de este ejemplo, puede seguir compilando. La guarda sigue siendo la protección del contenido de la cabecera frente a una nueva inclusión en la misma unidad; no reemplaza las definiciones que deben aportar las fuentes al enlace."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz__guarda_conclusion",
+          "question": "En una copia de este proyecto se retiran sólo #ifndef, #define y #endif de estante.h, dejando las mismas declaraciones y la doble inclusión. La copia también compila y muestra 23 espacios y Pesado. ¿Qué conclusión está respaldada por este resultado?",
+          "options": [
+            "La repetición de estas declaraciones compatibles permite compilar; la salida no demuestra por sí sola que exista una guarda.",
+            "La segunda inclusión se ignora siempre por usar el mismo nombre de archivo; ninguna cabecera necesita proteger su contenido.",
+            "El enlace reúne automáticamente cualquier cuerpo de función repetido; retirar la guarda no puede crear definiciones duplicadas."
+          ],
+          "correctIndex": 0,
+          "explanation": "La copia repite las declaraciones de las tres funciones, no sus cuerpos. Esas declaraciones son compatibles y pueden repetirse. Por eso la compilación correcta también es posible sin la guarda de este ejemplo; la ocupación 23 y la categoría Pesado no permiten inferir que esté presente. La guarda controla el texto incorporado en cada unidad y no reúne definiciones ordinarias duplicadas (Köppe et al., 2023; Stroustrup, 2024)."
         }
       ]
     },
@@ -1538,7 +1677,12 @@
           "block_0003_0002",
           "block_0003_0003",
           "block_0003_0004",
-          "block_0003_0005"
+          "block_0003_0005",
+          "estante_base_pruebas_titulo",
+          "estante_base_pruebas_cliente",
+          "estante_base_pruebas_consigna",
+          "estante_base_pruebas_salida",
+          "estante_base_comprobacion_propia"
         ]
       },
       {
@@ -1602,7 +1746,11 @@
           "block_0009_0002",
           "block_0009_0004",
           "block_0009_0003",
-          "block_0009_0005"
+          "block_0009_0005",
+          "estante_variante_pruebas_titulo",
+          "estante_variante_pruebas_consigna",
+          "estante_variante_pruebas_salida",
+          "estante_variante_comprobacion_propia"
         ]
       },
       {
@@ -1643,7 +1791,10 @@
         "blocks": [
           "block_0012_0000",
           "block_0012_0001",
-          "block_0012_0002"
+          "block_0012_0002",
+          "estante_guarda_mecanismo",
+          "estante_guarda_limite",
+          "estante_guarda_conclusion"
         ]
       },
       {
@@ -2763,6 +2914,114 @@
           "block": 7
         },
         "progressPage": "page_0011"
+      },
+      {
+        "id": "estante_base_pruebas_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 15,
+          "block": 8
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "estante_base_pruebas_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 15,
+          "block": 9
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "estante_base_pruebas_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 15,
+          "block": 10
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "estante_base_pruebas_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 15,
+          "block": 11
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "estante_base_comprobacion_propia",
+        "sha256": "60c35e04084c26b6242691af2192111c03f2d3fd048c0bb13c80e1c2f04b808f",
+        "storage": {
+          "page": 15,
+          "block": 12
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "estante_variante_pruebas_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 15,
+          "block": 13
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "estante_variante_pruebas_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 15,
+          "block": 14
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "estante_variante_pruebas_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 15,
+          "block": 15
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "estante_variante_comprobacion_propia",
+        "sha256": "48e499f8838a49cc1c4b50c990f4a0a1e201c16a6d7efd67048e3ba64711dc5d",
+        "storage": {
+          "page": 15,
+          "block": 16
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "estante_guarda_mecanismo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 15,
+          "block": 17
+        },
+        "progressPage": "page_0012"
+      },
+      {
+        "id": "estante_guarda_limite",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 15,
+          "block": 18
+        },
+        "progressPage": "page_0012"
+      },
+      {
+        "id": "estante_guarda_conclusion",
+        "sha256": "f7631f6fafa3329fd93cb6b7f3aa2219dead514833fb9a8979c349dac765a166",
+        "storage": {
+          "page": 15,
+          "block": 19
+        },
+        "progressPage": "page_0012"
       }
     ],
     "editorial": [
@@ -2880,6 +3139,51 @@
         "id": "block_0014_0001",
         "beforeSha256": "b964bc7a989c368074a5312a10b78f4254d13fab2a545ac6dce0675444d47bbd",
         "afterSha256": "e1b2652cbb51eb0b029c5741bf080d0f42af908b03d7879c7690732e61e12f15"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "0d8f3ff802c0adc3cc13ffcf171cb4c66f6c68b1e3efc7c21c1dc953b124ad7d",
+        "afterSha256": "c2f9559bcd3c80bd67b7e65f69828e19e1eca15c3dae9c7ac5a979ccfe62c791"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "d1c49393dde2177ccffb225a5b0f8bad7390a3bbc28155d0221a7bfa13ffdec0",
+        "afterSha256": "2d3e75705f974d208d2aa5bf7bae9d6fd6da6a5734e370f0a28ebc4a9a531771"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "57d3bc321bd59e2398805350cf1cd15b3cc5785f06456ad5fc94d55531454924",
+        "afterSha256": "6e1b22b3f10680cb65b1b1f89cae340f54908531af3e2944e11caabab73f0a5d"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "9da8d446d150f3727b9dbe0e6b7e347b85adb0322bcb99698351cae23f7e2df3",
+        "afterSha256": "7dc2e6a08c08845a1ffafdb5b80108278ed6e349f785022e663c5343c4133377"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "26e2d105069d5a6878542038250989b58ff6396c610cbbe14b9016ab341470e2",
+        "afterSha256": "93ab6df1d9ea145440406bb99c49a8ec4f3a82bf27620ac69847e7b2233abc56"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "12618007b60800773f3d1171ff7e3c51e47c75b5c38abb48c46692dec31ac528",
+        "afterSha256": "1a3814901e324733b3ef938d221c4e7f5b65b73e12b3638ae0a6a8849f230af8"
+      },
+      {
+        "id": "block_0010_0005",
+        "beforeSha256": "78b7cfa72f9bc18e883f4568506c1fc8bb52fb3debad70def020ab468cf3ee3e",
+        "afterSha256": "74945c8beae72f9b4b5262b711c19e1d45225a81d9a45d35868ac27cb5f614e1"
+      },
+      {
+        "id": "block_0012_0000",
+        "beforeSha256": "6f22b336ba079cdc70ed520dd16c4803ed559a7604d338e2e19106f942c2a067",
+        "afterSha256": "ec824d258138b6ef4363302ccd2e71f876df57336cf309cda58311984706fff9"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "b1bbbec4a5817c5cd1c378df9ab93ef8680ed9de7e419ca159624c1726c17001",
+        "afterSha256": "bc01f93f79d461721186900c0d5f507f4f12af5fed42d31bf3c37c679d0f3c10"
       }
     ],
     "orderRefinements": [
@@ -2908,7 +3212,7 @@
   },
   "referenceAfter": [
     {
-      "activity": "block_0003_0002",
+      "activity": "estante_base_comprobacion_propia",
       "blocks": [
         "block_0005_0000",
         "block_0005_0001",
@@ -2924,7 +3228,7 @@
       ]
     },
     {
-      "activity": "block_0009_0003",
+      "activity": "estante_variante_comprobacion_propia",
       "blocks": [
         "block_0010_0000",
         "block_0010_0001",
@@ -2951,19 +3255,40 @@
     {
       "activity": "block_0007_0006",
       "requires": [
-        "block_0003_0002"
+        "block_0003_0002",
+        "estante_base_comprobacion_propia"
       ]
     },
     {
       "activity": "block_0009_0003",
       "requires": [
-        "block_0003_0002"
+        "block_0003_0002",
+        "estante_base_comprobacion_propia"
       ]
     },
     {
       "activity": "block_0010_0009",
       "requires": [
+        "block_0009_0003",
+        "estante_variante_comprobacion_propia"
+      ]
+    },
+    {
+      "activity": "estante_base_comprobacion_propia",
+      "requires": [
+        "block_0003_0002"
+      ]
+    },
+    {
+      "activity": "estante_variante_comprobacion_propia",
+      "requires": [
         "block_0009_0003"
+      ]
+    },
+    {
+      "activity": "estante_guarda_conclusion",
+      "requires": [
+        "block_0012_0002"
       ]
     }
   ],
@@ -3876,21 +4201,14 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "8ecd2345fca30f261c51e32b6b2e6413d12fa346e7780e12714063e76cd69231",
+        "sourceSha256": "774a680d401c72d531bfcb0385f1a62ed2e66bf81f303a20b3b4b56f30ac159c",
         "spans": []
       },
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "736c4d56960c7ebd35a8db0efe44fe950b7e36fcdfd22b4b021be50f7539d26b",
+        "sourceSha256": "e6b839550039e8224213b42df8d31dae1da664f321e717098388a538268ff97c",
         "spans": [
-          {
-            "start": 82,
-            "end": 84,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
-          },
           {
             "start": 199,
             "end": 203,
@@ -3899,36 +4217,29 @@
             "reading": "natural"
           },
           {
-            "start": 204,
-            "end": 208,
+            "start": 212,
+            "end": 216,
             "text": ".cpp",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 232,
-            "end": 233,
-            "text": "4",
+            "start": 239,
+            "end": 244,
+            "text": "(4,3)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 234,
-            "end": 235,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 248,
-            "end": 250,
-            "text": "23",
+            "start": 256,
+            "end": 267,
+            "text": "23 espacios",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 274,
-            "end": 280,
+            "start": 282,
+            "end": 288,
             "text": "Pesado",
             "role": "output",
             "reading": "natural"
@@ -3938,16 +4249,8 @@
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "cf602fdcbc0616fac660798b357d9f299986e7991f4fef43ac07fa57fdfb3655",
-        "spans": [
-          {
-            "start": 177,
-            "end": 179,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "d6cf5fb0d09f4d3551a20586198ea80ad970538edd84e0d21dda1412d9daeb50",
+        "spans": []
       },
       {
         "block": "block_0004_0000",
@@ -4186,27 +4489,27 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "ab21ae487466b54962a4717a4bac123f96a7cfc45d020ee342e13b77517f7094",
+        "sourceSha256": "3d0d3b341a0a2edc931ba729128e7211d209420530fbb2d59f31c10b74e4cf7c",
         "spans": [
           {
-            "start": 70,
-            "end": 79,
+            "start": 3,
+            "end": 12,
             "text": "estante.h",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 89,
+            "start": 14,
+            "end": 22,
             "text": "<string>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 188,
-            "text": "una",
-            "role": "data",
+            "start": 197,
+            "end": 217,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -4276,20 +4579,146 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "0c39764ffa7820c2838183dbe3442589d2e0004e0f1e6bdbcf34e946c26cd7da",
+        "sourceSha256": "05c663fe5f9c167e640a6768e3e13c57bae9eca579b72038a9cd58f28be0a8b7",
         "spans": [
           {
-            "start": 90,
-            "end": 92,
+            "start": 16,
+            "end": 21,
+            "text": "(4,3)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 30,
             "text": "23",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 175,
-            "end": 177,
+            "start": 41,
+            "end": 59,
+            "text": "2 × 4 + 5 × 3 = 23",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 153,
+            "text": "(1,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 161,
+            "text": "(0,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 210,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 245,
+            "text": "(7,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 252,
+            "text": "(0,4)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 260,
+            "text": "(8,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 272,
+            "text": "19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 276,
             "text": "20",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 281,
+            "text": "21",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 321,
+            "text": "Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 360,
+            "text": "Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 393,
+            "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 420,
+            "text": "0 Vacio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 439,
+            "text": "(10,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 441,
+            "end": 447,
+            "text": "(0,10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 450,
+            "end": 457,
+            "text": "(10,10)",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4794,22 +5223,8 @@
       {
         "block": "block_0009_0004",
         "path": "/text",
-        "sourceSha256": "3392cbd72a6b4d74608bfa4871609b02aa08710066d02d44142b846f89251b3d",
+        "sourceSha256": "a097625c77d9acd6c1e514c3d3a74d2547e004c81eefae2566c6d560669eab4c",
         "spans": [
-          {
-            "start": 40,
-            "end": 44,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 62,
-            "end": 66,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
           {
             "start": 131,
             "end": 143,
@@ -4898,7 +5313,7 @@
       {
         "block": "block_0010_0005",
         "path": "/text",
-        "sourceSha256": "e4296368f4ac5c0ef39d2321af97061be3f52a994cad12792244d26b1684ea3b",
+        "sourceSha256": "f3ef8a8379296ebc77c7af11c31f6b7341c5d1618bb1d8ab73afa99ac798fceb",
         "spans": [
           {
             "start": 5,
@@ -4908,37 +5323,121 @@
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 37,
-            "text": "24",
+            "start": 18,
+            "end": 30,
+            "text": "Espacios: 24",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 46,
+            "text": "Carga: Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "(0,6)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 183,
-            "end": 184,
+            "start": 113,
+            "end": 117,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 222,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 284,
+            "text": "(1,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 311,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 320,
+            "text": "(8,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 342,
+            "text": "24",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 379,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 185,
-            "end": 186,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 212,
-            "end": 214,
-            "text": "18",
+            "start": 393,
+            "end": 394,
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 238,
-            "end": 244,
-            "text": "Ligero",
+            "start": 397,
+            "end": 399,
+            "text": "16",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 453,
+            "text": "(5,2)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 461,
+            "text": "(7,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 480,
+            "text": "23 Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 483,
+            "end": 492,
+            "text": "25 Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 521,
+            "text": "24",
             "role": "output",
             "reading": "natural"
           }
@@ -5262,38 +5761,31 @@
       {
         "block": "block_0012_0000",
         "path": "/text",
-        "sourceSha256": "838474778779fa6dd70c2c2dcd6dd9a5f58fb5bc7790fd0dfd89564a4769bbca",
+        "sourceSha256": "c9b597038c6ea4e3fd579db3632a7705ae42bbf1be56ab816d99f2e623954bb7",
         "spans": []
       },
       {
         "block": "block_0012_0001",
         "path": "/text",
-        "sourceSha256": "f28cea92d506a6bb7c68fe7915b535d7dd2ef6dfd12a09d726fa20891a97619b",
+        "sourceSha256": "fb11dfd2a30125776c196df883f5bf1e77836a79298a93015cd9f6f7a036f72c",
         "spans": [
           {
-            "start": 21,
-            "end": 24,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 31,
+            "end": 40,
+            "text": "estante.h",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 73,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 160,
-            "end": 172,
+            "start": 157,
+            "end": 169,
             "text": "Espacios: 23",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 190,
+            "start": 172,
+            "end": 185,
             "text": "Carga: Pesado",
             "role": "output",
             "reading": "natural"
@@ -5484,6 +5976,519 @@
             "text": "conteo.cpp",
             "role": "cpp",
             "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "estante_base_pruebas_titulo",
+        "path": "/text",
+        "sourceSha256": "2db8daab7d0c4a4841bdd7ccf02dde7920bdeeacffecfa75c5acaab203077774",
+        "spans": []
+      },
+      {
+        "block": "estante_base_pruebas_cliente",
+        "path": "/text",
+        "sourceSha256": "acd27b1d3535376f4d6119508ad1c1b496adbd7b591fd157648f4b7e02f41094",
+        "spans": [
+          {
+            "start": 29,
+            "end": 41,
+            "text": "mostrar_caso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 125,
+            "text": "cantidades_validas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 151,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 181,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 205,
+            "text": "return;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 245,
+            "text": "mostrar_caso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 251,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 357,
+            "text": "espacios_ocupados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 360,
+            "end": 377,
+            "text": "descripcion_carga",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 380,
+            "end": 392,
+            "text": "mostrar_caso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 401,
+            "end": 405,
+            "text": "void",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "estante_base_pruebas_consigna",
+        "path": "/text",
+        "sourceSha256": "9dbc22e64f54274d5c292d017cc3ca029ce5b12e66433d79d00cf45c41324ae0",
+        "spans": [
+          {
+            "start": 25,
+            "end": 34,
+            "text": "estante.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 46,
+            "text": "conteo.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 59,
+            "text": "estado.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 128,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "estante_base_pruebas_salida",
+        "path": "/text",
+        "sourceSha256": "be7bffd97b5d4e156060ce4eabecd3b9d785d7d08027bbbb21eda6a184601fdd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 257,
+            "text": "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 5 Ligero\n7 1: 19 Ligero\n0 4: 20 Ligero\n10 0: 20 Ligero\n8 1: 21 Pesado\n4 3: 23 Pesado\n0 10: 50 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_base_comprobacion_propia",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "0a1171611d11846262dd16ecb3780c3057984de7524390cc7d401274254251fc",
+        "spans": [
+          {
+            "start": 40,
+            "end": 47,
+            "text": "0 Vacio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 92,
+            "text": "19",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 96,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 101,
+            "text": "21",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_variante_pruebas_titulo",
+        "path": "/text",
+        "sourceSha256": "58d5f249181d472936c752cb05fa8c662e24919e84f46ac73c7dcbe79331681f",
+        "spans": []
+      },
+      {
+        "block": "estante_variante_pruebas_consigna",
+        "path": "/text",
+        "sourceSha256": "9ecafa94d3b8ced8744b3de2fbd10c3eaf45be7f7dd7aa5d074a818cfd7c2876",
+        "spans": [
+          {
+            "start": 98,
+            "end": 99,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 160,
+            "text": "24",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 223,
+            "text": "mostrar_caso",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 277,
+            "text": "conteo.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 289,
+            "text": "estado.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 300,
+            "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "estante_variante_pruebas_salida",
+        "path": "/text",
+        "sourceSha256": "ef308de9be512a7ddf806f050737987e6a77d94541295e613da4ba01eb2fbb15",
+        "spans": [
+          {
+            "start": 0,
+            "end": 272,
+            "text": "0 0: 0 Vacio\n1 0: 3 Ligero\n0 1: 4 Ligero\n5 2: 23 Ligero\n0 6: 24 Ligero\n8 0: 24 Ligero\n7 1: 25 Pesado\n2 3: 18 Ligero\n10 0: 30 Pesado\n0 10: 40 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_variante_comprobacion_propia",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "b9cc7a678d5c84d9a04c1ba5bfac827ec769cb85c1d7254fedad51236f0e2d00",
+        "spans": [
+          {
+            "start": 82,
+            "end": 87,
+            "text": "(1,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 95,
+            "text": "(0,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 140,
+            "text": "23 Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 151,
+            "text": "24 Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 163,
+            "text": "25 Pesado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_variante_comprobacion_propia",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "9975cee7cb70862af5ebd99427084bdebe282ca65a5f4398dc7993c7dcf352a4",
+        "spans": [
+          {
+            "start": 40,
+            "end": 57,
+            "text": "espacios_ocupados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "(1,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 103,
+            "text": "3 Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 123,
+            "text": "2 Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 164,
+            "text": "(0,6)",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_guarda_mecanismo",
+        "path": "/text",
+        "sourceSha256": "0a8af9a13f297c730aeffe939bc74aa8001355eb57e1910b6aa957b819a731c4",
+        "spans": [
+          {
+            "start": 18,
+            "end": 44,
+            "text": "CPP_FUNDAMENTALS_ESTANTE_H",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 220,
+            "text": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 306,
+            "text": "#define CPP_FUNDAMENTALS_ESTANTE_H",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 351,
+            "end": 357,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 633,
+            "end": 653,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_guarda_limite",
+        "path": "/text",
+        "sourceSha256": "2ab5f5a7f210565e1f21972e4de85ca282c8729b61c9740a0ce70f3d9352f4fa",
+        "spans": [
+          {
+            "start": 269,
+            "end": 277,
+            "text": "<string>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 403,
+            "end": 452,
+            "text": "int espacios_ocupados(int pequenas, int grandes);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 484,
+            "end": 502,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_guarda_conclusion",
+        "path": "/question",
+        "sourceSha256": "1d36854e4bf2e8aa429f69a8ea9d9615a712b59e921cb10d4b41942c6dd2777b",
+        "spans": [
+          {
+            "start": 46,
+            "end": 53,
+            "text": "#ifndef",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 62,
+            "text": "#define",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "#endif",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 84,
+            "text": "estante.h",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 178,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 196,
+            "text": "Pesado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "estante_guarda_conclusion",
+        "path": "/options/0",
+        "sourceSha256": "527886b50f359b3f5f659632102d58dfbd2906aaa44bde6ee18f02a395e51f94",
+        "spans": []
+      },
+      {
+        "block": "estante_guarda_conclusion",
+        "path": "/options/1",
+        "sourceSha256": "833724a6ead3bc76e074100d270356dcf90705fc77cfa78495d9089c90858c0f",
+        "spans": []
+      },
+      {
+        "block": "estante_guarda_conclusion",
+        "path": "/options/2",
+        "sourceSha256": "73a746884a2683859501ea85c7aa178fa9d8f1724e0572c43b53ea21e8c26079",
+        "spans": []
+      },
+      {
+        "block": "estante_guarda_conclusion",
+        "path": "/explanation",
+        "sourceSha256": "d2dd2f55fb58215953794d0390655f3cfa50146b831578372947730ac5963891",
+        "spans": [
+          {
+            "start": 223,
+            "end": 225,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 247,
+            "text": "Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 426,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       }

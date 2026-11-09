@@ -889,11 +889,116 @@
         },
         {
           "type": "heading",
+          "text": "Comprobar la misma regla en ocho casos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado de veinticinco tarjetas no comprueba todas las fronteras. Recupera en sobres.cpp las dos funciones que acabas de adaptar a capacidad veinte. La cabecera conserva las firmas y ya documenta el nuevo requisito; faltan las definiciones de las auxiliares.\n\nmain.cpp contiene un cliente completo. Conserva sus llamadas: cada una obtiene la descripción y el número de sobres de tus funciones. No sustituyas los cálculos por mensajes fijados para cada dato. Este proyecto reúne todos los casos en una ejecución y no necesita Entrada.",
+          "emphasis": [
+            {
+              "text": "Recupera en sobres.cpp las dos funciones",
+              "style": "bold"
+            },
+            {
+              "text": "Conserva sus llamadas",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente prueba cero y ciento veinte tarjetas, los extremos del dominio. También prueba diecinueve, veinte y veintiuna, alrededor de la capacidad de un sobre; doce y veinticuatro recuperan cantidades ligadas a la capacidad anterior. Conserva veinticinco para comparar con el primer intento.\n\nCada línea identifica la cantidad de tarjetas y muestra la descripción seguida del número de sobres. El objetivo es este informe completo:"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Un sobre: 1\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Un sobre: 1\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Varios sobres: 2\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa sobres.cpp y selecciona sobres.cpp y main.cpp como fuentes. Pulsa «Compilar, ejecutar y comprobar». Las ocho líneas deben salir del mismo programa, en el orden mostrado. El salto de línea final es opcional. Si una línea difiere, revisa la regla de las auxiliares y vuelve a ejecutar el informe completo.",
+          "emphasis": [
+            {
+              "text": "Las ocho líneas deben salir del mismo programa",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 20 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "#include \"sobres.h\"\n\n// Recupera tus definiciones de sobres_necesarios y descripcion_sobres.\n// Ambas deben cumplir el contrato de capacidad veinte.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Un sobre: 1\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Un sobre: 1\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Varios sobres: 2\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6",
+                  "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Un sobre: 1\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Un sobre: 1\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Varios sobres: 2\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La ejecución reúne los ocho resultados exigidos. Diecinueve y veinte tarjetas caben en un sobre; veintiuna necesita dos. Doce y veinticuatro distinguen la capacidad nueva de una adaptación que conserve el resto de doce. La comparación siguiente desarrolla por qué veinticinco, por sí solo, no descubre ese error.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Sin tarjetas: 0\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Varios sobres: 2\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Un sobre: 1\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6",
+                      "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Sin tarjetas: 0\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Varios sobres: 2\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Un sobre: 1\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6\n"
+                    ],
+                    "text": "Este informe coincide con una división por veinte y un resto calculado con doce. Para doce tarjetas aparecen cero sobres, aunque hace falta uno; para veinte aparecen dos, aunque basta uno; y para veinticuatro aparece uno, aunque hacen falta dos. Revisa que las dos operaciones utilicen la misma capacidad. Que veinticinco produzca dos no basta para conservar el resto anterior."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para veinticinco tarjetas, 25 / 20 obtiene un sobre completo y 25 % 20 obtiene cinco tarjetas sobrantes: se añade otro sobre y el resultado es dos. Si se deja por error 25 % 12, el resto es uno. También es distinto de cero, de modo que se añade un sobre y vuelve a obtenerse dos.\n\nLas dos versiones coinciden en ese dato aunque calculan restos diferentes. El caso de veinticinco comprueba un resultado concreto; no distingue la modificación completa de esa modificación parcial.",
+          "emphasis": [
+            {
+              "text": "Las dos versiones coinciden en ese dato",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Con doce tarjetas, 12 / 20 obtiene cero grupos completos. El resto 12 % 20 vale doce: esas tarjetas necesitan un sobre. Si se conserva 12 % 12, el resto vale cero y la versión defectuosa no añade ninguno. Por eso el resultado cero, con la descripción Sin tarjetas, descubre el fallo: había doce tarjetas válidas.\n\nCon veinte tarjetas ocurre el error contrario. 20 / 20 obtiene un sobre completo y 20 % 20 vale cero: no queda ninguna tarjeta fuera. Pero 20 % 12 vale ocho, y usar ese resto añade un sobre innecesario. El resultado correcto es uno, no dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con veinticuatro tarjetas, 24 / 20 obtiene un sobre completo y 24 % 20 deja cuatro tarjetas: hace falta un segundo sobre. En cambio, 24 % 12 vale cero y la versión mezclada se queda en uno. Los casos de doce, veinte y veinticuatro separan así resultados que el caso de veinticinco dejaba coincidir.\n\nDiecinueve, veinte y veintiuna comprueban la frontera entre uno y dos sobres. Cero conserva el caso sin tarjetas, y ciento veinte llena exactamente seis sobres de veinte. En todos ellos cambia el argumento de la llamada, mientras se conserva la misma regla de cálculo.",
+          "emphasis": [
+            {
+              "text": "se conserva la misma regla de cálculo",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "heading",
           "text": "Referencia con la capacidad ampliada"
         },
         {
           "type": "paragraph",
-          "text": "La cabecera conserva las declaraciones y actualiza el comentario a veinte tarjetas por sobre. En sobres.cpp cambian juntos el divisor y el cálculo del resto. Para veinticinco tarjetas hay un grupo completo y un sobrante; se necesitan dos sobres. El cliente y la función de descripción se conservan.",
+          "text": "La cabecera conserva las declaraciones y actualiza el comentario a veinte tarjetas por sobre. En sobres.cpp cambian juntos el divisor y el cálculo del resto. Para veinticinco tarjetas hay un grupo completo y cinco tarjetas sobrantes; se necesitan dos sobres. La función de descripción y el cliente del primer intento se conservan. El mismo sobres.cpp sirve al cliente de ocho casos sin cambiar la regla entre llamadas.",
           "emphasis": [
             {
               "text": "cambian juntos",
@@ -2003,6 +2108,15 @@
           "block_0015_0000",
           "block_0015_0001",
           "block_0015_0002",
+          "capacidad_veinte_bateria_titulo",
+          "capacidad_veinte_bateria_consigna",
+          "capacidad_veinte_bateria_casos",
+          "capacidad_veinte_bateria_salida",
+          "capacidad_veinte_bateria_accion",
+          "capacidad_veinte_bateria",
+          "capacidad_veinte_veinticinco_no_distingue",
+          "capacidad_veinte_doce_y_veinte",
+          "capacidad_veinte_veinticuatro_y_fronteras",
           "capacidad_veinte_referencia_titulo",
           "capacidad_veinte_referencia_explicacion",
           "capacidad_veinte_referencia_codigo"
@@ -3455,6 +3569,87 @@
           "block": 3
         },
         "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_bateria_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 24,
+          "block": 4
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_bateria_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 24,
+          "block": 5
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_bateria_casos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 24,
+          "block": 6
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_bateria_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 24,
+          "block": 7
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_bateria_accion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 24,
+          "block": 8
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_bateria",
+        "sha256": "286c45254a4e7842664727f701931ddb8fab8e1389aede9ab27959316d0d2926",
+        "storage": {
+          "page": 24,
+          "block": 9
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_veinticinco_no_distingue",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 24,
+          "block": 10
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_doce_y_veinte",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 24,
+          "block": 11
+        },
+        "progressPage": "page_0015"
+      },
+      {
+        "id": "capacidad_veinte_veinticuatro_y_fronteras",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 24,
+          "block": 12
+        },
+        "progressPage": "page_0015"
       }
     ],
     "editorial": [
@@ -3662,6 +3857,11 @@
         "id": "block_0023_0001",
         "beforeSha256": "2b809d1269afdacdbc0b8f0265214d73f75f964224388cd7e2b3946320c3d177",
         "afterSha256": "c946521d5ecd9e767c74c239ab8b709de738d5fa9842ac83921dda837e14788f"
+      },
+      {
+        "id": "capacidad_veinte_referencia_explicacion",
+        "beforeSha256": "d57b1fc8227f0167ec21ee88f4dd05ce83aec89ef6ce227d38c5f50fe712d523",
+        "afterSha256": "09004295aa4a64ac3703646a3b1a5f7cd3a16674a0e1e041849b87d8a87895df"
       }
     ]
   },
@@ -3680,8 +3880,11 @@
       ]
     },
     {
-      "activity": "block_0015_0002",
+      "activity": "capacidad_veinte_bateria",
       "blocks": [
+        "capacidad_veinte_veinticinco_no_distingue",
+        "capacidad_veinte_doce_y_veinte",
+        "capacidad_veinte_veinticuatro_y_fronteras",
         "capacidad_veinte_referencia_titulo",
         "capacidad_veinte_referencia_explicacion",
         "capacidad_veinte_referencia_codigo"
@@ -3699,6 +3902,12 @@
       "activity": "block_0020_0002",
       "requires": [
         "block_0008_0008"
+      ]
+    },
+    {
+      "activity": "capacidad_veinte_bateria",
+      "requires": [
+        "block_0015_0002"
       ]
     }
   ],
@@ -5779,11 +5988,18 @@
       {
         "block": "capacidad_veinte_referencia_explicacion",
         "path": "/text",
-        "sourceSha256": "6fb51763bec1e1d3c7f2836e10fc51984bdde95ca73d612b36e2338c3b0c8453",
+        "sourceSha256": "544b73eee9f5f144f481e8fec8d40cf3dfceab941633f68967dcd9a48eddd889",
         "spans": [
           {
             "start": 97,
             "end": 107,
+            "text": "sobres.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 350,
             "text": "sobres.cpp",
             "role": "data",
             "reading": "natural"
@@ -6360,6 +6576,212 @@
             "text": "main.cpp",
             "role": "data",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "capacidad_veinte_bateria_titulo",
+        "path": "/text",
+        "sourceSha256": "ce1da593a1cf9e85aef5aeb50fa5676c5a3f29f8574eaa6f5f1a7cb0fbbe3892",
+        "spans": []
+      },
+      {
+        "block": "capacidad_veinte_bateria_consigna",
+        "path": "/text",
+        "sourceSha256": "a774d0fa625e53dfb1db9e72bf25acbffc2208f14e12c0bc66a7f59390541740",
+        "spans": [
+          {
+            "start": 83,
+            "end": 93,
+            "text": "sobres.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 273,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 530,
+            "end": 537,
+            "text": "Entrada",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "capacidad_veinte_bateria_casos",
+        "path": "/text",
+        "sourceSha256": "26c085387cc1675fa21a914849fdec5be572556d119f8d87334026fcd2c5d4ae",
+        "spans": []
+      },
+      {
+        "block": "capacidad_veinte_bateria_salida",
+        "path": "/text",
+        "sourceSha256": "ec4a174ff7ebba58de6d55d669738895499b49135d12c3fe040d3c5aef1b19e2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 231,
+            "text": "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Un sobre: 1\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Un sobre: 1\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Varios sobres: 2\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "capacidad_veinte_bateria_accion",
+        "path": "/text",
+        "sourceSha256": "05bd2ca0e77773ea6487b27744f71a4a557534901edad2cf2b2ec3779870452e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 19,
+            "text": "sobres.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 43,
+            "text": "sobres.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 54,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "capacidad_veinte_bateria",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "d42606db7b4703da819951abbcee563f8e48090cced2254033f8d127ca0b58bf",
+        "spans": []
+      },
+      {
+        "block": "capacidad_veinte_bateria",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "4bed01563cb22f2d178fbe95ae76a5df210644190c0babde2c6bfbfed7cef72e",
+        "spans": []
+      },
+      {
+        "block": "capacidad_veinte_veinticinco_no_distingue",
+        "path": "/text",
+        "sourceSha256": "25dd0e4a88f3c79b8bde6992ef7b6d7bdd6121a31fd1ce961c28934a4373cbcb",
+        "spans": [
+          {
+            "start": 27,
+            "end": 34,
+            "text": "25 / 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 70,
+            "text": "25 % 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 176,
+            "text": "25 % 12",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "capacidad_veinte_doce_y_veinte",
+        "path": "/text",
+        "sourceSha256": "93b173f9bc369e88fee1c9c7a4293d0338cf3682469239469f3e896546d54da1",
+        "spans": [
+          {
+            "start": 19,
+            "end": 26,
+            "text": "12 / 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 74,
+            "text": "12 % 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 142,
+            "text": "12 % 12",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 263,
+            "text": "Sin tarjetas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 368,
+            "text": "20 / 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 404,
+            "text": "20 % 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 453,
+            "end": 460,
+            "text": "20 % 12",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "capacidad_veinte_veinticuatro_y_fronteras",
+        "path": "/text",
+        "sourceSha256": "a23c56369171bb9be2ff404b2fbd7b097dcbfff66592cbcf1e56d63e26a12624",
+        "spans": [
+          {
+            "start": 27,
+            "end": 34,
+            "text": "24 / 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 70,
+            "text": "24 % 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 140,
+            "text": "24 % 12",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }
