@@ -2,7 +2,7 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar la revisión pedagógica de Programación 1 desde U12L27, «Del Laboratorio al proyecto de Windows», en `app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_preparar_el_proyecto_windows.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
+Continuar la revisión pedagógica de Programación 1 desde U12L31, «Construir el modelo de InspectionLog», en `app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_construir_el_modelo_de_inspectionlog.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
 
 ## Base conservada
 
