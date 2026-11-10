@@ -2,7 +2,7 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar con la planificación y revisión de Programación 2, «Construcción, depuración y práctica profesional», a partir de `app/src/main/assets/content/es/programming/programming_practice_tools/course_programming_practice_tools.json` y de su avance real. La revisión curricular de Programación 1, incluidas sus referencias y la enseñanza del proyecto InspectionLog, está cerrada. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar y conservar la distribución de libros vigente.
+Continuar la revisión de Programación 2 desde U2L1, `app/src/main/assets/content/es/programming/programming_practice_tools/construccion_reproducible/lesson_fuentes_objetivos_y_fases.json`: contrastar su descripción histórica Android y el requisito mínimo C++20 con el entorno Windows vigente. U1L1–L5 tienen la revisión editorial y el marcado explícito incorporados; su cierre funcional conserva los tres editores pendientes de acreditación descritos en `PENDIENTES_RECURSOS_CURRICULARES.md`. El curso sigue abierto y su proyecto previsto está en `AGENTS.md`; conservar los veinte elementos actuales del índice y la distribución de libros. La revisión curricular de Programación 1 permanece cerrada. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar.
 
 ## Base conservada de la importación
 
