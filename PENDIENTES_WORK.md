@@ -2,15 +2,15 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar la revisión pedagógica de Programación 1 desde U12L37, «Referencias del curso», en `app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_referencias_del_curso.json`. Tras comprobar la concordancia de citas y bibliografía, completar el cierre transversal de cobertura, práctica y proyecto según el maestro, reutilizando las revisiones y evidencias acreditadas. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta ese cierre.
+Continuar con la planificación y revisión de Programación 2, «Construcción, depuración y práctica profesional», a partir de `app/src/main/assets/content/es/programming/programming_practice_tools/course_programming_practice_tools.json` y de su avance real. La revisión curricular de Programación 1, incluidas sus referencias y la enseñanza del proyecto InspectionLog, está cerrada. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar y conservar la distribución de libros vigente.
 
-## Base conservada
+## Base conservada de la importación
 
 - Directorio de Work: `E:\PersonalFiles\Projects\LearnGameAndEngineDev-Work`, rama `main`.
 - Origen: `E:\PersonalFiles\Projects\LearnGraphicsProgramming`, `main` `911118f2a92066569911e6785f4a98660ade0124`. Su historial se conserva en este repositorio local; el proyecto original permanece intacto.
 - Importación verificada byte por byte: 1.727 archivos versionados, incluidos los 878 JSON curriculares, pruebas, modelos ingleses y audios Ogg existentes. Se conservaron también los dos archivos locales de `.codex-qa/u4-recorridos-anidados/`, incluido el ejecutable, excluidos de Git. Evidencia local: `.migration-qa/import-verification.json`.
 - Registro vigente de pedidos: `PENDIENTES_RECURSOS_CURRICULARES.md`, editado exclusivamente por Work. Los pedidos Windows se trasladaron allí con sus identificadores; Codex informa únicamente en el chat.
-- **Estado curricular:** Programación 1 sigue abierto. Se conservan las seis correcciones editoriales, las dos predicciones y el editor de recuperación de frecuencias. Su importación no acredita aceptación Windows ni cierra las comprobaciones anteriores pendientes.
+- **Estado curricular al importar:** Programación 1 seguía abierto. Se conservan las seis correcciones editoriales, las dos predicciones y el editor de recuperación de frecuencias. Su importación no acredita aceptación Windows ni cierra las comprobaciones anteriores pendientes.
 - **Estado de Windows:** base nativa, recorrido U1L2 e importación sintética incorporados. Consultar su aceptación y límites en el registro único. El progreso personal del teléfono permanece intacto y no se ha importado para QA.
 
 ## Recursos locales que se conservan en el origen
