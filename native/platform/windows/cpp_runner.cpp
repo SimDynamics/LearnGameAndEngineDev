@@ -461,6 +461,47 @@ CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProject
 }
 void merge_phase(CppPhaseResult& total,CppPhaseResult part,std::size_t limit){const bool exceeded=part.stdout_bytes.size()>limit-total.stdout_bytes.size()||part.stderr_bytes.size()>limit-total.stderr_bytes.size();
     total.stdout_bytes.append(part.stdout_bytes,0,std::min(part.stdout_bytes.size(),limit-total.stdout_bytes.size()));total.stderr_bytes.append(part.stderr_bytes,0,std::min(part.stderr_bytes.size(),limit-total.stderr_bytes.size()));total.status=exceeded?CppPhaseStatus::output_limit:part.status;total.exit_code=part.exit_code;}
+// WASIp1 runs inside the Wasmtime process. There is no fresh unsigned PE
+// for Windows application control to reject for each student's C++ exercise.
+// Toolchain and runtime are installed in shared, versioned C:\\LGP-Tools.
+void run_wasi_single(const CppRunRequest& request,CppRunResult& result,
+        const std::filesystem::path& source,const std::filesystem::path& input,
+        const std::filesystem::path& compiler_input,std::stop_token stop) {
+    if(request.diagnostic||request.cmake||!request.project_files.empty())
+        throw std::invalid_argument("WASI single-file execution cannot replace native diagnostics or CMake.");
+    const std::filesystem::path sdk{LR"(C:\LGP-Tools\WASI-SDK\34.0)"};
+    const auto clang=sdk/L"bin/clang++.exe";
+    const auto sysroot=sdk/L"share/wasi-sysroot";
+    const std::filesystem::path wasmtime{LR"(C:\LGP-Tools\Wasmtime\50.0.1\wasmtime.exe)"};
+    if(!std::filesystem::is_regular_file(clang)||!std::filesystem::is_directory(sysroot)
+        ||!std::filesystem::is_regular_file(wasmtime))
+        throw std::runtime_error("WASI SDK 34 / Wasmtime 50.0.1 no están instalados. "
+            "Reconstruye la aplicación con Build-Native.ps1 para instalar las herramientas oficiales "
+            "sin cambiar la configuración de Seguridad de Windows.");
+    const auto wasm=result.run_directory/L"program.wasm";
+    write_exact(source,request.source_utf8);
+    write_exact(result.run_directory/L"toolchain.txt",
+        "backend=WASI (wasm32-wasip1)\nwasi-sdk=34.0\nwasmtime=50.0.1\n"
+        "clang="+utf8(clang.wstring())+"\n");
+    const std::vector<std::wstring> compile_args{
+        L"--target=wasm32-wasip1",
+        L"--sysroot="+sysroot.wstring(),L"-std=c++23",L"-Wall",L"-Wextra",
+        L"-fno-color-diagnostics",L"-o",wasm.wstring(),source.wstring()
+    };
+    // Clang emits UTF-8 diagnostics on Windows. Launch it directly so an
+    // additional, locally built unsigned compiler-host PE is never necessary.
+    result.compilation=run_phase(clang,compile_args,result.run_directory,compiler_input,
+        L"compilation",request.compile_timeout,request.output_limit_bytes,true,stop,false);
+    if(!result.compilation.succeeded())return;
+    result.artifact=wasm;
+    result.target_type="WASI_COMMAND";
+    // Wasmtime receives stdin from the same exact prepared-input file and
+    // keeps stdout and stderr independent; only the owned run folder is
+    // available for guest file operations.
+    const std::vector<std::wstring> run_args{L"run",L"--dir",L".",wasm.wstring()};
+    result.execution=run_phase(wasmtime,run_args,result.run_directory,input,
+        L"execution",request.execution_timeout,request.output_limit_bytes,false,stop,false);
+}
 void run_multifile(const CppRunRequest& request,CppRunResult& result,const std::filesystem::path& input,const std::filesystem::path& compiler_input,std::stop_token stop){
     validate_request_project(request);result.project_fingerprint=fingerprint(request);const auto source=result.run_directory/L"project",objects=result.run_directory/L"objects",executable=result.run_directory/L"program.exe";
     materialize(request.project_files,source);std::filesystem::create_directory(objects);const std::filesystem::path compiler=std::filesystem::path(build::educational_vc_root)/L"bin/Hostx64/x64/cl.exe";std::vector<std::wstring> link{L"/nologo",L"/Fe:"+executable.wstring()};
@@ -908,10 +949,14 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         const auto executable = result.run_directory / L"program.exe";
         const std::filesystem::path vc{build::educational_vc_root};
         const auto compiler = vc / L"bin/Hostx64/x64/cl.exe";
-        if (!std::filesystem::is_regular_file(compiler))
-            throw std::runtime_error("Pinned educational MSVC compiler is unavailable");
         write_exact(input, request.stdin_utf8);
         write_exact(compiler_input, "");
+        if(request.backend==CppRunRequest::Backend::wasi) {
+            run_wasi_single(request,result,source,input,compiler_input,stop);
+            return result;
+        }
+        if (!std::filesystem::is_regular_file(compiler))
+            throw std::runtime_error("Pinned educational MSVC compiler is unavailable");
         write_exact(result.run_directory / L"toolchain.txt", "MSVC=14.51.36231\nSDK=" +
             utf8(build::educational_sdk_version) + "\ncompiler=" + utf8(compiler.wstring()) + "\n");
         if(request.diagnostic){
