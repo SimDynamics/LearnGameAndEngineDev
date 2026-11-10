@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Root = 'E:\PersonalFiles\Projects\LearnGameAndEngineDev-Dep'
+    [string]$Root = 'C:\LGAED-Dep'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,6 +10,11 @@ $ProgressPreference = 'SilentlyContinue'
 # Never move existing dependencies, change Windows Security, trust stores,
 # antivirus preferences, other projects or the installed MSVC/Android toolchains.
 $root = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
+$authorized = [System.IO.Path]::GetFullPath('C:\LGAED-Dep').TrimEnd('\', '/')
+$isolatedCI = $env:GITHUB_ACTIONS -eq 'true' -and $env:RUNNER_ENVIRONMENT -eq 'github-hosted'
+if (-not $isolatedCI -and -not [string]::Equals($root, $authorized, [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Unapproved WASI dependency path: $root. Project dependencies belong in $authorized."
+}
 $sdkDir = Join-Path $root 'WASI-SDK\34.0'
 $runtimeDir = Join-Path $root 'Wasmtime\50.0.1'
 $sdkCompiler = Join-Path $sdkDir 'bin\clang++.exe'
