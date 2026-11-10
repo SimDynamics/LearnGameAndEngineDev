@@ -463,7 +463,7 @@ void merge_phase(CppPhaseResult& total,CppPhaseResult part,std::size_t limit){co
     total.stdout_bytes.append(part.stdout_bytes,0,std::min(part.stdout_bytes.size(),limit-total.stdout_bytes.size()));total.stderr_bytes.append(part.stderr_bytes,0,std::min(part.stderr_bytes.size(),limit-total.stderr_bytes.size()));total.status=exceeded?CppPhaseStatus::output_limit:part.status;total.exit_code=part.exit_code;}
 // WASIp1 runs inside Wasmtime without generating an unsigned PE per exercise.
 // Toolchain and runtime are confined to the user-authorized, project-specific
-// LearnGameAndEngineDev-Dep root configured at build time.
+// C:\\LGAED-Dep root configured at build time (isolated CI excepted).
 void run_wasi_single(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& source,const std::filesystem::path& input,
         const std::filesystem::path& compiler_input,std::stop_token stop) {
@@ -478,7 +478,7 @@ void run_wasi_single(const CppRunRequest& request,CppRunResult& result,
         ||!std::filesystem::is_regular_file(wasmtime))
         throw std::runtime_error("WASI SDK 34 / Wasmtime 50.0.1 no están instalados. "
             "Reconstruye la aplicación con Build-Native.ps1 para instalar las herramientas oficiales "
-            "solo en LearnGameAndEngineDev-Dep, sin modificar Seguridad de Windows.");
+            "solo en C:\\LGAED-Dep, sin modificar Seguridad de Windows.");
     const auto wasm=result.run_directory/L"program.wasm";
     write_exact(source,request.source_utf8);
     write_exact(result.run_directory/L"toolchain.txt",
