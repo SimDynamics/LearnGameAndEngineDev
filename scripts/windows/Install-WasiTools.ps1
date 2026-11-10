@@ -1,13 +1,15 @@
 [CmdletBinding()]
-param()
+param(
+    [string]$Root = 'E:\PersonalFiles\Projects\LearnGameAndEngineDev-Dep'
+)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-# One-time, per-machine provisioning of official portable Windows x64 tools.
-# No changes to Windows Security, antivirus exclusions, trust stores, policies,
-# user profiles or the installed MSVC/Android toolchains.
-$root = 'C:\LGP-Tools'
+# One-time provisioning exclusively inside the project-specific dependency root.
+# Never move existing dependencies, change Windows Security, trust stores,
+# antivirus preferences, other projects or the installed MSVC/Android toolchains.
+$root = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
 $sdkDir = Join-Path $root 'WASI-SDK\34.0'
 $runtimeDir = Join-Path $root 'Wasmtime\50.0.1'
 $sdkCompiler = Join-Path $sdkDir 'bin\clang++.exe'
@@ -41,13 +43,14 @@ $locked = $false
 try {
     $locked = $mutex.WaitOne([TimeSpan]::FromMinutes(30))
     if (-not $locked) { throw 'Timeout waiting for the shared WASI installation lock.' }
+    [System.IO.Directory]::CreateDirectory($root) | Out-Null
     foreach ($package in $packages) {
         if (Test-Path -LiteralPath $package.Check -PathType Leaf) { continue }
         if (Test-Path -LiteralPath $package.Destination) {
             throw "The WASI destination exists but is incomplete: $($package.Destination). Keep its files and investigate; do not overwrite it."
         }
 
-        $stage = Join-Path ([System.IO.Path]::GetTempPath()) ('lgaed-wasi-' + [guid]::NewGuid().ToString('N'))
+        $stage = Join-Path $root ('._wasi_install_' + [guid]::NewGuid().ToString('N'))
         [System.IO.Directory]::CreateDirectory($stage) | Out-Null
         try {
             $archive = Join-Path $stage ('download.' + $package.Kind)
