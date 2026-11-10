@@ -3881,7 +3881,11 @@ struct LessonView {
                 return ui("La fase no terminó correctamente.","The phase did not finish successfully.","La phase ne s’est pas terminée correctement.");
             };
             std::string status;
-            if(!cmake){
+            if(result->error_utf8.find("Windows error 4551")!=std::string::npos)
+                status=ui("Windows bloqueó un proceso por su política de control de aplicaciones (error 4551). Consulta los detalles en la consola.",
+                    "Windows application control blocked a process (error 4551). See the console for details.",
+                    "Le contrôle des applications Windows a bloqué un processus (erreur 4551). Consultez la console.");
+            else if(!cmake){
                 if(result->compilation.exit_code&&!result->compilation.succeeded())status=ui("La compilación falló (código ","Compilation failed (code ","Échec de la compilation (code ")+std::to_string(*result->compilation.exit_code)+").";
                 else if(result->execution.exit_code)status=(result->execution.succeeded()||completed_for_objective
                     ?ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")
