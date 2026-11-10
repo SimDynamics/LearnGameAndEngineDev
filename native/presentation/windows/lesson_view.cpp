@@ -2099,7 +2099,7 @@ struct LessonView {
         // of a fresh unsigned Windows executable for every compilation.
         // MSVC remains the explicit backend for real native diagnostics and
         // project/CMake objectives, whose contracts are not interchangeable.
-        if(!vm.project&&!block(index).compile_check)
+        if(!laboratory()&&!vm.project&&!block(index).compile_check)
             request.backend=windows::CppRunRequest::Backend::wasi;
         if(block(index).compile_check){
             request.diagnostic=windows::prepare_cpp_diagnostic_request(block(index),request);
