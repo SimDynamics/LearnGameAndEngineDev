@@ -1,0 +1,1846 @@
+{
+  "id": "programming_practice_tools__proyecto_assetcheck__preparar_y_comprobar_cmake_en_windows",
+  "title": "Preparar y comprobar CMake en Windows",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Del acuerdo del manifiesto a una construcción reproducible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos lecciones anteriores definieron qué registros admite AssetCheck y cómo se conserva un lote. Antes de programar el lector comprobaremos que el entorno externo puede construir un ejecutable mínimo. Esta etapa no declara implementado el validador, ni atribuye al estudiante una instalación que no realizó."
+        },
+        {
+          "type": "paragraph",
+          "text": "La preparación del autor se hizo con una consola x64 de Visual Studio Community 2026 18.11.3 sobre Windows compilación 26200.9711. Se identificaron MSVC 19.51.36260.0, toolset 14.51.36231, Windows SDK 10.0.28000.0, CMake 4.3.1-msvc1 y Ninja 1.13.2. Son versiones observadas, no requisitos exactos para todos los equipos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al ejecutar el programa mínimo se observó «AssetCheck: entorno listo» y después «Codigo=0». Esta salida acredita el resultado de ese ejecutable; la transcripción compartida todavía no incluye los mensajes completos de configuración, generación ni capturas, y no permite afirmar que se instalaron herramientas desde cero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_alcance",
+          "question": "¿Qué demuestra esa salida con código cero?",
+          "options": [
+            "Que el lector definitivo verifica los manifiestos.",
+            "Que el ejecutable de prueba terminó normalmente con el resultado previsto.",
+            "Que CMake y Visual Studio se instalaron ese mismo día."
+          ],
+          "correctIndex": 1,
+          "explanation": "El dato procede de ejecutar el programa mínimo. No sustituye las pruebas del proyecto completo ni los pasos de instalación.",
+          "reviewFeedback": [
+            "Todavía no se programa el lector.",
+            "Distingue el alcance del programa observado.",
+            "No se registró una instalación sobre un equipo vacío."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Seguiremos las fases de preparación, configuración, generación, construcción y ejecución. Identificar cada una permite averiguar qué falló antes de cambiar código al azar (Scott, 2025, pp. 7–10)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la consola de desarrollo y las herramientas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Abre la consola de desarrollo x64 de Visual Studio. Comprueba que el entorno se inicializó para x64 y ejecuta cada consulta sin permisos de administrador. «where» muestra la herramienta que realmente se selecciona; su versión explica qué instalación se está usando."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "ver\necho VSINSTALLDIR=\"%VSINSTALLDIR%\"\necho VCToolsInstallDir=\"%VCToolsInstallDir%\"\necho WindowsSDKVersion=\"%WindowsSDKVersion%\"\necho VSCMD_ARG_HOST_ARCH=\"%VSCMD_ARG_HOST_ARCH%\"\necho VSCMD_ARG_TGT_ARCH=\"%VSCMD_ARG_TGT_ARCH%\"\nwhere cl\ncl /Bv\nwhere cmake\ncmake --version\nwhere ninja\nninja --version"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la comprobación del autor, cl /Bv mostró MSVC 19.51.36260.0 y también D8003, porque se pidió información del compilador sin proporcionar un archivo fuente. Ese mensaje no demostró por sí mismo un fallo de instalación. El CMake seleccionado provenía de Visual Studio, mientras Ninja informó la versión 1.13.2."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_ruta_herramienta",
+          "question": "¿Qué distingue dos copias de CMake con diferentes ubicaciones?",
+          "options": [
+            "La salida de where cmake y el resultado de cmake --version.",
+            "El nombre de un registro del manifiesto.",
+            "La cantidad de letras de main.cpp."
+          ],
+          "correctIndex": 0,
+          "explanation": "La ruta efectiva y la versión identifican el ejecutable seleccionado en esa consola.",
+          "reviewFeedback": [
+            "Debes contrastar ejecutable y versión.",
+            "El manifiesto todavía no interviene.",
+            "El tamaño de un nombre no identifica la herramienta."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Si falta una herramienta en un equipo nuevo, hay que revisar la instalación de Visual Studio, MSVC x64, SDK y CMake/Ninja antes de descargar o configurar componentes. La sesión verificada partió de herramientas presentes; el recorrido inicial de instalación queda por documentar con pasos y capturas reales."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Confirmar el directorio después del traslado"
+        },
+        {
+          "type": "paragraph",
+          "text": "La raíz actual del curso es E:\\Projects\\LGAEDProjects. La antigua ruta E:\\PersonalFiles\\Projects ya no sirve. En la sesión inicial, cd /d falló y los siguientes comandos intentaron escribir dentro de Program Files\\Microsoft Visual Studio, produciendo «Acceso denegado». El error principal fue no comprobar el directorio tras la primera orden."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cd /d \"E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\"\ncd\ndir /b"
+        },
+        {
+          "type": "paragraph",
+          "text": "La segunda orden debe mostrar la carpeta correcta; si no coincide, detén las operaciones de escritura y localiza la ubicación real. Para usar la prueba ya creada, entra en 01_prueba_cmake y revisa los archivos antes de editarlos. No vuelvas a sobrescribir archivos existentes con redirecciones sin comprobar su contenido."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cd /d \"E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\01_prueba_cmake\"\ncd\ndir /b\ntype CMakeLists.txt\ntype main.cpp"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_cd_fallido",
+          "question": "¿Cómo se debe actuar si cd /d informa que no encuentra la ruta?",
+          "options": [
+            "Continuar con mkdir porque cd crea automáticamente las carpetas.",
+            "Comprobar la ubicación y no escribir archivos hasta resolver la ruta.",
+            "Dar permisos de administrador a toda la instalación de Visual Studio."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un cambio de directorio fallido deja la consola donde estaba. Hay que corregir la ubicación antes de ejecutar las demás órdenes.",
+          "reviewFeedback": [
+            "cd no crea carpetas y seguir puede afectar otros archivos.",
+            "La siguiente escritura depende de la carpeta actual.",
+            "Los privilegios no resuelven una ruta inexistente."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declarar el objetivo mínimo en CMake"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 01_prueba_cmake, CMakeLists.txt describe el proyecto y su único ejecutable. Esta es una prueba de construcción, no la futura biblioteca de AssetCheck. Si el archivo ya existe, comprueba su contenido antes de modificarlo."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(PreparacionAssetCheck LANGUAGES CXX)\nadd_executable(preparar_entorno main.cpp)\ntarget_compile_features(preparar_entorno PRIVATE cxx_std_20)\nset_target_properties(preparar_entorno PROPERTIES CXX_EXTENSIONS OFF)"
+        },
+        {
+          "type": "paragraph",
+          "text": "cmake_minimum_required establece CMake 3.20 como mínimo; project habilita C++; add_executable relaciona el objetivo preparar_entorno con main.cpp. target_compile_features declara capacidades mínimas de C++20, sin imponer una edición exacta del compilador. CXX_EXTENSIONS OFF indica que el objetivo no solicita extensiones del compilador."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_minimo_cpp",
+          "question": "Un objetivo declara cxx_std_20, pero el entorno dispone de un compilador más reciente. ¿Qué significa?",
+          "options": [
+            "El compilador debe reemplazarse por uno de 2020.",
+            "El objetivo necesita al menos capacidades C++20 y puede usar un modo posterior compatible.",
+            "Todos los programas deben utilizar funciones exclusivas de C++23."
+          ],
+          "correctIndex": 1,
+          "explanation": "El mínimo solicitado al objetivo no es la misma cosa que la versión instalada o el modo efectivo seleccionado.",
+          "reviewFeedback": [
+            "Las capacidades del objetivo no se definen por la fecha del instalador.",
+            "Separa requisito del proyecto y entorno de ejecución.",
+            "El código puede seguir siendo sencillo y portable."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Scott (2025, pp. 12–20, 213–216) distingue la descripción del proyecto de sus objetivos y de los requisitos del lenguaje. No basta con que un compilador reciente esté instalado para demostrar que todos los objetivos quedaron correctamente declarados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escribir el programa que confirma la construcción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guarda main.cpp junto a CMakeLists.txt. No necesita dependencias externas: std::puts escribe una línea en la salida estándar y return 0 indica terminación normal. El contenido deliberadamente pequeño permite separar fallos de construcción de las reglas del manifiesto que vendrán después."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstdio>\n\nint main()\n{\n    std::puts(\"AssetCheck: entorno listo\");\n    return 0;\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "El texto mostrado por el programa se utiliza como evidencia. No demuestra que un archivo de recursos exista, que su tamaño real coincida con el declarado ni que el lote cumpla las reglas. Esas comprobaciones pertenecen a la implementación posterior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_fuentes",
+          "question": "¿Qué necesita CMake encontrar en el directorio de fuentes para configurar esta prueba?",
+          "options": [
+            "preparar_entorno.exe como fuente de código.",
+            "CMakeLists.txt y main.cpp.",
+            "Un paquete de texturas y sonidos de prueba."
+          ],
+          "correctIndex": 1,
+          "explanation": "CMakeLists.txt describe el objetivo y main.cpp aporta su fuente. El .exe todavía no tiene por qué existir.",
+          "reviewFeedback": [
+            "El ejecutable se obtiene después de construir.",
+            "Son las entradas explícitas de esta etapa.",
+            "No necesitamos aún recursos reales."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Configurar, generar y separar las salidas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde 01_prueba_cmake ejecuta la orden completa. -S . selecciona el árbol de fuentes, -B build separa los archivos generados, -G Ninja escoge el generador y -DCMAKE_BUILD_TYPE=Debug solicita la configuración de depuración para Ninja, que es de una sola configuración."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug\necho CodigoConfiguracion=%ERRORLEVEL%\ndir /b build"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando CMake termina normalmente, suele informar «Configuring done» y «Generating done». CMakeCache.txt y build.ninja son productos del directorio build; no se deben confundir con CMakeLists.txt, que es la fuente de la descripción. Si el directorio build ya pertenecía a otro generador, hay que usar uno nuevo o resolver esa diferencia expresamente."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_windows_opciones_cmake",
+          "prompt": "Relaciona cada parte de la orden de CMake con su función.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "fuente",
+                  "label": "-S ."
+                },
+                {
+                  "id": "build",
+                  "label": "-B build"
+                },
+                {
+                  "id": "ninja",
+                  "label": "-G Ninja"
+                },
+                {
+                  "id": "debug",
+                  "label": "-DCMAKE_BUILD_TYPE=Debug"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "salida",
+                  "label": "Árbol donde se generan archivos"
+                },
+                {
+                  "id": "modo",
+                  "label": "Configuración Debug"
+                },
+                {
+                  "id": "entrada",
+                  "label": "Árbol que contiene CMakeLists.txt"
+                },
+                {
+                  "id": "generador",
+                  "label": "Sistema de construcción seleccionado"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "fuente": "entrada",
+                  "build": "salida",
+                  "ninja": "generador",
+                  "debug": "modo"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La fuente, el destino, el generador y el modo Debug son decisiones distintas. La orden todavía no ejecuta preparar_entorno.exe.",
+            "incorrect": "Distingue dónde se lee el proyecto, dónde se generan los archivos, qué sistema construye y qué modo se solicita."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La documentación de CMake 4.3 sobre la línea de comandos confirma estas opciones y el comportamiento de --build. La sesión compartida sólo conserva el resultado final del ejecutable; para acreditar también esta etapa se necesitan sus mensajes y código de retorno."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el objetivo y ejecutar el .exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "La orden de construcción pide a CMake que invoque el sistema generado para preparar_entorno. Comprueba su código de salida inmediatamente. Después ejecuta el binario ubicado en build y consulta el retorno de ese proceso antes de ejecutar cualquier otra orden."
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "cmake --build build --target preparar_entorno\necho CodigoConstruccion=%ERRORLEVEL%\nbuild\\preparar_entorno.exe\necho Codigo=%ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "La observación real del autor fue «AssetCheck: entorno listo» y «Codigo=0». El dato verifica que el ejecutable de prueba terminó satisfactoriamente en Windows x64 con las herramientas ya presentes. No se ha recibido todavía la salida completa de configuración, construcción ni una captura de la sesión."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_codigo_de_ejecucion",
+          "question": "Si echo Codigo=%ERRORLEVEL% muestra 0 inmediatamente después del .exe, ¿qué queda acreditado?",
+          "options": [
+            "La ejecución de ese programa terminó con código cero.",
+            "El manifiesto de recursos se ha validado por completo.",
+            "Se instaló Ninja desde cero."
+          ],
+          "correctIndex": 0,
+          "explanation": "ERRORLEVEL debe interpretarse inmediatamente después del proceso relevante. No acredita otros procesos ni proyectos.",
+          "reviewFeedback": [
+            "El código pertenece al proceso ejecutado.",
+            "El lector todavía no existe.",
+            "La instalación requiere evidencia diferente."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Si build\\preparar_entorno.exe no aparece, busca el primer error de configuración o construcción y verifica que el objetivo tenga ese nombre. Una ruta al ejecutable que no existe no es un fallo de sus cálculos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modificar, reconstruir y comprobar que no se ejecuta una versión anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de guardar un cambio en main.cpp, ejecutar el .exe anterior no actualiza el programa. En esta práctica cambia sólo el texto que muestra std::puts y reconstruye el mismo objetivo. Un resultado viejo antes de reconstruir y el nuevo después permiten distinguir fuente editada de binario actualizado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cstdio>\n\nint main()\n{\n    std::puts(\"AssetCheck: entorno actualizado\");\n    return 0;\n}"
+        },
+        {
+          "type": "code",
+          "language": "cmd",
+          "code": "build\\preparar_entorno.exe\necho CodigoAntes=%ERRORLEVEL%\ncmake --build build --target preparar_entorno\necho CodigoConstruccion=%ERRORLEVEL%\nbuild\\preparar_entorno.exe\necho CodigoDespues=%ERRORLEVEL%"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_ejecutable_viejo",
+          "question": "Guardaste la fuente con el mensaje nuevo, pero el .exe todavía muestra el anterior. ¿Qué debes comprobar primero?",
+          "options": [
+            "Que guardar haya reconstruido automáticamente el binario.",
+            "Que vuelvas a construir el objetivo y después ejecutes el archivo actualizado.",
+            "Que los programas Debug no puedan cambiar sus cadenas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Guardar un archivo fuente no es lo mismo que compilarlo. La reconstrucción actualiza el artefacto ejecutable.",
+          "reviewFeedback": [
+            "Guardar texto no necesariamente invoca CMake.",
+            "La construcción y la ejecución deben corresponder a la nueva revisión.",
+            "Debug no congela las cadenas de salida."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "La segunda reconstrucción es la siguiente comprobación práctica. El autor todavía no ha compartido el resultado de la variante «entorno actualizado», así que no se presenta como prueba realizada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnosticar la fase exacta y continuar el proyecto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero identifica dónde ocurre el problema. Un cd /d fallido mantiene la carpeta anterior; la falta de CMakeLists.txt afecta a la configuración; un error de main.cpp pertenece a la compilación; no encontrar el .exe puede indicar que no se construyó el objetivo o que se está usando otra ubicación."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_windows_diagnosticos",
+          "prompt": "Relaciona la observación con la primera comprobación pertinente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "ruta",
+                  "label": "cd /d no encuentra la ruta"
+                },
+                {
+                  "id": "fuentes",
+                  "label": "CMake no encuentra CMakeLists.txt"
+                },
+                {
+                  "id": "compila",
+                  "label": "El compilador informa un error en main.cpp"
+                },
+                {
+                  "id": "exe",
+                  "label": "No aparece preparar_entorno.exe"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "binario",
+                  "label": "Comprobar si se construyó el objetivo y dónde quedó"
+                },
+                {
+                  "id": "archivo",
+                  "label": "Comprobar los archivos del árbol de fuentes"
+                },
+                {
+                  "id": "ubicacion",
+                  "label": "Comprobar cd antes de escribir"
+                },
+                {
+                  "id": "codigo",
+                  "label": "Leer el diagnóstico y revisar la línea de fuente"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "ruta": "ubicacion",
+                  "fuentes": "archivo",
+                  "compila": "codigo",
+                  "exe": "binario"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Resolver el primer error de cada fase evita tratar las consecuencias como si fueran fallos independientes del programa.",
+            "incorrect": "Busca primero la fase de la que procede cada observación."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para enseñar esta preparación desde cero aún se necesitan capturas reales de instalación y selección de componentes, además de imágenes legibles de la consola, la generación y la reconstrucción de la variante. No se sustituye esa evidencia con respuestas correctas de la app ni con capturas inventadas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_windows_siguiente_tramo",
+          "question": "¿Qué corresponde construir después de comprobar esta prueba mínima?",
+          "options": [
+            "El lector y validador del manifiesto por etapas, con su enseñanza y pruebas correspondientes.",
+            "Todo AssetCheck en una sola lección sin etapas intermedias.",
+            "Declarar finalizado AssetCheck porque imprime una línea."
+          ],
+          "correctIndex": 0,
+          "explanation": "La preparación confirma el entorno de compilación. Después se enseñarán e implementarán progresivamente la lectura, validación, diagnóstico y comprobación independiente.",
+          "reviewFeedback": [
+            "El proyecto avanza junto con sus prácticas verificables.",
+            "La construcción completa debe enseñarse progresivamente.",
+            "Un programa mínimo no resuelve el problema del usuario del manifiesto."
+          ]
+        },
+        {
+          "type": "note",
+          "text": "Continuación: completar las evidencias reales de preparación, conservar el programa mínimo y comenzar después la lectura y validación de un registro sin adelantar el cliente completo."
+        }
+      ]
+    }
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "dd1fa136721ab1f38c0a9e3595a1bc6234122d20dc52f458793aa73d17f44c68",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "962bf77e492c3760b958a11b631fe7382825cd1b8e82ac5c71a2c4279ae80fb7",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "7805428b9cce9be672ad0c292408fd4361241445e7aa707d8f40a6b0a4cdfe62",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "9ca3611f29e2f25d23badf3529d009179ce357318bffb6dcdae4f51a94aeff83",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "30904293cdeae9c791762faf351317a746c3220517b74698d125c82f86c3bec2",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "f57c5c261303396655217554afdac75ae0634f8b080f1efaabca0c647d4267d6",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "f784ee69e39652a67ac90227378252655c9970406dea7bc8f6f9c7e1e176a51d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "02cb56c9e08cfcf01f8716f4b742db93464738ecacd48e1abccb30034a519b55",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "a2b4b09a994733b76c5a311099c059134a995ca4f24b5a3acf5a3aefc7c683b3",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "2ce7f76b8b8df95a45c3e036172248a2775ee76657e5dba4f70cbcfe9ed5dfc6",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "3747cf3f53dd942e305d0fa9d8d4bc16f33124c6a40661ebd7b210341cb13636",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "72db93df9fdfbfd728c55319b9995643e956428236a8418c6ab33c1709af7858",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/text",
+        "sourceSha256": "8898cf3c9a0414f4ab86fde8b70ada4d03981bb9764c0287693f4da65ddbf68e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "8e9bcd3e90d1552eadcd35ae9ccc9995c9a8bff1786cb120a7d0ba35256c773d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "b1642df62e7704261e7c4043fa5ba144c640820bd053242a78a8550d843237ed",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "e6a6a8273d69e26818d5c172d408ae71f308cf8e048265aac7f7e244b683c5c5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "93202b7f3ec394b9644f79ed8b3a714eede92a61c2a65979616af06b9e5f3011",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "7604ac41173a680f89c455d0e29e19c99af5b04f712df5f73a041928b46c8f48",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "36b739cf92cb3b845cbb0d7a918a05d00c5ef82441748315530852cb773fe4c4",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "603702157ade4946be9613a8503b8947d6b1d820687629b8be5a1fb32fe34931",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "0fbf2a9bed4d1d9fe0e4927c2709850aab9bb1150cf5e272b39843570e3a1059",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "9b58350b23abd06af8aa147c26e3a62932e4532f3848093bd9e305446ba746fa",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "4011b6a81f2ce04366dcd32dab9b0fd056c5b535ec2e8c62a49305ef3a127467",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "aa43537103f76f78cba45915fffc707084bb984deeb4e98abb022911f8c8d311",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "011cdde8a0aefb08918c2b1b459dc2215a38a9ec5b6784f6f74d3b34fc04b2b6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "a27a115968469f6244476f90d09ab053cb9a439615c3470a7d8541c29eb0dd25",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "9bddac52e3829d7556ad5da811f4360476d5ed3888b136e64110b6c942ac4cbb",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "5f2efd689cbb428a368f8ce927afd6ba142b8baa2a6470414ff976be93ed9e5d",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "be67d3597d4c8bf7837454aa45e68b38f33fa09d534de3b9e5d04143c5aba251",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "063d04149aacdc2fbb80e8ef2c6ad5438865686dac752f68167604f2eb649db3",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/0",
+        "sourceSha256": "1dc88c4206a4ac187c43f70e921758a272399bc9215fd1a611dab72ff122abe2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/1",
+        "sourceSha256": "2290387009e59067ccab977e0df3fdab2e0850b4252796cf64848077fe416a78",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/2",
+        "sourceSha256": "c7ad73f22b45d203877e3652527ef3961bc5ba172e3c6672a9f9e3d36dd2568c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "885be49c3bb18852d147dca62e20ee6ec8bb0a07ba46ddde9d14d9e71e4fa67f",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "94625f1fb8c89a7a9dfa8a7c89a4b5f89a925b31a53f651a305b877a9015c9d1",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "0cec7da5bca0e945532f5ea10820522b6eb9628a940c33a59bf62f62423bd7ef",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "36f558f72328c419c103d374a993fa97fc67e527be4cd6f23c2868cc7247d75a",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "c275efbf8a5106203f3fbef0c55f352f2c9ae4779e3fdc816991145b2ad8902d",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "07e8415ea8708089f141fe1753e2734deaacc60c33e3823185428d0979325556",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "9eb89f2b297311930104afc1a02afd6d9fba3136829ae4d925339f5389ffd4fa",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "5371ff283fa200181281a6200153053d2bad854885e7ff562fa58e3ebda31d72",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/0",
+        "sourceSha256": "a90ceac8de1cacf0821cd8c13620d62abe9bbad5ca2012cf851b1a2c181dbe06",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/1",
+        "sourceSha256": "cbe617e7815232126945048fd22e168b310dcfc521a03fd8b66a6ee51584dcb8",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/2",
+        "sourceSha256": "4c45a0c992aa54f36e22946f1413c6590eb7a63a5c9fea2c80daa9c0274982a3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "9b65ca7f66d2c82bac3b1b984b65c84adbac7eadfbb9959c9b2ffa85dda98376",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "5e0b6a369161d3361b209d285ad6ac1c386d46050f7f83e3dba96d074c4ca7f6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "19d5112f0f820ffb0f83b6a20f9109cc4e02c281cd62dafe6febea0ef69dad7f",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "1cace2e36ae8ec427ff0fe39f47880e55983ac0dea92aaee715e84d1efa62707",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "9de470cc2bd5b5a68c47e4b88fedaa5087791b2afdbc75e2cf49d80ebde7b390",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "bee546b28ff8a2662513664411eea6930234188737147b004a446f639379c5d4",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "4c8d8c5a39b9a05dc9648ad60a453cba5f99f3fef4843ebd47cffa0915de3b01",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "f7730943ffaa4e73fcc340b9c5c0f19e69cac2c67a4f6f80dfb876ed4c0531fc",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "c4c5104ea51404b370ae964ffacf4fb528276cef8642d4f53193fee486ca5d97",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/0",
+        "sourceSha256": "4b1124def378006e1b2b3f0b5ea8d22ff6b3a6d4d06be51c2d9da530224f8aee",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/1",
+        "sourceSha256": "1138e5cd9367a636efa02ac77018076c3b4152c1dd98fc873aa99fb8b7f1207e",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/2",
+        "sourceSha256": "cec1ee0d2980d511cf335be295f4b5f7e4c7e00cfd6ccb57eb5dfa34d5b28b69",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "aac4fced5925fbaae481a85942d62fa55d1478259a837a595feeac734cc5475e",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "6fde95e62d8df668fe6600418de3f956871b8116b0470ca817d8c5017b3ef976",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "92f31822b6b5027f469feb96dfad6c4418770d431529d272548bcd82998c491a",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "0b37c0dcf055eda59cdbf3bd17ae813618c3df398c2130b54e34491d29e4151d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "10cd12f76683310396bdc13c51dc9c3ec041c7f0bb43c700a4293072228f1fa7",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "0bbe8c95bcfaa113f6ec95237ebe2ad46d58896933033cd49bf2cd4b13b2c457",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/prompt",
+        "sourceSha256": "4f68f4a709845bc7375b71a00ca3bee5cddae1d9cd0e7bcf76cd24d169bb1ce9",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "d0838ff9dafbd6209b893f6a489dd07ccd29a9690e7e37696eb284a573aebd4f",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "4d22514274e1251650ccafe129dfb38eb0a2eec387ba37e65bf44adcf67c19bf",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "cc0a66fef592ee63a22fc9f587e396a7e5085e45aa2c340405ee3fb2a773f410",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "dcec1a6a956b406031db05d90a3ca864e81bd0b422d1c07590652f6156722acc",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "a76a891786f13d707e3af62a70d7615bb23ed4224e7d3dca29e45eb561c0f055",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "1413a5410d7296c410d413ca5c97162e971da1adb564e92106dbe43bea6725d4",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "ab173ee932475afaabb99b6a36b7d2dbf893efc2e68d2c093a8fde2f2e96ca7e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "2520639c6213e2dcb2c2c1a835a69aaa94d21bef47f61a0397689897aadfd377",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "54c73b21aeb27fde2a664e631d09f8453ece1201d161f85218da3d6a4925d28f",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "a8ada33598743e6fc3a56ef5cd42f7976eceec6d58b02f376bf70f8d79eb3fc6",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "eadd697a4b73652496f891d6019f3d967356da17847acb3de6fcbf3e3fe23ba9",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "698462014dc514a73d359bfd8c71336e5f9ed6fcef26143d09b4b93b3e0dbc0c",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "ebb209ae249ee24cdb72839985279c74b5ea8f967de89d63265b86f028b9ce55",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "322c62e1a8f2e9aed26bf6ec3a1d31a01b9d62ed8bf39f55f90e559f052a29e5",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/question",
+        "sourceSha256": "45ea5453044873ef68c24c88e8ffa13948800e9972c6dbf128c022eabda228f8",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/explanation",
+        "sourceSha256": "317a9d8111ee36ba678bc627c7f0e34c1f6c239ba6ff26c18220848278506ffd",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/0",
+        "sourceSha256": "eab7346d8a61dcac6a69968aee3309feabf8fb57c6baecaffb6f4bde05706f19",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/1",
+        "sourceSha256": "93b798a0d965b0cdd923e1c8fbbc4fcc40b82612771a221b05c0e486a65d9cb8",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/2",
+        "sourceSha256": "f0915fb24ad6233319cddcd82f512e768c431130e40234e835cd9c1340bcc462",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "68acb386dfc0d236598b96140a8af86482789c860f69010f94caf626301dabcc",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "741a6d41c817fb2a0410881efd3ccce978effd608337f6b33d7565e72cca574d",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "dd9093e1df678af6dab9cc3ce399e730f96fbeff927b7628114010a846eec3db",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "d5a0fa12541b75786707f60b1395479bc44fed88f5d8a01bbc728c372c379157",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "70915dda69eebf159af707961f01dd5bcd4ca6bb8fc5b3b25aef0e6f0119529a",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "c3cd66f04f646da82b6d03eba37e5bde7caa4c952974a6d90f25f0abe6849428",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "d25ba1395a12d919c88b0d888d2f72e5999c537f78e401083044d9c32af749ff",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "82e466a64ae640cc4ab92b855d667e3a59c4a6f7103c9a921804fbeb854ae9ff",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/0",
+        "sourceSha256": "dbde028ae12ff545615fef226c473b9ac8f5f4361bb7f90783a97917ee504b69",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/1",
+        "sourceSha256": "f349428408cb2d59abf2ef5ec05b305bb5931f173c2b3facec0a757212834bf9",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/2",
+        "sourceSha256": "ac68d3d8e82b00be1b464cc7133af99c333631f556c4606f944ffe4375e7a37e",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d01a88609d8ac3c85750a43e4e9b3d2c9294c1211b03159d979d7db220b19093",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9d8b54d000698fb66e2a6eefe3e6820b85e50d2e6c47624bba9b4c656cc4674a",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "6d46df0614e6a1b4b73143f4c726ea09d66a6e30693534afdd1bc3cd2cfb0433",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "5c1c1a2e848a535ec6791285a98f687d946fe597c3988a64ea65f936b0f550cd",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "67748de956829f62ac2ed0ad6ceeaa5936de7ef0f6328b41cb05516717c68ead",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "f0e2eabc962180be3d1b21c5d663907b13188201ec1c92fb6977446ce5c95565",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/prompt",
+        "sourceSha256": "cd1f4872d874c64fb55a19e127304bb2025c670a4b28d4f88f6224e875f4cb98",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/feedback/correct",
+        "sourceSha256": "0157edd0d6ab60c1be75da73e4126893ec587157a83fea627e80ae5ef43a4497",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "dc2aab9152b2381075ce524cbb7a1608e46343ac719ab0089c6c52885fe41998",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "dca98aec4944290e8f2552d9c518cdbf426446d2e71e96cb453fa4441f3713b6",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "b24c53480bb9816c1a5f21942e81859cc061c51656a84f4ad47d5e69e8b695cc",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "a92ecf25cead253f947e63623214a5b8c840f02952e84469579d86351609b918",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "f1075df1b71d3418823c9eeab2f8f35ff54aefbd2e9cd352c92e989120f848aa",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "e021cd5f4fa5ec321e34c9e1aa4f288aa66efda831732fd8732689e6ba4aed63",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "809e0b02cf23f8046b34f6338e685442033055cfc8093729f42f3509b5d3e868",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "44327217d5d279fc1c478591b516cc2f4e5c300bd1ee9a712ea1b1544475bc0d",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "09d7007c0d6d8dd3c92b0700ef6b4c11c971ab5e0c974e7ac4ca07906bf85f99",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "c7f4b510fd49cfae907dfbe514099af47a7a0fbb2cb99ad24b7efba8dcb0a39c",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/question",
+        "sourceSha256": "0fdc0c6702ef4ea931d2a0f25488ba209057455daa8d9d4bf1e76f81d9859af7",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/explanation",
+        "sourceSha256": "465593a85a0923a090a7f98bdc51a29b08829ffba4cbc0dc74d863ed92fd0018",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/0",
+        "sourceSha256": "2998910342bbef9073ba00d2bc9e51c14d8f148bd244006c7b39941ed4c2b2d2",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/1",
+        "sourceSha256": "5e2c3e02192be8279af9044b5ad731bfa6527071da3856a5b4a7fede46f68ee0",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/2",
+        "sourceSha256": "a1b3ea897644a38c54e117d93c8bbe55bb5963926def5f5459c33f8ec1a39df7",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "78f95c5162fd833036d4568f7ef3cdcbe82b4e1c4fb7393d2735258e60e9cdc4",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "dcb95b8a854628f5166ffd3615efd0718c4ca443368f0eaff03c37f7a4f53bb1",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "97d5fa43043f7a5d2979daa8b500cf1a70da27bb3bab4ccffb40aff94f3b3df8",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/text",
+        "sourceSha256": "8fe2d70da10ce2bf7d096ec822d6a5aa98483f5005e04e293e8e4acc4e493293",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "0bf5d8c34b92a39c358808ad476acf2fde32ab481d1f88787b541c3d2b942c44",
+        "spans": []
+      }
+    ]
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "6e746e53ea337be355314eabc66b4cbf3eb0fdd96d4517c1cf58a8392ff67b48"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "62e8e4d315826440dd1189894262d39216aec08df9d40740c8c497c27fcfb396"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1c9103e8777bc73bee31e43bf7542c6b12d78495c563895480435c7c518e0f81"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "4d4889b6c7155c0d044301197d113bd0bbbe404b04754d23c57df93ae8df0d53"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "560d255eb8ef8ff24d256975439b94fd0eabe43fb14c7c07608182703caca096"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "87d40fde0daf7eade7f7e5f33925e61a4fe6a72d5a165cb371a998c5f1b85f75"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "3a041657b867b5d6d6a6c8e67d8ec42976708305b96262dbaab8e43d5d85178e"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "04dc9b937d103bc7fee5758ee50f49d93c87adcdb535e1f983dd217f4ab8a3ca"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "a416af5fa27ad66340707d31ec386959403009824ce4af00799bf7a7b898df13"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "d946280ff79526d1cf07d9d0f94a54b04337a084da9f6a904d59e8b38101eb40"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "5f6a8688c2566d635fb1f8841a1d601877729cb373f8d43594378b3f127e9840"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "b91596b357a337da7cfc8cb2372e51c838892b28faad7360b1b972921a6f08f8"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "a15600571dbd25126178c931737011e51c5e3c58e69deddcd60a36e3f6e44166"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "a8d204584e3786aa0e692bcd8b7443eadadc7c7f632a32a13e216c5a5fd9b5ef"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "9c66b755b72e6b4d93c97ba8420044b15528290b66b6740f99fa2472cba5c9a0"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "01633118b5a0401c9e89eb9ce00cd04f1d23c9bb07af9a7cef8e5249fe8f57f5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "6da66c12ea4b0aed7c926893dafaaf3d26ce17963ce0e983a4e94a3c698b2b0c"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1a8ace6b8f9cd52bf33161dc44d77854472b6cdf25fadf6e623b673580d9334a"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "61143ac9d84fb02e9a10896830f63ca729e3d22fd5c7b1c8cf3557ac4ddf88ba"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "3d8b83ecff74d1e7a413cca1aa4e7d8dc88752be7cb38ab7c4a09835e2d9d746",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "64a3c87b566eac93ae62ef251eb9f6b11faa599d69b7dd7425a506a03c80d9ed"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "62e8e4d315826440dd1189894262d39216aec08df9d40740c8c497c27fcfb396"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "8d7fc770bb1a0e1244861d641861bba709a10617871f7db9408784163d5161b3"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "4d4889b6c7155c0d044301197d113bd0bbbe404b04754d23c57df93ae8df0d53"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "560d255eb8ef8ff24d256975439b94fd0eabe43fb14c7c07608182703caca096"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "b97fd28dcf38db424c70010f79abeda60adc198e7d4fa0cae223d4dcce133ae2"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "3a041657b867b5d6d6a6c8e67d8ec42976708305b96262dbaab8e43d5d85178e"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "da23ff18ceda6f1688753d91150b9451f56b842a32ad75c24ddec0476989f46b"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "a416af5fa27ad66340707d31ec386959403009824ce4af00799bf7a7b898df13"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "259b35e375ff4fbc70c7286981269a07ef7946ca7e2fcae14c6eef3ea42fa3fe"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5f6a8688c2566d635fb1f8841a1d601877729cb373f8d43594378b3f127e9840"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "b91596b357a337da7cfc8cb2372e51c838892b28faad7360b1b972921a6f08f8"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "a15600571dbd25126178c931737011e51c5e3c58e69deddcd60a36e3f6e44166"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "8d15cfd2a1b946549bcf29fb1404dc63f59932b67e15e6c201caa9e7efc6d906"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "9c66b755b72e6b4d93c97ba8420044b15528290b66b6740f99fa2472cba5c9a0"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "01633118b5a0401c9e89eb9ce00cd04f1d23c9bb07af9a7cef8e5249fe8f57f5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "ccd3bfa9e80265e63e09e750fcda4d412c9594f79ac0a7d2ab18706da545d365"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1a8ace6b8f9cd52bf33161dc44d77854472b6cdf25fadf6e623b673580d9334a"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "110f0b42987f21ea931460f82dd7cb9e780e9a2cc9cb0a3b6d6a6d509a41c725"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
