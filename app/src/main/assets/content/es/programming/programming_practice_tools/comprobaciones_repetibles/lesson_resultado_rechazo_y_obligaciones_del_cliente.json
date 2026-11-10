@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya construiste cajas_para para piezas entre 0 y 20 y conservaste su batería. Ese acuerdo no establecía qué debía hacer fuera del dominio. Aquí reutilizaremos su cuerpo sin ampliarlo: una función nueva recibirá cualquier int y decidirá si puede llamarlo. Recuperas bool e int& de C++ 1; el trabajo nuevo es acordar qué comunica la interfaz y qué debe hacer su cliente."
+          "text": "Ya construiste cajas_para para cantidades de piezas entre 0 y 20, ambos incluidos. Exigir ese intervalo antes de llamarla es una precondición: una condición que su cliente debe cumplir para obtener el resultado prometido. El acuerdo anterior no establecía qué debía hacer fuera de ese dominio.\n\nAhora una función nueva recibirá cualquier int, decidirá si la cantidad está permitida y sólo entonces llamará al cálculo conocido. Actuará como adaptador entre las peticiones del cliente y la función anterior. Recuperas bool e int& de C++ 1; el trabajo nuevo es acordar qué comunica cada uno y cómo debe usarlos el cliente."
         },
         {
           "type": "code",
@@ -19,7 +19,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Contrato de esta práctica: con 0 <= piezas <= 20, devuelve true y escribe en resultado el mínimo de cajas de cuatro plazas. Cero piezas es una petición válida y produce cero cajas. Fuera de ese intervalo devuelve false y conserva exactamente el valor anterior de resultado. No imprime ni termina el programa. El bool y la salida por referencia tienen papeles distintos. La conservación al rechazar es una decisión explícita de este contrato, no una regla de todas las funciones (Kernighan & Pike, 1999, pp. 105, 111–112)."
+          "text": "Contrato de intentar_cajas: si piezas está entre 0 y 20, ambos incluidos, devuelve true y escribe en resultado el mínimo de cajas de cuatro plazas. Cero piezas es una petición válida y produce cero cajas. Fuera de ese intervalo devuelve false y conserva exactamente el valor anterior de resultado. La función no imprime ni termina el programa.\n\nEstas promesas sobre el retorno y el destino después de la llamada son sus postcondiciones. El bool indica aceptación o rechazo; la referencia permite entregar un resultado numérico al cliente. Conservar el destino al rechazar es una decisión explícita de este contrato, no una regla de todas las funciones. Al diseñar una interfaz hay que precisar sus efectos sobre los datos del cliente y cómo comunica los errores (Kernighan & Pike, 1999, pp. 105, 111–112)."
         },
         {
           "type": "multiple_choice",
@@ -31,7 +31,7 @@
             "Que no hay un resultado exigido para esa llamada por el acuerdo anterior."
           ],
           "correctIndex": 2,
-          "explanation": "Una precondición delimita las llamadas cubiertas por ese acuerdo. No especifica por sí sola un mecanismo de rechazo. intentar_cajas añade ahora ese comportamiento para cualquier int sin atribuírselo retroactivamente a cajas_para.",
+          "explanation": "La precondición anterior exigía una cantidad entre cero y veinte. Una llamada con menos uno incumple esa condición; el acuerdo no prometía devolver false, conservar datos ni terminar el proceso. intentar_cajas añade un rechazo definido para cualquier int sin atribuir ese comportamiento retroactivamente a cajas_para.",
           "reviewFeedback": [
             "Distingue lo que promete el nuevo adaptador de lo que decía la interfaz anterior.",
             "Revisa si el acuerdo de partida exigía una acción concreta ante datos fuera de su dominio.",
@@ -48,7 +48,7 @@
         },
         {
           "type": "paragraph",
-          "text": "int& vincula resultado con un int modificable del cliente. El retorno bool responde si ESTA petición fue aceptada. Si es true, el entero es el nuevo resultado; si es false, aquí conserva historia anterior. Leer ese entero para comprobar que no cambió es legítimo; registrarlo como resultado nuevo de la petición rechazada incumple el acuerdo."
+          "text": "El parámetro int& resultado permite modificar el objeto entero que el cliente proporciona en la llamada; no crea una copia independiente de su valor. El retorno bool indica si esa petición fue aceptada. Si devuelve true, el destino contiene el resultado nuevo. Si devuelve false, este contrato exige conservar el valor que tenía inmediatamente antes de la llamada. Ese valor podría proceder de la inicialización o de una petición aceptada anterior.\n\nEl comprobador puede leerlo para verificar la conservación. El cliente que acumula resultados debe consultar primero el retorno: sumar ese valor después de un rechazo contaría como nuevo un dato que la llamada no produjo."
         },
         {
           "type": "multiple_choice",
@@ -60,7 +60,7 @@
             "true / 37: una petición de cero piezas conserva el resultado previo."
           ],
           "correctIndex": 0,
-          "explanation": "El cero está dentro del dominio y requiere cero cajas. La aceptación no se deduce de convertir ese cero a bool: se obtiene del retorno de la función.",
+          "explanation": "Cero piezas está dentro del intervalo y requiere cero cajas. Por eso la función devuelve true y cambia el destino de 37 a 0. El retorno comunica aceptación aunque el resultado numérico sea cero; convertir ese entero a bool contestaría una pregunta distinta.",
           "reviewFeedback": [
             "Comprueba por separado la aceptación de la petición y el valor que debe producir.",
             "Contrasta el dominio permitido con el significado del cero en el resultado numérico.",
@@ -69,7 +69,7 @@
         },
         {
           "type": "paragraph",
-          "text": "También podría diseñarse otra interfaz que devolviera un único int y reservara una cifra para el rechazo, siempre que quedase fuera de todos los resultados normales y se documentase. No sería la misma firma ni el mismo acuerdo que practicamos aquí. Elegir una señal exige conocer el conjunto de resultados (Kernighan & Pike, 1999, pp. 111–112)."
+          "text": "También podría diseñarse otra interfaz que devolviera un único int y reservara un valor especial, llamado centinela, para comunicar el rechazo. Ese valor tendría que quedar fuera de todos los resultados normales y el cliente tendría que conocer su significado. En el ejemplo de cajas, reservar cero confundirá una petición rechazada con una petición válida que no necesita cajas. No sería la misma firma ni el mismo acuerdo que practicamos aquí. Elegir una señal exige conocer el conjunto completo de resultados (Kernighan & Pike, 1999, pp. 111–112)."
         },
         {
           "type": "multiple_choice",
@@ -81,7 +81,7 @@
             "Reservar 5 para el rechazo y mantener 5 como resultado de veinte piezas."
           ],
           "correctIndex": 1,
-          "explanation": "En ese diseño alternativo -1 queda fuera de 0..5. Reservar un valor ya válido mezclaría dos situaciones. Esto no cambia el contrato bool + int& elegido para estas prácticas.",
+          "explanation": "Los resultados válidos van de 0 a 5. El valor -1 queda fuera y podría reservarse como señal si el cliente la interpreta. En cambio, cero piezas ya produce 0 y veinte piezas produce 5: reservar cualquiera de esos resultados confundiría aceptación y rechazo. Esta alternativa no cambia el contrato bool más int& de las prácticas.",
           "reviewFeedback": [
             "Busca si el valor reservado coincide con algún resultado de una petición permitida.",
             "Contrasta la señal reservada con todo el conjunto de resultados y con la obligación del cliente.",
@@ -98,7 +98,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una prueba compara la pareja observada con la pareja exigida. Para -1 piezas y destino inicial 37 esperamos false y 37. Ese false es un resultado correcto del componente; la prueba sólo falla si el estado o el destino difieren de lo acordado. Usa distintos valores iniciales para no ocultar una asignación fija accidental."
+          "text": "Una prueba compara la pareja observada con la pareja exigida: el retorno de la función y el valor que dejó en el destino. Para -1 piezas y destino inicial 37 esperamos false y 37. El rechazo es correcto si ambas partes coinciden. Si devuelve false pero escribe cero, la petición se rechaza y, aun así, la función incumple la conservación.\n\nUsa distintos valores iniciales: empezar siempre en cero ocultaría una asignación accidental de cero. Un destino inicial 37 y otro -8 permiten distinguir conservar el dato recibido de escribir siempre una cifra fija."
         },
         {
           "type": "code",
@@ -115,7 +115,7 @@
             "Como prueba correcta de un rechazo, porque coincide el estado y la salida."
           ],
           "correctIndex": 2,
-          "explanation": "Estado de la petición y veredicto de la prueba responden preguntas distintas. La prueba aprueba cuando el rechazo observado cumple su contrato completo.",
+          "explanation": "La función debía rechazar la petición y conservar 37. Observar false y 37 satisface las dos condiciones, de modo que la prueba es correcta. Un rechazo de la petición y un fallo de la prueba son hechos distintos: la prueba falla cuando lo observado difiere de lo exigido.",
           "reviewFeedback": [
             "Distingue el retorno del componente del resultado de comparar contra el esperado.",
             "Revisa qué comunica la presencia de un valor anterior en el destino de una petición rechazada.",
@@ -136,7 +136,7 @@
             2,
             0
           ],
-          "explanation": "Primero se fija el estado anterior, después se ejecuta una llamada y al final se comparan su retorno y la salida que dejó. Comparar el destino antes no observa el efecto de esa llamada.",
+          "explanation": "Primero se inicializa destino con 37. Después se llama una sola vez a intentar_cajas con -1 y ese destino; el retorno queda en aceptado. Al final se comparan !aceptado y destino == 37. Comparar antes de llamar sólo observaría la inicialización, sin comprobar si la función conservó el dato.",
           "reviewFeedback": "Sigue cuándo existe cada variable y a qué momento pertenece el valor observado. Comprueba que la comparación se refiera a la única llamada que ya terminó."
         }
       ]
@@ -153,7 +153,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Predice qué casos detectan el defecto antes de ejecutar. El programa muestra piezas:estado:salida y después el veredicto de cada prueba. Un rechazo esperado debe acabar en OK; un defecto del componente produce FALLO y retorno 1 de este comprobador. Tras reparar deben pasar los siete casos, incluidos cero y ambas fronteras exteriores. La referencia está después del intento. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "El programa muestra piezas:estado:salida y después el veredicto de cada prueba. Un rechazo esperado debe acabar en OK; una discrepancia produce FALLO y hace que este comprobador termine con retorno 1. La coincidencia exige tanto el estado como el destino, no sólo que se haya devuelto un rechazo.\n\nTras reparar intentar_cajas deben pasar los siete casos, incluidos cero y las cantidades inmediatamente exteriores al intervalo. Utiliza «Compilar, ejecutar y comprobar» en este editor para contrastar el informe completo. La implementación de referencia aparece en la página siguiente."
         },
         {
           "type": "cpp_compiler",
@@ -167,7 +167,7 @@
                 "outputs": [
                   "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\n"
                 ],
-                "explanation": "Los siete controles coinciden: los rechazos conservan el destino y los datos admitidos producen el número de cajas pedido. Un rechazo previsto termina en OK dentro de la batería."
+                "explanation": "Los siete controles coinciden. Las peticiones -1 y 21 devuelven false y conservan 37 y -8, respectivamente; por eso sus pruebas muestran OK. Las entradas admitidas producen las cajas requeridas. El informe termina en Componente: OK y el comprobador retorna 0."
               }
             ]
           }
@@ -182,7 +182,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta reparación conserva el cálculo conocido y no escribe en resultado hasta saber que la petición se acepta. Las pruebas de -1 y 21 esperan un rechazo, no un fallo del comprobador. Los distintos valores iniciales hacen visible una escritura indebida; comprobar sólo el bool habría dejado ese defecto sin detectar."
+          "text": "La reparación comprueba el intervalo antes de escribir en resultado. La petición -1 conserva 37 y la petición 21 conserva -8; en ambos casos el retorno es false y la prueba muestra OK. En el inicial, resultado = 0 se ejecutaba antes de rechazar y destruía esos valores. Comprobar sólo el bool habría dejado pasar ese defecto.\n\nCuando la petición se acepta, la función llama al cálculo conocido y escribe su respuesta. Las siete comparaciones ejercitan los casos declarados; que coincidan no demuestra por sí solo el comportamiento de todas las entradas posibles."
         },
         {
           "type": "code",
@@ -198,7 +198,7 @@
             "||",
             "or"
           ],
-          "explanation": "La disyunción rechaza cuando basta una de las dos comparaciones. Ningún int puede ser a la vez menor que cero y mayor que veinte; exigir ambas dejaría pasar los dos extremos exteriores.",
+          "explanation": "La disyunción permite rechazar cuando una sola comparación es verdadera: para -1 se cumple piezas < 0 y para 21 se cumple piezas > 20. Ningún entero puede satisfacer ambas a la vez. Usar una conjunción dejaría pasar las dos peticiones exteriores y permitiría llamar al cálculo fuera de su precondición.",
           "reviewFeedback": "Evalúa por separado una petición menor que cero y otra mayor que veinte. Comprueba cuándo debe entrar el rechazo aunque sólo una comparación sea verdadera."
         },
         {
@@ -210,7 +210,7 @@
             "1:0|0:0|1:2|0:2"
           ],
           "outputComparison": "exact",
-          "explanation": "Cero se acepta y escribe cero. -1 se rechaza conservando ese cero; cinco escribe dos; veintiuno se rechaza conservando dos. El bool describe cada petición, mientras el destino puede conservar un resultado anterior.",
+          "explanation": "La petición 0 se acepta y escribe 0. La de -1 devuelve false y conserva ese 0; la de 5 escribe 2; la de 21 devuelve false y conserva ese 2. Las cuatro parejas impresas son 1:0, 0:0, 1:2 y 0:2, unidas por las barras. El retorno pertenece a cada llamada; el destino puede conservar el resultado de la anterior.",
           "reviewFeedback": "Mantén una sola traza del destino. Distingue la rama de rechazo de cada nueva asignación y relaciona cada impresión con la llamada que acaba de terminar."
         }
       ]
@@ -240,7 +240,7 @@
             "Sumar cero y contar una aceptación porque no se necesitan cajas nuevas."
           ],
           "correctIndex": 0,
-          "explanation": "La salida sigue valiendo dos por la obligación de conservación, pero la petición fue rechazada. Ese dos puede inspeccionarse como historia; no constituye un resultado nuevo para el acumulador.",
+          "explanation": "La llamada con 21 se rechaza y conserva el dos que ya tenía cajas. Ese dos no se calculó para la petición actual. El cliente debe aumentar el contador de rechazos sin añadirlo al total; poder inspeccionarlo para comprobar conservación no lo convierte en un resultado nuevo.",
           "reviewFeedback": [
             "Relaciona el registro del cliente con la aceptación de esta llamada concreta.",
             "Distingue conservar un valor anterior de producir un resultado para la petición actual.",
@@ -261,7 +261,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Traza cada estado y salida antes de ejecutar. Repara únicamente el uso del bool dentro del bucle, conservando la biblioteca, los cinco datos y los tres esperados finales. El destino que conserva un rechazo no pertenece a una petición nueva y no debe incorporarse al total. La variación del orden se trabaja después en otro editor. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "Revisa en este editor qué valor conserva el destino después de cada llamada y en qué momento se añade al total. Repara únicamente el uso del bool dentro del bucle, conservando la biblioteca, los cinco datos y los tres esperados finales. El destino que conserva un rechazo no pertenece a una petición nueva. La variación del orden se trabaja después en otro editor. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar el informe completo."
         },
         {
           "type": "cpp_compiler",
@@ -275,7 +275,7 @@
                 "outputs": [
                   "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
                 ],
-                "explanation": "El componente conserva sus siete controles; el cliente suma sólo resultados de peticiones aceptadas. Hay tres aceptadas, dos rechazadas y total tres."
+                "explanation": "La batería conserva sus siete controles. En el cliente, 0, 5 y 4 piezas se aceptan y aportan 0, 2 y 1 cajas; -1 y 21 sólo aumentan los rechazos. El informe indica Aceptados=3 Rechazados=2 Total=3, termina en Cliente: OK y el proceso retorna 0."
               }
             ]
           }
@@ -290,7 +290,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La suma queda dentro de la rama aceptada, junto con su contador. La rama rechazada sólo cuenta la petición. Mantener la misma biblioteca permite atribuir la reparación al consumidor. Pasar su batería de componente era evidencia real, pero no comprobaba todavía ese bucle del cliente."
+          "text": "En la referencia, la suma se ejecuta únicamente cuando la llamada devuelve true, junto con el aumento de aceptados. La otra rama sólo aumenta rechazados. Con 0, -1, 5, 21 y 4 piezas se suman los resultados nuevos 0, 2 y 1. El inicial sumaba además el cero conservado al rechazar -1 y el dos conservado al rechazar 21: el primer error no alteraba el total, pero el segundo lo llevaba a cinco.\n\nMantener la misma biblioteca y su batería permite atribuir esta reparación al consumidor. Las siete pruebas del componente eran correctas; todavía no comprobaban cuándo el bucle añadía un resultado al acumulador."
         },
         {
           "type": "code",
@@ -307,7 +307,7 @@
             "Actualizar el total esperado a cinco, conservando las peticiones y sus contratos."
           ],
           "correctIndex": 1,
-          "explanation": "El componente cumplía su acuerdo; el cliente añadió una salida que pertenecía a una llamada anterior. Cambiar el componente o el oráculo para acomodar ese uso ocultaría el incumplimiento del consumidor.",
+          "explanation": "La biblioteca conserva correctamente el destino al rechazar. El bucle inicial añade el dos que dejó la petición de cinco piezas otra vez al procesar el rechazo de veintiuna, elevando el total de tres a cinco. Hay que corregir cuándo suma el cliente. Borrar el destino cambiaría el contrato del componente; cambiar el esperado a cinco aceptaría el uso incorrecto.",
           "reviewFeedback": [
             "Contrasta la escritura propuesta con la postcondición que la biblioteca ya debe respetar.",
             "Atribuye por separado lo que comprueba la batería y lo que exige el acumulador.",
@@ -334,7 +334,7 @@
                 "outputs": [
                   "0:1:0 OK\n-1:0:37 OK\n20:1:5 OK\n21:0:-8 OK\n1:1:1 OK\n5:1:2 OK\n17:1:5 OK\nComponente: OK\nAceptados=3 Rechazados=2 Total=3\nCliente: OK\n"
                 ],
-                "explanation": "El rechazo inicial conserva 77, pero no lo suma al total. El orden cambiado conserva tres aceptadas, dos rechazadas y total tres, además de la batería del componente."
+                "explanation": "El primer rechazo conserva 77, pero el cliente no lo suma. Las peticiones aceptadas de 4, 0 y 5 piezas aportan 1, 0 y 2 cajas. Quedan tres aceptadas, dos rechazadas y total tres, junto con los siete controles del componente; el proceso retorna 0. Sumar después de toda llamada habría producido 81 en este orden."
               }
             ]
           }
@@ -349,7 +349,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye otra interfaz y su cliente. calcular_saldo recibe cualquier par de int; acepta exactamente cuando cobros y devoluciones están, cada uno, entre 0 y 9 incluidos. Al aceptar escribe cobros - devoluciones en saldo y devuelve true. Al rechazar devuelve false y conserva saldo. No imprime. El rango de resultados normales es -9..9; el signo no decide la aceptación."
+          "text": "Construye otra interfaz y su cliente. calcular_saldo recibe cualquier par de int; acepta exactamente cuando cobros y devoluciones están, cada uno, entre 0 y 9 incluidos. Al aceptar escribe cobros - devoluciones en saldo y devuelve true. Al rechazar devuelve false y conserva saldo. No imprime.\n\nEl rango de resultados normales es -9..9. Por ejemplo, dos cobros y tres devoluciones producen menos uno y siguen formando una petición aceptada. El signo del resultado no decide si los datos de entrada cumplen el acuerdo."
         },
         {
           "type": "code",
@@ -370,7 +370,7 @@
             "La reserva funciona porque un valor utilizado como señal deja de ser resultado numérico."
           ],
           "correctIndex": 1,
-          "explanation": "Dos entradas no negativas pueden producir una diferencia negativa. -1 y 0 están dentro de -9..9; reservarlos sin cambiar el acuerdo es ambiguo. Podrían diseñarse otras señales fuera de ese rango, pero estas prácticas conservan el contrato separado.",
+          "explanation": "El par permitido (2,3) produce 2 - 3, que vale -1. Una interfaz que usara -1 tanto para ese saldo como para el rechazo no permitiría distinguirlos por el valor devuelto. También cero está dentro del rango válido. Otra señal fuera de -9..9 sería un diseño posible, pero la práctica utiliza el bool separado.",
           "reviewFeedback": [
             "Traza el rango posible de una diferencia, no sólo los signos de sus dos operandos.",
             "Contrasta el resultado del par permitido con el valor reservado por la interfaz alternativa.",
@@ -389,7 +389,7 @@
                 "outputs": [
                   "5:5:1:0 OK\n2:3:1:-1 OK\n9:0:1:9 OK\n0:9:1:-9 OK\n10:0:0:37 OK\n0:-1:0:-8 OK\nAceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
                 ],
-                "explanation": "Los seis controles del componente coinciden. Las cuatro llamadas del cliente dejan tres aceptadas, una rechazada y total menos diez; un saldo negativo admitido se conserva como resultado."
+                "explanation": "Los seis controles del componente coinciden. En el cliente, (5,5), (2,3) y (0,9) se aceptan y aportan 0, -1 y -9; (10,0) sólo aumenta rechazados. Quedan tres aceptadas, una rechazada y total -10; el informe termina en Transferencia: OK y el proceso retorna 0. Un saldo negativo válido sigue siendo un resultado aceptado."
               }
             ]
           }
@@ -404,7 +404,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Validar ambos operandos antes de restar mantiene también la operación dentro de los límites indicados. El cliente decide con el bool, por lo que suma correctamente saldos positivos, cero y negativos. El comprobador conserva su tarea distinta: inspeccionar el destino de un rechazo para verificar que quedó intacto."
+          "text": "La referencia comprueba los dos límites de cada operando antes de restar. Así, toda resta que ejecuta utiliza cantidades entre cero y nueve y su resultado queda entre menos nueve y nueve. El cliente decide con el retorno bool y suma los saldos aceptados, sean positivos, cero o negativos.\n\nPara las cuatro peticiones del cliente, los saldos nuevos son cero, menos uno y menos nueve; la petición de diez cobros se rechaza. La suma es menos diez. El comprobador del componente tiene otra tarea: también inspecciona el destino de un rechazo para verificar que quedó intacto."
         },
         {
           "type": "code",
@@ -420,7 +420,7 @@
             "1:3:0"
           ],
           "outputComparison": "exact",
-          "explanation": "El cliente cuenta (5,5), cuyo saldo es cero. Clasifica indebidamente como rechazos los saldos -1 y -9; también cuenta el rechazo real de (10,0). Por eso muestra 1:3:0, aunque el contrato del cliente exigía 3:1:-10.",
+          "explanation": "El par (5,5) produce cero y satisface la condición adicional. Los pares (2,3) y (0,9) sí son aceptados por el componente, pero sus saldos negativos incumplen saldo >= 0 y el cliente los cuenta indebidamente como rechazos. (10,0) es el único rechazo real. De ahí 1:3:0 frente al 3:1:-10 exigido por el contrato del cliente.",
           "reviewFeedback": "Sigue por separado el retorno del componente y la comparación adicional del cliente. Aplica ambas a cada par antes de actualizar los tres acumuladores."
         },
         {
@@ -433,17 +433,55 @@
             "Que se conservó el destino al rechazar; no que se haya calculado un saldo nuevo."
           ],
           "correctIndex": 2,
-          "explanation": "El bool falso indica rechazo y la igualdad con el valor inicial acredita conservación. Estar dentro del rango de saldos no convierte la salida histórica en el resultado de esa petición.",
+          "explanation": "La devolución de menos uno está fuera del dominio, por lo que la función devuelve false. Encontrar -8 acredita que el destino conserva su valor inicial. Aunque -8 también pueda ser un saldo válido de otra petición, en ésta no hubo un cálculo nuevo que el cliente deba sumar.",
           "reviewFeedback": [
             "Atribuye el entero al estado inicial o a una nueva asignación según el resultado de esta llamada.",
             "Relaciona la obligación del acumulador con la aceptación, no sólo con que el entero tenga un rango posible.",
             "Distingue qué verifica aquí la prueba y qué valor podría registrar el consumidor."
           ]
+        },
+        {
+          "type": "heading",
+          "text": "Recuperar los límites que faltaban en la batería"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor conserva los seis controles anteriores y añade dos: cobros negativos con devoluciones permitidas, y devoluciones superiores a nueve con cobros permitidos. El componente inicial acepta indebidamente esas peticiones aunque pasa los seis controles antiguos.\n\nRepara únicamente calcular_saldo para cumplir el mismo contrato: cada operando debe estar entre 0 y 9, y cualquier rechazo debe conservar el destino. Mantén registrar, las ocho comparaciones, sus esperados y las cuatro llamadas del cliente. Utiliza «Compilar, ejecutar y comprobar»; el informe debe contener ocho OK, conservar tres peticiones aceptadas y una rechazada en el cliente, y terminar en Transferencia: OK con retorno 0. Se admite cualquier condición equivalente que respete ambos límites de cada operando."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n\nbool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros > 9 || devoluciones < 0) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n\nvoid registrar(int cobros, int devoluciones, int& total,\n               int& aceptados, int& rechazados) {\n    int saldo{99};\n    if (calcular_saldo(cobros, devoluciones, saldo)) {\n        total += saldo;\n        ++aceptados;\n    } else {\n        ++rechazados;\n    }\n}\n\nbool comprobar_saldo(int cobros, int devoluciones, int inicial,\n                     bool estado_esperado, int salida_esperada) {\n    int salida{inicial};\n    const bool aceptado{calcular_saldo(cobros, devoluciones, salida)};\n    const bool coincide{aceptado == estado_esperado && salida == salida_esperada};\n    std::cout << cobros << \":\" << devoluciones << \":\" << aceptado << \":\" << salida << \" \";\n    if (coincide) { std::cout << \"OK\\n\"; }\n    else { std::cout << \"FALLO\\n\"; }\n    return coincide;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar_saldo(5, 5, 37, true, 0)) { correcto = false; }\n    if (!comprobar_saldo(2, 3, 37, true, -1)) { correcto = false; }\n    if (!comprobar_saldo(9, 0, -8, true, 9)) { correcto = false; }\n    if (!comprobar_saldo(0, 9, 37, true, -9)) { correcto = false; }\n    if (!comprobar_saldo(10, 0, 37, false, 37)) { correcto = false; }\n    if (!comprobar_saldo(0, -1, -8, false, -8)) { correcto = false; }\n    if (!comprobar_saldo(-1, 0, 23, false, 23)) { correcto = false; }\n    if (!comprobar_saldo(0, 10, -4, false, -4)) { correcto = false; }\n    int total{0};\n    int aceptados{0};\n    int rechazados{0};\n    registrar(5, 5, total, aceptados, rechazados);\n    registrar(2, 3, total, aceptados, rechazados);\n    registrar(10, 0, total, aceptados, rechazados);\n    registrar(0, 9, total, aceptados, rechazados);\n    std::cout << \"Aceptados=\" << aceptados << \" Rechazados=\" << rechazados\n              << \" Total=\" << total << \"\\n\";\n    if (aceptados != 3 || rechazados != 1 || total != -10) { correcto = false; }\n    if (!correcto) { std::cout << \"Transferencia: FALLO\\n\"; return 1; }\n    std::cout << \"Transferencia: OK\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5:5:1:0 OK\n2:3:1:-1 OK\n9:0:1:9 OK\n0:9:1:-9 OK\n10:0:0:37 OK\n0:-1:0:-8 OK\n-1:0:0:23 OK\n0:10:0:-4 OK\nAceptados=3 Rechazados=1 Total=-10\nTransferencia: OK\n"
+                ],
+                "explanation": "Con (-1,0), cobros incumple su límite inferior y el destino debe conservar 23; con (0,10), devoluciones incumple su límite superior y debe conservar -4. El inicial devolvía true y escribía -1 y -10, respectivamente. Los seis controles antiguos no observaban esos dos incumplimientos. La reparación satisface las ocho comparaciones y conserva el resultado del cliente; el proceso retorna 0."
+              }
+            ]
+          }
         }
       ]
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación: cuatro límites y dos observaciones nuevas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El inicial sólo rechazaba cobros superiores a nueve o devoluciones negativas. Ninguno de los seis controles antiguos entregaba cobros negativos ni devoluciones superiores a nueve, así que una condición incompleta podía superarlos. Las peticiones (-1,0) y (0,10) aíslan los otros dos límites: un operando incumple el dominio mientras el otro permanece permitido.\n\nLa referencia comprueba los cuatro extremos antes de asignar saldo. Sus destinos iniciales, 23 y -4, permiten comprobar que ambos rechazos conservan exactamente el dato recibido. Pasar esta batería mejora la evidencia para esos casos concretos; no convierte una lista finita de ejecuciones en una demostración para cualquier programa."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool calcular_saldo(int cobros, int devoluciones, int& saldo) {\n    if (cobros < 0 || cobros > 9 || devoluciones < 0 || devoluciones > 9) {\n        return false;\n    }\n    saldo = cobros - devoluciones;\n    return true;\n}\n"
+        },
         {
           "type": "heading",
           "text": "Recuperar las obligaciones cuando cambia una política"
@@ -462,7 +500,7 @@
             "Cambiar los esperados del cero válido a false y omitir el bool al registrar resultados."
           ],
           "correctIndex": 0,
-          "explanation": "Cambió la postcondición del rechazo. Debe reflejarse en su esperado, sin confundirla con el cero válido ni eliminar la obligación del cliente de comprobar el retorno. Estas prácticas conservan, en cambio, su contrato original de destino intacto.",
+          "explanation": "La nueva política sólo cambia el efecto de los rechazos: el destino esperado pasa a cero. El retorno sigue siendo false y los casos aceptados conservan sus resultados, incluido el cero válido. Por ello el cliente debe seguir consultando el bool. Las prácticas anteriores mantienen el contrato original de destino intacto; esta política se analiza como una interfaz distinta.",
           "reviewFeedback": [
             "Relaciona cada comparación y cada decisión del cliente con la parte concreta del acuerdo que cambió.",
             "Revisa si el nuevo texto conserva la postcondición antigua y si el cero distingue por sí solo los dos estados.",
@@ -480,5 +518,3738 @@
         }
       ]
     }
-  ]
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "005900f2f0af050e920fe886f0dddf63084b4b2c85702881b975eafad02c712f"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "f2b4420a1a09adb2405b4ab550fd5989d21b05a4410ff602b6fe8b365c4b0339"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "a77b49648660a9659c2b528d354070ae9bfa5075d9926e4cd8198db44aa0a100"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "ec15ed2068b4a6254516ef85082b70ae56181fd17365bf5e983da1334c9b61e9"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "2686e5f50dd433ae23d15478f96239024719dabf98a0534dd7d2573f1ead56db"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "12b764bb48b17d660e15eba48e49ad603542f65d4b0835b0afb6fa8489a36f46"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "163751204568ab6afd036551a594ea06b64cf982c8cf864276a365ab57ace049"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "15882d6c04aefab902f28825feba9d57d6a641f359e530a28f933eb828a39889"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "789ee3172e89016d300b564ffc27e17e1da3eca5b7835c5d9fff92694650a8d9"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "2fc0f46ed36c689c7e11e7d608c6eb4d87c59967f1062087ad321273383dec9e"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "61438f6c637007ec9f46195b2b1f5835c1847dfa96f530cb99ded314af8c5e82"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "e6b1c9eac347cfea3c72c7c86a314e1e3b6478acb5d2ff5d22cb4cc8989603f3"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "9b7acae8c911adffba177282c700d34f6e555c77b36f3ce428fea89ee586ab3f"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "0dd360a1016200afc7d8327b82b74a43e7b76661e23c7bd79a41d685369613a4"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "f68a91e40ce90bde176c0d929265b5c4e4b7b36cc469cac137e2921175bf5fe5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "e12df54f0e8d26b9ea450a7a91513620c2dd0ab69af632f3a7d0aa21fddb277e"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "6178b72a9d7415b2232b88116afc0df994500a5c01bf629809e26272fa898838"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "6fdda4c110d24b7f1a79b844948fa6dbca040e11f64edacdb5470b1c182db5f3"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "46b2acdeefed28863fa977185bd524a49a4f2d807ba0396b5e40879a6b5bbc01"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "a45d3ab11bff13bbfa02e9e1ef0f4e462a50efc2b5050ddf02c19a23eb23a23c"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "927af0186e19f328de95264661adcbbe19bcbf800fc48600e6239a6b6fd462cb"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "19cea0eaf41d966bd316d3b8de665ab23852d86bdc2392a9b7940b3fe238dea1"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "c880404f72c6cdc0c80642000116a400cf579657d50dce0f927d0d9dbde48773"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "205bd7b3fbe28c6a42f89e440330ac013a36373177113485ce1e89baaa22456a"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "5f87d5a0985ddee01ee58d5a89648957dc66b95451c35e8e98441e3e8e842176"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "u3l5_limites_saldo_titulo",
+          "u3l5_limites_saldo_consigna",
+          "u3l5_limites_saldo_editor"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "u3l5_limites_saldo_referencia_titulo",
+          "u3l5_limites_saldo_referencia_texto",
+          "u3l5_limites_saldo_referencia_codigo",
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "13b5f85e67d7f6d39a4bd091a2e3bd2118c5ec5c964172d784d6c61ef307e3b6",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "005900f2f0af050e920fe886f0dddf63084b4b2c85702881b975eafad02c712f"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "122b690a7b300c58c7234e11eb46f2eeea95463ea0f147f457ed157e40e66200"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "a184b52af5c7a5ee3fdf038cc367eb0ff51f316f9cdbc4ce8e527c793c55cf1b"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "f19b1b5cec980b6d7dfee1ec08404e1479620cf9b0736ddaea767451f99bfc6d"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "2686e5f50dd433ae23d15478f96239024719dabf98a0534dd7d2573f1ead56db"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "9c1de622110d68013b8f5baa2dea61b1bcfcbc78353850316d5ca502520d6a74"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "163751204568ab6afd036551a594ea06b64cf982c8cf864276a365ab57ace049"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "0139a849893e075823ef0035a3cc10347266f145b9d5bc6ef85780a1876eb648"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "82b970510d4af94b45dd2009aa3875471360bc633962eecfe879c710e99b34f9"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "2fc0f46ed36c689c7e11e7d608c6eb4d87c59967f1062087ad321273383dec9e"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "61438f6c637007ec9f46195b2b1f5835c1847dfa96f530cb99ded314af8c5e82"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "f9a37025b08131e3e3dc2a6aaede2ccc4f60924bf00fbd0c9665566018e37f55"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "dda893b25d6af685b2b4b439d2ee25acf2ee89bdc07413acebf207426dcd73b7"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "344f83f8bd3a3defa24c306f038ccdccff0a276ebfe6b33542c64e7ab0f23381"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "6222f83f476b9e0127e6eddad6c2312e141cfdd79ee026462d2ef406167427ca"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "f9e2a85c3383eebdf31f7473839ce60029bc3e8b5e044d45675d6fec830c6f51"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "6fdda4c110d24b7f1a79b844948fa6dbca040e11f64edacdb5470b1c182db5f3"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "0e95fdf9ca0bcd819ec2c9accd70ea882a7b1279af021f33a5ec8d1588c696ec"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "17e2eed17f1852577a3f4f270e86eadf0c982005723c980459c4b7b766b50a3b"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "55d33aabdc37b105ff435389b362a7767fe6de1ee8bc3893025cc0cbf62b13cc"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "19cea0eaf41d966bd316d3b8de665ab23852d86bdc2392a9b7940b3fe238dea1"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "4db98219c47fe79476a124f0519ac6c7106bf731be55671340588a13fafa0a9c"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "e4312106c3128f5d8cf861bc81d39d87086c7002fe7616a98b901866f410f88e"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "a08e3c3d9ca895aa9729c0c798e6ee50b37ca31e9582e33e33fb30bd11f86b70"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "3269a861240e202fd16c1a2578d700341549a10ebce59a0bde785d8ae6e61f68",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "005900f2f0af050e920fe886f0dddf63084b4b2c85702881b975eafad02c712f"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "f2b4420a1a09adb2405b4ab550fd5989d21b05a4410ff602b6fe8b365c4b0339"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "a77b49648660a9659c2b528d354070ae9bfa5075d9926e4cd8198db44aa0a100"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "ec15ed2068b4a6254516ef85082b70ae56181fd17365bf5e983da1334c9b61e9"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "2686e5f50dd433ae23d15478f96239024719dabf98a0534dd7d2573f1ead56db"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "12b764bb48b17d660e15eba48e49ad603542f65d4b0835b0afb6fa8489a36f46"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "163751204568ab6afd036551a594ea06b64cf982c8cf864276a365ab57ace049"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "15882d6c04aefab902f28825feba9d57d6a641f359e530a28f933eb828a39889"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "789ee3172e89016d300b564ffc27e17e1da3eca5b7835c5d9fff92694650a8d9"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "2fc0f46ed36c689c7e11e7d608c6eb4d87c59967f1062087ad321273383dec9e"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "61438f6c637007ec9f46195b2b1f5835c1847dfa96f530cb99ded314af8c5e82"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "e6b1c9eac347cfea3c72c7c86a314e1e3b6478acb5d2ff5d22cb4cc8989603f3"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "9b7acae8c911adffba177282c700d34f6e555c77b36f3ce428fea89ee586ab3f"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "0dd360a1016200afc7d8327b82b74a43e7b76661e23c7bd79a41d685369613a4"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "f68a91e40ce90bde176c0d929265b5c4e4b7b36cc469cac137e2921175bf5fe5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "e12df54f0e8d26b9ea450a7a91513620c2dd0ab69af632f3a7d0aa21fddb277e"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "6178b72a9d7415b2232b88116afc0df994500a5c01bf629809e26272fa898838"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "6fdda4c110d24b7f1a79b844948fa6dbca040e11f64edacdb5470b1c182db5f3"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "46b2acdeefed28863fa977185bd524a49a4f2d807ba0396b5e40879a6b5bbc01"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "a45d3ab11bff13bbfa02e9e1ef0f4e462a50efc2b5050ddf02c19a23eb23a23c"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "927af0186e19f328de95264661adcbbe19bcbf800fc48600e6239a6b6fd462cb"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "19cea0eaf41d966bd316d3b8de665ab23852d86bdc2392a9b7940b3fe238dea1"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "c880404f72c6cdc0c80642000116a400cf579657d50dce0f927d0d9dbde48773"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "205bd7b3fbe28c6a42f89e440330ac013a36373177113485ce1e89baaa22456a"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "5f87d5a0985ddee01ee58d5a89648957dc66b95451c35e8e98441e3e8e842176"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "8dd6d18a6b28fc7fd467d18085231c8c49ca4b2377b12cc9f079b34ac03c4e61",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "005900f2f0af050e920fe886f0dddf63084b4b2c85702881b975eafad02c712f"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "d1314059a805abe4912701b5ed98a9c739c8bde2d629a45671d010d27d073f64"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "a549f089997f54788b2646f7c9a02e06de7caa2fe9ba4e163725c33fbd882f74"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "a2c61037ab6e280013279b63330ab3216e3eef3d6230117678c527fbb9862bb2"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "2686e5f50dd433ae23d15478f96239024719dabf98a0534dd7d2573f1ead56db"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "691d246bd9aa7c9357e67788053296d7f2fc5f9bf94fd556cbe240a6d7b6c2e8"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "163751204568ab6afd036551a594ea06b64cf982c8cf864276a365ab57ace049"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "be1866448b76d7dbe7993ee88c957939d597c0295f22b2a4a909f6a95b491d52"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "714b530d9db52029affa08afc096fe060d93c5aebec67365fa1b8480e3be2f82"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "2fc0f46ed36c689c7e11e7d608c6eb4d87c59967f1062087ad321273383dec9e"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "61438f6c637007ec9f46195b2b1f5835c1847dfa96f530cb99ded314af8c5e82"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "0c3066d84b6474f3f5f5cd69b483277352c4dc714a5953276be79dc43ece4e5d"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "8fb67e03081d76b47cec09886c59b522e9faa04b3469fe91e306820362562948"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "6d04458d7b27c4e91edc12ca81cfd437a98040258916441597b5a65b8d6758d6"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "b4f0b8e0a673d8ddf58deda9a78ce0aea30585987d98056309c3964e20f82f09"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "4e3d2c453e7055bc037f6185e395fab1ec73d6d85e7be049d7485bf986d11934"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "6fdda4c110d24b7f1a79b844948fa6dbca040e11f64edacdb5470b1c182db5f3"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "8689b231d2af239e09ff98fb12388f5d0aec177e9743e8fb288243e5feec73ad"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "4b1f4f2ee3b33b4ace43f69d29a914f6e9541465a6f33d533f56d80ec2247561"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "3e0ea9687447e6fa02b9edc61a9d227da8232918998ca57a536560e416fa6ab6"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "19cea0eaf41d966bd316d3b8de665ab23852d86bdc2392a9b7940b3fe238dea1"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "d2f25a0031aef95707ad7a9a4c48a8ad4281ef91b86d159bf2d20ded45cd989f"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "c5ea0319b9017b69c7ec9fc26b0ea647e479205cd02063fbc2498b535e8e81a7"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "a32cb0902ac13798066ea994ed7aced6bf40fab6c74e346ee6d03a682aa4af75"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [
+      {
+        "id": "u3l5_limites_saldo_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 11,
+          "block": 0
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u3l5_limites_saldo_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 1
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u3l5_limites_saldo_editor",
+        "sha256": "05b35236bf37f71f775eeeab76575d2da87297cc4fe3b34c011588ddf7fb2dfa",
+        "storage": {
+          "page": 11,
+          "block": 2
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u3l5_limites_saldo_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 11,
+          "block": 3
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u3l5_limites_saldo_referencia_texto",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 4
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u3l5_limites_saldo_referencia_codigo",
+        "sha256": "5a7748d6a9148526fc64a2b52ab2fda9bf2692b43ba40f83ca2c47b11f9b4bf1",
+        "storage": {
+          "page": 11,
+          "block": 5
+        },
+        "progressPage": "page_0010"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "d2b57f21b4d546f938d2db600d11159dc5718d09bd95e1c2eb8715da648f4b5f",
+        "afterSha256": "c6a939acfbad315fdfb75e0b9726eec69c5e0ecb35695be96901c580229ef99b"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "08e8f64aa746210b0dba46297de9abea1606c2f03d639a00cfe905e387137a86",
+        "afterSha256": "ac3e2ab42b60bf7cde6511a0503ffb39b1c8d971cc33c9c3570d073ebf5289ca"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "9ec553943191cd41773ad6f25ede6be2913bd5c9d24d6cce8fbfe6eb73cbcbec",
+        "afterSha256": "b53f191a022e9a384ac9ac7a35061782ae47577be758e509d113b018fe1bf43a"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "6d94ff817a867b6e5592ea201dfbe937ddedc9d281a5cc932bea92eb3a3488ff",
+        "afterSha256": "78be1193372ada94641e0738c57ffa584a6b42362230a991e8a83b2613a0fac1"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "ff7a21c75489ebc61a19ef6b85742c5c735abdfe1c417da40cd77d71e48c4a3f",
+        "afterSha256": "b3aa61709eab89d0ef11dacccba98a4773a9eebbd495fb03fd014677ff3d06c4"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "d0cee4fd4e086366b9daf4f8439dc5f124507247c54bf98709af417b31e058b0",
+        "afterSha256": "763efc40b466123f32b43b647f217af29e547273f797ab5568439e5eee30f98e"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "f4e4c86142c5ebe484c544c259c6e9a2a50ca3be2a1443c4709161d1ce5778a7",
+        "afterSha256": "34b6220b68330c4efa93162f42587dbcaa43409202ed83197c43b865514cf067"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "e12aafaa5302e67ef6d91f05dc65b9f0715384f4fa3a2f0115875d31343cbdf7",
+        "afterSha256": "aa8ab173f0b60d61c924c9b8bdb0967e9b25e5970390ae3b536751fbe5c75630"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "eed04e80f3254e0596890cdc5d56528085f9972bf4acc6f0917111317e0015b1",
+        "afterSha256": "a1a267ab7cc9687333310a521489f1a21cce7f0fde0dc098aa5abafc2084b131"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "550976c8bdeb1f9ce5358b966eef8ecf836f0cdfab9bf998ebf8b36eff2a93b4",
+        "afterSha256": "4cc0c4bdaced008068919d398b5dcbdb92c8632112d7d2f15274ca230c564373"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2bcbc44bf4971d62ec82003f2380024e46c8e151d88aace0c14791e2d60f078d",
+        "afterSha256": "208395f3dd08165cc6b35a20755a3263e2a045529f885c0cf9232616b98fa9a3"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "be1c6eceede224c5300949f443c662707ce035455fc846108d6d042a5dce311c",
+        "afterSha256": "0d09e10fac3d182a4daddc62c67f5b463109ef26bdc80dca76ba9f0c7f82b1f5"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "f9666d8edfd7ba2a73d6f0fe9b99adf3a81913ab79ba8861ccb3f3a0b538ec09",
+        "afterSha256": "803a17aac945cd4d0eab74d30341cf2e445582cdf7b2a9bc3c75175294709caa"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "0dc26f45a7c86e3b2112f6754e740e2cb92f86a3b355cd6a9b180168eadaef73",
+        "afterSha256": "9c8a72d227c3c9d421365b17b3ca1caf4444d3596536550fd2d5bc687fddae91"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "1e1c051b833404b1a9e1ab884d82f560339e7260008c2b1226dc28414038c156",
+        "afterSha256": "1c8d1dbc530328f9f73934ff1f5607dd342e804acccec1df2a195ff9e4455fe4"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "2bf24f74b863c534d12bf7e1a625cbec34536980c05c105d38ecff982cb7d66e",
+        "afterSha256": "e2c587734fb98b95da61d4bf0609e8312ca986d48c9df2f8b7f525e01af33dc5"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "ff76c99c08e454565ca99c82882ba5bb50f0107084c5c1f06736d02de9617432",
+        "afterSha256": "ab008f99aa80e9f216ecee095bfea06f4a623a2a5fcc3ac240e21fea42aa48ca"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "4e30580dd5dd8d4357f2e77c210a643839c26ce59a8fe62b42a094196bf498fd",
+        "afterSha256": "0cf64082c934783104d735c788febc42b20fea1a034743acce355a86891641c3"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "9600516d045191a2eb76f1505899dbc80b6d316584bad882a0908516e84e4f15",
+        "afterSha256": "d189a5311ea6426ef5c71b3aa8ecaa0c197645c00d98e4dc04042e6bdd05a9a2"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "0b6ec3fe6e6c6702472de154a8d2772ae13e0c9d9b459ee5ee8fcac1ad838757",
+        "afterSha256": "559a6bd0179a14d228c0e1fdc03daef7bb3ddb5b3ddeab7776c36d0018b64436"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "03d2a01de53a056772f1a30b91976a2389f4aa354ac0c0a67f2d1b6314dcce1f",
+        "afterSha256": "3e448b0fa792ca69fe23a7aa0360aa3796bce9275c2e939327f4312e8cf79ca7"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "09984f81d162aa54050c1c0635b109971772dc9a58e7c3ef998efc40e014255b",
+        "afterSha256": "b98666e996003e103cf31bbd34a9a1dccbd148ba6ad32dbc5a08d196ccd44787"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "f2c774c25c5e351ed78ddc2b32b1ac7481eddb1068fd9c76671797cf5da1164d",
+        "afterSha256": "27dd5b536da8796940a97a41ea1de57a2061403e597d3794956abb51822ac605"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "295624eb73cd62f9d79ea6b0210b8a79e1eebcef05f2357be01a0bee12425d08",
+        "afterSha256": "8cb793f71a41971290d4a45d2a9e00376dd3c7937ea961d6467ff28e2af5c70b"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "eff687c87b61eae23318574c344f7a26d4abc09ba6e914a91de27a1c8b21f19e",
+        "afterSha256": "cb375566d57c61d3176f0ef609601adc742499738503b01462789def5735416c"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "77315a6adbc8f7b3d0bdcdb0ee175160c26e72c1a8b266b5ab314ee116c3e8cf",
+        "afterSha256": "651ad5d9c59b3ada5aab4f0ef892fda5319b342dd61973ff74a4e7aff8ec05c7"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "60d6aaa7f381fdf054daff49fe0437e0087fbff127ed887a50e18434a8e60862",
+        "afterSha256": "98f98607388b8ceccc40765f85599cbc9363b4d3a64b7625d10f9eb754813e04"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "f66f4b47934cceb6dfaaf0dd8284568fe612a0cb4897e21a5ccb2f561ee6d90a",
+        "afterSha256": "cece5d383a7e5e2ce39366700b60da75f1e6a1aaffaef9e976d477e1f8f22398"
+      }
+    ]
+  },
+  "referenceAfter": [
+    {
+      "activity": "u3l5_limites_saldo_editor",
+      "blocks": [
+        "u3l5_limites_saldo_referencia_titulo",
+        "u3l5_limites_saldo_referencia_texto",
+        "u3l5_limites_saldo_referencia_codigo"
+      ]
+    }
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "ff03c354d24c62c0f0e79b93463fa422a8f7615317f60f907801ad8aa2cde8ce",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "ec509dca28dbbffea77b4604199342f86309a0c132f54d81ec869808e8228390",
+        "spans": [
+          {
+            "start": 15,
+            "end": 25,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 58,
+            "end": 64,
+            "text": "0 y 20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 341,
+            "text": "int",
+            "role": "cpp"
+          },
+          {
+            "start": 516,
+            "end": 520,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 523,
+            "end": 527,
+            "text": "int&",
+            "role": "cpp"
+          },
+          {
+            "start": 531,
+            "end": 536,
+            "text": "C++ 1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "7fb1933380e0eca2143f60c25f9b6fb506d7b51eea91a9ff5bbef525f64bef00",
+        "spans": [
+          {
+            "start": 12,
+            "end": 26,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 31,
+            "end": 37,
+            "text": "piezas",
+            "role": "cpp"
+          },
+          {
+            "start": 49,
+            "end": 55,
+            "text": "0 y 20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 87,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 110,
+            "text": "resultado",
+            "role": "cpp"
+          },
+          {
+            "start": 237,
+            "end": 242,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 296,
+            "text": "resultado",
+            "role": "cpp"
+          },
+          {
+            "start": 440,
+            "end": 444,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 762,
+            "end": 804,
+            "text": "(Kernighan & Pike, 1999, pp. 105, 111–112)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "fc8cbbaf094a4b35c6cf41fa8e985a91ed19d5438dab6ad50fca2e08d3ccf316",
+        "spans": [
+          {
+            "start": 23,
+            "end": 33,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "text": "0..20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 118,
+            "text": "cajas_para(-1)",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "0c35a17ea6a876332b73edcd557aee09941eaaf43dfaf1d7f23c310046d0c769",
+        "spans": [
+          {
+            "start": 148,
+            "end": 153,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 209,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 251,
+            "end": 254,
+            "text": "int",
+            "role": "cpp"
+          },
+          {
+            "start": 306,
+            "end": 316,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "9dca961672cc6789568d5d6e702f532bccd942883806994bb48d95720a4c46e1",
+        "spans": [
+          {
+            "start": 32,
+            "end": 37,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "aa6978025be09d319e3dbab35b31645c0009a0a745ebda28a72f7c84f47267cf",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "6afe16ca786cf352ed751a093a862c817f821dc41191d461794c54c504eaf086",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "c8b89c65cd9d866355054c1420152c14bccc030f6c499a1fffaa96193f7ea8d2",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "73220c28099e5ef9e7848da13dbdb92b23973ff9db4768bb708c89e7b9405ee1",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "81b7915abe9b10eae554584f34a05945e0e1575ce7aaf4dbcb2e1630637c118d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "f68d4e0b0965992aed73f50985bc5eb45b34f3cf02e8a8deec1549841cd9c55d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "aacb0a8c5e41b7a75f03e84f3c548db81545c3c3e601f3bd007a9781f5b02988",
+        "spans": [
+          {
+            "start": 13,
+            "end": 27,
+            "text": "int& resultado",
+            "role": "cpp"
+          },
+          {
+            "start": 161,
+            "end": 165,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 215,
+            "end": 219,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 278,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/question",
+        "sourceSha256": "527f4e336237cc6d426ce6f0d6bcd71c7648c56872d649882bd2ed643a1ba9d3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "resultado",
+            "role": "cpp"
+          },
+          {
+            "start": 16,
+            "end": 18,
+            "text": "37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 59,
+            "text": "intentar_cajas(0, resultado)",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/explanation",
+        "sourceSha256": "411b9d92e02287c469cc45fec0c01b622e403773e8dde422eb64492961c0a73e",
+        "spans": [
+          {
+            "start": 89,
+            "end": 93,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 119,
+            "text": "37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 222,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/options/0",
+        "sourceSha256": "220bb309b7d12f0da7ac9c32a1c2a188247aa4af08067c6c08b3d8eec1fde71a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "true / 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/options/1",
+        "sourceSha256": "65dfc18f2dca647871744bc94f94c41d467368c05c1c10dda1ae15657b1fb138",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "false / 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/options/2",
+        "sourceSha256": "ff369bbc18e9d08a3a70b70a70c6da88d9886479ed8e6aeae11647e8f5b6c8d8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "true / 37",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "2a2d314e1f8be115e5ec53ee7cece8d9721f06b28779707652c7fa29b1278b41",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "a7a0dafc439e5d964a61353ad0ac8472b1972b6bfa63182992ea007569b8784d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d93aa73f572dd1a90da094ca8bbacde0b010a8ddfff408250a0a896bc14e8ef3",
+        "spans": [
+          {
+            "start": 76,
+            "end": 78,
+            "text": "37",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "4bb1199def0b4100cb8bced02b14d65e215d817ce029aceccf6905a335125ba6",
+        "spans": [
+          {
+            "start": 63,
+            "end": 66,
+            "text": "int",
+            "role": "cpp"
+          },
+          {
+            "start": 512,
+            "end": 549,
+            "text": "(Kernighan & Pike, 1999, pp. 111–112)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "b6fae4e1f68fb47d0830f082c673941df719b15a4b07ee95564edda8743424fb",
+        "spans": [
+          {
+            "start": 81,
+            "end": 85,
+            "text": "0..5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "25b3f6e605c99fb9c0dd8d2f36188cfa6fbf36c4619d2d2600421db90e2aee74",
+        "spans": [
+          {
+            "start": 30,
+            "end": 35,
+            "text": "0 a 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 48,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 182,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 300,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 305,
+            "end": 309,
+            "text": "int&",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "5e7f960d83fd474be3caf0df2a3580cf22d1022438f03146589d41e61672b5ee",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "405d2c89c81dfbe726f1d0750765304cc5f9ccaea18ee80d232ae6200684c5bf",
+        "spans": [
+          {
+            "start": 9,
+            "end": 11,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "7dc6d3b040af3a86f2196d65d48b7c3f28229f81d188f363b181f552a8a75f2a",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "2754be9b1d8b1de6f34cb8ff0d761a4db572b1a280a108e7e41d3dd81df239e7",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "e7a05ecf99c5f3082a3de4386fb19c696a46d9874e2cfe7f08c62308a3d648c8",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "44c71449e64241ba6baf9391a49918e3e84d503b6c11d9f6b1e3e2a489b3f61e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "13f8afcff778c213f6a0ae1f50f36b030fc8bb4ab7cc5ee138da592465967ecd",
+        "spans": [
+          {
+            "start": 48,
+            "end": 50,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "ec9948485e542b9dfae75b35aff1488e0ca2b17001b24bf3dd73f1ad835556db",
+        "spans": [
+          {
+            "start": 127,
+            "end": 129,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 157,
+            "text": "37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 173,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 178,
+            "text": "37",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 247,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 461,
+            "end": 463,
+            "text": "37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 473,
+            "text": "-8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/question",
+        "sourceSha256": "fda1bdca437503278fea86e990b7dff513358e5326e7ec1a4f5804f28982ff9b",
+        "spans": [
+          {
+            "start": 16,
+            "end": 18,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 31,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "text": "37",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/explanation",
+        "sourceSha256": "e0c8db00062c304c66d68ccbcde6f64c63cb43092e59ef6d8abc4e64478b0ca3",
+        "spans": [
+          {
+            "start": 50,
+            "end": 52,
+            "text": "37",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 68,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 73,
+            "text": "37",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/0",
+        "sourceSha256": "dd00a35d1c34186a8a69f6a02aa4f68f4c0ec501bc17d6bb32c05aa46e66d092",
+        "spans": [
+          {
+            "start": 44,
+            "end": 49,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/1",
+        "sourceSha256": "99a0e91bc944b23ba02215ac1e027c32d134c859150835b45f413dde3e315db0",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/options/2",
+        "sourceSha256": "7e6a3f8174a9fa8920ec9071ac6deb778571fca8823b87dc42d7026eedde5c3e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "6f5d0c53eefe27218fa255371d7ff673ebc819de487870a1b8e6b4d7c60025de",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d502f6e6f801722fb6562dc0f52cfe360e4db24fba59e8ca6e4e0ffec326355a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e0b737bd24172040b80cbe06e4446e7b33607bbdd985ecc28674510e1c825c68",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "79cb35bfb9a4099a66da5b027de795ec2ab33a123e6817d5b583d5bb7300ac8d",
+        "spans": [
+          {
+            "start": 61,
+            "end": 63,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "1c9491d8ff01a0c7636e3465b162f9401b8a837436cbfc62477598126afe4558",
+        "spans": [
+          {
+            "start": 22,
+            "end": 29,
+            "text": "destino",
+            "role": "cpp"
+          },
+          {
+            "start": 34,
+            "end": 36,
+            "text": "37",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 84,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 89,
+            "end": 91,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 135,
+            "text": "aceptado",
+            "role": "cpp"
+          },
+          {
+            "start": 158,
+            "end": 167,
+            "text": "!aceptado",
+            "role": "cpp"
+          },
+          {
+            "start": 170,
+            "end": 183,
+            "text": "destino == 37",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "5a6be92493fb781ad2a837103e5933bef229e3a1a25ba8d1815acc2ba61ba6bf",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "d6a9d88924385a60d881056a39afcf13bb76052d08d6ce4246a6d84b8f4dd2b8",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "48d52e78992f61943c2d1860f3c666e1c0b9fb11a96c1b54ce0ed12f16b228d7",
+        "spans": [
+          {
+            "start": 11,
+            "end": 25,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 176,
+            "end": 186,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 188,
+            "end": 203,
+            "text": "comprobar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 205,
+            "end": 223,
+            "text": "bateria_componente",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "a064f582e9f168adf10cbaf0dffc87dc3e7af9f312733510ac435fc9219ed04b",
+        "spans": [
+          {
+            "start": 20,
+            "end": 40,
+            "text": "piezas:estado:salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 117,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 149,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 199,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 325,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "967c35fa5ebbe955b0a4c753c614b5023a6a47502e11bb3725c6c8aabe732dfe",
+        "spans": [
+          {
+            "start": 46,
+            "end": 48,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 53,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 89,
+            "text": "37 y -8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 139,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 231,
+            "text": "Componente: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "db4cdba485986175049ced0b91724390eebeec24029286ad60e6ea4cc34f540a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "5011efa81f00dc228836207d131071260e8c7bf28ac180811021a73289da2bd9",
+        "spans": [
+          {
+            "start": 58,
+            "end": 67,
+            "text": "resultado",
+            "role": "cpp"
+          },
+          {
+            "start": 81,
+            "end": 83,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 95,
+            "text": "37",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 112,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "-8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 160,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 183,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 213,
+            "text": "resultado = 0",
+            "role": "cpp"
+          },
+          {
+            "start": 288,
+            "end": 292,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/question",
+        "sourceSha256": "cf4ec312b993b426b6089a2a3f87f5a63dbb106e6901fe7e90d838a4c828001f",
+        "spans": [
+          {
+            "start": 139,
+            "end": 142,
+            "text": "C++",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/explanation",
+        "sourceSha256": "cb8ffce62ea930c15675bfdf46fbf7195f0a1eec04254cd71349585fb80676df",
+        "spans": [
+          {
+            "start": 78,
+            "end": 80,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 101,
+            "text": "piezas < 0",
+            "role": "cpp"
+          },
+          {
+            "start": 109,
+            "end": 111,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 133,
+            "text": "piezas > 20",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "c15791148b629e1a5702bed0c905a29ec3314d0931cf5aa80f6e7c9a69bcf178",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "e667aa0918d8ae3d0488b6630c7d7c8a043471e0a379186da65a0b18d16e5f51",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "8d44ca4dc61e831a0fdd82a162e8cd0639df174a3d9f13d5e9ee3b1789a4c89c",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 60,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 96,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 106,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 121,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 138,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 191,
+            "text": "1:0, 0:0, 1:2 y 0:2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "d846850655e903824a45344313e79f9561fbf22db0dbe3b6ea31a6728263b78e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "142426c15d98e1d705665ba768bafb732505fb0dbb4d9bdf72ef065eb2619a76",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "797e074eb145526bb44a548b6bee82a7f3c86b13fc46c6ac422cfebe07747f65",
+        "spans": [
+          {
+            "start": 330,
+            "end": 362,
+            "text": "(Kernighan & Pike, 1999, p. 111)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "8e8a348fe1b8784de5155e68fc5d508b07111e15d2bd219b3c8f6a68a87a804d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "db24a5d8139df5b6a53f9a472fc04c9749f53feb3f38bea361e4e24860a7c5c6",
+        "spans": [
+          {
+            "start": 15,
+            "end": 17,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 65,
+            "text": "cajas",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/0",
+        "sourceSha256": "227323841be584bbe38fa013a231bee4e5e37636482e23fce76a0d6d225d3d11",
+        "spans": [
+          {
+            "start": 28,
+            "end": 33,
+            "text": "cajas",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/1",
+        "sourceSha256": "83e7220fc9e20d63a58c80bf0ccf537c8f1373a5c025402494be7201ca3015c5",
+        "spans": [
+          {
+            "start": 6,
+            "end": 11,
+            "text": "cajas",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/2",
+        "sourceSha256": "f607b8cb4002ef3da90540282b3e7fa6a14759dd58ab432df6822601b60eb2a3",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a2aa85c2b4e559c20f835e7bde137b203b7f2c20b00557e86f31fd6de8704902",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "6f36a0f64999ce5099cf5bd262b51fed348a8fc1a6305c102e11cb30f35ddf8c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "4b67f252caee709fdfdef36f31694c5aad61ae5ecd0c2f13ae30f63b45175934",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "3640b5456080cfd15dd9112c1705b39a605042c72a4c493e5a1358836ea97a81",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "3c97efbfe5488bb18223038b4fb3e7a136f4ff11d9104c91db02686c1effab45",
+        "spans": [
+          {
+            "start": 105,
+            "end": 121,
+            "text": "0, -1, 5, 21 y 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 224,
+            "text": "0 + 2 + 1 = 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "412826558eb3e3d9311d89bf1a556e4e678cab9052dc282cfd4ed0e896c0854d",
+        "spans": [
+          {
+            "start": 141,
+            "end": 145,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "576213c2d4d58bc1b5d0cb4c7d5166ac6dde76d74eab2118d53a357cecc2f483",
+        "spans": [
+          {
+            "start": 56,
+            "end": 64,
+            "text": "0, 5 y 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 101,
+            "text": "0, 2 y 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 116,
+            "text": "-1 y 21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 195,
+            "text": "Aceptados=3 Rechazados=2 Total=3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 219,
+            "text": "Cliente: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 242,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "104e6f9390c605ce13b1597a7c520cd6589d4d82788dc476566e2cf49517bb56",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "305e37dc441bde397857e937188bc33867b9e5b58f04dcc50849008dbfd8931c",
+        "spans": [
+          {
+            "start": 75,
+            "end": 79,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 114,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 142,
+            "end": 152,
+            "text": "rechazados",
+            "role": "cpp"
+          },
+          {
+            "start": 158,
+            "end": 174,
+            "text": "0, -1, 5, 21 y 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 221,
+            "text": "0, 2 y 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 281,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 316,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "1d36300746724d44e7f04cbebf2b81631f0ee7732e9e2741d75efcbe26218ab1",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "7dfed93920bcd640d6f227f46db1effbff467ee9fadf26080d784fcd0f603d76",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/0",
+        "sourceSha256": "9ded26eb45cb60f869b91466045d1267a08cf2cb1138c388fa43f2909ff8b0c8",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/1",
+        "sourceSha256": "45f679a6bbeb966e27f9ee87b597a0b7387d6192ed4a0b276920139093292fea",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/2",
+        "sourceSha256": "13018e5530f0e2789f61acb00f488adcd17ac8a21c469e067ef5e89617434ffd",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "1e3a2c5a0003d70b78accafd3bf334a05891e500fd65a6b285d08ab8b4e7394e",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "5441fe1731c496a0e3e754347d2b85ce1440bb180d99fcc5bc5b16c8cb02c8af",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "a517f76ddd5d2961cbade2b5d1593f58a40e523e274f94acfd46370eb22fdaea",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/text",
+        "sourceSha256": "f538c72e1a9f7d5aac54aa49cce0b95c9faeebc8cf6cd3beb56798c0438970b3",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "90f46f2c30fb304050307d5d292e55c239f3ab7c8471131fea2d77d3327a2163",
+        "spans": [
+          {
+            "start": 49,
+            "end": 65,
+            "text": "21, 4, -1, 0 y 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 95,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 185,
+            "end": 186,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 218,
+            "text": "77",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1880b6aa03db74c7624ca349f0e0da0407eef716e8b624caad91c6cf05270ed8",
+        "spans": [
+          {
+            "start": 27,
+            "end": 29,
+            "text": "77",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 95,
+            "text": "4, 0 y 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 119,
+            "text": "1, 0 y 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 245,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 296,
+            "text": "81",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "56b6980f0cd54f8560d4f6c7274a85216a85043a2bba473415d0ec3e526e3cab",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "1acc54740be3d7bd5f5bf420d6718a12239fc89dca3ec06e5d79eec5b4cde184",
+        "spans": [
+          {
+            "start": 38,
+            "end": 52,
+            "text": "calcular_saldo",
+            "role": "cpp"
+          },
+          {
+            "start": 77,
+            "end": 80,
+            "text": "int",
+            "role": "cpp"
+          },
+          {
+            "start": 108,
+            "end": 114,
+            "text": "cobros",
+            "role": "cpp"
+          },
+          {
+            "start": 117,
+            "end": 129,
+            "text": "devoluciones",
+            "role": "cpp"
+          },
+          {
+            "start": 153,
+            "end": 158,
+            "text": "0 y 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 210,
+            "text": "cobros - devoluciones",
+            "role": "cpp"
+          },
+          {
+            "start": 214,
+            "end": 219,
+            "text": "saldo",
+            "role": "cpp"
+          },
+          {
+            "start": 231,
+            "end": 235,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 263,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 280,
+            "text": "saldo",
+            "role": "cpp"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "-9..9",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "63ef3c145e6903253fe2a21af7052f1ae545aef6f5a170a1cb8247365e4dc78e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "registrar",
+            "role": "cpp"
+          },
+          {
+            "start": 78,
+            "end": 83,
+            "text": "total",
+            "role": "cpp"
+          },
+          {
+            "start": 94,
+            "end": 103,
+            "text": "aceptados",
+            "role": "cpp"
+          },
+          {
+            "start": 136,
+            "end": 146,
+            "text": "rechazados",
+            "role": "cpp"
+          },
+          {
+            "start": 312,
+            "end": 339,
+            "text": "(5,5), (2,3), (10,0), (0,9)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 406,
+            "text": "-10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/question",
+        "sourceSha256": "a094904b0fad1fd411f63498ca4385386d927aea85f6582ac143375a65e8cc07",
+        "spans": [
+          {
+            "start": 84,
+            "end": 86,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 144,
+            "text": "cobros - devoluciones",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/explanation",
+        "sourceSha256": "aab2e3ca106a3470fe103f59eb2f83cfad96c2df3761bf7d1fdf56528c53601b",
+        "spans": [
+          {
+            "start": 17,
+            "end": 22,
+            "text": "(2,3)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 36,
+            "text": "2 - 3",
+            "role": "cpp"
+          },
+          {
+            "start": 47,
+            "end": 49,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 76,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 238,
+            "text": "-9..9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 296,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/0",
+        "sourceSha256": "acfcdbff2a8ffb315e15c5140ca6b0c422c46859f90d92de3ed6ac4c6ffa1bc2",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/1",
+        "sourceSha256": "04c527828dc777961d6c5801375eacdd714afb4bf87e807e0dfcab1a80f552f2",
+        "spans": [
+          {
+            "start": 14,
+            "end": 19,
+            "text": "(2,3)",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/2",
+        "sourceSha256": "0a691729d2e3588f86173c05cd03811479ff58313583cc14030c23258944aba5",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "11de91e2d0a80e4db42fc88098b9c28b0381eae6d3cdb87e370bcee8497f05c6",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "55220a1b227483d1759ba2833152739c5e7055ee8172630c52afa1874957367c",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e199a530a3300dc8e71ca3ed7a2da9416ac4a7c4a8635124fd51c53c37ee05d9",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "6045fc135e7ae613e147d7b92ebab49e7cbf989d2537bae6a532fde34bf64cd0",
+        "spans": [
+          {
+            "start": 60,
+            "end": 80,
+            "text": "(5,5), (2,3) y (0,9)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 112,
+            "text": "0, -1 y -9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "(10,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 144,
+            "text": "rechazados",
+            "role": "cpp"
+          },
+          {
+            "start": 191,
+            "end": 194,
+            "text": "-10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 235,
+            "text": "Transferencia: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0000",
+        "path": "/text",
+        "sourceSha256": "a4e9a0d8fc301715959821ba4386e222ae7c61a1a47b5ae3fe92b8bfacbf13ca",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/text",
+        "sourceSha256": "961930a49149f06eb9c11dcbc4c68a20a7e46b11900cf13a951ded72d00842db",
+        "spans": [
+          {
+            "start": 221,
+            "end": 225,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/question",
+        "sourceSha256": "b41c02de5151e2fa36375c099e9f941ee0136c48e8e2fa23ba4f2140934feb7a",
+        "spans": [
+          {
+            "start": 20,
+            "end": 30,
+            "text": "saldo >= 0",
+            "role": "cpp"
+          },
+          {
+            "start": 76,
+            "end": 102,
+            "text": "aceptados:rechazados:total",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 146,
+            "text": "calcular_saldo",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/explanation",
+        "sourceSha256": "bea8e8738e7e62734ce4ee3e31a1eb3f8f8dbf9862feaf2b03dc6c850be04107",
+        "spans": [
+          {
+            "start": 7,
+            "end": 12,
+            "text": "(5,5)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 77,
+            "text": "(2,3)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 85,
+            "text": "(0,9)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 168,
+            "text": "saldo >= 0",
+            "role": "cpp"
+          },
+          {
+            "start": 222,
+            "end": 228,
+            "text": "(10,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 267,
+            "text": "1:3:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 285,
+            "text": "3:1:-10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "e668165b244d9ffbbcd3a07c147075e5e352c9d0641a416a882bb0133c643c74",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/question",
+        "sourceSha256": "e3791d199de93a427f4f013b4f879fc3528cb0e7e541273e40c5010444134baa",
+        "spans": [
+          {
+            "start": 3,
+            "end": 40,
+            "text": "comprobar_saldo(0, -1, -8, false, -8)",
+            "role": "cpp"
+          },
+          {
+            "start": 97,
+            "end": 99,
+            "text": "-8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/explanation",
+        "sourceSha256": "6f7cf58db00bb83756aee6f7083be6c83a3580c1b68c6e731454a3b939e09752",
+        "spans": [
+          {
+            "start": 82,
+            "end": 87,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 101,
+            "text": "-8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 162,
+            "text": "-8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/options/0",
+        "sourceSha256": "860f073e720d428e2f2bbc3870c38dea8b13acf1e5b64bdeb8d428de13457b64",
+        "spans": [
+          {
+            "start": 4,
+            "end": 6,
+            "text": "-8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 79,
+            "text": "-9..9",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/options/1",
+        "sourceSha256": "faa11525d0dae21978441f80a26d17ff28d43c526e7396b2d52ea4ae7c0bb2d0",
+        "spans": [
+          {
+            "start": 26,
+            "end": 28,
+            "text": "-8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/options/2",
+        "sourceSha256": "54e3e149acfef5aa3eb44a160a264ae2fdf3df511d857db5330a18f3ad45d6e2",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d32b74570ce9b3048be01edaacd1f110e9d8f74c4ffc5fec774e7db55e693726",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "2a9bf971632b1b3d8606dd7e201904e928df21050881f00b80a6fab912e1d192",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "75269ee6b3405d1fa620d2715e58d918793190ca4c96c7f37c5a2a565b8b059a",
+        "spans": []
+      },
+      {
+        "block": "u3l5_limites_saldo_titulo",
+        "path": "/text",
+        "sourceSha256": "d313a9a5ed457eba06225c675d419056c8f6dcb9b273c4549afc79494b8bc50a",
+        "spans": []
+      },
+      {
+        "block": "u3l5_limites_saldo_consigna",
+        "path": "/text",
+        "sourceSha256": "e732fc5ccc13a7cceb493423de3cfe94c67d1a41c0b1bd0ad1b242d0bb433273",
+        "spans": [
+          {
+            "start": 286,
+            "end": 300,
+            "text": "calcular_saldo",
+            "role": "cpp"
+          },
+          {
+            "start": 364,
+            "end": 369,
+            "text": "0 y 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 425,
+            "end": 434,
+            "text": "registrar",
+            "role": "cpp"
+          },
+          {
+            "start": 581,
+            "end": 583,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 666,
+            "end": 683,
+            "text": "Transferencia: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 696,
+            "end": 697,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l5_limites_saldo_editor",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "f42ccab0f5fe1e8bb1a250e807c34ea9ce23c662ddf7ed5dbf29d85e4f8c15c7",
+        "spans": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "(-1,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 12,
+            "end": 18,
+            "text": "cobros",
+            "role": "cpp"
+          },
+          {
+            "start": 75,
+            "end": 77,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 89,
+            "text": "(0,10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 103,
+            "text": "devoluciones",
+            "role": "cpp"
+          },
+          {
+            "start": 149,
+            "end": 151,
+            "text": "-4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 191,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 197,
+            "text": "-10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 388,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u3l5_limites_saldo_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "6a1058540e81a700ccad52a05fadf7025d1e90391ae23982b021cb7025804bb9",
+        "spans": []
+      },
+      {
+        "block": "u3l5_limites_saldo_referencia_texto",
+        "path": "/text",
+        "sourceSha256": "7d49257ae460a67fdff691ba7733a810b336f910db05c820fc1bec096e430e9a",
+        "spans": [
+          {
+            "start": 246,
+            "end": 252,
+            "text": "(-1,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 261,
+            "text": "(0,10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 429,
+            "text": "saldo",
+            "role": "cpp"
+          },
+          {
+            "start": 455,
+            "end": 462,
+            "text": "23 y -4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0000",
+        "path": "/text",
+        "sourceSha256": "5d0c334fb1787da1b4a7d30ec92ca6fc009723de5779b66a3bc3ae07b6399103",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0001",
+        "path": "/text",
+        "sourceSha256": "29e335ebb1a1c62236a92630dc65532e90280a57599b87f4f1b27c02ddc62c35",
+        "spans": [
+          {
+            "start": 97,
+            "end": 102,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/question",
+        "sourceSha256": "20b3e68cec337c099a6b03d8c8656ff3a9c38d3b22e73552c3d85c10892c26c8",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/explanation",
+        "sourceSha256": "c2ac5fa58aa169ce41af0920f392c17de517d56e42931ee8f7bb7fcff572f5c1",
+        "spans": [
+          {
+            "start": 114,
+            "end": 119,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 244,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/options/0",
+        "sourceSha256": "f3645177113c33aceb3c3c570dbed962cb5bc0e27efd72287080ec0c2ca682c2",
+        "spans": [
+          {
+            "start": 87,
+            "end": 91,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/options/1",
+        "sourceSha256": "f24ba7ff51f732a6b21344f7b448341c59e1e5a9690d5f2427c0c2d6ccf5732b",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/options/2",
+        "sourceSha256": "15e9ef26216fd447039db1e37dfae9934440e331d87608656b300831b672da0b",
+        "spans": [
+          {
+            "start": 40,
+            "end": 45,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "ba1be0f32c581142a6a0e460e467604b1cba70b7368d64a0691815bb17e6628a",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "4d90333ea0cce42574ed871eeffcd422d89d2691965325e0e3d056201bd61cb1",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e05e736c8c554598aab5e1cdef8f203f3bf8fdf95f2785ea05e6e461c2a928f5",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/text",
+        "sourceSha256": "c15227f25a44d7a0ea5a8a5841a4b31595aa6a628e2875b6c85a00b84061b7be",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "77c67a380feef2b13c2eda6dead0ef05663e98d0974edbf264ba66805f20e8c6",
+        "spans": []
+      }
+    ]
+  }
 }

@@ -10,15 +10,15 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta práctica vas a combinar lo que ya sabes, con un caso original: calcular cuánto ajustar un valor para llevarlo a un intervalo permitido. Tendrás que conservar a la vez el contrato de una biblioteca, el tratamiento recuperable de sus clientes, la independencia de sus pruebas y una construcción atribuible. No se añade una sintaxis nueva ni un marco de pruebas. Tu primera solución debe partir de los requisitos, antes de consultar la referencia."
+          "text": "Esta práctica integra dentro del editor de la app una biblioteca, un cliente y un comprobador. El caso consiste en calcular cuánto ajustar un valor para llevarlo a un intervalo permitido. Debes conservar el contrato de la biblioteca, el rechazo recuperable del cliente, las expectativas independientes del comprobador y la relación entre fuentes y objetivos construidos. Utilizarás los recursos ya estudiados, sin añadir un marco de pruebas. La primera solución se construye a partir de los requisitos.\n\nEl trabajo prepara la integración del proyecto externo de portafolio: su instalación de herramientas, desarrollo, depuración, variante propia, documentación y publicación tendrán su enseñanza y sus evidencias. Resolver este integrador dentro de la app acredita únicamente los objetivos que se comprueben aquí."
         },
         {
           "type": "paragraph",
-          "text": "La interfaz pública es bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste). Acepta cuando los tres valores están entre -20 y 20, inclusive, e inferior no supera a superior. Con valor dentro del intervalo escribe cero. Si está por debajo, escribe lo que hay que sumarle para llegar a inferior; si está por encima, escribe lo que hay que sumarle para llegar a superior. Ese segundo ajuste es negativo. Así obtiene el cambio de menor magnitud que sitúa valor dentro del intervalo. Al aceptar devuelve true; al rechazar devuelve false y conserva exactamente el destino anterior. No imprime ni termina el programa."
+          "text": "La interfaz pública es bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste). Acepta cuando los tres valores están entre -20 y 20, inclusive, y inferior no supera a superior. Al aceptar escribe en ajuste el cambio de menor magnitud que, sumado a valor, lo sitúa dentro del intervalo; devuelve true. Al rechazar devuelve false y conserva exactamente el destino anterior. La función no imprime ni termina el programa.\n\nSi el valor ya está dentro del intervalo, el ajuste es cero. Por debajo, debe llegar al extremo inferior: para 2 e intervalo [3,7], el ajuste es 1. Por encima, debe retroceder hasta el extremo superior: para 9 en ese mismo intervalo, el ajuste es -2. Ese resultado negativo es válido; su signo indica en qué dirección debe cambiar el valor."
         },
         {
           "type": "paragraph",
-          "text": "Los tipos no bastan para expresar esas obligaciones. El bool indica aceptación de esa llamada y el entero sólo pertenece a una petición nueva cuando fue aceptada. La política de rechazo y la conservación del destino forman parte del acuerdo que deben compartir biblioteca y consumidores (Kernighan & Pike, 1999, pp. 105, 111–112). Recupera esa separación al diseñar el cliente y al comprobar también los rechazos."
+          "text": "El tipo bool por sí solo no explica la política de la función ni qué ocurre con el destino en cada estado. El cliente debe conocer qué significa aceptar, qué datos se rechazan y quién decide cómo comunicarlo. Conservar esos acuerdos entre biblioteca y consumidores permite cambiar una implementación sin alterar inesperadamente el tratamiento del programa (Kernighan & Pike, 1999, pp. 105, 111–112). Aquí el entero sólo representa el resultado de la petición nueva cuando esa llamada fue aceptada; un destino conservado tras un rechazo pertenece al estado anterior."
         }
       ]
     },
@@ -30,19 +30,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Prepara los casos de tu comprobador con estos datos: valor, inferior, superior, destino inicial, aceptación esperada y destino final esperado. Cada caso debe permitir observar una obligación del contrato. Incluye situaciones a ambos lados del intervalo, dentro y en sus extremos; considera un intervalo de un solo valor, los límites admitidos y rechazos por las condiciones del contrato. Elige destinos iniciales que permitan detectar si un rechazo los cambió. No obtengas un esperado llamando al mismo cálculo que quieres comprobar."
+          "text": "En pruebas/casos.cpp, el archivo del comprobador que encontrarás en el editor, cada caso debe guardar estos datos: valor, extremo inferior, extremo superior, destino inicial, aceptación esperada y destino final esperado. Deduce los dos esperados del requisito antes de llamar a la función. Incluye valores por debajo, dentro y por encima del intervalo, y comprueba sus dos extremos; considera también un intervalo de un solo valor, los límites admitidos y rechazos por las condiciones del contrato. Elige destinos iniciales que hagan visible una escritura incorrecta al rechazar. Obtener un esperado llamando al mismo cálculo que se evalúa impediría contrastarlo con una expectativa independiente."
         },
         {
           "type": "paragraph",
-          "text": "No necesitas un orden textual único ni una cantidad de filas elegida por costumbre: necesitas que los casos permitan observar las obligaciones pertinentes. Una batería guardada debe llevar consigo entradas y expectativas revisables; comparar con una versión anterior sólo tiene sentido si esa expectativa era correcta (Kernighan & Pike, 1999, pp. 149–150). Después de tu intento podrás contrastar tu selección con una referencia, sin que esa referencia sustituya tu razonamiento."
+          "text": "La selección de casos debe permitir observar cada obligación pertinente; no se fija una cantidad de filas por costumbre. Guardar juntas las entradas y sus esperados hace revisable la batería. Cuando se repiten las pruebas tras un cambio, sus coincidencias sólo son evidencia útil si las expectativas conservadas eran correctas (Kernighan & Pike, 1999, pp. 149–150). La referencia posterior permitirá comparar qué situaciones observa cada selección y qué puede quedar sin contrastar."
         },
         {
           "type": "paragraph",
-          "text": "Diseña también el cliente para un máximo de ocho peticiones: cada una es una terna completa de int representables, seguida finalmente del fin normal de la entrada. Dentro de ese dominio, debe procesarlas todas, identificar cada petición por su posición, mostrar sólo los ajustes aceptados y diagnosticar los rechazos con los tres valores y la regla que permite revisarlos. Al final informa cuántas aceptó, cuántas rechazó y la suma de los ajustes nuevos. Devuelve 1 si hubo algún rechazo y 0 en otro caso. Un cero aceptado cuenta como petición aceptada; un ajuste negativo también."
+          "text": "Construye en app/consulta.cpp un cliente para un máximo de ocho peticiones. Cada petición contiene una terna completa de int representables; después de la última llega el fin normal de la entrada. Dentro de ese dominio, el cliente debe procesarlas todas y numerarlas por su posición. Muestra sólo los ajustes aceptados; cada rechazo identifica la petición, sus tres valores, el intervalo admitido, la condición de orden y una acción para revisar los datos. Al final informa de las cantidades aceptada y rechazada y de la suma de los ajustes nuevos. Devuelve 1 si hubo algún rechazo y 0 en otro caso. Tanto un ajuste cero como uno negativo cuentan como resultados aceptados."
         },
         {
           "type": "paragraph",
-          "text": "En este ejercicio no se pide un nuevo analizador de texto incompleto o ilegible. La precondición de ternas completas permite concentrarte en los acuerdos y su integración. Las diferencias de dos valores admitidos están entre -40 y 40; con ocho peticiones, los contadores y la suma permanecen dentro de int. Antes de ejecutar la entrada preparada, deduce sus resultados y qué observación atribuirás al cliente o al comprobador."
+          "text": "La entrada de este ejercicio contiene ternas completas y legibles: esa precondición permite concentrarse en los acuerdos de la biblioteca y su integración. Las peticiones pueden incumplir el dominio de la función, aunque sus enteros sean representables. Se rechazan antes de efectuar restas. Para datos aceptados, cada ajuste está entre -40 y 40; con ocho peticiones, la suma queda entre -320 y 320 y los contadores no superan ocho. Esas operaciones caben en int. Relaciona cada resultado que observes con el cliente o con el comprobador que lo produjo."
         }
       ]
     },
@@ -54,11 +54,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva este árbol: publico/control/ajuste.h declara la interfaz; src/ajuste.cpp la implementa; app/consulta.cpp contiene el cliente; pruebas/casos.cpp contiene el comprobador; CMakeLists.txt describe la construcción. La biblioteca se llamará ajustes y los ejecutables consultar_ajustes y comprobar_ajustes. Ambos deben usar la misma biblioteca, con su propio main. Cada archivo que usa la interfaz incluye control/ajuste.h, sin copiar el cuerpo del componente."
+          "text": "Conserva este árbol del editor: publico/control/ajuste.h declara la interfaz; src/ajuste.cpp la implementa; app/consulta.cpp contiene el cliente; pruebas/casos.cpp contiene el comprobador; CMakeLists.txt describe la construcción. La biblioteca se llamará ajustes y los ejecutables consultar_ajustes y comprobar_ajustes. Ambos deben enlazar con la misma biblioteca, cada uno con su propio main. Cada fuente que use la interfaz incluye \"control/ajuste.h\"; no copia el cuerpo del componente."
         },
         {
           "type": "paragraph",
-          "text": "CMakeLists.txt está vacío a propósito: escribe la descripción con mínimo CMake 3.20, C++ habilitado, esos tres objetivos, sus fuentes, la búsqueda pública de la cabecera y las relaciones de enlace. Exige cxx_std_20 y extensiones desactivadas a lo que compiles. Las fuentes iniciales son borradores PENDIENTES; no cumplen el contrato y sus mensajes no son resultados de una prueba. Completa el componente, el cliente y un comprobador que observe cada caso que preparaste, compare tanto el bool como el destino y termine con 1 si alguna comparación discrepa. No hagas depender esas llamadas o comparaciones necesarias de assert.\n\nConfigura, construye y ejecuta por separado el cliente y el comprobador seleccionando su objetivo. Mantén separados stdout, stderr y código final, y atribuye cada observación a su fuente y objetivo. Completa y comprueba esta integración antes de consultar la referencia.",
+          "text": "CMakeLists.txt está vacío a propósito. Escribe la descripción: mínimo CMake 3.20, lenguaje C++ habilitado, los tres objetivos con sus fuentes, búsqueda pública de la cabecera y relaciones de enlace. Declara cxx_std_20 y extensiones desactivadas para los tres objetivos. Ese mínimo de características es compatible con construir en C++23; no exige un modo exactamente C++20.\n\nLas fuentes iniciales son borradores PENDIENTE: sus mensajes no demuestran que hayan ejecutado una prueba. Completa el componente, el cliente y un comprobador que compare tanto el bool como el destino de cada caso. Debe terminar con 1 si alguna comparación discrepa y con 0 si todas coinciden, sin omitir casos posteriores. Las llamadas y comparaciones necesarias deben permanecer fuera de assert.\n\nEn «Objetivo CMake», selecciona primero consultar_ajustes. Usa «Configurar y generar», «Construir objetivo» y «Ejecutar objetivo construido» con la entrada preparada. Después selecciona comprobar_ajustes, vacía el campo «Entrada», constrúyelo y ejecútalo: los casos del comprobador están en su código. Atribuye stdout, stderr y el retorno a la revisión y al objetivo correspondientes. Guarda tus casos en su archivo del proyecto: la consola muestra su ejecución, pero no sustituye las comparaciones programadas.",
           "emphasis": [
             {
               "text": "compare tanto el bool como el destino"
@@ -99,7 +99,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Mientras la descripción está vacía no existen esos objetivos: un fallo de esa etapa no acredita ni refuta el cálculo. Una salida PENDIENTE tampoco constituye una batería que haya comparado algo. Los resultados del cliente y del comprobador responden a acuerdos distintos aun cuando ambos se hayan construido correctamente."
+          "text": "Mientras la descripción está vacía, esos objetivos no existen. CMake puede procesar una descripción vacía y aun así no tener ningún objetivo que construir; la app necesita localizar el solicitado. Un fallo de esa etapa no acredita ni refuta el cálculo. Del mismo modo, una salida PENDIENTE no constituye una batería que haya comparado algo. El cliente procesa peticiones y el comprobador contrasta obligaciones: sus resultados tienen significados diferentes incluso cuando ambos ejecutables se construyeron correctamente."
         }
       ]
     },
@@ -111,7 +111,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Consulta esta referencia después de implementar tus casos y tu intento. No impone una única forma de programar. Compara qué validas, qué escribes al aceptar y qué conservas al rechazar. Mantén la declaración pública en publico/control/ajuste.h:"
+          "text": "Esta referencia conserva el contrato mediante validación previa, cálculo por ramas y consumidores separados. Otras implementaciones pueden cumplir las mismas obligaciones. Compara qué se valida antes de escribir, qué valor se produce al aceptar y qué destino se conserva al rechazar. La declaración pública permanece en publico/control/ajuste.h:"
         },
         {
           "type": "code",
@@ -120,7 +120,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En src/ajuste.cpp, esta solución rechaza antes de modificar el destino o efectuar una resta. Cuando acepta, las ramas expresan dónde estaba valor. Se valida cada dato y el orden; también serían válidas comprobaciones equivalentes que cumplan todo el acuerdo y mantengan definidas las operaciones."
+          "text": "En src/ajuste.cpp, la primera decisión rechaza los datos fuera del dominio o los extremos invertidos antes de modificar el destino o efectuar una resta. Si la petición se acepta, las ramas distinguen las tres posiciones posibles: por debajo se calcula inferior - valor; por encima, superior - valor; dentro, se escribe 0. Por ejemplo, para 9 sobre [3,7], la resta 7 - 9 obtiene -2 y al sumarla se llega al extremo superior. También son válidas otras decisiones equivalentes que conserven todas las obligaciones y mantengan definidas las operaciones."
         },
         {
           "type": "code",
@@ -129,7 +129,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En CMakeLists.txt, src/ajuste.cpp pertenece sólo a ajustes; cada main tiene su propio ejecutable. Ambos consumidores enlazan con ajustes y reciben la búsqueda pública que completa control/ajuste.h. La descripción expresa relaciones y requisitos, no una lista manual de compilaciones (Scott, 2025, pp. 18–21, 182–183). Recupera también los avisos del compilador sin confundirlos con el veredicto de tus casos."
+          "text": "En CMakeLists.txt, src/ajuste.cpp pertenece sólo a la biblioteca ajustes; cada main tiene su propio ejecutable. Los dos consumidores enlazan con esa biblioteca. La búsqueda pública añade publico para que la biblioteca y sus consumidores puedan completar control/ajuste.h. Esa relación de uso transmite el requisito al construir cada consumidor (Scott, 2025, pp. 18–21, 182–183).\n\nLa referencia conserva las opciones -Wall, -Wextra y -Wpedantic estudiadas para GCC. Su significado pertenece al compilador: CMake las transmite, pero no las convierte automáticamente en opciones equivalentes de MSVC. Recupera la configuración de avisos adecuada al compilador activo y distingue sus diagnósticos del veredicto de la batería."
         },
         {
           "type": "code",
@@ -138,7 +138,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Puedes ordenar de otro modo instrucciones independientes o estructurar de otra manera una implementación correcta. Debe conservarse el árbol y los objetivos acordados para atribuir las observaciones; los dos consumidores han de usar una misma implementación. Una cabecera localizable no sustituye la definición enlazada, y un objetivo construido todavía necesita su comprobación de comportamiento."
+          "text": "El orden de instrucciones independientes puede variar; una implementación equivalente también puede organizar de otra manera sus decisiones. Deben conservarse el árbol, los objetivos y sus relaciones para atribuir cada observación al componente y al consumidor correspondientes. Los dos ejecutables usan una sola implementación de la biblioteca. Encontrar la cabecera permite compilar sus llamadas; enlazar la definición las incorpora al programa. Construir ese programa todavía no comprueba si cumple el contrato."
         }
       ]
     },
@@ -150,7 +150,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En app/consulta.cpp, el bool de cada llamada decide si el ajuste pertenece a una petición nueva. El destino puede conservar historia al rechazar; esa historia no entra en la suma. El diagnóstico identifica la petición y sus tres datos, y recuerda las condiciones para revisarlos. Tu presentación puede ser distinta si conserva esa información y separa resultados de diagnósticos."
+          "text": "En app/consulta.cpp, el resultado bool de cada llamada decide si el ajuste pertenece a la petición nueva. El destino vive fuera del bucle y conserva historia: si una petición se rechaza, su valor anterior no entra en la suma. El diagnóstico identifica la petición y sus tres datos y recuerda las condiciones para revisarlos. Se admite otra presentación que conserve esa información y separe resultados de diagnósticos."
         },
         {
           "type": "code",
@@ -159,7 +159,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la entrada preparada se aceptan las peticiones 1, 2, 3 y 5: sus ajustes son 1, 0, -2 y 0. Se rechaza la cuarta por sus extremos invertidos y la sexta por el valor 21. Por tanto, el resumen es cuatro aceptadas, dos rechazadas y suma -1. El retorno normal 1 informa de esos rechazos. Contrasta los tres valores de cada diagnóstico con la petición correspondiente, sin suponer un orden combinado entre stdout y stderr."
+          "text": "La entrada preparada contiene seis peticiones. Se aceptan la primera, segunda, tercera y quinta, con ajustes 1, 0, -2 y 0. Se rechaza la cuarta por sus extremos invertidos y la sexta por el valor 21. El resumen es Aceptadas=4 Rechazadas=2 Suma=-1 y el retorno normal es 1.\n\nLa cuarta petición llega después del ajuste negativo de la tercera. El destino conserva ese resultado al rechazarse la cuarta, pero el cliente no vuelve a sumarlo: sólo suma cuando la llamada actual acepta. Contrasta cada diagnóstico con los tres valores de su petición. Los canales stdout y stderr se observan por separado, sin exigir un orden combinado entre ambos."
         },
         {
           "type": "multiple_choice",
@@ -171,7 +171,7 @@
             "El cliente terminó las seis peticiones y devolvió 1 por dos fallos de la biblioteca; cada rechazo del lote debe registrarse como una comparación fallida del contrato, aunque estuviera previsto."
           ],
           "correctIndex": 0,
-          "explanation": "El retorno del cliente resume su tratamiento del lote. Dos datos incumplen el dominio y reciben el tratamiento acordado; eso no equivale a que dos comparaciones del comprobador hayan discrepado. Un ajuste negativo sigue siendo un resultado válido.",
+          "explanation": "Para las seis peticiones, el cliente acepta cuatro y rechaza dos según el contrato. Los ajustes aceptados 1, 0, -2 y 0 suman -1; el negativo corresponde a bajar un valor que supera el extremo superior y sigue siendo válido. El retorno 1 procede de que rechazadas es mayor que cero. En cambio, el comprobador devuelve 1 cuando una observación discrepa de su esperado. Rechazar correctamente un dato previsto no es una discrepancia del contrato.",
           "reviewFeedback": [
             "Relaciona el retorno con la decisión concreta que toma main al terminar y con el significado de sus contadores.",
             "Vuelve al significado del ajuste que debe sumarse a un valor situado por encima del intervalo permitido.",
@@ -188,7 +188,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En pruebas/casos.cpp, contrasta tus comparaciones con estos casos y comprueba qué obligación observa cada uno. Los tres primeros observan debajo, dentro y encima; el cuarto conserva un intervalo de un valor. Los dos siguientes alcanzan los ajustes de magnitud cuarenta con valores admitidos. Los restantes aíslan orden y límites rechazados, usando destinos iniciales distintos. No se pretende imponer once como cuota ni acreditar toda función posible: cada caso tiene una obligación concreta que observar."
+          "text": "En pruebas/casos.cpp, cada llamada guarda un destino inicial y contrasta dos observaciones: aceptación y destino final. Los tres primeros casos observan un valor por debajo, dentro y por encima; el cuarto observa un intervalo de un valor. Los casos quinto y sexto alcanzan ajustes de magnitud cuarenta con datos admitidos. Los restantes comprueban rechazos por orden o límites y usan destinos iniciales diferentes.\n\nEsta selección de once casos es una referencia finita. Por ejemplo, no contiene un valor situado exactamente en cada extremo de un intervalo con extremos diferentes. Su coincidencia no demuestra por sí sola esas situaciones ni todas las demás entradas. Compara la selección con el contrato y conserva qué obligación observa cada caso; no confundas la cantidad de filas con una garantía de cobertura completa."
         },
         {
           "type": "code",
@@ -197,7 +197,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada llamada obtiene primero su resultado; después se comparan dos valores observados con expectativas literales deducidas del requisito. Un rechazo correcto también puede producir OK porque conserva el destino esperado. Las llamadas necesarias se ejecutan en if separados: una discrepancia no impide observar los casos posteriores. El resumen Fallos=0 y el retorno 0 pertenecen a esta batería, no al significado del retorno del cliente. No sustituyas esas comparaciones por assert: deben permanecer cuando se desactiven las comprobaciones internas."
+          "text": "comprobar llama primero a la biblioteca y guarda la aceptación y el destino obtenido. Después contrasta esos dos valores con esperados escritos a partir del requisito. Un rechazo correcto también imprime OK: la aceptación debe ser false y el destino debe conservar su valor inicial. En estas líneas, los valores de aceptación se muestran como 1 y 0.\n\nLas once llamadas están en instrucciones if separadas, por lo que una discrepancia no impide ejecutar las posteriores. Aunque la expresión && pueda omitir la segunda comparación cuando la primera es falsa, la llamada a la biblioteca ya se efectuó y los dos valores obtenidos se muestran. El resumen Fallos=0 y el retorno 0 pertenecen a estas comparaciones. No se sustituyen por assert, pues deben ejecutarse también cuando las comprobaciones internas estén desactivadas."
         }
       ]
     },
@@ -209,7 +209,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una batería debe poder observar una alteración localizada del componente conservando expectativas independientes. El fragmento siguiente invierte deliberadamente el signo de la rama superior en src/ajuste.cpp; no cambia la firma, la validación ni las otras ramas. La actividad posterior dispone de un proyecto propio para investigar esa alteración."
+          "text": "Una batería útil debe poder detectar un incumplimiento concreto manteniendo sus expectativas. El fragmento siguiente invierte deliberadamente el signo de la rama superior en src/ajuste.cpp, sin cambiar firma, validación ni otras ramas. El editor independiente de esta página contiene ese defecto para observarlo y repararlo con los casos conservados."
         },
         {
           "type": "code",
@@ -218,28 +218,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con las expectativas de referencia, nueve sobre [3,7] necesita -2 y veinte sobre [-20,-20] necesita -40. El signo alterado produce discrepancias en esos dos casos y la batería continúa con los posteriores. El editor independiente que sigue permite observarlas y reparar sólo la resta, conservando casos, diagnósticos y resumen."
-        },
-        {
-          "type": "multiple_choice",
-          "id": "integracion_alcance_del_control_y_recuperacion",
-          "question": "La batería detectó el signo alterado, mantuvo los casos posteriores y volvió a coincidir tras restaurarlo. ¿Qué acredita ese recorrido?",
-          "options": [
-            "El control detectó el signo alterado y la recuperación volvió a coincidir; esa sensibilidad hace innecesario justificar los esperados conservados, porque la batería ya mostró que reacciona ante una alteración de la implementación.",
-            "El control detectó el signo alterado; bastaría adaptar sus esperados a esos resultados para conservar la misma comprobación del contrato, ya que las entradas, los nombres y el número de casos seguirían siendo los mismos.",
-            "El control detectó el signo alterado y la recuperación volvió a coincidir; esos casos aportan evidencia sobre esa alteración y la revisión restaurada, mientras sus expectativas siguen necesitando una justificación independiente."
-          ],
-          "correctIndex": 2,
-          "explanation": "El control deliberado permite investigar la sensibilidad de la batería a un incumplimiento concreto. Recuperar las coincidencias conserva evidencia para esos casos; no transforma una selección finita o un esperado equivocado en una garantía universal (Kernighan & Pike, 1999, pp. 149–150).",
-          "reviewFeedback": [
-            "Revisa si detectar un cambio en la implementación demuestra de dónde salió la respuesta esperada para cada caso.",
-            "Compara la obligación que se contrastaba antes y después de adaptar una expectativa al resultado observado.",
-            "Relaciona cada conclusión con la revisión, el objetivo y las expectativas que participaron en el recorrido."
-          ]
-        },
-        {
-          "type": "paragraph",
-          "text": "La última actividad de esta página amplía un comprobador conservado: elige una terna propia que observe una obligación del contrato, un destino inicial y sus dos esperados. Escríbela como otra llamada independiente a comprobar en el editor de esa actividad. Si se propone cambiar una expectativa o interpretación, se revisan la pregunta, su contexto y el requisito que pretendía observar (Thomas & Hunt, 2020, pp. 17–18); no se ajusta el esperado sólo a lo que imprimió el programa."
+          "text": "En el tercer caso, 9 sobre [3,7] requiere -2, pero la resta invertida obtiene 2. En el sexto, 20 sobre [-20,-20] requiere -40 y el defecto obtiene 40. Los otros casos conservan sus resultados. La batería debe registrar esas dos discrepancias, continuar hasta el último caso y devolver un estado que indique fallos. La actividad siguiente permite observar ese estado y después reparar sólo la resta."
         },
         {
           "type": "heading",
@@ -247,7 +226,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto independiente contiene el componente con el signo alterado y los once casos de referencia. Construye y ejecuta comprobar_ajustes; localiza las discrepancias de los casos 3 y 6 y el resumen Fallos=2, con retorno 1. Repara sólo esa resta y vuelve a ejecutar: los once casos deben coincidir, el resumen debe ser Fallos=0 y el retorno 0. Conserva los otros archivos y expectativas. Tras completar la reparación, utiliza «Compilar, ejecutar y comprobar» para contrastar la salida de esta actividad."
+          "text": "Este proyecto contiene el componente con el signo alterado y los once casos de referencia. Con comprobar_ajustes seleccionado en «Objetivo CMake», configura y construye. Vacía el campo «Entrada»: este comprobador usa los casos de su código y no lee las ternas del cliente. Al ejecutar el estado inicial, localiza las discrepancias de los casos 3 y 6, el resumen Fallos=2 y el retorno 1. Ese estado reproduce el defecto; todavía no satisface el objetivo final.\n\nRepara únicamente la resta de esa rama en src/ajuste.cpp y pulsa «Compilar, ejecutar y comprobar» con el mismo objetivo. Las once comparaciones deben coincidir, el resumen debe ser Fallos=0 y el retorno 0. Conserva los demás archivos, las entradas de los casos y sus expectativas. La coincidencia de salida comprueba el informe final; la reparación solicitada exige además conservar esas comparaciones y el recorrido desde el defecto."
         },
         {
           "type": "cpp_compiler",
@@ -288,10 +267,31 @@
                 "outputs": [
                   "Caso=1 Acepta=1 Ajuste=1 EsperaAcepta=1 EsperaAjuste=1 OK\nCaso=2 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=3 Acepta=1 Ajuste=-2 EsperaAcepta=1 EsperaAjuste=-2 OK\nCaso=4 Acepta=1 Ajuste=0 EsperaAcepta=1 EsperaAjuste=0 OK\nCaso=5 Acepta=1 Ajuste=40 EsperaAcepta=1 EsperaAjuste=40 OK\nCaso=6 Acepta=1 Ajuste=-40 EsperaAcepta=1 EsperaAjuste=-40 OK\nCaso=7 Acepta=0 Ajuste=77 EsperaAcepta=0 EsperaAjuste=77 OK\nCaso=8 Acepta=0 Ajuste=-8 EsperaAcepta=0 EsperaAjuste=-8 OK\nCaso=9 Acepta=0 Ajuste=19 EsperaAcepta=0 EsperaAjuste=19 OK\nCaso=10 Acepta=0 Ajuste=-4 EsperaAcepta=0 EsperaAjuste=-4 OK\nCaso=11 Acepta=0 Ajuste=8 EsperaAcepta=0 EsperaAjuste=8 OK\nFallos=0\n"
                 ],
-                "explanation": "Los once casos conservados coinciden y el resumen es Fallos=0. La reparación conserva la validación, las expectativas y los destinos que no deben modificarse al rechazar."
+                "explanation": "La salida coincide con el informe esperado de once casos y Fallos=0, con retorno 0. En la referencia, la resta reparada obtiene -2 y -40 en los dos casos que antes discrepaban; los rechazos conservan sus destinos. Este acierto de salida no demuestra por sí solo que se observara primero el defecto ni que se mantuvieran intactos los archivos y las comparaciones requeridos por la consigna."
               }
             ]
           }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "integracion_alcance_del_control_y_recuperacion",
+          "question": "La batería detectó el signo alterado, mantuvo los casos posteriores y volvió a coincidir tras restaurarlo. ¿Qué acredita ese recorrido?",
+          "options": [
+            "El control detectó el signo alterado y la recuperación volvió a coincidir; esa sensibilidad hace innecesario justificar los esperados conservados, porque la batería ya mostró que reacciona ante una alteración de la implementación.",
+            "El control detectó el signo alterado; bastaría adaptar sus esperados a esos resultados para conservar la misma comprobación del contrato, ya que las entradas, los nombres y el número de casos seguirían siendo los mismos.",
+            "El control detectó el signo alterado y la recuperación volvió a coincidir; esos casos aportan evidencia sobre esa alteración y la revisión restaurada, mientras sus expectativas siguen necesitando una justificación independiente."
+          ],
+          "correctIndex": 2,
+          "explanation": "Antes de reparar, los casos tercero y sexto detectan el signo equivocado porque sus ajustes esperados son -2 y -40. Tras restaurar la resta, las once comparaciones vuelven a coincidir. Ese recorrido demuestra sensibilidad a ese defecto y recuperación de esos resultados, siempre que se conserven casos y esperados. Cambiar el esperado al resultado defectuoso eliminaría la discrepancia sin reparar el contrato. Una batería finita tampoco convierte una expectativa injustificada en correcta (Kernighan & Pike, 1999, pp. 149–150).",
+          "reviewFeedback": [
+            "Revisa si detectar un cambio en la implementación demuestra de dónde salió la respuesta esperada para cada caso.",
+            "Compara la obligación que se contrastaba antes y después de adaptar una expectativa al resultado observado.",
+            "Relaciona cada conclusión con la revisión, el objetivo y las expectativas que participaron en el recorrido."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La actividad de ampliación tiene otro editor con la solución y los once casos conservados. Elige una terna propia, un destino inicial y los dos esperados que se deducen del contrato; escríbelos como otra llamada independiente a comprobar en ese editor. Para interpretar una observación, identifica la pregunta que intenta responder y las condiciones en que tiene sentido (Thomas & Hunt, 2020, pp. 17–18). Aquí significa justificar la aceptación y el destino con los límites y el intervalo acordados, sin adaptar el esperado a lo que imprimió el programa."
         },
         {
           "type": "heading",
@@ -299,7 +299,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor conserva la solución y los once casos de referencia. Añade en pruebas/casos.cpp una llamada independiente a comprobar, con otro número de caso, una terna admitida o rechazada, un destino inicial y sus esperados deducidos del requisito. No elimines llamadas ni copies la función para calcular esos esperados. Construye y ejecuta comprobar_ajustes: el caso nuevo debe compararse y el resumen final debe seguir siendo Fallos=0 con retorno 0. Tu dato puede ser distinto del de otra solución válida."
+          "text": "Este editor conserva la solución y los once casos de referencia. Añade en pruebas/casos.cpp una llamada independiente a comprobar con otro número de caso, una terna admitida o rechazada, un destino inicial y sus dos esperados deducidos del requisito. Puede observar, por ejemplo, un extremo de un intervalo con extremos diferentes o una condición de rechazo: tú eliges los datos. Conserva las once llamadas anteriores y la implementación; no obtengas los esperados llamando al cálculo evaluado.\n\nSelecciona comprobar_ajustes, vacía el campo «Entrada», configura, construye y usa «Ejecutar objetivo construido». Comprueba que aparece y se compara el caso nuevo, además de los anteriores. El resumen debe seguir siendo Fallos=0 con retorno 0. Ejecutar el inicial sin editar también produce ese resumen, pero no realiza la ampliación: la evidencia adicional es la nueva comparación con su expectativa independiente. Se admiten otras ternas correctas, sin exigir una salida literal única."
         },
         {
           "type": "cpp_compiler",
@@ -335,5 +335,2241 @@
         }
       ]
     }
-  ]
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "bc1528f80876cc2d64e207b98346cbaa32260771d649fdafece2d76c9dee665c"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "be0735973cfbec7a24f7030ef7bda7d6270772207b1f0d948c615d73562b5456"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "498f64f5451a488ba773390162f2d80c6c0aa17d5f290a50635f8f3b63513ae3"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "0b318300bb2e2b4a5239951e215b081bb6e3934addaf5999dfa21eb104563aa8"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "5d78186eab881b14eabffec187f40a98b137f72957762dcdbe25c575f431d465"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "e3a7e695ba23377baf7c2e7e374842f067aa656206f7e3b06ec43a0b50bb7159"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "98f040b8d56449c901d016e22299bf3f3833ccb5b737d0be00b468aa0800e898"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "46fc872193f5581aba02d68fb665cf911d3269f5a8af04e8397eba0810aee7d3"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "b19e85a96cb29b3af07de80efe92976531c4ebedce38cdc7f3af97c687361eb8"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0008",
+            "sha256": "1b2fc7953c0b2802b5a803829aa7d158c39ff8f5e0dc3f8002d3f5825e01aaf5"
+          },
+          {
+            "id": "block_0006_0009",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0010",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0011",
+            "sha256": "ba6a4bce565478eb0ccb01c247759e6c6480df4f006f0a89b9752e2bfce4b44f"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0006",
+          "block_0006_0007",
+          "block_0006_0008",
+          "block_0006_0004",
+          "block_0006_0005",
+          "block_0006_0009",
+          "block_0006_0010",
+          "block_0006_0011"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "8b4fdfd86982dda7182187fbf3c6135a491c78ae0e45cf6d86ade5f3ce8e79f5",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "60eac5ca093ec1cac93213c95f1ee0c6e1f28795a2f68e20ce89b901579a1483"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "cfa8849698e882f2b84972bba47606a794ba52e70afc2957aa45c6fd02ccfd96"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "498f64f5451a488ba773390162f2d80c6c0aa17d5f290a50635f8f3b63513ae3"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "0b318300bb2e2b4a5239951e215b081bb6e3934addaf5999dfa21eb104563aa8"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "81647fd530b55332022e46d8c000faa1bf01cd604de6ed5cc7fb9c5bb6fe4766"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "224f87a489d2bc57fc29abf4d8abff5ccb8da537ac7149d8d71225fbd05165fc"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "4a6402e2daf9d4e99cb464daff4f143b78e3e699399a2c568625166396ad8ea7"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "46fc872193f5581aba02d68fb665cf911d3269f5a8af04e8397eba0810aee7d3"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "7bdfd997bac71d076d500a414388a276bdfbcf76e4830f8486ef70544c02067c"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "0cff564a76b0f3db9dc5fe0dd70cd7a5e1e07c593af296f434a451cfe44837cd",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "bc1528f80876cc2d64e207b98346cbaa32260771d649fdafece2d76c9dee665c"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "be0735973cfbec7a24f7030ef7bda7d6270772207b1f0d948c615d73562b5456"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "498f64f5451a488ba773390162f2d80c6c0aa17d5f290a50635f8f3b63513ae3"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "0b318300bb2e2b4a5239951e215b081bb6e3934addaf5999dfa21eb104563aa8"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "5d78186eab881b14eabffec187f40a98b137f72957762dcdbe25c575f431d465"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "e3a7e695ba23377baf7c2e7e374842f067aa656206f7e3b06ec43a0b50bb7159"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "98f040b8d56449c901d016e22299bf3f3833ccb5b737d0be00b468aa0800e898"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "46fc872193f5581aba02d68fb665cf911d3269f5a8af04e8397eba0810aee7d3"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "b19e85a96cb29b3af07de80efe92976531c4ebedce38cdc7f3af97c687361eb8"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0008",
+                "sha256": "1b2fc7953c0b2802b5a803829aa7d158c39ff8f5e0dc3f8002d3f5825e01aaf5"
+              },
+              {
+                "id": "block_0006_0009",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0010",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0011",
+                "sha256": "ba6a4bce565478eb0ccb01c247759e6c6480df4f006f0a89b9752e2bfce4b44f"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "2895cc5bbde1f89a22f7fae6d10052e830cbe1f4789d8a0e6c3f50f7b5abfae4",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "7308519e6d83f2e16ef17988d920e9067c1a10ea002694fb974c0a13f6e3e28d"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "d1fed67d093cef8a8819d4726e539f8a627f07ff470b550d355664c57b8ea2f4"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "498f64f5451a488ba773390162f2d80c6c0aa17d5f290a50635f8f3b63513ae3"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "0b318300bb2e2b4a5239951e215b081bb6e3934addaf5999dfa21eb104563aa8"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "80c7fda946b63519ad64d39b6cb41f1923bf2c48e5eb395963e52eb6ae76886d"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1fc3d30653eed9a61de8e655b4325bb9531157e41d7b1abf8a8ffa25c6cfb721"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "7aa8c43ab1871a74f0210e180d06e917f2c5a3cfd31625fb23c85d13b7f846ec"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "46fc872193f5581aba02d68fb665cf911d3269f5a8af04e8397eba0810aee7d3"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "82065123886c1eec31573c2e4eb2034cb08ced296574160ff9f4c29c08dc7332"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "836123f1cae71e3623b8ebed23b9e0de8aef30b46339b90c6bfa05c6c27f5bcf",
+        "afterSha256": "d8815265b0f90f551e707d1bf694f730a028199a0ddfdedf0aa341c9379bd94e"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "77d80f6baebc64a415b67a2a8233c316a126c1d7c6d4c2dbe2377a1b60287e7d",
+        "afterSha256": "4870e06739092c0460b5d4aefc865b64b1f80ab3bce00dd1e36f20269e46f8b7"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "a1c4a583a42ee0746b2885477fbebab6f24a8b0b0003598e2bdf3aaca53d1dca",
+        "afterSha256": "1899b3c2412b358de3dde1b32ced03b29a47a7b577a7f2b5cc84a670572a0221"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "ba59b8c7a1970d75dbed5817a6fb17aff7c6f9a6c30e7b6db04bb8372f27e8b9",
+        "afterSha256": "cdde546bacc849c8302b12d074cb45daafc5514187387b5f8a4a2f8fff5389ee"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "adf35190f03f0a36b89bb5c291123b88bae18cd2b0bf710d71f46b605f9f6a5e",
+        "afterSha256": "d56253d0dc78b32f02adbe4b612dba31b4c69b4d9ee525d07ccce11fa9745b8e"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "e4a3c1f35ae551ca6a01d1d492385bc25db4c5017e395d72f28fa5e70264dd93",
+        "afterSha256": "348fc128603555a691e3be51573435b7be814704d3249fd0641d4dc857088b9b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "29ce046b8e712ebf2751efa9269b4cad5c1c39045b198b5a0f26cba3a73a16df",
+        "afterSha256": "0bf5f06079380d4c14253354e40b33175471597b0fe157c449926b88a5e99987"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "a9f8a675ac9b8b1144899b0aa64a6d967abb946276581e13fc8a1f8decaf3cfe",
+        "afterSha256": "236925dbdc83106f0399b1c732d19843ebc8b5b7ccc4661d45e4746629ef7860"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "d981ddfc56a89d8c819f5fd8c91e355f4202243b6e2e9cde4017e069065c1d6f",
+        "afterSha256": "be6abdb6b96f9897b8f72d35fb1e45dc4150ee751648024ae06c3f9925574a31"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "b959c10d7d74f943c0b3ba2940de6956b8c71b73359dba29f9de691492df517b",
+        "afterSha256": "f18ec03585ebb7c1e9820eb9fc42c888806d4375eadc44365606636201533668"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "c173d94c6606c632fc3d620a923d3cd2ab7901e0571976060da03596397e2023",
+        "afterSha256": "3c90ca684aee9be39de6d3c2a72bc424baddb45b091dc5ac85f114f02d47f455"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "033fe24e7c9883c1065248b215aa951b0d78707bba7ff4dffee528cb22e25826",
+        "afterSha256": "cb01651116501182008f7b6e762ea8da7b9a490ad081a44d2d7017ceda26ec9f"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "62e38bbd9c5b78de7fcff661fd19536704c133aed44e5c51b9258e2f27bb7543",
+        "afterSha256": "6b7e6c4cb4852212b7681e300a88f23417a4f452be9100ed8cbcd8631baf7fb2"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "a883b867a14b60c17dd1cbb77147e9760058f7bab3308e8be6bba0bdd793cbe8",
+        "afterSha256": "33af8cb74139bcf7774a767919af28cb4d370d8b0d962825645b12cb150e84d8"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "ecb5d14a8789f00e3c305c9e727f5d0c667905f4927bf468b4b47ac97dba6689",
+        "afterSha256": "34898598f1de6b823dc307db4b3936d360876cad5ac276b7b08000eeab343f95"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "3bef5f344ca9389e1eb522c215c5d157ac0f18ce72d3074d59f5912b2e9c9e01",
+        "afterSha256": "2891c26c7264d10993bf84f0c15006dc4962af22225cb806db1da75d7b574c31"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "63e039c2a99257d7f9f97558e1b455b8ea3a2aa4181109dda7e887f3b8bcff12",
+        "afterSha256": "4c1171643f6d81b339bb8ecc1525d29a9153788d829ad05baed37f4efd00edd5"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "914c433b2ccfbaa12b363e6bdf36e22241fb4eb83d65664249369c13c36272e2",
+        "afterSha256": "96770c00012e6b9d5ce63fcc22e39087a8877948c4e26dff4deac69fc560071d"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "435e804c71502dd504ef635f1309bc012321661740da866beab7ffd4651207eb",
+        "afterSha256": "a2364628025fb36c499d25fa69a1d1ce290dd379dc9909f4780bce12337d1179"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "453e28847c1459bc499e59f0f33083951d6b9fbd1b0ae497681fe639a895a162",
+        "afterSha256": "063eecd531c2cee46b02f96ea280c455573078b3ba6eb91cc13f4ea238f1516c"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "e3985a972b2bd2ad18f2d2bb48d8b1c2524e0ff563985b1b0a6ff636df72c82c",
+        "afterSha256": "4c91bf8d976056447732e39c2a2c5a57f253da1a228e80b53f08d65040c73142"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "d08b6c7a32725311260301ed8a7a87ea1e7aaaef558c12966e9fa80361ec6ad0",
+        "afterSha256": "f90acc16a6bc9f57b7bcd0fa2d6009675d25b5979827f952917a9ff3b3423e80"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "71d5f737f5de8206730a990ffa80f22c0f5712da47e93017323e0ea77bc239cc",
+        "afterSha256": "f219cf969097641ed89fb6d65c2fb8e50c78757a0f3e1baa4679e050a2890924"
+      },
+      {
+        "id": "block_0006_0007",
+        "beforeSha256": "cc13099a871ab61dea861c160a574b7cf5c4ff4016db34de24276d73d975de2f",
+        "afterSha256": "3bb72d03261e481c7a6bcdf8253602a324dc73815305880af0bdf1f98d1bbe86"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "467f3333735ec9c55acaaa1489b0fa6ede3fc695328628fa4ce7084444c3d4d4",
+        "afterSha256": "a7ca69cb57d62eb89c543f0685cb48c08fe92ca5e098d1c59cfcadb2577ab471"
+      },
+      {
+        "id": "block_0006_0010",
+        "beforeSha256": "d5d2ea83d272b321b5d3ed67605a54def96e5a9e3e27b18495878ffac8da25b5",
+        "afterSha256": "a3604dbf483069a0f775725477cb557604a3d6ad85f198d44dbcc872c20a5914"
+      }
+    ]
+  },
+  "activityAfter": [
+    {
+      "activity": "block_0006_0004",
+      "requires": [
+        "block_0006_0008"
+      ]
+    },
+    {
+      "activity": "block_0006_0011",
+      "requires": [
+        "block_0006_0008"
+      ]
+    }
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "afaa38f80fb400461636bc1bad3cae4fd4c309516e19a2882cc10519895a6b54",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "c090bd8fca7a70a65dc8ccbcc554d92cf17bc5556d55df0e08fa256839d3a7d8",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "ba8a5efdc0ab0352bd173ea21071e342c8a7f819f6bb6404e4b97fcb28458084",
+        "spans": [
+          {
+            "start": 23,
+            "end": 95,
+            "text": "bool intentar_ajuste(int valor, int inferior, int superior, int& ajuste)",
+            "role": "cpp"
+          },
+          {
+            "start": 140,
+            "end": 148,
+            "text": "-20 y 20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 171,
+            "text": "inferior",
+            "role": "cpp"
+          },
+          {
+            "start": 184,
+            "end": 192,
+            "text": "superior",
+            "role": "cpp"
+          },
+          {
+            "start": 216,
+            "end": 222,
+            "text": "ajuste",
+            "role": "cpp"
+          },
+          {
+            "start": 265,
+            "end": 270,
+            "text": "valor",
+            "role": "cpp"
+          },
+          {
+            "start": 312,
+            "end": 316,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 344,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 547,
+            "end": 548,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 566,
+            "text": "[3,7]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 581,
+            "end": 582,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 644,
+            "end": 645,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 683,
+            "end": 685,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "b4b8c2b2023fbc4a47e9ccbf71925268b7b2ddb0a268a5e420771df656bb28e2",
+        "spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 356,
+            "end": 398,
+            "text": "(Kernighan & Pike, 1999, pp. 105, 111–112)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "4b8267a3e823f803941a8bdf11c254cdf6bba6ea1dedbbd7cbc441972bc35b73",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "3782c7f9d4affa4c9f739e51c9271d3e8d944605c5e5bd7bdd7686cf498cde50",
+        "spans": [
+          {
+            "start": 3,
+            "end": 20,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "b5e9ff9e46a4c1a49b7da42a43519e22ea13ef0533941ae593bda3840126452a",
+        "spans": [
+          {
+            "start": 327,
+            "end": 364,
+            "text": "(Kernighan & Pike, 1999, pp. 149–150)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "c6513d94a7e65172e25617c70612b81ca4492a77f3e54bcab8f8e3dab9114997",
+        "spans": [
+          {
+            "start": 13,
+            "end": 29,
+            "text": "app/consulta.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 124,
+            "text": "int",
+            "role": "cpp"
+          },
+          {
+            "start": 558,
+            "end": 559,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 584,
+            "end": 585,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "e2a99d268baba30167f7741d2050bfe0def42fa6980eec9b78ea7aaa0f7cfb2c",
+        "spans": [
+          {
+            "start": 337,
+            "end": 345,
+            "text": "-40 y 40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 398,
+            "text": "-320 y 320",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 459,
+            "end": 462,
+            "text": "int",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "7ca99b452370b4f10a63ccc81360685cc973c560dad4b3058754452fdb122fa0",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "fa58985a43049b1d6e327ca008c96c3519a01ce411ab082b9496850f10727d53",
+        "spans": [
+          {
+            "start": 32,
+            "end": 56,
+            "text": "publico/control/ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 78,
+            "end": 92,
+            "text": "src/ajuste.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 124,
+            "text": "app/consulta.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 163,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 203,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 262,
+            "text": "ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 298,
+            "text": "consultar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 318,
+            "text": "comprobar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 392,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 434,
+            "end": 452,
+            "text": "\"control/ajuste.h\"",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "bcf59436c2d982e567ef1b04a4e1efc53cfc3ee6654eba655b0c0012554ab60c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 80,
+            "text": "CMake 3.20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "C++",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 217,
+            "text": "cxx_std_20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 331,
+            "end": 336,
+            "text": "C++23",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 367,
+            "end": 372,
+            "text": "C++20",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 421,
+            "text": "PENDIENTE",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 555,
+            "end": 559,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 608,
+            "end": 609,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 647,
+            "end": 648,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 765,
+            "end": 771,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 814,
+            "end": 831,
+            "text": "consultar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 960,
+            "end": 977,
+            "text": "comprobar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1085,
+            "end": 1091,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1093,
+            "end": 1099,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "92b4f6d24820c5b5b724aed5ff01389d4c701c45f3b0c063080c266f9b7b216d",
+        "spans": [
+          {
+            "start": 280,
+            "end": 289,
+            "text": "PENDIENTE",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "ba185f9d684ad449df55026aa40d1f80393fa7302a4fd9aebb36b3a55377d3e4",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "b2af8f9c83fc77b3430fb42c0aaecb93b68e58705da9cf6ae250ae6742362ddf",
+        "spans": [
+          {
+            "start": 320,
+            "end": 344,
+            "text": "publico/control/ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "b3c4761941e03c3d7e0197bb9576fa2e1de81b0feb9bb8f1df2563eaf679e63e",
+        "spans": [
+          {
+            "start": 3,
+            "end": 17,
+            "text": "src/ajuste.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 268,
+            "text": "inferior - valor",
+            "role": "cpp"
+          },
+          {
+            "start": 282,
+            "end": 298,
+            "text": "superior - valor",
+            "role": "cpp"
+          },
+          {
+            "start": 319,
+            "end": 320,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 341,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 353,
+            "text": "[3,7]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 369,
+            "text": "7 - 9",
+            "role": "cpp"
+          },
+          {
+            "start": 378,
+            "end": 380,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "c8d5d9af76229ff083cb286b7c644394d908546aac8937b6050d2d443c513236",
+        "spans": [
+          {
+            "start": 3,
+            "end": 17,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 33,
+            "text": "src/ajuste.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 72,
+            "text": "ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 83,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 187,
+            "end": 194,
+            "text": "publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 254,
+            "end": 270,
+            "text": "control/ajuste.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 377,
+            "text": "(Scott, 2025, pp. 18–21, 182–183)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 416,
+            "end": 421,
+            "text": "-Wall",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 423,
+            "end": 430,
+            "text": "-Wextra",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 433,
+            "end": 443,
+            "text": "-Wpedantic",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0007",
+        "path": "/text",
+        "sourceSha256": "060ed076f65682b2b2d7959397bd2d0bb90abf09fd83c5d99500d5ed7cb124ee",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "ddc7e7413b6847e596906dc8f04984cf28fac71e6c29456d4647504026b49cdd",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "387918af7c2c36c13a0938638889f0d281be6628a55342d66cddd319eb1cb2d4",
+        "spans": [
+          {
+            "start": 3,
+            "end": 19,
+            "text": "app/consulta.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 38,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "d16a5e7677d0eff9752ad947d97439569a87bc573c75e111633188c86fe16066",
+        "spans": [
+          {
+            "start": 109,
+            "end": 121,
+            "text": "1, 0, -2 y 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 198,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 246,
+            "text": "Aceptadas=4 Rechazadas=2 Suma=-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 557,
+            "end": 563,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 566,
+            "end": 572,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "3542d42c5f015e5bf21e05891bc1f77dde58929c5ab69c54df018fb046b787a6",
+        "spans": [
+          {
+            "start": 56,
+            "end": 57,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "7323a0919233a04136b62ea8184dc5558f626ef024f6459d0f3c8bbd355900e0",
+        "spans": [
+          {
+            "start": 106,
+            "end": 118,
+            "text": "1, 0, -2 y 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 127,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 236,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 262,
+            "text": "rechazadas",
+            "role": "cpp"
+          },
+          {
+            "start": 317,
+            "end": 318,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/0",
+        "sourceSha256": "105340933f0a265e9017f28a649ac306b9147581a21d065b4926368694fa4186",
+        "spans": [
+          {
+            "start": 51,
+            "end": 52,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/1",
+        "sourceSha256": "42123fdba254c1d349149bceb7acdccbea0688b6807ccd9c54a50bb57da39bc8",
+        "spans": [
+          {
+            "start": 50,
+            "end": 51,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/2",
+        "sourceSha256": "e7e738a8ecc724c11488ffc0020daa3ac967b76706afbb1afc0de0e4b324cece",
+        "spans": [
+          {
+            "start": 50,
+            "end": 51,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "7f5612567aa568a001334f27b7770ad65daa78ddcada78907403b435e8e0844b",
+        "spans": [
+          {
+            "start": 55,
+            "end": 59,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "f10faafb97f24a337c745580ea7d4e811ebda15cb6de8483f5d3d3e9624ec3fd",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d4394e4adeb21e0e875c041936e914d4734005e58dd7ed7fa7daaced46f7c1a7",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "d8fdd41b020e1a432aeb3c3c68065fba448f642ae6161d85bef568db95ca68d8",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "2d52cab0719dc03b6fe3c1505e807a93d8a4451a50d415ecd7be79cb6c6bf8d6",
+        "spans": [
+          {
+            "start": 3,
+            "end": 20,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "947a474a5cb2698f8047afb468755a888ca8d6bc061aac6b76bd786a7db5ac65",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "comprobar",
+            "role": "cpp"
+          },
+          {
+            "start": 204,
+            "end": 206,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 236,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 344,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 348,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 392,
+            "end": 394,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 490,
+            "end": 492,
+            "text": "&&",
+            "role": "cpp"
+          },
+          {
+            "start": 650,
+            "end": 658,
+            "text": "Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 672,
+            "end": 673,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 729,
+            "end": 735,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "fb7080cdf35cfa0648f7cb05a132bde55ba10c5d53d274fb0144ffcda0797548",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "555445c7ea7c2779ec242fa68000b0df418748db4c44be3dedfcacc67a4d416e",
+        "spans": [
+          {
+            "start": 174,
+            "end": 188,
+            "text": "src/ajuste.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "b5e8f04405d903815f0199b72c848b67b8229c454887d1562402c27e3fdc68a8",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 32,
+            "text": "[3,7]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 44,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 79,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 96,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 112,
+            "text": "[-20,-20]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 125,
+            "text": "-40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 149,
+            "text": "40",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0006",
+        "path": "/text",
+        "sourceSha256": "428e115fc88cd150cf7534c0e768ea3eb0b7b9d018809e3f009acbeb569736f3",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0007",
+        "path": "/text",
+        "sourceSha256": "41e0e45605513cfa7d7feb85d554d2aa40c016c9e8a068c31813d0c009c2c5b8",
+        "spans": [
+          {
+            "start": 95,
+            "end": 112,
+            "text": "comprobar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 349,
+            "text": "3 y 6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 370,
+            "text": "Fallos=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 385,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 517,
+            "text": "src/ajuste.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 642,
+            "end": 650,
+            "text": "Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 664,
+            "end": 665,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0008",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "69417b48aa5c678995a1540aa73d64577c1ce62b775333afaca56affd70c0749",
+        "spans": [
+          {
+            "start": 59,
+            "end": 67,
+            "text": "Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 136,
+            "text": "-40",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/question",
+        "sourceSha256": "6d0bf89ee7ddafb1f61901967289ee0f274631456d89525ed5cbf41850c66523",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/explanation",
+        "sourceSha256": "df340a11c04c17df295d5fa6435d1c0fb8378bd7db75e412f5e2d9844fabcb2c",
+        "spans": [
+          {
+            "start": 106,
+            "end": 108,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 114,
+            "text": "-40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 490,
+            "end": 527,
+            "text": "(Kernighan & Pike, 1999, pp. 149–150)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/0",
+        "sourceSha256": "53edc05699baa85267a64086ddf1cf28cb81db4034decddf93fc4f16cb66120e",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/1",
+        "sourceSha256": "bf177eb380466d4f1b5812527a8484e43bd0c9fd38f4f4a7ed5e36705bed8c28",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/2",
+        "sourceSha256": "dac338f0a0ab8ec615b04a5c373eccfb62bec7c89a63ff82838187fb5bdd37dd",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "c81a52e49795e9927742d2312e74f3954acc22871bd4a81d62c754d06727fe72",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "10a1bd546c273c687561098377ab33ca322b2233aed07640f04676613d871f2e",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "26c68499d83729187fee1efca1d2b62546bd324e77f2ced4879f8836f54e202d",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/text",
+        "sourceSha256": "0cf9300ad7dcc30f7d1efe063d06a319f6bbcdf026c2c0caadf7d0943bd6da82",
+        "spans": [
+          {
+            "start": 228,
+            "end": 237,
+            "text": "comprobar",
+            "role": "cpp"
+          },
+          {
+            "start": 371,
+            "end": 403,
+            "text": "(Thomas & Hunt, 2020, pp. 17–18)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0009",
+        "path": "/text",
+        "sourceSha256": "7d03713bfc0cab8a1668f3337c44a0fd1962b3d350352a145083c2aed0a41f75",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0010",
+        "path": "/text",
+        "sourceSha256": "9e3deb2ba45a1789238ce11e01915b706b501ffaf0938be5ab49357c45263c90",
+        "spans": [
+          {
+            "start": 74,
+            "end": 91,
+            "text": "pruebas/casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 129,
+            "text": "comprobar",
+            "role": "cpp"
+          },
+          {
+            "start": 507,
+            "end": 524,
+            "text": "comprobar_ajustes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 717,
+            "end": 725,
+            "text": "Fallos=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 738,
+            "end": 739,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "cdb13157da205dccb0ad96e022c49f3b4b33a52986f4e1eb25d4714f36e53e86",
+        "spans": []
+      }
+    ]
+  }
 }

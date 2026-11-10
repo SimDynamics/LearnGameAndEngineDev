@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En C++ 1 utilizaste static_assert para comprobar condiciones constantes durante la compilación. Recuperaremos esa distinción al introducir assert: cuando está habilitada, esta aserción comprueba su condición durante la ejecución, con los valores que el programa tiene en ese momento. Si la condición es verdadera, continúa; si es falsa, informa del incumplimiento y provoca una terminación anormal. No produce un bool para que el llamador decida qué hacer."
+          "text": "En Programación 1 utilizaste static_assert para comprobar condiciones constantes durante la compilación. Ahora introducimos assert: cuando está habilitada, comprueba su condición durante la ejecución, con los valores disponibles en ese momento. Si la condición resulta verdadera, la ejecución continúa después de la comprobación. Si resulta falsa, emite un diagnóstico y provoca una terminación anormal. No entrega un resultado bool al llamador ni le ofrece una rama para recuperarse del incumplimiento (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)."
         },
         {
           "type": "paragraph",
-          "text": "Una aserción permite hacer visible una contradicción con un acuerdo interno: algo que el programa suponía que debía cumplirse en ese punto. La fuente recomienda estas comprobaciones para detectar incumplimientos inesperados y distingue esa interrupción del tratamiento que permite recuperarse de datos rechazados (Kernighan & Pike, 1999, pp. 141–142). Su utilidad depende de elegir una condición pertinente y de interpretar qué comprobó realmente."
+          "text": "Una aserción hace visible una contradicción con un acuerdo interno: una propiedad que el programa esperaba que ya se cumpliera en ese punto. Comprobar esas propiedades ayuda a localizar desacuerdos entre operaciones y sus consumidores. Una aserción fallida interrumpe el programa; ese mecanismo tiene un papel distinto del tratamiento que permite recuperarse de datos rechazados (Kernighan & Pike, 1999, pp. 141–142). Elegir una condición útil exige precisar qué propiedad observa y qué obligaciones quedan fuera de ella."
         },
         {
           "type": "multiple_choice",
@@ -26,7 +26,7 @@
             "La expresión devuelve false y el programa continúa hasta que el llamador compruebe ese bool."
           ],
           "correctIndex": 1,
-          "explanation": "La condición se comprobó al ejecutar una construcción ya obtenida. Una aserción habilitada que falla provoca la interrupción; no devuelve al llamador un estado de rechazo recuperable.",
+          "explanation": "La construcción ya había terminado y el programa llegó a esa condición al ejecutarse. El resultado falso de la condición provoca el diagnóstico y la terminación anormal; no convierte aquella construcción en un error de compilación. Tampoco devuelve false a un llamador: assert no produce ese resultado de aceptación o rechazo.",
           "reviewFeedback": [
             "Distingue en qué momento se obtuvieron los valores de esta condición y en qué etapa se produjo el incumplimiento.",
             "Relaciona la consecuencia con el punto de ejecución en que la condición interna dejó de cumplirse.",
@@ -43,11 +43,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera el cliente de cajas: intentar_cajas recibe cualquier int, rechaza cantidades fuera de 0 a 20 y conserva el destino cuando devuelve false. El cliente explica el rechazo y puede continuar con la petición siguiente. Una cantidad de -1 puede aparecer como dato rechazado sin contradecir ese funcionamiento. La comprobación normal debe permanecer para cumplir ese acuerdo."
+          "text": "Recupera el cliente de cajas: intentar_cajas recibe cualquier int, acepta sólo cantidades de 0 a 20 y conserva el destino cuando devuelve false. El cliente informa del rechazo y puede continuar con la petición siguiente. Recibir -1 es una situación prevista por ese contrato: la decisión de rechazo debe ejecutarse antes de llamar al cálculo y antes de modificar el destino."
         },
         {
           "type": "paragraph",
-          "text": "Dentro del cálculo, después de aceptar una cantidad, podemos comprobar una propiedad distinta: las plazas de las cajas calculadas deben cubrir esas piezas. Si una cantidad válida de cinco piezas produce sólo una caja de cuatro plazas, hay una contradicción en el cálculo que queremos detectar. La persona que proporcionó cinco no incumplió el intervalo admitido. El diagnóstico interno debe ayudarnos a localizar esa contradicción, en vez de atribuirla a un dato que sí aceptamos."
+          "text": "Dentro del cálculo, después de aceptar una cantidad, comprobamos otra propiedad: las plazas de las cajas calculadas deben cubrir las piezas. Con cinco piezas, la división entera 5 / 4 obtiene 1 y esa caja sólo ofrece cuatro plazas. La comparación 1 * 4 >= 5 resulta falsa. El dato cinco pertenece al intervalo admitido; el defecto está en el cálculo. Detectar esa contradicción interna ayuda a localizarlo sin atribuir el problema a una petición válida."
         },
         {
           "type": "multiple_choice",
@@ -59,7 +59,7 @@
             "Debe conservar el rechazo normal; la aserción tiene otro propósito y no sustituye la continuación prometida al cliente."
           ],
           "correctIndex": 2,
-          "explanation": "El acuerdo externo incluye cómo rechazar y continuar, además de qué valores admite. Una comprobación que puede interrumpir no equivale a devolver false y permitir procesar la siguiente petición. La condición interna observa otro requisito después de aceptar los datos.",
+          "explanation": "El contrato admite que llegue -1: intentar_cajas devuelve false sin escribir el destino y el cliente puede procesar la petición posterior. Sustituir esa decisión por una aserción de intervalo cambiaría la consecuencia: habilitada, interrumpiría el lote; desactivada, ni siquiera comprobaría el intervalo. La aserción de capacidad se alcanza después de aceptar los datos y observa otra obligación.",
           "reviewFeedback": [
             "Compara las consecuencias de ambas comprobaciones, además de la relación numérica que escriben.",
             "Distingue presentar un mensaje de decidir si se calcula y si el lote puede continuar según el acuerdo.",
@@ -76,11 +76,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La cabecera <cassert> proporciona la macro assert. Escribe assert(condicion);, sin std:: delante: aquí no estás llamando a una función de ese espacio de nombres. La condición debe representar lo que esperas que ya sea cierto. En el ejemplo sólo observa cajas, piezas_por_caja y piezas; el cálculo y el return permanecen fuera de la comprobación (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). El cálculo inicial está alterado deliberadamente para que puedas estudiar un incumplimiento seguro."
+          "text": "La cabecera <cassert> proporciona la macro assert: el preprocesador sustituye su uso por la comprobación que corresponda. Se escribe assert(condicion);, sin std:: delante; no es una llamada a una función de ese espacio de nombres. La condición representa algo que esperas que ya sea cierto. Aquí sólo consulta cajas, piezas_por_caja y piezas; el cálculo y el return permanecen fuera de la comprobación (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). El cálculo inicial está alterado deliberadamente para estudiar su incumplimiento."
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, sigue por separado las peticiones -1 y 5 de la entrada preparada. Identifica cuál se rechaza sin llamar al cálculo, qué capacidad obtiene la otra y si la condición interna será verdadera. Recupera el límite del cliente: como máximo ocho enteros completos representables, seguidos del final normal de la entrada. Sólo 0..20 llega al cálculo, el divisor es cuatro y los productos de esta comprobación caben en int. Conserva ese dominio; los otros dos estados se ejecutarán después en editores independientes.\n\nEjecuta este estado con la aserción habilitada. Observa por separado stdout, stderr y la terminación que muestre el editor de código. Localiza el rechazo público de la primera petición y la expresión del incumplimiento interno de la segunda; el diagnóstico de assert no tiene una frase literal única entre implementaciones.",
+          "text": "Antes de ejecutar, sigue por separado las peticiones -1 y 5 de la entrada preparada: identifica cuál se rechaza sin llamar al cálculo y qué capacidad obtiene la otra. El dominio del cliente es un máximo de ocho enteros completos representables, seguidos del final normal de la entrada. Sólo 0..20 llega al cálculo, el divisor es cuatro y los productos de la condición caben en int. Conserva ese dominio y el programa inicial de este editor; los otros dos estados tienen editores independientes.\n\nPulsa «Compilar y ejecutar» con la aserción habilitada. Observa por separado stdout, stderr y el estado de terminación. Localiza el rechazo público de la primera petición y el diagnóstico de la condición interna de la segunda. El formato de ese diagnóstico y el estado con que el entorno informa del aborto dependen de la implementación: no se exige un mensaje literal ni un número de terminación universal.",
           "emphasis": [
             {
               "text": "la aserción habilitada"
@@ -95,7 +95,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una interrupción por assert no significa que main haya alcanzado su return con un valor elegido allí. El cálculo de cinco piezas incumple la condición interna después de que el cliente aceptó ese dato; el rechazo público de -1 ocurre antes y responde a una condición distinta."
+          "text": "La interrupción por assert ocurre dentro de cajas_para; no significa que main haya alcanzado su return. El rechazo público de -1 ya se había comunicado y el cliente continuó. Al aceptar después cinco piezas, el cálculo no ofrece capacidad suficiente y la aserción interrumpe esa ejecución antes de imprimir su resultado. Son dos condiciones distintas, alcanzadas en dos momentos del mismo lote."
         }
       ]
     },
@@ -107,10 +107,10 @@
         },
         {
           "type": "paragraph",
-          "text": "El segundo estado define #define NDEBUG antes de incluir <cassert>. Esa línea define un nombre del preprocesador; no crea una variable bool. En este uso mínimo, definirlo antes de esa inclusión hace que assert no evalúe su condición. La cabecera permite desactivar estas comprobaciones (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3). El nombre de una configuración, como Debug o Release, no sustituye comprobar cómo se construyó el programa. El nuevo editor de esta página deja visible esa diferencia en su propio archivo.",
+          "text": "El segundo estado escribe #define NDEBUG antes de incluir <cassert>. Esa directiva define un nombre del preprocesador; no crea una variable bool. Cuando ese nombre está definido al incluir la cabecera, assert no evalúa su condición ni ejecuta las operaciones escritas dentro de ella. Lo decisivo es que el nombre esté definido, no que tenga un valor verdadero: definirlo con #define NDEBUG 0 también desactivaría la comprobación (ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3).\n\nUn nombre de configuración como Debug o Release no reemplaza comprobar cómo se construyó el programa. Este editor muestra la definición en su propio archivo. Desactivarla aquí permite estudiar la diferencia; no demuestra que las comprobaciones sean innecesarias cuando algunas pruebas han pasado (Thomas & Hunt, 2020, pp. 116–117).",
           "emphasis": [
             {
-              "text": "assert no evalúe su condición"
+              "text": "no evalúa su condición"
             }
           ]
         },
@@ -121,7 +121,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la misma entrada, la comprobación pública sigue rechazando -1. La petición válida de cinco llega ahora a mostrar Cajas=1, aunque esa capacidad sea insuficiente. El diagnóstico público de -1 permanece y main devuelve 1 por ese rechazo recuperable. La actividad siguiente permite observar esos canales: retirar la comprobación interna no reparó la operación."
+          "text": "Con la misma entrada, la decisión pública sigue rechazando -1. La petición válida de cinco llega ahora a imprimir Cajas=1, aunque esa capacidad sea insuficiente. El diagnóstico de la primera petición permanece y main termina normalmente con 1 porque hubo un rechazo recuperable. Retirar la comprobación interna no reparó la división. Si sólo llegara la petición válida de cinco, ese mismo cálculo defectuoso terminaría normalmente con 0: el retorno del cliente tampoco acredita por sí solo la corrección del cálculo."
         },
         {
           "type": "multiple_choice",
@@ -133,7 +133,7 @@
             "El diagnóstico público de -1 demuestra que la condición de assert continuó ejecutándose con otro formato."
           ],
           "correctIndex": 1,
-          "explanation": "El retorno normal procede de hubo_rechazos en main. El if de intentar_cajas sigue activo; desactivar assert no elimina esa decisión ni corrige la fórmula de cajas_para.",
+          "explanation": "La primera petición hace que hubo_rechazos pase a true. Con la segunda, el cálculo defectuoso imprime Cajas=1 porque la aserción desactivada ya no lo interrumpe. Al terminar la entrada, main consulta aquella marca y devuelve 1. El if de intentar_cajas sigue activo: desactivar assert no suprime el rechazo público ni corrige cajas_para.",
           "reviewFeedback": [
             "Localiza qué expresión del archivo determina el retorno de main y qué aporta realmente assert cuando está desactivada.",
             "Relaciona el tratamiento de la primera petición con el valor que devuelve main al terminar el lote.",
@@ -146,7 +146,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta este estado independiente sin modificar su código ni la entrada -1 5. Comprueba Cajas=1 seguido de salto en stdout, el rechazo público de la primera petición en stderr y terminación normal 1. Distingue esa terminación de la interrupción de la actividad anterior."
+          "text": "Ejecuta este estado independiente con «Compilar y ejecutar», sin cambiar su código ni la entrada -1 5. Compara los tres resultados: Cajas=1 seguido de salto de línea en stdout; el rechazo público de la primera petición en stderr; y terminación normal con 1. Esa última cifra procede del retorno de main, mientras que la actividad anterior se interrumpió dentro del cálculo."
         },
         {
           "type": "cpp_compiler",
@@ -160,11 +160,11 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Reparar el cálculo y precisar qué garantiza una condición"
+          "text": "Recuperar el cálculo conservando ambas comprobaciones"
         },
         {
           "type": "paragraph",
-          "text": "El tercer estado vuelve a tener assert habilitada. El editor independiente de esta página conserva el cálculo alterado y la entrada -1 5 para que repares sólo la fórmula de cajas. Mantén la aserción que observa su capacidad y el rechazo público; no necesitas modificar ni restaurar el programa con NDEBUG.",
+          "text": "El tercer estado vuelve a tener assert habilitada. Este editor conserva el cálculo alterado y la entrada -1 5 para que repares sólo la fórmula de cajas. Debe volver a obtener la menor cantidad de cajas de cuatro plazas para cada cantidad admitida. Mantén la aserción de capacidad, el rechazo público y el resto del programa. No necesitas modificar ni restaurar el editor que define NDEBUG.",
           "emphasis": [
             {
               "text": "repares sólo la fórmula de cajas"
@@ -172,38 +172,8 @@
           ]
         },
         {
-          "type": "code",
-          "language": "cpp",
-          "code": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
-        },
-        {
           "type": "paragraph",
-          "text": "Contrasta los tres estados con tus predicciones: cálculo alterado con comprobación, mismo cálculo sin comprobación y cálculo reparado con comprobación. En el último se muestra Cajas=2 y la aserción permite continuar. El mensaje de rechazo y el retorno normal 1 permanecen por la primera petición. Relaciona el rechazo público y el incumplimiento interno con el mecanismo que los detecta. Una aserción verdadera sólo acredita esa condición para la ejecución que llegó a ella; aquí comprueba cobertura, sin demostrar por sí sola que elegimos la menor cantidad de cajas."
-        },
-        {
-          "type": "multiple_choice",
-          "id": "asercion_cobertura_no_demuestra_minimalidad",
-          "question": "Otro cálculo devuelve cinco cajas para cinco piezas. Cumple cajas * piezas_por_caja >= piezas. ¿Esa condición basta para acreditar que devolvió la menor cantidad de cajas necesaria?",
-          "options": [
-            "Sí: cumplir una propiedad interna del resultado acredita todas las obligaciones de ese cálculo.",
-            "Sí, siempre que el programa termine normalmente; esa terminación completa la comprobación de minimalidad.",
-            "No: la capacidad puede cubrir las piezas y aun así utilizar cajas de más; falta contrastar la obligación de minimalidad."
-          ],
-          "correctIndex": 2,
-          "explanation": "La condición compara plazas disponibles con piezas. Un resultado mayor de lo necesario también puede satisfacer esa desigualdad. Elegir una condición útil no convierte esa observación parcial en una comprobación de todo el contrato.",
-          "reviewFeedback": [
-            "Separa la propiedad escrita en esa desigualdad de las otras obligaciones que exige calcular una cantidad mínima.",
-            "Revisa qué información añade terminar normalmente sobre la cantidad de cajas elegida.",
-            "Relaciona el alcance de la desigualdad con la obligación específica que todavía necesita evidencia."
-          ]
-        },
-        {
-          "type": "heading",
-          "text": "Recuperar el cálculo conservando ambas comprobaciones"
-        },
-        {
-          "type": "paragraph",
-          "text": "Repara sólo el cálculo de cajas en este editor. Conserva la aserción habilitada, el rechazo público y la entrada preparada. Criterios: stdout contiene Cajas=2 seguido de salto; stderr conserva sólo el rechazo público de -1 y main termina normalmente con 1. El acierto de la condición interna no sustituye la verificación del contrato."
+          "text": "Repara sólo la fórmula de cajas en este editor y pulsa «Compilar y ejecutar». Conserva la aserción habilitada, el rechazo público y la entrada preparada. Debes observar Cajas=2 seguido de salto de línea en stdout, sólo el rechazo público de -1 en stderr y terminación normal con 1. No retires la aserción para evitar la interrupción: el objetivo es reparar el cálculo y conservar las dos comprobaciones con sus propósitos distintos."
         },
         {
           "type": "cpp_compiler",
@@ -217,11 +187,41 @@
       "blocks": [
         {
           "type": "heading",
+          "text": "Referencia: cálculo reparado y alcance de la condición"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cassert>\n#include <iostream>\n\nint cajas_para(int piezas) {\n    const int piezas_por_caja{4};\n    const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;\n    assert(cajas * piezas_por_caja >= piezas);\n    return cajas;\n}\n\nbool intentar_cajas(int piezas, int& resultado) {\n    if (piezas < 0 || piezas > 20) {\n        return false;\n    }\n    resultado = cajas_para(piezas);\n    return true;\n}\n\nvoid informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {\n    destino << \"Cajas: peticion \" << peticion << \", piezas=\" << piezas\n            << \". Se admite un entero de 0 a 20. Revise la cantidad.\\n\";\n}\n\nint main() {\n    int piezas{0};\n    int peticion{0};\n    bool hubo_rechazos{false};\n    while (std::cin >> piezas) {\n        ++peticion;\n        int cajas{77};\n        if (intentar_cajas(piezas, cajas)) {\n            std::cout << \"Cajas=\" << cajas << \"\\n\";\n        } else {\n            hubo_rechazos = true;\n            informar_rechazo_cajas(std::cerr, peticion, piezas);\n        }\n    }\n    return hubo_rechazos ? 1 : 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia suma una cantidad de una plaza menos que la capacidad antes de dividir: con cinco piezas calcula (5 + 4 - 1) / 4, que obtiene 2. Ocho plazas cubren las cinco piezas y la condición permite continuar; aparece Cajas=2. El diagnóstico público y el retorno normal 1 permanecen por la primera petición, -1. La fórmula también da cero cajas para cero piezas y no añade otra caja cuando las piezas completan exactamente las anteriores.\n\nLos tres estados separan defecto, comprobación y reparación: el primero interrumpe el cálculo defectuoso; el segundo conserva ese defecto sin comprobarlo; el tercero repara el cálculo manteniendo la comprobación. Una aserción verdadera sólo observa su condición en la ejecución que la alcanzó. Aquí verifica cobertura, sin demostrar por sí sola que usamos la menor cantidad de cajas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_cobertura_no_demuestra_minimalidad",
+          "question": "Otro cálculo devuelve cinco cajas para cinco piezas. Cumple cajas * piezas_por_caja >= piezas. ¿Esa condición basta para acreditar que devolvió la menor cantidad de cajas necesaria?",
+          "options": [
+            "Sí: cumplir una propiedad interna del resultado acredita todas las obligaciones de ese cálculo.",
+            "Sí, siempre que el programa termine normalmente; esa terminación completa la comprobación de minimalidad.",
+            "No: la capacidad puede cubrir las piezas y aun así utilizar cajas de más; falta contrastar la obligación de minimalidad."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cinco cajas ofrecen veinte plazas: 5 * 4 >= 5 es verdadero. Pero dos cajas ofrecen ocho plazas y ya permiten guardar cinco piezas; cinco cajas no es la cantidad mínima. La desigualdad sólo comprueba cobertura. Ni su acierto ni una terminación normal comprueban las obligaciones que no aparecen en ella.",
+          "reviewFeedback": [
+            "Separa la propiedad escrita en esa desigualdad de las otras obligaciones que exige calcular una cantidad mínima.",
+            "Revisa qué información añade terminar normalmente sobre la cantidad de cajas elegida.",
+            "Relaciona el alcance de la desigualdad con la obligación específica que todavía necesita evidencia."
+          ]
+        },
+        {
+          "type": "heading",
           "text": "El trabajo necesario debe sobrevivir a la comprobación"
         },
         {
           "type": "paragraph",
-          "text": "Recupera registrar_visita y su contador inicializado, estudiados al observar sin repetir operaciones. Esta vez la llamada necesaria quedó dentro de assert. Analiza este programa por lectura: si la comprobación está habilitada, la llamada registra una visita; si se desactiva antes de incluir <cassert>, la condición no se evalúa y la visita no se registra. El problema no es que C++ prohíba escribir una llamada ahí, sino que hicimos depender una operación requerida de una comprobación que puede desaparecer."
+          "text": "Recupera registrar_visita y su contador inicializado, estudiados al observar sin repetir operaciones. La llamada incrementa numero_visita: además de obtener un resultado, cambia el estado del programa. Ahora quedó dentro de assert. Con la comprobación habilitada se ejecuta y registra una visita; si se define NDEBUG antes de incluir <cassert>, esa expresión no se evalúa y la visita no se registra. Por eso una operación necesaria debe ejecutarse fuera de una aserción que sólo observa su resultado (Thomas & Hunt, 2020, p. 116). El problema no es que se prohíba escribir una llamada ahí, sino haber hecho depender el trabajo requerido de una comprobación que puede desaparecer."
         },
         {
           "type": "code",
@@ -238,7 +238,7 @@
             "Mantener la llamada dentro de assert y añadir otra llamada después para compensar cuando se desactive la comprobación."
           ],
           "correctIndex": 0,
-          "explanation": "La operación requerida se ejecuta fuera de la condición. La aserción puede observar su resultado sin decidir si se registra la visita. Añadir llamadas de compensación también modificaría la historia cuando la comprobación estuviera habilitada.",
+          "explanation": "Ejecutar registrar_visita una vez fuera de assert deja el contador en 1 en las dos configuraciones. La aserción puede observar el valor guardado sin repetir esa llamada. Cambiar sólo la comparación no consigue que la expresión se evalúe al desactivar la macro. Añadir una llamada de compensación produciría dos visitas con la comprobación habilitada y una con ella desactivada; por tanto, tampoco conserva exactamente una visita en ambos estados.",
           "reviewFeedback": [
             "Comprueba por separado cuántas veces se registra la visita en cada configuración y qué parte sólo observa un valor.",
             "Revisa si cambiar una comparación hace que su llamada llegue a evaluarse cuando la comprobación está desactivada.",
@@ -252,9 +252,2024 @@
         },
         {
           "type": "paragraph",
-          "text": "Revisa en el código de cajas qué condición observa assert, qué operaciones deben ejecutarse aunque esa comprobación se desactive y qué rechazo recuperable conserva el cliente. Contrasta, con la misma entrada, el retorno normal 1 de los estados segundo y tercero con la interrupción del primero. Los puzzles de esta página comprueban esa distinción; relaciona después los diagnósticos observados con el flujo que los alcanza."
+          "text": "En la reorganización anterior, primera conserva el valor devuelto por la única llamada y assert sólo consulta ese valor. Con la comprobación habilitada o desactivada, la salida es Visitas=1;Primera=1 seguida de salto de línea.\n\nRecupera la misma separación en las cajas: el cálculo produce el resultado, la aserción observa su capacidad y el cliente conserva el rechazo recuperable. Los retornos normales de los estados segundo y tercero proceden de main; el primero se interrumpe antes. Distinguir esas causas requiere relacionar condición, canales y punto de terminación, además de leer el número que muestre el entorno."
         }
       ]
     }
-  ]
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "b2ff2c416629b35e797b23adf0f51b9b8984707f60981c1bbf3e333f3993121a"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "5e542781581448141920a632ddc5a9f9ba6f4d4dce5cf273e9b260afddb8c29a"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "8a44c7f579bfd97723924cf4068ccfa1132bd0c1ec8c87d3d0bbabca81bce7d5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "7e16a0909717e64d33587082b21d8f0bcf9bf689b0169e31d2a0d1d8af7cf6ce"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "f266caf5740f3e54c31eff35827c82fbb824ac8d0b91a2b4a5c0e4a9e1aa7a7e"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0007",
+            "sha256": "52e83f22eb81a0a9e2ccbfa214ce89634798f04adff87e37ddef1c55728e70bf"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "70a5a3b9bf215d6ddf235c75e18d00c0fbadd3cfc632f5101b07e5f3ab78b28a"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "219861e188d97c6a8a0b4f7a570c64294f78583c9e67c85b934c656702286286"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "8a44c7f579bfd97723924cf4068ccfa1132bd0c1ec8c87d3d0bbabca81bce7d5"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "5fbb17dbb4fb1fc438dcfc2b9c46e0369189f19202ddb737002a6cb8a99110ea"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "41bc37a034e69519ee21581c49a6b8f9871f87067c9d8c2e752b3379f781ada1"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "3d1fbb0fd43ab274d4ce3498f49e37f61abab3441cdd5f18509431e6263dd7d5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005",
+          "block_0003_0006",
+          "block_0003_0007"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0005",
+          "block_0004_0001",
+          "block_0004_0006",
+          "block_0004_0007"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "cf638ba9c78d02d322106cd87d0b7b07933872672ddd075a8d74930d10787eb8",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "84f3115cda0cda6054ee9fbb4f70f5086d693cc0bbee0741ec295cb96c6a94b7"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "0c80276cd370098fcb72410d81fb02b84b918c89cc975d392cea23ae8312928d"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "6dd0a1665256fba1690a8156a0345b4e2d95f866b845347be49a91aca09581a8"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "f6a71ce26ca0d849094c0d25bc31af68b4069e7f521005feab254b519ae77c0a"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "3bd1314628d539cb8f22bf302d412f2a3f1e726c4c441d3de151d95bbfafe174"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "84322b3c3acf4ecdd8681700cb321df06ca894fa714c503417956e14e7b92ed4"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "79223a5eb5a7bfc90f242698cc5137d4110375fa43ba36d46d322d16b1539c8e"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "8647971b34afbb3b74d2d66623b3f323a30d1b38137e99714d17dc5858a64141"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "f7aa50778b97aea21d8261ed4eee13d06624bac1ecab1fc03044943e91526066"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "2a6b3278d008f05851539cb2aa3df3a3885848eb4402ca7c507b3a3c2858cf22"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "d47cbaa553b51410da11428c5e145081edf1a1a7036ba7d14efdef04513f9824",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "b2ff2c416629b35e797b23adf0f51b9b8984707f60981c1bbf3e333f3993121a"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5e542781581448141920a632ddc5a9f9ba6f4d4dce5cf273e9b260afddb8c29a"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "8a44c7f579bfd97723924cf4068ccfa1132bd0c1ec8c87d3d0bbabca81bce7d5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "7e16a0909717e64d33587082b21d8f0bcf9bf689b0169e31d2a0d1d8af7cf6ce"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "f266caf5740f3e54c31eff35827c82fbb824ac8d0b91a2b4a5c0e4a9e1aa7a7e"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0007",
+                "sha256": "52e83f22eb81a0a9e2ccbfa214ce89634798f04adff87e37ddef1c55728e70bf"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "70a5a3b9bf215d6ddf235c75e18d00c0fbadd3cfc632f5101b07e5f3ab78b28a"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "219861e188d97c6a8a0b4f7a570c64294f78583c9e67c85b934c656702286286"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "8a44c7f579bfd97723924cf4068ccfa1132bd0c1ec8c87d3d0bbabca81bce7d5"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "5fbb17dbb4fb1fc438dcfc2b9c46e0369189f19202ddb737002a6cb8a99110ea"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "41bc37a034e69519ee21581c49a6b8f9871f87067c9d8c2e752b3379f781ada1"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "3d1fbb0fd43ab274d4ce3498f49e37f61abab3441cdd5f18509431e6263dd7d5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "b22956290d3fe490cc9e7f162fa98fb3cdb45661f5f43e4bdb2e626a60317c4b",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "10d29a0b0d5a42be01362f0f38b53712cb4beadf38f24d9506219b69e95c4863"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "d904efda9a239cb0f22c73f51fb59424865f7093a24192c1346943fcc0974bfa"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "5e374630cbf9afabbafbc825d468bf10280f5c1f6833e37437ab65fb87c3bb53"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "68501a5715e7f63956b0a3b0aab89f6f0dce3ece3b60322f8ba5a9e9e4435e1f"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1d815b24e46fa700fbe14168b363b699e4196ad6e576a619195d0e14d56c1c72"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "118b192987f6a1d507b4b651eeffc379b0a7ce9a396733cf826dc35ce418e07b"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1245fef6bc608dfea54981cc57a8a0cbcc276a5f2e1c8b64a69bf271b3115255"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "2906dbca5ad58a8a4d8a0a43faa70d618418376808318175e92ddda3f21fb50c"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "6992dadd1f685c4b97e8fd740bdf35729b2d56b9c21f1be85b4c6830bf02b12e"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "2076f4103cd323772c3cede899b77d54ff06276818002e35fc944fa849386731"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "02fb3957d6bf3f054ccbb2f786e2ce48a3027b96cfec3908fce27cccddfd4f6a",
+        "afterSha256": "8651111ea151996b1c3d39a0085c29918c102415e37fa6d2edc4d399b03963d5"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "7f53851449e36ec450c39fed8601b27dc18eec107fa6be886e14fdb005a66809",
+        "afterSha256": "fffaf472a90f3ae8d98e3936a2de438565494dd4d44c5e1eb225725cc1a4d8d0"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "9ed8bb9ce8a913d01a145c2452610eee7acce5c13eb9f0a1ddd45eae12cb2666",
+        "afterSha256": "3f270d8a64d7b46310113306f737cb6d3b3df16934c82c3c5d614902d47fafc3"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a43be49d0f4f7227ade9a986fb11b35c3ea0874281361e87c297c5d28600dcab",
+        "afterSha256": "2f4fe3f3b78674c2431101b340ac45675869c7b8a7edac9d7e9e975cb0a50aba"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "584775b82c7e0163843550e5a99887eaf105b6a831adf072b9e562a23ce13a70",
+        "afterSha256": "3f4e64e169a98ef0c7123857d70d8821dd32a450dacbe35b7bb7b8d730d721ee"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "006ed2d5791e1237c4c91aab8ab881753a1bb369c070f7fd739f2f5c4612971e",
+        "afterSha256": "39a6446b8089fd998e350f1ca3bf88a24762ceca4c974fddca3cca520c7611a8"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "38da22c45c5a6c4a9e3838622e0603a297f2cd730f22ec5f0c66adacaa5972e6",
+        "afterSha256": "960b724df0aa8926cae05f832dd76bb63af564f1ccafe3337ba104adc077b25d"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "fd97746e1f44580a0140003bc93c71b82aaf85a99d811848c06eabb93761ac91",
+        "afterSha256": "20306e35f6608455a005200bea706b7780c5c1ff832024d18cf0d08b08137681"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "fd5cdcb55d93c817a9c73fbf30a5fca47b914ae806e81c89d68e153da3fddedf",
+        "afterSha256": "6b1402cb2c76afee56c135a42c5ea877b63f392764eaec762a4f229d65993f1d"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "588065ecccad7d0283bef3404f7d51bb8ded4774f88676e2d002852137df2023",
+        "afterSha256": "96319b291e6cddd97140db3f3d30591eea93d4dddf8fa56dd956a603bf16c4f9"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "a123bcaadfb6f83bdca94df05bfb86ada03ce25540735c41cc32b5e00ac07f06",
+        "afterSha256": "88bd72abb420ab3e95ddd1f3f7fb7d757ce83c128eb5390fdfb55128f15c351e"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "fd660cc0c7981f7dff542810ea1c6b28a0cc64303a73dddcc18e31818667eae3",
+        "afterSha256": "144eef416ef19f9a2a072dc7e694728acf5ac9d80845267ecfbd8b052713a05f"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "e03bee036c724f3999770ebfa4a51cc0ef6c0b6814adc0c6e6cd2887cb59a099",
+        "afterSha256": "767980b614fdba89c5629961ab47aa13edf5d3a6acce47f63953b63ca2820bb6"
+      },
+      {
+        "id": "block_0004_0000",
+        "beforeSha256": "af38496586ac854c5ee14be732d6966c3f0cdf71e9e8303b919efc8da51f62d2",
+        "afterSha256": "b8cdbbf0656acf3ed9df45a7354ad33e35e5d98a6e5b070c1b58c9bd57d44bfd"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "39de670d8364db6537812d46562bbec588a62a3571a5a035cb921225e0d2709f",
+        "afterSha256": "0cd84e21d9c5bd769127292bd3a77782a76fa779166baba58ab1c9f1a98a811a"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "f8c4bfbe716a50f5c968fcdf4cf4d2bdc56bf4c7dc07d8582ab8b9320a290eb4",
+        "afterSha256": "39aa5b01fdf756a1659e6042b1a4fe3d687f94f4c67d931da5848dae0901f41e"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "b16932c47112285b49736716eeac118950d9a037bdc789e6afc9b9f83095ec98",
+        "afterSha256": "c7a1c1a9925e2aecc14e37e7b04665692f6facf0358b99f95fa5a379c7960de0"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "7311d2e242e9c18747fb81c007c68903cba45cb1d10130495c48529aba8197da",
+        "afterSha256": "a95c32a9cb476cb046f7fd9fd22540383a7fb4d80af261807d54716bdf0cc250"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "150a1bd1a135e6c67222c9b220400bc7f10c0067709c72fd107b70e6ee45ecfc",
+        "afterSha256": "9300b42b4e8c2fe98be453ca11a0ef77202559a35a6f238ac4e36c9314c10501"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "52551bff5212878e34a3e0c8e92d11033affa70ab5c8eff3cc97e29e8ac8eecb",
+        "afterSha256": "877179ad1baa3b1886ab93e7a8719bd55b0773472b902a1a1d8a556a7cfe0525"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "3bd3ada27c737b4b4d7dcfe983c41760eea96d0a99004a9c81c1cf3dd7206dce",
+        "afterSha256": "2ba287e94c83edc648b465eb9c7c8e2e6156492dace213566360fd7490e10ac4"
+      }
+    ]
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "d4f92a38a7196d2bcaf79b189452b347a0f6f9c4996742b7404d16e54fd0d034",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "9902795ebbeb2ba1b2fbd70950a5ec23fa7507786bd6575039edacf87d75e491",
+        "spans": [
+          {
+            "start": 29,
+            "end": 42,
+            "text": "static_assert",
+            "role": "cpp"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 428,
+            "end": 432,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 503,
+            "end": 544,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "08bdc30fe9709e8ad3e16e38ee674f45a050ad32cd6dac0db951f6cb7c3cdbcf",
+        "spans": [
+          {
+            "start": 379,
+            "end": 416,
+            "text": "(Kernighan & Pike, 1999, pp. 141–142)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "28054cb7b302fad5bf5f0c4c1acbda1ff40d6d8610965f7d5bf9f58a0d114159",
+        "spans": [
+          {
+            "start": 155,
+            "end": 161,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "058e6989e4960123682219b0091291dec9bc0f919c017a25aa7ff1dce09df926",
+        "spans": [
+          {
+            "start": 249,
+            "end": 254,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 276,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "92cc7e5470c76e7f47e29f178456be6b80ad42ad879d21588ce87f3ffa863dfa",
+        "spans": [
+          {
+            "start": 84,
+            "end": 97,
+            "text": "static_assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "78b77ddae45c236ee89ce0765deb0fd678b2d1bc2083516c4256208188cf9870",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "51768c3133f453ac28d1b0757492767e2d420425dc1a7ed410662ee3373b51a6",
+        "spans": [
+          {
+            "start": 22,
+            "end": 27,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 91,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "cdb97d8fc2448ff87e900169feafdf194bb3b9a91ac76c5c53fdb5fc6c481765",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "19ecf72328b4967f1ea8b39b6e061c17a7cc920a2c548b5533f09a6e0280da4a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "5f46d871d586822f1dd40a69d1b043090cd89fda634dd4eaa0447b6694e8beb8",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "70c3874d4fcc0cee4bdcddb60235d0830a31e27d7d0933e7d609099f1a4d6092",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "9f6b5c62f4320c76a58e3910a215bc42c7fa5eb25a8885002e764f07261ae86f",
+        "spans": [
+          {
+            "start": 30,
+            "end": 44,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 62,
+            "end": 65,
+            "text": "int",
+            "role": "cpp"
+          },
+          {
+            "start": 93,
+            "end": 99,
+            "text": "0 a 20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 143,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 231,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "30fd3a54355436475ac09206600e7958fd71b147272348bf81ca4dd157c1fbd7",
+        "spans": [
+          {
+            "start": 178,
+            "end": 183,
+            "text": "5 / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 257,
+            "text": "1 * 4 >= 5",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "836efb2d459b3d9b84f8072fa2634691afa7b69a8b9d28395db51d8d990c0a5b",
+        "spans": [
+          {
+            "start": 50,
+            "end": 55,
+            "text": "0..20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "1e7ac30cc2c180c8ab0ae53dc5ecfb2cc9dd896e8dd8f3425b170dfa8582f45e",
+        "spans": [
+          {
+            "start": 30,
+            "end": 32,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 48,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 58,
+            "end": 63,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/0",
+        "sourceSha256": "c24745e51c03eba2f6313a3e320fe519222b9a22e25b8509ee902f7a87cb557a",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/1",
+        "sourceSha256": "91dff3745a37a34d5f49abbc86ec75103b54903ff6aee046cdcd585ed8e5985b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/options/2",
+        "sourceSha256": "4f89317fbb052e7e228813623b5ef5345fbe1b40343c5903939a8c23b33e19ad",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "39220684c0221831dc5cb2b54e31823c48a706862a52c4291dea5e2307403e7b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "5ed997297c55046a811720b78fa9e17b58ccbb90e834c19f439b386f062b57cf",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "1d76a452ddb2f52a864285f5709be5cd0481fd12898f00b05309c007065e9ebe",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "20bd15db267213c4e9f7e7ff50c0139cd851c3b874e05e79630508f0e5347515",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "1b43de8eedff8c1bdc60995f522f078c83efd6542f0ea1a66fa7c844d051e8e8",
+        "spans": [
+          {
+            "start": 12,
+            "end": 21,
+            "text": "<cassert>",
+            "role": "cpp"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 133,
+            "end": 151,
+            "text": "assert(condicion);",
+            "role": "cpp"
+          },
+          {
+            "start": 157,
+            "end": 162,
+            "text": "std::",
+            "role": "cpp"
+          },
+          {
+            "start": 310,
+            "end": 315,
+            "text": "cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 317,
+            "end": 332,
+            "text": "piezas_por_caja",
+            "role": "cpp"
+          },
+          {
+            "start": 335,
+            "end": 341,
+            "text": "piezas",
+            "role": "cpp"
+          },
+          {
+            "start": 359,
+            "end": 365,
+            "text": "return",
+            "role": "cpp"
+          },
+          {
+            "start": 402,
+            "end": 443,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "c4f8d5da905b6e4efa417bbb4d4ca42b07dd5659e774b0ac7c689809270f5622",
+        "spans": [
+          {
+            "start": 53,
+            "end": 59,
+            "text": "-1 y 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 296,
+            "text": "0..20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 377,
+            "end": 380,
+            "text": "int",
+            "role": "cpp"
+          },
+          {
+            "start": 573,
+            "end": 579,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 581,
+            "end": 587,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "d6798c9246c4d5a2e37c3673535db99898233a5da5c51bb1220aaea0a25ad371",
+        "spans": [
+          {
+            "start": 20,
+            "end": 26,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 44,
+            "end": 54,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 96,
+            "end": 102,
+            "text": "return",
+            "role": "cpp"
+          },
+          {
+            "start": 126,
+            "end": 128,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "2de061310b0dc364a48e83ce1b9b59c8d4b16007c4554545119c2a08649ec107",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "9a23a51f9fd74f920596c4e1a6f2596ab090a4dfd1b21e30496851f107e6af6c",
+        "spans": [
+          {
+            "start": 26,
+            "end": 40,
+            "text": "#define NDEBUG",
+            "role": "cpp"
+          },
+          {
+            "start": 58,
+            "end": 67,
+            "text": "<cassert>",
+            "role": "cpp"
+          },
+          {
+            "start": 140,
+            "end": 144,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 202,
+            "end": 208,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 375,
+            "end": 391,
+            "text": "#define NDEBUG 0",
+            "role": "cpp"
+          },
+          {
+            "start": 429,
+            "end": 470,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 21, 2023, § 19.3)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 505,
+            "end": 510,
+            "text": "Debug",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 513,
+            "end": 520,
+            "text": "Release",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 769,
+            "end": 803,
+            "text": "(Thomas & Hunt, 2020, pp. 116–117)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "7d92cc7f54af1ff046b490f3f1e58943124ceb476808d3f83d129f9228250b7a",
+        "spans": [
+          {
+            "start": 59,
+            "end": 61,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 121,
+            "text": "Cajas=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 216,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 241,
+            "end": 242,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 435,
+            "end": 436,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "b6bfdbe92a4ae9493614a658a55c67d02d42e45af8ab3ba70fefcbd506c0701c",
+        "spans": [
+          {
+            "start": 32,
+            "end": 39,
+            "text": "Cajas=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 69,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 86,
+            "end": 87,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "1e6c7efaa08f976c5a31bbecbb11d2ece24d0cf16ac04196efa23581b9f9373a",
+        "spans": [
+          {
+            "start": 29,
+            "end": 42,
+            "text": "hubo_rechazos",
+            "role": "cpp"
+          },
+          {
+            "start": 50,
+            "end": 54,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 109,
+            "text": "Cajas=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 190,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 225,
+            "end": 226,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 233,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 237,
+            "end": 251,
+            "text": "intentar_cajas",
+            "role": "cpp"
+          },
+          {
+            "start": 277,
+            "end": 283,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 325,
+            "end": 335,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/0",
+        "sourceSha256": "fae7d70986e2f6daa63b4620faefae944abebe1a05e08245a7e76d2040af6d4d",
+        "spans": [
+          {
+            "start": 33,
+            "end": 34,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 74,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/1",
+        "sourceSha256": "a6f0959312078bf02fc2d0ebb3a697807a5aae8de795cbeefdf3dee33a4032fe",
+        "spans": [
+          {
+            "start": 28,
+            "end": 30,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/2",
+        "sourceSha256": "ab445b46cc867d706c20ea4a2ffb9bcc708b56b7e0b8379c537f35b06642426c",
+        "spans": [
+          {
+            "start": 26,
+            "end": 28,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 65,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "d540a2826a46eec807f876bdc0c9cfe55f7c91d099814203eedd4d6c3ead6189",
+        "spans": [
+          {
+            "start": 59,
+            "end": 63,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 87,
+            "end": 93,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "f0b85736c6a2f952cae39dd45e9cc2a898dbacecd3488d6cb99a4665247454a3",
+        "spans": [
+          {
+            "start": 74,
+            "end": 78,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d75e44a964e4d302138af708f3c2a9bab6d5b1a1dac02dbcd0fbcb83cb35deb3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/text",
+        "sourceSha256": "380db7b7508a63a811cb0c0c6c05ecbf2bd17c43881167b4ace91f0b8d3a6f8c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0006",
+        "path": "/text",
+        "sourceSha256": "a6fe575f3e506abe7390cc90f9be5e07199dfda778dbd8834b3627a6af107ae8",
+        "spans": [
+          {
+            "start": 97,
+            "end": 101,
+            "text": "-1 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 139,
+            "text": "Cajas=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 175,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 228,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 256,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 302,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "3560044361222a0c67d6c2547d40091923bf3ff335beb093dd55aa9b7c58509f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "1f82e04044102e3464753ecd49a8c05732bae39617b3caf209739106b55cfeb3",
+        "spans": [
+          {
+            "start": 32,
+            "end": 38,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 105,
+            "end": 109,
+            "text": "-1 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 382,
+            "end": 388,
+            "text": "NDEBUG",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0006",
+        "path": "/text",
+        "sourceSha256": "bbb1676e9ab950fd6e28e282558c5e454444c7b5eb06879653f05553a3e179b1",
+        "spans": [
+          {
+            "start": 169,
+            "end": 176,
+            "text": "Cajas=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 212,
+            "text": "stdout",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 243,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 253,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 280,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "22c11b7c566223690208585e1f839d73e120bbaa10e546244b7a64b4a819e30c",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "1cbeae3e07b12b4880a611ccae0a31d2fa7c5803ad6630626707a586a8e7d732",
+        "spans": [
+          {
+            "start": 111,
+            "end": 126,
+            "text": "(5 + 4 - 1) / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 140,
+            "end": 141,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 228,
+            "text": "Cajas=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 274,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 313,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "59cd94ff7b9339d0dc28e27c43b8142006b1b6ba56801e7b9d6b81f1fe5180b3",
+        "spans": [
+          {
+            "start": 60,
+            "end": 93,
+            "text": "cajas * piezas_por_caja >= piezas",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "9edfacf08a991b29697cbab5894d01285bc680c9c68fc302fa58f14d5968b8d5",
+        "spans": [
+          {
+            "start": 35,
+            "end": 45,
+            "text": "5 * 4 >= 5",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/0",
+        "sourceSha256": "82113eeffb536eb47a8455eb3f64c156ec22e0be2eab5772b9b304d5f324cda2",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/1",
+        "sourceSha256": "4897bb7aa9d97e467f3564da7267c099a05e5f3c8c910a7cbd8217af9da8db77",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/2",
+        "sourceSha256": "2a5ea12312acf4a9b8242a49fb00509fb7638ef745b13bc82adeaf6468870eea",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "285b218e176f131d2bcd3aafdafdd6838f0d70679c39b24c673527b5af5ffcdc",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "37122476c0620f6f3f119f4423e8450e99661924c57205fc041fe89b3d146de3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "01c2b7fb61a4721b3c6dbaee4fac6c41aabf5b1109b69e94225d837f6d10311c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "358d410582bee07171b32e8a85eacdca77b68323d70f3db8febe2d6f59fab4c5",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "cd04d99482c7e43b8a4383fc1b92102aa5c46c44f9b59501f22f0334d008d1d1",
+        "spans": [
+          {
+            "start": 9,
+            "end": 25,
+            "text": "registrar_visita",
+            "role": "cpp"
+          },
+          {
+            "start": 124,
+            "end": 137,
+            "text": "numero_visita",
+            "role": "cpp"
+          },
+          {
+            "start": 224,
+            "end": 230,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 310,
+            "end": 316,
+            "text": "NDEBUG",
+            "role": "cpp"
+          },
+          {
+            "start": 334,
+            "end": 343,
+            "text": "<cassert>",
+            "role": "cpp"
+          },
+          {
+            "start": 500,
+            "end": 529,
+            "text": "(Thomas & Hunt, 2020, p. 116)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "b9829d5a2d9c5fb946f1ce640ceeeaf2a4ca7e962f108ab521c18e14037dcf8c",
+        "spans": [
+          {
+            "start": 60,
+            "end": 66,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "259099b8e149d3f1da3b57a26d24476de5e645b531f71e98c338ed55412b3f2a",
+        "spans": [
+          {
+            "start": 9,
+            "end": 25,
+            "text": "registrar_visita",
+            "role": "cpp"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/0",
+        "sourceSha256": "cc5d08c950e00795347e007b40cc87b2a88b7c926d6015e3072317a52728b347",
+        "spans": [
+          {
+            "start": 9,
+            "end": 25,
+            "text": "registrar_visita",
+            "role": "cpp"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/1",
+        "sourceSha256": "86de936c946c7d47b6b7fafedec272cf2f34ab9c5a8e9bf2457562eb31106af7",
+        "spans": [
+          {
+            "start": 9,
+            "end": 25,
+            "text": "registrar_visita",
+            "role": "cpp"
+          },
+          {
+            "start": 36,
+            "end": 42,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 70,
+            "end": 74,
+            "text": ">= 1",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/options/2",
+        "sourceSha256": "6433f77df83d3254df298d5920b6132f1d339260d7931eece3575eb55999b0e1",
+        "spans": [
+          {
+            "start": 30,
+            "end": 36,
+            "text": "assert",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "6519c71b122f55d4e702335af57ed0710818d5d296a16eb68d2c0f4c4795f19d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "a7f9455f2a4e2a8b0fb7591e5256d7ba55207fda46abcf11697f331306456c69",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "a888fa1155fa25d8e112d35082c41376224c142aaaf49474bbf25964891737b4",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/text",
+        "sourceSha256": "8eef8b454adfee20e296e0a45470922c498d905c43867a264973a8bc091bd1e7",
+        "spans": [
+          {
+            "start": 31,
+            "end": 38,
+            "text": "primera",
+            "role": "cpp"
+          },
+          {
+            "start": 89,
+            "end": 95,
+            "text": "assert",
+            "role": "cpp"
+          },
+          {
+            "start": 180,
+            "end": 199,
+            "text": "Visitas=1;Primera=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 450,
+            "end": 454,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "2876dba8fa46b74d3c271634435e4a9dccb43173496e1a84efa27075342c3871",
+        "spans": []
+      }
+    ]
+  }
 }
