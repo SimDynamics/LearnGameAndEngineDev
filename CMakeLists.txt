@@ -81,10 +81,17 @@ if(NOT LGAED_DEFAULT_PROFILE MATCHES "^(Work|Codex)$")
     message(FATAL_ERROR "Select -DLGAED_DEFAULT_PROFILE=Work or Codex for this checkout.")
 endif()
 
-# Project-owned dependencies must live in the user-authorized -Dep folder.
-# Only an explicitly configured isolated CI build may override this root.
-set(LGAED_DEP_ROOT "E:/PersonalFiles/Projects/LearnGameAndEngineDev-Dep" CACHE PATH
-    "User-authorized LearnGameAndEngineDev-only dependency root")
+# The developer explicitly authorized C:/LGAED-Dep for this Windows
+# project's dependencies. Replace any cached E:-drive path on local builds;
+# only a disposable, GitHub-hosted CI runner may select its own temp root.
+set(_lgaed_authorized_dependencies "C:/LGAED-Dep")
+if("$ENV{GITHUB_ACTIONS}" STREQUAL "true" AND "$ENV{RUNNER_ENVIRONMENT}" STREQUAL "github-hosted")
+    set(LGAED_DEP_ROOT "${_lgaed_authorized_dependencies}" CACHE PATH
+        "LearnGameAndEngineDev dependency root (isolated CI may override)")
+else()
+    set(LGAED_DEP_ROOT "${_lgaed_authorized_dependencies}" CACHE PATH
+        "User-authorized LearnGameAndEngineDev dependencies" FORCE)
+endif()
 file(TO_CMAKE_PATH "${LGAED_DEP_ROOT}" LGAED_DEP_ROOT)
 file(TO_CMAKE_PATH "$ENV{VCToolsInstallDir}" LGAED_EDUCATIONAL_VC_ROOT)
 file(TO_CMAKE_PATH "$ENV{WindowsSdkDir}" LGAED_EDUCATIONAL_SDK_ROOT)
