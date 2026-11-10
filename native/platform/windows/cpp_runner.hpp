@@ -8,6 +8,7 @@
 #include <optional>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace lgaed::curriculum {
@@ -18,6 +19,11 @@ struct Block;
 }
 
 namespace lgaed::windows {
+
+// Provide an accurate Win32 policy-denial diagnostic without treating an
+// unstarted executable as a failed student program or successful puzzle case.
+[[nodiscard]] std::string cpp_launch_failure_message(std::uint32_t error,
+    std::string_view executable_utf8, bool build_tool);
 
 enum class CppPhaseStatus {
     not_started, completed, cancelled, timed_out, output_limit, launch_failed
