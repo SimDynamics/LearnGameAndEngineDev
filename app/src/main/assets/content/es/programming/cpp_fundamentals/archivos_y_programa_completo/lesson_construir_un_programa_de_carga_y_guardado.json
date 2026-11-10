@@ -65,7 +65,7 @@
             "No corresponde abrirlo: no se aceptó una muestra completa."
           ],
           "correctIndex": 2,
-          "explanation": "El programa sólo genera salida de datos después de aceptar la muestra y componer el texto completo.",
+          "explanation": "El grupo leído es sólo una parte del conjunto candidato. Al faltar el cierre exterior, el lector todavía no dispone de una muestra completa y devuelve false; el programa debe conservar el conjunto anterior.\n\nLa ruta de guardado comienza después de aceptar toda la muestra y componer su representación. Abrir antes un std::ofstream de salida con el modo habitual puede truncar un archivo previo aunque luego se rechacen los datos (Köppe et al., 2023, [filebuf.members]). Por eso este rechazo termina antes de abrir la salida para escribir: no se guardan los grupos provisionales.",
           "reviewFeedback": [
             "Disponer de un primer grupo válido no significa que el conjunto haya terminado. Revisa qué cierre y qué condiciones faltan antes de aceptar la muestra completa.",
             "Los grupos leídos se reúnen en un candidato; el estado destino sólo se sustituye cuando se acepta el conjunto completo. Revisa si una extracción fallida autoriza a guardar esos datos o exige conservar el estado previo.",
@@ -131,6 +131,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Las muestras Base e ID local tienen dos grupos, tres aceptados y un rechazado, pero distribuyen esos datos de formas diferentes. La primera conserva rojo con dos registros y azul vacío; la segunda conserva un registro de identificador 7 en cada grupo. La comparación de ida y vuelta debe revisar esa estructura completa, no sólo los totales que se presentan.\n\nVacio produce cero grupos y Presente vacio produce uno, aunque sus dos totales sean cero. Las otras seis muestras incumplen cierre, unicidad, dominio o ausencia de texto posterior. Su ruta de rechazo debe conservar verde con 9[6;2] y terminar antes de abrir la salida para escribir. El retorno cero de probar indica que se atendió el caso previsto; no equivale a aceptar los datos. Un fallo técnico se informa por su etapa y devuelve uno."
         },
         {
           "type": "note",
@@ -201,7 +205,7 @@
             "Que close() puede omitirse si existe una marca previa."
           ],
           "correctIndex": 0,
-          "explanation": "La prueba comprueba una ruta de control concreta. Una escritura posterior puede truncar o fallar parcialmente y requiere otra garantía.",
+          "explanation": "La prueba creó primero el texto MARCA y después presentó una muestra incompleta. La ruta de rechazo no abrió el archivo para escribir, así que al releerlo se obtuvo la misma marca. Esto comprueba que ese rechazo evitó sustituir o truncar la salida.\n\nNo se inició una escritura nueva sobre el archivo marcado. Por tanto, el ensayo no reproduce una escritura interrumpida ni una pérdida de energía. Si una muestra válida conduce después a abrir y escribir la salida, sus operaciones necesitan sus propias comprobaciones; conservar la marca en el rechazo no permite omitir close() ni garantiza recuperar un archivo parcialmente escrito.",
           "reviewFeedback": [
             "Relaciona la marca conservada con la operación que realmente se ejecutó: la ruta de rechazo evita abrir la salida para escribir. Una escritura posterior sería otro caso.",
             "La prueba no interrumpe una escritura: evita iniciarla cuando la muestra es inválida. Distingue esa ruta de un corte durante una escritura ya iniciada.",
@@ -218,7 +222,7 @@
             "Verificacion uno: aceptar los datos garantiza que se pueden guardar."
           ],
           "correctIndex": 1,
-          "explanation": "Aceptar los datos y conectar la salida son etapas distintas. Esa ruta intenta atravesar un archivo regular como si fuera un directorio; el programa informa la apertura fallida, sin reclasificar la muestra.",
+          "explanation": "El lector ya aceptó la muestra y el programa pudo componer sus datos. El problema aparece al intentar abrir la salida: inspecciones_entrada.txt es un archivo regular, y la ruta nueva lo coloca en la posición que debería ocupar una carpeta.\n\nLa apertura de guardado falla, así que el programa presenta Error al abrir salida y termina con retorno 1. Este resultado identifica una etapa técnica posterior a la aceptación. No transforma los datos válidos en una entrada rechazada, ni permite afirmar que se guardaron por el hecho de haberlos leído correctamente.",
           "reviewFeedback": [
             "Separa la aceptación del formato de la conexión posterior con un archivo de salida.",
             "Identifica qué representa el primer componente de la ruta y qué etapa se ejecuta.",
@@ -262,6 +266,10 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "En el primer ensayo se abre un archivo vacío y se cierra correctamente antes de intentar insertar PRUEBA. La inserción sobre esa conexión cerrada falla; al releer el archivo sigue vacío. Por eso se requieren Escritura: 1 y Vacio: 1.\n\nEn el segundo ensayo la inserción y el primer cierre sí guardan PRUEBA. El segundo close() intenta cerrar una conexión que ya está cerrada y deja el flujo en fallo, sin borrar los caracteres guardados (Köppe et al., 2023, [ofstream.members], [filebuf.members]). De ahí Cierre: 1 y Conservado: 1. Observar únicamente que el flujo falla al final no permite deducir cuál de estos dos contenidos tiene el archivo."
+        },
+        {
           "type": "note",
           "text": "Estos archivos son muestras privadas de tu propia ejecución. Los ensayos provocan errores definidos de uso del flujo; no provocan un disco averiado ni prueban restauración ante escritura parcial. La página siete presenta una implementación de referencia."
         },
@@ -302,6 +310,10 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "La marca se crea y se comprueba antes de analizar los datos. La muestra termina después del cierre de rojo, pero todavía falta el cierre del conjunto. El lector la rechaza y debe dejar el estado anterior completo: verde con el registro 9[6;2].\n\nLa ruta de rechazo no abre la salida para escribir. La lectura posterior debe recuperar exactamente MARCA y alcanzar el final sin avería. Así se obtienen dos comprobaciones distintas: Estado conservado: 1 para el objeto y Marca conservada: 1 para el texto recuperado. Esta prueba ejercita el rechazo antes del guardado; no una recuperación tras escritura parcial."
+        },
+        {
           "type": "heading",
           "text": "Referencia de la prueba con marca"
         },
@@ -333,6 +345,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "La muestra válida ya fue aceptada y compuesta. El programa creó inspecciones_entrada.txt como archivo regular y después intentó atravesarlo como carpeta en inspecciones_entrada.txt/inspecciones_salida.txt. Esa apertura no puede proporcionar la conexión de salida solicitada.\n\nLa comprobación de guardado conduce a Error al abrir salida, sin salto final, y return 1; termina el programa. El caso pide exactamente ese fallo de apertura y ese retorno; no cualquier error del proceso. Todavía no se ha guardado la muestra, y su formato no se reclasifica como inválido por fallar esta operación posterior."
         }
       ]
     },
@@ -393,6 +409,10 @@
               }
             ]
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia inicial conserva cada grupo y cada registro en su posición, con ambas cantidades, así que la primera comparación da 1. Cambiar los rechazados del registro 2 de 1 a 2, invertir registros, invertir grupos o quitar azul vacío cambia datos del contrato, y esas cuatro comparaciones dan 0.\n\nEl conjunto con 2[11;0] incumple el dominio y se rechaza incluso al compararlo consigo mismo: la validez forma parte de lo que promete mismos_datos. Dos conjuntos vacíos sí son válidos e iguales, de modo que la última comparación da 1. La implementación debe comparar también las identidades y los aceptados; recuperar el mismo tamaño o el mismo informe no sustituye esos campos."
         },
         {
           "type": "heading",
@@ -592,6 +612,10 @@
           }
         },
         {
+          "type": "paragraph",
+          "text": "En Base, verde tiene un registro de cinco aceptados y rojo tiene dos de tres. Sumar todos los aceptados de rojo produce 6, que supera 5; elegir por el mayor registro individual daría otro ganador. Los dos casos de empate conservan el primer grupo de su orden respectivo, sin ordenar por nombre o identificador.\n\nUn grupo presente y vacío participa con suma cero. Por eso Ceros elige azul, mientras Vacio carece de ganador. En esa ausencia, el contrato de Informe_mayor exige hay_grupo=false, id=-1 y aceptados=0, aunque la presentación utilice las palabras ninguno y el valor 0. Maximo suma diez aportes de diez y obtiene 100. Las comprobaciones de conservación y de ida y vuelta siguen revisando todos los datos, incluidos los que no deciden el ganador."
+        },
+        {
           "type": "note",
           "text": "La comprobación de stdout revisa el informe calculado y permite corregir el mismo intento. No inspecciona por sí sola el algoritmo: la implementación debe consultar los datos, respetar la política de empate y comparar su conservación. La referencia posterior conserva el ejemplo de otro conjunto y añade la batería completa."
         }
@@ -646,7 +670,7 @@
           "answers": [
             "Entrada aceptada\nGrupos: 3\nMayor: verde\nAceptados del grupo: 5\nDatos conservados: 1\nVerificacion: 1"
           ],
-          "explanation": "Verde suma 2+3=5 y rojo suma cinco. Verde apareció primero y conserva el empate; azul vacío suma cero. El informe no cambia datos ni órdenes y la comparación completa de ida y vuelta sigue dando true.",
+          "explanation": "Verde contiene dos registros: sus aceptados suman 2 + 3 = 5. Rojo tiene un registro con 5 aceptados y azul está presente sin registros, con suma cero. Verde aparece antes que rojo; cuando se encuentra la suma igual de rojo, la selección conserva el ganador anterior.\n\nEl informe muestra Grupos: 3, Mayor: verde y Aceptados del grupo: 5. Los rechazados 1, 0 y 4 no intervienen en la elección, pero siguen perteneciendo a los datos que se guardan. La referencia compara el estado antes y después del informe y lo contrasta con el archivo recuperado: ambas comprobaciones dan 1.",
           "reviewFeedback": "Suma los aceptados de todos los registros de cada grupo. Después sigue el orden de entrada para resolver un empate. Calcula por separado el ganador, la cantidad de grupos y las dos comprobaciones de conservación del informe."
         },
         {
@@ -658,7 +682,7 @@
           "answers": [
             "Entrada aceptada\nGrupos: 3\nMayor: azul\nAceptados del grupo: 0\nDatos conservados: 1\nVerificacion: 1"
           ],
-          "explanation": "Los tres grupos están presentes y sus sumas son cero. Azul es el primero y tiene un ganador válido aunque esté vacío; no se presenta ninguno. Los registros de rojo y verde, con ambas cantidades, siguen en el conjunto y en el archivo.",
+          "explanation": "Azul aparece primero y está presente aunque su vector de registros esté vacío. Su suma de aceptados es cero. Rojo también suma cero con 2[0;4], y verde suma cero con 9[0;0]. Ninguno supera la suma del primer grupo, por lo que el ganador sigue siendo azul.\n\nSe muestran Mayor: azul y Aceptados del grupo: 0, con Grupos: 3. Presentar ninguno confundiría una suma cero con la ausencia de grupos. El recuento de rojo conserva sus cuatro rechazados y verde conserva su registro con cantidades cero; ambos participan en las comparaciones completas, aunque no cambien la suma utilizada para elegir.",
           "reviewFeedback": "Distingue un conjunto sin grupos de un grupo presente sin registros. Calcula la suma de cada grupo y aplica el empate al primero en orden de entrada, sin borrar grupos o registros de cantidades cero."
         },
         {
@@ -671,7 +695,7 @@
             "Cumple si cada grupo conserva sus registros y sus dos cantidades."
           ],
           "correctIndex": 1,
-          "explanation": "La inspección no puede reordenar el conjunto. Guardar y releer el mismo orden ya modificado podría dar igualdad entre esos dos estados; la comparación con la copia anterior al informe detecta la pérdida del orden original.",
+          "explanation": "Mover el ganador cambia la posición de al menos dos grupos cuando no estaba ya al principio. El contrato conserva el orden recibido, además de las identidades y cantidades. Presentar el ganador correcto no autoriza esa modificación.\n\nSi se guarda el conjunto después de reordenarlo y se compara únicamente con lo releído, ambos pueden coincidir: el archivo habrá conservado precisamente el orden ya alterado. La copia tomada antes del informe aporta la referencia que falta. Comparar sus posiciones con las del conjunto posterior permite detectar que el propio informe cambió los datos.",
           "reviewFeedback": [
             "El informe debe conservar los datos que inspecciona, incluido el orden de grupos. Compara el conjunto anterior al informe con el que se va a guardar, no sólo el ganador.",
             "Revisa qué permite detectar la copia tomada antes del informe. La ida y vuelta entre dos estados que ya tienen el mismo orden modificado no recupera el orden anterior.",
@@ -681,6 +705,65 @@
         {
           "type": "paragraph",
           "text": "La prueba de conservación observa identidades, ambas cantidades, presencia vacía y ambos órdenes, además del texto compuesto. La selección y la comprobación de archivo tienen responsabilidades distintas: ganar por la suma correcta no acredita que los datos se hayan conservado. Mantén estos casos junto a los de apertura, escritura y cierre, sin convertir un fallo técnico en rechazo de datos."
+        },
+        {
+          "type": "heading",
+          "text": "Recuperación: el mismo informe puede describir datos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa de nuevo mismos_datos y seleccionar_mayor en el editor. Recupera sus contratos y conserva el cliente proporcionado, que compone, guarda y relee los datos antes de compararlos. mismos_datos exige conjuntos válidos e igualdad de presencia, identidades, ambos órdenes y ambas cantidades. seleccionar_mayor recibe aquí únicamente conjuntos válidos, suma aceptados por grupo y conserva el primero ante un empate, sin modificar el conjunto.\n\nEl resultado de la selección tiene tres campos. Con un ganador devuelve hay_grupo=true, su identificador y su suma; sin grupos devuelve hay_grupo=false, id=-1 y aceptados=0. El cliente muestra esos tres valores reales, también en ausencia. Un programa que muestre el nombre esperado en las muestras anteriores puede seguir necesitando una corrección en los campos que aquella presentación no utilizaba."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente prepara una base y cuatro variantes. Guarda la base en contraste_base.txt y cada variante en un archivo cuyo nombre se forma con \"contraste_\", su nombre de ensayo y \".txt\". Todos se crean y releen dentro de esta ejecución mediante rutas relativas; no se importan archivos del usuario. La función proporcionada comprueba composición, apertura, escritura, cierre y lectura antes de entregar el conjunto recuperado.\n\nLa primera línea muestra Base: y los campos del informe de la base. En cada fila posterior, Datos: compara los conjuntos recuperados completos; Informe: muestra presencia, identificador y suma de la variante; Mismo informe: compara los tres campos de ambos informes; e Ida y vuelta: compara los originales con sus respectivas recuperaciones. Una igualdad entre informes no decide la igualdad entre conjuntos. El objetivo de stdout comprueba estas líneas; las operaciones del cliente producen las observaciones de los archivos, sin que el comprobador inspeccione por sí solo sus bytes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe 1 en Entrada y pulsa Compilar, ejecutar y comprobar. La base contiene rojo con 7[2;1] y 2[3;0], seguido de azul vacío. La variante grupo cambia sólo el identificador del grupo vacío a verde; registro cambia sólo el identificador del primer registro rojo a 8; reparto cambia los aceptados de rojo a 1 y 4, manteniendo su suma. La salida requerida es:\n\nBase:1:0:5\ncopia|Datos:1|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\ngrupo|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nregistro|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nreparto|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\n\nTodas las líneas terminan con salto de línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después cambia Entrada a 2 y vuelve a ejecutar. La base contiene azul vacío, rojo con 9[0;3] y verde con 5[0;0], en ese orden. La variante orden coloca rojo antes de azul; presencia conserva sólo azul vacío; vacio elimina todos los grupos. La salida requerida es:\n\nBase:1:2:0\ncopia|Datos:1|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\norden|Datos:0|Informe:1:0:0|Mismo informe:0|Ida y vuelta:1\npresencia|Datos:0|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\nvacio|Datos:0|Informe:0:-1:0|Mismo informe:0|Ida y vuelta:1\n\nTodas las líneas terminan con salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nbool grupo_valido(const Grupo& grupo) {\n    if (grupo.id < 0 || grupo.id >= 3 || grupo.registros.size() > 10) {\n        return false;\n    }\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id < 0 || registro.id > 9\n            || !recuento_valido(registro.recuento)) {\n            return false;\n        }\n        int coincidencias{0};\n        for (const Registro& otro : grupo.registros) {\n            if (otro.id == registro.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool conjunto_valido(const Conjunto& conjunto) {\n    if (conjunto.grupos.size() > 3) { return false; }\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (!grupo_valido(grupo)) { return false; }\n        int coincidencias{0};\n        for (const Grupo& otro : conjunto.grupos) {\n            if (otro.id == grupo.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    std::ostringstream salida;\n    salida << \"{ conjunto\";\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::string nombre;\n        if (!nombre_grupo(grupo.id, nombre)) { return false; }\n        salida << \" { grupo \" << nombre;\n        for (const Registro& registro : grupo.registros) {\n            salida << ' ' << registro.id << registro.recuento;\n        }\n        salida << \" }\";\n    }\n    salida << \" }\";\n    if (!salida) { return false; }\n    destino = salida.str();\n    return true;\n}\n\nbool mismos_datos(const Conjunto&, const Conjunto&) {\n    // Recupera la comparacion completa desde su contrato.\n    return false;\n}\n\nstruct Informe_mayor {\n    bool hay_grupo;\n    int id;\n    int aceptados;\n};\n\nInforme_mayor seleccionar_mayor(const Conjunto&) {\n    // Recupera la seleccion sin modificar los datos.\n    return Informe_mayor{false, -1, 0};\n}\n\nbool guardar_y_releer(const Conjunto& origen, const std::string& ruta,\n                      Conjunto& recuperado) {\n    std::string texto;\n    if (!componer_conjunto(origen, texto)) {\n        std::cout << \"Error al componer \" << ruta;\n        return false;\n    }\n    std::ofstream salida{ruta};\n    if (!salida) {\n        std::cout << \"Error al abrir \" << ruta;\n        return false;\n    }\n    salida << texto;\n    if (!salida) {\n        std::cout << \"Error al escribir \" << ruta;\n        return false;\n    }\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error al cerrar \" << ruta;\n        return false;\n    }\n    std::ifstream entrada{ruta};\n    if (!entrada || !leer_muestra_completa(entrada, recuperado) || entrada.bad()) {\n        std::cout << \"Error al releer \" << ruta;\n        return false;\n    }\n    return true;\n}\n\nstruct Ensayo {\n    std::string nombre;\n    Conjunto datos;\n};\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 2) return 1;\n    Conjunto base{};\n    std::vector<Ensayo> ensayos;\n    if (caso == 1) {\n        base = Conjunto{{Grupo{0, {{7, {2, 1}}, {2, {3, 0}}}}, Grupo{2, {}}}};\n        Conjunto grupo = base;\n        grupo.grupos.at(1).id = 1;\n        Conjunto registro = base;\n        registro.grupos.at(0).registros.at(0).id = 8;\n        Conjunto reparto = base;\n        reparto.grupos.at(0).registros.at(0).recuento.aceptados = 1;\n        reparto.grupos.at(0).registros.at(1).recuento.aceptados = 4;\n        ensayos = {{\"copia\", base}, {\"grupo\", grupo},\n                   {\"registro\", registro}, {\"reparto\", reparto}};\n    } else {\n        base = Conjunto{{Grupo{2, {}}, Grupo{0, {{9, {0, 3}}}},\n                         Grupo{1, {{5, {0, 0}}}}}};\n        Conjunto orden{{base.grupos.at(1), base.grupos.at(0), base.grupos.at(2)}};\n        Conjunto presencia{{base.grupos.at(0)}};\n        ensayos = {{\"copia\", base}, {\"orden\", orden},\n                   {\"presencia\", presencia}, {\"vacio\", Conjunto{}}};\n    }\n\n    Conjunto base_recuperada{};\n    if (!guardar_y_releer(base, \"contraste_base.txt\", base_recuperada)) return 1;\n    const Informe_mayor informe_base = seleccionar_mayor(base_recuperada);\n    std::cout << \"Base:\" << informe_base.hay_grupo << ':' << informe_base.id\n              << ':' << informe_base.aceptados << '\\n';\n    for (const Ensayo& ensayo : ensayos) {\n        Conjunto recuperado{};\n        const std::string ruta = \"contraste_\" + ensayo.nombre + \".txt\";\n        if (!guardar_y_releer(ensayo.datos, ruta, recuperado)) return 1;\n        const Informe_mayor informe = seleccionar_mayor(recuperado);\n        const bool mismo_informe = informe.hay_grupo == informe_base.hay_grupo\n            && informe.id == informe_base.id && informe.aceptados == informe_base.aceptados;\n        const bool ida_y_vuelta = mismos_datos(base, base_recuperada)\n            && mismos_datos(ensayo.datos, recuperado);\n        std::cout << ensayo.nombre << \"|Datos:\" << mismos_datos(base_recuperada, recuperado)\n                  << \"|Informe:\" << informe.hay_grupo << ':' << informe.id << ':' << informe.aceptados\n                  << \"|Mismo informe:\" << mismo_informe << \"|Ida y vuelta:\" << ida_y_vuelta << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Base:1:0:5\ncopia|Datos:1|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\ngrupo|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nregistro|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nreparto|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La copia coincide en todos los datos. Las otras tres variantes cambian, respectivamente, la identidad de un grupo, la identidad de un registro o la distribución de los aceptados. Cada una debe dar Datos:0, aunque los tamaños se mantengan.\n\nEn las cuatro variantes gana rojo con suma 5. Por eso el informe real es 1:0:5 y Mismo informe:1 en todas las filas. El informe conserva una selección y una suma; no contiene la identidad de cada registro ni el reparto de sus cantidades. La ida y vuelta debe dar 1 para cada original y su recuperación, sin confundir esa pareja con la comparación de la base frente a una variante distinta."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Base:1:2:0\ncopia|Datos:1|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\norden|Datos:0|Informe:1:0:0|Mismo informe:0|Ida y vuelta:1\npresencia|Datos:0|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\nvacio|Datos:0|Informe:0:-1:0|Mismo informe:0|Ida y vuelta:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Todos los aceptados de la base son cero. Azul aparece primero y participa aunque esté vacío: su informe es 1:2:0. Invertir los dos primeros grupos hace que gane rojo, con 1:0:0, y cambia también los datos.\n\nConservar únicamente azul mantiene el informe 1:2:0, pero elimina dos grupos y sus registros: Datos:0 debe distinguirlo de la base. Al eliminar todos los grupos ya no hay ganador. La fila vacio debe mostrar los campos reales 0:-1:0, además de diferir tanto en datos como en informe. Las cuatro variantes siguen siendo válidas y deben conservarse completas al guardarlas y releerlas."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: comparar cada información con su objetivo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nbool grupo_valido(const Grupo& grupo) {\n    if (grupo.id < 0 || grupo.id >= 3 || grupo.registros.size() > 10) {\n        return false;\n    }\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id < 0 || registro.id > 9\n            || !recuento_valido(registro.recuento)) {\n            return false;\n        }\n        int coincidencias{0};\n        for (const Registro& otro : grupo.registros) {\n            if (otro.id == registro.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool conjunto_valido(const Conjunto& conjunto) {\n    if (conjunto.grupos.size() > 3) { return false; }\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (!grupo_valido(grupo)) { return false; }\n        int coincidencias{0};\n        for (const Grupo& otro : conjunto.grupos) {\n            if (otro.id == grupo.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    std::ostringstream salida;\n    salida << \"{ conjunto\";\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::string nombre;\n        if (!nombre_grupo(grupo.id, nombre)) { return false; }\n        salida << \" { grupo \" << nombre;\n        for (const Registro& registro : grupo.registros) {\n            salida << ' ' << registro.id << registro.recuento;\n        }\n        salida << \" }\";\n    }\n    salida << \" }\";\n    if (!salida) { return false; }\n    destino = salida.str();\n    return true;\n}\n\nbool mismos_datos(const Conjunto& primero, const Conjunto& segundo) {\n    if (!conjunto_valido(primero) || !conjunto_valido(segundo)\n        || primero.grupos.size() != segundo.grupos.size()) {\n        return false;\n    }\n    const int cantidad_grupos = static_cast<int>(primero.grupos.size());\n    for (int i = 0; i < cantidad_grupos; ++i) {\n        const Grupo& a = primero.grupos.at(i);\n        const Grupo& b = segundo.grupos.at(i);\n        if (a.id != b.id || a.registros.size() != b.registros.size()) {\n            return false;\n        }\n        const int cantidad_registros = static_cast<int>(a.registros.size());\n        for (int j = 0; j < cantidad_registros; ++j) {\n            const Registro& x = a.registros.at(j);\n            const Registro& y = b.registros.at(j);\n            if (x.id != y.id || x.recuento.aceptados != y.recuento.aceptados\n                || x.recuento.rechazados != y.recuento.rechazados) {\n                return false;\n            }\n        }\n    }\n    return true;\n}\n\nstruct Informe_mayor {\n    bool hay_grupo;\n    int id;\n    int aceptados;\n};\n\nInforme_mayor seleccionar_mayor(const Conjunto& conjunto) {\n    Informe_mayor mejor{false, -1, 0};\n    for (const Grupo& grupo : conjunto.grupos) {\n        int total{0};\n        for (const Registro& registro : grupo.registros) {\n            total += registro.recuento.aceptados;\n        }\n        if (!mejor.hay_grupo || total > mejor.aceptados) {\n            mejor = Informe_mayor{true, grupo.id, total};\n        }\n    }\n    return mejor;\n}\n\nbool guardar_y_releer(const Conjunto& origen, const std::string& ruta,\n                      Conjunto& recuperado) {\n    std::string texto;\n    if (!componer_conjunto(origen, texto)) {\n        std::cout << \"Error al componer \" << ruta;\n        return false;\n    }\n    std::ofstream salida{ruta};\n    if (!salida) {\n        std::cout << \"Error al abrir \" << ruta;\n        return false;\n    }\n    salida << texto;\n    if (!salida) {\n        std::cout << \"Error al escribir \" << ruta;\n        return false;\n    }\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error al cerrar \" << ruta;\n        return false;\n    }\n    std::ifstream entrada{ruta};\n    if (!entrada || !leer_muestra_completa(entrada, recuperado) || entrada.bad()) {\n        std::cout << \"Error al releer \" << ruta;\n        return false;\n    }\n    return true;\n}\n\nstruct Ensayo {\n    std::string nombre;\n    Conjunto datos;\n};\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 2) return 1;\n    Conjunto base{};\n    std::vector<Ensayo> ensayos;\n    if (caso == 1) {\n        base = Conjunto{{Grupo{0, {{7, {2, 1}}, {2, {3, 0}}}}, Grupo{2, {}}}};\n        Conjunto grupo = base;\n        grupo.grupos.at(1).id = 1;\n        Conjunto registro = base;\n        registro.grupos.at(0).registros.at(0).id = 8;\n        Conjunto reparto = base;\n        reparto.grupos.at(0).registros.at(0).recuento.aceptados = 1;\n        reparto.grupos.at(0).registros.at(1).recuento.aceptados = 4;\n        ensayos = {{\"copia\", base}, {\"grupo\", grupo},\n                   {\"registro\", registro}, {\"reparto\", reparto}};\n    } else {\n        base = Conjunto{{Grupo{2, {}}, Grupo{0, {{9, {0, 3}}}},\n                         Grupo{1, {{5, {0, 0}}}}}};\n        Conjunto orden{{base.grupos.at(1), base.grupos.at(0), base.grupos.at(2)}};\n        Conjunto presencia{{base.grupos.at(0)}};\n        ensayos = {{\"copia\", base}, {\"orden\", orden},\n                   {\"presencia\", presencia}, {\"vacio\", Conjunto{}}};\n    }\n\n    Conjunto base_recuperada{};\n    if (!guardar_y_releer(base, \"contraste_base.txt\", base_recuperada)) return 1;\n    const Informe_mayor informe_base = seleccionar_mayor(base_recuperada);\n    std::cout << \"Base:\" << informe_base.hay_grupo << ':' << informe_base.id\n              << ':' << informe_base.aceptados << '\\n';\n    for (const Ensayo& ensayo : ensayos) {\n        Conjunto recuperado{};\n        const std::string ruta = \"contraste_\" + ensayo.nombre + \".txt\";\n        if (!guardar_y_releer(ensayo.datos, ruta, recuperado)) return 1;\n        const Informe_mayor informe = seleccionar_mayor(recuperado);\n        const bool mismo_informe = informe.hay_grupo == informe_base.hay_grupo\n            && informe.id == informe_base.id && informe.aceptados == informe_base.aceptados;\n        const bool ida_y_vuelta = mismos_datos(base, base_recuperada)\n            && mismos_datos(ensayo.datos, recuperado);\n        std::cout << ensayo.nombre << \"|Datos:\" << mismos_datos(base_recuperada, recuperado)\n                  << \"|Informe:\" << informe.hay_grupo << ':' << informe.id << ':' << informe.aceptados\n                  << \"|Mismo informe:\" << mismo_informe << \"|Ida y vuelta:\" << ida_y_vuelta << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación recorre las mismas posiciones de ambos conjuntos. Antes de comparar registros, comprueba el identificador y el tamaño de cada grupo; dentro de cada pareja de registros comprueba su identificador, sus aceptados y sus rechazados. Omitir cualquiera de los dos identificadores o las cantidades aceptadas deja pasar una diferencia que no tiene por qué cambiar el ganador.\n\nLa selección responde a una pregunta más pequeña: qué grupo gana y cuánto suma. En reparto, pasar de 2 + 3 a 1 + 4 conserva el cinco del informe, pero cambia dos cantidades almacenadas. En presencia, conservar sólo azul mantiene el ganador con cero y elimina otros datos válidos. Por eso ninguna de esas coincidencias permite afirmar que los conjuntos completos sean iguales.\n\nLa referencia inicializa la ausencia con Informe_mayor{false, -1, 0} y elige el primer grupo presente incluso cuando suma cero. Después sólo sustituye al ganador ante una suma mayor. Mostrar todos los campos permite observar también el contrato de ausencia, sin que la presentación lo sustituya por un identificador o una suma constantes.\n\nCada archivo se relee antes de usar su contenido. La igualdad entre original y recuperación comprueba esa pareja concreta; la igualdad entre base y variante responde a otra comparación. Mantener ambas preguntas separadas ayuda a localizar una diferencia: puede pertenecer a los datos elegidos para el ensayo o aparecer durante su conservación y recuperación."
         }
       ]
     }
@@ -1068,6 +1151,7 @@
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
+          "u12_integrador_informe_y_datos_recuperados_feedback_block_0002_0003",
           "block_0002_0004"
         ]
       },
@@ -1094,15 +1178,18 @@
           "block_0004_0006",
           "block_0004_0007",
           "block_0004_0008",
+          "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0008",
           "block_0004_0009",
           "block_0004_0010",
           "block_0004_0011",
           "block_0004_0012",
+          "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0012",
           "block_0004_0013",
           "block_0004_0014",
           "block_0004_0015",
           "block_0004_0016",
-          "block_0004_0017"
+          "block_0004_0017",
+          "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0017"
         ]
       },
       {
@@ -1116,6 +1203,7 @@
           "block_0005_0005",
           "block_0005_0006",
           "block_0005_0007",
+          "u12_integrador_informe_y_datos_recuperados_feedback_block_0005_0007",
           "block_0005_0008",
           "block_0005_0009"
         ]
@@ -1141,6 +1229,7 @@
           "block_0007_0005",
           "block_0007_0006",
           "block_0007_0007",
+          "u12_integrador_informe_y_datos_recuperados_feedback_block_0007_0007",
           "block_0007_0008"
         ]
       },
@@ -1163,7 +1252,16 @@
           "block_0009_0001",
           "block_0009_0002",
           "block_0009_0003",
-          "block_0009_0004"
+          "block_0009_0004",
+          "u12_integrador_informe_y_datos_recuperados_titulo",
+          "u12_integrador_informe_y_datos_recuperados_contrato",
+          "u12_integrador_informe_y_datos_recuperados_cliente",
+          "u12_integrador_informe_y_datos_recuperados_caso_1",
+          "u12_integrador_informe_y_datos_recuperados_caso_2",
+          "u12_integrador_informe_y_datos_recuperados_construccion",
+          "u12_integrador_informe_y_datos_recuperados_referencia_titulo",
+          "u12_integrador_informe_y_datos_recuperados_referencia_codigo",
+          "u12_integrador_informe_y_datos_recuperados_referencia_razonamiento"
         ]
       }
     ],
@@ -2098,7 +2196,143 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_construccion",
+        "sha256": "9eb76735a664b7b9fdc72054b73e63afb8b379546403ca493f5ae5de342349c1",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 6
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_referencia_codigo",
+        "sha256": "88ab7382ed0b17af4a94431ef50a0d01e447f2dc1def0f473d11c3814966c3c2",
+        "storage": {
+          "page": 10,
+          "block": 7
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 8
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_feedback_block_0002_0003",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 9
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0008",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 10
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0012",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 11
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0017",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 12
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_feedback_block_0005_0007",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 13
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_integrador_informe_y_datos_recuperados_feedback_block_0007_0007",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 14
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0004_0009",
@@ -2204,6 +2438,36 @@
         "id": "block_0009_0003",
         "beforeSha256": "ebc37cd14fc9066e1316d056ce5ec5245606d1b2cc295f0688b6f81a47c0babc",
         "afterSha256": "18904318d4d72dbfe2078e3d5b9f5192b00a6eeb18fd6ba69cdf5ac1fd267921"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "e2528453e99ffc6519c0533b1c68edf7f47d564773de4143ea33d8bd23080475",
+        "afterSha256": "21caefc674706a225c81ee9d410f64c365de9ba2c0ee8513b7577f04f48141f2"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "4f4853b7be8ca5c13ca6fcadc1069d88af1868bbca9475602a3b4e84c7addb4d",
+        "afterSha256": "cb20db9759e75183b4f8027b88354cd938e65d4ad3a0ff594309b6f6a9491039"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "0d8aee81c372e1ef31905817e1d9e5b299811ca1dc18d2de664187044da8d24d",
+        "afterSha256": "fb3370cd149900f2e9eb6383efbd726bafca9e4025dff17bae9c626ca166b7d3"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "bd47408b8fef9410ca1bc291e82df2058ac321807858f8ed80773898e66a048b",
+        "afterSha256": "e04ef67313985ec05fd628d0e2cac852984fe89175dd7ecd8e36d94f817f117f"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "c0eda69650a7925371ab646b85a97209304910413e567381c3545c6a97c226e6",
+        "afterSha256": "bdbfa67cc682dfc9d0f4340f37f82920ada7cbb96bcef1088a9357dc9c90f927"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "18904318d4d72dbfe2078e3d5b9f5192b00a6eeb18fd6ba69cdf5ac1fd267921",
+        "afterSha256": "bb8141b70719074b2fb384b1b9c4c80453d0d9b103e9d55b58784cef2aed72b0"
       }
     ]
   },
@@ -2378,8 +2642,30 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "a8debc9ee9d5efef377328457ef6810b3321a68beaca6a9de1178ae4155ad2b3",
-        "spans": []
+        "sourceSha256": "33581b77855fd7a09621859f248efa711955d2986b551578af0cf4e7c4bad0b9",
+        "spans": [
+          {
+            "start": 151,
+            "end": 156,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 317,
+            "end": 330,
+            "text": "std::ofstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 429,
+            "end": 468,
+            "text": "(Köppe et al., 2023, [filebuf.members])",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -3234,8 +3520,23 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "4de35a8def7d620ea8149d2e888ff9baf51bd394beb2015ca244130e36e84af4",
-        "spans": []
+        "sourceSha256": "c80a6e23bbeae97eddcd10b7e77799c9e5301a38f58907f3d5a289cccdb9633f",
+        "spans": [
+          {
+            "start": 32,
+            "end": 37,
+            "text": "MARCA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 570,
+            "end": 577,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -3321,8 +3622,37 @@
       {
         "block": "block_0004_0005",
         "path": "/explanation",
-        "sourceSha256": "ed88b78c6135cda2a0d4cedf54dc8fc5f9e9938e3540dfea917ed4adb695a512",
-        "spans": []
+        "sourceSha256": "f7e50e95218849c752b24b16ba656b5f216a19d7817b9d8ba2ee11d887da0228",
+        "spans": [
+          {
+            "start": 119,
+            "end": 143,
+            "text": "inspecciones_entrada.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 264,
+            "text": "guardado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 322,
+            "text": "Error al abrir salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 346,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0005",
@@ -5245,61 +5575,68 @@
       {
         "block": "block_0009_0001",
         "path": "/explanation",
-        "sourceSha256": "960683cf114a0bd74aa7d47a176da32b8dda26ebbd39022beab5dc8553580d77",
+        "sourceSha256": "2be8442bc95eeb6d312565f7af50fc59e39a9175d1ab777273eab176972dbac9",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "Verde",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 11,
-            "end": 16,
-            "text": "2+3=5",
+            "start": 50,
+            "end": 59,
+            "text": "2 + 3 = 5",
             "role": "math",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 19,
-            "end": 23,
-            "text": "rojo",
+            "start": 88,
+            "end": 89,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 296,
+            "text": "Grupos: 3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 29,
-            "end": 34,
-            "text": "cinco",
+            "start": 298,
+            "end": 310,
+            "text": "Mayor: verde",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 41,
-            "text": "Verde",
+            "start": 313,
+            "end": 335,
+            "text": "Aceptados del grupo: 5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 81,
-            "end": 85,
-            "text": "azul",
-            "role": "output",
+            "start": 352,
+            "end": 353,
+            "text": "1",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 97,
-            "end": 101,
-            "text": "cero",
-            "role": "output",
+            "start": 355,
+            "end": 356,
+            "text": "0",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 199,
-            "text": "true",
+            "start": 359,
+            "end": 360,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 573,
+            "end": 574,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           }
@@ -5350,47 +5687,61 @@
       {
         "block": "block_0009_0002",
         "path": "/explanation",
-        "sourceSha256": "000b2c78d5229d0560e70889cea8436233ce390c8dfd0ac758a7476b2fddc456",
+        "sourceSha256": "31b53efa003c87806c45ab90c18d8a1dd2a328ebc86822e333e70ca74d2f96fe",
         "spans": [
           {
-            "start": 4,
-            "end": 8,
-            "text": "tres",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 52,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 54,
-            "end": 58,
-            "text": "Azul",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 133,
-            "end": 140,
-            "text": "ninguno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 159,
-            "end": 163,
-            "text": "rojo",
+            "start": 136,
+            "end": 142,
+            "text": "2[0;4]",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 166,
-            "end": 171,
-            "text": "verde",
+            "end": 172,
+            "text": "9[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 280,
+            "text": "Mayor: azul",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 305,
+            "text": "Aceptados del grupo: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 320,
+            "text": "Grupos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 339,
+            "text": "ninguno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 426,
+            "end": 432,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 492,
+            "text": "cero",
             "role": "data",
             "reading": "natural"
           }
@@ -5419,7 +5770,7 @@
       {
         "block": "block_0009_0003",
         "path": "/explanation",
-        "sourceSha256": "c5231b1829e8f5a9ee9174e8d52ed3dfa9d2428d84207bbdc07d4d86704cc39f",
+        "sourceSha256": "48dd250b879c9f415649ff464c557c9137db1506da673dc27f582d96a754ac52",
         "spans": []
       },
       {
@@ -5471,6 +5822,767 @@
         "path": "/text",
         "sourceSha256": "8c134364288021768b37df901384fab1dd65246b78719663bcf16504acd3fca3",
         "spans": []
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_titulo",
+        "path": "/text",
+        "sourceSha256": "b10d1e1529b337f1b214488eff05290bf2a6efcebe828f21ff9ee30f95e13061",
+        "spans": []
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_contrato",
+        "path": "/text",
+        "sourceSha256": "fc81fc54e8373b47b4aa578adbaf962ff0841bfa26861f12b115181c250cb278",
+        "spans": [
+          {
+            "start": 18,
+            "end": 30,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 33,
+            "end": 50,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 197,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 311,
+            "text": "seleccionar_mayor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 517,
+            "end": 531,
+            "text": "hay_grupo=true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 581,
+            "end": 596,
+            "text": "hay_grupo=false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 598,
+            "end": 603,
+            "text": "id=-1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 606,
+            "end": 617,
+            "text": "aceptados=0",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_cliente",
+        "path": "/text",
+        "sourceSha256": "5d4006b704e00790dba4036a649015825843bf652a7536ec3e6245c8a0d769f3",
+        "spans": [
+          {
+            "start": 66,
+            "end": 84,
+            "text": "contraste_base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 152,
+            "text": "\"contraste_\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 182,
+            "text": "\".txt\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 455,
+            "text": "Base:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 523,
+            "text": "Datos:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 577,
+            "text": "Informe:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 634,
+            "end": 648,
+            "text": "Mismo informe:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 694,
+            "end": 707,
+            "text": "Ida y vuelta:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_caso_1",
+        "path": "/text",
+        "sourceSha256": "5c622cdcfe849a9cc82e90c54f616a69943e035032bea58fda153e686248df7e",
+        "spans": [
+          {
+            "start": 8,
+            "end": 9,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 93,
+            "text": "7[2;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 102,
+            "text": "2[3;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 144,
+            "text": "grupo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 207,
+            "text": "registro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 265,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 274,
+            "text": "reparto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 307,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 311,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 610,
+            "text": "Base:1:0:5\ncopia|Datos:1|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\ngrupo|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nregistro|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1\nreparto|Datos:0|Informe:1:0:5|Mismo informe:1|Ida y vuelta:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_caso_2",
+        "path": "/text",
+        "sourceSha256": "69ddc943a405e27526d8c8d42eb128ff0b477a72945b43bdadc1b42849689598",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 92,
+            "text": "9[0;3]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 111,
+            "text": "5[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 144,
+            "text": "orden",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 181,
+            "text": "presencia",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 213,
+            "text": "vacio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 516,
+            "text": "Base:1:2:0\ncopia|Datos:1|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\norden|Datos:0|Informe:1:0:0|Mismo informe:0|Ida y vuelta:1\npresencia|Datos:0|Informe:1:2:0|Mismo informe:1|Ida y vuelta:1\nvacio|Datos:0|Informe:0:-1:0|Mismo informe:0|Ida y vuelta:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "c398381aabb1ded971e5fb795a39ed1a38a9210c665f2b019be47500e1e6782f",
+        "spans": [
+          {
+            "start": 197,
+            "end": 204,
+            "text": "Datos:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 284,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 313,
+            "end": 318,
+            "text": "1:0:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 336,
+            "text": "Mismo informe:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 504,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "28206420d710c4e2c51e11722cb045a488c129626a22893ab0e181a088ecc6c5",
+        "spans": [
+          {
+            "start": 107,
+            "end": 112,
+            "text": "1:2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 176,
+            "text": "1:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 253,
+            "end": 258,
+            "text": "1:2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 308,
+            "text": "Datos:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 395,
+            "end": 400,
+            "text": "vacio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 432,
+            "end": 438,
+            "text": "0:-1:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "6482b4b661e5c765b2d10f97a2317cbd890e273c00900071e74808e6d70dff35",
+        "spans": []
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "4e096bebd14a237ab76e33b97c45dcf3ff14d22de822bcea571fff202290f181",
+        "spans": [
+          {
+            "start": 466,
+            "end": 473,
+            "text": "reparto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 484,
+            "end": 489,
+            "text": "2 + 3",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 492,
+            "end": 497,
+            "text": "1 + 4",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 572,
+            "end": 581,
+            "text": "presencia",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 801,
+            "end": 828,
+            "text": "Informe_mayor{false, -1, 0}",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_feedback_block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "b7e25392987ea241fba13a3a5007e78a9864147fac91fd16446e02323f73dc08",
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "Base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 28,
+            "text": "ID local",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 236,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 365,
+            "text": "Vacio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 402,
+            "text": "Presente vacio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 585,
+            "end": 591,
+            "text": "9[6;2]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 662,
+            "end": 668,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0008",
+        "path": "/text",
+        "sourceSha256": "cd517e62079502b56c066f618012c4e751f6e80591796d28f4b4b0f91354350e",
+        "spans": [
+          {
+            "start": 98,
+            "end": 104,
+            "text": "PRUEBA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 220,
+            "text": "Escritura: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 231,
+            "text": "Vacio: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 304,
+            "text": "PRUEBA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 324,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 435,
+            "end": 494,
+            "text": "(Köppe et al., 2023, [ofstream.members], [filebuf.members])",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 512,
+            "text": "Cierre: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 515,
+            "end": 528,
+            "text": "Conservado: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0012",
+        "path": "/text",
+        "sourceSha256": "8b72148c03d4d1c06bb5a762ed1b06a87db4888ac0ee8995814befcd746322c4",
+        "spans": [
+          {
+            "start": 236,
+            "end": 242,
+            "text": "9[6;2]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 350,
+            "text": "MARCA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 449,
+            "text": "Estado conservado: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 467,
+            "end": 486,
+            "text": "Marca conservada: 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0017",
+        "path": "/text",
+        "sourceSha256": "e5d77f16be92e3617a1aa3a19db5152dd58eae780d197ccb30da416103a56be0",
+        "spans": [
+          {
+            "start": 64,
+            "end": 88,
+            "text": "inspecciones_entrada.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 204,
+            "text": "inspecciones_entrada.txt/inspecciones_salida.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 303,
+            "text": "guardado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 335,
+            "text": "Error al abrir salida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 365,
+            "text": "return 1;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_feedback_block_0005_0007",
+        "path": "/text",
+        "sourceSha256": "b4cfe3328684903a4b7624eae01f798db7f364434c725efcce55ec92983d6658",
+        "spans": [
+          {
+            "start": 125,
+            "end": 126,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 165,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 292,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 318,
+            "text": "2[11;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 442,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 528,
+            "end": 529,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_integrador_informe_y_datos_recuperados_feedback_block_0007_0007",
+        "path": "/text",
+        "sourceSha256": "d13f8f9d53e2c3382f4390b8df8000c0cb1256763896f73a48ed85675c6c027d",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "Base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 376,
+            "text": "Ceros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 398,
+            "end": 403,
+            "text": "Vacio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 455,
+            "end": 468,
+            "text": "Informe_mayor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 475,
+            "end": 490,
+            "text": "hay_grupo=false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 492,
+            "end": 497,
+            "text": "id=-1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 500,
+            "end": 511,
+            "text": "aceptados=0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 557,
+            "end": 564,
+            "text": "ninguno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 577,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 579,
+            "end": 585,
+            "text": "Maximo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 622,
+            "end": 625,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -5480,5 +6592,119 @@
         "spans": []
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0003",
+      "blocks": [
+        "u12_integrador_informe_y_datos_recuperados_feedback_block_0002_0003",
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0003_0005"
+      ]
+    },
+    {
+      "activity": "block_0004_0012",
+      "blocks": [
+        "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0012",
+        "block_0004_0013",
+        "block_0004_0014"
+      ]
+    },
+    {
+      "activity": "block_0005_0007",
+      "blocks": [
+        "u12_integrador_informe_y_datos_recuperados_feedback_block_0005_0007",
+        "block_0005_0008",
+        "block_0005_0009"
+      ]
+    },
+    {
+      "activity": "block_0004_0008",
+      "blocks": [
+        "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0008",
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003",
+        "block_0006_0004"
+      ]
+    },
+    {
+      "activity": "block_0007_0007",
+      "blocks": [
+        "u12_integrador_informe_y_datos_recuperados_feedback_block_0007_0007",
+        "block_0008_0000",
+        "block_0008_0001",
+        "block_0008_0002",
+        "block_0008_0003",
+        "block_0008_0004",
+        "block_0008_0005",
+        "block_0008_0006"
+      ]
+    },
+    {
+      "activity": "u12_integrador_informe_y_datos_recuperados_construccion",
+      "blocks": [
+        "u12_integrador_informe_y_datos_recuperados_referencia_titulo",
+        "u12_integrador_informe_y_datos_recuperados_referencia_codigo",
+        "u12_integrador_informe_y_datos_recuperados_referencia_razonamiento"
+      ]
+    },
+    {
+      "activity": "block_0004_0017",
+      "blocks": [
+        "u12_integrador_informe_y_datos_recuperados_feedback_block_0004_0017"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0004_0012",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0004_0017",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0005_0007",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0007_0007",
+      "requires": [
+        "block_0002_0003",
+        "block_0005_0007"
+      ]
+    },
+    {
+      "activity": "block_0009_0001",
+      "requires": [
+        "block_0007_0007"
+      ]
+    },
+    {
+      "activity": "block_0009_0002",
+      "requires": [
+        "block_0007_0007"
+      ]
+    },
+    {
+      "activity": "u12_integrador_informe_y_datos_recuperados_construccion",
+      "requires": [
+        "block_0005_0007",
+        "block_0007_0007"
+      ]
+    }
+  ]
 }

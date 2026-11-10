@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Podemos leer una muestra, escribir sus objetos y leer ese texto otra vez. Los datos recuperados deben conservar los grupos presentes, incluidos los vacíos, los ID de cada registro, sus cantidades y el orden de ambos vectores. No basta recuperar el mismo número de grupos ni la misma suma de aceptados."
+          "text": "Un Conjunto guarda un vector de grupos; cada Grupo tiene su ID y un vector de registros, y cada Registro guarda su ID y las dos cantidades. Escribir ese conjunto produce caracteres. Leerlos después crea otro conjunto que debe conservar esos datos.\n\nLa comparación debe comprobar qué grupo contiene cada registro, sus identificadores, sus cantidades y las posiciones en ambos vectores. También cuenta un grupo presente aunque su vector de registros esté vacío. Dos conjuntos con el mismo número de grupos o la misma suma de aceptados pueden diferir en cualquiera de esas asociaciones."
         },
         {
           "type": "paragraph",
-          "text": "Nuestro escritor elige una forma textual: nombres exactos, espacios determinados y enteros sin un + delante ni ceros iniciales. La entrada podía usar otra cantidad de blancos y +07 para el ID 7. Por eso no es necesario que el texto recibido y el texto compuesto sean idénticos: las dos escrituras pueden representar los mismos datos. Después de leer el primer texto compuesto, componemos los datos recuperados una segunda vez. Esa segunda composición debe producir exactamente el mismo texto que la primera; a esa coincidencia la llamamos estabilidad de la forma compuesta."
+          "text": "Nuestro escritor elige nombres exactos, espacios determinados y enteros sin signo positivo escrito ni ceros iniciales. Por ejemplo, el lector puede obtener el ID 4 y las cantidades 3 y 0 a partir de +04[03;00]. El escritor presenta esos valores como 4[3;0]. Los campos se conservan aunque la escritura cambie.\n\nComparar dos std::string con == exige la misma secuencia de caracteres: también cuentan los signos, espacios y saltos almacenados. Esa comparación no interpreta nuestro formato para decidir si los textos representan los mismos registros (Köppe et al., 2023).\n\nLa estabilidad se comprueba a partir del primer texto compuesto: lo leemos, volvemos a componer sus datos y comparamos ambas composiciones. Deben coincidir exactamente. El texto recibido al comienzo puede tener otra escritura válida; no necesita coincidir literalmente con la forma elegida por el escritor."
         },
         {
           "type": "multiple_choice",
@@ -26,7 +26,7 @@
             "No: también debe conservarse la asociación con el grupo."
           ],
           "correctIndex": 2,
-          "explanation": "El grupo pertenece a la identidad completa. Contar o sumar ocultaría ese cambio.",
+          "explanation": "El registro 7[2;1] conserva su ID y sus cantidades, pero el primer conjunto lo sitúa en rojo y el segundo en azul. La identidad completa incluye el grupo, por lo que la comparación debe devolver false.\n\nAmbos podrían tener un grupo, un registro y las mismas sumas. Esos totales no indican a qué grupo pertenecía el recuento y ocultarían el cambio.",
           "reviewFeedback": [
             "El registro conserva su ID y sus cantidades, pero revisa también a qué grupo pertenece en cada conjunto. Esa asociación forma parte del dato que queremos recuperar.",
             "La cantidad de grupos y registros no describe sus asociaciones. Sigue el registro 7[2;1] y comprueba el grupo al que pertenece en cada conjunto.",
@@ -43,7 +43,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Define mismos_datos para conjuntos válidos: compara cantidad de grupos; luego, en cada posición, ID de grupo y cantidad de registros; finalmente, ID y las dos cantidades de cada registro en la misma posición. Devuelve false si cualquiera de los conjuntos es inválido. Aquí el orden es parte del contrato, aunque otros formatos podrían decidir ignorarlo."
+          "text": "Construye bool mismos_datos(const Conjunto& primero, const Conjunto& segundo). Las referencias constantes permiten consultar los dos conjuntos sin modificarlos por esos parámetros. La función no imprime. Debe devolver true únicamente cuando ambos conjuntos son válidos y coinciden en todos los datos acordados.\n\nCompara la cantidad de grupos y, en cada posición, el ID del grupo y su cantidad de registros. Después compara, en cada posición de esos registros, el ID y las dos cantidades. Devuelve false si cambia cualquiera de esos datos o si cualquiera de los conjuntos es inválido. El orden forma parte de este contrato; no se ordenan los vectores para hacerlos coincidir."
         },
         {
           "type": "multiple_choice",
@@ -55,7 +55,7 @@
             "true si el registro restante tiene cantidades cero."
           ],
           "correctIndex": 0,
-          "explanation": "La presencia no se reconstruye a partir de las cantidades ni de una suma.",
+          "explanation": "El primer conjunto tiene dos elementos en su vector de grupos: rojo, cuyo vector de registros está vacío, y azul. El segundo sólo tiene el grupo azul. La comparación ya encuentra una diferencia en la cantidad de grupos.\n\nEl resultado es false, aunque las sumas de todas las cantidades coincidan. Un grupo presente sin registros es un dato distinto de un grupo ausente; los ceros de otro registro tampoco pueden reconstruir esa presencia.",
           "reviewFeedback": [
             "Distingue entre no tener un grupo y tenerlo sin registros. Compara primero qué grupos están presentes; después sus registros y cantidades.",
             "Un grupo vacío sigue siendo un elemento del vector de grupos. Que no añada cantidades a la suma no permite tratarlo como ausente.",
@@ -64,7 +64,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Valida los límites antes de recorrer. La comparación puede convertir los tamaños ya acotados a int: hay como máximo tres grupos y diez registros por grupo, de modo que esa conversión conserva el valor. Comprobar tamaños iguales antes de at() permite usar los mismos índices en las dos colecciones."
+          "text": "La validación acota el modelo a tres grupos y diez registros por grupo. Una vez comprobados esos límites, convertir sus tamaños a int conserva los valores. Esta conversión no debe utilizarse para ocultar un tamaño que todavía no se ha validado.\n\nLos tamaños iguales permiten comparar posiciones comunes. Si un grupo tiene dos registros y el otro sólo uno, el resultado ya debe ser false: acceder a la posición uno del segundo vector con at() quedaría fuera de su tamaño. Primero se comprueba la cantidad y después se accede. Si ambos conjuntos válidos están vacíos, no hay posiciones que difieran y la comparación puede devolver true."
         },
         {
           "type": "multiple_choice",
@@ -76,7 +76,7 @@
             "Devolver true sólo cuando sus cantidades coincidan."
           ],
           "correctIndex": 1,
-          "explanation": "El escritor recorre los vectores sin ordenar. Cambiar el orden altera lo que aquí hemos acordado conservar.",
+          "explanation": "En la primera posición de un vector está el registro que el otro guarda en la segunda, y viceversa. Como el contrato compara posiciones, esa inversión debe producir false.\n\nEl escritor recorre los vectores en su orden actual; no los ordena antes de escribir. Incluso si los dos recuentos fueran iguales, seguiría siendo necesario conservar qué ID ocupa cada posición.",
           "reviewFeedback": [
             "El compositor recorre los vectores en el orden que ya tienen. No hay una ordenación previa que permita ignorar sus posiciones.",
             "Comprueba los registros de ambos conjuntos posición por posición, además de comprobar sus ID y cantidades. El contrato incluye el orden.",
@@ -93,7 +93,7 @@
             "Sólo sumar cantidades y comprobar que no sean negativas."
           ],
           "correctIndex": 0,
-          "explanation": "Un ciclo estable puede repetir la misma pérdida. Comparar identidades, presencia, valores y orden con el original detecta lo que ya desapareció antes de la segunda escritura.",
+          "explanation": "El primer texto ya carece del registro eliminado. Su lector sólo puede recuperar los datos que ese texto contiene, y la segunda escritura puede repetir exactamente esa versión reducida. Comparar esos textos no observa el registro que falta en ambos.\n\nEl original completo conserva un punto de comparación independiente: su cantidad de registros, sus ID o sus posiciones revelan la pérdida. La estabilidad del texto y la conservación de datos contestan preguntas distintas y deben comprobarse por separado.",
           "reviewFeedback": [
             "El texto reducido se obtiene después de perder un registro. Para detectar esa pérdida, la comprobación necesita un punto de comparación que todavía conserve ese registro.",
             "La segunda escritura parte de los datos que el lector ya recuperó del texto reducido. Piensa qué información ya no puede aparecer en ninguno de esos dos textos.",
@@ -110,7 +110,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa mismos_datos y organiza en main la prueba de ida y vuelta: prepara un Conjunto original válido; compón su texto; lee ese texto en otro Conjunto; compara el original con el recuperado; y vuelve a componer los datos recuperados para comparar los dos textos. Comprueba el resultado de componer_conjunto y de leer_muestra_completa antes de utilizar lo que producen: si una operación devuelve false, no continúes como si hubiera tenido éxito. En cambio, las comparaciones pueden devolver false intencionadamente cuando pruebes datos diferentes; ese resultado se presenta y se interpreta como parte de la prueba."
+          "text": "Construye mismos_datos y organiza la prueba en main. Prepara un Conjunto original válido directamente con los datos previstos; compón su texto; lee ese texto en otro conjunto; y compara el recuperado con ese original, que todavía conserva los datos de partida. Después compón de nuevo el recuperado y compara las dos cadenas.\n\nComprueba el resultado de componer_conjunto y de leer_muestra_completa antes de usar sus destinos. Un false de esas operaciones indica que no se obtuvo el resultado solicitado, aunque el destino siga guardando algún valor previo. En cambio, mismos_datos puede devolver false intencionadamente cuando comparas conjuntos diferentes o inválidos. En la batería, ese resultado se muestra como parte del diagnóstico previsto."
         },
         {
           "type": "paragraph",
@@ -164,11 +164,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa de esta página desarrolla el ciclo inicial de la batería: componer, leer, comparar los datos y componer de nuevo. Su primera línea es 1:1:1. Los datos coinciden, la segunda composición tiene éxito y ambos textos compuestos coinciden. La segunda línea es { conjunto { grupo azul 7[0;0] } { grupo rojo 4[3;1] } }. Conservamos el orden de azul antes de rojo, las cantidades cero y la asociación de cada registro con su grupo. La referencia de la batería completa aparece en la página de conservación e igualdad completa."
+          "text": "El programa desarrolla el ciclo inicial: compone el original, lee ese texto, compara los dos conjuntos y compone otra vez el recuperado. La primera línea es 1:1:1: los datos coinciden, la segunda composición tiene éxito y ambas composiciones son iguales.\n\nLa segunda línea es { conjunto { grupo azul 7[0;0] } { grupo rojo 4[3;1] } }. Conserva azul antes de rojo, el registro siete con cantidades cero y el registro cuatro dentro de rojo. Este programa inicial termina sin un salto después de esa segunda línea. La referencia de conservación e igualdad completa añade las demás comparaciones y termina todas sus líneas con salto."
         },
         {
           "type": "paragraph",
-          "text": "En la batería completa, cada copia cambia una sola característica: el grupo, una cantidad, un ID o el orden de los grupos. La comparación debe detectar esa diferencia sin confundirla con un dato inválido. Después se comprueban por separado los conjuntos vacíos, la presencia de un grupo vacío, el orden de los registros dentro de un grupo y la repetición permitida de un ID en grupos distintos. Contar registros o sumar cantidades no basta: esas operaciones pueden dar el mismo resultado aunque un registro cambie de grupo o desaparezca un grupo vacío. Comparar de nuevo los textos compuestos añade una comprobación de estabilidad; no sustituye la comparación de los datos con el original."
+          "text": "Cada copia de la batería completa cambia un solo dato del recuperado y se compara con el original. Cambiar azul por verde altera el grupo; cambiar aceptados de cero a uno altera una cantidad; cambiar siete por seis altera un ID; invertir los grupos altera el orden. Las copias siguen siendo válidas, pero ya no son los mismos datos.\n\nLa batería distingue además un conjunto vacío de un grupo presente sin registros, invierte el orden local de dos registros y conserva la repetición permitida de un ID entre grupos distintos. Contar o sumar puede ocultar esas diferencias. La comparación de los dos textos compuestos añade una comprobación de estabilidad, pero no sustituye ninguna de las comparaciones con el original."
         },
         {
           "type": "output_prediction",
@@ -179,7 +179,7 @@
           "answers": [
             "1:1:0\n{ conjunto { grupo azul 7[0;1] } { grupo rojo } }"
           ],
-          "explanation": "El lector obtiene los datos y el compositor los escribe en la forma elegida. Los blancos, + y ceros iniciales del recibido no se copian literalmente.",
+          "explanation": "El lector admite los blancos exteriores y obtiene el ID 7 a partir de +07, con cantidades 0 y 1 a partir de 00 y +01. También conserva el grupo rojo presente, aunque no tenga registros.\n\nEl compositor escribe esos valores en la forma elegida, sin copiar los signos positivos, ceros iniciales ni blancos exteriores. Por eso la lectura y la composición tienen éxito, pero la comparación literal con recibido es falsa: 1:1:0. La segunda línea es { conjunto { grupo azul 7[0;1] } { grupo rojo } }, sin salto final.",
           "reviewFeedback": "Sigue por separado las dos operaciones y la comparación final: leer_muestra_completa obtiene los datos; componer_conjunto elige su escritura; y recibido == canon compara caracteres, incluidos los blancos. No confundas obtener los mismos datos con conservar literalmente el texto recibido."
         }
       ]
@@ -199,16 +199,16 @@
           "answers": [
             "1:0"
           ],
-          "explanation": "Los dos textos compuestos coinciden, pero falta el grupo rojo presente y vacío. La estabilidad por sí sola no demuestra conservación.",
+          "explanation": "La primera composición recibe incompleto, que sólo contiene azul y su registro siete. El lector recupera ese mismo conjunto reducido y la segunda composición produce la misma cadena: el primer resultado es 1.\n\nLa comparación de datos utiliza original, que también contiene rojo vacío. El número de grupos ya difiere, por lo que el segundo resultado es 0. La salida 1:0 combina estabilidad verdadera con conservación falsa; no son resultados contradictorios.",
           "reviewFeedback": "Localiza de qué conjunto parte la primera composición y cuál se usa como original en mismos_datos. Comprueba si ambos contienen los mismos grupos, incluso cuando un grupo no tiene registros. La comparación de los dos textos y la comparación de los datos no contestan la misma pregunta."
         },
         {
           "type": "paragraph",
-          "text": "La estabilidad textual no sustituye la conservación: el original completo es el punto de comparación. Un grupo vacío, un registro de cantidades cero, un mismo ID local en grupos distintos y el orden de los registros son datos observables del contrato."
+          "text": "Si se elimina un grupo vacío antes de la primera escritura, los dos textos del ciclo pueden omitirlo de la misma forma. Ambos coincidirían entre sí y, aun así, no describirían el conjunto completo de partida. Para detectar esa pérdida, la comparación necesita conservar ese original fuera del resultado que se está comprobando.\n\nLa misma precaución se aplica a cantidades, identificadores y orden: producir un resultado repetible no demuestra que corresponda a los datos previstos. En este contrato son observables un grupo vacío, un registro con cantidades cero, el mismo ID local en grupos distintos y las posiciones de los registros."
         },
         {
           "type": "paragraph",
-          "text": "La transferencia a una tabla de presencia tiene un editor independiente posterior. Esa organización facilita consultar por ID, pero no conserva el orden de llegada. La prueba presenta la colección de origen antes y después para conservar explícitamente la información que la tabla no puede reconstruir."
+          "text": "El siguiente editor de transferencia construye una tabla nueva a partir de los registros de un grupo. Las posiciones de la tabla permiten consultar por ID, pero recorrerlas en orden creciente no reproduce necesariamente el orden del vector original.\n\nPor eso el cliente muestra la colección de origen antes y después de la conversión. Conservar ese vector permite seguir disponiendo del orden de llegada, además de consultar las asociaciones en la tabla. La tabla por sí sola no permite averiguar cuál de dos registros llegó primero."
         },
         {
           "type": "note",
@@ -280,6 +280,133 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nbool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino) {\n    std::vector<Celda> candidatos(10, Celda{false, {0, 0}});\n    for (const Registro& registro : registros) {\n        if (!insertar(candidatos, registro)) {\n            return false;\n        }\n    }\n    destino = candidatos;\n    return true;\n}\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nvoid mostrar_origen(const Grupo& grupo) {\n    std::cout << \"Origen:\";\n    for (const Registro& registro : grupo.registros) std::cout << registro.id << ':';\n    std::cout << \"\\n\";\n}\n\nint main() {\n    const Grupo grupo{2, {{7, {0, 0}}, {2, {3, 1}}}};\n    mostrar_origen(grupo);\n    std::vector<Celda> tabla;\n    if (!convertir(grupo.registros, tabla)) return 1;\n    std::cout << \"Tabla:\\n\";\n    for (int id = 0; id < 10; ++id) {\n        Recuento resultado{0, 0};\n        if (consultar(tabla, id, resultado))\n            std::cout << id << ':' << resultado.aceptados << ':' << resultado.rechazados << \"\\n\";\n    }\n    mostrar_origen(grupo);\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Contrastar el ciclo con datos esperados independientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa únicamente mismos_datos y conserva el cliente y las funciones de apoyo. Devuelve true sólo si ambos conjuntos son válidos y coinciden la presencia y el orden de grupos, el ID de cada grupo, la cantidad y el orden de registros y todos sus campos. Devuelve false en cualquier otro caso; no modifica los conjuntos ni imprime.\n\nLa comparación debe consultar esos datos, sin usar el compositor para fabricar el criterio de igualdad. El compositor es una de las operaciones que queremos contrastar. Puedes organizar los recorridos y las comprobaciones de otra forma si cumples el mismo contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente prepara esperado directamente: primero azul sin registros y después rojo, con 7[0;0] y 2[3;1] en ese orden. Ese objeto conserva la referencia de lo previsto. En los selectores uno, dos y tres, observado procede de leer una muestra textual preparada aparte; no se obtiene escribiendo primero el esperado.\n\nLa muestra uno describe exactamente esos datos con otra escritura. La dos cambia únicamente rechazados del registro dos, de 1 a 2. La tres conserva los ID y sus posiciones, pero asigna 3 aceptados y 1 rechazado al registro siete y deja cantidades cero en el registro dos. Sus totales siguen siendo 3 y 1, aunque cambia a qué registro pertenecen."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las tres muestras válidas tienen un salto de línea inicial y un tabulador final. El cliente las construye con estos literales; las secuencias de escape representan esos controles dentro de la cadena, no dos caracteres de texto:\n1: \"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;01] } }\\t\"\n2: \"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;02] } }\\t\"\n3: \"\\n{ conjunto { grupo azul } { grupo rojo +07[03;+01] 02[00;00] } }\\t\"\n\nEl selector 4 no lee una muestra: cambia el ID del segundo registro de rojo a siete y copia ese conjunto en el otro objeto. Ambos contienen ahora el ID siete repetido dentro del mismo grupo. Sus campos coinciden, pero ambos son inválidos. Según el contrato, compararlos entre sí o consigo mismos debe devolver false. Ese resultado no exige encontrar campos diferentes: también comunica que no se cumplen las condiciones de una comparación válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las tres primeras líneas muestran Validos=primero:segundo, con el resultado del validador para esperado y observado; Comparacion=directa:inversa, con las comparaciones en ambos órdenes; y Consigo=primero:segundo, comparando cada objeto consigo mismo. Los valores que sustituyen esos marcadores son booleanos numéricos. Si alguno es inválido, el cliente muestra Ciclo=omitido y termina normalmente.\n\nPara los conjuntos válidos, compone el observado, lee esa composición y vuelve a componer el recuperado. Comprueba el éxito de cada operación antes de continuar. Después muestra Recibido igual= seguido de la igualdad literal entre la muestra y la primera composición; Datos tras ciclo= seguido de la comparación del esperado con el recuperado; Texto estable= seguido de la igualdad entre las dos composiciones; y Canon= seguido de la primera composición. Todas las líneas terminan con salto."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Entrada escribe sólo 1, 2, 3 o 4. Puedes rodear ese único entero con espacios, tabuladores o saltos de línea ASCII; el cliente ya contiene las muestras. Mantén una sola implementación y pulsa «Compilar, ejecutar y comprobar» con cada selector. Las salidas completas requeridas aparecen a continuación. Conserva sus separadores y el salto final de cada línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 1. Salida:\nValidos=1:1\nComparacion=1:1\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=1\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;1] } }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 2. Salida:\nValidos=1:1\nComparacion=0:0\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=0\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;2] } }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 3. Salida:\nValidos=1:1\nComparacion=0:0\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=0\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[3;1] 2[0;0] } }"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 4. Salida:\nValidos=0:0\nComparacion=0:0\nConsigo=0:0\nCiclo=omitido"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nbool grupo_valido(const Grupo& grupo) {\n    if (grupo.id < 0 || grupo.id >= 3 || grupo.registros.size() > 10) {\n        return false;\n    }\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id < 0 || registro.id > 9\n            || !recuento_valido(registro.recuento)) {\n            return false;\n        }\n        int coincidencias{0};\n        for (const Registro& otro : grupo.registros) {\n            if (otro.id == registro.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool conjunto_valido(const Conjunto& conjunto) {\n    if (conjunto.grupos.size() > 3) { return false; }\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (!grupo_valido(grupo)) { return false; }\n        int coincidencias{0};\n        for (const Grupo& otro : conjunto.grupos) {\n            if (otro.id == grupo.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    std::ostringstream salida;\n    salida << \"{ conjunto\";\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::string nombre;\n        if (!nombre_grupo(grupo.id, nombre)) { return false; }\n        salida << \" { grupo \" << nombre;\n        for (const Registro& registro : grupo.registros) {\n            salida << ' ' << registro.id << registro.recuento;\n        }\n        salida << \" }\";\n    }\n    salida << \" }\";\n    if (!salida) { return false; }\n    destino = salida.str();\n    return true;\n}\n\nbool mismos_datos(const Conjunto& primero, const Conjunto& segundo) {\n    // Completa el criterio de comparacion sin cambiar el cliente ni el apoyo.\n    (void)primero;\n    (void)segundo;\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 4) { return 1; }\n    Conjunto esperado{{Grupo{2, {}}, Grupo{0, {{7, {0, 0}}, {2, {3, 1}}}}}};\n    Conjunto observado{};\n    std::string recibido;\n    if (caso == 1) {\n        recibido = \"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;01] } }\\t\";\n    } else if (caso == 2) {\n        recibido = \"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;02] } }\\t\";\n    } else if (caso == 3) {\n        recibido = \"\\n{ conjunto { grupo azul } { grupo rojo +07[03;+01] 02[00;00] } }\\t\";\n    } else {\n        esperado.grupos.at(1).registros.at(1).id = 7;\n        observado = esperado;\n    }\n    if (caso != 4) {\n        std::istringstream entrada{recibido};\n        if (!leer_muestra_completa(entrada, observado)) {\n            std::cout << \"Error de lectura\\n\";\n            return 1;\n        }\n    }\n    const bool valido_esperado = conjunto_valido(esperado);\n    const bool valido_observado = conjunto_valido(observado);\n    std::cout << \"Validos=\" << valido_esperado << ':' << valido_observado << '\\n';\n    std::cout << \"Comparacion=\" << mismos_datos(esperado, observado) << ':'\n              << mismos_datos(observado, esperado) << '\\n';\n    std::cout << \"Consigo=\" << mismos_datos(esperado, esperado) << ':'\n              << mismos_datos(observado, observado) << '\\n';\n    if (!valido_esperado || !valido_observado) {\n        std::cout << \"Ciclo=omitido\\n\";\n        return 0;\n    }\n    std::string canon;\n    if (!componer_conjunto(observado, canon)) {\n        std::cout << \"Error de composicion\\n\";\n        return 1;\n    }\n    Conjunto recuperado{};\n    std::istringstream entrada_compuesta{canon};\n    if (!leer_muestra_completa(entrada_compuesta, recuperado)) {\n        std::cout << \"Error de segunda lectura\\n\";\n        return 1;\n    }\n    std::string segunda;\n    if (!componer_conjunto(recuperado, segunda)) {\n        std::cout << \"Error de segunda composicion\\n\";\n        return 1;\n    }\n    std::cout << \"Recibido igual=\" << (recibido == canon) << '\\n';\n    std::cout << \"Datos tras ciclo=\" << mismos_datos(esperado, recuperado) << '\\n';\n    std::cout << \"Texto estable=\" << (canon == segunda) << '\\n';\n    std::cout << \"Canon=\" << canon << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Validos=1:1\nComparacion=1:1\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=1\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;1] } }\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las líneas coinciden con la muestra equivalente: ambos conjuntos son válidos, las comparaciones dan 1 y cada uno coincide consigo mismo. Recibido igual=0 se debe a que la muestra contiene blancos exteriores, signos positivos y ceros iniciales que la composición no conserva.\n\nDatos tras ciclo=1 compara el recuperado con el esperado preparado antes de leer. Texto estable=1 compara las dos composiciones. Con el cliente dado se observan ambas propiedades sin exigir que el texto recibido sea idéntico a la forma compuesta.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Validos=1:1\nComparacion=0:0\nConsigo=0:0\nRecibido igual=0\nDatos tras ciclo=0\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;1] } }\n"
+                    ],
+                    "text": "Los conjuntos preparados son válidos y contienen los mismos datos, pero las comparaciones resultan falsas, incluidas las de cada objeto consigo mismo. Revisa si permanece el return false; provisional o si alguna condición está rechazando la coincidencia. Debes completar la función para admitir la igualdad válida además de detectar diferencias e invalidez."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Validos=1:1\nComparacion=0:0\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=0\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;2] } }\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La diferencia está en rechazados del registro 2 de rojo: el esperado tiene 1 y el observado tiene 2. Ambos siguen siendo válidos, pero las comparaciones entre ellos dan 0. Las comparaciones de cada uno consigo mismo dan 1.\n\nEl ciclo conserva fielmente la versión observada y su texto se estabiliza. Eso explica Texto estable=1 junto con Datos tras ciclo=0: el conjunto recuperado continúa siendo diferente del esperado independiente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Validos=1:1\nComparacion=1:1\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=1\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;2] } }\n"
+                    ],
+                    "text": "La comparación presenta coincidencia pese a que rechazados del registro dos es 1 en el esperado y 2 en el observado. Este resultado es compatible con omitir ese miembro al comparar. Revisa las dos cantidades de cada registro: comprobar sólo aceptados, ID y tamaños deja sin observar esta diferencia. Que el texto se estabilice no la elimina."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Validos=1:1\nComparacion=0:0\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=0\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[3;1] 2[0;0] } }\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las dos versiones suman 3 aceptados y 1 rechazado dentro de rojo, pero esas cantidades pertenecen a ID diferentes. En el esperado están en el registro dos; en el observado, en el siete. Comparar los recuentos de cada posición produce 0:0 en Comparacion.\n\nLa escritura del observado es estable y cada conjunto válido coincide consigo mismo. La estabilidad no corrige el reparto: Datos tras ciclo=0 continúa detectando la diferencia respecto del esperado.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Validos=1:1\nComparacion=1:1\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=1\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[3;1] 2[0;0] } }\n"
+                    ],
+                    "text": "La comparación acepta el reparto modificado. Este patrón es compatible con conservar sólo los totales de las cantidades: ambos grupos suman 3 y 1. Revisa los recuentos vinculados a cada ID y posición. El registro siete pasa de cantidades cero a 3 y 1, mientras el registro dos cambia en sentido contrario; las sumas ocultan ambos cambios."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Validos=0:0\nComparacion=0:0\nConsigo=0:0\nCiclo=omitido\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Ambos conjuntos repiten el ID siete dentro de rojo. El validador los rechaza y las comparaciones devuelven 0, incluso al recibir dos veces el mismo objeto. Aquí el contrato sólo devuelve verdadero para conjuntos válidos con todos sus datos coincidentes.\n\nEl cliente presenta Ciclo=omitido porque no continúa la composición con esos datos inválidos. La terminación normal permite comprobar este diagnóstico; no se trata de un error de compilación.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Validos=0:0\nComparacion=1:1\nConsigo=1:1\nCiclo=omitido\n"
+                    ],
+                    "text": "El propio cliente muestra Validos=0:0, pero la comparación acepta los conjuntos. Los campos iguales no bastan para devolver verdadero bajo este contrato: el ID siete está repetido dentro de rojo. Comprueba que la comparación rechace objetos inválidos también cuando se comparan consigo mismos, sin confundir identidad del objeto con datos admitidos."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Una comparación completa y sus comprobaciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nbool grupo_valido(const Grupo& grupo) {\n    if (grupo.id < 0 || grupo.id >= 3 || grupo.registros.size() > 10) {\n        return false;\n    }\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id < 0 || registro.id > 9\n            || !recuento_valido(registro.recuento)) {\n            return false;\n        }\n        int coincidencias{0};\n        for (const Registro& otro : grupo.registros) {\n            if (otro.id == registro.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool conjunto_valido(const Conjunto& conjunto) {\n    if (conjunto.grupos.size() > 3) { return false; }\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (!grupo_valido(grupo)) { return false; }\n        int coincidencias{0};\n        for (const Grupo& otro : conjunto.grupos) {\n            if (otro.id == grupo.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    std::ostringstream salida;\n    salida << \"{ conjunto\";\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::string nombre;\n        if (!nombre_grupo(grupo.id, nombre)) { return false; }\n        salida << \" { grupo \" << nombre;\n        for (const Registro& registro : grupo.registros) {\n            salida << ' ' << registro.id << registro.recuento;\n        }\n        salida << \" }\";\n    }\n    salida << \" }\";\n    if (!salida) { return false; }\n    destino = salida.str();\n    return true;\n}\n\nbool mismos_datos(const Conjunto& primero, const Conjunto& segundo) {\n    if (!conjunto_valido(primero) || !conjunto_valido(segundo)\n        || primero.grupos.size() != segundo.grupos.size()) {\n        return false;\n    }\n    const int cantidad_grupos = static_cast<int>(primero.grupos.size());\n    for (int i = 0; i < cantidad_grupos; ++i) {\n        const Grupo& a = primero.grupos.at(i);\n        const Grupo& b = segundo.grupos.at(i);\n        if (a.id != b.id || a.registros.size() != b.registros.size()) {\n            return false;\n        }\n        const int cantidad_registros = static_cast<int>(a.registros.size());\n        for (int j = 0; j < cantidad_registros; ++j) {\n            const Registro& x = a.registros.at(j);\n            const Registro& y = b.registros.at(j);\n            if (x.id != y.id || x.recuento.aceptados != y.recuento.aceptados\n                || x.recuento.rechazados != y.recuento.rechazados) {\n                return false;\n            }\n        }\n    }\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 4) { return 1; }\n    Conjunto esperado{{Grupo{2, {}}, Grupo{0, {{7, {0, 0}}, {2, {3, 1}}}}}};\n    Conjunto observado{};\n    std::string recibido;\n    if (caso == 1) {\n        recibido = \"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;01] } }\\t\";\n    } else if (caso == 2) {\n        recibido = \"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;02] } }\\t\";\n    } else if (caso == 3) {\n        recibido = \"\\n{ conjunto { grupo azul } { grupo rojo +07[03;+01] 02[00;00] } }\\t\";\n    } else {\n        esperado.grupos.at(1).registros.at(1).id = 7;\n        observado = esperado;\n    }\n    if (caso != 4) {\n        std::istringstream entrada{recibido};\n        if (!leer_muestra_completa(entrada, observado)) {\n            std::cout << \"Error de lectura\\n\";\n            return 1;\n        }\n    }\n    const bool valido_esperado = conjunto_valido(esperado);\n    const bool valido_observado = conjunto_valido(observado);\n    std::cout << \"Validos=\" << valido_esperado << ':' << valido_observado << '\\n';\n    std::cout << \"Comparacion=\" << mismos_datos(esperado, observado) << ':'\n              << mismos_datos(observado, esperado) << '\\n';\n    std::cout << \"Consigo=\" << mismos_datos(esperado, esperado) << ':'\n              << mismos_datos(observado, observado) << '\\n';\n    if (!valido_esperado || !valido_observado) {\n        std::cout << \"Ciclo=omitido\\n\";\n        return 0;\n    }\n    std::string canon;\n    if (!componer_conjunto(observado, canon)) {\n        std::cout << \"Error de composicion\\n\";\n        return 1;\n    }\n    Conjunto recuperado{};\n    std::istringstream entrada_compuesta{canon};\n    if (!leer_muestra_completa(entrada_compuesta, recuperado)) {\n        std::cout << \"Error de segunda lectura\\n\";\n        return 1;\n    }\n    std::string segunda;\n    if (!componer_conjunto(recuperado, segunda)) {\n        std::cout << \"Error de segunda composicion\\n\";\n        return 1;\n    }\n    std::cout << \"Recibido igual=\" << (recibido == canon) << '\\n';\n    std::cout << \"Datos tras ciclo=\" << mismos_datos(esperado, recuperado) << '\\n';\n    std::cout << \"Texto estable=\" << (canon == segunda) << '\\n';\n    std::cout << \"Canon=\" << canon << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia comprueba primero la validez y los tamaños. Después recorre posiciones correspondientes: un ID de grupo distinto, un número diferente de registros o cualquier diferencia de ID, aceptados o rechazados impide devolver true. Los retornos antes del acceso evitan consultar una posición que no existe en uno de los vectores.\n\nEn las tres primeras pruebas, esperado se prepara directamente y se conserva mientras el lector obtiene observado desde un texto. El ciclo posterior utiliza el observado, pero la comparación final vuelve al esperado inicial. Por eso una escritura estable no puede cambiar por sí sola el criterio de lo que se quería recuperar.\n\nEl segundo caso cambia sólo rechazados; el tercero redistribuye cantidades manteniendo totales; el cuarto contiene datos idénticos pero inválidos. Cada uno distingue una comprobación diferente. Una comparación incompleta puede coincidir con muestras que no ejerciten el dato que omitió. La implementación mostrada es una opción: otras organizaciones de la función son válidas si respetan el mismo criterio y sus límites."
         }
       ]
     }
@@ -527,7 +654,21 @@
         "id": "page_0007",
         "blocks": [
           "block_0007_0000",
-          "block_0007_0001"
+          "block_0007_0001",
+          "u12_igualdad_esperado_independiente_titulo",
+          "u12_igualdad_esperado_independiente_contrato_0",
+          "u12_igualdad_esperado_independiente_contrato_1",
+          "u12_igualdad_esperado_independiente_contrato_2",
+          "u12_igualdad_esperado_independiente_contrato_3",
+          "u12_igualdad_esperado_independiente_contrato_4",
+          "u12_igualdad_esperado_independiente_entrada_salida_0",
+          "u12_igualdad_esperado_independiente_entrada_salida_1",
+          "u12_igualdad_esperado_independiente_entrada_salida_2",
+          "u12_igualdad_esperado_independiente_entrada_salida_3",
+          "u12_igualdad_esperado_independiente_construccion",
+          "u12_igualdad_esperado_independiente_referencia_titulo",
+          "u12_igualdad_esperado_independiente_referencia_codigo",
+          "u12_igualdad_esperado_independiente_referencia_razonamiento"
         ]
       }
     ],
@@ -958,7 +1099,134 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_igualdad_esperado_independiente_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_contrato_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_contrato_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_contrato_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_contrato_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_contrato_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_entrada_salida_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_entrada_salida_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 7
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_entrada_salida_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 8
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_entrada_salida_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 9
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_construccion",
+        "sha256": "10d3f9c79a9d744aeab673c66e6ff0cdd0d1b9b66d4cd0a774a887540dadbe86",
+        "storage": {
+          "page": 8,
+          "block": 10
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 11
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_referencia_codigo",
+        "sha256": "0137a8acccec194bdbc026f28efb2839aa136a90709500299e6b720e3c89132b",
+        "storage": {
+          "page": 8,
+          "block": 12
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_igualdad_esperado_independiente_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 13
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0004",
@@ -1039,6 +1307,81 @@
         "id": "block_0006_0002",
         "beforeSha256": "abbfa55f6663c68b1e189149a37fcc83b7de749fee222957097c875324b07433",
         "afterSha256": "a18eddb4c8e447c807fd706bae9d94be0e5c1f87494ce6b7cb7eef42be4a6bae"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "b2879e8c0eefbe04eb4fa15c7b29a89998c0255a74e095a72adb9621f2755999",
+        "afterSha256": "d2942f2470d8d0367024903d9ba992fe536a1713f50bf815c78e5afbfcc4a6fc"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "2e5fd88f8c82b57e93227a1b1637fd5b0c528a7b18fd3a1e66c4ed30c95f866f",
+        "afterSha256": "8bc64783db066426054ddb64fc9f46e165d5204bdf92eafa0ca827ea7dc0e09c"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "7f3a19f97716a9d231136034214a7ed68938fd44173f0ba3deb50b0b885a6386",
+        "afterSha256": "3b594f70939d130e516dfc6d0ef95828a2d3d85deb31fcb0f1e087f3503ff8f5"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "18bda8209ef5b36940f50eb128ef6b73257ab19742a4f7be4092f8c385a225a6",
+        "afterSha256": "06e03eb9604192a9ab318af54130c35d5b77d111cc6eda78274467fce4ad6017"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "e6a17b7fcded129eae9224d70fdb424a93658d8b343eee4e1c29b67e9bfb4e0c",
+        "afterSha256": "e1dbbc16cb6d97f52eb8ac12eedef1744fcb50d6d10f8cfdf83d38affef37e85"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "61942eef31c7b4d120470329281ffb90eac8d786badf472600437e4ac8442f94",
+        "afterSha256": "432f837603aa848544a17653fb7dfb6d6dbf147700356f75aade0894297c2f94"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "b2606c32f4f28b78e8d562483557ced7e3bce8b8c2ea4f523b9dee3c3047ad57",
+        "afterSha256": "6b85b67fbed77c2f45117f5eba5743b825468cc239a39996f5eaba3117623ea1"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "b8e00742733c0895d3ba127e3eead76183d99640a8a3d0989c83480b60b03e33",
+        "afterSha256": "f293f1cee9c49995b5f87d11f99fd80b0e9fb135f43b61684c43052525f6e3ab"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "d9e5ef82c07282ba6b400d384dda20d0aa6ff9e83c164938629b007ae0d6b16b",
+        "afterSha256": "b74ce1fa5f2eabb03723abdf8865da16df608019e4d2eff6257fe64c2b76905e"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8f3114b9607410c8b9ab37b0517b1459c22475e5bdacd67446fa3abc5c5a32d6",
+        "afterSha256": "03474a6bada6e95998170e1bab0705b0f1d820d7ccf7cabc220610a95a13f0b7"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "4d8256255f5ce3dff5ce02867117572d5be943b4f349323fac6e99717b217ce7",
+        "afterSha256": "a2873b14e704f0c686ecb00ce0577883d65632523352a08e0b17c09df915128b"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "a7b49a67bda9d9f853ecc9bf6ebc236d05b84328c21c360ad7000e703c2312f8",
+        "afterSha256": "ba306d131347dee6acf601b80b06cb6c87f7fe5e2e24f2f5c3355c457817d23a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "c394b67bf2575af5c4ef008d912bd01ffadcd894cdac06389cea123b95ad5c72",
+        "afterSha256": "31976419e8048d031d9e03b7337e925b7453d038a786d0001e3f22004c22505e"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "8d97df101fc30456372d64820883e5eed85b0668bfa107ce0cd0fba6ac741cc0",
+        "afterSha256": "367eff78e20738faea54a3fd8e4c779282fb1154c690227c01e680ecbc0d0812"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "49d56cbd240a9d9385767fb765e875328d0fa459c44933d78c305bd74841aead",
+        "afterSha256": "364cdae994d11765f321a9627bba9a67560a59cf211f68efc4a5499fd083ba78"
       }
     ]
   },
@@ -1055,12 +1398,26 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "501732eaa0abc54dc23e167e4d28bf1066cafebb7538831795abf5b167fe0635",
+        "sourceSha256": "1b9387eb54950499a91d94e0bb04bf78abcc87f983e698331589187bbc8e1a15",
         "spans": [
           {
-            "start": 291,
-            "end": 300,
-            "text": "aceptados",
+            "start": 3,
+            "end": 11,
+            "text": "Conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 50,
+            "text": "Grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 104,
+            "text": "Registro",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1069,41 +1426,62 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "c85d0ac60a1fb5fa15f83f36ad703482dbfd9afacb05d94a0dc0abfef14011f2",
+        "sourceSha256": "a596f1bb7d06dc2cfc3ee61614f60c0e12690bc91e379bcd950b860e9f3a719c",
         "spans": [
           {
-            "start": 98,
-            "end": 99,
-            "text": "+",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 111,
-            "end": 116,
-            "text": "ceros",
+            "start": 162,
+            "end": 163,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 180,
-            "text": "+07",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 192,
-            "end": 193,
-            "text": "7",
+            "start": 181,
+            "end": 182,
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 282,
-            "end": 285,
-            "text": "dos",
+            "start": 185,
+            "end": 186,
+            "text": "0",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 209,
+            "text": "+04[03;00]",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 250,
+            "end": 256,
+            "text": "4[3;0]",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 324,
+            "end": 335,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 342,
+            "text": "==",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 548,
+            "end": 568,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           }
         ]
@@ -1139,8 +1517,37 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "b783fa0aef7238e60cf8b4190bee03901097b0081de21669d30f13802eefd6e3",
-        "spans": []
+        "sourceSha256": "25758e6ac59d4798b2ff3a5e9c1e8df821302478b9054e53bd0242c25d75c949",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "7[2;1]",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 200,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1195,28 +1602,28 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "081c7720f698e4b689050307842e76a48bdecfe4e93196eca72ff93fb9b6f55f",
+        "sourceSha256": "3ed016b6855fbc643b3534f397f75ea14358d229737563e5f8b5babeb46b27ca",
         "spans": [
           {
-            "start": 7,
-            "end": 19,
-            "text": "mismos_datos",
+            "start": 10,
+            "end": 77,
+            "text": "bool mismos_datos(const Conjunto& primero, const Conjunto& segundo)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 155,
-            "end": 158,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 218,
+            "end": 222,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 218,
-            "end": 223,
+            "start": 497,
+            "end": 502,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1251,8 +1658,30 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "fe9348222698cd287935aa4afb0b5b678faf9c586000c09c22aae45bad3147ed",
-        "spans": []
+        "sourceSha256": "08d0f65a4c48b1c14c27191f2c2b4505556abd268d72d4e039bb9ccb7e4bf376",
+        "spans": [
+          {
+            "start": 63,
+            "end": 67,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 112,
+            "text": "azul",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 242,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1332,42 +1761,35 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "f4b047cd45d18710e2de5ba47089b10e5de6d40e33aadb7b3579cf4540b4ce47",
+        "sourceSha256": "3d1dd5afb46512314b90067e1f6d3f7fff43a6d311225a4368bfc70cd36ca4a1",
         "spans": [
           {
-            "start": 95,
-            "end": 98,
+            "start": 130,
+            "end": 133,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 116,
-            "end": 120,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
+            "start": 381,
+            "end": 386,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 134,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 237,
-            "end": 241,
+            "start": 437,
+            "end": 441,
             "text": "at()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 281,
-            "end": 284,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 629,
+            "end": 633,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1395,8 +1817,16 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "2c6fb1ac158c351c9516f7fbd04bf3a180576e4c002c8072c144ba3134ec5e12",
-        "spans": []
+        "sourceSha256": "0988f0ad9ff75105bc967b986eb996d9ff96be17a729cbd592c6b45c786693cc",
+        "spans": [
+          {
+            "start": 165,
+            "end": 170,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1459,7 +1889,7 @@
       {
         "block": "block_0001_0005",
         "path": "/explanation",
-        "sourceSha256": "7b123592ef924ba243a9ce82ce3926deaeb0270edc977df92e053847b2e08038",
+        "sourceSha256": "b13845192f1c1c17ea095ad5e0699ea3111d632025621e16680585724b82d363",
         "spans": []
       },
       {
@@ -1515,70 +1945,63 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "5d12a813a13a972a42bf2589adca525d2c39d94a1811b296974d2ec26f5859b1",
+        "sourceSha256": "ff3e766028cbc90729a1b1f18d2b7b04424a0aa63af2a72155fe41e6fdb11f5d",
         "spans": [
           {
-            "start": 11,
-            "end": 23,
+            "start": 10,
+            "end": 22,
             "text": "mismos_datos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 38,
-            "end": 42,
+            "start": 47,
+            "end": 51,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 81,
-            "end": 89,
-            "text": "Conjunto",
+            "start": 64,
+            "end": 81,
+            "text": "Conjunto original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 146,
-            "end": 154,
-            "text": "Conjunto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 255,
-            "end": 258,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 293,
-            "end": 310,
+            "start": 353,
+            "end": 370,
             "text": "componer_conjunto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 316,
-            "end": 337,
+            "start": 376,
+            "end": 397,
             "text": "leer_muestra_completa",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 399,
-            "end": 404,
+            "start": 429,
+            "end": 434,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 494,
-            "end": 499,
+            "start": 568,
+            "end": 580,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 596,
+            "end": 601,
             "text": "false",
-            "role": "output",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2045,41 +2468,20 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "463b14dcbca93b814ca1a27ded7162692ab6b8cb7e53ac14376222bdb40740a1",
+        "sourceSha256": "f2f9ae03118ca68ffd482cce85c8eff45fd18c250ff3d771167a134e1d8c3f04",
         "spans": [
           {
-            "start": 146,
-            "end": 151,
+            "start": 157,
+            "end": 162,
             "text": "1:1:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 322,
+            "start": 276,
+            "end": 332,
             "text": "{ conjunto { grupo azul 7[0;0] } { grupo rojo 4[3;1] } }",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 348,
-            "end": 352,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 362,
-            "end": 366,
-            "text": "rojo",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 383,
-            "end": 387,
-            "text": "cero",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2087,7 +2489,7 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "625360ed190bb5aed69a75e1a029caf4654810a7f75c2155415da3e00dbc639b",
+        "sourceSha256": "6358e9d1abd6b151ee4e03d6c1ab976d23cfd6f95eec5a6b5f55b98b67e118d2",
         "spans": []
       },
       {
@@ -2107,20 +2509,69 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "044532547a7c4f2ad4fa28107a96fecf3643ca1694a04f56c991240e132833cb",
+        "sourceSha256": "971efbb629d12367bfed3606e7f49881b3c09b328a238f0f3374d7bec59dc6e8",
         "spans": [
+          {
+            "start": 56,
+            "end": 57,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 73,
+            "text": "+07",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 90,
             "end": 91,
-            "text": "+",
+            "text": "0",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
           },
           {
             "start": 94,
-            "end": 99,
-            "text": "ceros",
+            "end": 95,
+            "text": "1",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "00",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 116,
+            "text": "+01",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 397,
+            "end": 405,
+            "text": "recibido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 416,
+            "end": 421,
+            "text": "1:1:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 492,
+            "text": "{ conjunto { grupo azul 7[0;1] } { grupo rojo } }",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2204,20 +2655,41 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "3eb574f289fedac5437d46f618463243baddb88c47a543eec49229d79cd34bb9",
+        "sourceSha256": "eb77a4cab5b1311cdd8e2d4f7ff9e7942eee7fb2335879c56f160e4e09ff08c6",
         "spans": [
           {
-            "start": 4,
-            "end": 7,
-            "text": "dos",
-            "role": "data",
+            "start": 30,
+            "end": 40,
+            "text": "incompleto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 207,
+            "text": "1",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 57,
-            "end": 61,
-            "text": "rojo",
-            "role": "data",
+            "start": 242,
+            "end": 250,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 353,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 368,
+            "text": "1:0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2246,21 +2718,13 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "d4293c1effed0d658d4352e9885466ecc224747bb8f30918055d11d197670452",
-        "spans": [
-          {
-            "start": 144,
-            "end": 148,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "7753c9b36e14240c737ea3d620f455b8de89a0e4673a0faef57c01e0eebf2fc5",
+        "spans": []
       },
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "8a84fd1a05ea1807c2092b565c74025b2cde9cb825592477f650932090b6f538",
+        "sourceSha256": "45c4904dce6d3849125755adc9925c5e89a36a30e97b0c2e10615f82fc1c5654",
         "spans": []
       },
       {
@@ -2574,6 +3038,634 @@
         "path": "/text",
         "sourceSha256": "c06fa9f55369edd5755050190c1f35fd37d5c20b68f51007cc2f394ac4f9b47e",
         "spans": []
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_titulo",
+        "path": "/text",
+        "sourceSha256": "f8c3f3198413d29a3da3afc295774cce4d82ae41b29e4d265a69ed107fa57704",
+        "spans": []
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_contrato_0",
+        "path": "/text",
+        "sourceSha256": "f17483d4061d9a7bfc50165175ad200035fe62a6ea1584d7884da5102f6fc327",
+        "spans": [
+          {
+            "start": 20,
+            "end": 32,
+            "text": "mismos_datos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 94,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 269,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_contrato_1",
+        "path": "/text",
+        "sourceSha256": "67ee630d0f5485366f449477b8af35fe030fe7425cbb26793efeea4a3cd9cb6d",
+        "spans": [
+          {
+            "start": 19,
+            "end": 27,
+            "text": "esperado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 95,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 98,
+            "end": 104,
+            "text": "2[3;1]",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 204,
+            "end": 213,
+            "text": "observado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 441,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 444,
+            "end": 445,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 501,
+            "end": 502,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 515,
+            "end": 516,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 614,
+            "end": 615,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 618,
+            "end": 619,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_contrato_2",
+        "path": "/text",
+        "sourceSha256": "7e02247c116ce2b5db18a84d93eb14451cd3c625855b2eff74d429b7bdfe49a2",
+        "spans": [
+          {
+            "start": 228,
+            "end": 229,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 301,
+            "text": "\"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;01] } }\\t\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 303,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 375,
+            "text": "\"\\n{ conjunto { grupo azul } { grupo rojo +07[00;+00] 02[03;02] } }\\t\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 377,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 449,
+            "text": "\"\\n{ conjunto { grupo azul } { grupo rojo +07[03;+01] 02[00;00] } }\\t\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 463,
+            "end": 464,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 761,
+            "end": 766,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_contrato_3",
+        "path": "/text",
+        "sourceSha256": "36f585d7136e3db77d057d9e1c96e01640d2ac383284b65524b7d2bada410939",
+        "spans": [
+          {
+            "start": 34,
+            "end": 57,
+            "text": "Validos=primero:segundo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 144,
+            "text": "Comparacion=directa:inversa",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 211,
+            "text": "Consigo=primero:segundo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 374,
+            "text": "Ciclo=omitido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 577,
+            "end": 592,
+            "text": "Recibido igual=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 667,
+            "end": 684,
+            "text": "Datos tras ciclo=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 743,
+            "end": 757,
+            "text": "Texto estable=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 812,
+            "end": 818,
+            "text": "Canon=",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_contrato_4",
+        "path": "/text",
+        "sourceSha256": "38db33632738751ade5f9b39cc006d90a608b45ac6c91bc3471b30ecaa122a20",
+        "spans": [
+          {
+            "start": 24,
+            "end": 25,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_entrada_salida_0",
+        "path": "/text",
+        "sourceSha256": "211b2302d3198c1d4f39268819445296d0f11f001bd907154081dc9092c061e8",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 174,
+            "text": "Validos=1:1\nComparacion=1:1\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=1\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;1] } }",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_entrada_salida_1",
+        "path": "/text",
+        "sourceSha256": "ed5ca941c935f3d264db1974789a64d962fd74df6fe80743f9a5d0f26a819648",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 174,
+            "text": "Validos=1:1\nComparacion=0:0\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=0\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[0;0] 2[3;2] } }",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_entrada_salida_2",
+        "path": "/text",
+        "sourceSha256": "1bb6e8e6d06d6e4ca09acdccd7b7f0dd38b3916776e28c1ee571ea3fc0ff10be",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 174,
+            "text": "Validos=1:1\nComparacion=0:0\nConsigo=1:1\nRecibido igual=0\nDatos tras ciclo=0\nTexto estable=1\nCanon={ conjunto { grupo azul } { grupo rojo 7[3;1] 2[0;0] } }",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_entrada_salida_3",
+        "path": "/text",
+        "sourceSha256": "966e5d7e48c446486a84a45b88cb8ed468e39ad26df51bbd3690db2cdf48dc64",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 73,
+            "text": "Validos=0:0\nComparacion=0:0\nConsigo=0:0\nCiclo=omitido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "ee55771e7d99f5d510350f082743e792bc9b539ed2c9d6b97b2668456b4338a8",
+        "spans": [
+          {
+            "start": 100,
+            "end": 101,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 153,
+            "text": "Recibido igual=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 294,
+            "text": "Datos tras ciclo=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 373,
+            "text": "Texto estable=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "5a1d3979027439b5af3dc681439d3f7aabee57f86c5193460a9a6a1321322cca",
+        "spans": [
+          {
+            "start": 174,
+            "end": 187,
+            "text": "return false;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "934a7fa7dd585649186688a7ddbbe627722c55146a6d11789456565cea7daecb",
+        "spans": [
+          {
+            "start": 46,
+            "end": 47,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 76,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 99,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 326,
+            "text": "Texto estable=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 355,
+            "text": "Datos tras ciclo=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "33795ed0d973ed1f3770790c20f498c83576bf95e6d32587cfdbf56e4caf7f47",
+        "spans": [
+          {
+            "start": 79,
+            "end": 80,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 99,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "2277570e3f185302d919dab52702be1abeec4b1e247f1c600154f77515ceedca",
+        "spans": [
+          {
+            "start": 24,
+            "end": 25,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 237,
+            "text": "0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 252,
+            "text": "Comparacion",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 396,
+            "text": "Datos tras ciclo=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "34ba3fc873399bb27b9c4a88d290a3190e8c90a1d33cd0bde1c463a4a67524e9",
+        "spans": [
+          {
+            "start": 140,
+            "end": 141,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 246,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 250,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "605c9c5e4170981c14e84659f61970e185e27c5b5620ac66ed1097b66b6983ff",
+        "spans": [
+          {
+            "start": 107,
+            "end": 108,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 288,
+            "text": "Ciclo=omitido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_construccion",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "fe81144e3d6a9c29f6064ce1c53211e18e10c03aa942fe00250ae7c71d1dff70",
+        "spans": [
+          {
+            "start": 26,
+            "end": 37,
+            "text": "Validos=0:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "3b7e78a76a4de1a21389ea1f6bc129b82e90fdc2f2032e828eb67a3826ef0bc7",
+        "spans": []
+      },
+      {
+        "block": "u12_igualdad_esperado_independiente_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "3be165d617f23324aab2e9dd0db086685cfd4171c1db17df9f98880337aae8d1",
+        "spans": [
+          {
+            "start": 230,
+            "end": 234,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 373,
+            "text": "esperado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 439,
+            "end": 448,
+            "text": "observado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2583,5 +3675,57 @@
         "spans": []
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0002_0003",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0004_0000",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001"
+      ]
+    },
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001"
+      ]
+    },
+    {
+      "activity": "u12_igualdad_esperado_independiente_construccion",
+      "blocks": [
+        "u12_igualdad_esperado_independiente_referencia_titulo",
+        "u12_igualdad_esperado_independiente_referencia_codigo",
+        "u12_igualdad_esperado_independiente_referencia_razonamiento"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "block_0003_0004",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0004_0001",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "u12_igualdad_esperado_independiente_construccion",
+      "requires": [
+        "block_0002_0003"
+      ]
+    }
+  ]
 }
