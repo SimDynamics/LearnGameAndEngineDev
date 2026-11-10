@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'NarrationWorker', 'U12Reader',
+    [ValidateSet('StateImport', 'NarrationPlayer', 'ReaderBuild', 'WasiRunner', 'NarrationWorker', 'U12Reader',
         'U11EditorialReader', 'CompilerHistoricalReader', 'U6DiagnosticReader')]
     [string] $Suite = 'StateImport',
     [ValidateSet('All', 'DeclarationsAssignments', 'Characters')]
@@ -69,6 +69,15 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_u6_diagnostic_flow_tests'
             )
             Results = 'reader-build'
+        }
+    }
+    'WasiRunner' {
+        @{
+            Directory = 'wasi-runner-ci'
+            CMakeOption = 'LGAED_WASI_RUNNER_QA_ONLY'
+            Targets = @('lgaed_cpp_runner_tests')
+            Results = 'wasi-runner'
+            Tests = @('native.wasi_runner')
         }
     }
     'NarrationWorker' {
