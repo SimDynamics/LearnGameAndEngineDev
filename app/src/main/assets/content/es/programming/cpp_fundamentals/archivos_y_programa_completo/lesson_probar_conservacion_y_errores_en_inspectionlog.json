@@ -58,7 +58,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para mismos_datos, parte del caso base y prepara seis contrastes separados: igualdad exacta; invertir grupos; invertir registros; eliminar el grupo vacío; eliminar el registro de ceros; y cambiar únicamente los rechazados. Añade un conjunto inválido comparado consigo mismo: el resultado debe ser falso. Esta prueba controla una precondición que comparar sólo los miembros no comprobaría."
+          "text": "Para mismos_datos, parte del caso base y prepara seis contrastes separados: igualdad exacta; invertir grupos; invertir registros; eliminar el grupo vacío; eliminar el registro de ceros; y cambiar únicamente los rechazados. Añade un conjunto inválido comparado consigo mismo: el resultado debe ser falso. La validez de ambos conjuntos forma parte de lo que esta función comprueba. Aunque coincidan todos los miembros, no debe devolver true si alguno de los conjuntos es inválido."
         },
         {
           "type": "paragraph",
@@ -90,7 +90,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En el comprobador, escribe una entrada inválida y prepara una salida con el texto exacto MARCA. Comprueba apertura, escritura y cierre de esos archivos de prueba. Después llama a procesar_archivos con el estado previo no vacío. Debe devolver 2, conservar ese estado y dejar la salida exactamente en MARCA. La ausencia de un informe no basta: hay que releer el archivo para comprobar que no se abrió y truncó antes de tiempo."
+          "text": "En el comprobador, escribe una entrada inválida y prepara una salida con el texto exacto MARCA. Comprueba apertura, escritura y cierre de esos archivos de prueba. Después llama a procesar_archivos con el estado previo no vacío. Debe devolver 2, conservar ese estado y dejar la salida exactamente en MARCA.\n\nReleer el archivo permite comprobar que su contenido final conserva esos caracteres. Para verificar además que la salida no se abre antes de aceptar la entrada, revisa el orden de las operaciones en procesar_archivos: la apertura de salida debe quedar después de la lectura y validación completas. El contenido final y la inspección del código aportan comprobaciones distintas."
         },
         {
           "type": "paragraph",
@@ -98,7 +98,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para provocar una apertura imposible de forma reproducible, crea pruebas_tmp/bloqueo.txt como archivo normal. La ruta pruebas_tmp/bloqueo.txt/salida.txt intenta utilizar ese archivo como si fuera una carpeta. Una muestra válida debe producir Error al abrir salida y terminar con 1. Utiliza la misma idea para una entrada que no pueda abrirse; en ese caso tampoco se debe tocar la salida anterior."
+          "text": "Para provocar una apertura imposible de forma reproducible, crea pruebas_tmp/bloqueo.txt como archivo normal. La ruta pruebas_tmp/bloqueo.txt/salida.txt intenta utilizar ese archivo como si fuera una carpeta. Con una entrada válida, la operación debe producir Error al abrir salida y terminar con 1. En ese momento, actual ya contiene el conjunto aceptado: la función lo sustituyó después de validar la entrada y antes de intentar abrir la salida. El error de guardado no deshace esa aceptación en memoria.\n\nUtiliza la misma idea para una entrada que no pueda abrirse. En ese caso, la operación falla antes de leer y aceptar datos: debe conservar el estado previo y tampoco tocar la salida anterior. Ambas ejecuciones devuelven 1, pero el diagnóstico y el estado esperado dependen de la etapa alcanzada."
         },
         {
           "type": "paragraph",
@@ -106,7 +106,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para recuperar el análisis de flujos, escribe en un std::ofstream ya cerrado y observa el fallo; comprueba también un segundo cierre tras una escritura y un primer cierre correctos. Son errores provocados expresamente, no averías físicas observadas. Distingue el indicador del flujo de los bytes que quedaron guardados."
+          "text": "Para recuperar el análisis de flujos, crea pruebas_tmp/cerrado.txt, ciérralo correctamente y después intenta escribir MARCA en el mismo std::ofstream. El flujo debe señalar un fallo y la relectura debe encontrar el archivo vacío. En otra prueba, escribe MARCA en pruebas_tmp/doble.txt, comprueba la escritura y el primer cierre, y llama de nuevo a close. El segundo cierre señala fallo porque el archivo ya está cerrado (Köppe et al., 2023, [ofstream.members], [filebuf.members]).\n\nEn esta segunda prueba, la relectura debe seguir obteniendo MARCA. El mismo indicador de fallo acompaña a dos contenidos finales diferentes; hay que comprobar ambos. Son errores provocados expresamente, no averías físicas observadas."
         },
         {
           "type": "multiple_choice",
@@ -175,11 +175,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Guarda los fuentes y ejecuta cada línea por separado desde la raíz, en la consola de desarrollo. Cada ejecución debe mostrar sus casos correctos y devolver cero; consulta el resultado inmediatamente después de ejecutarla."
+          "text": "Guarda los fuentes y ejecuta cada línea por separado desde la raíz, en la consola de desarrollo. La orden echo %ERRORLEVEL% que sigue inmediatamente a cada construcción consulta el retorno de cl: se espera 0, que significa que terminó sin errores (Microsoft, 2025c). Lee también sus advertencias. Si hay un error, corrígelo, guarda y construye de nuevo antes de ejecutar.\n\nDespués de ejecutar cada programa, la siguiente consulta de echo %ERRORLEVEL% corresponde a esa ejecución. Cada batería correcta debe mostrar sus casos correctos y devolver cero. La construcción y las comprobaciones del programa tienen resultados separados; consulta cada uno antes de ejecutar otra herramienta."
         },
         {
           "type": "paragraph",
           "text": "cl /W4 /EHsc modelo.cpp prueba_modelo.cpp /Fe:prueba_modelo.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
         },
         {
           "type": "paragraph",
@@ -192,6 +196,10 @@
         {
           "type": "paragraph",
           "text": "cl /W4 /EHsc modelo.cpp informe.cpp archivos.cpp pruebas.cpp /Fe:pruebas.exe"
+        },
+        {
+          "type": "paragraph",
+          "text": "echo %ERRORLEVEL%"
         },
         {
           "type": "paragraph",
@@ -493,9 +501,11 @@
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0002",
+          "u12_inspectionlog_retorno_construccion_modelo",
           "block_0005_0003",
           "block_0005_0004",
           "block_0005_0005",
+          "u12_inspectionlog_retorno_construccion_bateria",
           "block_0005_0006",
           "block_0005_0007",
           "block_0005_0008",
@@ -710,8 +720,53 @@
         ]
       }
     },
-    "additions": [],
-    "editorial": []
+    "additions": [
+      {
+        "id": "u12_inspectionlog_retorno_construccion_modelo",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_inspectionlog_retorno_construccion_bateria",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      }
+    ],
+    "editorial": [
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "b4350efe16c3067903555594ddc239205eb3062bdb054e35accfdfe3351ae652",
+        "afterSha256": "5b8a3ff33e97c806086d59757c3077e619e61d9e3f4a6aa0fd97f3afcc9f4d12"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "083e1ec813e6fe376938284e904e9e28eec425ca7417971113d20b61538052ee",
+        "afterSha256": "170afccddc672b20d0c26477e93589b018beb988af97f26ee5bce951561746e4"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "4b7028fc7e504e31b2a0488945fecfde59d925deb0062269f907da61fb06d861",
+        "afterSha256": "adbb15f0abbfcd6e3797aa79d727140caefaa349c8008129f7e66b85c90b975c"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "554a6099cc96d686bd8a3195ca9851415798929e19141e6af88ceddb9481e89a",
+        "afterSha256": "ce0391d4f389dba126863b971436ba1cccb8f34dfae9dec2b987adafddc8ec17"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "02aa6a73cfd420dab0e023c21634c628e7a8a5fe423461ceb65a9116db68b576",
+        "afterSha256": "4e39857132e671a6715fc98dbfececc4ae6f83e4feb053e1565794682258d43d"
+      }
+    ]
   },
   "textSemantics": {
     "version": 1,
@@ -951,14 +1006,28 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "30608b1c7b4a8a3465999950a9b19b023a103a4f98ecffd2493617f516ec09a6",
+        "sourceSha256": "b5eb679c03a945bed43473169187b192e1f4dc775fc3c55607f0bbe8f567b081",
         "spans": [
           {
             "start": 5,
             "end": 17,
             "text": "mismos_datos",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 297,
+            "end": 302,
+            "text": "falso",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 438,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1108,13 +1177,13 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "cec5cd8b5cce2f998e88c19f09dc3b2e7d695f59f3e16ece70e02d1a40a84363",
+        "sourceSha256": "f142ce88313e5000eb1e1b7da5bbad660266790394f087e6c67599eec16253c2",
         "spans": [
           {
             "start": 89,
             "end": 94,
             "text": "MARCA",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1122,7 +1191,7 @@
             "end": 196,
             "text": "procesar_archivos",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
             "start": 242,
@@ -1137,6 +1206,13 @@
             "text": "MARCA",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 523,
+            "text": "procesar_archivos",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1157,7 +1233,7 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "616e377aa9aafc640cd8223c37f03223aa926536a06c7288aec00fb542d7831e",
+        "sourceSha256": "ef1a709e1cc670122c56a6f4c1e735ea5329533a40d6929abf854e2c057639d8",
         "spans": [
           {
             "start": 65,
@@ -1174,15 +1250,29 @@
             "reading": "natural"
           },
           {
-            "start": 242,
-            "end": 263,
+            "start": 260,
+            "end": 281,
             "text": "Error al abrir salida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 279,
-            "end": 280,
+            "start": 297,
+            "end": 298,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 316,
+            "end": 322,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 728,
+            "end": 729,
             "text": "1",
             "role": "output",
             "reading": "natural"
@@ -1198,14 +1288,63 @@
       {
         "block": "block_0002_0005",
         "path": "/text",
-        "sourceSha256": "44b8d13a4371ed8e5eac2d536a7749701b11a7c4f0ae8d13cb3953e1e732faaa",
+        "sourceSha256": "bfbc3e0f4f966409fe7255260bdb9a053d0e6a3ff557ee70309c3209d249a031",
         "spans": [
           {
-            "start": 52,
-            "end": 65,
+            "start": 43,
+            "end": 66,
+            "text": "pruebas_tmp/cerrado.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 123,
+            "text": "MARCA",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 149,
             "text": "std::ofstream",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 254,
+            "end": 259,
+            "text": "MARCA",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 284,
+            "text": "pruebas_tmp/doble.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 353,
+            "text": "close",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 420,
+            "end": 479,
+            "text": "(Köppe et al., 2023, [ofstream.members], [filebuf.members])",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
+            "end": 547,
+            "text": "MARCA",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1232,7 +1371,7 @@
             "start": 47,
             "end": 52,
             "text": "MARCA",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1435,8 +1574,51 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "357d6a2a6b11255c466bad177e730d9606d934b5ba20cad7b7ed464c06d8a418",
-        "spans": []
+        "sourceSha256": "cff3b855f8759cf8d74c95ba0aeb2619bdba0469b7fe7dab14235a87406ee850",
+        "spans": [
+          {
+            "start": 106,
+            "end": 123,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 192,
+            "end": 194,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 207,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 265,
+            "text": "(Microsoft, 2025c)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 450,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 546,
+            "end": 550,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -1685,6 +1867,34 @@
         "path": "/options/2",
         "sourceSha256": "ee6da7f446898600bf749f4abd9c06f57dcb83b9758d13d3e5e0a8a7a753f727",
         "spans": []
+      },
+      {
+        "block": "u12_inspectionlog_retorno_construccion_modelo",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_inspectionlog_retorno_construccion_bateria",
+        "path": "/text",
+        "sourceSha256": "bfa3553dcf3e0324e0d15b768a8dd675619ae7a113445d36cf4616da9b94b73d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       }
     ],
     "rootFields": [

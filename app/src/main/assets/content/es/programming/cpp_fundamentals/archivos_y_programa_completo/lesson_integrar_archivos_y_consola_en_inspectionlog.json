@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El recorrido tendrá tres resultados observables. La terminación 0 significa que se aceptó la muestra, se escribió la salida y se verificó su recuperación. La terminación 2 significa que la muestra se rechazó y que la salida no se abrió para escribir. La terminación 1 identifica un problema técnico y su mensaje indica la etapa. Esta elección pertenece a nuestra aplicación; el comprobador devolverá cero cuando observe exactamente el resultado que esperaba, incluso si el caso probado debía rechazar datos."
+          "text": "El recorrido tendrá tres resultados observables. La terminación 0 significa que se aceptó la muestra, se escribió la salida y se verificó su recuperación. La terminación 2 significa que la muestra se rechazó y que la salida no se abrió para escribir. La terminación 1 identifica un problema técnico. Los mensajes de archivos distinguen la etapa cuando pueden escribirse; si falla el propio flujo de mensajes, puede no verse un diagnóstico completo.\n\nEsta elección pertenece a nuestra aplicación. El comprobador devolverá cero cuando observe exactamente el resultado que esperaba, incluso si el caso probado debía rechazar datos."
         },
         {
           "type": "paragraph",
@@ -114,7 +114,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si falla la escritura del informe o su mensaje final, devuelve 1. La copia de disco podría estar verificada aunque falle la consola; el resultado debe reflejar que la operación visible no terminó normalmente. Las comprobaciones del estado de los flujos y de close() recuperan las reglas ya practicadas con los flujos de archivos (Köppe et al., 2023)."
+          "text": "Si falla la escritura del informe o de su mensaje final, devuelve 1. La copia de disco podría estar verificada aunque falle la consola: el resultado debe reflejar que la operación visible no terminó normalmente. Escribir sobre un flujo que ya está fallido no asegura que aparezca el mensaje, de modo que el código de terminación sigue siendo una observación necesaria.\n\nPor ejemplo, la carga puede haber sustituido actual y la copia puede haberse cerrado y recuperado correctamente, pero la operación devolverá 1 si no logra presentar el informe. Ese resultado no significa que la entrada fuera inválida ni que la memoria se haya restaurado. Las comprobaciones del estado de los flujos y de close() recuperan las reglas ya practicadas con los archivos (Köppe et al., 2023)."
         },
         {
           "type": "multiple_choice",
@@ -296,7 +296,7 @@
           "imageId": "p1_inspectionlog_ejecucion",
           "src": "images/programming1/p1_inspectionlog_ejecucion.png",
           "alt": "Consola real de InspectionLog con las rutas ejemplos/base.txt y resultados/base_guardada.txt. La salida muestra Entrada aceptada, Grupos: 2, Aceptados: 3, Rechazados: 1, Mayor: rojo 3 y Guardado verificado. Debajo aparece el código de terminación 0.",
-          "caption": "Primera ejecución de la referencia en Windows Server 2025 con las herramientas de Visual Studio Enterprise 2026 ya instaladas. El informe coincide con la muestra y la copia se verifica. En esta ejecución por lotes, la orden echo %ERRORLEVEL% aparece expandida como echo 0."
+          "caption": "Captura de la referencia ejecutada en Windows Server 2025 con las herramientas de Visual Studio Enterprise 2026 ya instaladas. El informe coincide con la muestra y la copia se verifica. La carpeta visible pertenece a esa comprobación; tu ejecución parte de la raíz que creaste para el proyecto. En esta ejecución por lotes, la orden echo %ERRORLEVEL% aparece expandida como echo 0."
         },
         {
           "type": "paragraph",
@@ -990,7 +990,23 @@
         "progressPage": "page_0007"
       }
     ],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "0c223bf9020e6ec21ff4749080d1ea1eb3cde9dfeca6d427808373e74eb25796",
+        "afterSha256": "b75de5bb4c03e0522afed12e790a4c73913c0bd53fdf04be4fdfe25cf7a67b53"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "1521dc42f21fdb2392b29292192f8214b0bfd62df2ba466fbeeb419710e70296",
+        "afterSha256": "ffec528d22bda2bf6f25e0c5a11084e244e5c49e2c252f5dfe7bc9d45f3e882f"
+      },
+      {
+        "id": "image_inspectionlog_ejecucion",
+        "beforeSha256": "28a24df32bf9ed6c0d6fb0b2ce67893406d91f7c0e5dd968b3257911f0314713",
+        "afterSha256": "d3caabbcc32073615238167acccf6517dd97e1f66ab1f89530eef9e2eeee4963"
+      }
+    ]
   },
   "textSemantics": {
     "version": 1,
@@ -1046,7 +1062,7 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "13947798d712bf0a9d8638e30cf7f19f7244c3ac2cac59b677b84402ff5fb450",
+        "sourceSha256": "36355df07711571c660c9f14690eddbff1e4bbe52d894131f869ddf727b6e5f5",
         "spans": [
           {
             "start": 64,
@@ -1066,6 +1082,13 @@
             "start": 266,
             "end": 267,
             "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 525,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -1669,25 +1692,39 @@
       {
         "block": "block_0002_0005",
         "path": "/text",
-        "sourceSha256": "fec54326a9930db09284534443491be09f5d2cbe3813e028aa96b5e59785280f",
+        "sourceSha256": "b3913a50b3232966338db0892ee7a5fa37546dbc00202ca654025574f74acff5",
         "spans": [
           {
-            "start": 63,
-            "end": 64,
+            "start": 66,
+            "end": 67,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 258,
-            "end": 265,
-            "text": "close()",
+            "start": 415,
+            "end": 421,
+            "text": "actual",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 329,
-            "end": 349,
+            "start": 511,
+            "end": 512,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 691,
+            "end": 698,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 752,
+            "end": 772,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1704,7 +1741,22 @@
         "block": "block_0002_0006",
         "path": "/explanation",
         "sourceSha256": "ce4cf2b0329fe8abbadf3236a5dbcdbf596130aeb1f7966dfcdec907e03ca685",
-        "spans": []
+        "spans": [
+          {
+            "start": 15,
+            "end": 18,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0006",
@@ -2423,7 +2475,7 @@
       {
         "block": "image_inspectionlog_ejecucion",
         "path": "/caption",
-        "sourceSha256": "2c491545f87432ff8874134d7bb77ff7496e996cfecea614122e2bbb900846e9",
+        "sourceSha256": "588fb9516e1f6787ce2c60c5ef16ca95f415a6e7dbbc49fe3f74028b33f8e05f",
         "spans": [
           {
             "start": 38,
@@ -2440,18 +2492,18 @@
             "reading": "natural"
           },
           {
-            "start": 224,
-            "end": 241,
+            "start": 333,
+            "end": 350,
             "text": "echo %ERRORLEVEL%",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 265,
-            "end": 271,
+            "start": 374,
+            "end": 380,
             "text": "echo 0",
-            "role": "data",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       }

@@ -321,6 +321,10 @@
         },
         {
           "type": "paragraph",
+          "text": "Después de cada orden de cl, consulta inmediatamente echo %ERRORLEVEL% antes de escribir la siguiente orden o ejecutar un programa. El resultado 0 indica que esa construcción terminó sin errores; si aparece otro código, revisa su diagnóstico, corrige y vuelve a construir. Conserva también la lectura de las advertencias (Microsoft, 2025c). Consultar únicamente el código después de la quinta construcción no comprueba cómo terminaron las cuatro anteriores."
+        },
+        {
+          "type": "paragraph",
           "text": "cl /W4 /EHsc modelo.cpp informe.cpp archivos.cpp main.cpp /Fe:inspectionlog.exe"
         },
         {
@@ -801,6 +805,7 @@
           "published_mkdir_resultados",
           "published_mkdir_pruebas",
           "published_cinco_ordenes",
+          "published_construccion_retorno",
           "published_compilar_aplicacion",
           "published_compilar_modelo",
           "published_compilar_pruebas",
@@ -1594,6 +1599,15 @@
           "block": 47
         },
         "progressPage": "page_0005"
+      },
+      {
+        "id": "published_construccion_retorno",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 7,
+          "block": 48
+        },
+        "progressPage": "page_0004"
       }
     ],
     "editorial": [
@@ -2130,7 +2144,22 @@
         "block": "block_0002_0005",
         "path": "/question",
         "sourceSha256": "b23469540983b6ab098313305e29ad60f6d0601950f620012fab1389e377ae67",
-        "spans": []
+        "spans": [
+          {
+            "start": 46,
+            "end": 59,
+            "text": "InspectionLog",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "README",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0005",
@@ -2269,7 +2298,15 @@
         "block": "block_0003_0006",
         "path": "/question",
         "sourceSha256": "db6dc20bf8eef4a04922a6b0ba19a31bf20cab9d41d9a1b4d31a6a45c68b6b8b",
-        "spans": []
+        "spans": [
+          {
+            "start": 56,
+            "end": 73,
+            "text": "ejemplos\\base.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0006",
@@ -2281,19 +2318,50 @@
         "block": "block_0003_0006",
         "path": "/options/0",
         "sourceSha256": "6d719e4dea4574a3a1cbca6719754cfd8f922f7da3c2ccd7c00382b335be0708",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 36,
+            "text": "ejemplos_base.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0006",
         "path": "/options/1",
         "sourceSha256": "f967c770eead6c1bec0246f9d0e1668ca819b0dcf386b43791b5207e33e2664b",
-        "spans": []
+        "spans": [
+          {
+            "start": 11,
+            "end": 19,
+            "text": "base.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 49,
+            "text": "ejemplos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0006",
         "path": "/options/2",
         "sourceSha256": "d9da2307fa182b0884f9efd03ca1613cd8d18d00d6f1fc1584aa7a942d508dae",
-        "spans": []
+        "spans": [
+          {
+            "start": 10,
+            "end": 27,
+            "text": "base_guardada.txt",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0000",
@@ -2458,7 +2526,15 @@
         "block": "block_0004_0008",
         "path": "/question",
         "sourceSha256": "1f0c99852f99376837558c972d47610cf7c13a99f7cac2ec9a1391a287f2ad39",
-        "spans": []
+        "spans": [
+          {
+            "start": 46,
+            "end": 58,
+            "text": "aplicacion.h",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0008",
@@ -2538,7 +2614,15 @@
         "block": "block_0005_0004",
         "path": "/options/1",
         "sourceSha256": "b4c67055dfaf49d81d3c92f7ebdaeb0ec7cfbc4f33616bfb68fa4fc497d90835",
-        "spans": []
+        "spans": [
+          {
+            "start": 80,
+            "end": 86,
+            "text": "README",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -4285,10 +4369,24 @@
             "reading": "natural"
           },
           {
+            "start": 300,
+            "end": 313,
+            "text": "dos registros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 317,
             "end": 321,
             "text": "rojo",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 331,
+            "text": "ninguno",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4463,8 +4561,8 @@
             "start": 0,
             "end": 56,
             "text": "{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }",
-            "role": "data",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4490,8 +4588,8 @@
             "start": 344,
             "end": 350,
             "text": "echo 0",
-            "role": "data",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 408,
@@ -4659,7 +4757,15 @@
         "block": "published_pruebas",
         "path": "/caption",
         "sourceSha256": "cafbd5b4d6904e3cfe43e05667d7b926211d262e5635548d96ae47fe49477889",
-        "spans": []
+        "spans": [
+          {
+            "start": 119,
+            "end": 123,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "published_variante",
@@ -4756,6 +4862,41 @@
         "path": "/caption",
         "sourceSha256": "50a790cec37c12519c614edc94c19bb9c4b185406804d537aefc7cb2f44f6b33",
         "spans": []
+      },
+      {
+        "block": "published_construccion_retorno",
+        "path": "/text",
+        "sourceSha256": "cb315b14745a7c1696ea84396778a807efeaf1cb014de95624da9063c455d849",
+        "spans": [
+          {
+            "start": 25,
+            "end": 27,
+            "text": "cl",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 70,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 146,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 339,
+            "text": "(Microsoft, 2025c)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

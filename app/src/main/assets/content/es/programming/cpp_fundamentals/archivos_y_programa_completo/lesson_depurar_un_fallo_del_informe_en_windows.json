@@ -79,6 +79,10 @@
         },
         {
           "type": "paragraph",
+          "text": "Antes de ejecutar, introduce echo %ERRORLEVEL% en esta misma consola, inmediatamente después de la orden de cl. Se espera 0: la construcción terminó sin errores (Microsoft, 2025c). Si el valor es distinto, resuelve el diagnóstico, guarda y repite la construcción. Revisa también las advertencias. Aplica esta comprobación a cada orden de cl de la lección.\n\nSólo entonces ejecuta el programa. La consulta que aparece después de su ejecución corresponde al retorno de ese programa, no al de la construcción anterior."
+        },
+        {
+          "type": "paragraph",
           "text": ".\\depurar_informe.exe"
         },
         {
@@ -95,7 +99,7 @@
             "Que cada suma del programa necesariamente coincide con los datos de entrada."
           ],
           "correctIndex": 0,
-          "explanation": "El main devuelve cero si el informe escribe sin señalar un fallo de flujo. No compara por sí mismo el total con 5. Una terminación normal no sustituye los oráculos que comprueban el comportamiento requerido."
+          "explanation": "El conjunto de esta muestra es válido y la escritura no señala un fallo de flujo, por lo que mostrar_informe devuelve true y main llega a return 0;. Ese cero no procede de comparar el total con 5.\n\nLa copia defectuosa puede escribir Aceptados: 3 y llegar a la misma terminación que la versión correcta, que escribe Aceptados: 5. Hay que comparar el informe con el resultado calculado a partir de los dos registros; el código de terminación por sí solo no comprueba esa suma."
         }
       ]
     },
@@ -108,6 +112,20 @@
         {
           "type": "paragraph",
           "text": "Al iniciar Visual Studio por primera vez puede aparecer una pantalla para añadir una cuenta. En la prueba del autor se utilizó la opción visible Skip and add accounts later., que permitió continuar sin añadirla. Si aparece después la preparación inicial del editor, revisa sus opciones y pulsa Start Visual Studio. Si tu instalación ya completó ese inicio, continúa directamente en el IDE."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_inspectionlog_cuenta_opcional",
+          "src": "images/programming1/p1_inspectionlog_cuenta_opcional.png",
+          "alt": "Pantalla inicial de Visual Studio con opciones para añadir una cuenta de Microsoft o GitHub y crear una cuenta. El enlace Skip and add accounts later. aparece debajo de esas opciones.",
+          "caption": "Pantalla inicial de Visual Studio Enterprise 2026 en el ensayo del 9 de noviembre de 2026, sobre Windows Server 2025 con las herramientas ya instaladas. Se utilizó Skip and add accounts later. para continuar sin añadir una cuenta."
+        },
+        {
+          "type": "image",
+          "imageId": "p1_inspectionlog_ajustes_iniciales",
+          "src": "images/programming1/p1_inspectionlog_ajustes_iniciales.png",
+          "alt": "Preparación inicial de Visual Studio. El campo Development settings muestra General y el tema Dark está seleccionado. El botón Start Visual Studio está en la zona inferior.",
+          "caption": "Preparación del perfil del editor en el mismo ensayo. La pantalla conserva Development settings en General y el tema Dark; Start Visual Studio continúa al entorno de desarrollo."
         },
         {
           "type": "paragraph",
@@ -182,7 +200,7 @@
             "El recorrido reinicia el acumulador a cero antes de incorporar cada registro."
           ],
           "correctIndex": 1,
-          "explanation": "El estado observado pasa de 2 a 3, exactamente el dato del segundo registro. La asignación = reemplaza el valor. Una acumulación de ambas cantidades produciría 5; la observación concreta permite comprobar esa diferencia."
+          "explanation": "Antes de ejecutar la instrucción, el acumulador aún vale 2; la observación no respalda que ya se haya reiniciado a cero. Después pasa a 3, exactamente la cantidad del segundo registro. La asignación = reemplaza el valor anterior. Con +=, la aportación conservada 2 y la nueva 3 producirían 5.\n\nEn la primera visita, asignar 2 a un acumulador que vale 0 y añadirle 2 dan el mismo resultado. La segunda visita permite distinguir los procedimientos porque empieza con una aportación anterior distinta de cero."
         }
       ]
     },
@@ -269,7 +287,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ejecuta primero el programa desde la consola y comprueba las cuatro líneas. Después repite el recorrido del depurador sobre la nueva construcción. El punto de interrupción debe estar ligado a la instrucción corregida; si la fuente abierta no coincide con la construida, revisa las rutas y reconstruye antes de interpretar otros valores."
+          "text": "Inmediatamente después de la orden de construcción, consulta echo %ERRORLEVEL% y continúa cuando indique 0. Ejecuta el programa desde la consola y comprueba las cuatro líneas. Después repite el recorrido del depurador sobre la nueva construcción. El punto de interrupción debe estar ligado a la instrucción corregida; si la fuente abierta no coincide con la construida, revisa las rutas y reconstruye antes de interpretar otros valores."
         },
         {
           "type": "paragraph",
@@ -299,7 +317,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye y ejecuta después el comprobador de la lección de pruebas con la copia informe_error.cpp que acabas de corregir. Conserva pruebas_tmp, la carpeta de archivos de prueba que preparaste en esa lección. Mantén la selección explícita de fuentes y utiliza el nombre pruebas_corregidas.exe para distinguir esta ejecución de la batería original. Las cuarenta y cinco comprobaciones deben pasar y el proceso debe devolver 0: no basta con obtener cinco en un único caso."
+          "text": "Construye y ejecuta después el comprobador de la lección de pruebas con la copia informe_error.cpp que acabas de corregir. Conserva pruebas_tmp, la carpeta de archivos de prueba que preparaste en esa lección. Mantén la selección explícita de fuentes y utiliza el nombre pruebas_corregidas.exe para distinguir esta ejecución de la batería original. Comprueba el retorno de cl con echo %ERRORLEVEL% antes de ejecutar el comprobador. Las cuarenta y cinco comprobaciones deben pasar y el proceso debe devolver 0: no basta con obtener cinco en un único caso."
         },
         {
           "type": "paragraph",
@@ -322,7 +340,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba también que la batería detecta el defecto deliberado. En informe_error.cpp, vuelve temporalmente a la asignación =, guarda y construye el comprobador con otro nombre mediante la orden siguiente. Debe señalar la diferencia del informe y terminar con un código distinto de cero. Esta contraprueba muestra qué condición vigila la batería."
+          "text": "Comprueba también que la batería detecta el defecto deliberado. En informe_error.cpp, vuelve temporalmente a la asignación =, guarda y construye el comprobador con otro nombre mediante la orden siguiente. Consulta el retorno de cl antes de ejecutarlo. Una vez construida correctamente esa revisión, la batería debe señalar la diferencia del informe y terminar con un código distinto de cero. Esta contraprueba muestra qué condición vigila la batería."
         },
         {
           "type": "paragraph",
@@ -335,6 +353,10 @@
         {
           "type": "paragraph",
           "text": "echo %ERRORLEVEL%"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el comprobador de referencia, esta sustitución produce informe_limite: FALLO. La muestra contiene treinta registros, cada uno con diez aceptados: el total exigido es 300. La asignación deja en el acumulador la cantidad del último registro, 10. Las demás comprobaciones de esta batería pasan con este defecto concreto.\n\nPor ejemplo, informe_base utiliza aceptados 0 y 3. Sumarlos y conservar sólo el último producen 3 en ambos casos; por eso esa muestra no detecta la sustitución. El resultado del caso límite se explica por sus datos y por la operación que se cambió, no sólo por el nombre del caso que falló."
         },
         {
           "type": "paragraph",
@@ -427,11 +449,11 @@
             "5, porque las cantidades de aceptados no cambiaron."
           ],
           "correctIndex": 1,
-          "explanation": "Los rechazados son 2 y 4, por lo que deben sumar 6. Usar cantidades positivas hace que reemplazar la primera por la segunda produzca un resultado diferente de acumularlas. El total de aceptados responde a otra columna."
+          "explanation": "Los rechazados son 2 y 4, por lo que deben sumar 6. Usar cantidades positivas hace que reemplazar la primera por la segunda produzca un resultado diferente de acumularlas. El total de aceptados responde a otra columna.\n\nEn la primera visita, el acumulador empieza con 0 y recibe 2 rechazados: tanto asignar como sumar dejan 2. En la segunda visita, la cantidad nueva es 4 y el acumulador anterior vale 2. La copia defectuosa lo reemplaza por 4; la corrección conserva la aportación anterior y obtiene 6. Estos son los valores previstos a partir del código y los datos, con los que compararás las observaciones de tu ejecución.\n\nLos aceptados siguen sumando 5, y el único grupo, verde, sigue siendo el máximo con 5 aceptados. Con la copia corregida y reconstruida, el informe completo esperado es:\n\nGrupos: 1\nAceptados: 5\nRechazados: 6\nMayor: verde 5"
         },
         {
           "type": "paragraph",
-          "text": "Guarda ambos archivos y construye esta prueba separada con la orden completa. Después abre su ejecutable en Visual Studio y coloca el punto en la asignación de rechazados, dentro de informe_rechazados_error.cpp. Los parámetros y la selección de fuentes cumplen las mismas funciones que en la prueba anterior; cambian la copia del informe, el main de la muestra y el ejecutable."
+          "text": "Guarda ambos archivos y construye esta prueba separada con la orden completa. Consulta echo %ERRORLEVEL% inmediatamente después de cl y continúa cuando indique 0. Después abre su ejecutable en Visual Studio y coloca el punto en la asignación de rechazados, dentro de informe_rechazados_error.cpp. Los parámetros y la selección de fuentes cumplen las mismas funciones que en la prueba anterior; cambian la copia del informe, el main de la muestra y el ejecutable."
         },
         {
           "type": "paragraph",
@@ -806,6 +828,7 @@
           "block_0001_0007",
           "block_0001_0008",
           "block_0001_0009",
+          "u12_inspectionlog_construccion_antes_de_depurar",
           "block_0001_0010",
           "block_0001_0011",
           "block_0001_0012"
@@ -816,6 +839,8 @@
         "blocks": [
           "block_0002_0000",
           "block_0002_0001",
+          "u12_inspectionlog_cuenta_opcional",
+          "u12_inspectionlog_ajustes_iniciales",
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004",
@@ -872,6 +897,7 @@
           "block_0005_0012",
           "block_0005_0013",
           "block_0005_0014",
+          "u12_inspectionlog_contraste_informe_limite",
           "block_0005_0015"
         ]
       },
@@ -1336,6 +1362,42 @@
           "block": 6
         },
         "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_inspectionlog_construccion_antes_de_depurar",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 7
+        },
+        "progressPage": "page_0001"
+      },
+      {
+        "id": "u12_inspectionlog_cuenta_opcional",
+        "sha256": "382a736d71d0c7b2138b4796d956a219d230ed0d9ea9e3ce61eeca9708c1da49",
+        "storage": {
+          "page": 10,
+          "block": 8
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_inspectionlog_ajustes_iniciales",
+        "sha256": "7d4491654c511b3d54c89b4ef80dfed93518eb3a7955e27c3014b2d77fe3f727",
+        "storage": {
+          "page": 10,
+          "block": 9
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_inspectionlog_contraste_informe_limite",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 10
+        },
+        "progressPage": "page_0005"
       }
     ],
     "editorial": [
@@ -1353,6 +1415,41 @@
         "id": "block_0003_0002",
         "beforeSha256": "939e4e657ecb3bbb71e05c91f53275bf60982659e30a07acadf6b27584f8f6fd",
         "afterSha256": "ab3eee4fb757cfe692a686caa8d4ca73bb966eb703eee13ea9b5c5b8823087cf"
+      },
+      {
+        "id": "block_0001_0012",
+        "beforeSha256": "e8a91f53521f10a12a5e6340740583af7201f37b2dcbde17180784c189cab200",
+        "afterSha256": "5175ae743c71afe8dc57c7a877e65f069555e9c2af1682762e81630f7cefb2a9"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "c7dc7171304b8c8b3863185cae2d580bf798ec72206f372dd1609a06f63c3992",
+        "afterSha256": "f69f2540986e516f521dbdd50c3fc06364ff51e9ad9a784510813b634617d070"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "497cd2ddb12cab6f703f2735a1cfe3f61d27247ef5a5deb82196f7b17ab540a1",
+        "afterSha256": "ac5a8e3c4ff9d9f20acf1367e67841c62b6cf6b7a5e2e6da957d9d062b4adeba"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "dc3ddefb7820388cf7d0dc910a6420a86e0347d8844c57288e586bc2ba7da8da",
+        "afterSha256": "ff6e8a97958b486094ed4fe9b25b8aaa935843c2c09fa67b3e5283c6132e3b57"
+      },
+      {
+        "id": "block_0005_0011",
+        "beforeSha256": "ac35955a3b47a1a515db32d4df85c5e4716445ac1fea63369ceaecf75542b664",
+        "afterSha256": "1e2745c496725b1ccedab90444012fab5422e2f7a5336deb0866fad9d193f6fd"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "c6dfb139d5aa66426c4215f1940f775107a44354dcda1a681894798767649722",
+        "afterSha256": "6b5cd3febe3d8578a3f409d6d3e7d243cbd4baceaf628cd92fb1a4d3c01d90f5"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "93d6f9dd00f755bbcbb5636d95b9c45f8d9590c432ae2eb33441c2ae9f3b95ac",
+        "afterSha256": "2aa9e1546dda8a6d0363f3d136a5bce68a74352cd6f0842127d88971ac9f9fb4"
       }
     ]
   },
@@ -1772,24 +1869,81 @@
         "block": "block_0001_0012",
         "path": "/question",
         "sourceSha256": "f241b946bd220b00e521d8eaa4b449bcb3975c3a414248e1df365678dc571755",
-        "spans": []
+        "spans": [
+          {
+            "start": 26,
+            "end": 30,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 118,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0012",
         "path": "/explanation",
-        "sourceSha256": "2213f0b8a69dc76843149b6fa841b185b94ba4cd87f5c832904a292e7cc70368",
+        "sourceSha256": "0c26d46d556492725f10ecc88988ec4ff9afba71987df398d3417fc0d7c6041a",
         "spans": [
           {
-            "start": 3,
-            "end": 7,
-            "text": "main",
+            "start": 93,
+            "end": 108,
+            "text": "mostrar_informe",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 112,
-            "end": 113,
+            "start": 118,
+            "end": 122,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 129,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 147,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 157,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 195,
             "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 245,
+            "text": "Aceptados: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 327,
+            "text": "Aceptados: 5",
             "role": "output",
             "reading": "natural"
           }
@@ -2181,33 +2335,89 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "951fd67af97a8fcb29a5dd9782b417456d137beb43e8899c3107e1a0560ccd27",
+        "sourceSha256": "7c74449f1ec3ad20726e5346ed91b1de0effb491677950dcb597029701930b04",
         "spans": [
           {
-            "start": 28,
-            "end": 29,
+            "start": 57,
+            "end": 58,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 33,
+            "start": 115,
+            "end": 119,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 137,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 91,
-            "end": 92,
+            "start": 199,
+            "end": 200,
             "text": "=",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 160,
-            "end": 161,
+            "start": 234,
+            "end": 236,
+            "text": "+=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 264,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 277,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 291,
             "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 325,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 352,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 365,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 501,
+            "end": 505,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -2423,8 +2633,23 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "f90afc40ce853bc521c7373f49bed7a8c7d007f3b744b91902f33b73dd6c22cb",
-        "spans": []
+        "sourceSha256": "50ba6e3ceb5e74c3fa80aac0c3080c5462b5ccd1c9c02535fa87f5c6bacf1c6a",
+        "spans": [
+          {
+            "start": 61,
+            "end": 78,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -2499,7 +2724,7 @@
       {
         "block": "block_0005_0007",
         "path": "/text",
-        "sourceSha256": "e93ecdfa0d3eb793f87f6732b80148dc85e01c469c9ba749d22052e6cce97f05",
+        "sourceSha256": "63b5ed3a5e2079665093f1a0e59562aef62d701d2366edaf057d92fb615bc84a",
         "spans": [
           {
             "start": 81,
@@ -2523,9 +2748,30 @@
             "reading": "natural"
           },
           {
-            "start": 423,
-            "end": 424,
+            "start": 372,
+            "end": 374,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 396,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 506,
+            "end": 507,
             "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 530,
+            "end": 535,
+            "text": "cinco",
             "role": "output",
             "reading": "natural"
           }
@@ -2576,7 +2822,7 @@
       {
         "block": "block_0005_0011",
         "path": "/text",
-        "sourceSha256": "b952ba7ed2a2bdf3502dc8042a1a2933bef9e91e4af7c4bf3546ade28f65c23d",
+        "sourceSha256": "e3c8b42d2707b36c779b5b173d2470920f924a01ea27289e8ded2e85331525de",
         "spans": [
           {
             "start": 67,
@@ -2590,7 +2836,21 @@
             "end": 124,
             "text": "=",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 230,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 390,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2937,7 +3197,7 @@
       {
         "block": "block_0008_0004",
         "path": "/explanation",
-        "sourceSha256": "75ae56ddbc516b6e0f510e8ba776ead24a025c9066f7d77cd22687ccf8325725",
+        "sourceSha256": "d58ae39f8f66eb4b697a3f05789c78e2190d67dde96a4646d3ea66949808d6e7",
         "spans": [
           {
             "start": 19,
@@ -2957,6 +3217,83 @@
             "start": 49,
             "end": 50,
             "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 269,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 280,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 325,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 403,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 443,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 501,
+            "end": 502,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 657,
+            "end": 658,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 678,
+            "end": 683,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 712,
+            "end": 713,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 798,
+            "end": 849,
+            "text": "Grupos: 1\nAceptados: 5\nRechazados: 6\nMayor: verde 5",
             "role": "output",
             "reading": "natural"
           }
@@ -3021,28 +3358,56 @@
       {
         "block": "block_0008_0005",
         "path": "/text",
-        "sourceSha256": "8dfac8865ae397eae434bda1bd4288a71311767e0b82283c8763ea344ae61f83",
+        "sourceSha256": "27a23100cc9620d8bc78929cc974a86e919bab85eed6dffe14db11c3d2a6d146",
         "spans": [
           {
-            "start": 160,
-            "end": 170,
-            "text": "rechazados",
-            "role": "cpp",
-            "reading": "auto"
+            "start": 87,
+            "end": 104,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 182,
-            "end": 210,
+            "start": 131,
+            "end": 133,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 206,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 255,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 295,
             "text": "informe_rechazados_error.cpp",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 342,
-            "end": 346,
+            "start": 427,
+            "end": 431,
             "text": "main",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           }
         ]
       },
@@ -3231,6 +3596,13 @@
             "reading": "natural"
           },
           {
+            "start": 171,
+            "end": 175,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 186,
             "end": 203,
             "text": "echo %ERRORLEVEL%",
@@ -3241,8 +3613,8 @@
             "start": 227,
             "end": 233,
             "text": "echo 0",
-            "role": "data",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3745,6 +4117,258 @@
             "start": 71,
             "end": 72,
             "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_inspectionlog_construccion_antes_de_depurar",
+        "path": "/text",
+        "sourceSha256": "d6725abf1001a58893186dc540f1d3d49dd68af8c4cb62d5f738b17e71acb732",
+        "spans": [
+          {
+            "start": 29,
+            "end": 46,
+            "text": "echo %ERRORLEVEL%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 179,
+            "text": "(Microsoft, 2025c)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 340,
+            "text": "cl",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_inspectionlog_cuenta_opcional",
+        "path": "/alt",
+        "sourceSha256": "e1fc1ccbcff78d61a73dc7489c971220f4be3aee92e51467880f500cf758e01e",
+        "spans": [
+          {
+            "start": 20,
+            "end": 33,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "Microsoft",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 91,
+            "text": "GitHub",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 150,
+            "text": "Skip and add accounts later.",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_inspectionlog_cuenta_opcional",
+        "path": "/caption",
+        "sourceSha256": "51eb01679e4f1d54f5b4d8ba6588046439b527a5992aba6040f8aceec8b880c5",
+        "spans": [
+          {
+            "start": 20,
+            "end": 49,
+            "text": "Visual Studio Enterprise 2026",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 116,
+            "text": "Windows Server 2025",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 192,
+            "text": "Skip and add accounts later.",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_inspectionlog_ajustes_iniciales",
+        "path": "/alt",
+        "sourceSha256": "15607b63bc5f1069355422ca3b371089ace025185cfc2d6d2e6e6635701eb970",
+        "spans": [
+          {
+            "start": 23,
+            "end": 36,
+            "text": "Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 67,
+            "text": "Development settings",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 83,
+            "text": "General",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 98,
+            "text": "Dark",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 146,
+            "text": "Start Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_inspectionlog_ajustes_iniciales",
+        "path": "/caption",
+        "sourceSha256": "7d3b124b6f4efeb01d41bf13045d41c7a9ba6b4eeaa837d4208b59e460c9c168",
+        "spans": [
+          {
+            "start": 75,
+            "end": 95,
+            "text": "Development settings",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 106,
+            "text": "General",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 121,
+            "text": "Dark",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 142,
+            "text": "Start Visual Studio",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_inspectionlog_contraste_informe_limite",
+        "path": "/text",
+        "sourceSha256": "75325053b5b0e1a2ae52f60ff5872b9f8f7e13ac975293a448c47ca99a818ce2",
+        "spans": [
+          {
+            "start": 58,
+            "end": 79,
+            "text": "informe_limite: FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 108,
+            "text": "treinta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 137,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 172,
+            "text": "300",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 243,
+            "end": 245,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 347,
+            "text": "informe_base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 367,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 418,
+            "end": 419,
+            "text": "3",
             "role": "output",
             "reading": "natural"
           }

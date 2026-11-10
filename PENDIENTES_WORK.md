@@ -2,7 +2,7 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar la revisión pedagógica de Programación 1 desde U12L31, «Construir el modelo de InspectionLog», en `app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_construir_el_modelo_de_inspectionlog.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
+Continuar la revisión pedagógica de Programación 1 desde U12L37, «Referencias del curso», en `app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_referencias_del_curso.json`. Tras comprobar la concordancia de citas y bibliografía, completar el cierre transversal de cobertura, práctica y proyecto según el maestro, reutilizando las revisiones y evidencias acreditadas. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta ese cierre.
 
 ## Base conservada
 
