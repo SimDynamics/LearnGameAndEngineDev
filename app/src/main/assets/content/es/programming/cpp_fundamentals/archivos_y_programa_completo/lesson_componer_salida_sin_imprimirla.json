@@ -43,7 +43,7 @@
             "std::cout << mensaje"
           ],
           "correctIndex": 2,
-          "explanation": "El destino de la inserción importa: texto acumula caracteres en memoria; cout los envía a la salida estándar.",
+          "explanation": "La inserción en texto construye Cajas=4;Estado=listo en memoria. texto.str() obtiene una cadena con esos caracteres y la definición de mensaje guarda ese valor. Ninguna de esas dos operaciones lo envía a la salida estándar.\n\nLa instrucción std::cout << mensaje utiliza después el contenido de mensaje y lo inserta en la salida estándar. El destino de cada inserción determina dónde aparecen los caracteres.",
           "reviewFeedback": [
             "Identifica qué valor devuelve esta llamada y en qué variable se guarda; después localiza la instrucción que utiliza esa variable como salida.",
             "Observa a qué objeto se insertan esos caracteres y dónde se almacena su contenido.",
@@ -67,7 +67,7 @@
           "answers": [
             "Turno 2|Turno 2 confirmado"
           ],
-          "explanation": "anterior conserva la cadena obtenida antes de la segunda inserción. Consultar después obtiene el contenido ampliado.",
+          "explanation": "Después de la primera inserción, el flujo contiene Turno 2. La definición de anterior guarda una cadena con ese contenido. La siguiente inserción amplía únicamente el flujo, que pasa a contener Turno 2 confirmado.\n\nAl mostrar anterior, el separador y una consulta nueva de texto.str(), se obtiene Turno 2|Turno 2 confirmado. La cadena guardada antes no cambia al ampliar el flujo.",
           "reviewFeedback": "Separa el momento en que se inicializa anterior del momento en que se realiza la segunda inserción. Luego sigue cada expresión que se envía a cout."
         },
         {
@@ -89,7 +89,7 @@
           "answers": [
             "4:47"
           ],
-          "explanation": "La primera consulta devuelve 4; el flujo conserva ese carácter y después añade 7. El segundo contenido es 47.",
+          "explanation": "La primera inserción produce el carácter 4 dentro de texto. La consulta guarda ese contenido en primero, pero no lo elimina del flujo. La segunda inserción añade el carácter 7 detrás del anterior y forma 47.\n\nEl programa muestra la cadena guardada, el separador y el contenido actual: 4:47. Se han concatenado caracteres; no se han sumado los valores numéricos para obtener 11.",
           "reviewFeedback": "Sigue los caracteres que conserva el flujo después de cada inserción y distingue la cadena guardada antes de insertar el segundo número. La consulta no añade separadores."
         },
         {
@@ -102,7 +102,7 @@
             "Confiar en que devolver una cadena vacíe el flujo."
           ],
           "correctIndex": 0,
-          "explanation": "Un objeto local nuevo expresa un comienzo vacío para esa composición.",
+          "explanation": "Una llamada crea su propio std::ostringstream local con contenido vacío, compone el resumen y devuelve la cadena. En la llamada siguiente se construye otro flujo vacío, de modo que no quedan caracteres de la composición anterior.\n\nConsultar str() o devolver la cadena no vacía un flujo que se conserve para reutilizarlo. Por eso mantener ese mismo objeto sin reiniciarlo no cumpliría el comienzo nuevo solicitado.",
           "reviewFeedback": [
             "Relaciona la creación del objeto local con el contenido con el que empieza esa llamada.",
             "Comprueba si el flujo se crea de nuevo o si conserva los caracteres de una llamada anterior.",
@@ -119,7 +119,7 @@
             "Una cadena vacía, porque todos los valores son cero."
           ],
           "correctIndex": 1,
-          "explanation": "Un flujo local comienza sin texto. Cero es un valor presente y conserva los dos campos; str() devuelve su composición nueva.",
+          "explanation": "La primera llamada forma Validos=2;Rechazados=1 en su flujo local. La segunda recibe 0 y 0 y crea otro flujo vacío. Inserta las dos etiquetas y la representación del cero en cada campo, por lo que devuelve Validos=0;Rechazados=0.\n\nUn cero sigue siendo una cantidad que debe representarse. No elimina el campo ni recupera los caracteres de la llamada anterior.",
           "reviewFeedback": [
             "Sigue la duración del objeto local de cada llamada, antes de concatenar resultados de llamadas distintas.",
             "Comprueba qué valores reciben los parámetros de la segunda llamada y qué etiquetas forman parte del formato.",
@@ -190,6 +190,59 @@
         {
           "type": "note",
           "text": "Además de obtener la salida pedida, la función debe componer los campos desde sus parámetros y devolver la cadena, dejando la presentación a main. No sustituyas ese trabajo por imprimir una respuesta fija. La comprobación compara la salida; por sí sola no demuestra cómo la construiste. Contrasta también la organización de tu programa con la referencia."
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar el límite y la independencia de los campos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa la misma función de composición para todos los pares de argumentos del cliente. El contrato permanece igual: cada cantidad está entre 0 y 10, ambos incluidos, y la función devuelve los dos campos completos en una std::string, sin imprimir.\n\nCopia tu función antes del main proporcionado. El cliente la llama componer_resumen; si elegiste otro nombre, adapta sólo ese nombre en las llamadas, conservando los argumentos, el orden y la presentación. Mantiene los tres pares anteriores y añade (10, 0), (0, 10), (10, 10) y (1, 0).\n\nCada cantidad debe ocupar su propio campo, incluso cuando el otro sea cero. 10 está incluido en el contrato y necesita conservar sus dos dígitos. Guarda las siete cadenas antes de mostrarlas, como hace el cliente, y conserva un salto de línea después de cada una. Ejecuta la batería completa con «Compilar, ejecutar y comprobar».",
+          "emphasis": [
+            {
+              "text": "la misma función",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nValidos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\nValidos=10;Rechazados=0\nValidos=0;Rechazados=10\nValidos=10;Rechazados=10\nValidos=1;Rechazados=0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu funcion de composicion, sin otro main.\n\nint main() {\n    const std::string primero = componer_resumen(2, 1);\n    const std::string segundo = componer_resumen(0, 0);\n    const std::string tercero = componer_resumen(5, 3);\n    const std::string cuarto = componer_resumen(10, 0);\n    const std::string quinto = componer_resumen(0, 10);\n    const std::string sexto = componer_resumen(10, 10);\n    const std::string septimo = componer_resumen(1, 0);\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << tercero << \"\\n\"\n              << cuarto << \"\\n\" << quinto << \"\\n\" << sexto << \"\\n\"\n              << septimo << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\nValidos=10;Rechazados=0\nValidos=0;Rechazados=10\nValidos=10;Rechazados=10\nValidos=1;Rechazados=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las tres primeras líneas conservan sus resultados. Los casos nuevos mantienen 10 completo, lo combinan con un cero en cada posición y lo utilizan en ambos campos. La última llamada vuelve a un valor de un dígito y conserva el segundo campo cero.\n\nCada cadena corresponde a sus dos argumentos. Las siete se guardan antes de imprimir, de modo que las posteriores no alteran el valor de las primeras. Contrasta también que la función construye el texto y deja las inserciones en std::cout al cliente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\nValidos=0;Rechazados=0\nValidos=0;Rechazados=0\nValidos=0;Rechazados=0\nValidos=1;Rechazados=0\n"
+                    ],
+                    "text": "Las llamadas con 10 presentan 0 en el campo correspondiente. Esa salida coincide con conservar únicamente las unidades de cada cantidad. Los pares anteriores no superaban 5, por lo que no distinguían esa reducción. Inserta la representación de la cantidad completa: el límite 10 está permitido y no equivale a 0."
+                  },
+                  {
+                    "outputs": [
+                      "Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\nValidos=10;Rechazados=0\nValidos=0;Rechazados=0\nValidos=10;Rechazados=10\nValidos=1;Rechazados=0\n"
+                    ],
+                    "text": "La llamada (0, 10) devuelve Validos=0;Rechazados=0 y pierde el segundo argumento. Los campos son independientes: tener 0 válidos no cambia los 10 rechazados. El par anterior (0, 0) ocultaba esa confusión porque ambos valores ya eran cero."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -220,6 +273,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Validos=\" << validos << \";Rechazados=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    const std::string primero = componer_resumen(2, 1);\n    const std::string segundo = componer_resumen(0, 0);\n    const std::string tercero = componer_resumen(5, 3);\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << tercero << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: representar cantidades completas e independientes"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Validos=\" << validos << \";Rechazados=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    const std::string primero = componer_resumen(2, 1);\n    const std::string segundo = componer_resumen(0, 0);\n    const std::string tercero = componer_resumen(5, 3);\n    const std::string cuarto = componer_resumen(10, 0);\n    const std::string quinto = componer_resumen(0, 10);\n    const std::string sexto = componer_resumen(10, 10);\n    const std::string septimo = componer_resumen(1, 0);\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << tercero << \"\\n\"\n              << cuarto << \"\\n\" << quinto << \"\\n\" << sexto << \"\\n\"\n              << septimo << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En cada llamada, texto empieza vacío. La inserción del parámetro validos forma su representación completa y la del parámetro rechazados hace lo mismo para el otro campo. La función devuelve la cadena obtenida mediante texto.str(). No calcula un campo a partir del otro.\n\nCon (10, 0), la primera cantidad aporta los dos dígitos de 10 y la segunda conserva 0. Con (0, 10), cambia cuál de los campos necesita esos dos dígitos; el cero del primero no autoriza a borrar el segundo. (10, 10) comprueba ambos límites juntos y (1, 0) recupera una composición más corta después.\n\nLos tres pares originales sólo utilizaban cantidades de un dígito y el único cero aparecía en ambos campos a la vez. Por eso no distinguían una implementación que conservara sólo las unidades ni otra que impusiera cero al segundo campo cuando el primero era cero. Los nuevos pares separan esas decisiones con datos válidos del mismo contrato."
         }
       ]
     },
@@ -238,7 +304,7 @@
           "answers": [
             "Guardado"
           ],
-          "explanation": "El resumen se inserta en el archivo; cout sólo recibe Guardado. Leer str() no muestra el mensaje."
+          "explanation": "texto.str() obtiene Validos=2;Rechazados=1 como cadena. La inserción salida << mensaje envía esa cadena al archivo resumen_lgp.txt. Después de comprobar el cierre, la única inserción en std::cout escribe Guardado.\n\nPor eso la salida estándar contiene ese diagnóstico y el resumen queda en el archivo. Obtener la cadena del flujo no la imprime."
         },
         {
           "type": "paragraph",
@@ -406,7 +472,11 @@
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
-          "block_0002_0004"
+          "block_0002_0004",
+          "u12_composicion_limites_independientes_titulo",
+          "u12_composicion_limites_independientes_consigna",
+          "u12_composicion_limites_independientes_salida",
+          "u12_composicion_limites_independientes_comprobacion"
         ]
       },
       {
@@ -417,7 +487,10 @@
           "block_0003_0002",
           "block_0003_0003",
           "block_0003_0004",
-          "block_0003_0005"
+          "block_0003_0005",
+          "u12_composicion_limites_independientes_referencia_titulo",
+          "u12_composicion_limites_independientes_referencia_codigo",
+          "u12_composicion_limites_independientes_referencia_razonamiento"
         ]
       },
       {
@@ -797,7 +870,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_composicion_limites_independientes_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 5,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_composicion_limites_independientes_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_composicion_limites_independientes_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_composicion_limites_independientes_comprobacion",
+        "sha256": "a98aad9565df0e6ee6324a1c158aaf439df3d4de871920209f079bf7e23311ab",
+        "storage": {
+          "page": 5,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_composicion_limites_independientes_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 5,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_composicion_limites_independientes_referencia_codigo",
+        "sha256": "442603cd2e4a17e77456d98e246e5f45903cb0193d047e50e78941d887fc2689",
+        "storage": {
+          "page": 5,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_composicion_limites_independientes_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 5,
+          "block": 6
+        },
+        "progressPage": "page_0003"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -898,26 +1035,66 @@
         "id": "block_0001_0002",
         "beforeSha256": "a3c73edce6e41ffa8f86f478a5667a53e2ed1801fb43430e89721228e35d5e9b",
         "afterSha256": "5c9ada89910ac4c41a220b752e33a54baf5cc63ac25dab54f87b32655d771cf8"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "2834c29f0d3680bdf1fda9e6b573ba3e624ebd507e67d7083e6654d1ef4140fd",
+        "afterSha256": "4cf1fb7f0f4fc4572c7d330651dd949efe21dba54e5c2ca0c8126daa7ebb1eb8"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "79de873c83c4090d903b2ac91b67fe186b053b45ba2566b33ed51bb5e909f114",
+        "afterSha256": "1e0281de5fe96bafd3d50e3d82c74cf4988c6fe9c4cb2ef8f875c0fe6f0df739"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "4d21f3591bfa76c81c6fa7fdc48ffb455745414abdad0fc9cf1cb768b9d7bf0f",
+        "afterSha256": "add33f412e33fc90647aedbda89d456347a673cd2e563c52d91cfd1bfd93c485"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "7fed11b6ada96a990c364b94264c5152690187a2b59106156cfe225daa2c31b3",
+        "afterSha256": "a3f3ecf6ac5051f63649ac6e9bc5510882ed36efcb499e6ef4fd59b9ef613231"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "8216c1ca7b4af782b539a6e72edf5b36ccd0d3fcf98103a21da4453398dbaf22",
+        "afterSha256": "d2afb3944953c453b3dd5644eff9913afc35e32ce0cdf931ce49f8151e783ebf"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "4bddac581f21a70aa212ec0039f9ab2ab64badbcd315419e2e149a7ae7240166",
+        "afterSha256": "f091161c18b3015f95621da9e31406cfce596a0ec4b191f316918962d7cf36ec"
       }
     ]
   },
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0002_0003",
+      "activity": "u12_composicion_limites_independientes_comprobacion",
       "blocks": [
         "block_0003_0000",
         "block_0003_0001",
         "block_0003_0002",
         "block_0003_0003",
         "block_0003_0004",
-        "block_0003_0005"
+        "block_0003_0005",
+        "u12_composicion_limites_independientes_referencia_titulo",
+        "u12_composicion_limites_independientes_referencia_codigo",
+        "u12_composicion_limites_independientes_referencia_razonamiento"
       ]
     }
   ],
   "activityAfter": [
     {
       "activity": "block_0004_0001",
+      "requires": [
+        "block_0002_0003",
+        "u12_composicion_limites_independientes_comprobacion"
+      ]
+    },
+    {
+      "activity": "u12_composicion_limites_independientes_comprobacion",
       "requires": [
         "block_0002_0003"
       ]
@@ -1186,19 +1363,49 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "f19d974b5c59ed355e0c41c211e1e1fa56f661708e7f410ed2ad3290e77504dd",
+        "sourceSha256": "2980f04540e975823814fc9b5c76e5149eac34d4fb0a3cd88625a5e89908c63c",
         "spans": [
           {
-            "start": 36,
-            "end": 41,
+            "start": 16,
+            "end": 21,
             "text": "texto",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 73,
-            "end": 77,
-            "text": "cout",
-            "role": "cpp"
+            "start": 32,
+            "end": 52,
+            "text": "Cajas=4;Estado=listo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 76,
+            "text": "texto.str()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 142,
+            "text": "mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 260,
+            "text": "std::cout << mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 300,
+            "text": "mensaje",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1274,13 +1481,49 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "c5f1523377993029f837120f3278dca9d9f92edf897fa1a89ab65d3eefce73e2",
+        "sourceSha256": "02a518cc882fbd9e0e6226ad303e736fa563596607e8cb8f892f8df7c5c2abf1",
         "spans": [
           {
-            "start": 0,
-            "end": 8,
+            "start": 51,
+            "end": 58,
+            "text": "Turno 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 85,
             "text": "anterior",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 212,
+            "text": "Turno 2 confirmado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 234,
+            "text": "anterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 273,
+            "end": 284,
+            "text": "texto.str()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 297,
+            "end": 323,
+            "text": "Turno 2|Turno 2 confirmado",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1319,26 +1562,54 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "9c8784c43d45e4cecdd712f1d5ab0b896d29499ded7973dcd185a872b148a0e1",
+        "sourceSha256": "b17400ee807c11045ef08bd28698b57ae6fd9b82b06522f403a0b1b3f92eb5e6",
         "spans": [
           {
-            "start": 29,
-            "end": 30,
+            "start": 41,
+            "end": 42,
             "text": "4",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 79,
-            "end": 80,
+            "start": 53,
+            "end": 58,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 103,
+            "text": "primero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 175,
             "text": "7",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 204,
+            "end": 206,
+            "text": "47",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 106,
-            "end": 108,
-            "text": "47",
+            "start": 285,
+            "end": 289,
+            "text": "4:47",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 374,
+            "end": 376,
+            "text": "11",
             "role": "output",
             "reading": "natural"
           }
@@ -1359,8 +1630,23 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "f988a82bffd9939906a2f864202081fcce6029f2f347cdb9666149e8268cd66b",
-        "spans": []
+        "sourceSha256": "06a897e7fa199fe3f9e72dfd0bc9e6b9d6eceb83c1085ccafb7a93e22cfe7232",
+        "spans": [
+          {
+            "start": 27,
+            "end": 45,
+            "text": "std::ostringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 246,
+            "text": "str()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1450,13 +1736,35 @@
       {
         "block": "block_0001_0005",
         "path": "/explanation",
-        "sourceSha256": "039c5bd974c2ef79aae45a30b232baa764c8baf7022b58a53e7f0feb585a1aff",
+        "sourceSha256": "e58742a07510c699ac6519ac0b1db81469f22fe5b515f8d0c1825ab91257e92b",
         "spans": [
           {
-            "start": 88,
-            "end": 93,
-            "text": "str()",
-            "role": "cpp"
+            "start": 25,
+            "end": 47,
+            "text": "Validos=2;Rechazados=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 90,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 228,
+            "text": "Validos=0;Rechazados=0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1848,26 +2156,49 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "1b75b4c3ef1a495b374663396c240455b41cc486aa6e04e763ef3091f406d7e2",
+        "sourceSha256": "2b8f76206721d9fb3f84d124da77b6a2d0b52392cb95d50c0735e51473c277f7",
         "spans": [
           {
-            "start": 37,
-            "end": 41,
-            "text": "cout",
-            "role": "cpp"
+            "start": 0,
+            "end": 11,
+            "text": "texto.str()",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 54,
-            "end": 62,
-            "text": "Guardado",
+            "start": 20,
+            "end": 42,
+            "text": "Validos=2;Rechazados=1",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 69,
-            "end": 74,
-            "text": "str()",
-            "role": "cpp"
+            "end": 86,
+            "text": "salida << mensaje",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 130,
+            "text": "resumen_lgp.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 195,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 212,
+            "text": "Guardado",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1888,6 +2219,291 @@
             "end": 58,
             "text": "Validos=2;Rechazados=1",
             "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_composicion_limites_independientes_titulo",
+        "path": "/text",
+        "sourceSha256": "91d8b2970a7a090d2b8811f22b9ac929edcad8e43bc5dd336bd92cf778f5db69",
+        "spans": []
+      },
+      {
+        "block": "u12_composicion_limites_independientes_consigna",
+        "path": "/text",
+        "sourceSha256": "2ad9355de3115c88a7ea434a2dbccc8b7f1928fa85042963468b4276a2252c7b",
+        "spans": [
+          {
+            "start": 138,
+            "end": 139,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 144,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 228,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 276,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 312,
+            "end": 328,
+            "text": "componer_resumen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 494,
+            "end": 501,
+            "text": "(10, 0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 510,
+            "text": "(0, 10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 512,
+            "end": 520,
+            "text": "(10, 10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 523,
+            "end": 529,
+            "text": "(1, 0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 608,
+            "end": 610,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_composicion_limites_independientes_salida",
+        "path": "/text",
+        "sourceSha256": "ed5085b746e26d2978b522973828d1fa70442aa6900b91188ebfded8b69f4c89",
+        "spans": [
+          {
+            "start": 33,
+            "end": 197,
+            "text": "Validos=2;Rechazados=1\nValidos=0;Rechazados=0\nValidos=5;Rechazados=3\nValidos=10;Rechazados=0\nValidos=0;Rechazados=10\nValidos=10;Rechazados=10\nValidos=1;Rechazados=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_composicion_limites_independientes_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "334ccccee8b39d87b3d3a8cd900c4bc1cc8a75e6f5a05cb7ddf6b0bdccf326a8",
+        "spans": [
+          {
+            "start": 17,
+            "end": 19,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 278,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 311,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_composicion_limites_independientes_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "98d3e748abd4fbdfdf3fbe5f784eb71cdd19f87705d39f80ea13cef5a8561358",
+        "spans": [
+          {
+            "start": 11,
+            "end": 18,
+            "text": "(0, 10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 50,
+            "text": "Validos=0;Rechazados=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 180,
+            "text": "(0, 0)",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_composicion_limites_independientes_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "bd085599edb20006ca49e2e727f6db8ab97a42a9d702e420171250f6b10571b4",
+        "spans": [
+          {
+            "start": 78,
+            "end": 80,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 476,
+            "end": 485,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_composicion_limites_independientes_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "44d7e015ea4ebd27beaec28e1f0c6eca842924899873f4102ef707ee606246a3",
+        "spans": []
+      },
+      {
+        "block": "u12_composicion_limites_independientes_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "725a645a45dd9c41380e0c6b4f573351671bc371d4a6cf1e6beb086289c646a6",
+        "spans": [
+          {
+            "start": 17,
+            "end": 22,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 72,
+            "text": "validos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 135,
+            "text": "rechazados",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 229,
+            "text": "texto.str()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 282,
+            "text": "(10, 0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 332,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 356,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 369,
+            "text": "(0, 10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 477,
+            "end": 485,
+            "text": "(10, 10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 525,
+            "text": "(1, 0)",
+            "role": "data",
             "reading": "natural"
           }
         ]

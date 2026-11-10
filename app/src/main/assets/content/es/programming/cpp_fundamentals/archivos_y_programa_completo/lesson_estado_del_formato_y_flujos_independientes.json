@@ -35,7 +35,7 @@
           "answers": [
             "11|20|16"
           ],
-          "explanation": "Octal sigue activo para nueve y dieciséis; dec cambia sólo las inserciones posteriores.",
+          "explanation": "std::oct selecciona octal para std::cout. El valor 9 se presenta como 11: un grupo de ocho y una unidad. La cadena separadora no cambia la base, por lo que 16 se presenta después como 20: dos grupos de ocho.\n\nSólo al insertar std::dec se selecciona decimal para el último 16. Así se forma 11|20|16. Cada entero utiliza la base que el flujo conserva en ese momento.",
           "reviewFeedback": "Sigue el flujo de izquierda a derecha y conserva la última base seleccionada. Insertar el separador no selecciona otra base."
         },
         {
@@ -46,7 +46,7 @@
           "answers": [
             "dec"
           ],
-          "explanation": "Es necesario cambiar la base del propio flujo antes del segundo entero.",
+          "explanation": "La primera inserción presenta 20 en hexadecimal como 14, porque 1 × 16 + 4 = 20. Esa selección sigue activa después del separador.\n\nLa respuesta dec completa std::dec antes del segundo entero. La segunda inserción produce 20, y la salida completa es 14|20. No se cambia el valor del literal; se cambia la base de std::cout.",
           "reviewFeedback": "Escribe sólo el nombre del manipulador situado después de std::. La selección debe preceder al entero que quieres presentar en decimal."
         }
       ]
@@ -75,7 +75,7 @@
           "answers": [
             "1a|26|26"
           ],
-          "explanation": "Cambiar a no cambia b ni cout. Las cadenas obtenidas ya contienen sus caracteres.",
+          "explanation": "El flujo a recibe std::hex y el entero 26, por lo que almacena 1a. El flujo b conserva su base decimal inicial y almacena 26.\n\na.str() y b.str() proporcionan esas cadenas ya formadas. Insertarlas en std::cout no le aplica los manipuladores de los otros flujos. La inserción final del entero 26 sigue siendo decimal, y el resultado completo es 1a|26|26.",
           "reviewFeedback": "Sigue por separado la configuración de a, b y cout. Distingue obtener una cadena de configurar el flujo al que luego se inserta."
         },
         {
@@ -87,7 +87,7 @@
             "La base de cout conserva su propia configuración."
           ],
           "correctIndex": 2,
-          "explanation": "La cadena retornada comunica caracteres, no la configuración del flujo que los produjo.",
+          "explanation": "La función aplica sus manipuladores al std::ostringstream local. Al llamar a str(), obtiene una cadena con los caracteres que ese objeto produjo. El valor devuelto no es una orden para configurar std::cout.\n\nPor ejemplo, una cadena con 1a puede mostrarse en un std::cout configurado en decimal: sus caracteres siguen siendo 1a. Un entero insertado después utiliza la base que ya conserva std::cout, porque la composición local no la cambió.",
           "reviewFeedback": [
             "Distingue los caracteres devueltos por str() de las opciones que conserva cada objeto flujo.",
             "Localiza el objeto al que se aplican los manipuladores de la función.",
@@ -120,7 +120,7 @@
           "answers": [
             "1f:1f|31"
           ],
-          "explanation": "La primera cadena conserva 1f. dec afecta a los caracteres añadidos después; no reescribe los que ya estaban.",
+          "explanation": "El flujo texto almacena primero 1f, la escritura hexadecimal de 31. primera recibe una cadena con esos caracteres. Al añadir el separador y seleccionar std::dec, el flujo acumula después 31; su contenido pasa a ser 1f|31.\n\nLa cadena primera conserva 1f. El programa inserta esa cadena, los dos puntos separadores y el contenido actual del flujo. Por eso aparece 1f:1f|31. Cambiar la base no reescribe los caracteres anteriores ni actualiza una cadena obtenida previamente.",
           "reviewFeedback": "Sigue los caracteres almacenados antes y después de seleccionar decimal; distingue la cadena primera del contenido actual del flujo."
         },
         {
@@ -132,7 +132,7 @@
             "La base para los enteros que se inserten después."
           ],
           "correctIndex": 2,
-          "explanation": "Cambiar el estado de formato no cambia retrospectivamente el contenido.",
+          "explanation": "Después de texto << hex << 31, el flujo contiene 1f y tiene seleccionada la base hexadecimal. Al ejecutar texto << dec, sólo cambia esa selección a decimal. El manipulador no inserta un entero ni borra los caracteres acumulados.\n\nEl contenido sigue siendo 1f. Lo que cambia es la base que se utilizará cuando se inserten otros enteros. Por eso ninguna de las opciones que transforma o vacía el texto describe esta operación.",
           "reviewFeedback": [
             "Comprueba si el manipulador contiene alguna operación que borre el contenido.",
             "Separa los caracteres que ya están escritos de la opción para las inserciones futuras.",
@@ -245,7 +245,7 @@
           "answers": [
             "0xf|0x10|10"
           ],
-          "explanation": "showbase permanece para los primeros dos enteros; noshowbase retira el prefijo del tercero.",
+          "explanation": "Con std::showbase y std::hex activos, 15 se escribe 0xf y 16 se escribe 0x10. La petición de prefijo permanece durante ambas inserciones.\n\nstd::noshowbase retira esa petición antes del último 16, pero conserva la base hexadecimal. El entero se escribe entonces 10, y la salida completa es 0xf|0x10|10. Retirar el prefijo no equivale a seleccionar decimal.",
           "reviewFeedback": "Sigue por separado la base seleccionada y la petición de prefijos. No retires la base hexadecimal al aplicar noshowbase."
         }
       ]
@@ -283,7 +283,7 @@
           "answers": [
             "15|8"
           ],
-          "explanation": "La base octal permanece para las dos lecturas: uno por ocho más siete y uno por ocho.",
+          "explanation": "std::oct configura el flujo entrada antes de las dos extracciones. La escritura 17 aporta 1 × 8 + 7 = 15; la escritura 10 aporta 1 × 8 + 0 = 8. La base permanece entre ellas, por lo que ambos valores se leen en octal.\n\nstd::cout es otro flujo y conserva decimal. Presenta los valores obtenidos como 15|8. Configurar la entrada no cambia el formato de la salida.",
           "reviewFeedback": "Conserva en el flujo de entrada la base elegida para cada extracción. La base de cout se sigue por separado."
         },
         {
@@ -322,7 +322,7 @@
           "answers": [
             "Rechazado"
           ],
-          "explanation": "Ocho no es un dígito octal. El programa sólo usa una cantidad como resultado cuando la extracción tuvo éxito.",
+          "explanation": "La entrada preparada empieza con el carácter 8. Ese carácter no puede iniciar un entero octal, cuyo repertorio de dígitos termina en 7. La extracción falla y la condición del if resulta falsa.\n\nSe ejecuta la rama else, que escribe Rechazado. El programa no presenta el destino como una cantidad leída correctamente. El fallo de extracción y la base seleccionada son estados distintos: el fallo no selecciona decimal.",
           "reviewFeedback": "Comprueba si el primer carácter del texto puede empezar una escritura de la base seleccionada. Sigue la rama elegida por el resultado de la extracción."
         },
         {
@@ -409,7 +409,7 @@
             "Treinta y dos, porque el flujo solicita decimal."
           ],
           "correctIndex": 2,
-          "explanation": "No confundas la regla de un literal del código C++ con la base que se seleccionó para esta lectura.",
+          "explanation": "Aquí 032 es texto de entrada y el flujo tiene seleccionada explícitamente la base decimal. Los dígitos representan 0 × 100 + 3 × 10 + 2 = 32, por lo que se obtiene treinta y dos. El cero inicial no sustituye esa selección por octal.\n\nUn literal 032 escrito en el código C++ tendría otra regla: su cero inicial indica notación octal. La pregunta trata de una extracción con dec, no de ese literal.",
           "reviewFeedback": [
             "Comprueba qué regla de lectura selecciona el manipulador para este flujo.",
             "Distingue el texto que se lee de un literal entero escrito en el código fuente.",
@@ -426,7 +426,7 @@
             "1a, porque cout conserva su configuración hexadecimal."
           ],
           "correctIndex": 2,
-          "explanation": "Cada objeto flujo conserva su propio estado. Insertar una string ya compuesta no transfiere al destino la configuración de su flujo local.",
+          "explanation": "El flujo local compone la cadena dec=10;hex=a;oct=12 usando sus propias opciones. Devolverla e insertarla en cout comunica los caracteres, sin transferirle la última base local.\n\ncout conserva hexadecimal. Al insertar directamente el entero 26, produce 1a, porque 1 × 16 + 10 = 26. La escritura 12 del campo octal pertenece a la cadena previa; no determina cómo se presenta este nuevo entero.",
           "reviewFeedback": [
             "Localiza si alguna inserción dirigida al flujo local configura también cout.",
             "Distingue el último formato local del estado propio de la salida estándar.",
@@ -470,6 +470,65 @@
           }
         },
         {
+          "type": "heading",
+          "text": "Conservar también los prefijos y las mayúsculas del llamador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Utiliza tu función de composición con la firma std::string representar(int cantidad). Si elegiste otro nombre en la práctica anterior, adáptalo para que coincida con las llamadas proporcionadas. La función recibe un entero entre 0 y 1000, ambos incluidos, y devuelve dec=D;hex=H;oct=O, con hexadecimal minúsculo, sin prefijos y sin salto final. Crea su propio std::ostringstream local, inserta los valores como enteros y devuelve la cadena sin imprimir ni cambiar las opciones de std::cout.\n\nConserva el main proporcionado y coloca antes la definición de tu función. El cliente mantiene las cuatro llamadas y el entero final de la práctica anterior. A continuación añade cuatro llamadas con 42, 26, 0 y 1000. Tras cada cadena devuelta, escribe un separador y un entero directamente en std::cout, para observar la configuración que conserva el llamador.\n\nAntes de esas cuatro llamadas se activan std::showbase y std::uppercase. El cliente selecciona sucesivamente hexadecimal, octal, decimal y hexadecimal. Esos cambios de base no retiran la petición de prefijos ni la de mayúsculas. Mantén una sola implementación para las ocho llamadas y pulsa «Compilar, ejecutar y comprobar». La salida tiene nueve líneas y cada una termina con un salto.",
+          "emphasis": [
+            {
+              "text": "una sola implementación",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\ndec=10;hex=a;oct=12\ndec=20;hex=14;oct=24\ndec=0;hex=0;oct=0\ndec=31;hex=1f;oct=37\n1a\ndec=42;hex=2a;oct=52|0X2A\ndec=26;hex=1a;oct=32|032\ndec=0;hex=0;oct=0|26\ndec=1000;hex=3e8;oct=1750|0X3E8"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\n// Define aqui representar(int cantidad), sin otro main.\n\nint main() {\n    std::cout << std::hex;\n    std::cout << representar(10) << \"\\n\" << representar(20) << \"\\n\"\n              << representar(0) << \"\\n\" << representar(31) << \"\\n\" << 26 << \"\\n\";\n\n    std::cout << std::showbase << std::uppercase << std::hex;\n    std::cout << representar(42) << \"|\" << 42 << \"\\n\";\n    std::cout << std::oct;\n    std::cout << representar(26) << \"|\" << 26 << \"\\n\";\n    std::cout << std::dec;\n    std::cout << representar(0) << \"|\" << 26 << \"\\n\";\n    std::cout << std::hex;\n    std::cout << representar(1000) << \"|\" << 1000 << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "dec=10;hex=a;oct=12\ndec=20;hex=14;oct=24\ndec=0;hex=0;oct=0\ndec=31;hex=1f;oct=37\n1a\ndec=42;hex=2a;oct=52|0X2A\ndec=26;hex=1a;oct=32|032\ndec=0;hex=0;oct=0|26\ndec=1000;hex=3e8;oct=1750|0X3E8\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las cinco líneas anteriores se conservan. En las cuatro nuevas, la función devuelve campos sin prefijo y con letras minúsculas. Los enteros insertados directamente en std::cout aparecen como 0X2A, 032, 26 y 0X3E8. Cada uno refleja la base seleccionada por el cliente; las llamadas no eliminan sus prefijos ni sus mayúsculas.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "dec=10;hex=a;oct=12\ndec=20;hex=14;oct=24\ndec=0;hex=0;oct=0\ndec=31;hex=1f;oct=37\n1a\ndec=42;hex=2a;oct=52|0X2A\ndec=26;hex=1a;oct=32|0X1A\ndec=0;hex=0;oct=0|0X1A\ndec=1000;hex=3e8;oct=1750|0X3E8\n"
+                    ],
+                    "text": "La función ha dejado std::cout en hexadecimal incluso cuando el cliente había seleccionado octal o decimal. Por eso el entero exterior de la séptima y de la octava línea aparece como 0X1A, en lugar de 032 y 26. La batería anterior dejaba el llamador siempre en hexadecimal y no podía distinguir esa modificación. Aplica los manipuladores de composición sólo al flujo local; la función no necesita configurar std::cout."
+                  },
+                  {
+                    "outputs": [
+                      "dec=10;hex=a;oct=12\ndec=20;hex=14;oct=24\ndec=0;hex=0;oct=0\ndec=31;hex=1f;oct=37\n1a\ndec=42;hex=2a;oct=52|2A\ndec=26;hex=1a;oct=32|32\ndec=0;hex=0;oct=0|26\ndec=1000;hex=3e8;oct=1750|3E8\n"
+                    ],
+                    "text": "Los enteros exteriores aparecen como 2A, 32 y 3E8 donde el cliente había solicitado 0X2A, 032 y 0X3E8. La composición debe carecer de prefijos, pero esa condición pertenece a su flujo local. Retirar std::showbase de std::cout cambia una opción que pertenece al llamador. La batería anterior no activaba esa opción."
+                  },
+                  {
+                    "outputs": [
+                      "dec=10;hex=a;oct=12\ndec=20;hex=14;oct=24\ndec=0;hex=0;oct=0\ndec=31;hex=1f;oct=37\n1a\ndec=42;hex=2a;oct=52|0x2a\ndec=26;hex=1a;oct=32|032\ndec=0;hex=0;oct=0|26\ndec=1000;hex=3e8;oct=1750|0x3e8\n"
+                    ],
+                    "text": "Los enteros exteriores hexadecimales aparecen como 0x2a y 0x3e8 en lugar de 0X2A y 0X3E8. El cliente había pedido mayúsculas para su propio flujo. La cadena devuelta debe usar minúsculas, pero eso se resuelve en el std::ostringstream local, sin aplicar std::nouppercase a std::cout. La batería anterior usaba la configuración inicial de minúsculas y no distinguía ese cambio."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
           "type": "paragraph",
           "text": "Las cuatro llamadas deben comenzar composiciones independientes. Los resultados se devuelven como cadenas: insertarlos no transfiere las opciones del flujo local a `std::cout`. La inserción final de un entero utiliza la base que conserva la salida estándar.\n\nUna salida coincidente no demuestra por sí sola que se haya escrito una función ni que las cifras se obtengan insertando enteros. Revisa tu construcción con los criterios: debe calcular las representaciones de otra cantidad permitida sin sustituirlas por cadenas de respuestas fijas."
         }
@@ -504,7 +563,7 @@
           "answers": [
             "0|0"
           ],
-          "explanation": "La representación de cero no añade un prefijo duplicado en estos formatos.",
+          "explanation": "La primera inserción pide hexadecimal con prefijo, pero el valor 0 se presenta como 0. Después se selecciona octal, manteniendo la petición de prefijo, y ese mismo valor también se presenta como 0.\n\nNo se añaden los caracteres de un prefijo duplicado para este caso: no aparecen 0x0 ni 00. La cadena separadora sí se conserva, de modo que el resultado es 0|0.",
           "reviewFeedback": "Analiza el caso especial del valor cero con prefijos y conserva los separadores que se insertan como cadenas."
         },
         {
@@ -515,6 +574,14 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nstd::string representar(int cantidad) {\n    std::ostringstream texto;\n    texto << \"dec=\" << std::dec << cantidad << \";hex=\" << std::hex << cantidad\n        << \";oct=\" << std::oct << cantidad;\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    std::cout << representar(10) << \"\\n\" << representar(20) << \"\\n\"\n              << representar(0) << \"\\n\" << representar(31) << \"\\n\" << 26 << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar la composición local con el estado del destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la primera llamada adicional, representar(42) devuelve dec=42;hex=2a;oct=52. El entero exterior se inserta en el flujo del cliente con hexadecimal, prefijo y mayúsculas: aparece 0X2A. Son dos presentaciones del mismo valor en objetos flujo distintos.\n\nDespués, el cliente selecciona octal y llama con 26. La composición local devuelve dec=26;hex=1a;oct=32, mientras el entero exterior aparece como 032 por conservar la petición de prefijo. En la llamada con 0, la cadena devuelta contiene tres ceros; el entero exterior es 26 y se escribe 26, pues el llamador ha seleccionado decimal.\n\nLa última llamada usa el límite superior 1000. Sus campos locales son 1000, 3e8 y 1750. El entero exterior aparece como 0X3E8: volver a hexadecimal hace visibles las opciones de prefijo y mayúsculas que el cliente había conservado. Reponer siempre hexadecimal, retirar prefijos o seleccionar minúsculas en std::cout incumpliría el contrato aunque todas las cadenas devueltas fueran correctas.\n\nLa función representar de la referencia completa anterior satisface también estos casos. Sustituye su main por el cliente de esta práctica para ejecutar la misma batería. Cada llamada crea un flujo local nuevo, configura sus tres campos y devuelve texto.str(). El cliente decide cómo presenta los enteros que inserta directamente en su propio flujo."
         }
       ]
     }
@@ -770,6 +837,10 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
+          "u12_formato_del_llamador_titulo",
+          "u12_formato_del_llamador_consigna",
+          "u12_formato_del_llamador_salida",
+          "u12_formato_del_llamador_comprobacion",
           "block_0006_0003"
         ]
       },
@@ -781,7 +852,9 @@
           "block_0007_0002",
           "block_0007_0003",
           "block_0007_0004",
-          "block_0007_0005"
+          "block_0007_0005",
+          "u12_formato_del_llamador_referencia_titulo",
+          "u12_formato_del_llamador_referencia_razonamiento"
         ]
       }
     ],
@@ -1354,6 +1427,60 @@
           "block": 3
         },
         "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_formato_del_llamador_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_formato_del_llamador_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_formato_del_llamador_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_formato_del_llamador_comprobacion",
+        "sha256": "196dccb9c4ff740f70530a6923423099a3899b48859a7be9c9a1a2687da84f36",
+        "storage": {
+          "page": 8,
+          "block": 7
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_formato_del_llamador_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 8
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_formato_del_llamador_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 9
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1476,26 +1603,95 @@
         "id": "block_0003_0002",
         "beforeSha256": "9996c09f4b9a4e72742c442b3487314545e5e9e24cbd8c492e2d26bedb385b49",
         "afterSha256": "27fe6ecef62810feeead445041526bbe7e2e899beed18cbab4b056603457cbc8"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "16bf5d039522046a54b1da0539a64c697328824abbaf990edfba424ce23202e8",
+        "afterSha256": "53e4696e6dc08c94aa002e38de40a7b569c0e64d7f41a47e2f27eaca23a39716"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "d42704666ff08048f61ec6c3fe2f66608f79884bb80a66786f7f0fe357518384",
+        "afterSha256": "5e96580e26a23629c9994d04022469f62614a6c3cd16ca687b4fd44f4ddff18e"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "6ecc91ab7d3a474e913c0e2846423b5b9d96d4839ec5d9239c5d072381ab3051",
+        "afterSha256": "978a0ceed85e90cedada43b60e27c60e59642086eea8faab98a2e49c2934acbd"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "a97766856ba86f62b0e820cbeb51394336af9a7a9457310e8a3c84ca59bd4ca5",
+        "afterSha256": "8919126518b042f9fffd4a4340cb40cddf337e04084a776793259334fb06f8db"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "1cecb1ea93bdfa72df2b90b53a7cfb16f9a6f210d76af14712b9a257418b06e6",
+        "afterSha256": "a8b08e260b7f81da99be792d6d80462421dc057b39f68b8cb1f0636b69d415b8"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "5fb280471c7ed95b1bf3d2165d32a8386bb6a29082838953206a793372a452d2",
+        "afterSha256": "81f333926a7de0a76e1157b28c24f8378d3ce6357e32631c29c560c4dea08b67"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "6dcf05f737c378304d7d6ccf235bd41d6d1fe6da56bb7d23e4854c269e522bcd",
+        "afterSha256": "b0364e359cd8c0779a4caadbc6c8908cc8f2aa7a2e4211b9dc96d775af943cba"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "84b79cbf9428407b12a0b38d9bdec49eda7982f51ea1487318d328d9833a689f",
+        "afterSha256": "69c9929d5e1893e6f47cfd54189ba6c0cfb780f4b4c885f1be1690d0385c5028"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "d70bd66311249ab4caed39a83b931939bcd0906efad168f8f87a0be0f083c4f7",
+        "afterSha256": "c46d231ace7561ed4f4e6b22c8fcecf9081281fa0f990388fb5ab3e602a44ba7"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ecd8154eb2234e7c6175590d8c7705852b86544d2da8c4e7fdece8fb2d701491",
+        "afterSha256": "7dacfd8220c07472935f1f993e5304a4fbd8c4c62b59fd55af56f81b3f9187e5"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "4205ca341d2525ad0cb3217db3f9900ad6e63488f8746bbbc6059bf763040235",
+        "afterSha256": "d86f499ed5ee9c1b2396e38f75ccc312aa9f0c0098553893d2404f4672add961"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "0059bf593e4eca87ae843545ed9114f8fddb081a17835a1a2e7f7a703dd1f3b0",
+        "afterSha256": "7ecd0d90f50104088fcaee075464a443d1aac525465ab76f8bb83e9acf1a78bb"
       }
     ]
   },
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0006_0002",
+      "activity": "u12_formato_del_llamador_comprobacion",
       "blocks": [
         "block_0006_0003",
         "block_0007_0000",
         "block_0007_0001",
         "block_0007_0002",
         "block_0007_0004",
-        "block_0007_0005"
+        "block_0007_0005",
+        "u12_formato_del_llamador_referencia_titulo",
+        "u12_formato_del_llamador_referencia_razonamiento"
       ]
     }
   ],
   "activityAfter": [
     {
       "activity": "block_0007_0003",
+      "requires": [
+        "block_0006_0002",
+        "u12_formato_del_llamador_comprobacion"
+      ]
+    },
+    {
+      "activity": "u12_formato_del_llamador_comprobacion",
       "requires": [
         "block_0006_0002"
       ]
@@ -1598,7 +1794,7 @@
             "end": 216,
             "text": "0x",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 228,
@@ -1640,7 +1836,7 @@
             "end": 491,
             "text": "X",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 506,
@@ -1719,13 +1915,70 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "5f9f5fed36031e4ef8f29f2d858323e9d6e2163bc82ff0e1b917e7cd6159d36e",
+        "sourceSha256": "c1f0c1d38e1a491504cdc0a6efe3e372d94adbdc9b883cd0f07fc374d3b96705",
         "spans": [
           {
-            "start": 43,
-            "end": 46,
-            "text": "dec",
-            "role": "cpp"
+            "start": 0,
+            "end": 8,
+            "text": "std::oct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 40,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 52,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 72,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 158,
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 186,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 234,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 274,
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 297,
+            "text": "11|20|16",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1744,8 +1997,65 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "c198402a769427598db83874caf7c7c9562c2eb108bf7d378a79278b4cafe464",
-        "spans": []
+        "sourceSha256": "da055340801c7661ae7c5c4994fdecd7dedb354d84adb2c2f72ecfd905d99b11",
+        "spans": [
+          {
+            "start": 30,
+            "end": 32,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 55,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 79,
+            "text": "1 × 16 + 4 = 20",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 148,
+            "text": "dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 166,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 224,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 255,
+            "text": "14|20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 313,
+            "end": 322,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -1775,25 +2085,84 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "a2c9d5ac18c99c309fa29b0891ee3f633940989d9ba4830d7c645ade42df4e65",
+        "sourceSha256": "8a6dbe1808689a69b1c81e80deec4928c62120568891ce86627b5cab3248c480",
         "spans": [
           {
-            "start": 8,
-            "end": 9,
+            "start": 9,
+            "end": 10,
             "text": "a",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 20,
-            "end": 21,
+            "start": 18,
+            "end": 26,
+            "text": "std::hex",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "text": "1a",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
             "text": "b",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 25,
-            "end": 29,
-            "text": "cout",
-            "role": "cpp"
+            "start": 122,
+            "end": 124,
+            "text": "26",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 134,
+            "text": "a.str()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 144,
+            "text": "b.str()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 208,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 293,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 351,
+            "text": "1a|26|26",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1844,8 +2213,58 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "ea4a5fa8fb058ec167985a8d9432a58eacf921c9f296eb185002e255965495b4",
-        "spans": []
+        "sourceSha256": "b1fc9f1ce24048aeb112013bf7ff68c041e60e5d297312fe72f07a89e013c35d",
+        "spans": [
+          {
+            "start": 39,
+            "end": 57,
+            "text": "std::ostringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 82,
+            "text": "str()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 205,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 236,
+            "end": 238,
+            "text": "1a",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 270,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 324,
+            "end": 326,
+            "text": "1a",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 397,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1945,20 +2364,77 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "44d8a3a814a3d67cf0fa1a70c95cd713106b5f273c85d8daf41ecc7d819e0021",
+        "sourceSha256": "8396445a798004baab83f07ba42036637a4eb16b616e3a50ea670746df0dbfd5",
         "spans": [
           {
-            "start": 27,
-            "end": 29,
+            "start": 9,
+            "end": 14,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 34,
             "text": "1f",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 31,
-            "end": 34,
-            "text": "dec",
-            "role": "cpp"
+            "start": 64,
+            "end": 66,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 75,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 160,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 189,
+            "text": "31",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 220,
+            "text": "1f|31",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 240,
+            "text": "primera",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "1f",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 370,
+            "text": "1f:1f|31",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1997,8 +2473,37 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "85fc7716d37c918adebfc83f6315e0ada5158610b30f0e71f947b323cf7eb2f8",
-        "spans": []
+        "sourceSha256": "d0273a67f7e439ce91d7a344689e1ecdb92262f845d9561731dad70cc91a23ae",
+        "spans": [
+          {
+            "start": 11,
+            "end": 29,
+            "text": "texto << hex << 31",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 51,
+            "text": "1f",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 118,
+            "text": "texto << dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 256,
+            "end": 258,
+            "text": "1f",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -2208,19 +2713,77 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "eeb7208d27143bd7b2eb29ba1bf8b19585ea97404623ed133a222f00561fd990",
+        "sourceSha256": "c3fb6a686c6ad9ec54d52d1ac29548c88e95c9ad730a872124f6c80b3a4e5eec",
         "spans": [
           {
-            "start": 0,
-            "end": 8,
-            "text": "showbase",
-            "role": "cpp"
+            "start": 4,
+            "end": 17,
+            "text": "std::showbase",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 50,
+            "start": 20,
+            "end": 28,
+            "text": "std::hex",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 40,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 55,
+            "text": "0xf",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
             "end": 60,
-            "text": "noshowbase",
-            "role": "cpp"
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 76,
+            "text": "0x10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 154,
+            "text": "std::noshowbase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 194,
+            "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 263,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 300,
+            "text": "0xf|0x10|10",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2290,7 +2853,7 @@
             "end": 391,
             "text": "2a 52 42",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 526,
@@ -2346,8 +2909,65 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "db90ee94616d4772768ec540a873dc83ae07531e8c7d844b2a5eef1162768870",
-        "spans": []
+        "sourceSha256": "e14b38087f942a8af11f61f1e46c2d312ecae2cac79ce595b5df65d29422b183",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "std::oct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 35,
+            "text": "entrada",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 82,
+            "text": "17",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 90,
+            "end": 104,
+            "text": "1 × 8 + 7 = 15",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 121,
+            "text": "10",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 129,
+            "end": 142,
+            "text": "1 × 8 + 0 = 8",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 228,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 303,
+            "text": "15|8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2372,14 +2992,14 @@
             "end": 155,
             "text": "17x",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 202,
             "end": 204,
             "text": "17",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 227,
@@ -2424,8 +3044,44 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "91a8514d785cf20cceca05921d4676a134a9638fc15a346ae948b86cde0c25f6",
-        "spans": []
+        "sourceSha256": "e7538b9ab18470d001bded022d141ed5c6a8b18947d793d88d6be066eda58d25",
+        "spans": [
+          {
+            "start": 45,
+            "end": 46,
+            "text": "8",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 133,
+            "end": 134,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 177,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 217,
+            "text": "else",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 231,
+            "end": 240,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0001",
@@ -2628,7 +3284,7 @@
             "end": 14,
             "text": "\"032\"",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 26,
@@ -2647,8 +3303,37 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "ac6247162b583f3bdede19859822025038b4aa5f5d46e07dd7e23115eef2884e",
-        "spans": []
+        "sourceSha256": "b401ff871957739d6f3ad4d03f6ec0583cc87c3c814e772ad66f714c2fa6aff3",
+        "spans": [
+          {
+            "start": 5,
+            "end": 8,
+            "text": "032",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 115,
+            "end": 140,
+            "text": "0 × 100 + 3 × 10 + 2 = 32",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 248,
+            "text": "032",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 376,
+            "text": "dec",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -2660,13 +3345,29 @@
         "block": "block_0005_0002",
         "path": "/options/1",
         "sourceSha256": "80e4a0268cf08b92e9f3deb73bc84628ec6b7a045a990c6b7048f9f261c97887",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "Veintiséis",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
         "path": "/options/2",
         "sourceSha256": "030a6a1817a126a1366a079941ee3fea90abfad8d7883e932783fc27a8038dec",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Treinta y dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -2728,13 +3429,56 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "cacd14a0a086e1aa087d7efe520dda638665e383943f5bd1d05869d45f465188",
+        "sourceSha256": "fd68aabe2744e9709622c6f33c00106d5cf11e2b83ef4ab2de6e5759a66c042c",
         "spans": [
           {
-            "start": 58,
-            "end": 64,
-            "text": "string",
-            "role": "cpp"
+            "start": 33,
+            "end": 52,
+            "text": "dec=10;hex=a;oct=12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 183,
+            "text": "cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 243,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 253,
+            "end": 255,
+            "text": "1a",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 280,
+            "text": "1 × 16 + 10 = 26",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 295,
+            "end": 297,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3012,8 +3756,51 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "1cc302197b0908387638f5636fab6d7e6e81410a50aed838d2d15ef3c8ab0adf",
-        "spans": []
+        "sourceSha256": "bf94f130571459ea091807fc8c937b29f25742c2bcdfd450e9e292f74bbf1411",
+        "spans": [
+          {
+            "start": 65,
+            "end": 66,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 85,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 196,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 282,
+            "text": "0x0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 286,
+            "end": 288,
+            "text": "00",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 358,
+            "text": "0|0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -3026,6 +3813,473 @@
         "path": "/text",
         "sourceSha256": "87f9ad9331cc9bda60acf90ab15ecce4512d4f6afeeafd2ef600cb93172c7776",
         "spans": []
+      },
+      {
+        "block": "u12_formato_del_llamador_titulo",
+        "path": "/text",
+        "sourceSha256": "67fe8b8ce53a77202fa3a926bbb57e9819906ed8c1edf6abd03b618f1ad3552b",
+        "spans": []
+      },
+      {
+        "block": "u12_formato_del_llamador_consigna",
+        "path": "/text",
+        "sourceSha256": "819c98f3cc9a24f0200b6acfce7b6f772bcdcbfef960b47fe169571dd7107dbe",
+        "spans": [
+          {
+            "start": 47,
+            "end": 84,
+            "text": "std::string representar(int cantidad)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 230,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 237,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 284,
+            "text": "dec=D;hex=H;oct=O",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 378,
+            "text": "std::ostringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 480,
+            "end": 489,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 504,
+            "end": 508,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 691,
+            "end": 693,
+            "text": "42",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 695,
+            "end": 697,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 699,
+            "end": 700,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 703,
+            "end": 707,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 785,
+            "end": 794,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 895,
+            "end": 908,
+            "text": "std::showbase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 911,
+            "end": 925,
+            "text": "std::uppercase",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_del_llamador_salida",
+        "path": "/text",
+        "sourceSha256": "00b0c0adeffc206c19d2e8109910fba21fb7bf980ff61859ba999032ec24a2b9",
+        "spans": [
+          {
+            "start": 33,
+            "end": 219,
+            "text": "dec=10;hex=a;oct=12\ndec=20;hex=14;oct=24\ndec=0;hex=0;oct=0\ndec=31;hex=1f;oct=37\n1a\ndec=42;hex=2a;oct=52|0X2A\ndec=26;hex=1a;oct=32|032\ndec=0;hex=0;oct=0|26\ndec=1000;hex=3e8;oct=1750|0X3E8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_del_llamador_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "45efb509e1bc8be55d4b5637416468eb8a3426c6c4aa0083f1caad691d869743",
+        "spans": [
+          {
+            "start": 167,
+            "end": 176,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 195,
+            "text": "0X2A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "032",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 204,
+            "text": "26",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 212,
+            "text": "0X3E8",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_del_llamador_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "353ad0a207b56c0f51428537739f66635bfdd57ca5861b5d0924b95343bf8cd8",
+        "spans": [
+          {
+            "start": 21,
+            "end": 30,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 187,
+            "text": "0X1A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 204,
+            "text": "032",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 209,
+            "text": "26",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 417,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_del_llamador_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "4a3e03ee238f0c97fe7a4b2928f0833ad40362410375f326de43fba94fe7a2a5",
+        "spans": [
+          {
+            "start": 37,
+            "end": 39,
+            "text": "2A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 43,
+            "text": "32",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 49,
+            "text": "3E8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "0X2A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "032",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 101,
+            "text": "0X3E8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 212,
+            "text": "std::showbase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 225,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_del_llamador_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "609b351255d9e32b827cd5c7331a8b58fe97b9642a6dcf50f8898f83b5898dc1",
+        "spans": [
+          {
+            "start": 51,
+            "end": 55,
+            "text": "0x2a",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 63,
+            "text": "0x3e8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "0X2A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 88,
+            "text": "0X3E8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 233,
+            "text": "std::ostringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 269,
+            "text": "std::nouppercase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 281,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_del_llamador_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "d0187447eaff40ef42707cbc5bdb1299a92ab306f45fa06e4a8fb07888fe6b59",
+        "spans": []
+      },
+      {
+        "block": "u12_formato_del_llamador_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "a0cb4223159bf526d2db2779d070b476df132a2928322aacac9f6f51299ab0ac",
+        "spans": [
+          {
+            "start": 33,
+            "end": 48,
+            "text": "representar(42)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 78,
+            "text": "dec=42;hex=2a;oct=52",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 185,
+            "text": "0X2A",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 306,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 358,
+            "text": "dec=26;hex=1a;oct=32",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 401,
+            "end": 404,
+            "text": "032",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 461,
+            "end": 462,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 526,
+            "end": 528,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
+            "end": 544,
+            "text": "26",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 630,
+            "end": 634,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 659,
+            "end": 663,
+            "text": "1000",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 665,
+            "end": 668,
+            "text": "3e8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 671,
+            "end": 675,
+            "text": "1750",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 709,
+            "end": 714,
+            "text": "0X3E8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 895,
+            "end": 904,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 994,
+            "end": 1005,
+            "text": "representar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1085,
+            "end": 1089,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1231,
+            "end": 1242,
+            "text": "texto.str()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

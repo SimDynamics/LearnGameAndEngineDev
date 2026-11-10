@@ -42,7 +42,7 @@
             "Ambos flujos almacenan sólo el nombre, sin operar sobre datos."
           ],
           "correctIndex": 0,
-          "explanation": "Los nombres reflejan salida y entrada. Las operaciones de inserción y extracción conservan su papel.",
+          "explanation": "Al ejecutar una inserción como salida << \"2 5\";, el ofstream envía los caracteres hacia el archivo asociado. Al ejecutar entrada >> primero >> segundo, el ifstream obtiene caracteres del archivo y los interpreta para los dos destinos enteros.\n\nEl nombre del archivo se utiliza para establecer la conexión. Los objetos flujo permiten operar después sobre sus datos y consultar si esas operaciones han fallado.",
           "reviewFeedback": [
             "Relaciona las operaciones de inserción y extracción con el origen y el destino de sus datos.",
             "Sigue la dirección de los datos: cuáles van hacia el archivo y cuáles proceden de él.",
@@ -92,7 +92,7 @@
             "Que los destinos se inicialicen en cero, aunque una de las extracciones falle."
           ],
           "correctIndex": 1,
-          "explanation": "La apertura acredita acceso al archivo, no el formato de sus datos. Inicializar los destinos tampoco demuestra que las dos extracciones hayan obtenido valores válidos.",
+          "explanation": "Tras abrir el archivo, if (!entrada) comprueba si se pudo establecer el flujo de entrada. Eso todavía no ha obtenido los dos sumandos. La condición entrada >> primero >> segundo intenta extraerlos y permite continuar sólo cuando ambas extracciones tienen éxito.\n\nSi el texto fuera 2 x, la apertura podría haber funcionado y la segunda extracción fallaría. El valor con que se inicializó segundo no se convierte por ello en una cantidad válida del archivo. La suma debe esperar a la comprobación de la pareja leída.",
           "reviewFeedback": [
             "Separa el nombre del archivo de los datos que el lector debe obtener.",
             "Localiza las comprobaciones anteriores a la suma y qué debe haber ocurrido para continuar.",
@@ -116,7 +116,7 @@
           "answers": [
             "Total=11"
           ],
-          "explanation": "El archivo aporta 3 y 8; la suma se calcula después de comprobar la extracción.",
+          "explanation": "Esta versión escribe los caracteres 3 8 y comprueba la escritura y el cierre antes de abrir el lector. Las extracciones obtienen 3 en primero y 8 en segundo. La suma de esos destinos es 11.\n\nLa instrucción de consola antepone el rótulo y muestra Total=11, sin salto final. Cambiaron los datos de la muestra; se mantiene el recorrido que permite obtener el total desde el archivo.",
           "reviewFeedback": "Identifica qué texto escribe esta versión, qué valores obtiene el lector y desde qué variables se calcula el total. La predicción supone que se completan las etapas de archivo."
         },
         {
@@ -129,7 +129,7 @@
             "Sumar las constantes sin leer y afirmar que se comprobó el archivo."
           ],
           "correctIndex": 1,
-          "explanation": "El resultado debe provenir de los datos leídos. Sumar constantes no comprueba ese recorrido.",
+          "explanation": "Primero se produce la muestra y se comprueba la escritura tras cerrarla. Después se abre el lector, se intenta obtener cada entero y se comprueba la extracción completa. Sólo entonces se calcula con las variables que recibieron esos datos.\n\nSumar los valores iniciales o escribir directamente un total conocido podría dar una consola parecida sin haber leído la muestra. Para revisar el recorrido, sigue la procedencia de cada sumando desde su extracción hasta la operación que lo utiliza.",
           "reviewFeedback": [
             "Sigue cuándo existen ya los datos de la muestra y qué debe completarse antes de leerlos.",
             "Relaciona cada etapa con lo que deja preparado para la siguiente y conserva el origen del resultado en los datos leídos.",
@@ -164,7 +164,7 @@
             "Inicializar ambos destinos a cero para omitir la lectura."
           ],
           "correctIndex": 1,
-          "explanation": "La escritura, la conexión del lector y la interpretación de dos enteros son etapas distintas. Un destino inicializado no acredita haber obtenido sus datos.",
+          "explanation": "El ofstream permite escribir 4 7, pero abrirlo no modifica las variables del futuro lector. Después de escribir y comprobar el cierre, el ifstream debe abrir el mismo archivo y completar la extracción de los dos enteros.\n\nEl cálculo puede utilizar entonces los valores 4 y 7 realmente obtenidos. Inicializar antes los destinos evita dejarlos sin valor inicial, pero no sustituye ninguna extracción ni demuestra que se haya leído la muestra.",
           "reviewFeedback": [
             "Distingue abrir el flujo de salida de escribir la muestra y de extraerla hacia las variables del lector.",
             "Relaciona cada comprobación con la etapa que acaba de realizarse y con los datos que necesitas usar después.",
@@ -226,6 +226,84 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <fstream>\n\nint probar(int a, int b) {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo << \"\\n\";\n    return 0;\n}\n\nint main() {\n    if (probar(4, 7) != 0) return 1;\n    if (probar(0, 6) != 0) return 1;\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Observar cada campo y conservar los destinos ante un fallo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye dos funciones antes del cliente proporcionado. bool escribir_par(const std::string& ruta, int a, int b) abre el archivo de salida, escribe primero a y después b, separados por un espacio, cierra y comprueba el estado. Devuelve true sólo si se completa ese recorrido; si falla la apertura, la escritura o el cierre, devuelve false.\n\nbool leer_par(const std::string& ruta, int& primero, int& segundo) abre el archivo indicado e intenta extraer dos enteros en ese orden. Si completa ambas extracciones, actualiza los dos destinos y devuelve true. Si no puede abrir o no obtiene la pareja completa, devuelve false y conserva ambos destinos, incluso cuando ya haya leído el primer entero. Esta función comprueba la pareja solicitada; no exige que sean los únicos campos del archivo.\n\nLas funciones no imprimen mensajes: devuelven el resultado al cliente, que compone la consola. Para conservar los destinos del lector, recupera la estrategia de candidatos y confirmación conjunta practicada en el intérprete. Mantén los nombres, parámetros y llamadas del cliente; decide cómo organizar el cuerpo de cada función.",
+          "emphasis": [
+            {
+              "text": "conserva ambos destinos",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Las tres primeras llamadas escriben y leen 4 7, 0 6 y -3 8 sobre par_observable.txt. Cada línea muestra si se completó la escritura, si se completó la lectura y los dos valores leídos en su orden. Volver a abrir la salida sustituye la muestra anterior.\n\nEl cliente prepara los destinos con 90 y 80 y después intenta leer par_no_creado.txt, un archivo que esta ejecución no ha creado. A continuación crea y cierra par_incompleto.txt con el texto 5 x, y comprueba el rechazo de su segunda extracción. En ambos fallos los destinos deben seguir en 90 y 80.\n\nLa última llamada intenta escribir subcarpeta_ausente/par.txt. La carpeta de esta ejecución es nueva y el programa no crea subcarpeta_ausente; abrir un ofstream no crea ese directorio. La apertura debe fallar y la función debe comunicarlo. Estos fallos de prueba se observan mediante false; el cliente termina con return 0; tras comprobarlos. Pulsa «Compilar, ejecutar y comprobar».",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nRecorrido=1:1:4:7\nRecorrido=1:1:0:6\nRecorrido=1:1:-3:8\nAusente=0:90:80\nIncompleta=0:90:80\nSalida ausente=0\n\nConserva el salto de línea después de cada informe, incluido el último."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid recorrer(int a, int b) {\n    const std::string ruta{\"par_observable.txt\"};\n    const bool escrito{escribir_par(ruta, a, b)};\n    int primero{90};\n    int segundo{80};\n    bool leido{false};\n    if (escrito) leido = leer_par(ruta, primero, segundo);\n    std::cout << \"Recorrido=\" << escrito << ':' << leido << ':'\n              << primero << ':' << segundo << '\\n';\n}\n\nint main() {\n    recorrer(4, 7);\n    recorrer(0, 6);\n    recorrer(-3, 8);\n\n    int primero{90};\n    int segundo{80};\n    const bool ausente{leer_par(\"par_no_creado.txt\", primero, segundo)};\n    std::cout << \"Ausente=\" << ausente << ':' << primero << ':' << segundo << '\\n';\n\n    std::ofstream muestra{\"par_incompleto.txt\"};\n    if (!muestra) return 1;\n    muestra << \"5 x\";\n    muestra.close();\n    if (!muestra) return 1;\n    const bool incompleta{leer_par(\"par_incompleto.txt\", primero, segundo)};\n    std::cout << \"Incompleta=\" << incompleta << ':' << primero << ':' << segundo << '\\n';\n\n    const bool imposible{escribir_par(\"subcarpeta_ausente/par.txt\", 4, 7)};\n    std::cout << \"Salida ausente=\" << imposible << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Recorrido=1:1:4:7\nRecorrido=1:1:0:6\nRecorrido=1:1:-3:8\nAusente=0:90:80\nIncompleta=0:90:80\nSalida ausente=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los recorridos recuperan los pares 4:7, 0:6 y -3:8 en su orden. El archivo ausente y la pareja incompleta devuelven false y conservan 90 y 80. La escritura bajo el directorio inexistente también devuelve false. Mostrar cada destino permite distinguir cambios que una suma podría ocultar.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Recorrido=1:1:7:4\nRecorrido=1:1:6:0\nRecorrido=1:1:8:-3\nAusente=0:90:80\nIncompleta=0:90:80\nSalida ausente=0\n"
+                    ],
+                    "text": "Los recorridos muestran 7:4, 6:0 y 8:-3. Cada suma coincide con la del par solicitado, pero los destinos han recibido los valores intercambiados. Sigue el primer campo desde la inserción de a hasta la extracción hacia primero, y haz lo mismo con el segundo."
+                  },
+                  {
+                    "outputs": [
+                      "Recorrido=1:1:4:7\nRecorrido=1:1:0:6\nRecorrido=1:1:-3:8\nAusente=0:90:80\nIncompleta=0:5:0\nSalida ausente=0\n"
+                    ],
+                    "text": "La línea Incompleta=0:5:0 comunica un rechazo, pero los destinos ya cambiaron. La primera extracción de 5 x consiguió un entero; la segunda no obtuvo el solicitado. Lee en candidatos locales y confirma los dos destinos sólo cuando ambas extracciones se completen. El resultado requerido conserva 90 y 80."
+                  },
+                  {
+                    "outputs": [
+                      "Recorrido=1:1:4:7\nRecorrido=1:1:0:6\nRecorrido=1:1:-3:8\nAusente=0:90:80\nIncompleta=0:90:80\nSalida ausente=1\n"
+                    ],
+                    "text": "La línea Salida ausente=1 afirma que se completó la escritura, aunque falta el directorio de destino. Comprueba el flujo inmediatamente después de abrirlo y conserva el rechazo cuando esa apertura falla. Devolver éxito sin consultar el estado impide al cliente distinguir una muestra creada de una operación fallida."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comparar la interpretación y la conservación de datos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n#include <string>\n\nbool escribir_par(const std::string& ruta, int a, int b) {\n    std::ofstream salida{ruta};\n    if (!salida) return false;\n    salida << a << ' ' << b;\n    salida.close();\n    if (!salida) return false;\n    return true;\n}\n\nbool leer_par(const std::string& ruta, int& primero, int& segundo) {\n    std::ifstream entrada{ruta};\n    if (!entrada) return false;\n    int candidato_primero{0};\n    int candidato_segundo{0};\n    if (!(entrada >> candidato_primero >> candidato_segundo)) return false;\n    primero = candidato_primero;\n    segundo = candidato_segundo;\n    return true;\n}\n\nvoid recorrer(int a, int b) {\n    const std::string ruta{\"par_observable.txt\"};\n    const bool escrito{escribir_par(ruta, a, b)};\n    int primero{90};\n    int segundo{80};\n    bool leido{false};\n    if (escrito) leido = leer_par(ruta, primero, segundo);\n    std::cout << \"Recorrido=\" << escrito << ':' << leido << ':'\n              << primero << ':' << segundo << '\\n';\n}\n\nint main() {\n    recorrer(4, 7);\n    recorrer(0, 6);\n    recorrer(-3, 8);\n\n    int primero{90};\n    int segundo{80};\n    const bool ausente{leer_par(\"par_no_creado.txt\", primero, segundo)};\n    std::cout << \"Ausente=\" << ausente << ':' << primero << ':' << segundo << '\\n';\n\n    std::ofstream muestra{\"par_incompleto.txt\"};\n    if (!muestra) return 1;\n    muestra << \"5 x\";\n    muestra.close();\n    if (!muestra) return 1;\n    const bool incompleta{leer_par(\"par_incompleto.txt\", primero, segundo)};\n    std::cout << \"Incompleta=\" << incompleta << ':' << primero << ':' << segundo << '\\n';\n\n    const bool imposible{escribir_par(\"subcarpeta_ausente/par.txt\", 4, 7)};\n    std::cout << \"Salida ausente=\" << imposible << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El escritor coloca a antes de b y comprueba el estado después de close(). El lector obtiene los dos enteros en candidatos locales y sólo después los copia a primero y segundo. Esas variables conservan sus valores previos cuando la apertura o cualquiera de las extracciones falla.\n\nLa muestra 4 7 produce los destinos 4 y 7. Escribir 7 4 habría conservado el total 11 de la práctica anterior, pero aquí se observa el intercambio. Lo mismo ocurre con 0 6 y 6 0, cuya suma es 6. Los campos separados aportan una comprobación que el total no contiene.\n\nEn 5 x, el candidato del primer campo recibe 5, pero no se completa el segundo entero. La función vuelve antes de asignar a los destinos, de modo que permanecen en 90 y 80. El archivo inexistente se rechaza antes de intentar la extracción, y la ruta bajo el directorio inexistente se rechaza al abrir la salida.\n\nEl cliente observa los valores que entregan tus funciones y sus indicadores. La coincidencia de consola comprueba esos resultados; para revisar la procedencia, sigue además las inserciones, el cierre y las extracciones del código. Las muestras se crean en esta ejecución y los lectores consultan sus rutas reales."
         }
       ]
     }
@@ -413,7 +491,15 @@
         "id": "page_0005",
         "blocks": [
           "block_0005_0000",
-          "block_0005_0001"
+          "block_0005_0001",
+          "u12_archivo_campos_y_destinos_conservados_titulo",
+          "u12_archivo_campos_y_destinos_conservados_contrato",
+          "u12_archivo_campos_y_destinos_conservados_cliente",
+          "u12_archivo_campos_y_destinos_conservados_salida",
+          "u12_archivo_campos_y_destinos_conservados_comprobacion",
+          "u12_archivo_campos_y_destinos_conservados_referencia_titulo",
+          "u12_archivo_campos_y_destinos_conservados_referencia_codigo",
+          "u12_archivo_campos_y_destinos_conservados_referencia_razonamiento"
         ]
       }
     ],
@@ -786,7 +872,80 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+        "sha256": "658e2100925a5101affd94869fcac84da3251182b794f360a9911861a1c79d7b",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_referencia_codigo",
+        "sha256": "9b1065e1301b1e962d824c073e86a8bc95d742dae0c45828fdc79c51002d53ac",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_archivo_campos_y_destinos_conservados_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -862,6 +1021,31 @@
         "id": "block_0004_0004",
         "beforeSha256": "770617f78acf9c17f319ccd4b2c1f8de766996ef1c10765f489bc3d329d3d407",
         "afterSha256": "82250333b81c5154e2d3111399904de88bf8bfc7477b81f08499b249ca3e4735"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "074e8d14d791014ce954378fecec5029e4ee53b54bbe8e27b5d09183cd1bd17d",
+        "afterSha256": "0b4374aac92d0ca6333e60edb9de981a27e3bcc2981df4eaed48ba7cb86a3bd3"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "fb69d6ffcc11788a0011b67f170e837b1fce438b5a63012122687c27dbe9ca70",
+        "afterSha256": "20a8a1f3de5b88cc4010c758f47f81de997461a69e78dd4fa3176d8de976b8b5"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b9be666e704be17084edc908c672c0a4885dd606fe7901c8c42f304a44462de5",
+        "afterSha256": "3dba06e7e75883fdf10e68ad02ee06b73e0b6027bae189393c71c5cc78ce8103"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "2ab93bb7e17a1adc7cd77ae9c65555b69117aa7fad9ccb8ba338e1aba53b8988",
+        "afterSha256": "68b45c335481281d613933c61424a1418333f706d83d527be4aff86d3ccc5249"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "c18344ae949ab099c2f01225b3716bc5ac7db04d4191a56417575b8c73840712",
+        "afterSha256": "ab10c7a9fef555b91acba0c87acc01954e4f195b3ce9b557dc7025ba568aa12e"
       }
     ]
   },
@@ -877,6 +1061,14 @@
         "block_0004_0004",
         "block_0005_0000",
         "block_0005_0001"
+      ]
+    },
+    {
+      "activity": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+      "blocks": [
+        "u12_archivo_campos_y_destinos_conservados_referencia_titulo",
+        "u12_archivo_campos_y_destinos_conservados_referencia_codigo",
+        "u12_archivo_campos_y_destinos_conservados_referencia_razonamiento"
       ]
     }
   ],
@@ -987,8 +1179,37 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "fdd6d06d06ad7faf760b5d30b45c8d76497916282d751f5e9c41cbaa22aeff82",
-        "spans": []
+        "sourceSha256": "e0ddd463643fee08b285a587fc080b3c7db58b6ee4da4a13cc661a69a97563d3",
+        "spans": [
+          {
+            "start": 31,
+            "end": 47,
+            "text": "salida << \"2 5\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 60,
+            "text": "ofstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 150,
+            "text": "entrada >> primero >> segundo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 163,
+            "text": "ifstream",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1130,7 +1351,7 @@
             "end": 355,
             "text": "2 5",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 377,
@@ -1174,8 +1395,37 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "1ac880bb32ff5441aed99b362331cd6b87a97f6b77bc11d6ffb6c263691d6165",
-        "spans": []
+        "sourceSha256": "3736a8f0d887afa58e7a2a3b2ac8cd38fef515d44b6d75f6f1cee969546c8d88",
+        "spans": [
+          {
+            "start": 23,
+            "end": 36,
+            "text": "if (!entrada)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 177,
+            "text": "entrada >> primero >> segundo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 284,
+            "text": "2 x",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 387,
+            "end": 394,
+            "text": "segundo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1236,20 +1486,55 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "a436dbf5e727f1377fe9702f03ca6f082898519a507129b6ffb58b54942a630c",
+        "sourceSha256": "1ba11d206e654f505804cbba994d1250e74a17ae526961d1ada4627391467dea",
         "spans": [
           {
-            "start": 18,
-            "end": 19,
-            "text": "3",
+            "start": 36,
+            "end": 39,
+            "text": "3 8",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": "3",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 22,
-            "end": 23,
+            "start": 134,
+            "end": 141,
+            "text": "primero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 145,
             "text": "8",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 156,
+            "text": "segundo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 188,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 254,
+            "text": "Total=11",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1269,7 +1554,7 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "f3182c87590ccb06e8fc00f5805e39e17a6e34ad4f32effe1ddd6c64a6d42569",
+        "sourceSha256": "fcafe788c200b96abffcadfb4b3ee8b9aff3ddfefefaf77f8346ed03703e648b",
         "spans": []
       },
       {
@@ -1366,7 +1651,7 @@
             "start": 770,
             "end": 771,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1379,7 +1664,7 @@
             "start": 847,
             "end": 848,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1431,14 +1716,14 @@
             "end": 1312,
             "text": "4 7",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 1360,
             "end": 1363,
             "text": "0 6",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1451,8 +1736,44 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "284d67cd639d687a9282f7b00fe50f291e157f5a5b3796a4e945a074462cab05",
-        "spans": []
+        "sourceSha256": "26467922d4c68891c8564f88b59043dd90a0210df04487b96593f0e37aeccd5b",
+        "spans": [
+          {
+            "start": 3,
+            "end": 11,
+            "text": "ofstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 32,
+            "text": "4 7",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 138,
+            "end": 146,
+            "text": "ifstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 274,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -1519,7 +1840,7 @@
             "end": 91,
             "text": "4 7",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 102,
@@ -1539,7 +1860,7 @@
             "end": 487,
             "text": "4 7",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 499,
@@ -1553,7 +1874,7 @@
             "end": 527,
             "text": "0 6",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 539,
@@ -1603,6 +1924,487 @@
         "path": "/text",
         "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
         "spans": []
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_titulo",
+        "path": "/text",
+        "sourceSha256": "46209806514f812ebc0392ddf8469079039312e7495f602182c83da45623da99",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_contrato",
+        "path": "/text",
+        "sourceSha256": "b48b1b4b075a69a5c4ed8d8cdac3c65986d388e4e62cd3de5f8026ffeb2fdff0",
+        "spans": [
+          {
+            "start": 57,
+            "end": 113,
+            "text": "bool escribir_par(const std::string& ruta, int a, int b)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 241,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 334,
+            "end": 339,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 342,
+            "end": 408,
+            "text": "bool leer_par(const std::string& ruta, int& primero, int& segundo)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 548,
+            "end": 552,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 614,
+            "end": 619,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_cliente",
+        "path": "/text",
+        "sourceSha256": "ff7e2c01ccab716273abe08fd16d86ece27f922a2170b59e2280cab14dfd5a3f",
+        "spans": [
+          {
+            "start": 43,
+            "end": 46,
+            "text": "4 7",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 48,
+            "end": 51,
+            "text": "0 6",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "-3 8",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 65,
+            "end": 83,
+            "text": "par_observable.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 292,
+            "text": "90",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 297,
+            "text": "80",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 338,
+            "text": "par_no_creado.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 431,
+            "text": "par_incompleto.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 448,
+            "text": "5 x",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 544,
+            "end": 546,
+            "text": "90",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 549,
+            "end": 551,
+            "text": "80",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 589,
+            "end": 615,
+            "text": "subcarpeta_ausente/par.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 677,
+            "end": 695,
+            "text": "subcarpeta_ausente",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 706,
+            "end": 714,
+            "text": "ofstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 838,
+            "end": 843,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 868,
+            "end": 877,
+            "text": "return 0;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_salida",
+        "path": "/text",
+        "sourceSha256": "acd52246cfbb1044392c1aae56c786222acb55e4d6233d5651ee8a666f238281",
+        "spans": [
+          {
+            "start": 33,
+            "end": 139,
+            "text": "Recorrido=1:1:4:7\nRecorrido=1:1:0:6\nRecorrido=1:1:-3:8\nAusente=0:90:80\nIncompleta=0:90:80\nSalida ausente=0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "a5e90df4be08d19b2c220b6ba58619afa9d47a64cbde36d41d751558d05308f4",
+        "spans": [
+          {
+            "start": 35,
+            "end": 38,
+            "text": "4:7",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 40,
+            "end": 43,
+            "text": "0:6",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "text": "-3:8",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 116,
+            "end": 121,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 136,
+            "text": "90",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 141,
+            "text": "80",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 209,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "9c6825d4ae1589740128fee8cd39ac2b9730fb7869b7b8c1a4dc15d4c1af26b9",
+        "spans": [
+          {
+            "start": 24,
+            "end": 27,
+            "text": "7:4",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 29,
+            "end": 32,
+            "text": "6:0",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 35,
+            "end": 39,
+            "text": "8:-3",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 190,
+            "end": 191,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 225,
+            "text": "primero",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "b64bd372c38666c783887be71a558873be5637703d1b2df802f7cf6658d6177a",
+        "spans": [
+          {
+            "start": 9,
+            "end": 25,
+            "text": "Incompleta=0:5:0",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 104,
+            "end": 107,
+            "text": "5 x",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 296,
+            "end": 298,
+            "text": "90",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 303,
+            "text": "80",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "388b0e751b295bb9ad01a5dd08ba3eb64abdf928f76997eb37f91b5f40e164da",
+        "spans": [
+          {
+            "start": 9,
+            "end": 25,
+            "text": "Salida ausente=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "67054f77a8c650b7db8c9dec8aac5e411c0a1c74404e9ae85113940f25c66ce1",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_campos_y_destinos_conservados_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "ff6944d0c264a74cf2110314048a30c8c6c8694e7dec76efff3a476497e4290f",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 72,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 164,
+            "text": "primero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 174,
+            "text": "segundo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 295,
+            "text": "4 7",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 317,
+            "end": 318,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 322,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 336,
+            "text": "7 4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 364,
+            "end": 366,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 452,
+            "text": "0 6",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 455,
+            "end": 458,
+            "text": "6 0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 473,
+            "end": 474,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 552,
+            "end": 555,
+            "text": "5 x",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 594,
+            "end": 595,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 713,
+            "end": 715,
+            "text": "90",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 718,
+            "end": 720,
+            "text": "80",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1612,5 +2414,13 @@
         "spans": []
       }
     ]
-  }
+  },
+  "activityAfter": [
+    {
+      "activity": "u12_archivo_campos_y_destinos_conservados_comprobacion",
+      "requires": [
+        "block_0003_0003"
+      ]
+    }
+  ]
 }

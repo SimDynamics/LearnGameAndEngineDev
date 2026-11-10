@@ -37,7 +37,7 @@
             "Seis grupos de diez."
           ],
           "correctIndex": 2,
-          "explanation": "La posición de las decenas aporta seis por diez; el tres aporta unidades.",
+          "explanation": "En 63, el dígito 6 ocupa la posición de las decenas. Cuenta seis grupos de diez: 6 × 10 = 60. El dígito 3 ocupa la posición de las unidades y aporta 3. La suma de ambos aportes es 63.\n\nLa pregunta pide sólo el aporte del primer dígito: seis grupos de diez, es decir, 60. Contar seis unidades ignoraría su posición; contar sesenta y tres grupos de diez utilizaría la escritura completa como si fuera un solo dígito.",
           "reviewFeedback": [
             "Distingue el dígito escrito del aporte que tiene por ocupar la posición de las decenas.",
             "Identifica por separado el dígito de las decenas y el de las unidades.",
@@ -81,7 +81,7 @@
             "Veintitrés."
           ],
           "correctIndex": 1,
-          "explanation": "La posición izquierda vale grupos de ocho, no decenas.",
+          "explanation": "La escritura 23 está indicada como octal. Su dígito izquierdo cuenta dos grupos de ocho, que aportan 16; el derecho aporta 3 unidades. Por tanto, 2 × 8 + 3 = 19.\n\nUsar grupos de dieciséis daría 35, pero correspondería a interpretar esos caracteres como hexadecimales. Leerlos como veintitrés supondría decimal. La base del enunciado decide cuánto vale cada posición.",
           "reviewFeedback": [
             "Revisa la base indicada y qué tamaño tienen sus grupos en la segunda posición.",
             "Comprueba el aporte de cada posición antes de sumarlos.",
@@ -97,7 +97,7 @@
             "26"
           ],
           "correctIndex": 1,
-          "explanation": "Octal sólo usa dígitos de cero a siete.",
+          "explanation": "En octal sólo se admiten los dígitos del 0 al 7. En 17, ambos pertenecen a ese repertorio; también ocurre con el 2 y el 6 de 26.\n\nLa escritura 80 contiene el dígito 8, que no pertenece a octal. El problema está en ese carácter, aunque el cero sí esté permitido. No depende de que la cantidad escrita parezca grande o pequeña.",
           "reviewFeedback": [
             "Comprueba cada dígito con el repertorio de la base octal.",
             "Localiza el dígito que excede el repertorio permitido.",
@@ -237,7 +237,7 @@
             "Uno por dieciséis más seis: veintidós."
           ],
           "correctIndex": 1,
-          "explanation": "f es el dígito para quince; la otra posición cuenta grupos de dieciséis.",
+          "explanation": "En 1f, la posición izquierda cuenta un grupo de dieciséis. El dígito hexadecimal f representa quince unidades. Al reunir los aportes se obtiene 1 × 16 + 15 = 31.\n\nLa opción que usa ocho como tamaño de grupo aplica otra base. La que asigna seis a f confunde el dígito con un valor distinto de los definidos para hexadecimal.",
           "reviewFeedback": [
             "Comprueba qué base pide el enunciado antes de asignar el valor de la posición izquierda.",
             "Relaciona el dígito de las unidades con el repertorio hexadecimal y suma ambos aportes.",
@@ -360,7 +360,7 @@
           "answers": [
             "26|1a|32"
           ],
-          "explanation": "Un grupo de dieciséis más diez es veintiséis; tres grupos de ocho más dos también son veintiséis.",
+          "explanation": "La variable cantidad conserva 26 durante las tres inserciones. std::dec produce 26. std::hex produce 1a, porque 1 × 16 + 10 = 26 y a representa diez. std::oct produce 32, porque 3 × 8 + 2 = 26.\n\nLas cadenas separadoras añaden los dos caracteres |. Por eso la salida completa es 26|1a|32, sin salto final. Cambian las escrituras del entero, no su valor.",
           "reviewFeedback": "Sigue la base seleccionada antes de cada inserción del entero. Las cadenas separadoras se insertan literalmente y la variable no cambia de valor."
         },
         {
@@ -371,7 +371,7 @@
           "answers": [
             "oct"
           ],
-          "explanation": "oct selecciona grupos de ocho; diecisiete decimal se presenta como 21.",
+          "explanation": "El nombre que falta es oct: con el std:: ya escrito se forma std::oct. Ese manipulador selecciona octal antes de insertar cantidad.\n\nEl valor decimal 17 contiene dos grupos de ocho y una unidad: 2 × 8 + 1 = 17. Por eso el flujo presenta 21. El manipulador configura la inserción; no imprime la palabra octal.",
           "reviewFeedback": "Escribe sólo el nombre situado después de std::. Relaciona la base pedida con el manipulador que la selecciona."
         }
       ]
@@ -390,7 +390,7 @@
           "answers": [
             "1f|32"
           ],
-          "explanation": "La cantidad aumenta de treinta y uno a treinta y dos. Seleccionar hexadecimal sólo cambió sus caracteres de salida.",
+          "explanation": "La primera inserción presenta 31 en hexadecimal como 1f. Después se ejecuta cantidad += 1, que cambia el valor del objeto de 31 a 32.\n\nAntes de la segunda inserción se aplica std::dec, por lo que ese nuevo valor se presenta como 32. La salida es 1f|32. La suma actúa sobre el valor entero; seleccionar hexadecimal no convierte la variable en una cadena.",
           "reviewFeedback": "Separa la presentación inicial, la actualización de la variable y la selección de base posterior. No confundas el formato con el cálculo."
         },
         {
@@ -401,7 +401,7 @@
           "answers": [
             "10|16|16"
           ],
-          "explanation": "El entero se convierte según la base; la cadena 16 ya contiene caracteres y se inserta como texto.",
+          "explanation": "La primera aparición de cantidad inserta el entero 16 bajo std::hex y produce 10: un grupo de dieciséis y cero unidades. Después, \"16\" inserta directamente los caracteres 16 de la cadena, sin interpretarlos como un entero.\n\nFinalmente, std::dec presenta el valor de cantidad como 16. Las tres partes forman 10|16|16. La cadena mantiene sus caracteres aunque el flujo estuviera configurado en hexadecimal.",
           "reviewFeedback": "Distingue la inserción de una variable entera de la inserción de una cadena que ya contiene sus caracteres."
         },
         {
@@ -439,7 +439,7 @@
           "answers": [
             "8|8"
           ],
-          "explanation": "El literal del fuente ya creó el valor ocho; el formato de salida no vuelve a interpretar el texto 010.",
+          "explanation": "El literal 010 del código utiliza notación octal. Sus posiciones representan 1 × 8 + 0 = 8, de modo que cantidad se inicializa con el valor ocho. Ese paso se determina por la escritura del literal, antes de aplicar los manipuladores de salida.\n\nEl valor ocho se escribe 8 tanto en decimal como en hexadecimal. Por eso las dos inserciones producen 8|8. std::dec no vuelve a interpretar el texto del literal como si fuera diez.",
           "reviewFeedback": "Interpreta primero el literal del código fuente según su notación; después aplica la base de salida a ese valor."
         },
         {
@@ -456,7 +456,7 @@
             "dec=31;hex=1f;oct=31"
           ],
           "correctIndex": 1,
-          "explanation": "Treinta y uno son 1×16+15, escrito 1f en hexadecimal, y 3×8+7, escrito 37 en octal. Sólo cambia la representación.",
+          "explanation": "El campo decimal conserva la escritura 31. En hexadecimal, 31 = 1 × 16 + 15 se representa como 1f, donde f corresponde a quince. En octal, 31 = 3 × 8 + 7 se representa como 37.\n\nCon las etiquetas y el orden pedidos se obtiene dec=31;hex=1f;oct=37. Repetir 31 en todos los campos no aplica las bases solicitadas; cambiar sólo el hexadecimal deja sin realizar la conversión de presentación octal.",
           "reviewFeedback": [
             "El enunciado pide tres bases: comprueba si sus escrituras pueden coincidir para este valor.",
             "Contrasta ambas escrituras con los grupos correspondientes a sus bases.",
@@ -530,7 +530,7 @@
           "answers": [
             "30|26"
           ],
-          "explanation": "Tres grupos de ocho son veinticuatro. La suma produce veintiséis y se muestra en decimal.",
+          "explanation": "La primera inserción usa std::oct para presentar el valor 24. Son tres grupos de ocho y cero unidades, por lo que aparece 30.\n\nDespués se selecciona std::dec y se evalúa cantidad + 2. Esa expresión obtiene 26, que se inserta en decimal. El separador une ambas escrituras como 30|26; el formato no modifica la operación aritmética.",
           "reviewFeedback": "Sigue el valor del entero y la operación aritmética por separado del formato seleccionado en cada inserción."
         },
         {
@@ -1548,6 +1548,61 @@
         "id": "block_0007_0002",
         "beforeSha256": "ab8bb2c8c1cd56937439fc9c038b8c44c0ef0f3ec31ce1cd3df82d0470f05df9",
         "afterSha256": "8af0360a6b96cbc9e225fdee665bfb730d05dfbc9f6dfb141b97177c3abc10b5"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "5bd72e472a97cd5ea35f6eb0757cec8f570d472cf6269db9783575692897867a",
+        "afterSha256": "1166223567a0bdb3904c349cf9e069cd6693dbb380fdd62122e08a2e6b411c64"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "c8dddc989e9116af929c12f8eb613c0c21a11aa276702179dffe05584b5d96a1",
+        "afterSha256": "61efe3887719b33e2ebc90218bae607b469e8d2ca418b00be17384247a6ec4fc"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "eb811156290836a03e5b4cc0fa8cd7f06ce155f6bf6f1069ce82ce91f7b68411",
+        "afterSha256": "6f31cb15edb70cb559f3b26f30f01eab3ae125fcb19b5e16f19545eec27ad750"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "9a6a864c7abd758075f250735445ef297c9680b84c82bb7dce88c23405a0e1a7",
+        "afterSha256": "c8f1415de333c3b1230594cb8602e9ba584e087b3b5e32df7eda7da6dc5e55ab"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "133ac6932703b14f23fc081f78bfb6af16e72430ad7efa600db3ef48c8cd499c",
+        "afterSha256": "8fafbabd6041b1152b5f04eb337aa9806fe1db028e9e3d1e60ba6f3b283a1d76"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "12c957842782072ce7b04c3ab040c93a08087f33af8b9297da3b2ca23d0f595b",
+        "afterSha256": "be836f0a71268a6190e7791bfcb9fb6af86e6fed37da2396682eceebe71b32b1"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "2b7ec9192ef7a8a9bdcba0650e83ef44f14c51378590217c71b83b0dcaee5f40",
+        "afterSha256": "e9c907c97f0dc8b3079d24b6697815616680f5367c83ee622cf8696cdf69ff2b"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "39e7b6bd3d843ca39f26887a4e9b4cf46c449e9640cd0f091d34a9d8804dad0e",
+        "afterSha256": "b4748cd5f8f3e0f604ce10571637339dd510c4c74c287284fece82de1520d911"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "163b0c0a23b6b2eb2c7f560e5ab13b4331fbbf1d27427dae92432289fcc06623",
+        "afterSha256": "1d0a04ddd57882c038942e46e13eaafe8cda68d7565ebe8a268fc17caedae2da"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "1f0454a9232b9202db9c4e9d350ea3f47ca2fb3b21d4d43ae8bc285c6092d1be",
+        "afterSha256": "79fda1ae27a3e273006cca6bb9150b72152fcb9506b438bb75b8087c1bece405"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "d2077943dccc62c7b1ddacbedb0c264452409b70b10de6b4b03af616239c57f6",
+        "afterSha256": "42fc78fe4097b076e39e0378f6306db8a548c1ce59c59f0d9e7c5103a78a867e"
       }
     ]
   },
@@ -1660,8 +1715,58 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "7ae6cd3737c3ba8dbc0fd05e0ef4ea24c5881374f2b87f7f01d2ba9f74dfc6ae",
-        "spans": []
+        "sourceSha256": "c52b4b09f46f3e835921857d6fbea33eca89b31a36230fa1b10e96b6212d90e2",
+        "spans": [
+          {
+            "start": 3,
+            "end": 5,
+            "text": "63",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 18,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 92,
+            "text": "6 × 10 = 60",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 150,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 182,
+            "text": "63",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 269,
+            "text": "60",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1785,7 +1890,7 @@
             "end": 285,
             "text": "10",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1799,21 +1904,21 @@
             "end": 15,
             "text": "52",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 112,
             "end": 115,
             "text": "106",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 361,
             "end": 363,
             "text": "16",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1827,15 +1932,51 @@
             "end": 35,
             "text": "23",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "c0f5fb14dd51a7aa7180ff4cb2830bcc334c5ef3d511f636776370a733904ae6",
-        "spans": []
+        "sourceSha256": "b53900cb5c3833acbfdb788e20f390abf987d13206164d45bc13c7e14ffa902a",
+        "spans": [
+          {
+            "start": 13,
+            "end": 15,
+            "text": "23",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 101,
+            "end": 103,
+            "text": "16",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 124,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 160,
+            "text": "2 × 8 + 3 = 19",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 196,
+            "text": "35",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1882,8 +2023,65 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "48e4edea0bc5f67a4aaf7a26bd1845bc73e341f4c3e9757b7cf94efa71a02554",
-        "spans": []
+        "sourceSha256": "8813a4e95376b1e27c8087f8471b362fe18f978e5dd1917fccb01d05de5b53f2",
+        "spans": [
+          {
+            "start": 41,
+            "end": 42,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 54,
+            "text": "17",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 121,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 127,
+            "text": "26",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "text": "80",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 165,
+            "end": 166,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1895,7 +2093,7 @@
             "end": 2,
             "text": "17",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1909,7 +2107,7 @@
             "end": 2,
             "text": "80",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1923,7 +2121,7 @@
             "end": 2,
             "text": "26",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1955,7 +2153,7 @@
             "end": 16,
             "text": "203",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -1986,7 +2184,7 @@
             "start": 71,
             "end": 74,
             "text": "131",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2174,14 +2372,14 @@
             "end": 15,
             "text": "2a",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 123,
             "end": 125,
             "text": "46",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 254,
@@ -2202,7 +2400,7 @@
             "end": 358,
             "text": "2a",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2216,18 +2414,39 @@
             "end": 35,
             "text": "1f",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "22680d12a01522ec896ce25fa6bf09986b7775fba7da682c52f82de2e7b97cbd",
+        "sourceSha256": "40850d760b18fbc8b2c3a25125b5a2922338cdd8ae9b0707418c1b817c793af3",
         "spans": [
           {
-            "start": 0,
-            "end": 1,
+            "start": 3,
+            "end": 5,
+            "text": "1f",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "f",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 144,
+            "end": 160,
+            "text": "1 × 16 + 15 = 31",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 247,
             "text": "f",
             "role": "data",
             "reading": "characters"
@@ -2280,7 +2499,7 @@
             "end": 209,
             "text": "10",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2294,7 +2513,7 @@
             "end": 48,
             "text": "20",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2320,7 +2539,7 @@
             "end": 2,
             "text": "20",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2334,7 +2553,7 @@
             "end": 2,
             "text": "20",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2348,7 +2567,7 @@
             "end": 2,
             "text": "20",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2356,19 +2575,43 @@
         "block": "misma_escritura_bases_distintas",
         "path": "/responses/0/targets/0/label",
         "sourceSha256": "11f4b791042397a1f9bde5b68d162bfa13c21ee8bbd02a1f9a15822dd003eee9",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Treinta y dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "misma_escritura_bases_distintas",
         "path": "/responses/0/targets/1/label",
         "sourceSha256": "f8bf06843752247cc84b10daf8f91ec29f31750e867daf414a9062efb3de4498",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "Veinte",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "misma_escritura_bases_distintas",
         "path": "/responses/0/targets/2/label",
         "sourceSha256": "75568c3b97ff38a2e613e2f4a185f1323c4a7c65733f11ac00c54c9a0075448d",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "Dieciséis",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0000",
@@ -2449,8 +2692,100 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "62692231c538013c9e8f0d1f90b6b09271490677c9b4ce9d146de8f8402a1865",
-        "spans": []
+        "sourceSha256": "23be5348d437a6efb1a9040f7a97366e9931509f77df6e967bb0bd3b7b987e93",
+        "spans": [
+          {
+            "start": 12,
+            "end": 20,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 32,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 71,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 82,
+            "text": "26",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 92,
+            "text": "std::hex",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 101,
+            "end": 103,
+            "text": "1a",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 128,
+            "text": "1 × 16 + 10 = 26",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": "a",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 150,
+            "end": 158,
+            "text": "std::oct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 169,
+            "text": "32",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 192,
+            "text": "3 × 8 + 2 = 26",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 246,
+            "text": "|",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 278,
+            "end": 286,
+            "text": "26|1a|32",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2467,17 +2802,53 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "9dae0e3c40746836a3ad1ea573707bf6cbbd311e0c2f986e5396a869c95ba491",
+        "sourceSha256": "8afe67ec65405ecf28c61ad130088bf13d41cc362e9a832ff68c8418e08f8e34",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
+            "start": 23,
+            "end": 26,
             "text": "oct",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 67,
+            "start": 35,
+            "end": 40,
+            "text": "std::",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
             "end": 69,
+            "text": "std::oct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 130,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 152,
+            "text": "17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 209,
+            "text": "2 × 8 + 1 = 17",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 237,
+            "end": 239,
             "text": "21",
             "role": "output",
             "reading": "natural"
@@ -2512,8 +2883,65 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "3eec9180e7ab99f9891561b5707c1d69cbb6676ee5097ac14ee7585ae8dfc303",
-        "spans": []
+        "sourceSha256": "123e64b04311bc86689987c48f773a45118c451f8d380da1231f6aa07764d9c0",
+        "spans": [
+          {
+            "start": 30,
+            "end": 32,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 55,
+            "text": "1f",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 89,
+            "text": "cantidad += 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 127,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 132,
+            "text": "32",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 183,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 231,
+            "text": "32",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 251,
+            "text": "1f|32",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0001",
@@ -2530,12 +2958,75 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "ae8dc2d2a42b49ba6f7157e88a8bf18f83b4ea1b7e4a9bb50101671b40ec6be6",
+        "sourceSha256": "74036af1b1be7b9069fff40eb9e2e04a9512d7411b1bf8cefac31475b9b94593",
         "spans": [
           {
-            "start": 48,
-            "end": 50,
+            "start": 24,
+            "end": 32,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 53,
             "text": "16",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 67,
+            "text": "std::hex",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 78,
+            "end": 80,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 134,
+            "text": "\"16\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 173,
+            "text": "16",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 244,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 266,
+            "end": 274,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 280,
+            "end": 282,
+            "text": "16",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 315,
+            "text": "10|16|16",
             "role": "output",
             "reading": "natural"
           }
@@ -2643,13 +3134,49 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "d3ebd8d6d79cbf8a21605ab32360ecc791a6ab2d7fc0f62e24dac9c13417ef3f",
+        "sourceSha256": "4183fe846becee4c32201cd7d3b8f7d7173e8a889e01c13040323e0f741ac794",
         "spans": [
           {
-            "start": 99,
-            "end": 102,
+            "start": 11,
+            "end": 14,
             "text": "010",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 90,
+            "text": "1 × 8 + 0 = 8",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 112,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 350,
+            "text": "8|8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 360,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2682,31 +3209,61 @@
       {
         "block": "block_0005_0005",
         "path": "/explanation",
-        "sourceSha256": "ab0f61f0b70379b38cccc94c4ba02189aa320b810df33384b93c3547b0e4edae",
+        "sourceSha256": "b886f13f208fcb43b47859032a428254badd6e6051a9e4b278bcee307eef42fa",
         "spans": [
           {
-            "start": 18,
-            "end": 25,
-            "text": "1×16+15",
-            "role": "math"
+            "start": 39,
+            "end": 41,
+            "text": "31",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 35,
-            "end": 37,
+            "start": 59,
+            "end": 75,
+            "text": "31 = 1 × 16 + 15",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 97,
             "text": "1f",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 56,
-            "end": 61,
-            "text": "3×8+7",
-            "role": "math"
+            "start": 105,
+            "end": 106,
+            "text": "f",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 71,
-            "end": 73,
+            "start": 139,
+            "end": 153,
+            "text": "31 = 3 × 8 + 7",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 175,
             "text": "37",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 246,
+            "text": "dec=31;hex=1f;oct=37",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 258,
+            "text": "31",
             "role": "output",
             "reading": "natural"
           }
@@ -2939,8 +3496,58 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "eb516c6a83cc9e14c4d89b1f3cbf1a6c496e47b5aea5e26fbed5dd68c7eed40c",
-        "spans": []
+        "sourceSha256": "53609a18c181ae3e44c5d63f40295b49451c42b9ef7351aa00898090ca3d1880",
+        "spans": [
+          {
+            "start": 25,
+            "end": 33,
+            "text": "std::oct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 60,
+            "text": "24",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "30",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 157,
+            "text": "std::dec",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 182,
+            "text": "cantidad + 2",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 208,
+            "text": "26",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 281,
+            "text": "30|26",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",

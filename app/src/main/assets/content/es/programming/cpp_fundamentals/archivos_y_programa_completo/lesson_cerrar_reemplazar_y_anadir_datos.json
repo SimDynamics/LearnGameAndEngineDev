@@ -38,7 +38,7 @@
             "La necesidad de comprobar la apertura de cualquier lector posterior."
           ],
           "correctIndex": 0,
-          "explanation": "La vida del objeto y la vida de los datos almacenados son conceptos distintos. En la app el directorio de la ejecución tiene además su propio ciclo de vida.",
+          "explanation": "Al terminar el bloque, deja de existir el objeto local salida. Los caracteres que ya se escribieron en serie_lgp.txt permanecen en ese archivo; destruir el objeto no ejecuta una operación para borrarlos. Un std::ifstream posterior es otro objeto y su apertura necesita su propia comprobación.\n\nEn esta práctica el programa prepara su muestra dentro de la ejecución. El directorio de trabajo de la app tiene su propio ciclo de vida, distinto de la duración del objeto local.",
           "reviewFeedback": [
             "Identifica qué elemento del programa es local al bloque y qué elemento almacena los caracteres escritos.",
             "Separa el final de la vida del objeto local de una operación que elimine el archivo.",
@@ -88,7 +88,7 @@
             "3, porque app siempre reemplaza el contenido."
           ],
           "correctIndex": 1,
-          "explanation": "El modo app elige dónde escribir; no inventa separadores del formato.",
+          "explanation": "El archivo empieza con los caracteres 1 2. La segunda escritura añade únicamente 3: detrás del último 2 no aparece ningún espacio nuevo, por lo que queda 1 23. Un lector de enteros obtendría 1 y 23.\n\nstd::ios::app conserva lo anterior y sitúa la escritura al final; el programa tiene que escribir los separadores que requiera el formato.",
           "reviewFeedback": [
             "Fíjate en los caracteres que se escriben: comprueba si el nuevo texto contiene algún espacio.",
             "Relaciona el texto anterior con el nuevo texto, sin añadir caracteres que el programa no inserta.",
@@ -112,7 +112,7 @@
           "answers": [
             "Lectura incompleta"
           ],
-          "explanation": "La segunda apertura reemplaza la muestra y deja el texto espacio seguido de 3. No se obtienen los tres enteros; nunca se suman los destinos de una lectura fallida."
+          "explanation": "La segunda apertura de salida, al tener éxito sin std::ios::app, descarta el texto anterior. La escritura posterior deja un espacio seguido de 3. Ese espacio inicial no impide leer el primer entero, pero ya no existen otros dos valores.\n\nLa comprobación conjunta de entrada >> a >> b >> c falla. El programa entra en la rama que muestra Lectura incompleta y termina con código 1; no alcanza la suma."
         },
         {
           "type": "multiple_choice",
@@ -124,7 +124,7 @@
             "Reemplazar la muestra propia con los datos iniciales previstos."
           ],
           "correctIndex": 2,
-          "explanation": "Recrear la muestra fija el estado inicial. En la app cada trabajo ya está aislado, pero el programa también expresa esa preparación."
+          "explanation": "Si se empieza siempre escribiendo la muestra prevista mediante una apertura que reemplaza el contenido, cada prueba parte de los mismos caracteres. Un archivo anterior más largo tampoco conserva una cola de datos.\n\nEmpezar directamente con std::ios::app dejaría los caracteres que ya existieran y añadiría otros. La prueba dependería de ese estado previo. El aislamiento de la ejecución en la app no cambia lo que expresa cada modo de apertura."
         }
       ]
     },
@@ -154,7 +154,7 @@
             "3 4 5"
           ],
           "correctIndex": 2,
-          "explanation": "app conserva lo anterior y añade al final. El espacio escrito separa 4 de 5, de modo que el lector puede obtener tres enteros.",
+          "explanation": "La segunda apertura con std::ios::app conserva 3 4. La cadena escrita empieza con un espacio y después aporta 5, por lo que el archivo queda como 3 4 5.\n\nEl espacio separa las representaciones del segundo y tercer enteros. El lector obtiene 3, 4 y 5, en ese orden; el modo de apertura no ha añadido por sí mismo ningún separador.",
           "reviewFeedback": [
             "Sigue si el espacio de la segunda cadena se conserva al añadir sus caracteres al texto anterior.",
             "Distingue una apertura que conserva el texto anterior de otra que lo reemplaza.",
@@ -207,7 +207,7 @@
             "Un espacio escrito antes de 5 recupera siempre el contenido reemplazado."
           ],
           "correctIndex": 0,
-          "explanation": "Conservar caracteres previos no garantiza que los nuevos queden separados. A la inversa, un separador no recupera caracteres que una apertura ya reemplazó.",
+          "explanation": "Con std::ios::app, los caracteres 3 4 siguen presentes al escribir el dato nuevo. El espacio de \" 5\" separa el último 4 del nuevo 5, dejando 3 4 5.\n\nSi se conserva el modo pero se omite el espacio, queda 3 45. Si se conserva el espacio pero la apertura reemplaza el contenido, sólo queda un espacio seguido de 5. Corregir una de esas decisiones no corrige la otra.",
           "reviewFeedback": [
             "Relaciona el efecto de abrir el archivo con los caracteres concretos que escribe la inserción posterior.",
             "Localiza qué carácter de la instrucción de escritura introduce un separador y si se ha escrito un salto de línea.",
@@ -232,7 +232,7 @@
             "close reinicia el destino a cero."
           ],
           "correctIndex": 0,
-          "explanation": "La segunda apertura de salida predeterminada reemplaza la muestra. El espacio es válido; lo que falta son los dos valores previos.",
+          "explanation": "Al abrir de nuevo con el modo de salida predeterminado, la muestra 3 4 se descarta. Escribir después \" 5\" deja un único entero: 5. La extracción omite el espacio inicial y obtiene ese primer valor, pero la comprobación de las tres extracciones falla por falta de los otros dos.\n\nclose() actúa sobre la conexión de salida. No reinicia las variables que el lector utilizará después; el problema de este programa comienza en la segunda apertura.",
           "reviewFeedback": [
             "Sigue qué caracteres quedan después de la segunda apertura y cuántos enteros permite extraer ese texto.",
             "La extracción de un entero omite los espacios iniciales. Comprueba cuántos valores numéricos conserva el archivo.",
@@ -301,7 +301,7 @@
             "5: app siempre reemplaza."
           ],
           "correctIndex": 1,
-          "explanation": "Las inserciones concatenan caracteres; app decide dónde escribir, sin añadir separadores. Sólo se obtienen dos enteros.",
+          "explanation": "La apertura con std::ios::app conserva 3 4, pero escribir \"5\" coloca ese dígito inmediatamente después del último 4. El archivo queda como 3 45 y permite leer sólo dos enteros: 3 y 45.\n\nLa tercera extracción no obtiene un valor. Conservar el modo y añadir el separador a la segunda cadena permite mantener los datos anteriores y distinguir el nuevo entero.",
           "reviewFeedback": [
             "Localiza qué carácter sigue inmediatamente al último carácter ya escrito. El modo de apertura no añade caracteres que no se hayan escrito.",
             "Distingue los caracteres del archivo de los valores que resultan al leerlos como enteros.",
@@ -338,6 +338,108 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar cada valor leído, además de la suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye una variante de tu programa con una misma implementación para las cuatro entradas. Cada entrada proporciona tres enteros entre -10 y 10, ambos incluidos, mediante std::cin. Comprueba que se obtengan los tres antes de preparar el archivo.\n\nComienza serie_lgp.txt con los dos primeros valores separados por un espacio, reemplazando cualquier contenido anterior. Cierra y comprueba ese flujo. Abre después el mismo archivo con std::ios::app para añadir un espacio seguido del tercer valor. Comprueba también la apertura y el cierre de esta etapa.\n\nAbre un lector y extrae tres enteros en variables distintas de las que recibieron la entrada estándar. Comprueba las extracciones. Muestra, desde esos valores leídos, los tres campos en su orden y su suma, con el formato Leidos=A,B,C;Total=S. Las letras representan los números correspondientes; no forman parte del resultado. Termina cada resultado con un salto de línea.\n\nSi falla la entrada o alguna etapa del archivo, muestra un diagnóstico y termina con código 1, sin continuar el cálculo. Las entradas de la batería cumplen el intervalo; no se pide aceptar otros valores. En los casos correctos termina con código 0. Conserva el recorrido por el archivo: imprimir directamente los argumentos no realiza esta construcción.",
+          "emphasis": [
+            {
+              "text": "una misma implementación",
+              "style": "bold"
+            },
+            {
+              "text": "desde esos valores leídos",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa «Compilar, ejecutar y comprobar» una vez por cada entrada, manteniendo el mismo programa y cambiando únicamente «Entrada». Puedes separar los enteros con espacios, tabulaciones o saltos de línea. La salida no admite espacios añadidos y lleva un salto final.\n\nEntrada 1: 3 4 5\nSalida:\nLeidos=3,4,5;Total=12\n\nEntrada 2: 0 7 -7\nSalida:\nLeidos=0,7,-7;Total=0\n\nEntrada 3: -4 10 0\nSalida:\nLeidos=-4,10,0;Total=6\n\nEntrada 4: 8 -3 2\nSalida:\nLeidos=8,-3,2;Total=7",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Lee la entrada, construye el archivo y comprueba cada valor recuperado.\n    return 0;\n}\n",
+          "initialStandardInput": "3 4 5\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 4 5\n",
+                "outputs": [
+                  "Leidos=3,4,5;Total=12\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El lector conserva 3, 4 y 5, en ese orden, y calcula 12. Intercambiar los dos primeros destinos también daría suma 12, pero alteraría el primer campo a 4 y el segundo a 3. Los campos individuales distinguen ese error.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=4,3,5;Total=12\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0 7 -7\n",
+                "outputs": [
+                  "Leidos=0,7,-7;Total=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los valores leídos son 0, 7 y -7. La suma es 0 porque los dos últimos se compensan; eso no elimina ninguno de los tres valores ni permite cambiar su orden.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=7,0,-7;Total=0\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              },
+              {
+                "standardInput": "-4 10 0\n",
+                "outputs": [
+                  "Leidos=-4,10,0;Total=6\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La lectura obtiene -4, 10 y 0, cuya suma es 6. El último cero es el tercer valor del archivo; debe conservar su campo aunque no cambie la suma.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=10,-4,0;Total=6\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              },
+              {
+                "standardInput": "8 -3 2\n",
+                "outputs": [
+                  "Leidos=8,-3,2;Total=7\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El archivo permite obtener 8, -3 y 2, y la suma calculada es 7. El signo pertenece al segundo valor. Una suma correcta no basta si se ha alterado cuál ocupa cada posición.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Leidos=-3,8,2;Total=7\n"
+                    ],
+                    "text": "La suma coincide, pero los dos primeros campos aparecen intercambiados. Sigue la primera y la segunda extracción: cada una debe escribir en la variable que después se presenta en esa misma posición. Comprueba los valores individuales antes de utilizar el total como evidencia."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -351,6 +453,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: seguir los datos hasta sus destinos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    int tercero{0};\n    if (!(std::cin >> primero >> segundo >> tercero)) {\n        std::cout << \"Error entrada\";\n        return 1;\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << primero << ' ' << segundo;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << ' ' << tercero;\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Leidos=\" << a << \",\" << b << \",\" << c\n              << \";Total=\" << a + b + c << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera apertura reemplaza el contenido previo y escribe los valores de primero y segundo, con un espacio entre ellos. La segunda conserva esa muestra y añade un espacio junto con tercero. El lector utiliza después las variables a, b y c; la consola se forma a partir de esos destinos.\n\nCon 3 4 5, el archivo queda como 3 4 5 y se obtiene Leidos=3,4,5;Total=12. Cambiar la lectura a entrada >> b >> a >> c mantendría el total 12, pero produciría Leidos=4,3,5;Total=12. Mostrar únicamente la suma no permitiría distinguir ambos recorridos.\n\nLas demás entradas recuperan un cero inicial, un cero final y valores negativos. En 0 7 -7, la suma 0 resulta de conservar los tres datos y sumar valores opuestos; no significa que todos los campos fueran cero. Al comparar tu programa, identifica la preparación, el añadido y las extracciones que justifican cada campo. La salida verificada no demuestra por sí sola que se haya utilizado el archivo."
         }
       ]
     }
@@ -606,14 +721,21 @@
           "block_0007_0000",
           "block_0007_0001",
           "block_0007_0002",
-          "block_0007_0003"
+          "block_0007_0003",
+          "u12_archivo_orden_y_suma_titulo",
+          "u12_archivo_orden_y_suma_consigna",
+          "u12_archivo_orden_y_suma_casos",
+          "u12_archivo_orden_y_suma_comprobacion"
         ]
       },
       {
         "id": "page_0008",
         "blocks": [
           "block_0008_0000",
-          "block_0008_0001"
+          "block_0008_0001",
+          "u12_archivo_orden_y_suma_referencia_titulo",
+          "u12_archivo_orden_y_suma_referencia_codigo",
+          "u12_archivo_orden_y_suma_referencia_razonamiento"
         ]
       }
     ],
@@ -1029,7 +1151,71 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_archivo_orden_y_suma_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 0
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_casos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_comprobacion",
+        "sha256": "9c391aacada3b60f57cf572b3eaa2d211846b72195b1757103776d08d1621d29",
+        "storage": {
+          "page": 9,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 9,
+          "block": 4
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_referencia_codigo",
+        "sha256": "57e10748d71ef0c0ea2920d9c07c2ac852a220389c774cea9ac548d14fd8c92f",
+        "storage": {
+          "page": 9,
+          "block": 5
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u12_archivo_orden_y_suma_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 9,
+          "block": 6
+        },
+        "progressPage": "page_0008"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1115,6 +1301,46 @@
         "id": "block_0001_0001",
         "beforeSha256": "ba2b2ee1042029f7c51f7e1c52d10f6c3baf372e4740edbba56aee667ca3460d",
         "afterSha256": "31c64d65ba0d83191252378474e3b4167cecbfe3a1f22e745da6da43b8f15583"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "9d420766e283efeca90cc66bdaa3b7511ab551207c9eae3946c5f90cdffd7306",
+        "afterSha256": "fa8fb11f2917e46e3ddfe5cc330a72ebba09a2469a510cbf263eabfb189f6af4"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "6f3932a8f75742c6f3b8a1b491c1d99c8b807576f2f16f535df1a9acc381b7e5",
+        "afterSha256": "f4b69d65b4458490f8f73ac4fe051fa9ba5a7c84a0621a12baf4db00d1d10f5b"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b80a16cd7af0d46d6628a11784747299e7607317f58f87b48a41019f923157b2",
+        "afterSha256": "c08c306030cca0fb91bad60eb5f3f59e932af53d133f9ff364d56d69db6e8e35"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "cf523b001e3d72d0218c82e7b65ffb0f51a604eaf45ea214589eb39fe3910129",
+        "afterSha256": "1df8320fed3885db1df0106840cbc8b914db33b37b2b71e8532f49722d1d01b5"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "cc6ef6a8ed63185abf1d2f7b5def0e4efd13fa70bed590a4a374404e8fa53064",
+        "afterSha256": "3080506f06145e0699cb57f1605668623ec7ec25c36d06b46a4f5a2f4290aa3d"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "2ccc84b4492f8ce47b14a19da0c89a3cf0a109567839ce2a47642b85503ef721",
+        "afterSha256": "27f165fb0e1826ddc1b82a582794665bc0e9cf0de031b33efde61842a683afc8"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "8bcee01baa4355084dbab89902780b269b72901347981fe9a7e8d0fd77e85acf",
+        "afterSha256": "0b93e661f54bc495ae56f37b3d8875b2a331232acdaae6fa971b18b725a68277"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "0623f7b364b8a64e7d50375576b197278f75f016602f06ff5cc42658d349101b",
+        "afterSha256": "96f2126e2243923c94504d65704e0c920ed79d9339b6fc868eac488eb7b742cd"
       }
     ]
   },
@@ -1136,10 +1362,13 @@
       ]
     },
     {
-      "activity": "block_0007_0003",
+      "activity": "u12_archivo_orden_y_suma_comprobacion",
       "blocks": [
         "block_0008_0000",
-        "block_0008_0001"
+        "block_0008_0001",
+        "u12_archivo_orden_y_suma_referencia_titulo",
+        "u12_archivo_orden_y_suma_referencia_codigo",
+        "u12_archivo_orden_y_suma_referencia_razonamiento"
       ]
     }
   ],
@@ -1154,6 +1383,12 @@
       "activity": "block_0007_0001",
       "requires": [
         "block_0005_0003"
+      ]
+    },
+    {
+      "activity": "u12_archivo_orden_y_suma_comprobacion",
+      "requires": [
+        "block_0007_0003"
       ]
     }
   ],
@@ -1281,8 +1516,30 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "fcdf45ab8f4f28ea26d76d2226d6dab0a69032d0badd2e55348a432ddcae0750",
-        "spans": []
+        "sourceSha256": "13f8e6ea1b27ed97dc9e9156f733827aa653f2facbdceaced4cd751f106d3ed4",
+        "spans": [
+          {
+            "start": 55,
+            "end": 61,
+            "text": "salida",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 116,
+            "text": "serie_lgp.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 220,
+            "text": "std::ifstream",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1335,7 +1592,7 @@
             "start": 34,
             "end": 37,
             "text": "1 2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1354,35 +1611,35 @@
             "start": 237,
             "end": 238,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 288,
             "end": 293,
             "text": "1 2 3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 382,
             "end": 383,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 387,
             "end": 388,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 393,
             "end": 394,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1449,13 +1706,56 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "2c2062ec4c042dfb25d7dd210f6679c2e4e9d6e787fc5bb097b86c02aecf8eb9",
+        "sourceSha256": "b7f46dd90fbcdd12031e51dcd7fcb9ffe3320dc0e3c4a2afb6b7797b884b56e5",
         "spans": [
           {
-            "start": 8,
-            "end": 11,
-            "text": "app",
-            "role": "cpp"
+            "start": 38,
+            "end": 41,
+            "text": "1 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 82,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 158,
+            "text": "1 23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 192,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 197,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 213,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1468,7 +1768,7 @@
             "start": 0,
             "end": 5,
             "text": "1 2 3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1488,7 +1788,7 @@
             "start": 0,
             "end": 4,
             "text": "1 23",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1502,7 +1802,7 @@
             "start": 0,
             "end": 1,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1560,13 +1860,41 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "afbb27d5d44c1dcc3f9d7a09bc8f71e07c1f5510c6ea66c77316c9aea76c4261",
+        "sourceSha256": "6a8b7a924c49ed709fd16632b29be6da68225d80769f9122a8668c57b80a738e",
         "spans": [
           {
-            "start": 76,
-            "end": 77,
+            "start": 50,
+            "end": 63,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 144,
             "text": "3",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 288,
+            "text": "entrada >> a >> b >> c",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 337,
+            "end": 355,
+            "text": "Lectura incompleta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 377,
+            "end": 378,
+            "text": "1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1580,8 +1908,16 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "3f5a0aae973433d955f3dad9d798bd95b6fc6731c735b2a2cd7490dbf32998da",
-        "spans": []
+        "sourceSha256": "1c9f60462e3a244c06ffa2a9c8c9fe11e6a506176a3bb24dfd890c6f6cc095be",
+        "spans": [
+          {
+            "start": 240,
+            "end": 253,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1662,7 +1998,7 @@
             "start": 878,
             "end": 879,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1676,7 +2012,7 @@
             "start": 1124,
             "end": 1125,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1711,26 +2047,55 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "27f19004d234d5861775e8b2fb96d79b6a1911583adb56396d6f0933484bed09",
+        "sourceSha256": "4deaebf31b3f1675fb4a494e4939d61289e95bdde65d81850098430a090b60ba",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
-            "text": "app",
-            "role": "cpp"
+            "start": 24,
+            "end": 37,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 70,
-            "text": "4",
+            "start": 47,
+            "end": 50,
+            "text": "3 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 74,
-            "end": 75,
+            "start": 110,
+            "end": 111,
             "text": "5",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 151,
+            "text": "3 4 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 242,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 244,
+            "end": 245,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 249,
+            "text": "5",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1744,7 +2109,7 @@
             "start": 0,
             "end": 4,
             "text": "3 45",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1758,7 +2123,7 @@
             "start": 0,
             "end": 2,
             "text": " 5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1772,7 +2137,7 @@
             "start": 0,
             "end": 5,
             "text": "3 4 5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1824,7 +2189,7 @@
             "start": 46,
             "end": 49,
             "text": "3 4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1843,7 +2208,7 @@
             "start": 229,
             "end": 234,
             "text": "3 4 5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1863,7 +2228,7 @@
             "start": 578,
             "end": 579,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1882,7 +2247,7 @@
             "start": 707,
             "end": 711,
             "text": "3 45",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1896,7 +2261,7 @@
             "start": 898,
             "end": 899,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1916,8 +2281,65 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "0c1c0cc04f59845126056aeef82a33eda6453238bf9ec7a827d9ab3a1dad1697",
-        "spans": []
+        "sourceSha256": "b0eb55a384224fc9705412f5bbf32e8feeb14f780d7020adc4170ef3b0743090",
+        "spans": [
+          {
+            "start": 4,
+            "end": 17,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 34,
+            "end": 37,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 100,
+            "text": "\" 5\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 119,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 131,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 146,
+            "text": "3 4 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 208,
+            "text": "3 45",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 311,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -1999,8 +2421,37 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "43528ad7397d31290ff3ef6e9b8a6d30e0ad7cc486e1fd9d26c636a8a6778a22",
-        "spans": []
+        "sourceSha256": "fd42478e88c974af4df3f48631ba66f8572fc83e1b973d146afa33c14e6e3716",
+        "spans": [
+          {
+            "start": 67,
+            "end": 70,
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 105,
+            "text": "\" 5\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 286,
+            "text": "close()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0001",
@@ -2061,12 +2512,6 @@
         "sourceSha256": "2a1e3a207266013863aa5afa8a51ecf9e0d528d62d2b6916fdfd52828e7eeb11",
         "spans": [
           {
-            "start": 11,
-            "end": 12,
-            "text": "a",
-            "role": "cpp"
-          },
-          {
             "start": 13,
             "end": 20,
             "text": "close()",
@@ -2108,7 +2553,7 @@
             "start": 432,
             "end": 433,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2128,7 +2573,7 @@
             "start": 928,
             "end": 933,
             "text": "3 4 5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2142,7 +2587,7 @@
             "start": 1172,
             "end": 1173,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2188,13 +2633,56 @@
       {
         "block": "block_0007_0001",
         "path": "/explanation",
-        "sourceSha256": "049e6641d80bfcbccd742d4203520662a763f4d99df1e5ce18d3b03cfdb3ab92",
+        "sourceSha256": "4a89adf4c21dc12a887f376ff89d0065f98225823ddcc5abe9e96874a1def27c",
         "spans": [
+          {
+            "start": 16,
+            "end": 29,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
+          },
           {
             "start": 39,
             "end": 42,
-            "text": "app",
-            "role": "cpp"
+            "text": "3 4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "\"5\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 115,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 143,
+            "text": "3 45",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 178,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 183,
+            "text": "45",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2207,7 +2695,7 @@
             "start": 0,
             "end": 5,
             "text": "3 4 5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2227,7 +2715,7 @@
             "start": 0,
             "end": 4,
             "text": "3 45",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2255,7 +2743,7 @@
             "start": 0,
             "end": 1,
             "text": "5",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2314,7 +2802,7 @@
             "start": 424,
             "end": 425,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2349,7 +2837,7 @@
             "start": 1074,
             "end": 1075,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2359,6 +2847,434 @@
         "path": "/text",
         "sourceSha256": "e8902f8f3edbda744204dc00aec43e77f8d987aed197b9a8c2aec457a14a8254",
         "spans": []
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_titulo",
+        "path": "/text",
+        "sourceSha256": "afde2eb76d0ac207b16ac417f49e1cd2ace9df576409938b1a5819a704e8d53d",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_consigna",
+        "path": "/text",
+        "sourceSha256": "81dc07650ac700a96110b656ce3bc20955ce107fddff95fd4827cd619fc87e07",
+        "spans": [
+          {
+            "start": 137,
+            "end": 140,
+            "text": "-10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 181,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 258,
+            "end": 271,
+            "text": "serie_lgp.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 447,
+            "text": "std::ios::app",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 776,
+            "end": 796,
+            "text": "Leidos=A,B,C;Total=S",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1021,
+            "end": 1022,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1175,
+            "end": 1176,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_casos",
+        "path": "/text",
+        "sourceSha256": "eb7f9d5580e33f31dba7ecc3ba323b1c46c1830de64b0a3f36b9649695630d93",
+        "spans": [
+          {
+            "start": 274,
+            "end": 279,
+            "text": "3 4 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 309,
+            "text": "Leidos=3,4,5;Total=12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 328,
+            "text": "0 7 -7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 358,
+            "text": "Leidos=0,7,-7;Total=0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 378,
+            "text": "-4 10 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 409,
+            "text": "Leidos=-4,10,0;Total=6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 422,
+            "end": 428,
+            "text": "8 -3 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 437,
+            "end": 458,
+            "text": "Leidos=8,-3,2;Total=7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "24ff8ef318288051b3cf77f8104cc890664c917e18144e8360fbd77dcc97b0d4",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 55,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 117,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 153,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "ccf314d9745a41d058369174bd375f0785c2949e1c17e2af708b447c20460597",
+        "spans": [
+          {
+            "start": 23,
+            "end": 24,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 27,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 32,
+            "text": "-7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "4e86b6d46a9a15637d1adbf201b4a70e4f53b72392acec1581a49be7ccced585",
+        "spans": [
+          {
+            "start": 19,
+            "end": 21,
+            "text": "-4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 23,
+            "end": 25,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 29,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "25ec2cdb7952767c47550e96a0f4eb873faedcabdf23b330d0c51154e7e1423e",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_comprobacion",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "4e4397cbcfe47f8a8734bbc7c8a5f2e8e00afef8491e01af758781ab4bcc468f",
+        "spans": [
+          {
+            "start": 27,
+            "end": 28,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 32,
+            "text": "-3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "cfe3dc369017a4bf919c9bdccef9bdc785de95e2f145ff08e7ce1c9a911b566f",
+        "spans": []
+      },
+      {
+        "block": "u12_archivo_orden_y_suma_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "79dc6f18ce1e240eff52224b36b69ae72575e9136d069b3c8817a8df13e3cb7c",
+        "spans": [
+          {
+            "start": 75,
+            "end": 82,
+            "text": "primero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 92,
+            "text": "segundo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 190,
+            "text": "tercero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 233,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 236,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 240,
+            "text": "c",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 299,
+            "text": "3 4 5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 328,
+            "text": "3 4 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 363,
+            "text": "Leidos=3,4,5;Total=12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 408,
+            "text": "entrada >> b >> a >> c",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 429,
+            "end": 431,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 470,
+            "text": "Leidos=4,3,5;Total=12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 627,
+            "end": 633,
+            "text": "0 7 -7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 643,
+            "end": 644,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

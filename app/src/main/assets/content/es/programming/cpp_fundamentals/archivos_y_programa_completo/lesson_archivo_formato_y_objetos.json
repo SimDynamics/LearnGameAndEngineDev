@@ -43,7 +43,7 @@
             "El nombre no demuestra el formato ni la validez del contenido."
           ],
           "correctIndex": 2,
-          "explanation": "El contenido se valida leyendo e interpretando según un formato definido.",
+          "explanation": "El nombre pedidos.txt identifica el archivo que se intentará abrir. Todavía no se ha leído ningún carácter suyo: podría contener los campos acordados, otros datos o un texto incompleto. La extensión tampoco guarda una definición del tipo Pedido ni sus métodos.\n\nPara utilizar el contenido, el lector debe aplicar el formato que espera y comprobar sus reglas. Un nombre adecuado permite localizar la muestra; las operaciones de lectura y validación aportan la información necesaria sobre sus datos.",
           "reviewFeedback": [
             "Distingue lo que indica el nombre de lo que sólo podrías comprobar leyendo los datos.",
             "Separa la representación almacenada de los objetos que el programa utiliza al interpretar sus datos.",
@@ -71,7 +71,7 @@
           "answers": [
             "7:3"
           ],
-          "explanation": "La lectura decimal produce los enteros 7 y 3. Los ceros iniciales del texto no forman parte de esos valores.",
+          "explanation": "La primera extracción interpreta los caracteres 0007 como el entero 7 y lo guarda en turno. La siguiente interpreta 03 como el entero 3 y lo guarda en cajas. Se completan ambas extracciones, por lo que se ejecuta la rama de salida.\n\nstd::cout recibe el valor de turno, el separador y el valor de cajas: muestra 7:3, sin salto final. Los objetos enteros conservan los valores obtenidos; no conservan cuántos ceros precedían a cada uno en el texto.",
           "reviewFeedback": "Sigue cada extracción desde los caracteres de la cadena hasta su destino entero. Después revisa qué insertan las dos variables y el separador en la salida; no copies sin interpretar el texto de entrada."
         },
         {
@@ -98,7 +98,7 @@
             "Leerlo en double para que el tipo añada los ceros."
           ],
           "correctIndex": 1,
-          "explanation": "La cadena conserva los caracteres. Todavía hay que comprobar longitud y caracteres si el formato lo exige.",
+          "explanation": "El código 0007 contiene cuatro caracteres. Leerlo como std::string mantiene esa secuencia; una conversión a int produciría el valor 7 y perdería la información sobre los tres ceros iniciales. Un double tampoco conserva esa escritura original.\n\nConservar una cadena no demuestra que sea un código válido. Todavía hay que comprobar que tiene los cuatro caracteres exigidos y que pertenecen al conjunto permitido. Elegir el tipo y validar el dato resuelven partes distintas del requisito.",
           "reviewFeedback": [
             "Revisa qué información conserva un valor entero y si incluye cuántos caracteres se usaron para escribirlo.",
             "Distingue conservar los caracteres de comprobar que cumplen la longitud y las reglas exigidas.",
@@ -122,7 +122,7 @@
           "answers": [
             "Formato invalido"
           ],
-          "explanation": "La extracción compuesta no completó ambos enteros; se toma la rama de fallo sin usar cajas como un dato válido.",
+          "explanation": "La extracción hacia turno obtiene el entero 7 a partir de 0007. Al intentar extraer cajas, el flujo encuentra tres y no obtiene el segundo entero solicitado. La condición encadenada falla.\n\nSe ejecuta la rama que muestra Formato invalido, sin salto final. El programa no usa cajas como una cantidad leída correctamente: ni su inicialización ni el éxito de la primera extracción permiten aceptar una pareja incompleta.",
           "reviewFeedback": "Comprueba por separado si cada extracción obtiene el entero solicitado. Luego decide qué rama de la condición encadenada se ejecuta y localiza su instrucción de salida."
         },
         {
@@ -135,7 +135,7 @@
             "Se interpretaría otro significado sin que el tipo int detecte el intercambio."
           ],
           "correctIndex": 2,
-          "explanation": "La biblioteca sigue el orden de las operaciones; los nombres no corrigen un acuerdo de formato equivocado.",
+          "explanation": "En el texto 7 3, el primer campo representa el turno y el segundo la cantidad de cajas. Si se extrae primero hacia cajas, ese destino recibe 7; el otro destino recibe 3. Los dos valores caben en int, por lo que el tipo no detecta que se ha cambiado su significado.\n\nLos nombres de las variables no reorganizan los caracteres del flujo. El programa debe asociar el primer campo con el primer significado del formato y el segundo con el segundo; una extracción que tiene éxito no acredita por sí sola esa correspondencia.",
           "reviewFeedback": [
             "Compara el orden de las extracciones con el destino escrito a la derecha de cada >>. Revisa si los nombres pueden cambiar ese recorrido.",
             "Ambos destinos tienen el mismo tipo. Separa una incompatibilidad de tipos de una interpretación incorrecta de las posiciones.",
@@ -163,6 +163,87 @@
         {
           "type": "note",
           "text": "En el editor de Windows, cada ejecución del programa empieza en una carpeta de trabajo nueva. Si el programa abre muestra.txt sin indicar otra ruta, ese nombre se busca dentro de esa carpeta. Los próximos ejemplos crearán sus archivos de prueba y los leerán durante la misma ejecución.\n\nLos archivos generados quedan en la carpeta de esa ejecución, pero una ejecución posterior empieza en otra carpeta y no los recibe automáticamente. Guardar el código del programa y conservar los datos que éste genera son acciones distintas."
+        },
+        {
+          "type": "heading",
+          "text": "Construir una ficha que conserve el código"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta práctica, una ficha tiene dos campos: un código de exactamente cuatro dígitos y una cantidad entera de cajas entre 0 y 20, ambos límites incluidos. El texto 0007 03 identifica el código 0007 y la cantidad 3. Los ceros iniciales pertenecen a la identidad del código; en la cantidad sólo importa el valor.\n\nConstruye bool leer_ficha(const std::string& texto, std::string& codigo, int& cajas). Utiliza un std::istringstream para obtener el código como cadena y la cantidad como entero. Comprueba que el código contiene cuatro caracteres y que cada uno está entre '0' y '9'. Rechaza una cantidad fuera del intervalo o una extracción incompleta. Después de los dos campos sólo se permite espacio en blanco: intenta extraer un carácter adicional y rechaza si lo obtienes.\n\nDevuelve true y actualiza ambos destinos únicamente cuando se cumpla todo el contrato. Ante cualquier rechazo, devuelve false y conserva exactamente los valores que tenían codigo y cajas antes de la llamada. No hace falta abrir un archivo: aquí se comprueba cómo interpretar y aceptar el texto.",
+          "emphasis": [
+            {
+              "text": "dos campos",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "cuatro dígitos",
+              "style": "bold"
+            },
+            {
+              "text": "conserva exactamente",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe tu función antes de probar, sin cambiar las once llamadas del cliente. Cada llamada prepara de nuevo el código 0999 y la cantidad 19. La línea resultante muestra el indicador de aceptación, el código conservado y la cantidad, separados por dos puntos. El indicador 1 corresponde a true y 0 a false.\n\nLos casos incluyen códigos con ceros, los límites de cantidad, longitud incorrecta, un carácter ajeno a los dígitos, texto que no representa un entero, cantidades fuera del intervalo, un campo sobrante y una ficha incompleta. El último caso separa los mismos dos campos mediante espacios, tabuladores y un salto de línea; esos separadores están permitidos. Pulsa «Compilar, ejecutar y comprobar» con una implementación común para los once casos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\n1:0007:3\n1:0123:20\n1:0000:0\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n1:0007:3\n\nConserva el salto de línea después de cada informe, incluido el último."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Escribe aqui tus funciones antes del cliente.\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:0007:3\n1:0123:20\n1:0000:0\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n1:0007:3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las fichas 0007 03, 0123 20 y 0000 0 conservan sus códigos y obtienen las cantidades 3, 20 y 0. Los siete casos siguientes se rechazan sin cambiar 0999 ni 19. El último caso vuelve a aceptar el código 0007 y la cantidad 3: cambian los separadores, no los dos campos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "1:7:3\n1:123:20\n1:0:0\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n1:7:3\n"
+                    ],
+                    "text": "Las fichas aceptadas muestran los códigos 7, 123 y 0. Se conservó un valor numérico, pero se perdieron los ceros de la secuencia original. El contrato exige conservar 0007, 0123 y 0000 como cadenas de cuatro caracteres; comprueba qué dato asignas al destino codigo."
+                  },
+                  {
+                    "outputs": [
+                      "1:0007:3\n1:0123:20\n1:0000:0\n0:7:3\n0:00x7:3\n0:0007:0\n0:0007:21\n0:0007:-1\n0:0007:3\n0:0007:19\n1:0007:3\n"
+                    ],
+                    "text": "Los casos rechazados muestran cambios en los destinos: por ejemplo, 0:7:3 y 0:0007:21. Devolver false no deshace las asignaciones ya realizadas. Obtén y comprueba los candidatos antes de modificar los destinos; cada rechazo debe conservar el código 0999 y la cantidad 19."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comparar la interpretación y la conservación de datos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_ficha(const std::string& texto, std::string& codigo, int& cajas) {\n    std::istringstream entrada{texto};\n    std::string candidato_codigo;\n    int candidato_cajas{0};\n    if (!(entrada >> candidato_codigo >> candidato_cajas)) return false;\n    if (candidato_codigo.size() != 4) return false;\n    for (char caracter : candidato_codigo) {\n        if (caracter < '0' || caracter > '9') return false;\n    }\n    if (candidato_cajas < 0 || candidato_cajas > 20) return false;\n    char sobrante{};\n    if (entrada >> sobrante) return false;\n    codigo = candidato_codigo;\n    cajas = candidato_cajas;\n    return true;\n}\n\nvoid probar(const std::string& texto) {\n    std::string codigo{\"0999\"};\n    int cajas{19};\n    const bool aceptada{leer_ficha(texto, codigo, cajas)};\n    std::cout << aceptada << ':' << codigo << ':' << cajas << '\\n';\n}\n\nint main() {\n    probar(\"0007 03\");\n    probar(\"0123 20\");\n    probar(\"0000 0\");\n    probar(\"7 3\");\n    probar(\"00x7 3\");\n    probar(\"0007 tres\");\n    probar(\"0007 21\");\n    probar(\"0007 -1\");\n    probar(\"0007 3 extra\");\n    probar(\"0007\");\n    probar(\" \\t0007\\n03 \\t\");\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia obtiene los dos campos en candidato_codigo y candidato_cajas. El código conserva la secuencia textual; las comprobaciones de longitud y de cada carácter se aplican a esa cadena. La extracción del segundo campo convierte 03 en el valor 3, que sí es la información buscada para la cantidad.\n\nLeer 7 3 obtiene una pareja, pero la longitud del código no cumple el contrato. Leer 00x7 3 conserva cuatro caracteres, pero uno no es un dígito. En 0007 tres no se completa la extracción de la cantidad. Las muestras 0007 21 y 0007 -1 sí producen enteros, pero incumplen el dominio permitido.\n\nLa extracción adicional distingue 0007 3 extra de una ficha completa con sólo espacio en blanco al final. Las asignaciones a los destinos quedan después de todas esas comprobaciones. Por eso una ficha rechazada conserva 0999 y 19, incluso si se alcanzó a leer su primer campo. La aceptación y la conservación se observan en cada línea; el indicador por sí solo no mostraría los cambios indebidos."
         }
       ]
     }
@@ -270,7 +351,15 @@
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
-          "block_0002_0004"
+          "block_0002_0004",
+          "u12_codigo_textual_y_cantidad_titulo",
+          "u12_codigo_textual_y_cantidad_contrato",
+          "u12_codigo_textual_y_cantidad_cliente",
+          "u12_codigo_textual_y_cantidad_salida",
+          "u12_codigo_textual_y_cantidad_comprobacion",
+          "u12_codigo_textual_y_cantidad_referencia_titulo",
+          "u12_codigo_textual_y_cantidad_referencia_codigo",
+          "u12_codigo_textual_y_cantidad_referencia_razonamiento"
         ]
       }
     ],
@@ -504,7 +593,80 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_codigo_textual_y_cantidad_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 3,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 3,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 3,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 3,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_comprobacion",
+        "sha256": "399f73e6f1c69515bd0f773bc88ffaf39156aeda767dd9f8fd4fb140b8dc96bd",
+        "storage": {
+          "page": 3,
+          "block": 4
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 3,
+          "block": 5
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_referencia_codigo",
+        "sha256": "34b507d972421f0a8e9906522fd887c6c14049189bf0a7e771f67ba8aade800b",
+        "storage": {
+          "page": 3,
+          "block": 6
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_codigo_textual_y_cantidad_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 3,
+          "block": 7
+        },
+        "progressPage": "page_0002"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -560,6 +722,31 @@
         "id": "block_0002_0004",
         "beforeSha256": "d885e9050d990ace78974160c7c2bd3e80dd3839dc0326b86ba2faabf28e01af",
         "afterSha256": "994d0652ce0e9d79151806e4281038a11441e06450ba0d1fd4353da876d6e27e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "7517445da59a8fb30c78fc165785a6d1fd7f796708d11f0037f00b2223aa4a7d",
+        "afterSha256": "6c896a9e5aa4b045a7f5d78135c2c5c293abeb9ff455c2b7f9d9765a854ec75f"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "d9e23b54ab2883769c05576852670924682f5ad9ea29586029128b5ea55754fd",
+        "afterSha256": "9748d45df70934860916a5b72ab3c9d1fba12bcaae7daf1f82aa08dd73042e08"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "5024fa0a7c6ce918f62262ae942c36e3c95f17eb6ef8ad6f6f4f19ad97714d76",
+        "afterSha256": "58f3b4d1c51b852d92bf0ad752f1bf49ff30b10ffd151504c570e8668712a5c6"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ed8bf318d1639b6266a41eb3fea5c9cdeff746ccff28f824ac8197223732a34b",
+        "afterSha256": "081eec784d2e6eba6acca1863de3951e61ac17d86c0d285c896fe35815746a46"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "a37721397d388c1380f6bca36e0190cf9eea9158725e85fda9db8d8835df7a4f",
+        "afterSha256": "5ae030db1e9957fc147333d28edd8957e04bd0918f5c7b45b922c326f5e3c5f8"
       }
     ]
   },
@@ -581,13 +768,15 @@
             "start": 246,
             "end": 249,
             "text": "'1'",
-            "role": "string"
+            "role": "string",
+            "reading": "characters"
           },
           {
             "start": 254,
             "end": 257,
             "text": "'2'",
-            "role": "string"
+            "role": "string",
+            "reading": "characters"
           },
           {
             "start": 337,
@@ -642,8 +831,23 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "5574984efd9622883c99b00d98d1770a7c0919eb770e982a728c411b6d16deaf",
-        "spans": []
+        "sourceSha256": "d1a40cda3f48546b12336334173af0abb0c0be260de0d9e4dbac3e7433cdf21d",
+        "spans": [
+          {
+            "start": 10,
+            "end": 21,
+            "text": "pedidos.txt",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 244,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -728,20 +932,76 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "846ecbbd8a3ca775bb3b197e9516868030994718fee0d82cd7502d63b615e5b2",
+        "sourceSha256": "0ca8edc7032aa37850848be3cf3afcb498b583a8fa8e5294886a6691387da44d",
         "spans": [
           {
-            "start": 39,
-            "end": 40,
-            "text": "7",
+            "start": 48,
+            "end": 52,
+            "text": "0007",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 68,
+            "end": 69,
+            "text": "7",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 43,
-            "end": 44,
-            "text": "3",
+            "start": 85,
+            "end": 90,
+            "text": "turno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 118,
+            "text": "03",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 156,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 242,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 267,
+            "text": "turno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 301,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 314,
+            "text": "7:3",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -773,13 +1033,15 @@
             "start": 335,
             "end": 341,
             "text": "\"0007\"",
-            "role": "string"
+            "role": "string",
+            "reading": "characters"
           },
           {
             "start": 346,
             "end": 349,
             "text": "\"7\"",
-            "role": "string"
+            "role": "string",
+            "reading": "characters"
           },
           {
             "start": 492,
@@ -799,15 +1061,51 @@
             "end": 86,
             "text": "0007",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "60562235201a1bd478f2e67855b4b962262b9af5102d2fbf739041ad83d4adeb",
-        "spans": []
+        "sourceSha256": "16a5437b96931f9072bb964c0ebe51b574bc3acdc523b42d5c56532a4f23132d",
+        "spans": [
+          {
+            "start": 10,
+            "end": 14,
+            "text": "0007",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 55,
+            "end": 66,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 111,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 201,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -889,13 +1187,56 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "04ff4a02265df0eaa32a7ac6669799c2e69d998a9d8360ce660fbfed4062b6fc",
+        "sourceSha256": "730e1e0a610da0f77ee1f0bec3c6e27b5d2523bde46cf399ba1e5ef2bdc5e2d0",
         "spans": [
           {
-            "start": 85,
-            "end": 90,
+            "start": 20,
+            "end": 25,
+            "text": "turno",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "0007",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 84,
+            "end": 89,
             "text": "cajas",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 114,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 237,
+            "text": "Formato invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 280,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -914,20 +1255,22 @@
             "start": 17,
             "end": 22,
             "text": "turno",
-            "role": "cpp"
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 33,
             "end": 38,
             "text": "cajas",
-            "role": "cpp"
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 62,
             "end": 65,
             "text": "7 3",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 72,
@@ -946,8 +1289,44 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "3f8fcd40e87ddefc25b55cf7d7aec9432d8605a8f6f6e5147dbb31fd398b0b3b",
-        "spans": []
+        "sourceSha256": "3124d2550f11cfb0b1b8afbb0de114a83626fc0b41df111d75545825e803eaaf",
+        "spans": [
+          {
+            "start": 12,
+            "end": 15,
+            "text": "7 3",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 115,
+            "end": 120,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 168,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 198,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1025,6 +1404,452 @@
             "reading": "natural"
           }
         ]
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_titulo",
+        "path": "/text",
+        "sourceSha256": "6cbbe81bef49000715a35143648f63767d7b3543ccc9035402c15f3110f7066f",
+        "spans": []
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_contrato",
+        "path": "/text",
+        "sourceSha256": "933cb72bde14065548a62eeea1dd63f43a1ea6a997b8a1f3a10f679a42b28d91",
+        "spans": [
+          {
+            "start": 123,
+            "end": 124,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 129,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 172,
+            "text": "0007 03",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 194,
+            "end": 198,
+            "text": "0007",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 213,
+            "end": 214,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 397,
+            "text": "bool leer_ficha(const std::string& texto, std::string& codigo, int& cajas)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 410,
+            "end": 428,
+            "text": "std::istringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 568,
+            "end": 571,
+            "text": "'0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 574,
+            "end": 577,
+            "text": "'9'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 784,
+            "end": 788,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 895,
+            "end": 900,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 947,
+            "end": 953,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 956,
+            "end": 961,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_cliente",
+        "path": "/text",
+        "sourceSha256": "964ca354e5fb4f43264fe7a54e108b48e6c60374e2b61c784fa205ff3e801492",
+        "spans": [
+          {
+            "start": 28,
+            "end": 34,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 123,
+            "text": "0999",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "19",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 274,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 293,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 297,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 305,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_salida",
+        "path": "/text",
+        "sourceSha256": "1d405f33d45275f83c3888cdfc833006174d2c712a99c826644640fac96f8530",
+        "spans": [
+          {
+            "start": 33,
+            "end": 139,
+            "text": "1:0007:3\n1:0123:20\n1:0000:0\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n0:0999:19\n1:0007:3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "7a951f99d11564b8373c1e81dbfcd693e2b2073c0f1f9d008a2d8d91b4396e9c",
+        "spans": [
+          {
+            "start": 11,
+            "end": 18,
+            "text": "0007 03",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 20,
+            "end": 27,
+            "text": "0123 20",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 30,
+            "end": 36,
+            "text": "0000 0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 90,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 151,
+            "text": "0999",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 155,
+            "end": 157,
+            "text": "19",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 205,
+            "text": "0007",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "8fa2e5babf37958e52dbe48389ba0af26bcd52f72373994e025832c90f6e3823",
+        "spans": [
+          {
+            "start": 42,
+            "end": 43,
+            "text": "7",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "123",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 51,
+            "end": 52,
+            "text": "0",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 167,
+            "end": 171,
+            "text": "0007",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "0123",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 180,
+            "end": 184,
+            "text": "0000",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 258,
+            "end": 264,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "f41f6533513f94ab649c034b08e7b104b8dd46d90a8eed453432a5890291449b",
+        "spans": [
+          {
+            "start": 68,
+            "end": 73,
+            "text": "0:7:3",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 76,
+            "end": 85,
+            "text": "0:0007:21",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 96,
+            "end": 101,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 253,
+            "text": "0999",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 268,
+            "end": 270,
+            "text": "19",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "67054f77a8c650b7db8c9dec8aac5e411c0a1c74404e9ae85113940f25c66ce1",
+        "spans": []
+      },
+      {
+        "block": "u12_codigo_textual_y_cantidad_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "4c5f5bbe763bd1e82bab6bf9178da7ed77ab65f595bebb6409048552d7f8cba6",
+        "spans": [
+          {
+            "start": 40,
+            "end": 56,
+            "text": "candidato_codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 74,
+            "text": "candidato_cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 236,
+            "text": "03",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 249,
+            "end": 250,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 312,
+            "text": "7 3",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 389,
+            "end": 395,
+            "text": "00x7 3",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 453,
+            "end": 462,
+            "text": "0007 tres",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 521,
+            "end": 528,
+            "text": "0007 21",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 531,
+            "end": 538,
+            "text": "0007 -1",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 632,
+            "end": 644,
+            "text": "0007 3 extra",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 818,
+            "end": 822,
+            "text": "0999",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 825,
+            "end": 827,
+            "text": "19",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1034,5 +1859,16 @@
         "spans": []
       }
     ]
-  }
+  },
+  "compilerPuzzlesRequired": true,
+  "referenceAfter": [
+    {
+      "activity": "u12_codigo_textual_y_cantidad_comprobacion",
+      "blocks": [
+        "u12_codigo_textual_y_cantidad_referencia_titulo",
+        "u12_codigo_textual_y_cantidad_referencia_codigo",
+        "u12_codigo_textual_y_cantidad_referencia_razonamiento"
+      ]
+    }
+  ]
 }

@@ -2,7 +2,7 @@
 
 Encargos activos sólo en PENDIENTES_RECURSOS_CURRICULARES.md.
 
-Continuar la revisión pedagógica de Programación 1 desde U12L1, «Distinguir archivo, formato y objetos», en `app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_archivo_formato_y_objetos.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
+Continuar la revisión pedagógica de Programación 1 desde U12L7, «Precisión y presentación de double», en `app/src/main/assets/content/es/programming/cpp_fundamentals/archivos_y_programa_completo/lesson_precision_y_presentacion_de_double.json`. Leer íntegro `docs/curriculum/Instrucciones_maestras_cursos_corregidas.txt` al reanudar; el curso permanece abierto hasta completar su revisión según esos criterios.
 
 ## Base conservada
 
