@@ -14,6 +14,8 @@ option(LGAED_NARRATION_PLAYER_QA_ONLY
     "Build only the three real Windows narration-player probes with the official Windows toolchain" OFF)
 option(LGAED_READER_BUILD_QA_ONLY
     "Compile and link the three original curricular reader/diagnostic test executables without running them" OFF)
+option(LGAED_WASI_RUNNER_QA_ONLY
+    "Build and run actual Windows WASI SDK / Wasmtime single-file compiler and output regressions" OFF)
 option(LGAED_NARRATION_WORKER_QA_ONLY
     "Build and test real Spanish Kokoro synthesis and playback failure diagnostics without a reader or audio endpoint" OFF)
 option(LGAED_U12_READER_QA_ONLY
@@ -26,7 +28,7 @@ option(LGAED_U6_DIAGNOSTIC_READER_QA_ONLY
     "Build and run the three original U6 diagnostic reader flows with real Kokoro playback" OFF)
 set(_lgaed_qa_mode_count 0)
 foreach(_mode LGAED_STATE_IMPORT_QA_ONLY LGAED_NARRATION_PLAYER_QA_ONLY
-        LGAED_READER_BUILD_QA_ONLY LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
+        LGAED_READER_BUILD_QA_ONLY LGAED_WASI_RUNNER_QA_ONLY LGAED_NARRATION_WORKER_QA_ONLY LGAED_U12_READER_QA_ONLY
         LGAED_U11_EDITORIAL_READER_QA_ONLY LGAED_COMPILER_HISTORICAL_READER_QA_ONLY
         LGAED_U6_DIAGNOSTIC_READER_QA_ONLY)
     if(${_mode})
@@ -120,6 +122,18 @@ add_library(lgaed_platform_windows STATIC
 target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_options)
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
+
+if(LGAED_WASI_RUNNER_QA_ONLY)
+    include(CTest)
+    if(NOT BUILD_TESTING)
+        message(FATAL_ERROR "WASI runner QA requires BUILD_TESTING=ON.")
+    endif()
+    add_executable(lgaed_cpp_runner_tests native/platform/windows/cpp_runner_tests.cpp)
+    target_link_libraries(lgaed_cpp_runner_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.wasi_runner COMMAND lgaed_cpp_runner_tests --wasi)
+    message(STATUS "Focused real Windows WASI runner QA: C++23 compilation, four inputs and output rejection; no app or narration.")
+    return()
+endif()
 # The import/player modes still build the complete production core/platform
 # libraries and their original test translation units. Neither configures
 # presentation, shader assets or the synthesis runtime, which these probes do
