@@ -310,8 +310,11 @@ CppPhaseResult run_phase(const std::filesystem::path& executable,
     if (!CreateProcessW(launcher.c_str(), command.data(), nullptr, nullptr, TRUE,
             CREATE_SUSPENDED | (utf8_console?CREATE_NEW_CONSOLE:CREATE_NO_WINDOW) | CREATE_UNICODE_ENVIRONMENT |
                 EXTENDED_STARTUPINFO_PRESENT,
-            environment.data(), directory.c_str(), &startup.StartupInfo, &information))
-        windows_error("CreateProcessW");
+            environment.data(), directory.c_str(), &startup.StartupInfo, &information)) {
+        // Preserve GetLastError before UTF-8 conversion or formatting calls.
+        const DWORD code=GetLastError();
+        throw std::runtime_error(cpp_launch_failure_message(code,utf8(launcher.wstring()),compilation));
+    }
     Handle process(information.hProcess);
     Handle thread(information.hThread);
     // Assign before any user instruction can run or spawn a child.
@@ -727,6 +730,21 @@ bool expected_project_diagnostic(const CppRunRequest& request,const CppRunResult
 }
 
 } // namespace
+
+std::string cpp_launch_failure_message(std::uint32_t error,std::string_view executable_utf8,bool build_tool) {
+    auto message="CreateProcessW (Windows error "+std::to_string(error)+") while starting "
+        +std::string(build_tool?"a C++ build tool: ":"a newly compiled program: ")
+        +std::string(executable_utf8);
+    if(error==ERROR_SYSTEM_INTEGRITY_POLICY_VIOLATION) {
+        message+="\nWindows application-control policy blocked the process before it started. "
+            "The source may have compiled successfully, but no execution or output verification took place. "
+            "Check Windows Security's blocked-app details and the CodeIntegrity Operational log (event 3077) "
+            "to identify the file and its signing status. Keep security protections enabled: "
+            "a newly built executable may require a certificate from a trusted code-signing provider "
+            "or a separately configured development environment.";
+    }
+    return message;
+}
 
 CppDiagnosticRequest prepare_cpp_diagnostic_request(const curriculum::Block& block,const CppRunRequest& request) {
     CppDiagnosticRequest check;
