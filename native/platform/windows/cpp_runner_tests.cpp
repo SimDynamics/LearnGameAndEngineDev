@@ -64,7 +64,8 @@ int main(int argc, char** argv) {
     constexpr std::string_view diagnostic_test = "MSVC tool diagnostics preserve UTF-8 accents while program streams remain byte-exact";
     const bool diagnostic_only = argc == 2 && std::string_view(argv[1]) == "--diagnostic-utf8";
     const bool cpp23_only = argc == 2 && std::string_view(argv[1]) == "--cpp23";
-    if (argc > 1 && !diagnostic_only && !cpp23_only) return 2;
+    const bool wasi_only = argc == 2 && std::string_view(argv[1]) == "--wasi";
+    if (argc > 1 && !diagnostic_only && !cpp23_only && !wasi_only) return 2;
     const lgaed::LaunchOptions options{lgaed::ProfileId::Codex,
         L"cpp-runner-" + std::to_wstring(GetCurrentProcessId()) + L"-" +
             std::to_wstring(GetTickCount64()), false};
@@ -87,6 +88,8 @@ int main(int argc, char** argv) {
     const auto test = [&](std::string_view name, const std::function<void()>& action) {
         if (diagnostic_only && name != diagnostic_test) return;
         if (cpp23_only && !name.starts_with("C++23 ")) return;
+        if (wasi_only && !name.starts_with("WASI ")) return;
+        if (!wasi_only && name.starts_with("WASI ")) return;
         try {
             action();
             ++passed;
@@ -96,6 +99,56 @@ int main(int argc, char** argv) {
             std::cerr << "FAIL " << name << ": " << error.what() << '\n';
         }
     };
+
+    test("WASI C++23 four independent lesson inputs without unsigned program.exe", [&] {
+        // Real current U2L9 page-10 program and its four authored cases.
+        const std::string source=R"cpp(#include <iostream>
+#include <string>
+int main() {
+    std::string nombre;
+    int paq=0,piez=0;
+    std::cin >> nombre >> paq >> piez;
+    std::cout << nombre << ": " << paq*5 + piez;
+    return 0;
+}
+)cpp";
+        const std::vector<std::pair<std::string,std::string>> cases{
+            {"Iris 4 2","Iris: 22"}, {"Leo 0 4","Leo: 4"},
+            {"Vera 3 1","Vera: 16"}, {"Sol 20 4","Sol: 104"}};
+        for(const auto& [input,expected]:cases){
+            auto current=request(source,input);
+            current.backend=CppRunRequest::Backend::wasi;
+            const auto result=run_cpp(current);
+            require(result.error_utf8.empty(),"WASI launcher: "+result.error_utf8);
+            require(result.compilation.succeeded(),
+                "WASI clang failed: "+result.compilation.stdout_bytes+result.compilation.stderr_bytes);
+            require(result.execution.succeeded(),
+                "WASI runtime failed: "+result.execution.stdout_bytes+result.execution.stderr_bytes);
+            require(result.execution.stdout_bytes==expected && result.execution.stderr_bytes.empty(),
+                "WASI did not preserve the authored stdout and stderr channels for "+input);
+            require(result.target_type=="WASI_COMMAND" &&
+                result.artifact==result.run_directory/L"program.wasm" &&
+                std::filesystem::is_regular_file(result.artifact) &&
+                !std::filesystem::exists(result.run_directory/L"program.exe"),
+                "The WASI path accidentally created a new native executable");
+            const auto captured=capture_cpp_execution(current,result);
+            lgaed::curriculum::OutputCheck check;
+            check.cases.push_back({input,{expected}});
+            require(evaluate_cpp_output_check(check,captured,current.revision).verdict==
+                lgaed::curriculum::OutputVerdict::correct,
+                "A real valid WASI execution did not satisfy the exact student-output contract");
+            check.cases.front().outputs={"incorrecto"};
+            require(evaluate_cpp_output_check(check,captured,current.revision).verdict==
+                lgaed::curriculum::OutputVerdict::incorrect,
+                "The WASI backend fabricated a correct verdict from a wrong output");
+        }
+        auto invalid=request("int main( { return 0; }");
+        invalid.backend=CppRunRequest::Backend::wasi;
+        const auto rejected=run_cpp(invalid);
+        require(rejected.error_utf8.empty() && !rejected.compilation.succeeded() &&
+            rejected.execution.status==CppPhaseStatus::not_started,
+            "WASI compilation errors must remain compiler diagnostics, never execution credit");
+    });
 
     test("Windows policy-blocked executables are diagnosed without inventing C++ output", [&] {
         const auto blocked=cpp_launch_failure_message(4551,
