@@ -298,6 +298,13 @@ if ($Suite -in @('NarrationWorker', 'U12Reader', 'U11EditorialReader',
 foreach ($qaPath in @($qaRoot, $qaBuild, $qaVcVars, $qaCMake, $qaCTest, $qaPython, $qaGit) + $qaRuntimePaths) {
     if ($qaPath -match '["%!?&|<>^;\r\n]') { throw "Unsupported command metacharacter in native QA path: $qaPath" }
 }
+# The disposable runner owns its own isolated dependencies; a CI test
+# must never require or create the user's E:\ project dependency directory.
+$qaWasiDependencyOption = ''
+if ($Suite -eq 'WasiRunner') {
+    $qaWasiRoot = (Join-Path $env:RUNNER_TEMP 'lgaed-wasi-deps').Replace('\', '/')
+    $qaWasiDependencyOption = "`"-DLGAED_DEP_ROOT=$qaWasiRoot`""
+}
 # CMake checks the actual Python/Git versions against the same manifest and
 # retains the normal compiler, SDK, dependency and exact C++23 checks.
 $qaCommands = @(
@@ -305,7 +312,7 @@ $qaCommands = @(
     'chcp 65001 >nul',
     "call `"$qaVcVars`" x64 $qaSdkVersion -vcvars_ver=$($qaManifest.visualStudio.msvcToolset)",
     'if errorlevel 1 exit /b %errorlevel%',
-    "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions",
+    "`"$qaCMake`" -S `"$qaRoot`" -B `"$qaBuild`" -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/WindowsToolchain.cmake -DCMAKE_BUILD_TYPE=Debug -DLGAED_DEFAULT_PROFILE=Codex -D$($qaSuiteConfig.CMakeOption)=ON `"-DPython3_EXECUTABLE=$qaPython`" `"-DGIT_EXECUTABLE=$qaGit`" $qaRuntimeOptions $qaWasiDependencyOption",
     'if errorlevel 1 exit /b %errorlevel%',
     "`"$qaCMake`" --build `"$qaBuild`" --target $qaBuildTargets --parallel 2",
     'exit /b %errorlevel%'
