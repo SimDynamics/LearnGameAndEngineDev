@@ -1,0 +1,59 @@
+name: Windows WASI C++23 student execution
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/windows-wasi-execution.yml
+      - CMakeLists.txt
+      - cmake/**
+      - native/core/**
+      - native/platform/windows/**
+      - native/presentation/windows/lesson_view.cpp
+      - scripts/windows/Install-WasiTools.ps1
+      - scripts/windows/Test-NativeCurricularCI.ps1
+      - toolchains/windows.versions.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-wasi-execution-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  wasm:
+    name: Compile and run real C++23 WASIp1 lessons on Windows x64
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out Codex
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Select native toolchain Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.15.2'
+      - name: Provision official verified WASI SDK 34 and Wasmtime 50.0.1
+        run: .\scripts\windows\Install-WasiTools.ps1
+      - name: Build real native runner and execute four authored WASI input/output cases
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite WasiRunner
+      - name: Preserve native CMake, compiler and CTest evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-wasi-execution-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/wasi-runner-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/wasi-runner-ci/native-build.log
+            out/qa/wasi-runner-ci/wasi-runner-results.xml
+            out/qa/wasi-runner-ci/wasi-runner-results.log
+            out/qa/wasi-runner-ci/Testing/Temporary/*.log
