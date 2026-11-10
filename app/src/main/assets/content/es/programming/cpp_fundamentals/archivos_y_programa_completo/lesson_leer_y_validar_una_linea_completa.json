@@ -42,7 +42,7 @@
             "Si después del registro quedan datos que no son espacios."
           ],
           "correctIndex": 2,
-          "explanation": "Extraer los campos no valida el sufijo. extra infringe la regla de un único registro por línea.",
+          "explanation": "El identificador 2 y las cantidades 4 y 1 forman un registro válido, pero la línea también contiene extra. El operador del recuento termina al obtener el corchete de cierre; no decide qué significa lo que aparece después.\n\nEl lector de la línea debe omitir los blancos finales y comprobar si alcanzó el final del texto. En esta muestra encuentra la letra inicial de extra, así que rechaza toda la línea. Haber obtenido correctamente un prefijo no basta para aceptar el texto completo.",
           "reviewFeedback": [
             "El acuerdo utiliza valores numéricos, no exige conservar su escritura original. Revisa qué queda después de extraer el registro.",
             "El formato de presentación de un recuento no comprueba el texto pendiente de la línea que se está leyendo.",
@@ -222,7 +222,7 @@
             "Sí, si los candidatos comenzaron inicializados en cero."
           ],
           "correctIndex": 1,
-          "explanation": "Los valores iniciales no acreditan una lectura. Primero debe completarse la extracción; después comprobamos el sufijo.",
+          "explanation": "Un texto puede terminar antes de proporcionar el segundo entero o el corchete de cierre. En ese caso se alcanza el final, pero la extracción de todos los campos no se completó. Inicializar los candidatos en cero no convierte ese cero inicial en un dato leído.\n\nEl lector debe comprobar primero el resultado de la extracción y el dominio de los valores. Sólo después de superar esas comprobaciones puede preguntar si quedan caracteres adicionales. Consultar únicamente eof() confundiría una representación completa con otra truncada.",
           "reviewFeedback": [
             "Un campo obligatorio puede faltar justo al alcanzar el final. Sigue qué extracciones se completaron antes de consultar el sufijo.",
             "Primero se obtienen los campos y se valida su dominio; la comprobación del final viene después.",
@@ -246,7 +246,7 @@
           "answers": [
             "0:8"
           ],
-          "explanation": "Se obtiene 4, pero extra permanece después de omitir el espacio. eof() es false; se rechaza antes de asignar al destino.",
+          "explanation": "La extracción guarda 4 en candidato, que es una variable local distinta de id. Después std::ws consume el espacio y se detiene delante de extra: todavía queda texto, por lo que origen.eof() es false.\n\nSe ejecuta el retorno de rechazo antes de llegar a destino = candidato;. El id del llamador conserva 8 y el resultado booleano se presenta como cero. Por eso la salida es 0:8. Leer un valor provisional no implica haberlo aceptado.",
           "reviewFeedback": "Sigue por separado el candidato local y el destino del llamador. Después de ws, comprueba si todavía queda un carácter distinto de blanco y si se alcanza la asignación final."
         },
         {
@@ -273,7 +273,7 @@
             "La conservación del destino no garantiza recuperar el origen."
           ],
           "correctIndex": 2,
-          "explanation": "Objeto y flujo tienen estados distintos. La garantía de asignación aplazada protege el destino.",
+          "explanation": "El destino y el origen guardan información distinta. Por ejemplo, un lector puede consumir el entero 4 y el espacio de 4 extra antes de descubrir el sufijo inválido. Si todavía no asignó el candidato al destino, éste conserva su valor, aunque la posición de lectura ya haya avanzado.\n\nLa asignación aplazada protege el objeto del llamador; no ejecuta ninguna operación para retroceder el flujo. Cuando el análisis utiliza un flujo local nuevo, ese flujo termina con la llamada y la siguiente llamada analiza otra cadena con su propio estado.",
           "reviewFeedback": [
             "La asignación al objeto y la posición de lectura son estados diferentes. Busca si el programa ordena retroceder el flujo.",
             "Se pueden haber consumido caracteres para descubrir el rechazo. La garantía se refiere al objeto destino.",
@@ -290,7 +290,7 @@
             "Aceptar ID 3, pero conservar únicamente las cantidades anteriores."
           ],
           "correctIndex": 1,
-          "explanation": "El contrato de toda la línea exige ausencia de datos adicionales. La actualización conjunta ocurre sólo después de esa comprobación.",
+          "explanation": "El prefijo proporciona provisionalmente el identificador 3 y las cantidades 2 y 1. Sin embargo, sobra permanece después del recuento y viola el contrato de una sola representación completa.\n\nLa función debe devolver false antes de la asignación del Registro completo. Se conservan juntos el identificador 8 y ambas cantidades 9 del destino. Actualizar sólo el identificador mezclaría una parte rechazada con los datos anteriores.",
           "reviewFeedback": [
             "El cierre de Recuento termina ese objeto, pero todavía falta comprobar la condición de toda la línea.",
             "Localiza la asignación final del Registro completo y comprueba si el sufijo permite alcanzarla.",
@@ -346,6 +346,56 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Aceptar líneas nuevas conservando el último registro válido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa leer_linea en el editor. Conserva el formato y los dominios de esta lección: un identificador entre 0 y 9 y un recuento con dos cantidades entre 0 y 10. Se admiten los blancos que omiten las extracciones, los blancos finales y las escrituras decimales equivalentes, incluidos signo positivo y ceros iniciales. La falta de un espacio entre el identificador y el corchete no invalida una representación.\n\nLa función devuelve true y reemplaza todos los miembros del destino cuando acepta la línea completa. Devuelve false y conserva exactamente el registro recibido en esa llamada cuando faltan campos, hay valores fuera del dominio o sobra texto. No imprime ni reinicia el destino con un valor fijo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada contiene sólo el número del caso: 1, 2 o 3. El cliente selecciona una de las tres cadenas de su vector muestras, crea un flujo local con ese texto y obtiene sus líneas con std::getline. Las cadenas están visibles en el código: \\n representa un salto de línea y \\t una tabulación. Se conservan así exactamente las líneas vacías, los blancos y la última línea sin salto, sin tener que escribirlos manualmente en Entrada.\n\nEl cliente crea Registro destino{8, {9, 7}}; una sola vez, antes del bucle. Después de una aceptación, el siguiente rechazo debe conservar ese registro nuevo. Imprime en cada línea el resultado booleano y los tres campos actuales, separados por dos puntos. Obtener una línea y aceptar un registro siguen siendo decisiones diferentes (Köppe et al., 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La Entrada inicial selecciona el caso 1. Completa la función, conserva el cliente y las dependencias y pulsa Compilar, ejecutar y comprobar. Después cambia Entrada a 2 y a 3 y comprueba ambos. Puedes separar ese único entero con espacios o un salto final: esos blancos sólo rodean el selector y no cambian las cadenas que se analizan.\n\nEl primer caso combina aceptaciones, un sufijo inválido, una forma sin espacio y otra con signo positivo, ceros iniciales y tabulación final. El segundo comienza con líneas vacías o incompletas, acepta el registro de ceros y termina con una línea truncada sin salto final. El tercero comprueba el límite del identificador, un segundo recuento como residuo y cantidades con ceros iniciales. No añadas títulos ni líneas vacías a la salida del programa.\n\nSalida del caso 1, con un salto al final de cada línea:\n1:4:2:6\n0:4:2:6\n1:3:10:0\n1:9:0:10\n0:9:0:10\n\nSalida del caso 2, con un salto al final de cada línea:\n0:8:9:7\n0:8:9:7\n0:8:9:7\n1:0:0:0\n0:0:0:0\n\nSalida del caso 3, con un salto al final de cada línea:\n0:8:9:7\n1:9:10:10\n0:9:10:10\n1:6:2:4"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    // Completa la lectura y la aceptacion de toda la linea.\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "1:4:2:6\n0:4:2:6\n1:3:10:0\n1:9:0:10\n0:9:0:10\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera línea deja 1:4:2:6. La siguiente contiene sobra y debe mostrar 0:4:2:6, conservando ese último éxito. La forma 3[10;0] es válida sin un espacio obligatorio; las escrituras con signo y ceros también representan valores permitidos. Tras aceptar el identificador nueve con cantidades cero y diez, la cantidad once del último caso provoca 0:9:0:10."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "0:8:9:7\n0:8:9:7\n0:8:9:7\n1:0:0:0\n0:0:0:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las tres primeras líneas no contienen una representación completa y conservan Registro{8, {9, 7}}. La cuarta acepta un registro cuyos tres valores son cero. La última línea sí se obtiene aunque falte su salto final, pero carece del cierre del recuento: se rechaza conservando el registro de ceros y muestra 0:0:0:0."
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "0:8:9:7\n1:9:10:10\n0:9:10:10\n1:6:2:4\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El identificador diez está fuera del intervalo y conserva el destino inicial. La línea con el identificador nueve y ambas cantidades diez sí se acepta. Un segundo recuento detrás del primero cuenta como texto sobrante, aunque también tenga forma de recuento, y debe conservar 0:9:10:10. La última línea representa el registro numérico 6 [2;4], que se acepta."
+              }
+            ]
+          },
+          "initialStandardInput": "1\n"
         },
         {
           "type": "note",
@@ -481,6 +531,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\", \"03 [02;+1]\", \"3 [2;1]  \", \"\", \"3 [2;1\", \"-1 [2;1]\", \"3 [2,1]\", \"3 [2;1][0;0]\", \"0 [0;0]\", \"9 [10;10]\"};\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: seguir las aceptaciones y los rechazos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 3) return 1;\n    const std::vector<std::string> muestras{\n        \"4 [2;6]\\n3 [1;2] sobra\\n3[10;0]\\n+0009 [00000;+0010] \\t\\n2 [4;11]\\n\",\n        \"\\n \\t\\n2 [1;]\\n0 [0;0]\\n5 [7;3\",\n        \"10 [1;2]\\n9 [10;10]\\n7 [1;2][3;4]\\n0006 [00002;00004]\\n\"\n    };\n    std::istringstream fuente{muestras.at(caso - 1)};\n    Registro destino{8, {9, 7}};\n    std::string linea;\n    while (std::getline(fuente, linea)) {\n        const bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El candidato local reúne todos los campos antes de modificar el registro del llamador. Después de obtenerlos y comprobar el dominio, std::ws permite aceptar los blancos finales y eof() comprueba que no quedó otro contenido. Sólo se alcanza la asignación en las líneas válidas.\n\nEl cliente conserva un destino entre llamadas. Eso hace observables dos errores distintos: aceptar un prefijo con residuo y devolver un rechazo después de restaurar valores fijos. En el primer caso cambiarían datos que debían rechazarse; en el segundo se perdería un registro válido aceptado antes. La batería comprueba estas entradas concretas; también debe revisarse que la función utilice el argumento recibido y cumpla el contrato para las demás líneas admitidas."
         }
       ]
     }
@@ -666,6 +729,11 @@
           "block_0003_0001",
           "block_0003_0002",
           "block_0003_0003",
+          "u12_linea_estado_actual_titulo",
+          "u12_linea_estado_actual_contrato",
+          "u12_linea_estado_actual_cliente",
+          "u12_linea_estado_actual_casos",
+          "u12_linea_estado_actual_construccion",
           "block_0003_0004"
         ]
       },
@@ -685,7 +753,10 @@
         "id": "page_0005",
         "blocks": [
           "block_0005_0000",
-          "block_0005_0001"
+          "block_0005_0001",
+          "u12_linea_estado_actual_referencia_titulo",
+          "u12_linea_estado_actual_referencia_codigo",
+          "u12_linea_estado_actual_referencia_razonamiento"
         ]
       }
     ],
@@ -1104,6 +1175,78 @@
           "block": 1
         },
         "progressPage": "page_0004"
+      },
+      {
+        "id": "u12_linea_estado_actual_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_linea_estado_actual_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_linea_estado_actual_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_linea_estado_actual_casos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_linea_estado_actual_construccion",
+        "sha256": "270236ec12eeffda4cc87c8e57533eafd6d06d82f305cb662a38ee06c6d93a95",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_linea_estado_actual_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_linea_estado_actual_referencia_codigo",
+        "sha256": "e0aedbf1b038b537d28eae7194ff4639f2cf1df686a5c7aad071ddc8280a9c06",
+        "storage": {
+          "page": 6,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_linea_estado_actual_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 9
+        },
+        "progressPage": "page_0005"
       }
     ],
     "editorial": [
@@ -1201,13 +1344,38 @@
         "id": "block_0000_0001",
         "beforeSha256": "ec604c18ab5287d6ce00ffacee83ad993ee67d593be607ff8a804c65dd9b09f6",
         "afterSha256": "9b103affe713952cb590e2ce6ece0a2de16bee958cfaa96173bb4843d2a3420a"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ad19bdd3f84bad7866f4b8a1798427a19d2d4de8257ec662f2f0c3efd0b5f7e9",
+        "afterSha256": "cc6c2d94a8f710fcd52692254767d9184ed7f1e75da2572ef21339a35d76668d"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "14b4fed724fc180dff2680535ad25355f04b6201700774078e1e82043740e7a5",
+        "afterSha256": "10fa4a8b886f9e02d8780dedf70cb17ea03fa0aeab838cc3ad9682c86e28e532"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "92c8a591101abfbcef3b2e3f1f683157b1352d8146157f3328b119830e525630",
+        "afterSha256": "1514c5b3bd10e440f7d1850ce1f8f6eafc4f0e11bc50fb25816e46a5d0c686b9"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "10e35800c1328b2f7c01f384d99535c56c6cc5a3138ec54e045b66b7013a5c74",
+        "afterSha256": "f74d2b889d30e10b6e941361d19bdd822923af1c07ffd652eb358009993c9fe0"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "a35ba49b2a3dad2e4fe85a285b19db3ff2fe44068823ff66a018f444f521e569",
+        "afterSha256": "3eec603dc5a59b0a8e44abd144c173764197724d5eb2e01ca04329be1401b21c"
       }
     ]
   },
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0003_0003",
+      "activity": "u12_linea_estado_actual_construccion",
       "blocks": [
         "block_0003_0004",
         "block_0004_0000",
@@ -1217,13 +1385,22 @@
         "block_0004_0004",
         "block_0004_0005",
         "block_0005_0000",
-        "block_0005_0001"
+        "block_0005_0001",
+        "u12_linea_estado_actual_referencia_titulo",
+        "u12_linea_estado_actual_referencia_codigo",
+        "u12_linea_estado_actual_referencia_razonamiento"
       ]
     }
   ],
   "activityAfter": [
     {
       "activity": "distinguir_obtener_linea_y_aceptar_registro",
+      "requires": [
+        "block_0003_0003"
+      ]
+    },
+    {
+      "activity": "u12_linea_estado_actual_construccion",
       "requires": [
         "block_0003_0003"
       ]
@@ -1405,11 +1582,39 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "94bc77e3225339386a067aa941d85dd027b87661030d5bdb3df77ca665d2c75a",
+        "sourceSha256": "0a5a6ad72044823934a943ff4ecacad506eadc7a559a841ce10b2106e3c2d393",
         "spans": [
           {
+            "start": 17,
+            "end": 18,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 40,
-            "end": 45,
+            "end": 41,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 105,
+            "text": "extra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 371,
             "text": "extra",
             "role": "data",
             "reading": "natural"
@@ -1973,8 +2178,16 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "e919b196a7347f26fb6f40f0c05bf458be6297f65d11beab6b8189c11d0d76f5",
-        "spans": []
+        "sourceSha256": "663e09bcc84f68b7c3e500f8902e3e914d85f48cd6064827aa4523977ad5bca6",
+        "spans": [
+          {
+            "start": 468,
+            "end": 473,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -2027,33 +2240,84 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "f4500f5d4506bf9bed851bc6b57f2ed9f84856518595873e665023e54cadb35c",
+        "sourceSha256": "b7da48ee0c72cc12c6ce31bedb274cfa25ac9a54d55efc346cda31ea0c7e59ab",
         "spans": [
           {
-            "start": 11,
-            "end": 12,
+            "start": 21,
+            "end": 22,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 19,
-            "end": 24,
+            "start": 26,
+            "end": 35,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 77,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 94,
+            "text": "std::ws",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 143,
             "text": "extra",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 65,
-            "end": 70,
-            "text": "eof()",
-            "role": "cpp"
+            "start": 177,
+            "end": 189,
+            "text": "origen.eof()",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 74,
-            "end": 79,
+            "start": 193,
+            "end": 198,
             "text": "false",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 272,
+            "text": "destino = candidato;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 279,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 303,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 375,
+            "text": "0:8",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2099,8 +2363,23 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "1e893d9ef79229025aa4936c93e8fdc9d2dbb33f63691ee07b7e81cd897bd2db",
-        "spans": []
+        "sourceSha256": "83b13c5dcbe92e807a1a98a28e4934af0df342ad1f289f630b30fa09942031b2",
+        "spans": [
+          {
+            "start": 101,
+            "end": 102,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 126,
+            "text": "4 extra",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -2167,8 +2446,65 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "ae05e9e564686c4002e3e5be98d3db24a127bbdad7ad27c1fba668bd77ad1b09",
-        "spans": []
+        "sourceSha256": "8b917ec3cf33201d552d0e29207cae085780ad54b9b526e7e7789ddac01fafe0",
+        "spans": [
+          {
+            "start": 57,
+            "end": 58,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 81,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 101,
+            "text": "sobra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 221,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 257,
+            "text": "Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 306,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 327,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -2870,6 +3206,298 @@
         "path": "/text",
         "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
         "spans": []
+      },
+      {
+        "block": "u12_linea_estado_actual_titulo",
+        "path": "/text",
+        "sourceSha256": "40504ea4143acfc7c947f17b722d9daa5f9b101cfc0654ddc5cda772f6800977",
+        "spans": []
+      },
+      {
+        "block": "u12_linea_estado_actual_contrato",
+        "path": "/text",
+        "sourceSha256": "03d5eb5392707169e9a0f4485202f9ab3d2a1769752e9fc3ee206ff246e4253d",
+        "spans": [
+          {
+            "start": 9,
+            "end": 19,
+            "text": "leer_linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 110,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 160,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 432,
+            "end": 436,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 522,
+            "end": 527,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_linea_estado_actual_cliente",
+        "path": "/text",
+        "sourceSha256": "491226f13424205bafac6671e8b65f5822f9333d899f721ade3146c82ad320b8",
+        "spans": [
+          {
+            "start": 42,
+            "end": 43,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 119,
+            "text": "muestras",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 192,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 237,
+            "text": "\\n",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 269,
+            "end": 271,
+            "text": "\\t",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 444,
+            "end": 472,
+            "text": "Registro destino{8, {9, 7}};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 761,
+            "end": 781,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_linea_estado_actual_casos",
+        "path": "/text",
+        "sourceSha256": "8a17e0771a88257cdb2e9db7c7a5ecc484492ef719aa51e74fc2542fc2581e46",
+        "spans": [
+          {
+            "start": 38,
+            "end": 39,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 844,
+            "end": 886,
+            "text": "1:4:2:6\n0:4:2:6\n1:3:10:0\n1:9:0:10\n0:9:0:10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 944,
+            "end": 983,
+            "text": "0:8:9:7\n0:8:9:7\n0:8:9:7\n1:0:0:0\n0:0:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1041,
+            "end": 1076,
+            "text": "0:8:9:7\n1:9:10:10\n0:9:10:10\n1:6:2:4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_linea_estado_actual_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "22679dc2ace7753d6e3880a09d6ef9a1f65f354177dd3cb9406ccc130995cfe9",
+        "spans": [
+          {
+            "start": 22,
+            "end": 29,
+            "text": "1:4:2:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 58,
+            "text": "sobra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 81,
+            "text": "0:4:2:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 129,
+            "text": "3[10;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 346,
+            "end": 354,
+            "text": "0:9:0:10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_linea_estado_actual_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "b4e6f07d69d35f72e9a22c6feb97ed42ca2123f8708a4fdc68828905df800e47",
+        "spans": [
+          {
+            "start": 78,
+            "end": 97,
+            "text": "Registro{8, {9, 7}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 314,
+            "text": "0:0:0:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_linea_estado_actual_construccion",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "85a9427d02f91b7edb8fa09adf71e97bea6cbc87b63e7da8281d02ca15e43866",
+        "spans": [
+          {
+            "start": 276,
+            "end": 285,
+            "text": "0:9:10:10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 342,
+            "text": "6 [2;4]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_linea_estado_actual_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "05b71a06c75498a5598db2daceb6a1293246f16a5bcc01ec0c0420858b429d24",
+        "spans": []
+      },
+      {
+        "block": "u12_linea_estado_actual_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "b34072257f0443c5866f7240f999c7e9ff29f909059c95084c9ab279fdc04fb6",
+        "spans": [
+          {
+            "start": 133,
+            "end": 140,
+            "text": "std::ws",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 184,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

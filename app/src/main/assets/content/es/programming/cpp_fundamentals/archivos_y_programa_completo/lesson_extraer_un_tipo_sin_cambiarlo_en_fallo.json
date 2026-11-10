@@ -42,7 +42,7 @@
             "Puede haber consumido caracteres y conservar un estado de fallo."
           ],
           "correctIndex": 2,
-          "explanation": "Conservar el objeto no equivale a deshacer la entrada. La posición y el estado del origen tienen su propio comportamiento.",
+          "explanation": "En una entrada como (3]RESTO, el lector puede consumir la apertura, el entero y el cierre incorrecto antes de rechazar el candidato. Si todavía no asignó al destino, el objeto conserva su valor anterior; el origen ya ha avanzado.\n\nSon dos estados distintos. Conservar los campos del objeto no devuelve los caracteres ni elimina failbit. Para saber qué ocurrió con la entrada hay que consultar su posición y sus indicadores, además del dato protegido.",
           "reviewFeedback": [
             "La asignación al objeto y el avance por los caracteres son operaciones distintas. Busca si el lector realiza alguna operación que retroceda el origen.",
             "El objeto destino no es el flujo de entrada. Conservar sus campos no modifica por sí mismo los indicadores del flujo.",
@@ -100,7 +100,7 @@
             "El lector debe alterar los campos antes de comprobar el dominio."
           ],
           "correctIndex": 0,
-          "explanation": "La referencia permite aplicar la asignación al objeto original, pero nuestro contrato la retrasa hasta la validación completa.",
+          "explanation": "Cuando la lectura se acepta, destino = Cantidad{unidades}; debe cambiar el objeto que proporcionó el llamador. La referencia Cantidad& permite que esa asignación alcance ese objeto; una referencia constante impediría modificarlo por ese parámetro.\n\nLa capacidad de modificarlo no obliga a hacerlo inmediatamente. Nuestro lector obtiene y comprueba los candidatos primero, y sólo alcanza la asignación cuando la extracción, los delimitadores y el intervalo son válidos.",
           "reviewFeedback": [
             "Localiza la asignación que aplica el candidato después de validar. Esa operación debe alcanzar el objeto proporcionado por el llamador.",
             "La referencia al objeto destino no crea una copia del flujo. Son dos parámetros con funciones diferentes.",
@@ -124,7 +124,7 @@
           "answers": [
             "1|4"
           ],
-          "explanation": "El operador añade failbit al detectar ]. Como no llega a asignar el candidato, cantidad sigue teniendo 4.",
+          "explanation": "Las extracciones consiguen (, el entero 2 y ]. El fallo aparece al comprobar el acuerdo: ese cierre no es el paréntesis requerido. El operador añade failbit y retorna antes de asignar.\n\nPor eso entrada.fail() se presenta como 1 y cantidad.unidades sigue en 4, produciendo 1|4. Haber obtenido un entero válido no basta cuando el formato del registro es incorrecto.",
           "reviewFeedback": "Separa las variables locales del campo del objeto. Sigue primero qué extracciones obtienen datos y después qué condición rechaza el cierre. Comprueba si se alcanza la asignación al destino y qué indicador se añade."
         },
         {
@@ -136,7 +136,7 @@
           "answers": [
             "Leido:4|EOF=1;Fallo=1"
           ],
-          "explanation": "La extracción obtuvo 4 y señaló eofbit sin fallar. setstate añade failbit y conserva eofbit; después están activos ambos indicadores.",
+          "explanation": "La extracción reconoce el entero completo 4 y encuentra el final de la cadena mientras termina de leerlo. Activa eofbit, pero no failbit; la condición todavía acepta la lectura y muestra Leido:4|.\n\nDespués, setstate(std::ios::failbit) añade el indicador de fallo al estado existente. Se conservan ambos indicadores y el final de la salida es EOF=1;Fallo=1. Sustituir el estado sólo por failbit perdería la información del final encontrado.",
           "reviewFeedback": "Examina por separado la lectura del entero y la operación de estado posterior. Una extracción que obtuvo el entero puede haber encontrado el final sin activar failbit. Después aplica el efecto acumulativo de setstate."
         },
         {
@@ -170,7 +170,7 @@
           "answers": [
             "1:1|4"
           ],
-          "explanation": "El entero se obtiene, pero no puede extraerse el cierre. El origen termina con eofbit y failbit; el destino conserva 4.",
+          "explanation": "El origen contiene (2. La apertura y el entero se obtienen, pero el contrato también exige un cierre. Al intentar extraerlo ya no hay caracteres disponibles: el flujo termina con eofbit y failbit.\n\nLa primera comprobación del operador retorna antes de asignar, de modo que el destino conserva 4. Los indicadores y el campo forman 1:1|4. El entero estaba completo; el registro, que además necesitaba un delimitador, no lo estaba.",
           "reviewFeedback": "El registro necesita apertura, entero y cierre. Localiza la primera extracción que ya no encuentra el carácter requerido y sigue los indicadores del origen. Comprueba si el flujo de control alcanza la asignación al objeto."
         },
         {
@@ -183,7 +183,7 @@
             "El dominio del objeto se ha comprobado automáticamente."
           ],
           "correctIndex": 1,
-          "explanation": "El final puede encontrarse antes de comenzar otro registro o dentro de uno incompleto. Hay que conservar el contexto de la lectura.",
+          "explanation": "Si la entrada termina antes de comenzar otro registro, puede no haber datos nuevos que incorporar. Si termina después de una apertura y antes del cierre, queda un registro empezado pero incompleto. En ambos recorridos puede encontrarse el final.\n\nPor eso eof() no decide por sí mismo si el conjunto está completo. Hay que saber qué parte exigía todavía el lector cuando falló. Ni los delimitadores ni los límites de los campos se validan automáticamente por llegar al final.",
           "reviewFeedback": [
             "Llegar al final no informa por sí solo de si faltaba todavía un delimitador o un campo obligatorio.",
             "Relaciona el estado con la etapa en que se encontraba el lector, sin suponer que el registro estaba completo.",
@@ -217,7 +217,7 @@
           "answers": [
             "4|RESTO"
           ],
-          "explanation": "Se consumieron (, 3 y ] antes de detectar el cierre incorrecto. El objeto permanece en 4. Borrar el estado permite leer RESTO, sin devolver los caracteres ya consumidos.",
+          "explanation": "El lector ya consumió (, 3 y ] cuando comprueba que el cierre es incorrecto. Retorna sin asignar al objeto, que conserva 4. El texto que queda después de ese cierre es RESTO.\n\nclear() permite intentar otra lectura al restablecer los indicadores; no retrocede la posición. getline obtiene entonces ese sufijo y la salida resulta 4|RESTO. Confundir borrar el fallo con devolver los caracteres llevaría a esperar otra cadena.",
           "reviewFeedback": "Localiza qué caracteres se extrajeron antes de rechazar el cierre. La asignación al objeto no se alcanzó. clear modifica los indicadores; después getline empieza en la posición de entrada que quedó, no en el principio."
         },
         {
@@ -262,7 +262,7 @@
             0,
             1
           ],
-          "explanation": "Las dos comprobaciones preceden a la única asignación al destino. Sus ramas de fallo retornan el mismo origen.",
+          "explanation": "Primero deben existir los tres candidatos que utilizarán las extracciones. Si alguna extracción no consigue su dato, la primera comprobación devuelve el origen y evita toda asignación al objeto.\n\nSi las tres extracciones terminan, se verifican los delimitadores y el intervalo. Esa segunda rama también retorna ante un rechazo, después de añadir failbit. La asignación destino = Cantidad{unidades}; queda después de ambas comprobaciones; sólo el camino aceptado llega a ella y al retorno final.",
           "reviewFeedback": "Cada candidato debe existir antes de usarse en la extracción. Las dos comprobaciones se realizan antes de asignar al destino; sus ramas de fallo devuelven el origen. El retorno del camino aceptado queda después de la asignación."
         },
         {
@@ -275,7 +275,7 @@
             "Aceptar todo el texto como parte del campo rechazados."
           ],
           "correctIndex": 0,
-          "explanation": "El cierre termina ese objeto; exigir que no quede texto pertenece a otro contrato de línea o archivo completo.",
+          "explanation": "La apertura, los campos y el cierre forman un registro completo [2;1]. El operador puede asignarlo al destino y devolver el origen en la posición inmediatamente posterior al cierre. Los caracteres resto siguen disponibles para el llamador.\n\nExigir que no quede nada después sería otra condición: validar una línea o un archivo completo. Este operador sólo obtiene un registro; no debe incorporar ese sufijo al entero ni borrarlo para simular que la entrada terminó.",
           "reviewFeedback": [
             "Localiza el delimitador que termina un registro y distingue esa lectura de comprobar el fin de toda la cadena.",
             "El contrato sólo pide obtener un registro. Busca qué operación ordenaría borrar el texto que sigue al cierre.",
@@ -515,6 +515,201 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\", \"\", \"[3;4}\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Conservar el último valor aceptado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa el validador y operator>>(std::istream&, Recuento&) del editor, conservando el escritor y main. El lector reconoce un registro [aceptados;rechazados], exige los dos campos entre 0 y 10 y comprueba los tres delimitadores. Obtén candidatos antes de asignar; si rechazas la lectura, conserva íntegro el valor que tenía el destino en esa llamada. No lo sustituyas por un valor fijo ni por su inicialización original.\n\nDevuelve el mismo origen. Los flujos de las pruebas usan extracción decimal y la omisión habitual de blancos; permiten espacios entre componentes y el signo positivo de un entero. Tras el cierre, el texto restante no forma parte del registro y debe quedar disponible. Todavía no se pide validar una línea completa."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente mantiene un único Recuento actual{6, 2} mientras recorre las líneas de Entrada. Cada línea proporciona la cadena de un origen nuevo. Esto aísla los indicadores de cada intento, pero mantiene el mismo destino entre intentos: una lectura aceptada cambia lo que deberá conservar un rechazo posterior.\n\nstd::istream& devuelto = (origen >> actual); vincula una referencia al resultado del operador. Si ese flujo permite aceptar la lectura, el cliente obtiene por él los caracteres que quedaron y muestra OK seguido del registro y Resto= con ese sufijo. Si falla, muestra Fallo, el registro conservado y el valor de origen.eof(). Los separadores exactos están en el cliente. Cada informe termina con salto de línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba por separado los seis textos de tres líneas indicados a continuación. Conserva sus saltos y termina cada texto con un salto final. El quinto empieza con una línea vacía: ese primer intento también se procesa. El número muy largo del sexto no cabe en int en el entorno del curso y debe provocar un fallo de extracción, no un nuevo registro.\n\nLa primera prueba debe producir:\nOK [2;1]|Resto=uno\nFallo [2;1]|EOF=0\nOK [0;10]|Resto=fin\nLa segunda línea conserva el registro aceptado en la primera. El lector sólo reconoce un registro inicial; el cliente lee el sufijo para comprobar qué quedó. Usa la misma implementación para los seis textos y pulsa «Compilar, ejecutar y comprobar» con cada uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada 1:\n[2;1]uno\n{3;4]dos\n[0;10]fin"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada 2:\n[9;0]A\n[3;x]B\n[5;5]C"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada 3:\n[10;10]X\n[2;1\n[1;0]Y"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada 4:\n[4;7]A\n[11;2]B\n[2;-1]C"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada 5:\n\n[ 0 ; +10 ]espacios\n[0;0]cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada 6:\n[3;9]A\n[1;999999999999999999999999999999]B\n[2:8]C"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\n// Completa el validador y el lector. Conserva el escritor y main.\nbool recuento_valido(const Recuento& valor) {\n    return false;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    origen.setstate(std::ios::failbit);\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n            std::getline(devuelto, resto);\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "[2;1]uno\n{3;4]dos\n[0;10]fin\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "[2;1]uno\n{3;4]dos\n[0;10]fin\n",
+                "outputs": [
+                  "OK [2;1]|Resto=uno\nFallo [2;1]|EOF=0\nOK [0;10]|Resto=fin\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El primer registro aceptado cambia el destino a [2;1]. La siguiente entrada empieza con {, por lo que se rechaza sin sustituir ese valor. El tercer origen es nuevo y aporta el registro válido [0;10]. Los sufijos de las lecturas aceptadas siguen disponibles por la referencia devuelta.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [2;1]|Resto=uno\nFallo [6;2]|EOF=0\nOK [0;10]|Resto=fin\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [2;1]|Resto=uno\nOK [3;4]|Resto=dos\nOK [0;10]|Resto=fin\n"
+                    ],
+                    "text": "Se acepta el registro cuya apertura no es el corchete acordado. Obtener enteros dentro del intervalo y un cierre válido no sustituye la comprobación de todos los delimitadores. Revisa también el primer carácter antes de asignar el candidato."
+                  },
+                  {
+                    "outputs": [
+                      "OK [2;1]|Resto=\nFallo [2;1]|EOF=0\nOK [0;10]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[9;0]A\n[3;x]B\n[5;5]C\n",
+                "outputs": [
+                  "OK [9;0]|Resto=A\nFallo [9;0]|EOF=0\nOK [5;5]|Resto=C\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera lectura publica [9;0]. En la segunda, x no permite obtener el campo rechazados; el destino permanece en [9;0], no vuelve a su inicialización. La tercera lectura utiliza otro origen y acepta [5;5].",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [9;0]|Resto=A\nFallo [6;2]|EOF=0\nOK [5;5]|Resto=C\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [9;0]|Resto=\nFallo [9;0]|EOF=0\nOK [5;5]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[10;10]X\n[2;1\n[1;0]Y\n",
+                "outputs": [
+                  "OK [10;10]|Resto=X\nFallo [10;10]|EOF=1\nOK [1;0]|Resto=Y\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Después de aceptar [10;10], el siguiente origen termina sin el cierre requerido. El fallo conserva ese registro y se observa EOF=1. La tercera línea se lee con un origen nuevo y puede aceptar [1;0]; no necesita reparar el flujo anterior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [10;10]|Resto=X\nFallo [6;2]|EOF=1\nOK [1;0]|Resto=Y\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [10;10]|Resto=\nFallo [10;10]|EOF=1\nOK [1;0]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[4;7]A\n[11;2]B\n[2;-1]C\n",
+                "outputs": [
+                  "OK [4;7]|Resto=A\nFallo [4;7]|EOF=0\nFallo [4;7]|EOF=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El destino alcanza [4;7]. Las entradas siguientes contienen, respectivamente, 11 en aceptados y -1 en rechazados. Ambas quedan fuera del dominio. Ninguno de esos rechazos cambia el último registro válido ni necesita alcanzar el final de su cadena para ser detectado.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [4;7]|Resto=A\nFallo [6;2]|EOF=0\nFallo [6;2]|EOF=0\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [4;7]|Resto=\nFallo [4;7]|EOF=0\nFallo [4;7]|EOF=0\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "\n[ 0 ; +10 ]espacios\n[0;0]cero\n",
+                "outputs": [
+                  "Fallo [6;2]|EOF=1\nOK [0;10]|Resto=espacios\nOK [0;0]|Resto=cero\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera línea está vacía y no permite obtener ni la apertura: conserva [6;2] y señala el final de ese origen. La extracción formateada del segundo acepta los espacios y +10, obteniendo [0;10]. El último caso acepta dos ceros; ese registro también es válido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Fallo [6;2]|EOF=1\nOK [0;10]|Resto=\nOK [0;0]|Resto=\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              },
+              {
+                "standardInput": "[3;9]A\n[1;999999999999999999999999999999]B\n[2:8]C\n",
+                "outputs": [
+                  "OK [3;9]|Resto=A\nFallo [3;9]|EOF=0\nFallo [3;9]|EOF=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El primer registro publica [3;9]. El entero muy largo del segundo no se puede extraer como int, y el tercero usa dos puntos en lugar del punto y coma requerido. Son fallos de causas distintas que conservan el mismo último valor válido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "OK [3;9]|Resto=A\nFallo [6;2]|EOF=0\nFallo [6;2]|EOF=0\n"
+                    ],
+                    "text": "Tras un rechazo, la salida vuelve al registro inicial en lugar de conservar el último aceptado. Comprueba si la rama de fallo asigna un valor fijo al destino. Conservar significa no cambiar el objeto que recibió esa llamada, aunque sus campos sean diferentes de los usados al iniciar el programa."
+                  },
+                  {
+                    "outputs": [
+                      "OK [3;9]|Resto=\nFallo [3;9]|EOF=0\nFallo [3;9]|EOF=0\n"
+                    ],
+                    "text": "Los registros aceptados conservan sus campos, pero desaparece el texto que debía quedar después del cierre. Comprueba si el lector consume caracteres adicionales. Su contrato termina al obtener un registro; la lectura del sufijo corresponde al cliente mediante el mismo origen devuelto."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Una implementación y sus comprobaciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nint main() {\n    Recuento actual{6, 2};\n    std::string texto;\n    while (std::getline(std::cin, texto)) {\n        std::istringstream origen{texto};\n        std::istream& devuelto = (origen >> actual);\n        if (devuelto) {\n            std::string resto;\n            std::getline(devuelto, resto);\n            std::cout << \"OK \" << actual << \"|Resto=\" << resto << '\\n';\n        } else {\n            std::cout << \"Fallo \" << actual << \"|EOF=\" << origen.eof() << '\\n';\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El objeto actual se declara antes del recorrido de líneas y conserva su identidad entre llamadas. Los candidatos pertenecen a cada llamada del lector. Una lectura aceptada reemplaza el objeto; cualquier rechazo retorna antes de esa asignación y conserva el valor que había al empezar ese intento.\n\nReiniciar el destino a Recuento{6, 2} en cada fallo pasaba inadvertido en la batería anterior, porque cada prueba empezaba precisamente con esos valores. En la nueva secuencia, los registros aceptados cambian el estado previo: devolverlo a la inicialización ya es una pérdida de datos.\n\nLa apertura también se comprueba, aunque los campos y el cierre parezcan correctos. El lector se detiene al reconocer el cierre del registro; la referencia devuelta permite que el cliente obtenga el sufijo restante. El origen nuevo de cada línea evita que un fallo anterior bloquee la siguiente prueba, sin inventar una recuperación del origen fallido. Se aceptan otros nombres y organización de las funciones si conservan esas propiedades."
         }
       ]
     }
@@ -788,7 +983,21 @@
         "id": "page_0007",
         "blocks": [
           "block_0007_0000",
-          "block_0007_0001"
+          "block_0007_0001",
+          "u12_extraccion_ultimo_valido_titulo",
+          "u12_extraccion_ultimo_valido_contrato_0",
+          "u12_extraccion_ultimo_valido_contrato_1",
+          "u12_extraccion_ultimo_valido_contrato_2",
+          "u12_extraccion_ultimo_valido_entrada_0",
+          "u12_extraccion_ultimo_valido_entrada_1",
+          "u12_extraccion_ultimo_valido_entrada_2",
+          "u12_extraccion_ultimo_valido_entrada_3",
+          "u12_extraccion_ultimo_valido_entrada_4",
+          "u12_extraccion_ultimo_valido_entrada_5",
+          "u12_extraccion_ultimo_valido_construccion",
+          "u12_extraccion_ultimo_valido_referencia_titulo",
+          "u12_extraccion_ultimo_valido_referencia_codigo",
+          "u12_extraccion_ultimo_valido_referencia_razonamiento"
         ]
       }
     ],
@@ -1348,6 +1557,132 @@
           "block": 0
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_contrato_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_contrato_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_contrato_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_entrada_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_entrada_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_entrada_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 7
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_entrada_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 8
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_entrada_4",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 9
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_entrada_5",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 10
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_construccion",
+        "sha256": "8250da57ad19e8603d88c85ab2f532eae52d22d8306ed4c05b283ce0d7c22207",
+        "storage": {
+          "page": 8,
+          "block": 11
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 12
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_referencia_codigo",
+        "sha256": "3fa585e3c6e8802982715c295e68c701894a5e4fcd2ec362421817cec2c064bb",
+        "storage": {
+          "page": 8,
+          "block": 13
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_extraccion_ultimo_valido_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 14
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1485,6 +1820,51 @@
         "id": "block_0004_0004",
         "beforeSha256": "5fd8500aa385aacf0f0427d2cfe4b7a981d3db8dda3d6b34eaea1b2a50162607",
         "afterSha256": "a8fc3c584841bc0f1f1323e34449fada69959e3ab273cfde2d030a11a16b6919"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "31cf6b7a0f6793901f40c67fa8ecbc4f606eecddf51a6472d06c138480788fcf",
+        "afterSha256": "0dacac27cfcc883e6ed0282db39411a4e4f585a4433c62da58a4408a9b680327"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "b96780a923a8c0ab13e786c57c34ff28cd2c64e303e43b0597caddba2cb3c629",
+        "afterSha256": "65e9a537e0d795f7694ddc4e4e34e58108b5e33a2260e56f9899873e3d03f5a0"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "0b45156e06546e12e98e243adbc60cf74a705d6acd7b5fbaf5765563c7ca747f",
+        "afterSha256": "b043969b02c39eb18473d3e754ad4a2151a3b66757ecd35bb8b6b44f16eb44fd"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "02e3ab7022ee37792c0820e182c62b9936ea5e1d54fc35cc58d802904de2be32",
+        "afterSha256": "c66723a58adfbd7776f5f8dfaa50dfd85390a8123c56e19ef41f7fc4662d931b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "5e98398f729b707960dde2e5c2e2f667c2a49ac79c60e3e0ed8e08add865e3cc",
+        "afterSha256": "0c63a3eb5e9b8018d91380c73477f060632317a0425629705f056768c35967ce"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a0c7fe3755042719fba7d18419846720a263a5d94f6775f53a54b91b861a59cc",
+        "afterSha256": "238f9216493d5b23dcb9fa1e6e7777ac3122f0001107d53e70a2f733425ed4ab"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "0c0f8a1ae4759b165f30fea02a6f78884c1f5d4a305713e74f96a7ef00173c01",
+        "afterSha256": "13cc55cc1718131ca9dc7ccc6e749d5123efef4e264554f6b691331850ac2708"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "1442dd4fd6ed42d37c085336db621e575efb941eade744e7dfd1d13ab288fc0f",
+        "afterSha256": "3df7de858ab6f6124fdf2fa68bc357491d0008852e08c01d2a172b43e8ecf7f5"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "a8fc3c584841bc0f1f1323e34449fada69959e3ab273cfde2d030a11a16b6919",
+        "afterSha256": "e8be17588012222fc8355a8a1afb32c3dfd49d2ba9664f4d87e154ef47dc10f8"
       }
     ],
     "orderRefinements": [
@@ -1528,11 +1908,25 @@
         "block_0007_0000",
         "block_0007_0001"
       ]
+    },
+    {
+      "activity": "u12_extraccion_ultimo_valido_construccion",
+      "blocks": [
+        "u12_extraccion_ultimo_valido_referencia_titulo",
+        "u12_extraccion_ultimo_valido_referencia_codigo",
+        "u12_extraccion_ultimo_valido_referencia_razonamiento"
+      ]
     }
   ],
   "activityAfter": [
     {
       "activity": "separar_objeto_indicadores_y_texto_restante",
+      "requires": [
+        "block_0005_0005"
+      ]
+    },
+    {
+      "activity": "u12_extraccion_ultimo_valido_construccion",
       "requires": [
         "block_0005_0005"
       ]
@@ -1661,8 +2055,23 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "ce32b89d6d89aa24db4826d905c73a894d549a9feea7e5a55b0dfbf25d0cf5e7",
-        "spans": []
+        "sourceSha256": "f97e4d4bdd08ce60f6491f1475e6c840aae5530ede82f9d560614fed70b7200e",
+        "spans": [
+          {
+            "start": 20,
+            "end": 28,
+            "text": "(3]RESTO",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 328,
+            "end": 335,
+            "text": "failbit",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1840,8 +2249,23 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "876d4c2e0593f7e567de888e4f01b34b1d5da0011ae01476ca15a3f62f28d714",
-        "spans": []
+        "sourceSha256": "767ae6ef37a1f3a758b9712f966dd81df4efda5ace922e4bcb808f3886b2d3d1",
+        "spans": [
+          {
+            "start": 29,
+            "end": 58,
+            "text": "destino = Cantidad{unidades};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 134,
+            "text": "Cantidad&",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1894,32 +2318,69 @@
       {
         "block": "block_0002_0001",
         "path": "/explanation",
-        "sourceSha256": "67d33ae78f5fc1da26c6a0c68d31b1b6108eed6144c6d9feef498242e6e1316d",
+        "sourceSha256": "bc7cd1201eca811b2be9a6a08d60f7897dfaf3e7381496766bc47f9e7f62e774",
         "spans": [
           {
-            "start": 18,
-            "end": 25,
-            "text": "failbit",
-            "role": "cpp"
+            "start": 27,
+            "end": 28,
+            "text": "(",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 38,
-            "end": 39,
+            "start": 40,
+            "end": 41,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 45,
             "text": "]",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 79,
-            "end": 87,
-            "text": "cantidad",
-            "role": "cpp"
+            "start": 149,
+            "end": 156,
+            "text": "failbit",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 103,
-            "end": 104,
+            "start": 194,
+            "end": 208,
+            "text": "entrada.fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 227,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 247,
+            "text": "cantidad.unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 258,
             "text": "4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 275,
+            "text": "1|4",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1939,38 +2400,56 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "31f90e93f070501be28236c1236d701ca19f6363d879a63fbafc508a1bc269ef",
+        "sourceSha256": "37be6e5d87423bf854e9e8f716f9f125eec7f19403379845a91c6de61c5e4755",
         "spans": [
           {
-            "start": 21,
-            "end": 22,
+            "start": 42,
+            "end": 43,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 38,
+            "start": 113,
+            "end": 119,
             "text": "eofbit",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 59,
-            "text": "setstate",
-            "role": "cpp"
-          },
-          {
-            "start": 66,
-            "end": 73,
+            "start": 129,
+            "end": 136,
             "text": "failbit",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 91,
-            "text": "eofbit",
-            "role": "cpp"
+            "start": 187,
+            "end": 195,
+            "text": "Leido:4|",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 234,
+            "text": "setstate(std::ios::failbit)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 342,
+            "end": 355,
+            "text": "EOF=1;Fallo=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 393,
+            "text": "failbit",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2059,25 +2538,41 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "d0cbe6b4af80c252a2ba0ec79dc19ad903db4792ce1320c1c867df27c71be80b",
+        "sourceSha256": "bf14da99d127f7dc9dda28ebbd89ed45a7bca6986fac03122e76a43d878be5c0",
         "spans": [
           {
-            "start": 79,
-            "end": 85,
+            "start": 19,
+            "end": 21,
+            "text": "(2",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 179,
+            "end": 185,
             "text": "eofbit",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 88,
-            "end": 95,
+            "start": 188,
+            "end": 195,
             "text": "failbit",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 117,
-            "end": 118,
+            "start": 293,
+            "end": 294,
             "text": "4",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "1:1|4",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2110,8 +2605,16 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "a4af424c901cda32e87fe61b17b0c781697b131921a9d0f8a09d1b537627b073",
-        "spans": []
+        "sourceSha256": "63042d385299f979c9e2aaf3f377f9af43cad178b449e6609da259a6ab6ac170",
+        "spans": [
+          {
+            "start": 255,
+            "end": 260,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2191,41 +2694,62 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "1ea3a281484a5b2e0357cc8ea598ac7d4857ad864c2054c917a74f438720f42a",
+        "sourceSha256": "e64b0c42d990ae93f621850e6a4955b00777ac60942cf311ed00fbb861172648",
         "spans": [
           {
-            "start": 15,
-            "end": 16,
+            "start": 22,
+            "end": 23,
             "text": "(",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 18,
-            "end": 19,
+            "start": 25,
+            "end": 26,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 22,
-            "end": 23,
+            "start": 29,
+            "end": 30,
             "text": "]",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 87,
-            "end": 88,
+            "start": 121,
+            "end": 122,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 120,
-            "end": 125,
+            "start": 168,
+            "end": 173,
             "text": "RESTO",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 183,
+            "text": "clear()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 272,
+            "end": 279,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 335,
+            "text": "4|RESTO",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2297,8 +2821,23 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "e4b8a9fc83b4ae840d995921ee297081143e01656957e3e1bde5f62c7c65ef55",
-        "spans": []
+        "sourceSha256": "be59ab032f77439aabfde25b6f769026134e81ccceaccf3e47caf108b131f09d",
+        "spans": [
+          {
+            "start": 346,
+            "end": 353,
+            "text": "failbit",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 369,
+            "end": 398,
+            "text": "destino = Cantidad{unidades};",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2329,8 +2868,23 @@
       {
         "block": "block_0004_0004",
         "path": "/explanation",
-        "sourceSha256": "a9b5c1a2a0e1dccc880ed6698b8857b04a2ad962baaa145d91d9266c2cd2a6cf",
-        "spans": []
+        "sourceSha256": "d559d4dbdf1071f14ade55466d0c66b99f151c7656695413812e9bc714536917",
+        "spans": [
+          {
+            "start": 64,
+            "end": 69,
+            "text": "[2;1]",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 197,
+            "end": 202,
+            "text": "resto",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -3010,6 +3564,475 @@
         "path": "/text",
         "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
         "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_titulo",
+        "path": "/text",
+        "sourceSha256": "2c62b3dcfe7c2ee3af2d494d075ad1bec185c56116599d9a19190bcf9346f61c",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_contrato_0",
+        "path": "/text",
+        "sourceSha256": "63c3986fe3def51157aacd4de78648c71478f87d5d6b2da33e6b569cbc012ed8",
+        "spans": [
+          {
+            "start": 24,
+            "end": 60,
+            "text": "operator>>(std::istream&, Recuento&)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 103,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 158,
+            "text": "[aceptados;rechazados]",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 187,
+            "end": 188,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 193,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_contrato_1",
+        "path": "/text",
+        "sourceSha256": "35bda74e441f887bc62cf3214e4695ec04bc8f6370eec70770b96ebfc4e2f2cb",
+        "spans": [
+          {
+            "start": 29,
+            "end": 50,
+            "text": "Recuento actual{6, 2}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 310,
+            "end": 354,
+            "text": "std::istream& devuelto = (origen >> actual);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 512,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 542,
+            "text": "Resto=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 577,
+            "end": 582,
+            "text": "Fallo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 621,
+            "end": 633,
+            "text": "origen.eof()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_contrato_2",
+        "path": "/text",
+        "sourceSha256": "ac74e6502e691c53497e39e85df85f26fe6ce867a641b900a57cc82549384c8e",
+        "spans": [
+          {
+            "start": 257,
+            "end": 260,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 381,
+            "end": 437,
+            "text": "OK [2;1]|Resto=uno\nFallo [2;1]|EOF=0\nOK [0;10]|Resto=fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_entrada_0",
+        "path": "/text",
+        "sourceSha256": "ef704e985b5c0c0655cc5cb99d6df8db4142a0676cff11e3871dd34bcf0922c8",
+        "spans": [
+          {
+            "start": 11,
+            "end": 38,
+            "text": "[2;1]uno\n{3;4]dos\n[0;10]fin",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_entrada_1",
+        "path": "/text",
+        "sourceSha256": "e430397955e0072afedc8177a36ba7ea976463e29f629aee73c0630585d931a0",
+        "spans": [
+          {
+            "start": 11,
+            "end": 31,
+            "text": "[9;0]A\n[3;x]B\n[5;5]C",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_entrada_2",
+        "path": "/text",
+        "sourceSha256": "afd654813eb4aec033f0f591c84c3616fb4815fd5c0ba74dd84c83b6c2f361cf",
+        "spans": [
+          {
+            "start": 11,
+            "end": 31,
+            "text": "[10;10]X\n[2;1\n[1;0]Y",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_entrada_3",
+        "path": "/text",
+        "sourceSha256": "b8d0e1cef45377b11e47c974c602fe1c957317c847e7a4cfdf3c7c11587c5bae",
+        "spans": [
+          {
+            "start": 11,
+            "end": 33,
+            "text": "[4;7]A\n[11;2]B\n[2;-1]C",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_entrada_4",
+        "path": "/text",
+        "sourceSha256": "2dee109a751be753986e6ac6918bbd73ec37cf1739ec0d4359fbef4e91b3a6ef",
+        "spans": [
+          {
+            "start": 11,
+            "end": 41,
+            "text": "\n[ 0 ; +10 ]espacios\n[0;0]cero",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_entrada_5",
+        "path": "/text",
+        "sourceSha256": "a2269a2ae51619b66b335b0eabac75be904b99d432a9c1016ca75037117079b8",
+        "spans": [
+          {
+            "start": 11,
+            "end": 60,
+            "text": "[3;9]A\n[1;999999999999999999999999999999]B\n[2:8]C",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "d7bc9656433f15494def8090fdaf698ecd535c16a22d85c0f3008e38f21d5042",
+        "spans": [
+          {
+            "start": 48,
+            "end": 53,
+            "text": "[2;1]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "{",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 192,
+            "end": 198,
+            "text": "[0;10]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "17ee3b6cee2e1a26bc1063b715d36a0e846f4863a5cb277c0296c56b5d022c85",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "98201e862f6081363ca37a015fad133eb13cfbaf700d150a6e9c2f89bae503a5",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "f8a551ed7d29f6c6b89f01367adda767517a153c2f7fcc50e4c22276fc82c862",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "ba505cff0b501da3b0948b6ee23c36b3439892b024089a1ace1a6b29a9d5d6b3",
+        "spans": [
+          {
+            "start": 27,
+            "end": 32,
+            "text": "[9;0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "x",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 115,
+            "end": 120,
+            "text": "[9;0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 206,
+            "text": "[5;5]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "17ee3b6cee2e1a26bc1063b715d36a0e846f4863a5cb277c0296c56b5d022c85",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/1/reviewFeedback/1/text",
+        "sourceSha256": "f8a551ed7d29f6c6b89f01367adda767517a153c2f7fcc50e4c22276fc82c862",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "49d60e7f4231fa62de3ddfd44456a9b392c531a23d255548401fd5171217f15b",
+        "spans": [
+          {
+            "start": 19,
+            "end": 26,
+            "text": "[10;10]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 130,
+            "text": "EOF=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 197,
+            "text": "[1;0]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "17ee3b6cee2e1a26bc1063b715d36a0e846f4863a5cb277c0296c56b5d022c85",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/2/reviewFeedback/1/text",
+        "sourceSha256": "f8a551ed7d29f6c6b89f01367adda767517a153c2f7fcc50e4c22276fc82c862",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "1aa31c1be163967fa544a7370282b81c7b2a12b0f38b89ef7220e1f93b9ecc2f",
+        "spans": [
+          {
+            "start": 19,
+            "end": 24,
+            "text": "[4;7]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 80,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 98,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/3/reviewFeedback/0/text",
+        "sourceSha256": "17ee3b6cee2e1a26bc1063b715d36a0e846f4863a5cb277c0296c56b5d022c85",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/3/reviewFeedback/1/text",
+        "sourceSha256": "f8a551ed7d29f6c6b89f01367adda767517a153c2f7fcc50e4c22276fc82c862",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/4/explanation",
+        "sourceSha256": "67b8e3b818e45870e0190ba345ade643e3fa5b2f0758f72d27114d80ccac567c",
+        "spans": [
+          {
+            "start": 74,
+            "end": 79,
+            "text": "[6;2]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 175,
+            "text": "+10",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 188,
+            "end": 194,
+            "text": "[0;10]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/4/reviewFeedback/0/text",
+        "sourceSha256": "f8a551ed7d29f6c6b89f01367adda767517a153c2f7fcc50e4c22276fc82c862",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/5/explanation",
+        "sourceSha256": "00cabf5d132867b90810913a93009be3f4543d6b02683ac30d6b624b277403e1",
+        "spans": [
+          {
+            "start": 27,
+            "end": 32,
+            "text": "[3;9]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/5/reviewFeedback/0/text",
+        "sourceSha256": "17ee3b6cee2e1a26bc1063b715d36a0e846f4863a5cb277c0296c56b5d022c85",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_construccion",
+        "path": "/outputCheck/cases/5/reviewFeedback/1/text",
+        "sourceSha256": "f8a551ed7d29f6c6b89f01367adda767517a153c2f7fcc50e4c22276fc82c862",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "cf12a13e605b0a37503e90a0768f0bf0d1a017481735682f47c0fc88c2b73ed2",
+        "spans": []
+      },
+      {
+        "block": "u12_extraccion_ultimo_valido_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "d44f329b55402bd0c00d55d5a62783ec25fcdade2d9029a0d15c3a17e26f27ad",
+        "spans": [
+          {
+            "start": 10,
+            "end": 16,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 321,
+            "end": 335,
+            "text": "Recuento{6, 2}",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

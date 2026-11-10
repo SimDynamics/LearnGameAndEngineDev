@@ -46,7 +46,7 @@
             "Reemplazar el recuento anterior para conservar sólo un ID."
           ],
           "correctIndex": 1,
-          "explanation": "El ID es un valor entero, no la cadena de caracteres que lo representó. Conservamos la primera aparición admitida.",
+          "explanation": "La primera línea proporciona el valor entero 2 como identificador y queda admitida con las cantidades 1 y 0. La escritura 02 de la segunda línea representa ese mismo entero, aunque contenga otro carácter.\n\nLa búsqueda encuentra el identificador entre los registros ya admitidos, así que la segunda línea cuenta como un descarte. El registro guardado conserva sus cantidades originales; no se añade otro registro ni se sustituyen sus datos por 4 y 1.",
           "reviewFeedback": [
             "El lector obtiene un identificador entero. Compara ese valor con los que ya están guardados, no la escritura de las líneas.",
             "Localiza cuál fue la primera aparición válida y qué ordena hacer la política con las siguientes.",
@@ -86,7 +86,7 @@
             "Admitirla, porque sólo los registros válidos guardados reservan un ID."
           ],
           "correctIndex": 2,
-          "explanation": "La línea inválida nunca entró en candidatos. No genera un registro ni reserva su identidad.",
+          "explanation": "La primera línea no produjo un registro válido, por lo que no se insertó en la colección candidata. Mencionar el identificador 3 en una entrada rechazada no lo reserva.\n\nCuando llega 3 [2;1], el lector obtiene todos sus campos y acepta su dominio. La búsqueda no encuentra ese identificador entre los registros admitidos, así que se guarda el nuevo registro. Sólo una inserción aceptada participa en la comprobación de duplicados posterior.",
           "reviewFeedback": [
             "El cargador sólo comprueba duplicados entre los candidatos admitidos. Decide si una línea mal formada llegó a insertarse.",
             "Una línea rechazada no forma parte de la colección. No hay un registro inválido guardado que deba reemplazarse.",
@@ -264,7 +264,7 @@
             "[6;1], porque las cantidades de un ID se acumulan."
           ],
           "correctIndex": 1,
-          "explanation": "Dos líneas válidas pueden entrar en conflicto juntas. Este contrato conserva el primer registro y no suma ni reemplaza sus cantidades.",
+          "explanation": "La primera línea guarda el identificador 3 con las cantidades 2 y 1. La segunda también es válida por separado, pero su identificador ya está en la colección candidata.\n\nLa política incrementa una vez el contador de descartes y conserva [2;1]. No ejecuta una actualización con [4;0] ni una suma que produzca [6;1]. El contador describe líneas descartadas; los dos miembros del recuento siguen describiendo los datos de la primera línea admitida.",
           "reviewFeedback": [
             "La política conserva la primera aparición válida. Revisa si autoriza actualizar sus cantidades cuando llega otro registro con el mismo identificador.",
             "Separa las cantidades del registro admitido del contador de líneas descartadas.",
@@ -396,7 +396,7 @@
           "answers": [
             "Guardados=2;Descartados=2\n1:2:0\n2:0:0"
           ],
-          "explanation": "El primer ID 1 se conserva; la segunda aparición se descarta. ID 2 con cantidades cero se admite. mal se descarta. Guardados cuenta registros, no unidades aceptadas.",
+          "explanation": "La primera línea admite el identificador 1 con cantidades 2 y 0. La segunda repite ese identificador y añade un descarte. La tercera admite el identificador 2 aunque sus dos cantidades sean cero; la cuarta, mal, no contiene un registro y añade otro descarte.\n\nQuedan dos registros y dos descartes. El informe muestra Guardados=2;Descartados=2, después 1:2:0 y finalmente 2:0:0, en líneas separadas. El número de registros no se obtiene sumando sus cantidades, y el orden conserva las primeras apariciones admitidas.",
           "reviewFeedback": "Recorre las líneas en orden. Antes de guardar una línea válida, compara su identificador con los ya admitidos. Conserva también los registros con cantidades cero y cuenta por separado las líneas descartadas."
         },
         {
@@ -409,7 +409,7 @@
             "Una avería sólo borra el contador; los registros pueden publicarse."
           ],
           "correctIndex": 1,
-          "explanation": "La política permite descartar datos diagnosticados, pero no convierte una carga incompleta en un resultado completo. Colección y contador deben corresponder a la misma lectura aceptada.",
+          "explanation": "Un duplicado es una línea que el programa obtuvo y pudo clasificar según su política. Puede contarlo como descarte y continuar con la siguiente línea. Una avería del origen, en cambio, impide asegurar que se obtuvo toda la muestra.\n\nPor eso los candidatos y el contador local sólo sustituyen los dos resultados del llamador al terminar correctamente la lectura permitida. Si la carga devuelve false, conservar sólo la colección o sólo el contador dejaría resultados de cargas distintas. Deben permanecer ambos como estaban antes de la llamada.",
           "reviewFeedback": [
             "Descartar un dato según una regla conocida no confirma que el origen haya entregado toda la muestra.",
             "Comprueba qué permite publicar los candidatos y qué significado tienen los errores del flujo de origen.",
@@ -451,6 +451,48 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Recargar la colección y el contador como un mismo resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa cargar_lineas con la política parcial ya estudiada. El inicial proporciona el lector de línea, la búsqueda por identificador y un cliente con ocho llamadas. Cada llamada recibe un flujo nuevo; el vector destino y el contador descartadas son los mismos entre llamadas.\n\nUna carga aceptada reemplaza ambos resultados con los de la muestra nueva. Una carga rechazada conserva todos los registros, su orden, sus campos y el contador que existían justo antes de esa llamada. Se permiten hasta veinte líneas obtenidas, contando también las inválidas y repetidas. La función no imprime y no incorpora los registros anteriores a los candidatos nuevos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada contiene dos enteros: el identificador inicial y el contador previo. El cliente crea dos registros, con cantidades 6 y 4 para el primero y 0 y 3 para el segundo; el segundo identificador es el siguiente, calculado con el resto de dividir entre diez. Los casos utilizan 3 7 y 8 12, respectivamente. Esa entrada sólo prepara el estado inicial y no forma parte de las muestras que recibe el cargador.\n\nLa primera muestra tiene veintiuna líneas y debe rechazarse preservando ese estado inicial. Después se acepta una muestra donde una línea inválida menciona un identificador antes de su primera aparición válida; siguen una repetición, un registro con cantidades cero y una línea que incumple dos condiciones. Una línea descartada sigue contando una sola vez."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llamadas posteriores vuelven a superar el límite tras una aceptación, prueban la igualdad numérica de identificadores con ceros iniciales, aceptan una muestra vacía y distinguen veinte de veintiuna líneas inválidas. La última vuelve a aceptar un registro. Consulta las ocho cadenas en el cliente proporcionado.\n\nCada informe comienza por Aceptado o Rechazado, incluye ;Descartados= seguido del contador actual y muestra cada registro como |ID:aceptados:rechazados, en su orden. Termina con un salto. Completa la función y comprueba ambos casos sin cambiar el cliente. Un rechazo esperado es un resultado del cargador; el programa de pruebas continúa y termina normalmente con código cero.\n\nEntrada comienza con el primer caso. Después sustitúyela por 8 12 y vuelve a compilar y comprobar. Se permiten espacios, tabulaciones o saltos entre los enteros y después de ellos; no alteran las muestras del cliente.\n\nSalida requerida del primer caso, con un salto al final de cada línea:\nRechazado;Descartados=7|3:6:4|4:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3\n\nEn el segundo caso sólo cambia la primera línea, que debe ser Rechazado;Descartados=12|8:6:4|9:0:3. Las demás líneas coinciden."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_lineas(std::istream& origen, std::vector<Registro>& destino,\n                   int& descartadas) {\n    // Completa la politica parcial y la entrega conjunta de resultados.\n    return false;\n}\n\nvoid informar(bool completo, const std::vector<Registro>& destino,\n              int descartadas) {\n    std::cout << (completo ? \"Aceptado\" : \"Rechazado\")\n              << \";Descartados=\" << descartadas;\n    for (const Registro& registro : destino) {\n        std::cout << '|' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int id_inicial{0};\n    int descartadas{0};\n    if (!(std::cin >> id_inicial >> descartadas)) return 1;\n    std::vector<Registro> destino{\n        {id_inicial, {6, 4}}, {(id_inicial + 1) % 10, {0, 3}}\n    };\n    std::string veinte_validas;\n    std::string veinte_invalidas;\n    for (int i = 0; i < 20; ++i) {\n        veinte_validas += \"4 [0;2]\\n\";\n        veinte_invalidas += \"mal\\n\";\n    }\n    const std::vector<std::string> muestras{\n        veinte_validas + \"4 [0;2]\\n\",\n        \"3 [11;0]\\n03 [2;1]\\n3 [4;0]\\n8 [0;0]\\n8 [0;0] extra\\n0 [0;0]\",\n        veinte_validas + \"4 [0;2]\\n\",\n        \"9 [10;0]\\n+0009 [0;5]\\n2 [0;0]\",\n        \"\",\n        veinte_invalidas + \"mal\\n\",\n        veinte_invalidas,\n        \"5 [2;3]\"\n    };\n    for (const std::string& texto : muestras) {\n        std::istringstream origen{texto};\n        const bool completo = cargar_lineas(origen, destino, descartadas);\n        informar(completo, destino, descartadas);\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3 7\n",
+                "outputs": [
+                  "Rechazado;Descartados=7|3:6:4|4:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera muestra supera veinte líneas: se conserva Rechazado;Descartados=7|3:6:4|4:0:3. La muestra siguiente se acepta con tres descartes y los registros 3:2:1, 8:0:0 y 0:0:0, en ese orden. El identificador tres de la colección anterior no reserva el identificador en la muestra nueva. El siguiente rechazo debe conservar esta colección aceptada y su contador tres.\n\nEl contador cambia a uno al aceptar la muestra con el duplicado numérico nueve. La muestra vacía lo reinicia a cero; veintiuna líneas inválidas rechazan y lo conservan, mientras veinte se aceptan con veinte descartes. La última carga reemplaza ese contador por cero y conserva sólo el registro 5:2:3."
+              },
+              {
+                "standardInput": "8 12\n",
+                "outputs": [
+                  "Rechazado;Descartados=12|8:6:4|9:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El primer rechazo conserva el estado alternativo completo: Rechazado;Descartados=12|8:6:4|9:0:3. A partir de la siguiente aceptación, el resultado coincide con el del otro caso porque las nuevas muestras son iguales y reemplazan ambos resultados.\n\nLas diferencias iniciales permiten detectar una restauración fija. Los rechazos posteriores comprueban la conservación del último estado aceptado; las cargas vacías y la última carga evitan que el contador o los registros se acumulen entre llamadas."
+              }
+            ]
+          },
+          "initialStandardInput": "3 7\n"
         }
       ]
     },
@@ -464,6 +506,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_lineas(std::istream& origen, std::vector<Registro>& destino,\n                   int& descartadas) {\n    const int max_lineas{20};\n    std::vector<Registro> candidatos;\n    int nuevas_descartadas{0};\n    int lineas{0};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        if (lineas == max_lineas) {\n            return false;\n        }\n        ++lineas;\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            ++nuevas_descartadas;\n        } else {\n            candidatos.push_back(registro);\n        }\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    descartadas = nuevas_descartadas;\n    return true;\n}\n\nvoid escribir_resultado(const std::vector<Registro>& registros,\n                        int descartadas) {\n    std::cout << \"Guardados=\" << registros.size()\n              << \";Descartados=\" << descartadas;\n    for (const Registro& registro : registros) {\n        std::cout << '\\n' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream origen{texto};\n    std::vector<Registro> destino{{9, {1, 1}}};\n    int descartadas = 7;\n    const bool completa = cargar_lineas(origen, destino, descartadas);\n    std::cout << \"Carga:\" << completa << \"\\n\";\n    escribir_resultado(destino, descartadas);\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"\");\n    probar(\"\\n\");\n    std::string veinte;\n    for (int i = 0; i < 20; ++i) veinte += \"4 [0;2]\\n\";\n    probar(veinte);\n    probar(veinte + \"4 [0;2]\\n\");\n    probar(\"4 [0;2]\");\n    probar(\"4 [0;\");\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: seguir las aceptaciones y los rechazos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_lineas(std::istream& origen, std::vector<Registro>& destino,\n                   int& descartadas) {\n    const int max_lineas{20};\n    std::vector<Registro> candidatos;\n    int nuevas_descartadas{0};\n    int lineas{0};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        if (lineas == max_lineas) {\n            return false;\n        }\n        ++lineas;\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            ++nuevas_descartadas;\n        } else {\n            candidatos.push_back(registro);\n        }\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    descartadas = nuevas_descartadas;\n    return true;\n}\n\nvoid informar(bool completo, const std::vector<Registro>& destino,\n              int descartadas) {\n    std::cout << (completo ? \"Aceptado\" : \"Rechazado\")\n              << \";Descartados=\" << descartadas;\n    for (const Registro& registro : destino) {\n        std::cout << '|' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int id_inicial{0};\n    int descartadas{0};\n    if (!(std::cin >> id_inicial >> descartadas)) return 1;\n    std::vector<Registro> destino{\n        {id_inicial, {6, 4}}, {(id_inicial + 1) % 10, {0, 3}}\n    };\n    std::string veinte_validas;\n    std::string veinte_invalidas;\n    for (int i = 0; i < 20; ++i) {\n        veinte_validas += \"4 [0;2]\\n\";\n        veinte_invalidas += \"mal\\n\";\n    }\n    const std::vector<std::string> muestras{\n        veinte_validas + \"4 [0;2]\\n\",\n        \"3 [11;0]\\n03 [2;1]\\n3 [4;0]\\n8 [0;0]\\n8 [0;0] extra\\n0 [0;0]\",\n        veinte_validas + \"4 [0;2]\\n\",\n        \"9 [10;0]\\n+0009 [0;5]\\n2 [0;0]\",\n        \"\",\n        veinte_invalidas + \"mal\\n\",\n        veinte_invalidas,\n        \"5 [2;3]\"\n    };\n    for (const std::string& texto : muestras) {\n        std::istringstream origen{texto};\n        const bool completo = cargar_lineas(origen, destino, descartadas);\n        informar(completo, destino, descartadas);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La colección candidata y el contador de descartes comienzan vacíos y en cero en cada llamada. Una línea inválida no entra en los candidatos y no reserva su identificador; la comprobación de duplicados sólo consulta registros que ya fueron admitidos en esa muestra. La condición con || cuenta una sola línea descartada aunque reúna varios motivos de rechazo.\n\nEl contador de líneas aumenta por cada línea obtenida, no sólo por cada registro guardado. Por eso veinte líneas inválidas son una carga permitida con veinte descartes y la línea número veintiuno provoca un rechazo. Al rechazar no se asigna ninguno de los resultados locales. La asignación final reemplaza la colección y el contador de forma coherente cuando se acepta la carga. Esta garantía describe los retornos de la función con los prerrequisitos establecidos; no afirma recuperación automática del origen ni convierte excepciones en retornos."
         }
       ]
     }
@@ -705,14 +760,22 @@
         "blocks": [
           "block_0006_0000",
           "block_0006_0001",
-          "block_0006_0002"
+          "block_0006_0002",
+          "u12_parcial_recargas_titulo",
+          "u12_parcial_recargas_contrato",
+          "u12_parcial_recargas_cliente",
+          "u12_parcial_recargas_casos",
+          "u12_parcial_recargas_construccion"
         ]
       },
       {
         "id": "page_0007",
         "blocks": [
           "block_0007_0000",
-          "block_0007_0001"
+          "block_0007_0001",
+          "u12_parcial_recargas_referencia_titulo",
+          "u12_parcial_recargas_referencia_codigo",
+          "u12_parcial_recargas_referencia_razonamiento"
         ]
       }
     ],
@@ -1178,6 +1241,78 @@
           "block": 0
         },
         "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_parcial_recargas_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_parcial_recargas_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_parcial_recargas_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_parcial_recargas_casos",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_parcial_recargas_construccion",
+        "sha256": "7c8e890f5572fe312439725b3c5147bd63c945dd9eca66fda018293763260e20",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_parcial_recargas_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_parcial_recargas_referencia_codigo",
+        "sha256": "b7c34a3389945b6f66d05140aee2ec6ed4f3e47b10a1e40028e9e62f8d4127aa",
+        "storage": {
+          "page": 8,
+          "block": 7
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_parcial_recargas_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 8
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1290,6 +1425,31 @@
         "id": "block_0004_0005",
         "beforeSha256": "cce479d8dd71564f874211c3b23ee6e1dcbaa43d8144596f3216a917af6c6b21",
         "afterSha256": "24661bf78cc203adc1db0358b44ad2939bf786783cbcf10e5e0133007ab4b000"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "d2d1c65289e1085b799a96dbe047b1e0fc2ef196361069f52831c0c5ce872a36",
+        "afterSha256": "39847280a501d63cffe7e0a62b1eb04a2611501cc82fcef3f3bca56005b1c46d"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "8f7b0cb6e93c6708733a571319e36160555a3204739e06b412efd130c3ebda0b",
+        "afterSha256": "7dc9863033d27f8f0481e008d74e57eaa16567bf1b53204d64dedf2be3e5544e"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "89341947a68dc99dcaef1fba9dc1ae25759a806a8371fa44b5a87b606a01f921",
+        "afterSha256": "c323e5e7eab1b1a6f1228c4fc8d117735eff4137fdf8c699e1e3c0b187840b1b"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "902ecde3658ff58ea40432154ea00fc3775da9243f2cb45d0e94f06d6b517b6e",
+        "afterSha256": "9c9c613fe61ff237998e4bf023ff1595c92aa8949d0623d5b5b6539cdea644e5"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "ebb11fdd7f1acfc8f81058c6e100175fa0357b598ff2d13cceb7b8717e2f3961",
+        "afterSha256": "4674c6b5dbf5cba67f87194c16d15a1b3ee675e4da677a78562c73a139a96888"
       }
     ]
   },
@@ -1308,10 +1468,13 @@
       ]
     },
     {
-      "activity": "block_0006_0002",
+      "activity": "u12_parcial_recargas_construccion",
       "blocks": [
         "block_0007_0000",
-        "block_0007_0001"
+        "block_0007_0001",
+        "u12_parcial_recargas_referencia_titulo",
+        "u12_parcial_recargas_referencia_codigo",
+        "u12_parcial_recargas_referencia_razonamiento"
       ]
     }
   ],
@@ -1332,6 +1495,12 @@
       "activity": "block_0006_0002",
       "requires": [
         "block_0003_0003"
+      ]
+    },
+    {
+      "activity": "u12_parcial_recargas_construccion",
+      "requires": [
+        "block_0006_0002"
       ]
     }
   ],
@@ -1399,12 +1568,47 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "5c41aecdc14e44a43b929df4e36e515a9092bc03fffed94ff5f874defb9e100e",
+        "sourceSha256": "5fa1912a30b417c5b8e34bc66f5faed0faa98c72aab4585bdeae0cb7d692c151",
         "spans": [
           {
-            "start": 3,
-            "end": 5,
-            "text": "ID",
+            "start": 45,
+            "end": 46,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 107,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "02",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 443,
+            "end": 444,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 447,
+            "end": 448,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           }
@@ -1525,8 +1729,23 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "1fba5d43bc1bc6b6430627e3e0512235131c823281fb7dac1cc6ec612df628bf",
-        "spans": []
+        "sourceSha256": "6272c61af34a4885e4394a511f5197b6a12ab747ddb97638d0520c2ebaa2e01b",
+        "spans": [
+          {
+            "start": 127,
+            "end": 128,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 190,
+            "text": "3 [2;1]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1966,8 +2185,51 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "ee17e83d71d7c56e8ebd92702f15f75bee3b2a9e933019d6e03eba8dcf31dbb6",
-        "spans": []
+        "sourceSha256": "b6442f0c2ebdebf244d8d1d10aefad00bd3a79d168f27d34efee2fd4766faa2a",
+        "spans": [
+          {
+            "start": 41,
+            "end": 42,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 242,
+            "text": "[2;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 282,
+            "text": "[4;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 313,
+            "text": "[6;1]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -2308,47 +2570,61 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "1c2a999ee4bffd88c8fce5be14dca9b2afc9615635db64d2103d087a25597cb8",
+        "sourceSha256": "047a588b8235d29df171def97becde4fa210d8a94e8571fac6b9ff8d0c81c385",
         "spans": [
           {
-            "start": 10,
-            "end": 12,
-            "text": "ID",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 13,
-            "end": 14,
+            "start": 41,
+            "end": 42,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 64,
-            "text": "ID",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 65,
-            "end": 66,
+            "start": 58,
+            "end": 59,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 101,
+            "start": 62,
+            "end": 63,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 210,
             "text": "mal",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 115,
-            "end": 124,
-            "text": "Guardados",
+            "start": 317,
+            "end": 342,
+            "text": "Guardados=2;Descartados=2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 357,
+            "text": "1:2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 376,
+            "text": "2:0:0",
             "role": "output",
             "reading": "natural"
           }
@@ -2369,8 +2645,16 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "1da95c6744bb2ffcc311ce4f107b933b65110f63231134a08496a086c60fa1e2",
-        "spans": []
+        "sourceSha256": "10af65cf9a7996bd555dba045ec2034a509816ea657dc219e54c73ca57948cda",
+        "spans": [
+          {
+            "start": 393,
+            "end": 398,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -2533,6 +2817,221 @@
         "path": "/text",
         "sourceSha256": "889c5ad56c021e215bd5964b16f1efbbc9b145b68e2d031ffef49d4172b4d279",
         "spans": []
+      },
+      {
+        "block": "u12_parcial_recargas_titulo",
+        "path": "/text",
+        "sourceSha256": "d4d508aaab2fdec3540ac3368699d46c959989e14fd151f1cbed0030c2ab0f87",
+        "spans": []
+      },
+      {
+        "block": "u12_parcial_recargas_contrato",
+        "path": "/text",
+        "sourceSha256": "01901b58c7f25fb71cb63362e48e8430b448088483ad83efdae1e18ec115170f",
+        "spans": [
+          {
+            "start": 9,
+            "end": 22,
+            "text": "cargar_lineas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 219,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 245,
+            "text": "descartadas",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_parcial_recargas_cliente",
+        "path": "/text",
+        "sourceSha256": "c3ccd2bc53edd053bc6b17ce7cc924e7bd6eda563fa2a57f18542f245808973a",
+        "spans": [
+          {
+            "start": 123,
+            "end": 124,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 128,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 280,
+            "text": "3 7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 287,
+            "text": "8 12",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_parcial_recargas_casos",
+        "path": "/text",
+        "sourceSha256": "cbed547eb0e5b27155548abbdfe6b1bb8e18a915ff2c8d768afd04147c51eed1",
+        "spans": [
+          {
+            "start": 342,
+            "end": 350,
+            "text": "Aceptado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 362,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 385,
+            "text": ";Descartados=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 467,
+            "text": "|ID:aceptados:rechazados",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 755,
+            "end": 759,
+            "text": "8 12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 984,
+            "end": 1238,
+            "text": "Rechazado;Descartados=7|3:6:4|4:0:3\nAceptado;Descartados=3|3:2:1|8:0:0|0:0:0\nRechazado;Descartados=3|3:2:1|8:0:0|0:0:0\nAceptado;Descartados=1|9:10:0|2:0:0\nAceptado;Descartados=0\nRechazado;Descartados=0\nAceptado;Descartados=20\nAceptado;Descartados=0|5:2:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1302,
+            "end": 1338,
+            "text": "Rechazado;Descartados=12|8:6:4|9:0:3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_parcial_recargas_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "19128226425826b267e156347f551b9e3ca2e771ea78a8b81cab3b41736ca304",
+        "spans": [
+          {
+            "start": 53,
+            "end": 88,
+            "text": "Rechazado;Descartados=7|3:6:4|4:0:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 161,
+            "text": "3:2:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 168,
+            "text": "8:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 176,
+            "text": "0:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 663,
+            "end": 668,
+            "text": "5:2:3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_parcial_recargas_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "d20acde356538e1da14ec4252d543a6ab55a719bdd73417c8f437b2c463e1b7f",
+        "spans": [
+          {
+            "start": 59,
+            "end": 95,
+            "text": "Rechazado;Descartados=12|8:6:4|9:0:3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_parcial_recargas_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "05b71a06c75498a5598db2daceb6a1293246f16a5bcc01ec0c0420858b429d24",
+        "spans": []
+      },
+      {
+        "block": "u12_parcial_recargas_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "0a27e57793ade799871ee00fd6ba96a113bc5185ec804231b6b723eee3ebefe0",
+        "spans": [
+          {
+            "start": 282,
+            "end": 284,
+            "text": "||",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
