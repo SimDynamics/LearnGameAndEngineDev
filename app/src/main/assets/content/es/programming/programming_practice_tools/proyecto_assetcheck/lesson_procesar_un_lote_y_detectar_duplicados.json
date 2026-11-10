@@ -1,0 +1,1645 @@
+{
+  "id": "programming_practice_tools__proyecto_assetcheck__procesar_un_lote_y_detectar_duplicados",
+  "title": "Procesar un lote y detectar identificadores duplicados",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Del registro local al estado de un lote"
+        },
+        {
+          "type": "paragraph",
+          "text": "En U4L4, leer_registro recibe una declaración y devuelve ACEPTADO o su primera causa local de rechazo sin modificar el destino si falla. Ahora llegan varias líneas, y sus decisiones dependen de qué registros ya fueron admitidos. Una línea válida por sí sola puede ser DUPLICADO."
+        },
+        {
+          "type": "paragraph",
+          "text": "El acuerdo de AssetCheck conserva la primera aparición localmente válida de cada ID, con su tipo, tamaño y número original de línea. Si antes apareció Voz sonido 0, esa línea fue rechazada por TAMANO y no reservó Voz; una posterior Voz sonido 6 todavía puede ser la primera admisión."
+        },
+        {
+          "type": "paragraph",
+          "text": "La prioridad completa es FORMATO → ID → TIPO → TAMANO → DUPLICADO. Sólo después de superar las cuatro primeras reglas se consulta el estado. Rechazar nunca significa normalizar, reemplazar ni mezclar campos. Esta regla deriva del contrato de U4L2, no de una propiedad general de C++."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_no_reserva",
+          "question": "¿Qué sucede con la segunda línea de «Voz sonido 0» seguida de «Voz sonido 6»?",
+          "options": [
+            "Se rechaza por DUPLICADO, porque Voz ya apareció.",
+            "Se admite: la primera línea se rechazó localmente.",
+            "Se admiten ambas, aunque la primera tiene tamaño cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Sólo los registros admitidos reservan su identificador.",
+          "reviewFeedback": [
+            "Aparecer no equivale a admitir.",
+            "La línea con tamaño 0 no ingresó al lote.",
+            "El tamaño cero impide admitir la primera."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un estado observable: registro, origen y causa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un lote necesita distinguir el contenido conservado de las incidencias. Admision guarda Registro más su primera línea. Rechazo guarda la línea observada, la causa y, sólo para DUPLICADO, el origen de la primera admisión. La colección comienza vacía en cada revisión; nunca se comparte entre archivos distintos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// lote.hpp, junto a registro.hpp (la biblioteca anterior)\n#include \"assetcheck/registro.hpp\"\n#include <cstddef>\n#include <string>\n#include <vector>\nnamespace assetcheck {\nstruct Admision { std::size_t linea; Registro registro; };\nstruct Rechazo {\n    std::size_t linea;\n    Resultado causa;\n    std::size_t primera = 0;\n};\nstruct Lote {\n    std::vector<Admision> admitidos;\n    std::vector<Rechazo> rechazados;\n};\nvoid procesar_linea(const std::string& texto,\n                   std::size_t numero, Lote& lote);\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ampliaremos Resultado con duplicado en registro.hpp, sin cambiar la firma de leer_registro ni hacer que ese lector dependa del lote. Valor 0 en Rechazo.primera significa que la causa no es DUPLICADO; las líneas de origen de una revisión empiezan en 1. El cliente final será responsable de decidir qué mostrar y por qué canal (Kernighan & Pike, 1999, capítulo 4)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_guardar_origen",
+          "question": "¿Por qué un duplicado conserva el número de línea de la primera admisión?",
+          "options": [
+            "Para poder señalar qué registro existente provocó el rechazo.",
+            "Para convertir el tamaño del duplicado a cero.",
+            "Para sustituir el primer registro usando la línea más reciente."
+          ],
+          "correctIndex": 0,
+          "explanation": "El diagnóstico debe localizar la primera admisión sin modificarla.",
+          "reviewFeedback": [
+            "El número es una evidencia de origen.",
+            "La causa no se almacena cambiando los bytes.",
+            "El contrato prohíbe sustituir el primer registro."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Primero validar, luego buscar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada llamada construye una candidata local y pregunta a leer_registro si sus tres campos cumplen el contrato de U4L4. Si devuelve FORMATO, ID, TIPO o TAMANO, se agrega un único rechazo y se retorna. Esa candidata no participa en la búsqueda de duplicados. El registro anterior del lote queda intacto."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Registro candidata;\nconst Resultado local = leer_registro(texto, candidata);\nif (local != Resultado::aceptado) {\n    lote.rechazados.push_back({numero, local, 0});\n    return;\n}\n// Sólo aquí se consulta el ID entre admisiones anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, si Caja malla 3 ya fue admitido, «Caja material 0» tiene dos defectos locales. La causa es TIPO; no se comunica DUPLICADO. La posterior «Caja malla 7» sí puede ser rechazada por DUPLICADO porque sus datos locales cumplen todo el contrato."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_prioridad",
+          "question": "Ya está admitido Caja. ¿Cuál es la primera causa para «Caja material 0»?",
+          "options": [
+            "DUPLICADO, porque existe Caja.",
+            "TIPO, porque se revisa antes de TAMANO y de DUPLICADO.",
+            "TAMANO, porque cero es un número válido en C++."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las decisiones del estado llegan después de las cuatro comprobaciones locales.",
+          "reviewFeedback": [
+            "La existencia previa se consulta sólo al superar el contrato local.",
+            "El vocabulario permitido excluye material.",
+            "Representar cero no lo hace válido para el tamaño acordado."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una búsqueda que no olvida la primera admisión"
+        },
+        {
+          "type": "paragraph",
+          "text": "No basta con comparar contra el último registro: un ID puede repetirse después de varios diferentes. Para este paquete pequeño, recorrer std::vector<Admision> de principio a fin es sencillo y auditable. Compara anterior.registro.id exactamente con candidata.id, sin transformar mayúsculas ni minúsculas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "for (const auto& anterior : lote.admitidos) {\n    if (anterior.registro.id == candidata.id) {\n        lote.rechazados.push_back(\n            {numero, Resultado::duplicado, anterior.linea});\n        return; // No se altera el registro original.\n    }\n}\nlote.admitidos.push_back({numero, candidata});"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada aceptación sólo añade un registro nuevo. Como nunca se reemplaza uno admitido, la primera coincidencia ya contiene la primera línea de origen de ese ID. La búsqueda lineal cuesta O(A) comparaciones por candidata, donde A es el número de admisiones previas. El manifiesto está limitado a cien líneas físicas; por ahora importan más claridad y evidencia que una estructura prematuramente compleja (Kernighan & Pike, 1999, capítulo 2)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_no_ultimo",
+          "question": "¿Qué defecto tiene buscar duplicados solamente en admitidos.back()?",
+          "options": [
+            "No puede distinguir textura de sonido.",
+            "Puede aceptar un ID repetido si entre ambas apariciones se admitió otro.",
+            "Obliga a convertir los tamaños a cadena."
+          ],
+          "correctIndex": 1,
+          "explanation": "La identidad pertenece a todo el lote admitido, no al último elemento.",
+          "reviewFeedback": [
+            "El tipo no decide el duplicado.",
+            "Un registro intermedio no libera identificadores anteriores.",
+            "El tamaño no participa en la comparación de IDs."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir una traza sin perder el origen"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recorre estas seis líneas desde un lote inicialmente vacío. No cambies sus textos ni completes por intuición los campos que se rechazaron: cada línea produce exactamente una decisión. Los números de línea son originales, no posiciones compactadas por las admisiones."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "1: Puerta malla 0\n2: Puerta malla 3\n3: Caja textura 00012\n4: Puerta sonido 7\n5: puerta sonido 5\n6: Caja malla 4"
+        },
+        {
+          "type": "paragraph",
+          "text": "Resultado razonado: línea 1 TAMANO; línea 2 ACEPTADO (primera Puerta); línea 3 ACEPTADO (Caja con 12 bytes); línea 4 DUPLICADO primera=2; línea 5 ACEPTADO (puerta es otro ID); línea 6 DUPLICADO primera=3. Hay tres admisiones y tres rechazos. El tipo y los bytes de Puerta siguen siendo malla y 3."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_lote_recuperar_reglas",
+          "prompt": "Relaciona cada secuencia con su decisión: cada secuencia empieza con un lote vacío.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "Voz sonido 0 → Voz sonido 6"
+                },
+                {
+                  "id": "b",
+                  "label": "Caja malla 3 → Sol textura 4 → Caja sonido 5"
+                },
+                {
+                  "id": "c",
+                  "label": "Sol textura 4 → sol textura 4"
+                },
+                {
+                  "id": "d",
+                  "label": "Caja malla 3 → Caja sonido 0"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "reserva",
+                  "label": "La segunda es primera admisión válida"
+                },
+                {
+                  "id": "duplicado",
+                  "label": "La tercera es DUPLICADO, primera=1"
+                },
+                {
+                  "id": "distinto",
+                  "label": "Dos admisiones: IDs distintos por mayúsculas"
+                },
+                {
+                  "id": "prioridad",
+                  "label": "La segunda se rechaza por TAMANO"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "reserva",
+                  "b": "duplicado",
+                  "c": "distinto",
+                  "d": "prioridad"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una línea inválida no reserva el ID. Sólo las admisiones previas producen DUPLICADO; el rechazo local tiene prioridad y la comparación distingue mayúsculas.",
+            "incorrect": "Clasifica primero la línea localmente; busca ID sólo entre las admisiones completas anteriores."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio C++: decidir una admisión nueva"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor trae una versión autosuficiente del lector local. Completa sólo procesar_linea después de la validación: busca el ID en todas las admisiones, emite el origen de un duplicado sin modificar el vector y, si no existe, guarda la candidata completa. Main conserva un mismo lote durante toda la entrada. La traza A/R en stdout simplifica este ejercicio: NO es todavía el cliente final con stdout, stderr y resumen separados."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Registro { std::string id, tipo; int bytes = 0; };\nstruct Admision { Registro registro; int primera; };\nenum class Resultado { aceptado, formato, id, tipo, tamano };\n\nbool letra(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }\nbool digito(char c) { return c >= '0' && c <= '9'; }\nResultado leer_registro(const std::string& linea, Registro& destino) {\n    if (linea.size() > 80) return Resultado::formato;\n    for (unsigned char c : linea)\n        if (c != '\\t' && (c < 32 || c > 126)) return Resultado::formato;\n    std::istringstream flujo(linea);\n    std::string id, tipo, texto, extra;\n    if (!(flujo >> id >> tipo >> texto) || (flujo >> extra)) return Resultado::formato;\n    if (id.size() > 12 || !letra(id[0])) return Resultado::id;\n    for (char c : id) if (!letra(c) && !digito(c) && c != '_') return Resultado::id;\n    if (tipo != \"textura\" && tipo != \"malla\" && tipo != \"sonido\") return Resultado::tipo;\n    if (texto.empty() || texto.size() > 5) return Resultado::tamano;\n    int bytes = 0;\n    for (char c : texto) {\n        if (!digito(c)) return Resultado::tamano;\n        bytes = bytes * 10 + c - '0';\n    }\n    if (bytes < 1 || bytes > 30000) return Resultado::tamano;\n    destino = {id, tipo, bytes};\n    return Resultado::aceptado;\n}\nconst char* nombre(Resultado r) {\n    switch (r) {\n        case Resultado::formato: return \"FORMATO\";\n        case Resultado::id: return \"ID\";\n        case Resultado::tipo: return \"TIPO\";\n        case Resultado::tamano: return \"TAMANO\";\n        default: return \"ACEPTADO\";\n    }\n}\n\n// Completa sólo esta función después de la validación local.\nvoid procesar_linea(const std::string& linea, int numero, std::vector<Admision>& admitidos) {\n    Registro candidata;\n    const Resultado local = leer_registro(linea, candidata);\n    if (local != Resultado::aceptado) {\n        std::cout << \"R \" << numero << ' ' << nombre(local) << '\\n';\n        return;\n    }\n    // TODO: busca un ID idéntico entre TODAS las admisiones anteriores.\n    // Si existe, escribe: R numero DUPLICADO primera\n    // y termina sin cambiar admitidos.\n    // Si no existe, inserta {candidata, numero} y escribe:\n    // A numero id tipo bytes\n}\n\nint main() {\n    std::vector<Admision> admitidos;\n    std::string linea;\n    int numero = 0;\n    while (std::getline(std::cin, linea))\n        procesar_linea(linea, ++numero, admitidos);\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "A malla 1\nA sonido 4\n",
+                "outputs": [
+                  "A 1 A malla 1\nR 2 DUPLICADO 1\n"
+                ],
+                "explanation": "Se conserva la primera admisión completa de A: malla y 1 byte."
+              },
+              {
+                "standardInput": "B sonido 0\nB sonido 3\nB malla 5\n",
+                "outputs": [
+                  "R 1 TAMANO\nA 2 B sonido 3\nR 3 DUPLICADO 2\n"
+                ],
+                "explanation": "La primera B se rechazó localmente. La segunda B es la primera admitida."
+              },
+              {
+                "standardInput": "A textura 1\nb malla 2\nA sonido 3\na malla 4\nb sonido 5\n",
+                "outputs": [
+                  "A 1 A textura 1\nA 2 b malla 2\nR 3 DUPLICADO 1\nA 4 a malla 4\nR 5 DUPLICADO 2\n"
+                ],
+                "explanation": "Se busca entre todas las admisiones, no sólo la última. A y a son distintos."
+              },
+              {
+                "standardInput": "X texture 2\nX textura 1\n\nX textura 8\n",
+                "outputs": [
+                  "R 1 TIPO\nA 2 X textura 1\nR 3 FORMATO\nR 4 DUPLICADO 2\n"
+                ],
+                "explanation": "El rechazo de tipo no reserva X; una línea vacía también cuenta y se rechaza por FORMATO."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cuatro conjuntos prueban repetición inmediata, primera aparición inválida, duplicado con otra admisión intermedia, sensibilidad a mayúsculas y línea vacía. Un intento que sólo imprima los esperados sin consultar datos no demuestra el algoritmo. La referencia permanece oculta hasta intentar la actividad."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_laboratorio_primera",
+          "question": "El editor recibe «B sonido 0», «B sonido 3» y «B malla 5». ¿Qué línea se registra como primera admisión?",
+          "options": [
+            "La 1, aunque su tamaño fue rechazado.",
+            "La 2, porque su registro fue el primero localmente válido.",
+            "La 3, porque es la más reciente."
+          ],
+          "correctIndex": 1,
+          "explanation": "La línea rechazada no reserva el ID y la tercera repite la admisión de la segunda.",
+          "reviewFeedback": [
+            "Una línea con tamaño cero es inválida.",
+            "Se admite B sonido 3 y se conserva.",
+            "La última aparición no reemplaza la primera."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia protegida: buscar, conservar y comunicar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tras intentar el laboratorio, contrasta sólo la parte nueva. La validación local ya estaba implementada y comprobada en el código de partida; ahora se recorren las admisiones. La salida de la traza depende del número de línea recibido, no de la cantidad actual de admitidos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "for (const Admision& anterior : admitidos) {\n    if (anterior.registro.id == candidata.id) {\n        std::cout << \"R \" << numero << \" DUPLICADO \"\n                  << anterior.primera << '\\n';\n        return;\n    }\n}\nadmitidos.push_back({candidata, numero});\nstd::cout << \"A \" << numero << ' ' << candidata.id << ' '\n          << candidata.tipo << ' ' << candidata.bytes << '\\n';"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repara una solución propia si necesita comparar sólo con el último, si cambia los campos anteriores, si acepta Caja y caja como el mismo ID o si reserva nombres de registros inválidos. Las salidas de esta traza se comprobaron con GCC 14.2 en Linux; eso no acredita el laboratorio nativo Windows ni la app completa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Agregar la biblioteca del lote sin copiar el lector"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el proyecto externo AssetCheck, conservar registro.hpp y src/registro.cpp de U4L4. Crear include/assetcheck/lote.hpp y src/lote.cpp con el nuevo estado y procesar_linea. Sólo el lote conoce admisiones anteriores. El componente local sigue aceptando o rechazando una línea sin consultar otras."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// src/lote.cpp\n#include \"assetcheck/lote.hpp\"\nnamespace assetcheck {\nvoid procesar_linea(const std::string& texto,\n                    std::size_t numero, Lote& lote) {\n    Registro candidata;\n    const Resultado local = leer_registro(texto, candidata);\n    if (local != Resultado::aceptado) {\n        lote.rechazados.push_back({numero, local, 0});\n        return;\n    }\n    for (const auto& anterior : lote.admitidos) {\n        if (anterior.registro.id == candidata.id) {\n            lote.rechazados.push_back(\n                {numero, Resultado::duplicado, anterior.linea});\n            return;\n        }\n    }\n    lote.admitidos.push_back({numero, candidata});\n}\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "En registro.hpp, añadir duplicado al final de enum class Resultado. No introducir el valor como resultado local de leer_registro. El código conserva el comportamiento y la cabecera pública de la primera biblioteca, salvo esa ampliación del vocabulario de resultados."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "# Añadir después de definir assetcheck_registro.\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_20)\nset_target_properties(assetcheck_lote PROPERTIES CXX_EXTENSIONS OFF)\n\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde la raíz de AssetCheck y en la consola de desarrollo x64 de Visual Studio, «cmake -S . -B build -G Ninja» configura y genera; «cmake --build build --target comprobar_lote» construye ese objetivo; «ctest --test-dir build --output-on-failure» ejecuta las pruebas. Si build pertenece a otra raíz, no reutilices una caché ajena: elige un directorio de construcción exclusivo y comprueba su ruta antes de configurar. No borres cachés de otros proyectos (Scott, 2025, capítulos 2, 4 y 5)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_dependencia",
+          "question": "¿Por qué assetcheck_lote enlaza con assetcheck_registro?",
+          "options": [
+            "Porque llama al lector ya definido en esa biblioteca, sin copiar su implementación.",
+            "Porque CTest sustituye automáticamente la biblioteca anterior.",
+            "Porque un programa C++ sólo admite una biblioteca."
+          ],
+          "correctIndex": 0,
+          "explanation": "La nueva capa depende de la anterior a través de su interfaz pública.",
+          "reviewFeedback": [
+            "El enlace representa una dependencia de implementación real.",
+            "CTest ejecuta pruebas; no sustituye el lector.",
+            "Los objetivos pueden enlazar las bibliotecas que necesiten."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pruebas de continuidad y límites de la etapa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El comprobador de lote debe comparar datos, causas y primeras líneas, no sólo conteos. Incluye: vacío; IDs únicos; repetición inmediata e intermedia; primera línea inválida seguida de admisión válida; Caja frente a caja; repetición con TIPO o TAMANO inválidos; conservación del registro original después del duplicado; dos lotes nuevos sucesivos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Lote lote;\nprocesar_linea(\"Pieza malla 0\", 1, lote);\nprocesar_linea(\"Pieza malla 3\", 2, lote);\nprocesar_linea(\"Caja textura 00012\", 3, lote);\nprocesar_linea(\"Pieza sonido 9\", 4, lote);\n// Esperados independientes del programa:\nbool ok = lote.admitidos.size() == 2\n    && lote.admitidos[0].linea == 2\n    && lote.admitidos[0].registro.tamano_bytes == 3\n    && lote.rechazados.size() == 2\n    && lote.rechazados[1].causa == Resultado::duplicado\n    && lote.rechazados[1].primera == 2;\n// Añade comprobaciones y acumula fallos; no uses sólo assert."
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia parcial de esta etapa se compiló con GCC 14.2 en Linux y pasó 31 comprobaciones independientes, integradas mediante CMake y CTest. El dato describe sólo el código educativo de referencia, no una reconstrucción de AssetCheck en Windows. Sigue pendiente verificarlo con MSVC, registrar la ejecución de CTest y obtener las capturas manuales reales."
+        },
+        {
+          "type": "note",
+          "text": "Queda pendiente una etapa diferente: leer el archivo físico completo, distinguir LF y CRLF, detectar la línea 101, clasificar fallos globales y publicar stdout/stderr únicamente tras una revisión completa. U4L5 todavía no garantiza esos comportamientos ni constituye el cliente final."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_lote_alcance",
+          "question": "Una prueba de lote pasa, pero aún no se implementó abrir archivos ni el cliente final. ¿Qué se ha acreditado?",
+          "options": [
+            "El programa completo de portafolio funciona en cualquier Windows.",
+            "La lógica ensayada de admisión y duplicados, con el entorno y casos realmente usados.",
+            "La existencia y los bytes reales de todas las texturas."
+          ],
+          "correctIndex": 1,
+          "explanation": "La evidencia de un componente no acredita etapas que aún no se han construido.",
+          "reviewFeedback": [
+            "No se ha ejecutado la revisión global del archivo.",
+            "El alcance queda limitado a los casos y plataforma usados.",
+            "Los registros contienen declaraciones, no inspección física de recursos."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En la siguiente sección incorporaremos una lectura física acotada del manifiesto y el informe transaccional completo. Antes de atribuirle éxito, habrá que reconstruir y ejecutar todas sus etapas en el entorno Windows real."
+        }
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0005_0002",
+      "blocks": [
+        "block_0006_0000",
+        "block_0006_0001",
+        "block_0006_0002",
+        "block_0006_0003"
+      ]
+    }
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "0f4b7af860ee6f9d95ea29e1ed3aae6bad7ff65b5309517ab7997d9b988f829b",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "c535dc0a81e01bda3aaaeae9c5527c73720fd4d86089eed2c5ce17f190ff5c33",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "1445b210cc354339f58f96cb866a3c1ad21c5f38c9d377eae7bc0ba4e250aa90",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "e443ce65326ccdcfb0b95a0db192aba0bae6a0c613b637b5747b0bba3d761c35",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "78b5f6525d38150c00a2e2f793003f072f2f913521f7168e7bcf9f6a0ed09929",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "54faeb7496ab953c2061b67338beeb37b98a7095748a68d55f1e27e12997b07f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "6531eb9b159188404bfa7353d160e273241a6e0f0e5144e153d9d015ebfea108",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "0ce223c37e729db568c9a6e4bb69da0401adc241918e310775f49c728b208221",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "c5bd93d08cd22a063effeef91b94b4791ccb14e22e93aeb420ba7b93be2d835e",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "ce2c5f55068a6b6ead91ee23efd28f151b9b7b1d0aa7b61d990e591a44385dff",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "a0e39138ba6a6b07931a9ec89266859972000e599c6e0bc410037a3225f4158c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "3af09b125077ef0bfa04d3e491c98f2bb098541e8b5b99cfde4bec6427de5a4f",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "e22d39ef9edafb8ad335966021627d3a71f44cf9668bd37114cc574bf916437d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "a87caffaf25045aa1a5a12d3a02c608fa652b447a79a05c4fc971d575f45dcf8",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "66ff3d692d5b21ceeb6e3cccd4d8bc93e3c95be47969b6fc2ded5b99cdf947f8",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "87135b401fbab9e0cda908c5a9c450f75ee5f7d51502d9c14441cbd450dc81ba",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "04ff2074f34035eb41e66e3feca9eddef5006ef2bcbd0bb748829faddc1b5838",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "aad0180e8af32b8443bf03e0abaaa0326b56a9af2ad65c5d2f8a2208bf2b486a",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "34fcbb644058f45d81b4c9308eae6192c462d4382b37bd5d086c0d97d91b35e0",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "b1624269c3b92db3962ef3240b1de50959b264a14ad9fe49be17f4d56f6ef74c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "ec65b4842d3d64566ad83715373af8775559bbd3b26c56fb30cbbbd8f4e7ea88",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "2cea6d2d1444eedcae36892dab14bedf9456241479adb8d55ba8a7fd163d1ced",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "8f7ff711407f6b4eff9039812e856ffd4367c4a292fd0d4f0422e8a7ff2966fa",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "7555108d8617fc2953acfb4904f05dd0199e6b13447aeb4826378721bbb377ae",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "9082be1cf74bac38d8567ecf567a9331a86cdf978130b62832bdb155e2bb1d4d",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "b6c9f8e418a49bb30cec34d5a31271affb89978890c5c2e9fdb49ad4641075c5",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "ac2a5707c7a0afc7ec4ee69d7b149e1c550e77dfb3590f1e6c106bbc5092187c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "8a4f817dc6c9d8a476ae24f1bb77e3e908e39bb9a6a1db1ca195258e39a70c00",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/0",
+        "sourceSha256": "4d4abd21d63c4e9e55f29072f38a36f188d72456f884ea6e2c8f2832a08dcfe3",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/1",
+        "sourceSha256": "7fb80a389b179de59b5b27c249da1c8f9df1325396d12df39bb0eddea9d184dc",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/2",
+        "sourceSha256": "5bc8468579ba35c28d5a6472c3bbed2a7eb4c78b3a05b09691cdf0a88cf1a89a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "2169a4249ba8043ab9885fc06403c0836bd4f1bf779489f15fa629c1cf8f5c7a",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9a68a043508062684c9a432576ffa580a709128c46bc18ddc439502bcf59a95b",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c3f459f784fdd3ace913c6ceb9ffad15cd2f47341289a52a8a017f48579f66fd",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "995ed3a70e6787e0a4d9bb4e725b3c7ec96e71d1b41bf567ff49ec583b4a8915",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "bfc65812ef98c274cd288ddf5b8f183951f7988e5001f13aea7628aa38b9e1c5",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "d06b27cc6a5b489f1a4e023be31f8a0c65c872d1693e3ddc844a34fa9d07a54d",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "d06643df9db36271c207f7e7fa3cad97f1218e7588aa6ddba1c2dc0342a6ac08",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "2c3564ccc0f81555d50c7797f33f8a6fdf1d8e9252270ce8827e6a66aeee3139",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/0",
+        "sourceSha256": "1785be9aaf92570df8413293b0fe2f248407f2f742b3f732406c1e345dfc40cd",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/1",
+        "sourceSha256": "1b356733b3997d46b00ee68b673a59e56d77b290ef1cf540429fff00fcfe4ba3",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/2",
+        "sourceSha256": "260ab2948f784c13f5b179e9b0b413d875bc10d4012e2ffdd2f76eb10e79d373",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "e7c2c3b8d8adcbc8db7774effdb6ddb19583dc7462ab921bdfec6b1963da936c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "4fb85d4711137203e63b56efea98893a4bfb90d82d59c77f00f6dd7c90c3c3a9",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "39f1c0beef4d87dc7961389765b35a5cd9d319a05670c60db5b7fa515e3e7b18",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "84bef363cccab0438ece776f2626331840b164073a18240b0951937963213cff",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "7b6e96dd095e06aa5d079bc028b75bdf14bb1e9c82b19333a561b45e66ce232f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "fef4c2e7eff751edfce8b70a04210443f505d5afb5c108a67ce5f3fe6703ad79",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/prompt",
+        "sourceSha256": "7fc49175129113fdc192c0ca1a61d946869370b4fb9c11a7f67ec1fbb4bf7c53",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "db146b057dfb96e676c717465b583ae899f0f9082805d1c6a4cf2370b9737bce",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "a221e0ac4cd65f812c3495a0ff426c17039d933dda795edcb672293552b36728",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "36c1edc9695a061785089b0349c31a01a121d437b9cbcf7f41210cfb815e8274",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "1a02204be206cf8b1d11d4634a4ba2ccb7c8fa2836662c67686e3a007d2502da",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "ea3ef86a43b76a7a658dac922315ebc8bb8aaccf8e481d851cf4db56e0b9b557",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "8b08508f3d1a6229dc6e8072c5d64e85b189e1a99d6a4d384f938b4698d35afb",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "2417fb798d6cce3720e6ea60745fd1408dbd10b590db52329e461118f86852f4",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "f38a34c308cdb50f886bedea82612cc1568128ed3e0ea464927e8cd628ea2e11",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "dd43868f6070af11b9744c5cf45fc38d78c474b622fd9b74db4259c4dd273d8d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "3330a178e89158afd36e8a1ad298545b875134c5c23a075904793c621282fd62",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "eee0277ee120f15648dbc040a4fa48152068f2372d951bd400accc36ebdae97b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "52c3217667fe403b73678939187c64e2ed1c5a980b20dd75768bd91114590414",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "8f08aad713ab8b47cd5bfa738da0d6c0d75f0208bcde6e21ac4dc0a18a17b74c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "56688db7161c4c8318c78cacfa65b0edf4d78a1626016dee48df12a70c2360f5",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "ce7705f55a84c02ffcf91d15e67d0b5546820f750c64c1285a42ab3b9d885a05",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "2cc33214393f2c896683b50170f715f15705af5c641b26928d7405763cdf7978",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "b52d7e42317bbc0c0900f41250b94f529f0139d969e7a2215904bc26097898da",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "eaf8650046b0a1a2328f0cecb725d8845052e5f7dc8ecf6ca586f50d94115b66",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "8f74007db9a3c2c25aba187c73a2edd0cd21f8442d932b61e91fb83f2d188901",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/0",
+        "sourceSha256": "597f408b1627c7bc55cfb8529540aaf39b2a1816b7b2868e0378de74013d9b23",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/1",
+        "sourceSha256": "3714deca18b869f8a0682825a1de865cd9f68fc4502db5d055a13a618de8e96e",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/2",
+        "sourceSha256": "dad495f8ed8815f40319ec4a49262b741918ab0a6a17f6e47d83647e0677f465",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "264b18a7ea771b5b1339ac4b90d7f0a154c6b89fcb73a417ad70f45219461d00",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "420ceca7ed792ed57add0392461b91934f645cc004c189d1f6f17de4b3a5b0fe",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "b1b12206c71320b9c3d4c16d2bcc6d366386b3ba046a03361b532692a8f6f95d",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "5494fbb337ded95cedb3c203d2061dd81388e61dad8cd466094e2a1503eb216f",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "03641c4189b52c608c3e77338d16fdd4232154fc47cccce85deb994c5dc30543",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "dcb636356570d6cb50b7e27a33266dd6e6dfd3218de4b02697b133389dc544cc",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "1df3ee070675c58f9d87dc599937abf625171a18d4b301a597febd742ad23427",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "0534433f70cba7d6d1c4ff7edd49daed4ba5bca192b725c746f2ee20cae7faa1",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "1c9343d57db02a78ab862c534be691d61fdd76f3497f34672e5207d12e9ebb13",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/text",
+        "sourceSha256": "060da53c200d9828802d876a365a2f5f77837b95feb520c1f3606291a16effc2",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/question",
+        "sourceSha256": "6ca03c9444ae3e805a5d7d16fbf493629be769991845ab437864cea88568f716",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/explanation",
+        "sourceSha256": "df6eafc5aa6a295f8d595c9e6554cb90bc186422b3220cef8334032b5cb4cc8a",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/options/0",
+        "sourceSha256": "3ca95d7b53fd95fac0382a78368c3d093f3889ac9cbe4cba3452f3e7eb7a53c1",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/options/1",
+        "sourceSha256": "e4e2e54e57886d7918f1cfb7b1ef1323adb4cb9cceb5012426e90b08dacf62bb",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/options/2",
+        "sourceSha256": "7c7f814a7ceef8ce8b90248ed6074f3df8f436004b7b4a6dd93e935064f1f4ff",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "09c7bf43f0692696bc6bf505b5c5d3fb3e840537da8a765ba74df33b149841fe",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9144c141ebbe00e75f6b0f0946c7d1bf64fae13e83e81a2f66f91ea1aa7f3525",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "2b759f8186ebbf0317c2741f521f8d41285e4a837201132cf546416415d6b844",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "919e8a4bfaea03a40421a67fae98348509ad3f459e501a1211325c80148ee477",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "d4ca97a54b22acb8c673b21926c703266aaf95878c0a80e70eba0ecb918cdfe7",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "b16bf9facda52a958f9cea4646d90ddfe3349df8521e6e8a1fc9e4558073b6ea",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/text",
+        "sourceSha256": "b4a22511d522300a2db4517dd617b49cd3966b9db0f3c097bf55201f60652eeb",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/question",
+        "sourceSha256": "7c57ecde8c204c4363267752420bc71a179231a79fb6ffc2d9016d0a0c972428",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/explanation",
+        "sourceSha256": "6daaf0ce276f6f04c21d6d7608860fc6eb5a9669b2be0376ecc0c48eb5d97631",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/options/0",
+        "sourceSha256": "aa6c8e75b3235a949cc249e47d81ff24c58a635d4d72c58ce013c45f7707c96e",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/options/1",
+        "sourceSha256": "86d2767e750305a0325a57f2a7c207051dedf88d13fa6bb97284e8933d1e5654",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/options/2",
+        "sourceSha256": "9d8fa88bab9ea06c9d9b2750169e6b7690dcc702b25188f826b31a093b4d8542",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "c922b680e82049226dc4627de93216a1a69ebf1d482a10e3bb0edc9d64ef4196",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "68702365b299f19375994416457b8ffbdce667bd2ce219ad6374336079679b6d",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "8c1ba79b604cb417d031568085ef71bc400d2772e2956e919b5399eea3b596d7",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/text",
+        "sourceSha256": "9bd95b47b339eba5c8680ef7ed78ee4178417d07ce6a9cfd57ef5e0423dfa40a",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "57db3824a4072c6c896230d3562e6fcda0660244a0c174fe78dcfb37e1187b4b",
+        "spans": []
+      }
+    ]
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "5436e1036938a79dc691b573336fb33586e8e018cb6420ed244c5381c7ddd9a7"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "68ace359533268458ba83035a8d25fa8643807320ec0d3c8f20c2a13a6dbaf66"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "d0607c0bd962c5a6f4615aa6fb7a01f884476a35f6d23bbdff0514f4037929b5"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "585ff8a800ffd1e321dd40c017f0c51edd86856c3e5ab062cc20f2146604b95a"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "b145dc76d630cb5fe220b126201969ab39a4afbdf8db902af7e38df78fd462d6"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "6dd1cc33ebb0e4864988d55253981924be60e655d2f91ddbe0b72458a5df61bb"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "630fb0e1087b16a81903779a28fc779b202d4956c38f23bf7a1f7f73e81c1452"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "d09e12e4ac247a62769882f6883975f147b343e46e3ac14176ad0062aeca6252"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "540277743c42dfaeaee1795bdfeb6f2fbf015dc0a813c0785dfac3b13fd7946e"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "216d62eea108a28d4a8a757f4c29309a8977c17f7713c1756d8c40e51d71aaef"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "b79443cbb51a48cc019180df1c8a61eebc078ac7453e19721d297b498183f7a5"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "f228d6ed78bd0f01f5cae7c31de306ed2eefe64a56b63a96e4fdce137e74c296"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "a2dbd7cc996f0be8f125486dfb4721bbe57bf0cea390c753b787190a4f7eabaf"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "56d242c58e2052cb799ee4290499c530312e71c282e267a241d4081fbac8a42a"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0006",
+            "sha256": "6ba275fe574dca696d136fa78c7562cb83f35006a46fe78285550eac73e149ac"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "036eddab604e592e64e879552f6b78b76dac5ccd25770573dad4a46984760866"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "0c55f354d9e1a6fb4bf14f6cbbf52fa3be91e0a87b8f612ebd98a0e2f2aaf351"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005",
+          "block_0007_0006"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "09803d6643b64e53e67ed92ff00b8416dacaf571b5e30364b174421e3ea052da",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "5436e1036938a79dc691b573336fb33586e8e018cb6420ed244c5381c7ddd9a7"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "68ace359533268458ba83035a8d25fa8643807320ec0d3c8f20c2a13a6dbaf66"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "d0607c0bd962c5a6f4615aa6fb7a01f884476a35f6d23bbdff0514f4037929b5"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "585ff8a800ffd1e321dd40c017f0c51edd86856c3e5ab062cc20f2146604b95a"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "b145dc76d630cb5fe220b126201969ab39a4afbdf8db902af7e38df78fd462d6"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "6dd1cc33ebb0e4864988d55253981924be60e655d2f91ddbe0b72458a5df61bb"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "630fb0e1087b16a81903779a28fc779b202d4956c38f23bf7a1f7f73e81c1452"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "d09e12e4ac247a62769882f6883975f147b343e46e3ac14176ad0062aeca6252"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "540277743c42dfaeaee1795bdfeb6f2fbf015dc0a813c0785dfac3b13fd7946e"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "216d62eea108a28d4a8a757f4c29309a8977c17f7713c1756d8c40e51d71aaef"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "b79443cbb51a48cc019180df1c8a61eebc078ac7453e19721d297b498183f7a5"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "f228d6ed78bd0f01f5cae7c31de306ed2eefe64a56b63a96e4fdce137e74c296"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "a2dbd7cc996f0be8f125486dfb4721bbe57bf0cea390c753b787190a4f7eabaf"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "56d242c58e2052cb799ee4290499c530312e71c282e267a241d4081fbac8a42a"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0006",
+                "sha256": "6ba275fe574dca696d136fa78c7562cb83f35006a46fe78285550eac73e149ac"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "036eddab604e592e64e879552f6b78b76dac5ccd25770573dad4a46984760866"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "0c55f354d9e1a6fb4bf14f6cbbf52fa3be91e0a87b8f612ebd98a0e2f2aaf351"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
