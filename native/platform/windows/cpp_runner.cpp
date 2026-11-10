@@ -461,23 +461,24 @@ CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProject
 }
 void merge_phase(CppPhaseResult& total,CppPhaseResult part,std::size_t limit){const bool exceeded=part.stdout_bytes.size()>limit-total.stdout_bytes.size()||part.stderr_bytes.size()>limit-total.stderr_bytes.size();
     total.stdout_bytes.append(part.stdout_bytes,0,std::min(part.stdout_bytes.size(),limit-total.stdout_bytes.size()));total.stderr_bytes.append(part.stderr_bytes,0,std::min(part.stderr_bytes.size(),limit-total.stderr_bytes.size()));total.status=exceeded?CppPhaseStatus::output_limit:part.status;total.exit_code=part.exit_code;}
-// WASIp1 runs inside the Wasmtime process. There is no fresh unsigned PE
-// for Windows application control to reject for each student's C++ exercise.
-// Toolchain and runtime are installed in shared, versioned C:\\LGP-Tools.
+// WASIp1 runs inside Wasmtime without generating an unsigned PE per exercise.
+// Toolchain and runtime are confined to the user-authorized, project-specific
+// LearnGameAndEngineDev-Dep root configured at build time.
 void run_wasi_single(const CppRunRequest& request,CppRunResult& result,
         const std::filesystem::path& source,const std::filesystem::path& input,
         const std::filesystem::path& compiler_input,std::stop_token stop) {
     if(request.diagnostic||request.cmake||!request.project_files.empty())
         throw std::invalid_argument("WASI single-file execution cannot replace native diagnostics or CMake.");
-    const std::filesystem::path sdk{LR"(C:\LGP-Tools\WASI-SDK\34.0)"};
+    const std::filesystem::path deps{build::educational_dependencies_root};
+    const auto sdk=deps/L"WASI-SDK/34.0";
     const auto clang=sdk/L"bin/clang++.exe";
     const auto sysroot=sdk/L"share/wasi-sysroot";
-    const std::filesystem::path wasmtime{LR"(C:\LGP-Tools\Wasmtime\50.0.1\wasmtime.exe)"};
+    const auto wasmtime=deps/L"Wasmtime/50.0.1/wasmtime.exe";
     if(!std::filesystem::is_regular_file(clang)||!std::filesystem::is_directory(sysroot)
         ||!std::filesystem::is_regular_file(wasmtime))
         throw std::runtime_error("WASI SDK 34 / Wasmtime 50.0.1 no están instalados. "
             "Reconstruye la aplicación con Build-Native.ps1 para instalar las herramientas oficiales "
-            "sin cambiar la configuración de Seguridad de Windows.");
+            "solo en LearnGameAndEngineDev-Dep, sin modificar Seguridad de Windows.");
     const auto wasm=result.run_directory/L"program.wasm";
     write_exact(source,request.source_utf8);
     write_exact(result.run_directory/L"toolchain.txt",
