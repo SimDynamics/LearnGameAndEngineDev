@@ -81,6 +81,11 @@ if(NOT LGAED_DEFAULT_PROFILE MATCHES "^(Work|Codex)$")
     message(FATAL_ERROR "Select -DLGAED_DEFAULT_PROFILE=Work or Codex for this checkout.")
 endif()
 
+# Project-owned dependencies must live in the user-authorized -Dep folder.
+# Only an explicitly configured isolated CI build may override this root.
+set(LGAED_DEP_ROOT "E:/PersonalFiles/Projects/LearnGameAndEngineDev-Dep" CACHE PATH
+    "User-authorized LearnGameAndEngineDev-only dependency root")
+file(TO_CMAKE_PATH "${LGAED_DEP_ROOT}" LGAED_DEP_ROOT)
 file(TO_CMAKE_PATH "$ENV{VCToolsInstallDir}" LGAED_EDUCATIONAL_VC_ROOT)
 file(TO_CMAKE_PATH "$ENV{WindowsSdkDir}" LGAED_EDUCATIONAL_SDK_ROOT)
 configure_file(cmake/native_build_config.hpp.in generated/native_build_config.hpp @ONLY)
