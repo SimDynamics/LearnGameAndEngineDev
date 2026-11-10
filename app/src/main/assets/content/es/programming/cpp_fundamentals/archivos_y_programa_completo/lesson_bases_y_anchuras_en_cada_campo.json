@@ -35,7 +35,7 @@
           "answers": [
             "1f|37|31"
           ],
-          "explanation": "Treinta y uno se representa en cada base. No hay una base persistente que cambie el tercer campo.",
+          "explanation": "Los tres campos seleccionan el mismo argumento, cuyo valor es 31. En hexadecimal, 1f representa una vez dieciséis más quince. En octal, 37 representa tres veces ocho más siete. El campo {0} no pide otra base y compone 31 en decimal.\n\nLos separadores del patrón se copian entre esas escrituras: resulta 1f|37|31, sin salto final. Las opciones de un campo no pasan al siguiente ni cambian el entero recibido.",
           "reviewFeedback": "Lee cada campo por separado: primero identifica la base solicitada y después la presentación del campo básico. El mismo entero no cambia de valor."
         },
         {
@@ -47,7 +47,7 @@
             "Multiplicar el primer argumento por dieciséis."
           ],
           "correctIndex": 0,
-          "explanation": "Antes de los dos puntos se selecciona el argumento; después se describe su presentación.",
+          "explanation": "En {0:x}, el índice anterior a los dos puntos selecciona el primer argumento posterior al patrón. La letra x, situada después, pide que ese argumento se presente en hexadecimal.\n\nPor ejemplo, el valor 26 se escribiría 1a. No se busca una variable llamada x ni se multiplica el argumento: se eligen los caracteres que representarán su valor.",
           "reviewFeedback": [
             "Distingue la selección anterior a los dos puntos de la opción escrita después.",
             "Localiza si la letra está en la posición de un índice o en la especificación.",
@@ -74,7 +74,7 @@
           "answers": [
             "10101|21"
           ],
-          "explanation": "Veintiuno es dieciséis más cuatro más uno. Las posiciones de ocho y dos llevan cero.",
+          "explanation": "El valor 21 se descompone en dieciséis más cuatro más uno. De izquierda a derecha, las cinco posiciones binarias corresponden a dieciséis, ocho, cuatro, dos y uno; llevan las cifras 10101. Las posiciones de ocho y dos llevan cero.\n\nEl segundo campo pide decimal y escribe 21. El separador pertenece al patrón, de modo que la salida completa es 10101|21, sin salto final.",
           "reviewFeedback": "Descompón el valor usando posiciones de base dos, desde uno y duplicando hacia la izquierda. Comprueba también la escritura decimal del segundo campo."
         },
         {
@@ -86,7 +86,7 @@
             "Mil diez: se leen las cifras como decimal."
           ],
           "correctIndex": 1,
-          "explanation": "Las cuatro posiciones valen ocho, cuatro, dos y uno; sólo aportan ocho y dos.",
+          "explanation": "Las posiciones de 1010, de izquierda a derecha, valen ocho, cuatro, dos y uno. Aportan cantidad la primera y la tercera: ocho más dos da 10.\n\nEl cero de la segunda posición descarta cuatro y el de la última descarta uno. Leer esas cifras como un número decimal aplicaría valores de posición distintos de los que pide la pregunta.",
           "reviewFeedback": [
             "Asigna a cada posición su valor y suma sólo las que contienen uno.",
             "Lee las cuatro posiciones en base dos y comprueba qué ceros no aportan cantidad.",
@@ -101,7 +101,7 @@
           "answers": [
             "0|0|0"
           ],
-          "explanation": "Cero se representa con un dígito cero en estas bases. Ningún campo necesita inventar una posición no nula.",
+          "explanation": "El valor 0 no necesita ninguna posición no nula. Los campos binario, hexadecimal y decimal escriben cada uno el carácter 0, por lo que aparece 0|0|0.\n\nNinguno de los campos solicita la opción de prefijo. No se añaden 0b ni 0x, y el patrón tampoco contiene un salto final.",
           "reviewFeedback": "Presenta cero en cada base solicitada, sin añadir un prefijo que el patrón no pide. El valor sigue siendo cero."
         }
       ]
@@ -130,7 +130,7 @@
           "answers": [
             "0x1f|0X1F|037|0b11111"
           ],
-          "explanation": "Se selecciona el mismo argumento y cada campo incluye el indicador de su base. Treinta y uno suma las primeras cinco posiciones binarias.",
+          "explanation": "El argumento 31 se representa como 1f en hexadecimal, 37 en octal y 11111 en binario: dieciséis más ocho más cuatro más dos más uno. La opción # añade el indicador de base que corresponde a cada campo.\n\nEl campo con X usa mayúsculas tanto en las letras hexadecimales como en su prefijo. Por eso las cuatro partes son 0x1f|0X1F|037|0b11111, con los separadores del patrón y sin salto final.",
           "reviewFeedback": "Relaciona cada letra de presentación con su base y sus mayúsculas. Distingue los caracteres del prefijo de las cifras del número."
         },
         {
@@ -141,7 +141,7 @@
           "answers": [
             "0x0|0|0"
           ],
-          "explanation": "Hexadecimal conserva el prefijo solicitado. Octal cero ya se representa como 0, sin añadir otro cero de prefijo.",
+          "explanation": "El campo {0:#x} presenta el cero y antepone el prefijo hexadecimal: compone 0x0. En el campo octal, la escritura del cero ya es 0, por lo que la opción de prefijo no añade otro cero.\n\nEl campo decimal también produce 0. La composición queda 0x0|0|0; las tres partes representan el mismo valor, con las opciones propias de cada una.",
           "reviewFeedback": "Revisa por separado la regla del prefijo hexadecimal y el caso especial del cero octal. El último campo pide decimal."
         },
         {
@@ -153,7 +153,7 @@
             "1a"
           ],
           "correctIndex": 0,
-          "explanation": "X elige letras mayúsculas. El prefijo exige además la opción #.",
+          "explanation": "Veintiséis se representa con una vez dieciséis y diez unidades. En hexadecimal, la cifra de valor diez es A cuando el campo selecciona X, así que el resultado es 1A.\n\nLa opción # no está escrita en {0:X}. Las mayúsculas se solicitan, pero el prefijo 0X no; son dos decisiones distintas.",
           "reviewFeedback": [
             "Comprueba si se solicitó sólo una letra de presentación o también el prefijo.",
             "Identifica qué opción añade el prefijo y si está escrita en el campo.",
@@ -186,7 +186,7 @@
           "answers": [
             "[   7]|[1000]|[2]"
           ],
-          "explanation": "El primer entero recibe tres espacios. El segundo alcanza el mínimo. El último campo no tiene un ancho pedido.",
+          "explanation": "El primer campo pide cuatro posiciones para 7, cuya escritura ocupa una. La alineación a la derecha añade tres espacios delante. 1000 ya ocupa cuatro posiciones y no necesita relleno.\n\nEl último campo es básico y presenta 2 sin reservar cuatro posiciones. Los corchetes son caracteres exteriores a los campos: la salida es [   7]|[1000]|[2].",
           "reviewFeedback": "Cuenta los caracteres de cada dato y rellena sólo hasta el mínimo propio de su campo. No transfieras el ancho al campo básico final."
         },
         {
@@ -197,7 +197,7 @@
           "answers": [
             "[12345]|[8]"
           ],
-          "explanation": "El mínimo no limita ni trunca las cinco cifras. Tampoco se hereda al campo siguiente.",
+          "explanation": "La escritura de 12345 ocupa cinco posiciones y supera el mínimo de cuatro. Se conserva completa: el ancho no elimina la última cifra ni reduce el valor.\n\nEl campo básico posterior escribe 8 con sus propias opciones. Los corchetes y el separador del patrón producen [12345]|[8], sin relleno añadido en ninguno de esos dos campos.",
           "reviewFeedback": "El ancho es un mínimo, no un límite. Conserva los caracteres que lo superan y revisa si el siguiente campo pide ancho propio."
         },
         {
@@ -209,7 +209,7 @@
             "\"[{:5d}]|[{}]\""
           ],
           "correctIndex": 1,
-          "explanation": "Cada especificación se aplica al argumento de su propio campo.",
+          "explanation": "El patrón \"[{:5d}]|[{:5d}]\" solicita cinco posiciones en el primer campo y vuelve a solicitarlas en el segundo. Cada especificación describe únicamente el argumento presentado en ese campo.\n\nLas otras dos opciones contienen un campo básico: una deja sin ancho explícito el primero y la otra el segundo. Ninguno recibe el ancho por estar junto a un campo que sí lo declara.",
           "reviewFeedback": [
             "Comprueba si ambos campos solicitan el ancho pedido.",
             "Relaciona cada especificación con su propio campo.",
@@ -242,7 +242,7 @@
           "answers": [
             "[Luz   ]|[..12]|[5]"
           ],
-          "explanation": "La cadena añade espacios después; el entero añade puntos antes. El último entero no hereda ninguno de esos formatos.",
+          "explanation": "La cadena Luz ocupa tres posiciones. Al alinearla a la izquierda dentro de un mínimo de seis, se añaden tres espacios después. La escritura de 12 ocupa dos; el campo que pide ancho cuatro, puntos y alineación derecha añade dos puntos delante.\n\nEl último campo presenta 5 sin adoptar esas opciones. La composición es [Luz   ]|[..12]|[5]: cada relleno responde al ancho y a la alineación de su propio campo.",
           "reviewFeedback": "Sigue el ancho, la alineación y el relleno de cada campo. No uses las opciones del anterior para presentar el último entero."
         },
         {
@@ -253,7 +253,7 @@
           "answers": [
             "[    A]|[BC__]"
           ],
-          "explanation": "La primera cadena se alinea a la derecha con espacios; la segunda a la izquierda con guiones bajos.",
+          "explanation": "La primera cadena contiene un carácter y su campo pide mínimo cinco con alineación derecha. Faltan cuatro posiciones, que se completan con espacios antes de A.\n\nLa segunda contiene dos caracteres. El campo elige guion bajo, alineación izquierda y mínimo cuatro: añade dos guiones bajos después y produce BC__. Con los delimitadores aparece [    A]|[BC__].",
           "reviewFeedback": "Identifica primero el relleno y la alineación en cada especificación; después compara la longitud del texto con el mínimo."
         },
         {
@@ -389,7 +389,7 @@
           "answers": [
             "muestra_0023.txt|23"
           ],
-          "explanation": "El número recibe ceros sólo dentro del primer campo. El siguiente patrón lo presenta sin relleno.",
+          "explanation": "El entero 23 tiene dos cifras decimales. El campo {:04d} pide mínimo cuatro y completa las dos posiciones que faltan con ceros, por lo que el primer patrón compone muestra_0023.txt.\n\nLa segunda llamada usa un campo básico y vuelve a representar el entero como 23. El texto del nombre no cambia el argumento ni deja activado su relleno: la salida completa es muestra_0023.txt|23.",
           "reviewFeedback": "Distingue el texto fijo del nombre del campo numérico. El segundo patrón presenta el mismo entero con sus propias reglas básicas."
         },
         {
@@ -400,7 +400,7 @@
           "answers": [
             "[0000]|[1000]"
           ],
-          "explanation": "Cero necesita cuatro cifras por el relleno pedido. Mil ya alcanza las cuatro posiciones.",
+          "explanation": "La escritura decimal del valor 0 ocupa una posición. El ancho cuatro exige otras tres, que se rellenan con ceros y dan 0000. El valor 1000 ya ocupa las cuatro posiciones y queda 1000.\n\nLos corchetes están fuera de los campos y no cuentan para su ancho. Por eso aparece [0000]|[1000], sin añadir un quinto cero al primer campo ni relleno al segundo.",
           "reviewFeedback": "Cuenta primero cuántas cifras ocupa cada entero y añade ceros sólo si no alcanza el mínimo. Los corchetes no forman parte del campo numérico."
         },
         {
@@ -411,7 +411,7 @@
           "answers": [
             "d"
           ],
-          "explanation": "La especificación 04d separa relleno y ancho de la elección de base.",
+          "explanation": "La letra d elige la presentación decimal. El cero previo pide relleno de ceros y el cuatro fija el ancho mínimo, de modo que la especificación completa es 04d.\n\nPara el argumento 8, el campo produce 0008. Se han añadido tres caracteres a su presentación; el argumento sigue siendo el entero ocho.",
           "reviewFeedback": "Escribe sólo la letra de presentación; los caracteres de relleno y ancho ya están escritos en el patrón."
         },
         {
@@ -424,7 +424,7 @@
             "0012 y a."
           ],
           "correctIndex": 0,
-          "explanation": "El primer campo conserva la base decimal y rellena hasta cuatro. El segundo representa el mismo diez con a y no solicita prefijo.",
+          "explanation": "El primer campo representa 10 en decimal: conserva las cifras 10 y añade dos ceros para llegar a cuatro posiciones, dando 0010. No cambia la base por usar ceros de relleno.\n\nEn hexadecimal, diez se representa mediante a. Como ese campo no solicita prefijo, no se antepone 0x. Las dos escrituras describen el mismo valor.",
           "reviewFeedback": [
             "Distingue el relleno decimal de las letras hexadecimales y de su prefijo opcional.",
             "Comprueba si se ha solicitado un prefijo para la escritura hexadecimal.",
@@ -498,7 +498,7 @@
           "answers": [
             "0015|f"
           ],
-          "explanation": "El patrón presenta decimal con ceros; cout conserva hexadecimal para el entero insertado directamente.",
+          "explanation": "La llamada a std::format recibe el entero 15 y compone la cadena 0015 con decimal y ceros. Al insertar esa cadena, std::cout recibe caracteres ya compuestos; su modo hexadecimal no vuelve a interpretar esos caracteres como un entero.\n\nDespués se inserta directamente el entero 15, y esa inserción sí utiliza el modo hexadecimal del flujo: escribe f. Con el separador intermedio aparece 0015|f.",
           "reviewFeedback": "Separa la composición mediante el patrón de la inserción del entero en cout. Cada operación usa sus propias opciones."
         },
         {
@@ -511,7 +511,7 @@
             "Sustituir el entero por la cadena de su salida y quitar el patrón."
           ],
           "correctIndex": 0,
-          "explanation": "La primera comparación mantiene el formato y varía el dato. La segunda mantiene el dato y varía únicamente las letras hexadecimales; así se identifica la contribución de cada decisión.",
+          "explanation": "Al mantener la presentación hexadecimal minúscula y cambiar el valor de 10 a 31, la escritura pasa de a a 1f. Esa comparación permite observar el efecto de cambiar el dato.\n\nDespués se mantiene 31 y se cambia sólo x por X: 1f pasa a 1F. El valor es el mismo; ahora se observa únicamente la decisión sobre mayúsculas. Cambiar dato y formato a la vez mezclaría ambos efectos.",
           "reviewFeedback": [
             "Identifica qué dato y qué opción permanecen fijos en cada comparación.",
             "Si cambian varias decisiones a la vez, revisa si puedes atribuirles un efecto concreto.",
@@ -545,7 +545,7 @@
             "Las dos opciones cambian el valor guardado en cantidad."
           ],
           "correctIndex": 1,
-          "explanation": "Las especificaciones determinan caracteres de salida. Las operaciones numéricas posteriores siguen usando el entero original.",
+          "explanation": "Para el entero 8, el campo {:04d} compone 0008: decimal con ceros hasta mínimo cuatro. El campo {:#x} compone 0x8: hexadecimal con el prefijo solicitado.\n\nEsas escrituras se incorporan a la cadena devuelta. Ninguna asigna un valor nuevo a cantidad ni exige convertir antes el argumento en una cadena; un cálculo posterior sigue recibiendo el entero ocho.",
           "reviewFeedback": [
             "Distingue presentar un valor de convertirlo a otro dato antes de pasarlo.",
             "Relaciona las opciones con los caracteres producidos y comprueba el valor original.",
@@ -588,6 +588,82 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string nueva_etiqueta(const std::string& codigo, int cantidad) {\n    return std::format(\"[{0:<6}]|[{1:04d}]|[{1:#x}]\", codigo, cantidad);\n}\n\nint main() {\n    std::cout << nueva_etiqueta(\"Norte\", 8) << \"\\n\" << nueva_etiqueta(\"\", 0) << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar las letras y conservar el código completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye std::string nueva_etiqueta(const std::string& codigo, int cantidad) para el cliente proporcionado. El código contiene de cero a ocho caracteres ASCII imprimibles y la cantidad está entre 0 y 1000, incluidos los extremos. Son condiciones de entrada; no se pide otro validador.\n\nDevuelve una cadena con la forma [CODIGO]|[DECIMAL]|[HEX]. El código se alinea a la izquierda con mínimo seis y espacios, conservando todos sus caracteres cuando sea más largo. La cantidad se presenta primero en decimal con mínimo cuatro y ceros, y después en hexadecimal minúsculo con prefijo 0x. No se solicita ancho adicional para ese último campo.\n\nCompón el texto con std::format y un patrón literal con índices que reutilice la cantidad. La función devuelve la cadena sin salto final, sin imprimir y sin modificar los argumentos. Escribe su definición antes de main; mantén las seis llamadas y sus saltos de línea.",
+          "emphasis": [
+            {
+              "text": "conservando todos sus caracteres",
+              "style": "bold"
+            },
+            {
+              "text": "hexadecimal minúsculo",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos primeras llamadas recuperan Norte con cantidad 8 y el código vacío con cantidad 0. Las siguientes usan Muelle con 15, Pasillo con 26, Entradas con 255 y A B con 1000.\n\nEl cliente combina códigos de seis, siete y ocho caracteres, un espacio dentro de un código y cantidades cuyas escrituras hexadecimales incluyen letras. Conserva una implementación común para todas las llamadas y pulsa «Compilar, ejecutar y comprobar».",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\n[Norte ]|[0008]|[0x8]\n[      ]|[0000]|[0x0]\n[Muelle]|[0015]|[0xf]\n[Pasillo]|[0026]|[0x1a]\n[Entradas]|[0255]|[0xff]\n[A B   ]|[1000]|[0x3e8]\n\nConserva los espacios interiores y el salto después de cada línea, incluida la última."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <string>\n\n// Escribe aqui tu funcion antes del cliente.\n\nint main() {\n    std::cout << nueva_etiqueta(\"Norte\", 8) << '\\n'\n              << nueva_etiqueta(\"\", 0) << '\\n'\n              << nueva_etiqueta(\"Muelle\", 15) << '\\n'\n              << nueva_etiqueta(\"Pasillo\", 26) << '\\n'\n              << nueva_etiqueta(\"Entradas\", 255) << '\\n'\n              << nueva_etiqueta(\"A B\", 1000) << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "[Norte ]|[0008]|[0x8]\n[      ]|[0000]|[0x0]\n[Muelle]|[0015]|[0xf]\n[Pasillo]|[0026]|[0x1a]\n[Entradas]|[0255]|[0xff]\n[A B   ]|[1000]|[0x3e8]\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los códigos Pasillo y Entradas conservan todos sus caracteres; el mínimo de seis sólo añade relleno cuando hace falta. Las cantidades 15, 26, 255 y 1000 producen 0xf, 0x1a, 0xff y 0x3e8. La presencia de letras permite comprobar la minúscula que las cantidades 8 y 0 no mostraban.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "[Norte ]|[0008]|[0x8]\n[      ]|[0000]|[0x0]\n[Muelle]|[0015]|[0xF]\n[Pasillo]|[0026]|[0x1A]\n[Entradas]|[0255]|[0xFF]\n[A B   ]|[1000]|[0x3E8]\n"
+                    ],
+                    "text": "Los prefijos siguen siendo 0x, pero aparecen letras mayúsculas en 0xF, 0x1A, 0xFF y 0x3E8. Las escrituras de 8 y 0 no contienen letras y no permitían observar esa diferencia. Revisa la presentación del campo hexadecimal: el contrato pide letras minúsculas además del prefijo."
+                  },
+                  {
+                    "outputs": [
+                      "[Norte ]|[0008]|[0x8]\n[      ]|[0000]|[0x0]\n[Muelle]|[0015]|[0xf]\n[Pasill]|[0026]|[0x1a]\n[Entrad]|[0255]|[0xff]\n[A B   ]|[1000]|[0x3e8]\n"
+                    ],
+                    "text": "Las etiquetas largas aparecen como Pasill y Entrad, con seis caracteres. El mínimo seis no autoriza quitar letras: Pasillo tiene siete y Entradas tiene ocho, y ambos deben conservarse completos. Aplica relleno sólo a los códigos que no alcanzan el mínimo; no reduzcas los que lo superan."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comparar la construcción y sus resultados"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string nueva_etiqueta(const std::string& codigo, int cantidad) {\n    return std::format(\"[{0:<6}]|[{1:04d}]|[{1:#x}]\", codigo, cantidad);\n}\n\nint main() {\n    std::cout << nueva_etiqueta(\"Norte\", 8) << '\\n'\n              << nueva_etiqueta(\"\", 0) << '\\n'\n              << nueva_etiqueta(\"Muelle\", 15) << '\\n'\n              << nueva_etiqueta(\"Pasillo\", 26) << '\\n'\n              << nueva_etiqueta(\"Entradas\", 255) << '\\n'\n              << nueva_etiqueta(\"A B\", 1000) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El índice cero selecciona codigo y su campo aplica alineación izquierda y ancho mínimo seis. Norte necesita un espacio; el código vacío necesita seis; Muelle ya ocupa seis. Pasillo y Entradas superan el mínimo y se conservan completos. El espacio interno de A B pertenece al código y permanece antes del relleno.\n\nLos dos campos de índice uno seleccionan cantidad. El primero usa decimal con ceros y el segundo hexadecimal minúsculo con prefijo. La escritura decimal de 15 ocupa dos posiciones: el primer campo añade dos ceros y produce 0015, de cuatro posiciones. En hexadecimal ese valor produce 0xf.\n\nLas cantidades 8 y 0 se escriben sin letras hexadecimales; por sí solas no distinguían una selección incorrecta de mayúsculas. 15, 26 y 255 añaden esa observación. Cada llamada devuelve su composición y el cliente añade el salto al mostrarla. Se aceptan otras implementaciones que respeten el mismo contrato."
         }
       ]
     }
@@ -941,7 +1017,15 @@
         "id": "page_0009",
         "blocks": [
           "block_0009_0000",
-          "block_0009_0001"
+          "block_0009_0001",
+          "u12_etiqueta_letras_y_ancho_completo_titulo",
+          "u12_etiqueta_letras_y_ancho_completo_contrato",
+          "u12_etiqueta_letras_y_ancho_completo_cliente",
+          "u12_etiqueta_letras_y_ancho_completo_salida",
+          "u12_etiqueta_letras_y_ancho_completo_comprobacion",
+          "u12_etiqueta_letras_y_ancho_completo_referencia_titulo",
+          "u12_etiqueta_letras_y_ancho_completo_referencia_codigo",
+          "u12_etiqueta_letras_y_ancho_completo_referencia_razonamiento"
         ]
       }
     ],
@@ -1617,6 +1701,78 @@
           "block": 0
         },
         "progressPage": "page_0004"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_comprobacion",
+        "sha256": "458a3f79c17a809d5bee7debb9eae8664c54a3804b796ec50cf430c9a8f8adc6",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 6
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_referencia_codigo",
+        "sha256": "dee0850d8213de9537a86f5a62c19fa10c1bb3298e08bd2ee846bf83a969e5b1",
+        "storage": {
+          "page": 10,
+          "block": 7
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_etiqueta_letras_y_ancho_completo_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 8
+        },
+        "progressPage": "page_0009"
       }
     ],
     "editorial": [
@@ -1794,6 +1950,106 @@
         "id": "block_0004_0001",
         "beforeSha256": "05c68d3addb1b5ba86b5b603f6e5b1e929c8922fab7f988d97249f66d72461c8",
         "afterSha256": "0b71ddda4a03487b19bd19f7ab7f96e96a6074793e0ae166d2bd81c1a648889e"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "04566b497c5c354ead90f6d4d4e1275101a560775f0d921cb1ddda78218a10f8",
+        "afterSha256": "a271d8f7a703ad47c80f0d301adeb676f607b924adad8cb52f1bca42f7a51d5a"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "15fe5090d90f0430045ef32c5093baab1e9e25082da9c594d32591b28b074702",
+        "afterSha256": "eec3992e77adfe344de8ee089bdf204d3e2e49f86e3d04424e6f3d4f1292912a"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "1126905635772a7ffeb07a7d69c6441aaea4e75c02fcad17b6a19f1792636b96",
+        "afterSha256": "2686d44f07b711d3efcab392e7cd4994f1c8d83e829722ab564d49ccf72d4e3f"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "c80907f201bb1f3fe18881fcea31eab78fa8007e99745f9fb3c29ccf4b4b6352",
+        "afterSha256": "46624db13e1a75ec10933ddcbdf8e1934d7d903249e81bb480d017e79585c7c3"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "f542fbaec7987d64aa3207b13a30da8d14cd8e3847d3168db7144105384f53d3",
+        "afterSha256": "aa5efd382c95cf9c13cc118a3e5ad537f3ac0e20e7583d6d4a0c60576bac2c92"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "e2a6fe5b665df153c5a109a5cdf1ef76339ce7156edd4b119a5d184ba61f507a",
+        "afterSha256": "606dd8a0dbf94120b1c0812aea454d2192730209a2c4f906bb0d3d73ec6023ab"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "9d9bca8f8d295496a63324ace469e11ab5a5473c2845c92a7891caccc5ece0d5",
+        "afterSha256": "71f244bf303eabce6bc9fa0e788adb2fec7c87da5b6e1df60b8221b871f2d60e"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "ba49b838da4d732f5068a9e7feea928004ff2017e8cdfd6c6b37bc580f102024",
+        "afterSha256": "24aba3eeeb572d9182863fb6b59a41bcdc5ebc89ccfdfefd26ca502b43e53741"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "66bcf0fe0a7ffb34b425fd0417e820e2cca9bdefb7cf82e76d93714b70c4081b",
+        "afterSha256": "1a472bff4bde449ac8dcad8218dd319d091c04b694f719ea1bb8652fe5f1e103"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "cd0fcd45ec01569395d4a0932aaff1b9037148f344fdceba015eb8be6c3d7d47",
+        "afterSha256": "c36de5abac12e86ae121e2d92cf01cd22649d3df2cf46fbbac6037234b324841"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "14262642f7049c08081ff08bd369f1701874c44429adbbe2c53dc421f4b2dad4",
+        "afterSha256": "c17ae095704ba0fe6bd1b9e4748921ca89b56ed5d8b50d9576cd3cfa671128c8"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "2bb867ce22951666a2ce126bfcc7d80d3f00f4d6f0f678d71c957f329af8f2c4",
+        "afterSha256": "0d9de095fd8b5b8452d33e9f8deaee6e51b54dd5efb9488737c345211a94fd77"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "ecbcdc94badfe4cd335ceb7b04d969f0086d652c04a87567b1e0c08c0e086649",
+        "afterSha256": "9e18499f9feadec6434bc08a40e6b11536cfa5b22fc69ed5ed7b71cd50be4ae5"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "1f03e3d4986a7a281a57bede2394dc87be7c53f73cef8b474058e87a65ec00d5",
+        "afterSha256": "03e9e535dfb80f679fde4e35997d5219831c51039c3ac9747877431af89b13b5"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "edd5b10989eab39cd575dd35095ac5e72a7abebac040e80e4b9a5aa3ab0bea38",
+        "afterSha256": "a21228b44e3a0ba7cb35ca11c0919f559133584538b14adfca1162f80c0e59b3"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "a875ad21d495059bda15d38e7ae7957e124eccd5fbdf15ef37c6ca7fc697f946",
+        "afterSha256": "47302c6ff1e8a400ca246ef4d0d7f5bf4604e73f7e474d89f97bc3738aaf7d00"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "5d0718ec87d41b3c5b74155d5730555d7b2a4d22b31100e5b2c3b2b1b022f915",
+        "afterSha256": "a6813f34e400955903605388bfcfb1f388c26b1396d0886aa83172fb2bffa500"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "6cf40b23584135fecc96abd3a6ffda7deb60f7dffbd420daea338b37b48e885b",
+        "afterSha256": "5e23e5e48d1a27869d8dae62345fa0ef5713d584d0affae42c564ba2a877ea98"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "60def356465be38be64d447b6add9a49bc0cf35c1524dd85d31cdc20a96a15d4",
+        "afterSha256": "65101177e4d3311ce1fedb220cfdd65ba5e0a0300eaa1866980e59b5bb713010"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "1e845dde431139d851e5eee90be18da2aac651bda1c26128c6b17fda385caafe",
+        "afterSha256": "fcc3e4305340bd08e4bf58c754aa1a8095ed7f75ee59d66cdc165eecae4e4779"
       }
     ]
   },
@@ -1816,6 +2072,14 @@
         "block_0009_0000",
         "block_0009_0001"
       ]
+    },
+    {
+      "activity": "u12_etiqueta_letras_y_ancho_completo_comprobacion",
+      "blocks": [
+        "u12_etiqueta_letras_y_ancho_completo_referencia_titulo",
+        "u12_etiqueta_letras_y_ancho_completo_referencia_codigo",
+        "u12_etiqueta_letras_y_ancho_completo_referencia_razonamiento"
+      ]
     }
   ],
   "activityAfter": [
@@ -1823,6 +2087,12 @@
       "activity": "block_0007_0003",
       "requires": [
         "block_0006_0002"
+      ]
+    },
+    {
+      "activity": "u12_etiqueta_letras_y_ancho_completo_comprobacion",
+      "requires": [
+        "block_0008_0003"
       ]
     }
   ],
@@ -1947,8 +2217,51 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "50ef2cc23b935c263256bc08bd23e9830c9ebedb88542a68ced0b1991c8fe02e",
-        "spans": []
+        "sourceSha256": "65380010f5be234bf03d609c74888d234fc9b5493d1556c52e0e7d7bca7be624",
+        "spans": [
+          {
+            "start": 62,
+            "end": 64,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 84,
+            "text": "1f",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 136,
+            "end": 138,
+            "text": "37",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "text": "{0}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 220,
+            "text": "31",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 310,
+            "text": "1f|37|31",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -1978,8 +2291,44 @@
       {
         "block": "block_0000_0005",
         "path": "/explanation",
-        "sourceSha256": "15e7eeea02e117d462c9c418bf294d19fd3c608a22986227764f47bfb556a451",
-        "spans": []
+        "sourceSha256": "e9193d94c100fc5f46ff6d397d312872fe52c44c4cabaa697b5d18742f68ef7c",
+        "spans": [
+          {
+            "start": 3,
+            "end": 8,
+            "text": "{0:x}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "x",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 203,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 218,
+            "end": 220,
+            "text": "1a",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 255,
+            "end": 256,
+            "text": "x",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0000_0005",
@@ -2048,7 +2397,7 @@
             "end": 329,
             "text": "1101",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 631,
@@ -2075,8 +2424,37 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "983edef3ef75216ca4618e72b51d92bd75b698420c7ddd5f16170160e0e8bdaf",
-        "spans": []
+        "sourceSha256": "43d6542fbe6a7f9fd92642f76c07ddd5ccc0cdb02e9a3a118c6f267d43c15333",
+        "spans": [
+          {
+            "start": 9,
+            "end": 11,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 187,
+            "text": "10101",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 272,
+            "end": 274,
+            "text": "21",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 352,
+            "text": "10101|21",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -2094,15 +2472,30 @@
             "end": 42,
             "text": "1010",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "d9214172e8a121462f4de099fb74889f57220a445aef8caca1e5af1686d65d41",
-        "spans": []
+        "sourceSha256": "af844b9c46cc6ac2ad8f984b8424845819fe8c0743b379222627c9b10fbaaf1b",
+        "spans": [
+          {
+            "start": 18,
+            "end": 22,
+            "text": "1010",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 137,
+            "end": 139,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -2149,8 +2542,44 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "5e5dbda6d8fa46c08684a77c867ae1d091625aeea710bfd3576e0c1b73301dcd",
-        "spans": []
+        "sourceSha256": "4f65764daca9716f0c01d36aec3170d93dd3b8df44cc097803e1fdd63d69a590",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 122,
+            "text": "0",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 143,
+            "end": 148,
+            "text": "0|0|0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 219,
+            "text": "0b",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 223,
+            "end": 225,
+            "text": "0x",
+            "role": "output",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -2209,7 +2638,7 @@
             "end": 194,
             "text": "0x",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 197,
@@ -2223,7 +2652,7 @@
             "end": 209,
             "text": "0X",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 212,
@@ -2237,7 +2666,7 @@
             "end": 224,
             "text": "0b",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 228,
@@ -2271,8 +2700,58 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "2e47814b6eb079c5f29a6a931880f22574a7500cebed093833fcc38f88546c34",
-        "spans": []
+        "sourceSha256": "e6947c6462d3f480140601aeb6623b71ad3fef6c88ec88a7aef6689957255064",
+        "spans": [
+          {
+            "start": 13,
+            "end": 15,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 37,
+            "text": "1f",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 54,
+            "end": 56,
+            "text": "37",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "11111",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 143,
+            "end": 144,
+            "text": "#",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 217,
+            "text": "X",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 317,
+            "end": 338,
+            "text": "0x1f|0X1F|037|0b11111",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -2289,12 +2768,40 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "3946d494d3bc52c6c0d883883349c122c183d10fae5cc281c2272f5e66479bf3",
+        "sourceSha256": "a2df9cdde5376e6842bfc87088c6b1c0786c9891de779f4b6269f11485806581",
         "spans": [
           {
-            "start": 77,
-            "end": 78,
+            "start": 9,
+            "end": 15,
+            "text": "{0:#x}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 79,
+            "text": "0x0",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 128,
+            "end": 129,
             "text": "0",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": "0",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 241,
+            "end": 248,
+            "text": "0x0|0|0",
             "role": "output",
             "reading": "natural"
           }
@@ -2328,19 +2835,49 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "25a6c57832ab0b5ffbad6a7722b4ff9df7062789ec68cb6888034359855426aa",
+        "sourceSha256": "de33d6ac7328bd4f4a26749701096ac970d7cbac4547f0ace23a5e1bb60422a3",
         "spans": [
           {
-            "start": 0,
-            "end": 1,
-            "text": "X",
-            "role": "string"
+            "start": 106,
+            "end": 107,
+            "text": "A",
+            "role": "output",
+            "reading": "characters"
           },
           {
-            "start": 61,
-            "end": 62,
+            "start": 135,
+            "end": 136,
+            "text": "X",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 164,
+            "text": "1A",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 177,
+            "end": 178,
             "text": "#",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 203,
+            "text": "{0:X}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "0X",
+            "role": "output",
+            "reading": "characters"
           }
         ]
       },
@@ -2354,7 +2891,7 @@
             "end": 2,
             "text": "1A",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2368,7 +2905,7 @@
             "end": 4,
             "text": "0X1A",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2382,7 +2919,7 @@
             "end": 2,
             "text": "1a",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2453,8 +2990,37 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "4b5b772c00caea0afeeecc2cec038763840a0eb068c20892e08b0bc3925d48ce",
-        "spans": []
+        "sourceSha256": "fed7ec66d02b40172d244c49261e58b9b3b0ac46d2329ab133511a868a34b5b4",
+        "spans": [
+          {
+            "start": 44,
+            "end": 45,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 223,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 340,
+            "text": "[   7]|[1000]|[2]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2471,8 +3037,30 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "633febfaf3128c6bb9d97d1925397e727a963d9309eafaa3859712fa012ca855",
-        "spans": []
+        "sourceSha256": "064dd0370911401d1d5243466903a5cc68ebb02f722392e23dbe39cffd7f5af0",
+        "spans": [
+          {
+            "start": 16,
+            "end": 21,
+            "text": "12345",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 189,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 276,
+            "text": "[12345]|[8]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2489,8 +3077,16 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "99613d9bfd1483af1088125c4b0c952fa4df25564627e3552806577df94e4588",
-        "spans": []
+        "sourceSha256": "d7848d2ce9286812311e6e4b3d663b1aaf841a3dcda1788f1bf04afa93418ca7",
+        "spans": [
+          {
+            "start": 10,
+            "end": 27,
+            "text": "\"[{:5d}]|[{:5d}]\"",
+            "role": "string",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -2616,8 +3212,37 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "f935d4b85780aaebb0e130373886bfd70457d8e378a6663a0299f71956c68497",
-        "spans": []
+        "sourceSha256": "61c29be39e542e92fdfe488a77f730056d260a9d07aa39c14456225b38da33df",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "Luz",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 270,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 316,
+            "end": 335,
+            "text": "[Luz   ]|[..12]|[5]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2634,8 +3259,30 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "2332de92ff8367ce4882906867bc112dd829502d7116763552e609cbe04a2c4d",
-        "spans": []
+        "sourceSha256": "94d3e91ee9f53ce4111e017ad9431be1c34cc465e2bb55a258f03b18b50ebc3c",
+        "spans": [
+          {
+            "start": 157,
+            "end": 158,
+            "text": "A",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 304,
+            "end": 308,
+            "text": "BC__",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 340,
+            "end": 354,
+            "text": "[    A]|[BC__]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2731,7 +3378,8 @@
             "start": 342,
             "end": 343,
             "text": "#",
-            "role": "string"
+            "role": "output",
+            "reading": "characters"
           }
         ]
       },
@@ -2873,8 +3521,44 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "d3588277b1c6c620999ece85eb45f5e2531745c66b65e700d5a579c1ad610770",
-        "spans": []
+        "sourceSha256": "b1d52953f8404ed7a55513c19d25dacf62cd0a03fccfa8d8f72f6f7e7a433a6d",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "23",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 56,
+            "text": "{:04d}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 180,
+            "text": "muestra_0023.txt",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 260,
+            "end": 262,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 377,
+            "text": "muestra_0023.txt|23",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -2891,8 +3575,44 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "9358fb00ba683ea105e4e69d9e691705ab58aa4fc38e8b1b361da53e81d44e67",
-        "spans": []
+        "sourceSha256": "b64dc1705e93f2a8a7a6834a796d4416251a5343546f4ab3864e9263641368cd",
+        "spans": [
+          {
+            "start": 31,
+            "end": 32,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 123,
+            "text": "0000",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 134,
+            "end": 138,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "1000",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 269,
+            "end": 282,
+            "text": "[0000]|[1000]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2909,13 +3629,35 @@
       {
         "block": "block_0005_0004",
         "path": "/explanation",
-        "sourceSha256": "dec96a7584679ab3121520d1022f9e14ff7fb756753bd3d599694b9682efb730",
+        "sourceSha256": "355c803dbd404e34b9e81c288bf86f53fc3673a5052b4ac43c7fe8450ee8dbf1",
         "spans": [
           {
-            "start": 18,
-            "end": 21,
+            "start": 9,
+            "end": 10,
+            "text": "d",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 158,
             "text": "04d",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 180,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 203,
+            "text": "0008",
+            "role": "output",
+            "reading": "characters"
           }
         ]
       },
@@ -2941,14 +3683,42 @@
       {
         "block": "block_0005_0005",
         "path": "/explanation",
-        "sourceSha256": "be5be4c78a70c17ac2207bfb594fbf4613552c5d4248e97ba19debe17506ad02",
+        "sourceSha256": "0b36196112317b041a2340392d91c19dea503c811e4d91b71a653e200d62ec34",
         "spans": [
           {
-            "start": 105,
-            "end": 106,
+            "start": 27,
+            "end": 29,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 64,
+            "text": "10",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "0010",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 218,
+            "end": 219,
             "text": "a",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
+          },
+          {
+            "start": 272,
+            "end": 274,
+            "text": "0x",
+            "role": "output",
+            "reading": "characters"
           }
         ]
       },
@@ -2962,14 +3732,14 @@
             "end": 4,
             "text": "0010",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 7,
             "end": 8,
             "text": "a",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2983,14 +3753,14 @@
             "end": 4,
             "text": "0010",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 7,
             "end": 10,
             "text": "0xa",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -3004,14 +3774,14 @@
             "end": 4,
             "text": "0012",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 7,
             "end": 8,
             "text": "a",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -3170,13 +3940,56 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "35d0d5110c08bb3649071b343e8969b816274a7b21be67c775840a9878c32d73",
+        "sourceSha256": "5f112f7002a4156dfd5ba612437881a8fb5a7a9bcf0ce2e155cc36ddcc8fa594",
         "spans": [
           {
-            "start": 38,
-            "end": 42,
-            "text": "cout",
-            "role": "cpp"
+            "start": 13,
+            "end": 24,
+            "text": "std::format",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 44,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 69,
+            "text": "0015",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 115,
+            "end": 124,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 279,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 348,
+            "text": "f",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 386,
+            "end": 392,
+            "text": "0015|f",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3202,8 +4015,72 @@
       {
         "block": "block_0007_0004",
         "path": "/explanation",
-        "sourceSha256": "477c18846d644fb8ce051873c2a8380634564099c2923a9b2600af6a85d1f58d",
-        "spans": []
+        "sourceSha256": "cd7f0d44d0b199e83be6cf56809a2cc19780c1d954bf537d32fbac849518ed59",
+        "spans": [
+          {
+            "start": 72,
+            "end": 74,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "a",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 106,
+            "end": 108,
+            "text": "1f",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 194,
+            "end": 196,
+            "text": "31",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 215,
+            "text": "x",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 221,
+            "text": "X",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 225,
+            "text": "1f",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 233,
+            "end": 235,
+            "text": "1F",
+            "role": "output",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
@@ -3316,8 +4193,51 @@
       {
         "block": "block_0008_0001",
         "path": "/explanation",
-        "sourceSha256": "c1be84f215f9493af5a48cbab6f997fe2487364f4fcceafd7eef864cd5dea00b",
-        "spans": []
+        "sourceSha256": "85e5b497bab69d67e6c21d5f4fb290f3f7b6cd760c434e3c4223f2cc4215f489",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 33,
+            "text": "{:04d}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "text": "0008",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 96,
+            "end": 101,
+            "text": "{:#x}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 113,
+            "text": "0x8",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 239,
+            "end": 247,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0008_0001",
@@ -3392,7 +4312,7 @@
             "end": 335,
             "text": "0x",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 529,
@@ -3419,6 +4339,466 @@
         "path": "/text",
         "sourceSha256": "7a33c3160cbcf0cad312bee81d9a6fff96bd974ef4b5a612f2700e02cfa561e0",
         "spans": []
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_titulo",
+        "path": "/text",
+        "sourceSha256": "dcbcb0b03813dd5eb3ff392ea33efdcfecf927ff29be2b6ca29dc632e7662a25",
+        "spans": []
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_contrato",
+        "path": "/text",
+        "sourceSha256": "03a33473e2ac1f3d2b71c32b265a8f2b4ebaee484db3907b10a3ff3d0ae34611",
+        "spans": [
+          {
+            "start": 10,
+            "end": 77,
+            "text": "std::string nueva_etiqueta(const std::string& codigo, int cantidad)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 198,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 205,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 344,
+            "text": "[CODIGO]|[DECIMAL]|[HEX]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 581,
+            "end": 583,
+            "text": "0x",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 660,
+            "end": 671,
+            "text": "std::format",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 854,
+            "end": 858,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_cliente",
+        "path": "/text",
+        "sourceSha256": "fa2ebb7d3a54983f1f084846ced7766d369cfae669fa00d0c8901b7ab9c56076",
+        "spans": [
+          {
+            "start": 36,
+            "end": 41,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 117,
+            "text": "Muelle",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 133,
+            "text": "Pasillo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 150,
+            "text": "Entradas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 158,
+            "text": "255",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 164,
+            "text": "A B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 173,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_salida",
+        "path": "/text",
+        "sourceSha256": "53771620933c5c898734dc3d68ecb02677e3bf2e511c6a7dfd9fcba6b0db0590",
+        "spans": [
+          {
+            "start": 33,
+            "end": 171,
+            "text": "[Norte ]|[0008]|[0x8]\n[      ]|[0000]|[0x0]\n[Muelle]|[0015]|[0xf]\n[Pasillo]|[0026]|[0x1a]\n[Entradas]|[0255]|[0xff]\n[A B   ]|[1000]|[0x3e8]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "038a0d5a25723ae898c5d19b70cba3278edd0b08fa5411b9a66bb2c1114743ed",
+        "spans": [
+          {
+            "start": 12,
+            "end": 19,
+            "text": "Pasillo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 30,
+            "text": "Entradas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 136,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 140,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 145,
+            "text": "255",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 152,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 165,
+            "text": "0xf",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 167,
+            "end": 171,
+            "text": "0x1a",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 173,
+            "end": 177,
+            "text": "0xff",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 180,
+            "end": 185,
+            "text": "0x3e8",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 260,
+            "end": 261,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 265,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "5eb3ab87135a31ca88cfcf60202fc25511b1c1a7908e20907b9c1464d8ab2db0",
+        "spans": [
+          {
+            "start": 27,
+            "end": 29,
+            "text": "0x",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "text": "0xF",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 71,
+            "end": 75,
+            "text": "0x1A",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 77,
+            "end": 81,
+            "text": "0xFF",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 84,
+            "end": 89,
+            "text": "0x3E8",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 109,
+            "end": 110,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "596202e32161f8918688cc94e1bb66736f1966522dc0347639f6461ac81a37d9",
+        "spans": [
+          {
+            "start": 35,
+            "end": 41,
+            "text": "Pasill",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 50,
+            "text": "Entrad",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 122,
+            "text": "Pasillo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 145,
+            "text": "Entradas",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "d26bdda7899776ab853fce73e19d086386e2b2fd2fcd8cf4495728d74589fa1b",
+        "spans": []
+      },
+      {
+        "block": "u12_etiqueta_letras_y_ancho_completo_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "5678e77aed74a1151d3be7c697d74c84ca22876fb014c1a5bb73faaffad42b51",
+        "spans": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 157,
+            "text": "Muelle",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 180,
+            "text": "Pasillo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 191,
+            "text": "Entradas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 261,
+            "text": "A B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 363,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 470,
+            "end": 472,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 537,
+            "end": 541,
+            "text": "0015",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 598,
+            "end": 601,
+            "text": "0xf",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 619,
+            "end": 620,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 623,
+            "end": 624,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 731,
+            "end": 733,
+            "text": "15",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 735,
+            "end": 737,
+            "text": "26",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 740,
+            "end": 743,
+            "text": "255",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

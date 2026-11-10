@@ -36,7 +36,7 @@
             "Un objeto ostringstream que conserva el patrón."
           ],
           "correctIndex": 1,
-          "explanation": "La función devuelve texto. Para mostrarlo hace falta una operación de salida elegida por el programa.",
+          "explanation": "La llamada construye y devuelve un std::string cuyo contenido es Fila 3: conserva los caracteres fijos y sustituye el campo por la representación del entero. El llamador puede guardar esa cadena y utilizarla más tarde.\n\nLa propia llamada a std::format no la imprime. Para mostrarla, el programa debe insertar la cadena devuelta en una salida, por ejemplo mediante std::cout.",
           "reviewFeedback": [
             "Distingue componer una cadena de enviarla después a un flujo de salida.",
             "Identifica qué tipo de resultado devuelve la función y qué operación lo mostraría.",
@@ -63,7 +63,7 @@
           "answers": [
             "Este:9|2"
           ],
-          "explanation": "La cadena se compuso con nueve. Cambiar luego la variable no vuelve a componer los caracteres almacenados.",
+          "explanation": "Cuando se ejecuta la composición, cantidad contiene 9. Los dos campos producen Este:9, y esos caracteres quedan guardados en texto. La asignación posterior cambia la variable a 2, pero no vuelve a ejecutar la composición.\n\nLa salida combina la cadena ya guardada y el valor actual de la variable: Este:9|2. Guardar el resultado de la llamada no mantiene una conexión que actualice automáticamente la cadena.",
           "reviewFeedback": "Localiza el momento en que se compone y guarda la cadena. Sigue después la asignación a la variable sin volver a ejecutar esa composición."
         },
         {
@@ -74,7 +74,7 @@
           "answers": [
             "[]|[N]-[0]"
           ],
-          "explanation": "La cadena vacía ocupa su campo sin aportar caracteres. Cero sí aporta el carácter 0.",
+          "explanation": "En la primera composición, el argumento vacío aporta cero caracteres. Los corchetes pertenecen al patrón y permanecen, de modo que se obtiene [].\n\nLa segunda composición coloca N en el primer campo y el carácter 0 en el segundo. Conserva los corchetes y el guion y produce [N]-[0]. El separador insertado por el programa une ambos resultados: []|[N]-[0]. Un dato vacío y el entero cero no tienen la misma representación.",
           "reviewFeedback": "Una cadena vacía no aporta caracteres a su campo, pero no elimina los delimitadores literales. Distingue ese caso del entero cero."
         },
         {
@@ -86,7 +86,7 @@
             "El primero usa 4 y el segundo usa 12."
           ],
           "correctIndex": 2,
-          "explanation": "La selección automática recorre los argumentos en su orden.",
+          "explanation": "La selección automática relaciona el primer campo {} con el primer argumento posterior al patrón, 4. El segundo campo toma el segundo argumento, 12.\n\nLos espacios y la barra del patrón se conservan entre ambos resultados, por lo que la cadena queda como 4 / 12. El orden de los campos determina qué argumento ocupa cada lugar.",
           "reviewFeedback": [
             "Relaciona los campos con el orden de los argumentos posteriores al patrón.",
             "Comprueba si la selección automática repite un dato o avanza al siguiente.",
@@ -119,7 +119,7 @@
           "answers": [
             "8/Sol/8"
           ],
-          "explanation": "El índice uno selecciona ocho y se reutiliza. El índice cero selecciona Sol.",
+          "explanation": "Los argumentos posteriores al patrón son Sol, con índice 0, y 8, con índice 1. El patrón selecciona primero el índice 1, después el 0 y de nuevo el 1.\n\nLas barras se conservan y la cadena resulta 8/Sol/8. Repetir un índice vuelve a usar el mismo argumento; no avanza al siguiente ni elimina el valor ya utilizado.",
           "reviewFeedback": "Los índices seleccionan posiciones de argumentos posteriores al patrón. Sigue cada índice, incluso cuando uno se repite."
         },
         {
@@ -130,7 +130,7 @@
           "answers": [
             "0"
           ],
-          "explanation": "El primer argumento posterior al patrón tiene índice cero. El patrón entero conserva selección manual.",
+          "explanation": "El primer argumento posterior al patrón es R y tiene índice 0; el segundo es 5 y tiene índice 1. El último campo debe volver a seleccionar el primero, por lo que se completa con 0.\n\nEl patrón completo queda \"{1}:{0}:{0}\" y compone 5:R:R. Los tres campos conservan índices explícitos y la segunda selección de R no requiere un tercer argumento.",
           "reviewFeedback": "Escribe sólo el índice del argumento pedido. No cuentes el patrón como uno de los argumentos numerados ni cambies los campos restantes."
         },
         {
@@ -142,7 +142,7 @@
             "\"{1}/{1}\""
           ],
           "correctIndex": 2,
-          "explanation": "El índice uno identifica el segundo argumento, sin consumirlo ni modificarlo.",
+          "explanation": "El índice 0 identifica el argumento A y el índice 1 identifica 7. Para repetir sólo el segundo argumento, ambos campos deben seleccionar el índice 1: \"{1}/{1}\".\n\nLa cadena resultante es 7/7. El argumento del índice cero puede estar presente sin aparecer en el resultado, y reutilizar el índice uno no modifica su valor.",
           "reviewFeedback": [
             "Comprueba si ambos índices seleccionan el segundo argumento.",
             "Identifica qué posición posterior al patrón corresponde al índice cero.",
@@ -175,7 +175,7 @@
           "answers": [
             "{codigo=T}|{dato}"
           ],
-          "explanation": "Las llaves dobles pertenecen al patrón. Las llaves que ya contiene el argumento se copian como datos; no se vuelven a interpretar como campos.",
+          "explanation": "En el primer patrón, {{ aporta una llave de apertura, el texto fijo aporta codigo=, el campo aporta T y }} aporta la llave de cierre. Esa composición produce {codigo=T}.\n\nLa segunda llamada recibe {dato} como dato para un único campo. Sus llaves se copian junto con las letras y no crean otros campos. Con el separador del programa, la salida completa es {codigo=T}|{dato}.",
           "reviewFeedback": "Distingue las llaves dobles escritas en el patrón de las llaves que ya forman parte del dato. Cada una interviene en una etapa diferente."
         },
         {
@@ -187,7 +187,7 @@
             "Crean otro campo que exige un argumento adicional."
           ],
           "correctIndex": 0,
-          "explanation": "Sólo el primer argumento es el patrón interpretado por esta llamada.",
+          "explanation": "El patrón \"[{}]\" contiene un único campo entre dos corchetes literales. El argumento aporta los dos caracteres {} a ese campo y la cadena resultante es [{}].\n\nLa llamada interpreta los campos del patrón; no vuelve a analizar como patrón la cadena que ha recibido como dato. Por eso esas dos llaves no solicitan otro argumento ni desaparecen.",
           "reviewFeedback": [
             "Distingue el patrón interpretado de los datos que éste presenta.",
             "Comprueba si copiar los caracteres de una cadena elimina sus llaves.",
@@ -334,7 +334,7 @@
           "answers": [
             "7|7|true|false"
           ],
-          "explanation": "El entero y el carácter producen aquí caracteres iguales. Los valores lógicos se presentan como palabras.",
+          "explanation": "El primer argumento es un entero con valor 7 y se representa en decimal. El segundo es el carácter '7', que se copia como carácter. En esta muestra ambos campos se ven como 7, aunque proceden de tipos distintos.\n\nLos argumentos true y false se presentan con esas palabras al usar estos campos sin especificaciones. Los separadores del patrón producen la cadena completa 7|7|true|false.",
           "reviewFeedback": "Identifica el tipo de cada argumento y su presentación básica. No deduzcas que dos escrituras iguales proceden del mismo tipo."
         },
         {
@@ -345,7 +345,7 @@
           "answers": [
             "31:false|1f"
           ],
-          "explanation": "format compone su cadena con sus propias reglas. cout conserva hexadecimal sólo para el entero que recibe directamente.",
+          "explanation": "La llamada a std::format compone 31:false con sus propias reglas: el entero aparece en decimal y el valor lógico como palabra. Insertar esa cadena en std::cout conserva sus caracteres.\n\nEl segundo 31 se inserta directamente como entero en std::cout, que sigue configurado en hexadecimal, y aparece como 1f. Las dos operaciones producen en conjunto 31:false|1f.",
           "reviewFeedback": "Sigue por separado la cadena que compone format y el entero insertado directamente en cout. No traslades entre ambas operaciones el estado del flujo."
         },
         {
@@ -416,7 +416,7 @@
             "pedido {}: 6 unidades; copia="
           ],
           "correctIndex": 0,
-          "explanation": "Las llaves exteriores pertenecen al mensaje; las interiores forman parte del código. El dato se copia literalmente en ambos lugares.",
+          "explanation": "En la primera aparición del código, el mensaje aporta una llave antes y otra después del dato. El código contiene a su vez {X}, por lo que esa parte se ve como {{X}}.\n\nDespués de copia= se repite solamente el dato, sin otro par de llaves exteriores. Al incorporar la cantidad, la cadena completa queda pedido {{X}}: 6 unidades; copia={X}. Las llaves que contiene el código se conservan en ambas copias.",
           "reviewFeedback": [
             "Separa las llaves exteriores del mensaje de las llaves que ya contiene el código.",
             "Comprueba si la segunda aparición del dato debe conservar los mismos caracteres.",
@@ -490,7 +490,7 @@
           "answers": [
             "{R}-{R}|{R}"
           ],
-          "explanation": "El argumento se copia en dos campos y permanece intacto. Sus llaves no se interpretan de nuevo.",
+          "explanation": "Los dos campos seleccionan el mismo argumento {R}. Cada campo copia sus tres caracteres y el guion fijo queda entre ambas copias, formando {R}-{R}. Las llaves del dato no abren campos nuevos.\n\nLa composición no modifica dato. Al mostrar después el separador y esa variable, la salida se completa como {R}-{R}|{R}.",
           "reviewFeedback": "Reutilizar el argumento presenta de nuevo sus caracteres. No vuelve a interpretar sus llaves como un patrón ni cambia el dato original."
         },
         {
@@ -537,7 +537,7 @@
             "envio {0}: 6 cajas; codigo=0"
           ],
           "correctIndex": 1,
-          "explanation": "El argumento vacío no elimina los textos literales del patrón: se conservan llaves, dos puntos y la segunda etiqueta.",
+          "explanation": "El código vacío no aporta caracteres en ninguna de sus dos apariciones. El par de llaves del mensaje permanece junto, y la etiqueta final también se conserva aunque no tenga caracteres después del signo igual.\n\nLa cantidad aporta 6 al campo correspondiente, por lo que el resultado es envio {}: 6 cajas; codigo=. Omitir las llaves, los dos puntos o la segunda etiqueta cambiaría el texto fijo exigido por el contrato.",
           "reviewFeedback": [
             "Una cadena vacía no elimina los textos literales que la rodean.",
             "Distingue los delimitadores del patrón del contenido del argumento.",
@@ -567,6 +567,92 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Conservar cantidades completas y códigos con espacios"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa que lea un código de la primera línea de Entrada y una cantidad de la segunda. La primera línea puede estar vacía o contener de uno a ocho caracteres ASCII imprimibles, incluidos espacios y llaves. La segunda contiene un entero entre 0 y 1000. Estas pruebas respetan ese dominio; no se solicita un diagnóstico para entradas que lo incumplan.\n\nImplementa std::string envio(const std::string& codigo, int cajas). Debe devolver la forma envio {CODIGO}: CAJAS cajas; codigo=CODIGO, conservando el código en sus dos apariciones y todas las cifras de la cantidad. Usa un patrón literal con selección por índices, sin modificar los argumentos ni imprimir dentro de la función. La cadena devuelta no incluye salto de línea.",
+          "emphasis": [
+            {
+              "text": "todas las cifras",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "En main, usa std::getline para recibir la primera línea completa; después lee la cantidad. Llama a envio y muestra la cadena seguida de un único salto de línea. No escribas solicitudes de entrada ni otros rótulos.\n\nCompila y ejecuta el mismo programa con las tres entradas siguientes, cambiando sólo el contenido de Entrada entre ejecuciones. Una línea vacía en el segundo caso es parte de la entrada: no la sustituyas por comillas ni por un espacio. El tercer código tiene ocho caracteres, incluidos sus dos espacios. Cada caso requiere su propio resultado correcto.",
+          "emphasis": [
+            {
+              "text": "el mismo programa",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Caso 1: primera línea Q; segunda línea 10.\nCaso 2: primera línea vacía; segunda línea 1000.\nCaso 3: primera línea Z {Q} 7!; segunda línea 305.\n\nTermina cada línea de Entrada con un salto de línea. Cada ejecución produce una sola línea. Los resultados de los casos 1, 2 y 3, respectivamente, son:\nenvio {Q}: 10 cajas; codigo=Q\nenvio {}: 1000 cajas; codigo=\nenvio {Z {Q} 7!}: 305 cajas; codigo=Z {Q} 7!"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    // Construye el objetivo de transferencia de esta pagina.\n    return 0;\n}\n",
+          "initialStandardInput": "Q\n10\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "Q\n10\n",
+                "outputs": [
+                  "envio {Q}: 10 cajas; codigo=Q\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La cantidad 10 debe conservar sus dos cifras. El código Q aparece dentro de las llaves literales y otra vez después de codigo=. Usar sólo la cifra de las unidades produciría 0 y no cumpliría esta salida.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "envio {Q}: 0 cajas; codigo=Q\n"
+                    ],
+                    "text": "La cantidad aparece como 0 en lugar de 10. Comprueba si el programa conserva sólo la cifra de las unidades: cajas % 10 daría ese cero. El campo debe recibir la cantidad completa."
+                  }
+                ]
+              },
+              {
+                "standardInput": "\n1000\n",
+                "outputs": [
+                  "envio {}: 1000 cajas; codigo=\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera línea vacía aporta un código sin caracteres, pero se conservan las llaves y las dos etiquetas. La cantidad 1000 está en el límite admitido y aporta sus cuatro cifras. Leer primero la cantidad o saltarse la línea vacía cambiaría la distribución de los datos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "envio {}: 0 cajas; codigo=\n"
+                    ],
+                    "text": "La cantidad aparece como 0 en lugar de 1000. El código vacío sí se conserva, pero el límite de cuatro cifras se ha reducido. Revisa si se calcula el resto entre diez antes de componer el campo; la cantidad que debe presentarse sigue siendo mil."
+                  }
+                ]
+              },
+              {
+                "standardInput": "Z {Q} 7!\n305\n",
+                "outputs": [
+                  "envio {Z {Q} 7!}: 305 cajas; codigo=Z {Q} 7!\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El código Z {Q} 7! conserva sus ocho caracteres en ambos lugares. Las llaves y los espacios del dato no se interpretan como campos ni se eliminan. La cantidad 305 aporta sus tres cifras completas; conservar sólo la última produciría 5.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "envio {Z {Q} 7!}: 5 cajas; codigo=Z {Q} 7!\n"
+                    ],
+                    "text": "El código completo coincide, pero la cantidad aparece como 5 en lugar de 305. Ese cinco es el resto de dividir trescientos cinco entre diez. El campo debe presentar el entero completo, sin reducirlo a su última cifra."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -580,6 +666,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::cout << envio(\"Z\", 0) << \"\\n\" << envio(\"\", 6) << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: el patrón conserva los datos completos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <format>\n#include <iostream>\n#include <string>\n\nstd::string envio(const std::string& codigo, int cajas) {\n    return std::format(\"envio {{{0}}}: {1} cajas; codigo={0}\", codigo, cajas);\n}\n\nint main() {\n    std::string codigo;\n    int cajas = 0;\n    if (!std::getline(std::cin, codigo) || !(std::cin >> cajas)) {\n        return 1;\n    }\n    std::cout << envio(codigo, cajas) << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::getline obtiene la primera línea con todos sus caracteres y admite que esté vacía. La extracción posterior obtiene el entero de la segunda línea. Las dos lecturas tienen responsabilidades distintas: tratar el código como una palabra perdería los espacios del tercer caso.\n\nEn el patrón, {{ y }} aportan las llaves exteriores. El índice 0 selecciona el código en sus dos apariciones; el índice 1 selecciona la cantidad completa. El código que llega como argumento se copia y sus llaves no se analizan como un patrón nuevo.\n\nLas pruebas anteriores con cantidades de una cifra no distinguirían cajas de cajas % 10. Los valores 10, 1000 y 305 sí separan esos resultados. Los tres casos acreditan esas observaciones; no inspeccionan cómo está escrita la función ni prueban por sí solos todos los valores del dominio."
         }
       ]
     }
@@ -916,14 +1015,22 @@
           "block_0008_0000",
           "block_0008_0001",
           "block_0008_0002",
-          "block_0008_0003"
+          "block_0008_0003",
+          "u12_formato_cifras_y_codigo_titulo",
+          "u12_formato_cifras_y_codigo_contrato",
+          "u12_formato_cifras_y_codigo_lectura",
+          "u12_formato_cifras_y_codigo_entradas",
+          "u12_formato_cifras_y_codigo_construccion"
         ]
       },
       {
         "id": "page_0009",
         "blocks": [
           "block_0009_0000",
-          "block_0009_0001"
+          "block_0009_0001",
+          "u12_formato_cifras_y_codigo_referencia_titulo",
+          "u12_formato_cifras_y_codigo_referencia_codigo",
+          "u12_formato_cifras_y_codigo_referencia_razonamiento"
         ]
       }
     ],
@@ -1575,6 +1682,78 @@
           "block": 0
         },
         "progressPage": "page_0003"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_lectura",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_entradas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_construccion",
+        "sha256": "0f53ffa4d7832910a38cb3f0049ce17b30fd63a7a50661c17bbdf20839c5d0f0",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0008"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 6
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_referencia_codigo",
+        "sha256": "ac34e38481f67864520a8bcd1b22df82017aa21ced7e3b7c5cf4f09ca918943a",
+        "storage": {
+          "page": 10,
+          "block": 7
+        },
+        "progressPage": "page_0009"
+      },
+      {
+        "id": "u12_formato_cifras_y_codigo_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 8
+        },
+        "progressPage": "page_0009"
       }
     ],
     "editorial": [
@@ -1737,6 +1916,76 @@
         "id": "block_0008_0002",
         "beforeSha256": "9904a081d05509fa58a9fef2c0e707f9bfe905b24031dd6c077b1854d930d7cb",
         "afterSha256": "cb8d556e66c292874d884ea50ff2ec902c3f5037b0c1866ff879b30bad81a65d"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "33ebb09eefe5fcac06e4825b889b24c475ba82d1c426916cedf23d5ff013183a",
+        "afterSha256": "95433ea9ac00440cbbeac976ce938f93f97745a99a17a905b26b97b9d26170f4"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "c8395a37280a59e980dad2e4171b58911bc6eb2261a7da4dbe2eb6db91e9c936",
+        "afterSha256": "7eae1075b672a26fbcb4989cde410170904675ad7d6c0e57b48a2f60651c0fcd"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "2e5db05dac8fa25835ffaf2af593fe5ad8435ab1271e4b799e152f430d6bdb06",
+        "afterSha256": "3a1e88d806af67b76abec5cfbd138a8230d7a41d7f6911e7592420f031191d0f"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "fa2ae3e025a36312f5c488209281a42c55ef73eedb5ed26413210382501b3761",
+        "afterSha256": "47b318968f64b5b56b6964f79631bcd75be3911e94fc547da28f28506a6057f3"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "baccca39758e60c842a6ebabc5b55bcae3547571730525ba61c2468739d3c039",
+        "afterSha256": "838a7e417767c293e66b2b426c950ce381c2b53e83a34bb1f587ea3861162f47"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "4379059b28d57010e17b448938435cb90ca616036c1d80f3c9014457fa34d53b",
+        "afterSha256": "85ba5f5e9c1596633fe8fcfd2eb38522d8f7e7de6f21b3db765518a28d503399"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "b9a405b734d430d25972cc4f609a4442b95ef62da68ed021acc40f7894a5e1c1",
+        "afterSha256": "b2bdd34d993f8b8f045d63319bf613d944e0fc45efa189e6d68283d787700a00"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "0f7d800e84e1049808c0cb156644e12bd96533c033f75edcf8a12959875c4bca",
+        "afterSha256": "83bd27f58c968b6d20255f0945f5c2ba4663489254f3d430f2201915a4288030"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "cfcfaa07c5c101637eaf3900e3d4218d004187f106abafbaee87f14b09e7bc0a",
+        "afterSha256": "ac46d078b9c7f1623b9906f5766723d17f47c3e2d7386427ef2012cb54bd9690"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "3b3d4b7bfdac678a841e8e666aadb03688b8827b10f1dc126d413d79ce58c87b",
+        "afterSha256": "c014df87b2bcd0007fc9a0fa78e3254e45d9dac9a88e7b1654764a52544b7685"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "4a0ac4650c0eb1180c32225a21c6c58bf638c267edfb0be46cedd8769d825857",
+        "afterSha256": "90586ec10b9fc4f0f0a76465f37caf4ed915e071a0236ba7558cabc2df99f70f"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "a81c5dabf0309ba04d837a5f15b3e836173896ef3accd164e544e8a1a118c0f9",
+        "afterSha256": "e66d379eb6662ac438e066134abd80d26e693a88b376ae1353c213e2cedb9e81"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "3d46deb6296e2cf74ba498f2fab15575d2eaee6bdf563cc305264e9230fb5e1b",
+        "afterSha256": "9e24043e95eea7843feb050f16fcc6bf63550bb6a3896a151c530733bc5613f0"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "9c1ef42591f41774ed6b49a7c2d478e70ac5d3da2ca359ad1ba74f3dc2641f06",
+        "afterSha256": "77e5bb652c33a40cb0387377e586292878ff768eb1d78825c350c123b5284279"
       }
     ]
   },
@@ -1754,10 +2003,13 @@
       ]
     },
     {
-      "activity": "block_0008_0003",
+      "activity": "u12_formato_cifras_y_codigo_construccion",
       "blocks": [
         "block_0009_0000",
-        "block_0009_0001"
+        "block_0009_0001",
+        "u12_formato_cifras_y_codigo_referencia_titulo",
+        "u12_formato_cifras_y_codigo_referencia_codigo",
+        "u12_formato_cifras_y_codigo_referencia_razonamiento"
       ]
     }
   ],
@@ -1766,6 +2018,12 @@
       "activity": "block_0007_0003",
       "requires": [
         "block_0006_0002"
+      ]
+    },
+    {
+      "activity": "u12_formato_cifras_y_codigo_construccion",
+      "requires": [
+        "block_0008_0003"
       ]
     }
   ],
@@ -1865,8 +2123,37 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "143936ad515ac105f6d53eef52058af600167bcffdfe60afda4b678387cb19eb",
-        "spans": []
+        "sourceSha256": "f495570ac9029b1abd576e9246d191d776aec41b8c9e657399e15ff051831099",
+        "spans": [
+          {
+            "start": 35,
+            "end": 46,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "Fila 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 251,
+            "text": "std::format",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 364,
+            "end": 373,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -1954,8 +2241,51 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "8fe98bb7ed9e758c82550b06dab22158b227e29b427db64b04de0a73e0fee814",
-        "spans": []
+        "sourceSha256": "ea4b9ceafbaeb924272b91b4aadc5af7581bae9b8b3ba8dbc6821d678a6ea874",
+        "spans": [
+          {
+            "start": 34,
+            "end": 42,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 85,
+            "text": "Este:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 130,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 178,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 305,
+            "text": "Este:9|2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1972,14 +2302,42 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "9cd7b5022ce6da1ce614145e8fdde10a9051606ed543a58467ccee7cfde8ec4f",
+        "sourceSha256": "d7eeb39b3e1e237557dcecccf5a1469f40b7fcfb0a755eaf94bfc046b4a0909e",
         "spans": [
           {
-            "start": 82,
-            "end": 83,
+            "start": 142,
+            "end": 144,
+            "text": "[]",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 177,
+            "end": 178,
+            "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 213,
             "text": "0",
             "role": "output",
             "reading": "characters"
+          },
+          {
+            "start": 273,
+            "end": 280,
+            "text": "[N]-[0]",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 353,
+            "text": "[]|[N]-[0]",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2019,8 +2377,37 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "a10482baa63c5ca43d00a52329e8fb169f62a63439e296587d7728d6466fbc91",
-        "spans": []
+        "sourceSha256": "b67b0a103165dee3368292dfd90a17aae5de4fabff47a380b6cd769e0876114d",
+        "spans": [
+          {
+            "start": 50,
+            "end": 52,
+            "text": "{}",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 99,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 147,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 260,
+            "text": "4 / 12",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -2151,13 +2538,62 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "f92b0b886cbf498d3725b0dd071e0a85aecb59b52a05eee65e52efcbb20a36ff",
+        "sourceSha256": "14d50d9cf209e38230d6771bc41e8f36db7f06b4ac5ded35d28bfcd565b462de",
         "spans": [
           {
-            "start": 72,
-            "end": 75,
+            "start": 41,
+            "end": 44,
             "text": "Sol",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 119,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 149,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 203,
+            "text": "8/Sol/8",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2177,8 +2613,65 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "fca0bf5710709fc4bf91e6313d2c9e2a6fd7c5891ceda0dbc21f78f3ea236cb6",
-        "spans": []
+        "sourceSha256": "ead7fc2fbab32baf6ae446faf2dfd7c6e6f42ef19a563e0f477624b6bc4b94ae",
+        "spans": [
+          {
+            "start": 43,
+            "end": 44,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 95,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 179,
+            "text": "0",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 220,
+            "text": "\"{1}:{0}:{0}\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 231,
+            "end": 236,
+            "text": "5:R:R",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 310,
+            "text": "R",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -2209,8 +2702,58 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "f7dd361a212742cde5c03a92c5b29c981a3ecb1c09caed50bdcb7360a8360be1",
-        "spans": []
+        "sourceSha256": "81a9d8088dc157d54ff14a2a4c857a562b06fd3f286011ec40dc6a683fc71afe",
+        "spans": [
+          {
+            "start": 10,
+            "end": 11,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 159,
+            "text": "\"{1}/{1}\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "text": "7/7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -2342,8 +2885,58 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "876fa20b0152ad121f5ca659226588797667b67343c134765889b995ab1b7c41",
-        "spans": []
+        "sourceSha256": "595b1743846f03befc795d35ee16cbfcb51cf35f08ca52821ff6e2f32cc79832",
+        "spans": [
+          {
+            "start": 21,
+            "end": 23,
+            "text": "{{",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 75,
+            "end": 82,
+            "text": "codigo=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "T",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 106,
+            "text": "}}",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 158,
+            "end": 168,
+            "text": "{codigo=T}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 203,
+            "text": "{dato}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 355,
+            "end": 372,
+            "text": "{codigo=T}|{dato}",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2379,8 +2972,30 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "f3155c929b786455b82aef2dfd7e50c66bd4597f0d9a71f152beb61c6d0ba3fc",
-        "spans": []
+        "sourceSha256": "78b54ef6beac6b7d6ef312301dd49e5f1977f0a539dfa60d42cbb028c248eb14",
+        "spans": [
+          {
+            "start": 10,
+            "end": 16,
+            "text": "\"[{}]\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 113,
+            "text": "{}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 152,
+            "end": 156,
+            "text": "[{}]",
+            "role": "output",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2602,8 +3217,51 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "1c165888c5eef9aadf816cfcaac5e0181da2a4359ff66219d7c7b431b10044bd",
-        "spans": []
+        "sourceSha256": "0fa4fdffe5aadca994c09a80ffc7f230665a84e3eae0473c094ddd498de9e749",
+        "spans": [
+          {
+            "start": 43,
+            "end": 44,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 102,
+            "text": "'7'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 232,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 240,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 370,
+            "end": 384,
+            "text": "7|7|true|false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2620,19 +3278,56 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "8c51a62cb80035bbd0d4651e2734bab8981e686c76771222807035afa1558e4e",
+        "sourceSha256": "9133a9f62a121419791190263fdf67daebffe42699c23d842d719cc688ab8269",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
-            "text": "format",
-            "role": "cpp"
+            "start": 13,
+            "end": 24,
+            "text": "std::format",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 53,
-            "text": "cout",
-            "role": "cpp"
+            "start": 33,
+            "end": 41,
+            "text": "31:false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 159,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 197,
+            "end": 199,
+            "text": "31",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 248,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 303,
+            "end": 305,
+            "text": "1f",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 359,
+            "text": "31:false|1f",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2920,8 +3615,37 @@
       {
         "block": "block_0005_0005",
         "path": "/explanation",
-        "sourceSha256": "74a752a53b9479f0dc82454afca4f49972cf1316759c3b96dd05e4dba941c588",
-        "spans": []
+        "sourceSha256": "553364c1bb52bbfad1034e1fb55bbc900c1f290744a295a8865a58faba965885",
+        "spans": [
+          {
+            "start": 123,
+            "end": 126,
+            "text": "{X}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 160,
+            "end": 165,
+            "text": "{{X}}",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 179,
+            "end": 185,
+            "text": "copia=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 337,
+            "text": "pedido {{X}}: 6 unidades; copia={X}",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0005",
@@ -3144,8 +3868,37 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "9ba04ba16bd17e7055cb8fef93a06aafc156c8f1e55795a80fdc3b19759de027",
-        "spans": []
+        "sourceSha256": "1819b2d6a25228b6687058ed7ad5ff2d369a40e24c18c537ba90902adefb91d9",
+        "spans": [
+          {
+            "start": 46,
+            "end": 49,
+            "text": "{R}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 139,
+            "end": 146,
+            "text": "{R}-{R}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 220,
+            "end": 224,
+            "text": "dato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 312,
+            "text": "{R}-{R}|{R}",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -3222,8 +3975,23 @@
       {
         "block": "block_0008_0001",
         "path": "/explanation",
-        "sourceSha256": "164127a1036f2c356850dcaef6d72406848b9d75cffd640d47fe20bfcdaab6d8",
-        "spans": []
+        "sourceSha256": "33ddacc465a9a0ef6da587122663287496724abb0f3c637bb64c2bb7cd795ff3",
+        "spans": [
+          {
+            "start": 230,
+            "end": 231,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 311,
+            "text": "envio {}: 6 cajas; codigo=",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0008_0001",
@@ -3334,6 +4102,368 @@
         "path": "/text",
         "sourceSha256": "7a33c3160cbcf0cad312bee81d9a6fff96bd974ef4b5a612f2700e02cfa561e0",
         "spans": []
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_titulo",
+        "path": "/text",
+        "sourceSha256": "6f0fe57a535be0d83a19abe0ea69a11f98546e49798fb78c9f1c44e268f09a7c",
+        "spans": []
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_contrato",
+        "path": "/text",
+        "sourceSha256": "b280425e45bf81fd19688a4275cb35b2f7dd805a2b361b9f034faae5aeede880",
+        "spans": [
+          {
+            "start": 256,
+            "end": 257,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 264,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 376,
+            "end": 431,
+            "text": "std::string envio(const std::string& codigo, int cajas)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 456,
+            "end": 498,
+            "text": "envio {CODIGO}: CAJAS cajas; codigo=CODIGO",
+            "role": "output",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_lectura",
+        "path": "/text",
+        "sourceSha256": "6e6b450cc5a2f74ae509ae7dddbdbc8f4729a518e740aab5679a94dfa2295792",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 13,
+            "end": 25,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 104,
+            "text": "envio",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_entradas",
+        "path": "/text",
+        "sourceSha256": "b4dd3e7eacdf6db227cb7ef2367135a33f812c1ee624f2120934f591f8b79a2a",
+        "spans": [
+          {
+            "start": 22,
+            "end": 23,
+            "text": "Q",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 90,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 122,
+            "text": "Z {Q} 7!",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 138,
+            "end": 141,
+            "text": "305",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 325,
+            "text": "envio {Q}: 10 cajas; codigo=Q",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 355,
+            "text": "envio {}: 1000 cajas; codigo=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 400,
+            "text": "envio {Z {Q} 7!}: 305 cajas; codigo=Z {Q} 7!",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "c54e757fd409fd8fc3d35df8cb6fc34a3e753d6c46f9c708f455d325acb2bed9",
+        "spans": [
+          {
+            "start": 12,
+            "end": 14,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "text": "Q",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 126,
+            "text": "codigo=",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 175,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "ca2c8ba0bfbde37593ff09994048bcda89ce37e7216e5931f434d388416992af",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 118,
+            "text": "cajas % 10",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "278a1ab90aae410ed9b46f1f68a911b2db715cbb93aa81b7a2881d04d2c8a284",
+        "spans": [
+          {
+            "start": 118,
+            "end": 122,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_construccion",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "9ae0a38f04b5195b4d5cefe4a3913c2b57d40661c23b26aa02db7c6f52330ab3",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 43,
+            "text": "1000",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_construccion",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "4fc81a32685072c8232c26a78e748cc56a7c2670a4e388eea000879b0b54ab85",
+        "spans": [
+          {
+            "start": 10,
+            "end": 18,
+            "text": "Z {Q} 7!",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 159,
+            "end": 162,
+            "text": "305",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 234,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_construccion",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "109d36c47e2fb92753e97ce2032fc00cb331369b0a257e518923a8ebd11be0c2",
+        "spans": [
+          {
+            "start": 59,
+            "end": 60,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 76,
+            "text": "305",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "b4f7fb1e2d72f81d13821914d86b6a8a4cea8b3c7374cd341c55fac5c8cccbf0",
+        "spans": []
+      },
+      {
+        "block": "u12_formato_cifras_y_codigo_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "744790dbada22a18a5b93aa2aecf9946460c059b92b7e6d614e3db7a3cd0512f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "std::getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 292,
+            "end": 294,
+            "text": "{{",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 297,
+            "end": 299,
+            "text": "}}",
+            "role": "string",
+            "reading": "characters"
+          },
+          {
+            "start": 341,
+            "end": 342,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 398,
+            "end": 399,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 596,
+            "end": 601,
+            "text": "cajas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 605,
+            "end": 615,
+            "text": "cajas % 10",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 629,
+            "end": 631,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 633,
+            "end": 637,
+            "text": "1000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 640,
+            "end": 643,
+            "text": "305",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
