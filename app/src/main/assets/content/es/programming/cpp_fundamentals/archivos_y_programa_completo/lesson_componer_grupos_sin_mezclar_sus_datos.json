@@ -31,7 +31,7 @@
             "Aceptar y cerrar implícitamente el conjunto al ver EOF."
           ],
           "correctIndex": 1,
-          "explanation": "El cierre reconocido por leer_grupo pertenece a ese grupo. EOF no proporciona el cierre que falta al llamador.",
+          "explanation": "La llave disponible termina el grupo verde. leer_grupo la consume y puede devolver un grupo válido con cero registros. El lector del conjunto todavía está dentro de la apertura exterior: necesita encontrar y consumir una segunda llave para aceptar su propio candidato.\n\nAl llegar al final de la entrada no obtiene ese segundo cierre, así que rechaza el conjunto y la muestra completa. El grupo válido sólo era una parte provisional. Su cierre no puede utilizarse dos veces, y el final de la fuente no añade el carácter que falta.",
           "reviewFeedback": [
             "El grupo verde está completo, pero todavía queda el nivel que lo contiene. Comprueba si aparece un segundo cierre después del cierre de ese grupo.",
             "Identifica qué lector consume cada cierre y comprueba por separado que el grupo y el conjunto estén completos.",
@@ -55,7 +55,7 @@
           "answers": [
             "1:1"
           ],
-          "explanation": "El segundo candidato conserva el registro del primero. Copiarlo guarda también ese dato, aunque queríamos un grupo azul vacío.",
+          "explanation": "La primera inserción guarda una copia de candidato, que contiene el registro 7[0;0]. Después candidato.id = 2; cambia únicamente el identificador del grupo local: su vector de registros sigue teniendo ese elemento.\n\nLa segunda inserción copia el candidato tal como está en ese momento, incluido el registro. Las dos copias almacenadas tienen un registro, de modo que la salida es 1:1. Para preparar un grupo azul vacío hace falta un candidato cuyo vector esté vacío; cambiar sólo el identificador no elimina los datos anteriores.",
           "reviewFeedback": "Sigue el contenido de candidato.registros después de cada instrucción. push_back guarda una copia del grupo; cambiar candidato.id no ejecuta ninguna operación sobre sus registros. Comprueba el tamaño de cada copia, no sólo su ID."
         },
         {
@@ -72,7 +72,7 @@
             "Sí: sólo se prohíben los ID de registros repetidos."
           ],
           "correctIndex": 0,
-          "explanation": "La presencia del grupo se representa por una entrada en grupos, independiente de que sus registros estén vacíos.",
+          "explanation": "La primera representación contiene un grupo rojo completo, aunque su colección de registros tenga tamaño cero. Al admitirlo, el conjunto candidato guarda una entrada con el identificador de rojo.\n\nCuando aparece el segundo grupo, su identificador coincide con el de esa entrada. La comprobación de grupos repetidos debe rechazar el conjunto completo antes de reemplazar el destino. Contar únicamente grupos con registros perdería la información de que rojo ya estuvo presente; comprobar sólo los identificadores de los registros dejaría pasar este duplicado de otro nivel.",
           "reviewFeedback": [
             "Distingue la presencia del grupo de la cantidad de registros que contiene. Comprueba si el nombre ya aparece en la colección del conjunto.",
             "Aunque no tenga registros, el primer grupo rojo ya fue recibido. Revisa qué condición se comprueba al intentar añadir el segundo grupo con ese nombre.",
@@ -93,7 +93,7 @@
             "El primero termina el archivo y el segundo crea un grupo vacío."
           ],
           "correctIndex": 0,
-          "explanation": "Cada nivel consume su propio terminador. Que un grupo esté vacío no elimina su cierre ni el cierre exterior; sólo la capa de muestra completa exige después EOF.",
+          "explanation": "El lector del grupo se encuentra dentro de { grupo rojo } y consume la primera llave de cierre. Devuelve al lector del conjunto un grupo rojo vacío. El siguiente carácter de cierre aún está disponible para el nivel exterior, que lo consume para terminar { conjunto ... }.\n\nAsí se reconocen dos objetos y dos terminadores, aunque no haya registros. Sólo después, al validar la muestra completa, se omiten los blancos finales y se comprueba que no quede más texto. El cierre del conjunto y el final de la fuente son condiciones distintas.",
           "reviewFeedback": [
             "Sigue primero la llamada que lee el grupo interior y después la llamada que completa el conjunto exterior.",
             "Un lector no consume los cierres de todos los niveles a la vez. Identifica el nivel al que pertenece cada uno de los dos signos.",
@@ -152,6 +152,52 @@
         {
           "type": "note",
           "text": "Las funciones previas están disponibles como apoyo. Los dos cuerpos nuevos y las pruebas corresponden a tu construcción. Estos lectores usan flujos nuevos con la configuración habitual: lectura decimal, salto de blancos y sin máscara de excepciones añadida."
+        },
+        {
+          "type": "heading",
+          "text": "Construcción: un componente y una muestra completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa leer_conjunto(std::istream& entrada, Conjunto& destino) y leer_muestra_completa(std::istream& entrada, Conjunto& destino) en el editor. Reutiliza tu construcción anterior y conserva el cliente, los tipos y leer_grupo proporcionados. El primer lector acepta un solo conjunto, consume su propio cierre y deja todos los caracteres posteriores disponibles. El segundo acepta únicamente una muestra formada por un conjunto completo seguido, como máximo, de blancos hasta el final.\n\nAmbas funciones reemplazan todo el destino cuando aceptan y lo conservan exactamente cuando rechazan. Una aceptación intermedia dentro del lector de muestra todavía no autoriza modificar el destino final: puede aparecer después un sufijo que invalide toda la muestra. Los grupos conservan el orden de entrada, y los identificadores de registros sólo deben ser únicos dentro de su grupo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente empieza con verde, que contiene 6[4;0], y rojo vacío. Mantiene el mismo destino durante todas las llamadas de la entrada elegida. Cada informe comienza por aceptación y número de grupos; después aparece una línea por grupo con su identificador, cantidad de registros y registros completos.\n\nLas muestras difíciles, incluidos sus tabuladores, ya están escritas en el código. Escribe únicamente 1 o 2 en Entrada para elegir el recorrido. En el primero, TabPendiente:1 y EspacioPendiente:1 comprueban el carácter que queda inmediatamente después de cada cierre aceptado, antes de omitir blancos. No se examina la posición ni los indicadores de un flujo rechazado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con Entrada igual a 1, lee dos conjuntos sucesivos del mismo flujo mediante leer_conjunto y obtiene después la palabra aviso. Finalmente intenta validar otra muestra que termina en resto, utilizando leer_muestra_completa. Compila y ejecuta hasta obtener exactamente:\n\n1:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\nTabPendiente:1\n1:0\nEspacioPendiente:1\nSufijo:aviso\n0:0\n\nCada línea termina con un salto de línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia Entrada a 2. Todas las llamadas usan leer_muestra_completa. Tras aceptar tres grupos, el cliente prueba un cierre sobrante, un cierre exterior ausente y un grupo repetido. Luego acepta el conjunto vacío y rechaza una cantidad fuera de rango. La salida requerida es:\n\n1:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n1:0\n0:0\n\nCada línea termina con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream&, Conjunto&) {\n    // Implementa la lectura de un solo conjunto.\n    return false;\n}\n\nbool leer_muestra_completa(std::istream&, Conjunto&) {\n    // Implementa la validacion de toda la muestra.\n    return false;\n}\n\nvoid mostrar(bool aceptado, const Conjunto& conjunto) {\n    std::cout << aceptado << ':' << conjunto.grupos.size() << '\\n';\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::cout << grupo.id << ':' << grupo.registros.size();\n        for (const Registro& registro : grupo.registros) {\n            std::cout << ' ' << registro.id << registro.recuento;\n        }\n        std::cout << '\\n';\n    }\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 2) return 1;\n    Conjunto destino{{Grupo{1, {{6, {4, 0}}}}, Grupo{0, {}}}};\n    if (caso == 1) {\n        std::istringstream entrada{\n            \"{ conjunto { grupo azul 4[0;1] } { grupo verde } \"\n            \"{ grupo rojo 4[1;0] 2[0;0] } }\\t{ conjunto } aviso\"\n        };\n        bool aceptado = leer_conjunto(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"TabPendiente:\" << (entrada.peek() == '\\t') << '\\n';\n        aceptado = leer_conjunto(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"EspacioPendiente:\" << (entrada.peek() == ' ') << '\\n';\n        std::string sufijo;\n        entrada >> sufijo;\n        std::cout << \"Sufijo:\" << sufijo << '\\n';\n        std::istringstream con_sufijo{\n            \"{ conjunto { grupo azul 7[3;2] } } resto\"\n        };\n        aceptado = leer_muestra_completa(con_sufijo, destino);\n        mostrar(aceptado, destino);\n    } else {\n        const std::vector<std::string> muestras{\n            \"{ conjunto { grupo azul 4[0;1] } { grupo verde } { grupo rojo 4[1;0] 2[0;0] } }\",\n            \"{ conjunto { grupo verde 8[5;0] } } }\",\n            \"{ conjunto { grupo rojo 7[9;2] }\",\n            \"{ conjunto { grupo azul } { grupo azul 9[1;0] } }\",\n            \"{ conjunto }\",\n            \"{ conjunto { grupo rojo 3[10;11] } }\"\n        };\n        for (const std::string& texto : muestras) {\n            std::istringstream entrada{texto};\n            const bool aceptado = leer_muestra_completa(entrada, destino);\n            mostrar(aceptado, destino);\n        }\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "1:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\nTabPendiente:1\n1:0\nEspacioPendiente:1\nSufijo:aviso\n0:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El primer conjunto conserva los grupos en el orden azul, verde y rojo. Azul y rojo pueden contener el identificador 4 porque sus colecciones son distintas. El tabulador queda para el llamador; la segunda lectura acepta el conjunto vacío y deja disponible el espacio anterior a aviso.\n\nLa última llamada exige una muestra completa. Aunque su conjunto azul está cerrado, la palabra resto invalida el texto completo. El destino de esa llamada era el conjunto vacío aceptado antes, así que debe seguir vacío y producir 0:0. Exigir el final de toda la fuente dentro de leer_conjunto impediría las dos primeras lecturas componibles."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "1:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n1:0\n0:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera aceptación reemplaza los grupos iniciales por azul, verde y rojo, con sus tres registros asociados y en el orden recibido. Los siguientes errores afectan a la muestra completa: sobra un cierre, falta el cierre exterior o se repite azul. Cada rechazo debe mostrar los tres grupos anteriores, incluidos verde vacío y las dos apariciones válidas del identificador 4 en grupos distintos.\n\nDespués, { conjunto } reemplaza todo ese estado por una colección vacía. El recuento [10;11] de la última muestra es inválido porque la segunda cantidad excede 10. Ese rechazo conserva el estado vacío más reciente, no los grupos de una aceptación anterior."
+              }
+            ]
+          }
         }
       ]
     },
@@ -196,7 +242,7 @@
             "Aceptar uno y fusionar sus recuentos por tener el mismo ID."
           ],
           "correctIndex": 1,
-          "explanation": "La unicidad del registro es local al grupo. Fusionar por ID numérico perdería esa asociación.",
+          "explanation": "El primer registro se guarda dentro de la colección de rojo con cantidades 1 y 0. El segundo se guarda dentro de la colección de azul con cantidades 0 y 1. Cada grupo contiene una sola aparición del identificador 4, de modo que ambos cumplen la unicidad local.\n\nEl conjunto debe conservar los dos grupos y sus recuentos separados. Rechazar por una búsqueda global eliminaría un caso válido. Fusionar por el número 4 también sería incorrecto: se perdería qué cantidades pertenecían a rojo y cuáles a azul.",
           "reviewFeedback": [
             "Compara la identidad completa de los registros: además del ID, importa el grupo al que pertenece cada uno. Revisa si ambos ID se buscan en una misma colección.",
             "Comprueba las asociaciones de cada registro con su grupo y conserva los recuentos por separado.",
@@ -227,6 +273,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nvoid mostrar(const Conjunto& conjunto) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::cout << grupo.id << ':' << grupo.registros.size();\n        for (const Registro& registro : grupo.registros) {\n            std::cout << ' ' << registro.id << registro.recuento;\n        }\n        std::cout << '\\n';\n    }\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    Conjunto conjunto{{Grupo{2, {{9, {1, 1}}}}}};\n    bool aceptado = leer_muestra_completa(entrada, conjunto);\n    std::cout << aceptado << ':' << conjunto.grupos.size() << '\\n';\n    mostrar(conjunto);\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"{ conjunto { grupo rojo 7[0;0] } { grupo azul } }\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"{ conjunto { grupo rojo } { grupo rojo } }\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"{ conjunto { grupo rojo 7[0;0] } { grupo azul 2[3;1]\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"{ conjunto }\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"{ conjunto { grupo gris } }\");\n    std::cout << \"Caso 6\\n\";\n    probar(\"{ conjunto { grupo rojo +4[1;0] 004[0;1] } }\");\n    std::cout << \"Caso 7\\n\";\n    probar(\"{ conjunto } }\");\n    std::cout << \"Caso 8\\n\";\n    probar(\"{ conjunto } aviso\");\n    std::cout << \"Caso 9\\n\";\n    probar(\"{ conjunto { grupo rojo 1[1;1] }\");\n    std::cout << \"Caso 10\\n\";\n    probar(\"{ conjunto { grupo rojo 1[1;1]\");\n    std::cout << \"Caso 11\\n\";\n    probar(\"{ conjunto { grupo rojo 1[1;1] } { grupo azul 2[3;11] } }\");\n    std::cout << \"Caso 12\\n\";\n    probar(\"{ conjunto\\n{ grupo rojo\\t4[1;0] }\\n{ grupo azul 4[0;2] }\\n}\");\n    std::cout << \"Caso 13\\n\";\n    probar(\"\");\n    std::cout << \"Caso 14\\n\";\n    probar(\" { conjunto { grupo rojo } { grupo verde } { grupo azul } } \");\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: conservar datos entre intentos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nvoid mostrar(bool aceptado, const Conjunto& conjunto) {\n    std::cout << aceptado << ':' << conjunto.grupos.size() << '\\n';\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::cout << grupo.id << ':' << grupo.registros.size();\n        for (const Registro& registro : grupo.registros) {\n            std::cout << ' ' << registro.id << registro.recuento;\n        }\n        std::cout << '\\n';\n    }\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 2) return 1;\n    Conjunto destino{{Grupo{1, {{6, {4, 0}}}}, Grupo{0, {}}}};\n    if (caso == 1) {\n        std::istringstream entrada{\n            \"{ conjunto { grupo azul 4[0;1] } { grupo verde } \"\n            \"{ grupo rojo 4[1;0] 2[0;0] } }\\t{ conjunto } aviso\"\n        };\n        bool aceptado = leer_conjunto(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"TabPendiente:\" << (entrada.peek() == '\\t') << '\\n';\n        aceptado = leer_conjunto(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"EspacioPendiente:\" << (entrada.peek() == ' ') << '\\n';\n        std::string sufijo;\n        entrada >> sufijo;\n        std::cout << \"Sufijo:\" << sufijo << '\\n';\n        std::istringstream con_sufijo{\n            \"{ conjunto { grupo azul 7[3;2] } } resto\"\n        };\n        aceptado = leer_muestra_completa(con_sufijo, destino);\n        mostrar(aceptado, destino);\n    } else {\n        const std::vector<std::string> muestras{\n            \"{ conjunto { grupo azul 4[0;1] } { grupo verde } { grupo rojo 4[1;0] 2[0;0] } }\",\n            \"{ conjunto { grupo verde 8[5;0] } } }\",\n            \"{ conjunto { grupo rojo 7[9;2] }\",\n            \"{ conjunto { grupo azul } { grupo azul 9[1;0] } }\",\n            \"{ conjunto }\",\n            \"{ conjunto { grupo rojo 3[10;11] } }\"\n        };\n        for (const std::string& texto : muestras) {\n            std::istringstream entrada{texto};\n            const bool aceptado = leer_muestra_completa(entrada, destino);\n            mostrar(aceptado, destino);\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "leer_conjunto llama a leer_grupo para obtener cada componente y busca su identificador sólo entre los grupos que ya están en el candidato nuevo. Cada lector consume su cierre y devuelve el control a su llamador. El lector de conjunto no exige final de entrada: por eso puede reconocer dos conjuntos consecutivos sin apropiarse del texto que viene después.\n\nleer_muestra_completa utiliza otro candidato. Primero debe recibir un conjunto válido; después omite los blancos finales y exige que no quede ningún otro carácter. Sólo entonces lo asigna al destino del llamador. Un conjunto bien cerrado seguido de resto demuestra por qué esa asignación necesita esperar a la comprobación exterior.\n\nSi todas las pruebas llamaran únicamente al lector de muestra, una implementación que exigiera el final de la fuente dentro de leer_conjunto podría producir los mismos resultados. El recorrido de componentes sucesivos comprueba también el contrato de esa función por separado. Las recargas con un destino compartido muestran qué estructura completa debe conservar cada rechazo."
         }
       ]
     }
@@ -412,7 +471,13 @@
           "block_0002_0002",
           "block_0002_0003",
           "block_0002_0004",
-          "block_0002_0005"
+          "block_0002_0005",
+          "u12_conjunto_componente_y_muestra_titulo",
+          "u12_conjunto_componente_y_muestra_contrato",
+          "u12_conjunto_componente_y_muestra_cliente",
+          "u12_conjunto_componente_y_muestra_caso_1",
+          "u12_conjunto_componente_y_muestra_caso_2",
+          "u12_conjunto_componente_y_muestra_construccion"
         ]
       },
       {
@@ -439,7 +504,10 @@
         "id": "page_0005",
         "blocks": [
           "block_0005_0000",
-          "block_0005_0001"
+          "block_0005_0001",
+          "u12_conjunto_componente_y_muestra_referencia_titulo",
+          "u12_conjunto_componente_y_muestra_referencia_codigo",
+          "u12_conjunto_componente_y_muestra_referencia_razonamiento"
         ]
       }
     ],
@@ -864,7 +932,89 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_conjunto_componente_y_muestra_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_construccion",
+        "sha256": "ab5661c3c27afc22026d5aaef5f2e25a1cd595242a7858991babfed669a67cb8",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_referencia_codigo",
+        "sha256": "ce555c06ee1cd317ae2c7e10169015b42932e817171591768a26ae4cb5d7d9d9",
+        "storage": {
+          "page": 6,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_conjunto_componente_y_muestra_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0002_0005",
@@ -930,6 +1080,31 @@
         "id": "block_0004_0003",
         "beforeSha256": "4e066c0df96c7e22b515c139269503bd45b10e9847acb033aa600ea3d1e2fe1f",
         "afterSha256": "a2fce92318d33e7beae7dcd61a2471f6913caf1a31bc38383824e31360a15ac9"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "9b9ba22ded6f9fb7dadef489a42f0eecd06f5762082f431b1a4b2969cea5698c",
+        "afterSha256": "dfc95adf7393a103f2f86865037ab126ff4f5a7125ac0fa10a3c72e67909cdc5"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "f88ea9d82b05bc8f1617f234100e8287d1ea0bb316cf6317334c7eb5ce393e49",
+        "afterSha256": "e8b3d033d238bdb310effe50e78e7fd6d3d1194f6c998ce6335daf81b72d27d7"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "acab52e274cc721c98f979084d0008e7ede05afb416b0cdb33ed2bc428b59bd8",
+        "afterSha256": "1350be4b8b65573a3bfdced4535ca538d94a967a13d1aec6f7b9ecde07376539"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "9d82136080d4572ac55dd1e1e645816ac7f6a62fb994c9404b6b4d72ad0f5782",
+        "afterSha256": "fce39d6350632c75fe3593ee987a1f81009fef8d5f4a3e35502f96b07b41efcc"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "118c6985679e3975904bc128823ee8ab9ab3e14700da1799fac97129217e4149",
+        "afterSha256": "da4347212b55d304acebdb8ad0f7f94d6520e35f6379e671e82b6453ea022004"
       }
     ]
   },
@@ -1086,11 +1261,11 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "7839a7083baf85202513ba698f277d79bb1f5990b3a088fb7b4feb7a30c1251f",
+        "sourceSha256": "76d685fe84088b6027813adc9205f6ac7e3027a853eaf9e3f23eae01707ee770",
         "spans": [
           {
-            "start": 25,
-            "end": 35,
+            "start": 44,
+            "end": 54,
             "text": "leer_grupo",
             "role": "cpp",
             "reading": "technical"
@@ -1178,27 +1353,34 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "c47da23262466c307129f8a4c69703ace84deff67fb442b260c8941e9709c75b",
+        "sourceSha256": "30d6972e7e7f992ea372e599fbdf93e039409bca2ef05ae0fcda1e60a0f26120",
         "spans": [
           {
-            "start": 3,
-            "end": 10,
-            "text": "segundo",
+            "start": 41,
+            "end": 50,
+            "text": "candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "text": "7[0;0]",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 46,
-            "end": 53,
-            "text": "primero",
-            "role": "data",
-            "reading": "natural"
+            "start": 93,
+            "end": 110,
+            "text": "candidato.id = 2;",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 115,
-            "end": 119,
-            "text": "azul",
-            "role": "data",
+            "start": 380,
+            "end": 383,
+            "text": "1:1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1332,16 +1514,8 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "9d9bbc70472f4ae9983bc1ddc9e343a5ad9c97e1a702597d7044768a6bab36b5",
-        "spans": [
-          {
-            "start": 56,
-            "end": 62,
-            "text": "grupos",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
+        "sourceSha256": "ea4a7f017e7832a0a6bf514e1b27272361d06146e445952b7cbe76506e42ef43",
+        "spans": []
       },
       {
         "block": "block_0001_0003",
@@ -1469,8 +1643,23 @@
       {
         "block": "block_0001_0005",
         "path": "/explanation",
-        "sourceSha256": "84b22b2eed4b17ed50e99c78767761410831921688e0c0d45dd17993fe2d366f",
-        "spans": []
+        "sourceSha256": "8ac785b9f7a63cf3fdcdb151f40d14cccd50d2ff2f0e6e0d8991660b65dc4778",
+        "spans": [
+          {
+            "start": 43,
+            "end": 57,
+            "text": "{ grupo rojo }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 270,
+            "text": "{ conjunto ... }",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0005",
@@ -2452,8 +2641,51 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "f2a7c2bb6b1e21afa6102e6cb2a5706c1ba906cd53304a5ee6d6ca78d64a9278",
-        "spans": []
+        "sourceSha256": "203b383ddd2162f3f85a96a23453eb795261f3ef3efe329da2bbe1c7870ec0be",
+        "spans": [
+          {
+            "start": 75,
+            "end": 76,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 150,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 153,
+            "end": 154,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 214,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 414,
+            "end": 415,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0001",
@@ -2751,6 +2983,284 @@
         "path": "/text",
         "sourceSha256": "533e8da82dd979db710a20ab44f9bebae78affc3cbb1e55ca22b91483b0bfafa",
         "spans": []
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_titulo",
+        "path": "/text",
+        "sourceSha256": "c9a2d4092d7cab252258e45b9db47b88d8509d729cfd6a96ce41d222bd95e7f5",
+        "spans": []
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_contrato",
+        "path": "/text",
+        "sourceSha256": "1f4326da84112b282c1bbe84385c0c83233abd85c36995f443cc1139b7705a34",
+        "spans": [
+          {
+            "start": 9,
+            "end": 64,
+            "text": "leer_conjunto(std::istream& entrada, Conjunto& destino)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 130,
+            "text": "leer_muestra_completa(std::istream& entrada, Conjunto& destino)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 225,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_cliente",
+        "path": "/text",
+        "sourceSha256": "99b772cfccca5ae73c9c28ff915b3d2a541b6ad5b1cc164fac4749903a6eadcc",
+        "spans": [
+          {
+            "start": 43,
+            "end": 49,
+            "text": "6[4;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 404,
+            "end": 405,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 462,
+            "end": 476,
+            "text": "TabPendiente:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 479,
+            "end": 497,
+            "text": "EspacioPendiente:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_caso_1",
+        "path": "/text",
+        "sourceSha256": "8a01cf94b7c5f7937305cc42e23138920d135038a896d8e9728e1042b90111f9",
+        "spans": [
+          {
+            "start": 20,
+            "end": 21,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 89,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 124,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 186,
+            "text": "resto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 220,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 359,
+            "text": "1:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\nTabPendiente:1\n1:0\nEspacioPendiente:1\nSufijo:aviso\n0:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_caso_2",
+        "path": "/text",
+        "sourceSha256": "5ecc29bdfd5a1307c7096db16d1925ae85e384bc8c2a490492e8ae4f3581b770",
+        "spans": [
+          {
+            "start": 17,
+            "end": 18,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 65,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 429,
+            "text": "1:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n0:3\n2:1 4[0;1]\n1:0\n0:2 4[1;0] 2[0;0]\n1:0\n0:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "370a88debdb31e52d4dde1a325f7f23f99bfd84d64ec920ffa7d354f28356e55",
+        "spans": [
+          {
+            "start": 116,
+            "end": 117,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 282,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 380,
+            "end": 385,
+            "text": "resto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 515,
+            "end": 518,
+            "text": "0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 577,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "6a09993f840dd31b770ca87ab5f57524aaf6e689157e2c2aea2134d953eb9694",
+        "spans": [
+          {
+            "start": 372,
+            "end": 373,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 417,
+            "text": "{ conjunto }",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 481,
+            "end": 488,
+            "text": "[10;11]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 556,
+            "end": 558,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "3c4efb8e7a548959dee19ee80a8f4396a54f94de1a260f07107985a81ef60890",
+        "spans": []
+      },
+      {
+        "block": "u12_conjunto_componente_y_muestra_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "2752850edf91570d714cb5d74aafc7432dd6cdc22655726879d9585828a0f57f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 22,
+            "end": 32,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 357,
+            "end": 378,
+            "text": "leer_muestra_completa",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 606,
+            "end": 611,
+            "text": "resto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 818,
+            "end": 831,
+            "text": "leer_conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2760,5 +3270,30 @@
         "spans": []
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "u12_conjunto_componente_y_muestra_construccion",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0005_0000",
+        "block_0005_0001",
+        "u12_conjunto_componente_y_muestra_referencia_titulo",
+        "u12_conjunto_componente_y_muestra_referencia_codigo",
+        "u12_conjunto_componente_y_muestra_referencia_razonamiento"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "u12_conjunto_componente_y_muestra_construccion",
+      "requires": [
+        "block_0002_0004"
+      ]
+    }
+  ]
 }

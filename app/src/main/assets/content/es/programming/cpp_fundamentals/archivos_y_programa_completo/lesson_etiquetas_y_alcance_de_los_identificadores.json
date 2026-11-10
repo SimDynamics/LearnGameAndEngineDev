@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El formato de una estación de inspección nombra sus grupos rojo, verde y azul. En memoria les asignamos ID 0, 1 y 2. El nombre es una representación textual; el ID permite consultar una posición pequeña. La tabla establece la correspondencia: no deducimos que el nombre de un color sea por sí mismo un número."
+          "text": "El formato de una estación de inspección nombra sus grupos rojo, verde y azul. Acordamos que sus identificadores en memoria son 0, 1 y 2, respectivamente. Un identificador permite señalar el grupo; aquí lo abreviamos como ID.\n\nEl nombre es su representación textual y el entero permite consultar una posición pequeña. La tabla siguiente guarda cada nombre en la posición que le corresponde. El nombre de un color no determina por sí mismo un número: esta asociación es una decisión de nuestro programa."
         },
         {
           "type": "code",
@@ -19,7 +19,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El orden de esta tabla forma parte de la correspondencia acordada. Cambiarlo sin adaptar los datos en memoria cambiaría qué significa cada ID. Podemos consultar el nombre por índice sólo después de comprobar 0..2; para obtener el índice de un nombre necesitamos una búsqueda."
+          "text": "En nombres_grupos, la posición 0 contiene \"rojo\", la 1 contiene \"verde\" y la 2 contiene \"azul\". Si se intercambiaran las dos primeras entradas sin adaptar los datos almacenados, un registro que antes pertenecía a rojo se interpretaría como verde. Por eso el orden forma parte del acuerdo.\n\nLa dirección de la operación determina el procedimiento. Con un ID admitido podemos consultar su posición. Con un nombre debemos comparar cadenas hasta encontrar una coincidencia completa; la posición encontrada proporciona el ID."
         },
         {
           "type": "multiple_choice",
@@ -31,7 +31,7 @@
             "Leer el texto como si fuera un entero decimal."
           ],
           "correctIndex": 1,
-          "explanation": "La posición de la coincidencia azul es 2. La longitud ni una conversión numérica expresan la correspondencia."
+          "explanation": "La búsqueda compara \"azul\" con cada elemento de nombres_grupos y encuentra la coincidencia en la posición 2. Esa posición es el identificador acordado.\n\nEl nombre tiene cuatro letras, pero el valor 4 no pertenece al dominio de grupos. Tampoco se obtiene el identificador interpretando las letras como cifras: la relación procede de la tabla, no del aspecto numérico del texto."
         }
       ]
     },
@@ -48,7 +48,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida tiene dos líneas: 1:2 y 0:2. Ante false el parámetro conserva su valor previo. Por eso no basta mirar id: es imprescindible decidir con el bool si la búsqueda actual tuvo éxito."
+          "text": "La primera llamada busca \"azul\", encuentra la posición 2 y la asigna a id, que antes valía 9. El resultado lógico verdadero y ese nuevo valor producen 1:2.\n\nLa segunda busca \"gris\", que no aparece en la tabla. Devuelve false sin asignar: id sigue valiendo 2, por lo que la segunda línea es 0:2. Ese dos pertenece al éxito anterior. Consultar sólo el destino confundiría el resultado conservado con una búsqueda actual aceptada; el bool decide si se puede utilizar como resultado nuevo."
         },
         {
           "type": "fill_code",
@@ -59,7 +59,7 @@
           "answers": [
             ">="
           ],
-          "explanation": "El dominio incluye 0, 1 y 2. El límite superior no incluye 3; se rechaza antes de acceder a la tabla."
+          "explanation": "Los únicos índices admitidos son 0, 1 y 2. La primera parte de la condición rechaza los negativos; id >= 3 rechaza el primer índice posterior al último elemento y todos los superiores.\n\nSi se usara sólo id > 3, el valor 3 alcanzaría at() pese a estar fuera de la tabla. Nuestro contrato exige devolver false antes del acceso y conservar destino."
         },
         {
           "type": "multiple_choice",
@@ -71,7 +71,7 @@
             "Se rechaza y el destino conserva su valor."
           ],
           "correctIndex": 2,
-          "explanation": "Azul y azul son cadenas distintas. Aceptar variantes de escritura exigiría definir y aplicar otra política."
+          "explanation": "La tabla contiene \"azul\", con minúscula inicial, y la búsqueda utiliza igualdad completa sin transformar la entrada. \"Azul\" no coincide con esa cadena ni con las otras dos. El recorrido termina sin ejecutar ninguna asignación al destino y devuelve false.\n\nLa copia en minúsculas estudiada antes sólo debe aplicarse si el contrato permite ignorar caja. Aquí se exige el nombre exacto, de modo que introducir esa conversión cambiaría qué entradas se aceptan."
         }
       ]
     },
@@ -83,7 +83,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada grupo contiene registros con ID 0..9 y un Recuento. El registro 7 de rojo y el registro 7 de azul son entidades distintas: su identidad completa es grupo + ID del registro. No rechazamos un ID sólo porque exista en otro grupo. En cambio, dentro del mismo grupo cada ID debe aparecer como máximo una vez."
+          "text": "Dentro de cada grupo se admiten registros con ID de 0 a 9 y un Recuento. El número del registro sólo distingue registros de ese grupo. Por ejemplo, el registro 7 de rojo y el registro 7 de azul pueden tener recuentos diferentes.\n\nPara identificar uno sin ambigüedad necesitamos el grupo y su ID local. Rechazar cualquier número que ya aparezca en cualquier grupo eliminaría asociaciones permitidas. En cambio, recibir otra vez el mismo grupo y el mismo ID local repetiría un registro de ese grupo, aunque su recuento fuera distinto."
         },
         {
           "type": "multiple_choice",
@@ -95,11 +95,11 @@
             "Ninguno, porque los tres ID están en 0..9."
           ],
           "correctIndex": 1,
-          "explanation": "El dominio numérico válido no basta. La primera asociación azul–7 es nueva; la segunda asociación rojo–7 repite una identidad del mismo grupo."
+          "explanation": "El primer par reserva el registro 7 dentro de rojo. El segundo pertenece a azul: comparte el número, pero identifica otro registro porque cambia el grupo.\n\nEl tercer par repite tanto rojo como 7, que ya estaban asociados. Ahí aparece el primer conflicto. Estar dentro del intervalo permitido sólo valida el número; no demuestra que la identidad completa sea nueva."
         },
         {
           "type": "paragraph",
-          "text": "Una colección plana de registros necesitaría conservar también el grupo. Una estructura Grupo con sus propios registros expresa ese alcance directamente. No confundas esta identidad de los datos con el ámbito de un nombre declarado en el código: son dos decisiones diferentes."
+          "text": "Si guardáramos todos los registros juntos en un único vector, cada elemento necesitaría indicar a qué grupo pertenece. Si un objeto Grupo contiene su propia colección, esa pertenencia se expresa por la colección que lo guarda. Son dos formas de conservar la información necesaria para interpretar un ID local.\n\nAquí «alcance del identificador» se refiere al conjunto de datos en el que un número debe ser único. El ámbito de una variable del código determina dónde puede usarse su nombre. Cambiar de bloque una variable llamada id no modifica por sí mismo la regla que permite el registro siete en dos grupos diferentes."
         },
         {
           "type": "output_prediction",
@@ -110,7 +110,7 @@
           "answers": [
             "1:verde\n0:verde"
           ],
-          "explanation": "El ID 1 se convierte a verde. El ID 3 queda fuera del dominio y no cambia el texto previo."
+          "explanation": "La primera llamada comprueba que 1 está dentro del dominio y copia el elemento de esa posición, \"verde\", en nombre. Devuelve true y produce la primera línea 1:verde.\n\nLa segunda recibe 3, que se rechaza antes de acceder a la tabla. Devuelve false y no vuelve a asignar: nombre conserva \"verde\", no su inicialización \"previo\". La segunda línea es 0:verde y no tiene salto final."
         }
       ]
     },
@@ -140,7 +140,7 @@
             "Devuelve false pero convierte el destino en 0."
           ],
           "correctIndex": 0,
-          "explanation": "La búsqueda compara el nombre completo literalmente y sólo asigna al destino cuando encuentra una coincidencia. Un valor previo permitido o no permitido no convierte un false en éxito."
+          "explanation": "\"Rojo\" no coincide exactamente con \"rojo\", \"verde\" ni \"azul\". Ningún recorrido aceptado alcanza la asignación a id, así que el resultado es false y el destino conserva 6.\n\nEse seis es el estado anterior del llamador, aunque no sea un identificador admitido. Conservarlo cumple la garantía ante fallo; no lo valida ni lo convierte en el resultado de la búsqueda actual."
         },
         {
           "type": "cpp_compiler",
@@ -151,6 +151,15 @@
                 "standardInput": "",
                 "outputs": [
                   "rojo:1:1:1\nverde:1:1:1\nazul:1:1:1\nBuscar:0:8\nBuscar:0:7\nBuscar:0:6\nNombre:0:previo\nNombre:0:otro\n"
+                ],
+                "explanation": "La salida coincide con la batería solicitada. Las tres cadenas vuelven al nombre original y las búsquedas inválidas conservan los destinos 8, 7 y 6. Las conversiones de los identificadores fuera del dominio conservan previo y otro.\n\nLas tres igualdades verdaderas comprueban la ida y vuelta con este cliente, pero no muestran el número obtenido para cada nombre. Dos conversiones que utilizaran la misma asociación equivocada podrían recuperar el texto inicial. La práctica posterior mostrará también los ID concretos y consultará nombres a partir de enteros independientes.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "El programa termina sin imprimir. Define las dos conversiones y prepara la batería completa en main. Debe mostrar primero las tres idas y vueltas válidas y después los cinco rechazos, con los destinos iniciales y el orden especificados. No basta definir las funciones sin llamarlas."
+                  }
                 ]
               }
             ]
@@ -179,7 +188,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si una versión nueva del formato acepta nombres adicionales o sinónimos, habrá que decidir si la conversión inversa escribe el nombre recibido o una forma elegida. Recuperar los datos y recuperar cada carácter original no son el mismo objetivo. La siguiente parte define un formato propio y sus cierres."
+          "text": "Si otra versión admitiera \"AZUL\" como sinónimo de \"azul\", ambos textos podrían designar el mismo grupo. Convertir ese ID de vuelta usando nuestra tabla produciría azul, independientemente de cuál de los dos textos hubiera llegado.\n\nSe habría recuperado el grupo, pero no necesariamente la escritura original. Antes de añadir sinónimos o ignorar caja habría que decidir qué información conservar y qué nombre escribir. El formato de las siguientes lecciones mantiene sus nombres exactos y define también su estructura y sus cierres."
         },
         {
           "type": "note",
@@ -197,6 +206,89 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        const bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n        if (encontrado) convertido = nombre_grupo(id, recuperado);\n        std::cout << original << ':' << encontrado << ':' << convertido << ':' << (recuperado == original) << \"\\n\";\n    }\n    int id = 8;\n    bool encontrado = buscar_grupo(\"gris\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 7;\n    encontrado = buscar_grupo(\"\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    id = 6;\n    encontrado = buscar_grupo(\"Rojo\", id);\n    std::cout << \"Buscar:\" << encontrado << ':' << id << \"\\n\";\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n    nombre = \"otro\";\n    convertido = nombre_grupo(3, nombre);\n    std::cout << \"Nombre:\" << convertido << ':' << nombre << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar la correspondencia en cada dirección"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye buscar_grupo y nombre_grupo para la correspondencia fija rojo → 0, verde → 1 y azul → 2. Conserva la tabla y el cliente. La búsqueda exige coincidencia completa: no convierte a minúsculas, no recorta espacios y no acepta sólo un prefijo del nombre. La conversión inversa admite únicamente ID de 0 a 2 y rechaza los demás antes del acceso.\n\nCada función devuelve true y asigna su resultado únicamente cuando acepta su argumento; ante false, conserva el destino tal como estaba al empezar esa llamada. Ninguna imprime. El cliente muestra los enteros obtenidos de las búsquedas y consulta también nombres a partir de una lista de enteros independiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cada ejecución hay un solo destino id, inicialmente 9, para todas las búsquedas. Cada línea Buscar:resultado:ID presenta el éxito actual y el entero que quedó. Después comienza otra serie, con un solo nombre inicialmente \"previo\", para los enteros solicitados. Cada línea de esa serie tiene forma Nombre:resultado:destino. No se reinician los destinos dentro de sus recorridos. Todas las líneas terminan con salto.\n\nEl segundo recorrido no usa los enteros del primero: prueba la dirección ID a nombre con datos conocidos de partida. Así una ida y vuelta coherente no puede ocultar una asociación diferente de la acordada."
+        },
+        {
+          "type": "paragraph",
+          "text": "El selector 1 busca, en orden, \"azul\", \"gris\", \"rojo\", \"roj\", \"verde\" y \"verde!\". Después solicita los nombres de 2, 3, 0, -1 y 1, en ese orden.\n\nEl selector 2 busca \"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\" y \"rojo \". Las dos últimas variantes con espacio conservan, respectivamente, un espacio inicial delante de azul y un espacio final después de rojo. Después solicita 1, 4, 2, -2 y 0. Las cadenas están preparadas en el cliente; en Entrada sólo se escribe el selector."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Entrada escribe sólo uno de los selectores: 1, 2. Puedes rodearlo con espacios, tabuladores o saltos de línea ASCII. Las muestras ya están preparadas en el cliente. Prueba cada selector con el mismo programa y pulsa «Compilar, ejecutar y comprobar». A continuación se muestra la salida completa requerida para cada entrada; conserva los separadores y el salto final de todas las líneas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 1. Salida:\nBuscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\nNombre:0:rojo\nNombre:1:verde"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 2. Salida:\nBuscar:1:1\nBuscar:0:1\nBuscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    // Busca una coincidencia completa y conserva el destino si no existe.\n    (void)nombre;\n    (void)destino;\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    // Comprueba el dominio antes de consultar la posicion.\n    (void)id;\n    (void)destino;\n    return false;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Buscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\nNombre:0:rojo\nNombre:1:verde\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La salida muestra los ID concretos 2, 0 y 1 para azul, rojo y verde. Las búsquedas de gris, el prefijo incompleto y el nombre con signo conservan el último ID aceptado. En la dirección independiente se obtienen azul, rojo y verde para los enteros dos, cero y uno; los enteros tres y menos uno conservan el nombre anterior.\n\nLa coincidencia con estas líneas permite contrastar tanto la correspondencia acordada como la conservación de destinos que ya habían cambiado tras un éxito.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Buscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nBuscar:1:2\nBuscar:0:2\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\n"
+                    ],
+                    "text": "Los nombres y los números no siguen la asociación publicada, aunque tus dos conversiones puedan deshacer una a la otra. Revisa la posición asignada a cada nombre: rojo → 0, verde → 1, azul → 2. La primera serie muestra el ID obtenido y la segunda parte de enteros independientes. No basta recuperar el nombre después de dos conversiones que comparten la misma asociación equivocada."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Buscar:1:1\nBuscar:0:1\nBuscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera serie muestra los ID 1, 2 y 0 tras los nombres exactos. La variante con mayúscula y las dos variantes con espacio se rechazan conservando, respectivamente, esos mismos destinos. En la segunda serie, los enteros uno, dos y cero obtienen verde, azul y rojo; cuatro y menos dos no sustituyen el nombre anterior.\n\nLos resultados se refieren a cada llamada actual: un destino conservado después de un rechazo sigue mostrando el dato del éxito anterior.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Buscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nNombre:1:rojo\nNombre:0:rojo\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\n"
+                    ],
+                    "text": "Los nombres y los números no siguen la asociación publicada, aunque tus dos conversiones puedan deshacer una a la otra. Revisa la posición asignada a cada nombre: rojo → 0, verde → 1, azul → 2. La primera serie muestra el ID obtenido y la segunda parte de enteros independientes. No basta recuperar el nombre después de dos conversiones que comparten la misma asociación equivocada."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Una implementación y el estado observado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<std::string> consultas;\n    std::vector<int> identificadores;\n    if (caso == 1) {\n        consultas = {\"azul\", \"gris\", \"rojo\", \"roj\", \"verde\", \"verde!\"};\n        identificadores = {2, 3, 0, -1, 1};\n    } else if (caso == 2) {\n        consultas = {\"verde\", \"Verde\", \"azul\", \" azul\", \"rojo\", \"rojo \"};\n        identificadores = {1, 4, 2, -2, 0};\n    } else { return 1; }\n    int id{9};\n    for (const std::string& consulta : consultas) {\n        const bool encontrado = buscar_grupo(consulta, id);\n        std::cout << \"Buscar:\" << encontrado << ':' << id << '\\n';\n    }\n    std::string nombre{\"previo\"};\n    for (int solicitado : identificadores) {\n        const bool convertido = nombre_grupo(solicitado, nombre);\n        std::cout << \"Nombre:\" << convertido << ':' << nombre << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "buscar_grupo devuelve la posición de la coincidencia exacta en la tabla acordada. nombre_grupo comprueba el intervalo y copia el elemento de esa posición. En ambas, la asignación está únicamente en el camino aceptado, por lo que un fallo conserva el último dato del destino.\n\nEn el primer selector, buscar azul deja 2 y el rechazo de gris conserva ese dos. Buscar rojo cambia el destino a 0; rechazar el prefijo incompleto conserva ahora cero. No se recupera siempre el valor inicial nueve. El recorrido inverso tiene sus propios enteros de entrada y su propio texto persistente.\n\nSi las dos conversiones utilizaran coherentemente otra numeración, todavía podrían recuperar un nombre tras una ida y vuelta. Los ID visibles y las llamadas inversas independientes permiten comprobar además el acuerdo externo. Esa distinción será necesaria cuando los enteros representen grupos cuyos registros ya están guardados."
         }
       ]
     }
@@ -399,7 +491,18 @@
         "id": "page_0005",
         "blocks": [
           "block_0005_0000",
-          "block_0005_0001"
+          "block_0005_0001",
+          "u12_etiquetas_correspondencia_fija_titulo",
+          "u12_etiquetas_correspondencia_fija_contrato_0",
+          "u12_etiquetas_correspondencia_fija_contrato_1",
+          "u12_etiquetas_correspondencia_fija_contrato_2",
+          "u12_etiquetas_correspondencia_fija_ejecucion",
+          "u12_etiquetas_correspondencia_fija_entrada_salida_0",
+          "u12_etiquetas_correspondencia_fija_entrada_salida_1",
+          "u12_etiquetas_correspondencia_fija_construccion",
+          "u12_etiquetas_correspondencia_fija_referencia_titulo",
+          "u12_etiquetas_correspondencia_fija_referencia_codigo",
+          "u12_etiquetas_correspondencia_fija_referencia_razonamiento"
         ]
       }
     ],
@@ -808,7 +911,107 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_etiquetas_correspondencia_fija_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_contrato_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_contrato_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_contrato_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_ejecucion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_entrada_salida_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_entrada_salida_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_construccion",
+        "sha256": "b7a0f65451ee1d637af3954ef108a55ae00a923f84bf84eec8bc1f935aa43c48",
+        "storage": {
+          "page": 6,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_referencia_codigo",
+        "sha256": "d2b5451fdc8e804b4239030b2b087e43e8e58db06f960e5ee045ce61e435d33b",
+        "storage": {
+          "page": 6,
+          "block": 9
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_etiquetas_correspondencia_fija_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 10
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0003_0004",
@@ -819,6 +1022,71 @@
         "id": "block_0004_0002",
         "beforeSha256": "b6baa91b62b7f10ac6e2edf0583ac776524a9826dc4debc58f87642737b54ecc",
         "afterSha256": "f799d82fdbd82446a521996309a74bf5ac027167660954a114e1363cc00e2f75"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "6e2a1f4ef4e6f9e407bcf14462eaeec2412b9e24cae9254705df1d5d965348e8",
+        "afterSha256": "f2a81e899ebe73ef3242b6d737fb0429670fc5192ed8f6aa858a919f10b35485"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "226ea4240b8f03eeb8f28ab405400ab6915c8ac6dd5b7ce0da116fe8d56eb28e",
+        "afterSha256": "8ddcaf4ce23ba2fa6509366ad4cd140d0ef2fb88a7627a6d758683e7f3052d83"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "3ae350cb9041264c256d958f93e8a1cda3b08daf13838c5d16dbbb8a62c9f0b2",
+        "afterSha256": "e8081c50477e1e8bccc6a07dd1ce5fe713e19dbaad98127ff1d98ee9d958faa1"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "93841a0a9c90a18ce01194fbe234005c6232a718b9692f92277b1a75038b1884",
+        "afterSha256": "1c68a7b4de0bc12ac08e30df7870e4ae9ae576aaf2cbccca8e1758a32040d58b"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "ca2dbb2e00f90a91750afc4aac095b047ce5a60efeb8c599ca41e71aebce2c7e",
+        "afterSha256": "1e513a59e767b29b3b54fdda330e7b486d5dea896a65f933b03f9abdac48bf5b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "67f2aa1fa652c83a6e47ace82c8993548b6a044db5fb10003a09e0b564041112",
+        "afterSha256": "6412e0727c306b93c4dc626428db92c447f11002baba31b4bf5703ec0534daaa"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "d5bfd3fc7ffeb97de723c3df5dec79af5236fd8c72c76ece977182734987bf09",
+        "afterSha256": "ed651175689d930eb37f00b7969cc6bd549a2f9b15b71f70a0aaf611ecc074f4"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "cd1b2fb8958112b7db4a2001ec7cd378c8c5789f32b32cf68f9c0c50825c744d",
+        "afterSha256": "a4b5a573323502332b4db7b2e074a2fdbb6c78e76f0ed97cf01b7f524be8d92c"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "18a68c14ec483b32db038bb0e25a4601a4e2f2eccbe7a895109f5b8455eb3561",
+        "afterSha256": "209d9e1a986bfa70067f9e5ec7aef5e6763ea87fbb388f3531fe4112980424ad"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "3fe04af741440a0e7676da1b9e38772f0477eb9123c217bf2b912457a9a26028",
+        "afterSha256": "996542b890bd368eaf61329515e3cd7f02b7be746ce8e0b8c8675bc60b944f10"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "10e14b5e93ab8859171c63fed0c37b3edff3d0cb1f783e0226bf991b45a551b6",
+        "afterSha256": "fec4a4adbcfcd037fb58787686abe5404f1ed3137baedb37e3df05cff0d9c70a"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "86f61747f8d8b98548e5e331557aee24b69a6d2df16da9286176c40218ecab14",
+        "afterSha256": "d082f9c4a53dff9d5230408148a66b4b4f34c84787c9b1ed9e0c2ad230461c21"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "c4c8886185dbc33875b2f9a8541e2a8b7f9a131aa0de8241c4d2b67e11916a2e",
+        "afterSha256": "681ce1477a3f8dc2b2b47c19e491d0e568d174fd0aebc764fe59e8a1da4be503"
       }
     ]
   },
@@ -835,7 +1103,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "d6fe79107f1490fefd5a1d61ed39369a61208777e8165d9b121111f6c15f5012",
+        "sourceSha256": "1755f84e3144e65895c955de9dcb8f4f3c6352410cbb53e97c2a9c3adc99da47",
         "spans": [
           {
             "start": 59,
@@ -859,22 +1127,22 @@
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 108,
+            "start": 128,
+            "end": 129,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 110,
-            "end": 111,
+            "start": 131,
+            "end": 132,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 115,
+            "start": 135,
+            "end": 136,
             "text": "2",
             "role": "data",
             "reading": "natural"
@@ -884,14 +1152,56 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "cd91833c1695e4eb5f8e0c089f23cd20d20c7f9f7f8b04ace85dcf29f7943e70",
+        "sourceSha256": "2f816f43e629355a94dc8488c7ccfef682a947f210c5156e1e565195efec4a25",
         "spans": [
           {
-            "start": 208,
-            "end": 212,
-            "text": "0..2",
+            "start": 3,
+            "end": 17,
+            "text": "nombres_grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 32,
+            "text": "0",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "text": "\"rojo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 54,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 71,
+            "text": "\"verde\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 94,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -912,20 +1222,34 @@
       {
         "block": "block_0000_0004",
         "path": "/explanation",
-        "sourceSha256": "27a016f8fb5d741363f3b90dd8d13424698761a1cef75e6a032b0990193a44c1",
+        "sourceSha256": "16b64f1fed2a0e25bdd8481f2bf6f636836257b886c9ec4a2214d15e25567036",
         "spans": [
           {
-            "start": 31,
-            "end": 35,
-            "text": "azul",
+            "start": 20,
+            "end": 26,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 48,
+            "end": 62,
+            "text": "nombres_grupos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 107,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 39,
-            "end": 40,
-            "text": "2",
-            "role": "output",
+            "start": 198,
+            "end": 199,
+            "text": "4",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -957,46 +1281,81 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "503321de688e655ef7ea5f44ad395bf45626616ef048379f0bce85c4c0725fd7",
+        "sourceSha256": "9441a63f9265776d249bfd33575fd293a16835aba874e1558317ae71919153a9",
         "spans": [
           {
-            "start": 16,
-            "end": 19,
-            "text": "dos",
+            "start": 25,
+            "end": 31,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 28,
-            "end": 31,
-            "text": "1:2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 34,
-            "end": 37,
-            "text": "0:2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 44,
-            "end": 49,
-            "text": "false",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 112,
-            "end": 114,
+            "start": 71,
+            "end": 73,
             "text": "id",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 149,
-            "end": 153,
+            "start": 91,
+            "end": 92,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 154,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 180,
+            "text": "\"gris\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 224,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 238,
+            "end": 240,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 256,
+            "end": 257,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 290,
+            "end": 293,
+            "text": "0:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 435,
             "text": "bool",
             "role": "cpp",
             "reading": "technical"
@@ -1027,35 +1386,70 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "2fb298048d083bd3f9ce728d9949a3bc8b63f95daf646aebe2acc33584016463",
+        "sourceSha256": "2499f5a0a27ddf8444d7b49b949152c4074b6022d219aeb9acff855865d0546d",
         "spans": [
           {
-            "start": 19,
-            "end": 20,
+            "start": 33,
+            "end": 34,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 22,
-            "end": 23,
+            "start": 36,
+            "end": 37,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 26,
-            "end": 27,
+            "start": 40,
+            "end": 41,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 59,
-            "end": 60,
+            "start": 99,
+            "end": 106,
+            "text": "id >= 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 209,
+            "text": "id > 3",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 221,
             "text": "3",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 237,
+            "text": "at()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 307,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 337,
+            "end": 344,
+            "text": "destino",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1076,21 +1470,28 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "1c7c0cd16c9673424184d2edc21c835f794cbe599644f816b872cb7870d4d3b0",
+        "sourceSha256": "72365386e80f37917f4f35c3abbd136a8c72f2957f12015ad6c9b8c21919ccca",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
-            "text": "Azul",
-            "role": "data",
-            "reading": "natural"
+            "start": 18,
+            "end": 24,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 7,
-            "end": 11,
-            "text": "azul",
-            "role": "data",
-            "reading": "natural"
+            "start": 117,
+            "end": 123,
+            "text": "\"Azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 248,
+            "end": 253,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1137,61 +1538,54 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "1b13691295b737d2666e21a9d6254a1c97ac8ce384e2a54f55d6dd615389c168",
+        "sourceSha256": "dbf4ddde9d9cc853d5a5930046671e5ebd456159cee6d29bdc10e81f9844101c",
         "spans": [
           {
-            "start": 37,
-            "end": 41,
-            "text": "0..9",
+            "start": 52,
+            "end": 53,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 47,
-            "end": 55,
+            "start": 56,
+            "end": 57,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 71,
             "text": "Recuento",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 70,
+            "start": 160,
+            "end": 161,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 74,
-            "end": 78,
+            "start": 165,
+            "end": 169,
             "text": "rojo",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 93,
-            "end": 94,
+            "start": 184,
+            "end": 185,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 102,
+            "start": 189,
+            "end": 193,
             "text": "azul",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 153,
-            "end": 176,
-            "text": "grupo + ID del registro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 300,
-            "end": 303,
-            "text": "una",
             "role": "data",
             "reading": "natural"
           }
@@ -1228,33 +1622,40 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "21a58a47ae8852bfdb6e4ecf88d9507bdec42e2decaf848d7e10f74afa844cfe",
+        "sourceSha256": "c23822f86511d2837c580d7eac8dff3b1dc40f6fb384b1fb45a20edd43736d44",
         "spans": [
           {
-            "start": 40,
-            "end": 47,
-            "text": "primera",
+            "start": 34,
+            "end": 35,
+            "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 59,
-            "end": 65,
-            "text": "azul–7",
+            "start": 46,
+            "end": 50,
+            "text": "rojo",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 86,
-            "text": "segunda",
+            "start": 75,
+            "end": 79,
+            "text": "azul",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 104,
-            "text": "rojo–7",
+            "start": 183,
+            "end": 187,
+            "text": "rojo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 194,
+            "text": "7",
             "role": "data",
             "reading": "natural"
           }
@@ -1333,21 +1734,21 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "eb7c91ee87bf4a170f633ac6000b21b23a8b2fd2ea38a3fbc0e408ef87f24bb8",
+        "sourceSha256": "adff16ea59369119d4e56e3d336a12155aaf066e917f580bd111fe89c1d334c4",
         "spans": [
           {
-            "start": 88,
-            "end": 93,
+            "start": 132,
+            "end": 137,
             "text": "Grupo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 250,
-            "end": 253,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 528,
+            "end": 530,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1375,27 +1776,83 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "07058da6e85797c205ad9aca60a936c2b4f9467a6bc6545d0740d44cf2a9723c",
+        "sourceSha256": "bd0a57177c8997143515abc90f3e21022388bc1fd0f2c7f0394459a345bfa0d8",
         "spans": [
           {
-            "start": 6,
-            "end": 7,
+            "start": 33,
+            "end": 34,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 23,
-            "end": 28,
-            "text": "verde",
+            "start": 96,
+            "end": 103,
+            "text": "\"verde\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 114,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 129,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 164,
+            "text": "1:verde",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 36,
-            "end": 37,
+            "start": 185,
+            "end": 186,
             "text": "3",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 246,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 270,
+            "end": 276,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 286,
+            "end": 293,
+            "text": "\"verde\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 324,
+            "text": "\"previo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 353,
+            "text": "0:verde",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1662,14 +2119,56 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "262eb8139d4a6e44c0e3746049b4115379e5736a0eb9f33ba5c88350e8709284",
+        "sourceSha256": "c4e6d9b84feae705a33794788fabb9a9802643f7b9daa845e9dde6ce72ff28d5",
         "spans": [
           {
-            "start": 169,
-            "end": 174,
+            "start": 0,
+            "end": 6,
+            "text": "\"Rojo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 41,
+            "text": "\"rojo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 50,
+            "text": "\"verde\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 60,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 114,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 145,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 168,
+            "end": 169,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1941,8 +2440,30 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "398e9c313eddcd001ed57870f64e6f52e5f9c03b69482d29e9a7a0a5dfe4ff70",
-        "spans": []
+        "sourceSha256": "1d7eec56a447b611e7eb41278aeafc925ca4fe345e0d22d0323e810ef2934a9e",
+        "spans": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "\"AZUL\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 56,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 163,
+            "end": 167,
+            "text": "azul",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -1963,6 +2484,515 @@
         "path": "/text",
         "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
         "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "c0dd62a9222b4d33fd6fa4e0a967c3c0597972e08ec6a952c7c27676eb2a4149",
+        "spans": [
+          {
+            "start": 139,
+            "end": 140,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 223,
+            "text": "previo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 230,
+            "text": "otro",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "63418431e1475da05e2f140cf78255e5eb1beb5141f8ce416f033d4b29844c34",
+        "spans": [
+          {
+            "start": 95,
+            "end": 99,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_titulo",
+        "path": "/text",
+        "sourceSha256": "eb0167a61ec504523b2e2e8f4b270be683ff6eeb4e8eb6503142141de9bafff0",
+        "spans": []
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_contrato_0",
+        "path": "/text",
+        "sourceSha256": "6a64fda398f1f52622404369b54d3378969aa30fc0c0d6f9ad0f44cdb4e0e5f4",
+        "spans": [
+          {
+            "start": 12,
+            "end": 24,
+            "text": "buscar_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 27,
+            "end": 39,
+            "text": "nombre_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 77,
+            "text": "rojo → 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 88,
+            "text": "verde → 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 99,
+            "text": "azul → 2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 308,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 312,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 374,
+            "end": 378,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 445,
+            "end": 450,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_contrato_1",
+        "path": "/text",
+        "sourceSha256": "2b20c5a97c02656cc7efc76b89bda3b9725465207b2d39b72bcac19c85bc555f",
+        "spans": [
+          {
+            "start": 38,
+            "end": 40,
+            "text": "id",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 114,
+            "text": "Buscar:resultado:ID",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 210,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 232,
+            "text": "\"previo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 300,
+            "end": 324,
+            "text": "Nombre:resultado:destino",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_contrato_2",
+        "path": "/text",
+        "sourceSha256": "b4244f786364112abd4c7ab261d022e5e73f856c9087a26600019caa1df3f97f",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 37,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 45,
+            "text": "\"gris\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 53,
+            "text": "\"rojo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 55,
+            "end": 60,
+            "text": "\"roj\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 69,
+            "text": "\"verde\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 80,
+            "text": "\"verde!\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 129,
+            "text": "2, 3, 0, -1 y 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 159,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 173,
+            "text": "\"verde\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 182,
+            "text": "\"Verde\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 190,
+            "text": "\"azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 199,
+            "text": "\" azul\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 207,
+            "text": "\"rojo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 217,
+            "text": "\"rojo \"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 388,
+            "text": "1, 4, 2, -2 y 0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_ejecucion",
+        "path": "/text",
+        "sourceSha256": "3c1809bd773aa93beaed94aab552911b799da6a731c2fdd475ad864f272a2f99",
+        "spans": [
+          {
+            "start": 47,
+            "end": 51,
+            "text": "1, 2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_entrada_salida_0",
+        "path": "/text",
+        "sourceSha256": "91cef854965121afdca2f6b4fa8e778941c58294c6f6efb8400ed4e07df717e6",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 156,
+            "text": "Buscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nBuscar:1:1\nBuscar:0:1\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo\nNombre:0:rojo\nNombre:1:verde",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_entrada_salida_1",
+        "path": "/text",
+        "sourceSha256": "39a1c7f7205ce36f20d1f3c05f0d5a3e699e2cd685dac5f5acbee13e4dc06c9c",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 157,
+            "text": "Buscar:1:1\nBuscar:0:1\nBuscar:1:2\nBuscar:0:2\nBuscar:1:0\nBuscar:0:0\nNombre:1:verde\nNombre:0:verde\nNombre:1:azul\nNombre:0:azul\nNombre:1:rojo",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "fb81ca11e05b7502ea71d352bba2f1fcf5e522610d310f294dfa0359802f1de0",
+        "spans": [
+          {
+            "start": 35,
+            "end": 36,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "3fcebef97b8cdd5c8087f07bf9d851a4d61ca70ea609cacb7c63d767663d07a4",
+        "spans": [
+          {
+            "start": 163,
+            "end": 171,
+            "text": "rojo → 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 182,
+            "text": "verde → 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 192,
+            "text": "azul → 2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "6f90e64e65a79dc09d52f2b5ff9d56dab4583d808541a14f22bff5e88bdb698e",
+        "spans": [
+          {
+            "start": 32,
+            "end": 33,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_construccion",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "3fcebef97b8cdd5c8087f07bf9d851a4d61ca70ea609cacb7c63d767663d07a4",
+        "spans": [
+          {
+            "start": 163,
+            "end": 171,
+            "text": "rojo → 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 182,
+            "text": "verde → 1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 192,
+            "text": "azul → 2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "cf7aa61ef3b23df4c19908288cdbc71d2b7579fa1a2bdafb4114280991a9dc57",
+        "spans": []
+      },
+      {
+        "block": "u12_etiquetas_correspondencia_fija_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "4f22deec6be8662c56b14d49a515ca6fe4edc0200460607f6459da55948b05c2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "buscar_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 94,
+            "text": "nombre_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 317,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 389,
+            "end": 390,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -1972,5 +3002,35 @@
         "spans": []
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "block_0003_0003",
+      "blocks": [
+        "block_0004_0000",
+        "block_0004_0001",
+        "block_0004_0002",
+        "block_0004_0003",
+        "block_0004_0004",
+        "block_0005_0000",
+        "block_0005_0001"
+      ]
+    },
+    {
+      "activity": "u12_etiquetas_correspondencia_fija_construccion",
+      "blocks": [
+        "u12_etiquetas_correspondencia_fija_referencia_titulo",
+        "u12_etiquetas_correspondencia_fija_referencia_codigo",
+        "u12_etiquetas_correspondencia_fija_referencia_razonamiento"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "u12_etiquetas_correspondencia_fija_construccion",
+      "requires": [
+        "block_0003_0003"
+      ]
+    }
+  ]
 }

@@ -51,7 +51,7 @@
           "answers": [
             "0:1:0"
           ],
-          "explanation": "Cinco es un dígito; no es una letra ni un blanco. Se imprimen bool, no los enteros internos de los clasificadores.",
+          "explanation": "El carácter '5' satisface la pregunta de std::isdigit, pero no las de std::isalpha ni std::isspace en la configuración indicada. Cada comparación con cero produce un bool y la salida respeta el orden letra, dígito y blanco: 0:1:0.\n\nSe muestra el resultado lógico de cada pregunta; no se está imprimiendo ni el código numérico del carácter ni el entero interno que devuelve cada clasificador.",
           "reviewFeedback": "Aplica las tres preguntas al mismo carácter y conserva el orden letra, dígito y blanco. Los valores mostrados son los bool obtenidos al comparar cada resultado con cero."
         },
         {
@@ -63,7 +63,7 @@
             "std::isalpha(unidad) == unidad, porque devuelve el código original cuando reconoce una letra."
           ],
           "correctIndex": 1,
-          "explanation": "La biblioteca promete cero o no cero; la comparación con 1 añadiría una condición que no promete. El resultado comunica una categoría, no devuelve el código del carácter analizado.",
+          "explanation": "Si std::isalpha(unidad) devolviera, por ejemplo, un entero no nulo distinto de uno, la condición != 0 seguiría reconociendo una letra. La igualdad == 1 la rechazaría pese a que el contrato del clasificador se cumplió.\n\nEl resultado comunica pertenencia a la categoría. Compararlo con unidad tampoco expresa ese contrato: el código de entrada y el indicador devuelto desempeñan funciones diferentes.",
           "reviewFeedback": [
             "El contrato no fija qué entero distinto de cero representa verdadero. No añadas una igualdad que la biblioteca no promete.",
             "Separa el entero devuelto por el clasificador del bool que expresa si reconoció la categoría.",
@@ -107,7 +107,7 @@
             "unsigned char",
             "char unsigned"
           ],
-          "explanation": "La preparación ocurre antes de que el argumento llegue al clasificador. No cambia el texto ni decide qué categoría representa.",
+          "explanation": "unsigned char y char unsigned nombran el mismo tipo. La conversión se evalúa antes de llamar a std::isalpha: primero obtiene la unidad sin signo y luego esa unidad se proporciona como argumento.\n\nEn este programa, la entrada sigue siendo 'Q' y se obtiene 1:0:0. El propósito de la conversión es preparar un argumento dentro del dominio, no transformar la letra ni determinar su categoría. Convertir un valor negativo sólo a int no lo vuelve positivo.",
           "reviewFeedback": "La conversión que falta debe obtener el valor de la unidad sin signo antes de que se utilice como argumento. Conservar un negativo mediante una conversión a int no cumple ese propósito."
         },
         {
@@ -128,7 +128,7 @@
           "answers": [
             "0:1"
           ],
-          "explanation": "La marca no es un dígito. La conversión de caja no la transforma en una letra ni la pierde.",
+          "explanation": "EOF representa la marca de fin permitida, conservada aquí como int. No representa un dígito, por lo que la primera comparación produce 0. std::tolower devuelve la misma marca en este caso, así que la igualdad con EOF produce 1.\n\nSe obtiene 0:1 sin reducir previamente la marca a char. La preparación de una unidad almacenada en una cadena y el tratamiento de esta marca entera son situaciones distintas.",
           "reviewFeedback": "EOF se mantiene como una marca int permitida en estas llamadas. Decide si la marca representa un dígito y si la conversión de minúsculas la conserva; no la conviertas antes en char."
         },
         {
@@ -140,7 +140,7 @@
             "Usar unsigned char hace que todo carácter sea una letra válida."
           ],
           "correctIndex": 0,
-          "explanation": "El dominio de la llamada y la categoría de su argumento son cuestiones distintas.",
+          "explanation": "Preparar static_cast<unsigned char>(caracter) evita conservar como argumento un valor negativo indebido de char. La clasificación ocurre después: esa unidad puede resultar una letra, un dígito, un blanco u otra cosa.\n\nLa conversión no combina varias unidades para interpretar un carácter Unicode ni obliga a que std::isalpha responda verdadero. Cambiar la representación del argumento y reconocer su categoría son operaciones diferentes.",
           "reviewFeedback": [
             "Distingue preparar un argumento del clasificador de interpretar una secuencia de unidades como un texto más amplio.",
             "Cambiar el tipo de destino a int no elimina por sí solo un valor negativo que ya tenga el char.",
@@ -177,7 +177,7 @@
           "answers": [
             "1:0"
           ],
-          "explanation": "El retorno de carro pertenece a la categoría de blancos, pero no a la lista de tres separadores acordada.",
+          "explanation": "La entrada es el retorno de carro escrito como '\\r'. La biblioteca lo incluye entre sus seis blancos, de modo que biblioteca vale verdadero. Las tres igualdades del lector comparan con espacio, tabulador horizontal y salto de línea; ninguna coincide con ese retorno de carro.\n\nPor eso separador vale falso y se presenta 1:0. No hay contradicción: las dos condiciones responden a listas distintas.",
           "reviewFeedback": "Compara el carácter con la lista explícita de tres separadores y, por separado, con los seis blancos de la biblioteca en la configuración de C."
         },
         {
@@ -204,7 +204,7 @@
           "answers": [
             "1:1:1:1"
           ],
-          "explanation": "La letra, el dígito, el tabulador vertical y el guion bajo van a categorías distintas. Guion bajo no es una letra para isalpha. Hay cuatro caracteres y cuatro incrementos en total.",
+          "explanation": "La primera unidad, A, incrementa letras. El tabulador vertical incrementa blancos; 9 incrementa dígitos, y el guion bajo incrementa otros. La cadena de alternativas elige un único incremento por unidad.\n\nLos contadores se imprimen en el orden letras, dígitos, blancos y otros, que produce 1:1:1:1. Su suma es cuatro, la longitud de esta muestra. El guion bajo no pasa a ser una letra por poder aparecer en otros contextos de programación.",
           "reviewFeedback": "Recorre las cuatro unidades y sigue la cadena if/else if/else. Incrementa un único contador por unidad; recuerda que el tabulador vertical es blanco y que el guion bajo no es una letra básica."
         },
         {
@@ -246,7 +246,7 @@
           "answers": [
             "K:8:k"
           ],
-          "explanation": "La copia del carácter convertido es K; ocho no cambia; el objeto letra conserva k.",
+          "explanation": "std::toupper obtiene la mayúscula correspondiente a 'k', que se convierte a char para mostrar K. std::tolower deja el dígito '8' igual. Ninguna llamada asigna un valor nuevo a letra.\n\nLa última inserción vuelve a leer esa variable, que conserva 'k'. La salida es K:8:k, sin salto final. Obtener un valor transformado no modifica automáticamente el objeto usado como argumento.",
           "reviewFeedback": "Separa el valor devuelto de la variable que se usó como argumento. La letra tiene una conversión de caja; un dígito conserva su valor y las llamadas no reasignan por sí solas letra."
         },
         {
@@ -328,7 +328,7 @@
             "Cinco letras, porque la conversión de caja convierte todos los caracteres."
           ],
           "correctIndex": 0,
-          "explanation": "La normalización cambia la caja de las letras básicas, sin eliminar signos ni convertir dígitos. El guion bajo sigue en otros y se conserva en ambas copias.",
+          "explanation": "En \"aZ09_\" se recorren cinco unidades: dos letras, dos dígitos y un guion bajo. No aparece ningún blanco. La copia en minúsculas cambia únicamente la Z; la de mayúsculas cambia únicamente la a.\n\nSe obtienen az09_ y AZ09_, ambas de longitud cinco. El guion bajo cuenta como otro y permanece en las dos copias. Mantener el original permite comprobar que obtener esas representaciones no alteró el texto recibido.",
           "reviewFeedback": [
             "Cuenta las categorías por separado y cambia sólo las letras de cada copia, sin modificar el original.",
             "El guion bajo no es una letra para esta pregunta y no se elimina al cambiar mayúsculas por minúsculas.",
@@ -487,7 +487,7 @@
             "Que el informe usa otra categoría; no cambia el contrato del intérprete."
           ],
           "correctIndex": 2,
-          "explanation": "Reconocer una categoría y admitirla en una posición de una gramática son decisiones distintas.",
+          "explanation": "El informe aplica std::isspace, cuya lista incluye el tabulador vertical. El intérprete anterior compara sólo con espacio, tabulador horizontal y salto de línea. Un incremento del contador de blancos no ejecuta ni cambia esas condiciones del intérprete.\n\nAceptar allí el tabulador vertical sería ampliar el formato. La clasificación del informe describe una unidad; la aceptación de un texto exige además cumplir la estructura y los separadores acordados.",
           "reviewFeedback": [
             "El informe no cambia los requisitos del intérprete. Compara la categoría de biblioteca con los separadores que el lector acordó admitir.",
             "Tener una unidad blanca no demuestra que el resto del texto tenga la estructura solicitada.",
@@ -502,7 +502,7 @@
           "answers": [
             "0:1:1"
           ],
-          "explanation": "La igualdad exacta del texto original es falsa; la copia satisface la política de caja; el original se conserva.",
+          "explanation": "recibido contiene \"TaBlA\", por lo que su igualdad exacta con \"tabla\" es falsa. El recorrido transforma las tres mayúsculas de copia y deja en ella \"tabla\"; la segunda igualdad es verdadera.\n\nLa tercera comparación consulta de nuevo el original, que aún contiene \"TaBlA\". Los tres resultados forman 0:1:1. El resultado de una comparación depende del objeto consultado y de la política elegida, no sólo de que exista una copia normalizada.",
           "reviewFeedback": "Evalúa cada igualdad con el texto que realmente contiene ese objeto. La copia normalizada puede satisfacer una comparación que no satisface el original, y obtenerla no cambia recibido."
         },
         {
@@ -519,7 +519,7 @@
             "Todos los nombres que contienen letras pasan la validación después de tolower."
           ],
           "correctIndex": 0,
-          "explanation": "La normalización sólo cambia caja. La política de nombres debe comprobar por separado si quedan signos no admitidos; convertir no elimina ni valida esos caracteres.",
+          "explanation": "La conversión de \"LaGo\" produce lago, una etiqueta del conjunto admitido. Con \"LaGo!\", las mismas letras pasan a minúsculas, pero el signo final permanece: se obtiene lago!.\n\nEsa segunda cadena completa no es \"lago\" ni \"sol\". Normalizar permite aplicar la política de caja; la comparación posterior decide si la etiqueta completa está admitida.",
           "reviewFeedback": [
             "Sigue el efecto de la conversión sobre las letras y sobre el signo final, y comprueba después el conjunto de etiquetas permitidas.",
             "La conversión no elimina el signo de exclamación. Revisa si la cadena completa coincide con alguna etiqueta permitida.",
@@ -583,6 +583,125 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& entrada) {\n    std::string copia = entrada;\n    for (char& c : copia)\n        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));\n    return copia;\n}\n\nint main() {\n    const std::string a{\"ABC9_\"};\n    const std::string b{\"abc9_\"};\n    const std::string c{\"--7\"};\n    std::cout << copiar_en_minusculas(a) << \"\\n\" << copiar_en_minusculas(b) << \"\\n\"\n              << copiar_en_minusculas(c) << \"\\n\" << a << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Recorrer unidades que no tienen una letra visible"
+        },
+        {
+          "type": "paragraph",
+          "text": "El dominio ASCII admitido incluye unidades que no son letras, dígitos ni blancos. El carácter de valor cero se denomina NUL y puede escribirse como el literal '\\0'; no es el carácter del dígito '0'. El valor 127 corresponde a DEL. En la configuración C, ninguno pertenece a las tres categorías que cuenta el informe, por lo que ambos van a otros. Tampoco cambian de caja (ISO/IEC JTC 1/SC 22/WG 14, 2023)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cadena puede conservar esas unidades dentro de su longitud. Por ejemplo, la asignación entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; utiliza una lista de cinco caracteres; cada elemento ocupa una posición, incluido el cero interior. Un recorrido por la cadena visita sus cinco elementos. No debe terminar porque encuentre una unidad de valor cero (Köppe et al., 2023).\n\nEl cliente prepara las muestras con esas listas. Para hacer visible cada unidad, mostrar_unidades la convierte primero a unsigned char y después a int, e imprime su valor decimal. Así el cero y los controles aparecen como números separados por dos puntos, sin enviar esos controles a la consola."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye texto_admitido, resumir y las dos funciones de copia. Mantén los contratos anteriores: admitir hasta cuarenta unidades con valor sin signo de 0 a 127; validar todo el texto antes de clasificar o convertir; contar una categoría por unidad admitida; devolver copias completas en cada caja conservando el origen, la longitud, el orden y todas las unidades. Las funciones no imprimen. Conserva el cliente y su configuración regional C inicial.\n\nmain muestra primero Admitido=resultado|Unidades=longitud. Si se admite la cadena, muestra Resumen=letras:digitos:blancos:otros y las unidades numéricas del original y las dos copias. En todos los casos termina con la comparación Entrada conservada=resultado. Cada línea lleva salto final."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los cuatro selectores preparan estas muestras, en el orden de sus elementos:\n1: {'A', '\\0', 'Z', static_cast<char>(127), '9'}; cinco unidades.\n2: {'A', '\\0', static_cast<char>(-1), 'Z'}; cuatro unidades. El valor sin signo del tercer elemento supera 127, como en la batería anterior: debe rechazarse antes del resumen y las copias.\n3: {'\\0'}; una unidad, no una cadena vacía.\n4: {static_cast<char>(127), '\\t', 'b'}; DEL, tabulador horizontal y una letra minúscula.\n\nEl dígito nueve tiene código decimal 57, mientras que el código 9 identifica el tabulador horizontal. Los números del diagnóstico representan unidades; no deben confundirse con los caracteres de los dígitos que usamos para escribir esos números."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Entrada escribe sólo uno de los selectores: 1, 2, 3, 4. Puedes rodearlo con espacios, tabuladores o saltos de línea ASCII. Las muestras ya están preparadas en el cliente. Prueba cada selector con el mismo programa y pulsa «Compilar, ejecutar y comprobar». A continuación se muestra la salida completa requerida para cada entrada; conserva los separadores y el salto final de todas las líneas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 1. Salida:\nAdmitido=1|Unidades=5\nResumen=2:1:0:2\nOriginal=65:0:90:127:57\nMinusculas=97:0:122:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 2. Salida:\nAdmitido=0|Unidades=4\nEntrada conservada=1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 3. Salida:\nAdmitido=1|Unidades=1\nResumen=0:0:0:1\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 4. Salida:\nAdmitido=1|Unidades=3\nResumen=1:0:1:1\nOriginal=127:9:98\nMinusculas=127:9:98\nMayusculas=127:9:66\nEntrada conservada=1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    // Valida la longitud y todas las unidades antes del resumen y las copias.\n    (void)texto;\n    return false;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    // Cuenta cada unidad admitida en una sola categoria.\n    (void)texto;\n    return {0, 0, 0, 0};\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    // Devuelve la copia en minusculas sin perder unidades.\n    return texto;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    // Devuelve la copia en mayusculas sin perder unidades.\n    return texto;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Admitido=1|Unidades=5\nResumen=2:1:0:2\nOriginal=65:0:90:127:57\nMinusculas=97:0:122:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La salida coincide con las cinco unidades. El cero interior y DEL cuentan como otros; las letras y el dígito posteriores al cero también se recorren. En la copia minúscula cambian los códigos 65 → 97 y 90 → 122, mientras que 0, 127 y 57 permanecen en sus posiciones. Los contadores suman cinco y el cliente presenta el original conservado. La existencia de NUL no reduce la longitud ni termina el recorrido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Admitido=1|Unidades=5\nResumen=1:0:0:0\nOriginal=65:0:90:127:57\nMinusculas=97:0:90:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1\n"
+                    ],
+                    "text": "La salida es compatible con detener uno o más recorridos al encontrar '\\0'. Esa unidad pertenece a la longitud de la cadena: debe validarse, contarse como otra y conservarse en las copias, mientras el recorrido continúa con los elementos siguientes. Comprueba por separado el validador, el resumen y cada conversión; el cero no es la marca entera EOF."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Admitido=0|Unidades=4\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe muestra rechazo con longitud 4 y entrada conservada. La unidad posterior al cero queda fuera del dominio ASCII; encontrar antes una unidad válida de valor cero no basta para admitir toda la cadena. Con el cliente dado, el rechazo evita llamar al resumen y a las copias, por lo que no aparecen esas líneas.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Admitido=1|Unidades=4\nResumen=1:0:0:0\nOriginal=65:0:255:90\nMinusculas=97:0:255:90\nMayusculas=65:0:255:90\nEntrada conservada=1\n"
+                    ],
+                    "text": "La salida es compatible con detener uno o más recorridos al encontrar '\\0'. Esa unidad pertenece a la longitud de la cadena: debe validarse, contarse como otra y conservarse en las copias, mientras el recorrido continúa con los elementos siguientes. Comprueba por separado el validador, el resumen y cada conversión; el cero no es la marca entera EOF."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3\n",
+                "outputs": [
+                  "Admitido=1|Unidades=1\nResumen=0:0:0:1\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La cadena contiene exactamente una unidad de valor cero. Su longitud es 1, se cuenta una unidad en otros y ambas copias muestran el mismo 0. No se confunde con el caso vacío, cuyos contadores y longitud serían cero. El cliente confirma además que el original conserva su contenido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Admitido=1|Unidades=1\nResumen=0:0:0:0\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1\n"
+                    ],
+                    "text": "La salida es compatible con detener uno o más recorridos al encontrar '\\0'. Esa unidad pertenece a la longitud de la cadena: debe validarse, contarse como otra y conservarse en las copias, mientras el recorrido continúa con los elementos siguientes. Comprueba por separado el validador, el resumen y cada conversión; el cero no es la marca entera EOF."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4\n",
+                "outputs": [
+                  "Admitido=1|Unidades=3\nResumen=1:0:1:1\nOriginal=127:9:98\nMinusculas=127:9:98\nMayusculas=127:9:66\nEntrada conservada=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los informes coinciden con tres unidades: DEL cuenta en otros, el tabulador horizontal en blancos y la letra en letras. El 9 del diagnóstico es el código del tabulador; no se cuenta como un dígito decimal del texto. La copia mayúscula cambia 98 por 66 y conserva las otras dos unidades."
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Una implementación y el estado observado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nvoid mostrar_unidades(const std::string& texto) {\n    bool primera = true;\n    for (char caracter : texto) {\n        if (!primera) { std::cout << ':'; }\n        std::cout << static_cast<int>(static_cast<unsigned char>(caracter));\n        primera = false;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::string entrada;\n    if (caso == 1) { entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'}; }\n    else if (caso == 2) { entrada = {'A', '\\0', static_cast<char>(-1), 'Z'}; }\n    else if (caso == 3) { entrada = {'\\0'}; }\n    else if (caso == 4) { entrada = {static_cast<char>(127), '\\t', 'b'}; }\n    else { return 1; }\n    const std::string previo = entrada;\n    const bool admitido = texto_admitido(entrada);\n    std::cout << \"Admitido=\" << admitido << \"|Unidades=\" << entrada.size() << '\\n';\n    if (admitido) {\n        const Resumen_caracteres resumen = resumir(entrada);\n        const std::string minusculas = copiar_en_minusculas(entrada);\n        const std::string mayusculas = copiar_en_mayusculas(entrada);\n        std::cout << \"Resumen=\" << resumen.letras << ':' << resumen.digitos << ':'\n                  << resumen.blancos << ':' << resumen.otros << '\\n';\n        std::cout << \"Original=\"; mostrar_unidades(entrada);\n        std::cout << \"Minusculas=\"; mostrar_unidades(minusculas);\n        std::cout << \"Mayusculas=\"; mostrar_unidades(mayusculas);\n    }\n    std::cout << \"Entrada conservada=\" << (entrada == previo) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El límite del recorrido es el final de la cadena; ninguno de los cuerpos termina al encontrar una unidad cero. La validación revisa también los elementos posteriores y rechaza la segunda muestra antes de las operaciones de clasificación y copia. En el resumen, NUL y DEL no satisfacen ninguna de las tres preguntas y llegan a otros.\n\nLas funciones de copia asignan sobre una cadena independiente. El cero interior permanece, y la letra situada después también cambia a la caja requerida. mostrar_unidades permite comparar las posiciones sin depender del efecto visual de un carácter de control. El diagnóstico convierte a int para imprimir números; las copias siguen siendo cadenas de char.\n\nUna implementación que corte todos los recorridos en NUL puede coincidir con las muestras que no lo contienen. Aquí omitiría unidades del resumen o de la conversión y podría admitir una cadena inválida por no examinar su sufijo. Comparar sólo lo que se ve como letras no detectaría esa pérdida."
         }
       ]
     }
@@ -995,7 +1114,21 @@
         "id": "page_0010",
         "blocks": [
           "block_0010_0000",
-          "block_0010_0001"
+          "block_0010_0001",
+          "u12_caracteres_nul_interior_titulo",
+          "u12_caracteres_nul_interior_contrato_0",
+          "u12_caracteres_nul_interior_contrato_1",
+          "u12_caracteres_nul_interior_contrato_2",
+          "u12_caracteres_nul_interior_contrato_3",
+          "u12_caracteres_nul_interior_ejecucion",
+          "u12_caracteres_nul_interior_entrada_salida_0",
+          "u12_caracteres_nul_interior_entrada_salida_1",
+          "u12_caracteres_nul_interior_entrada_salida_2",
+          "u12_caracteres_nul_interior_entrada_salida_3",
+          "u12_caracteres_nul_interior_construccion",
+          "u12_caracteres_nul_interior_referencia_titulo",
+          "u12_caracteres_nul_interior_referencia_codigo",
+          "u12_caracteres_nul_interior_referencia_razonamiento"
         ]
       }
     ],
@@ -1795,7 +1928,134 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_caracteres_nul_interior_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 11,
+          "block": 0
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_contrato_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 1
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_contrato_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 2
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_contrato_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 3
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_contrato_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 4
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_ejecucion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 5
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 6
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 7
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 8
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_entrada_salida_3",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 9
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_construccion",
+        "sha256": "8bd0f4a7ab0663b98349ef7c75be68237a8f26dde427fb1c89fd5ab8ef52ea7c",
+        "storage": {
+          "page": 11,
+          "block": 10
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 11,
+          "block": 11
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_referencia_codigo",
+        "sha256": "a98bc9e31d64894adaf5cad984fc065853d9ccebec51c8b714dc9160918ed594",
+        "storage": {
+          "page": 11,
+          "block": 12
+        },
+        "progressPage": "page_0010"
+      },
+      {
+        "id": "u12_caracteres_nul_interior_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 11,
+          "block": 13
+        },
+        "progressPage": "page_0010"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -2046,6 +2306,66 @@
         "id": "block_0009_0002",
         "beforeSha256": "d33532cf27b2415ea796da3ec14ca23b9f24d111196e6db1a60baa116d182b44",
         "afterSha256": "a126974884cde3e0ea3db8717bc51a9ba0f468944114ce0a90ee4bd4afd50dfc"
+      },
+      {
+        "id": "block_0000_0005",
+        "beforeSha256": "7610077e644c6b7b7fba87d4e86ab81e1e813b36fe3bb6074f7932daffb76234",
+        "afterSha256": "d274265cdabaa01a6a521233585833ef727a33aa33c3fee75f42609acf5424b5"
+      },
+      {
+        "id": "block_0000_0006",
+        "beforeSha256": "5a0f43a041bd98335ef4cf860bcf5e26ae87aa7af316ff6330f11f90561ca176",
+        "afterSha256": "ea9f6a0c661e55bcb7e34580e6110a923d1106d09411d1ad7e4d91c9f1ce0db0"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "a959b7a5c5d594e6ee765b9a4b342ee77fa8a6ede0e9b36eacd2382eea50b55c",
+        "afterSha256": "6b9dfe0dbf5ff0c505a3d0218345332c91cc805945e95b64c149ec32e7075045"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "4f345e6d61f9b58f960267b1290fc24377ff6d304d856c8aa6f8650715da2e94",
+        "afterSha256": "635e7e714d315d2b992cbc22afddad1c8e326fdf5cbed5b6eae484b123788c48"
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "71a0598c4b0f387972b3e6c8b75a032b53aef6f476719bd7ab2ebf3c8152294e",
+        "afterSha256": "a51561e7735dc96bc30f657890cd71b9418e59af8b17155493b2a55522d120af"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "07b874e8dc737a29e34d79c39584489cd28e774307145acf6431d87d57755589",
+        "afterSha256": "0c260f25fb1398bd1eb7ade87d0bfb8a7d3a48f297d369681635548a67cb0c62"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "73b9ec40ea7c8a484dd356602f5f0de7e9799f53f9a39acd7dcdfc1c1d1b8f97",
+        "afterSha256": "b79ac25a46156e3090a9fddb5d4b28079a301e91690e81b63538dd8cf2b6e6a5"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "5cd38bea04aeaf608e7dc7776f2b0a95229d99097414de824f3251ac69a858be",
+        "afterSha256": "44e4c3225e3abb1edf0e1ee2ef9d0f20599e69a7efa33b49a8bd022ac6bd657a"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "06b78a5da0f9921ea002d638d6ad8a3b186610a688df96e24e3743d358362b20",
+        "afterSha256": "16cd7711b4e5af36a69efa54f2a0ef795eceb97734de5f21de64ec89183e3e5a"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "c071f94e2054e1a67a3f4db5e91fe5a50db5f702da946684facb3950058141cd",
+        "afterSha256": "46fdc2088c8cee74f85ba42f04dfadc12f9b5cd95915bff3a9f1b65df839cf8d"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "5b2b48428cf28dd612fc30c5232759e9f1a6ba74e34ba0caabc101ead0be2fd8",
+        "afterSha256": "6c52eb0e619515683c8eb29d47060f4d8e75a3d151b5d94a1f01c1335362ea26"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "36703721a0b7461154d1d07fc3e2602a8f3f2da1f2e4e8ee0670d29f68562785",
+        "afterSha256": "773c184df709049d9e8ba83d762b6390c514bad8bf82676e7c3e06adb2e99ab5"
       }
     ]
   },
@@ -2069,6 +2389,14 @@
         "block_0010_0000",
         "block_0010_0001"
       ]
+    },
+    {
+      "activity": "u12_caracteres_nul_interior_construccion",
+      "blocks": [
+        "u12_caracteres_nul_interior_referencia_titulo",
+        "u12_caracteres_nul_interior_referencia_codigo",
+        "u12_caracteres_nul_interior_referencia_razonamiento"
+      ]
     }
   ],
   "compilerPuzzlesRequired": true,
@@ -2083,6 +2411,12 @@
       "activity": "block_0009_0002",
       "requires": [
         "block_0005_0004"
+      ]
+    },
+    {
+      "activity": "u12_caracteres_nul_interior_construccion",
+      "requires": [
+        "block_0009_0002"
       ]
     }
   ],
@@ -2341,8 +2675,16 @@
       {
         "block": "block_0007_0001",
         "path": "/explanation",
-        "sourceSha256": "0cc8e5675098425d500544a3c1131942a7cd70634a08c7c8b9e4f2e3101fd339",
-        "spans": []
+        "sourceSha256": "08ff52534ca68ecb8d200b648418a8c1f4d9f4242df3142540d9674e3ba04c12",
+        "spans": [
+          {
+            "start": 18,
+            "end": 30,
+            "text": "std::isspace",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0001",
@@ -2412,21 +2754,56 @@
       {
         "block": "block_0007_0002",
         "path": "/explanation",
-        "sourceSha256": "ee62af627b0d15e85d1674ff8d5ffc7be274fde0e0da0f5e5112e4411bc95f12",
+        "sourceSha256": "c366dd2f72643c1c7d092791c919c88f768f53d546615a075d144e04ad012644",
         "spans": [
           {
-            "start": 41,
-            "end": 46,
-            "text": "falsa",
-            "role": "output",
-            "reading": "natural"
+            "start": 0,
+            "end": 8,
+            "text": "recibido",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 56,
+            "start": 18,
+            "end": 25,
+            "text": "\"TaBlA\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 68,
+            "text": "\"tabla\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 131,
             "text": "copia",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 154,
+            "text": "\"tabla\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 269,
+            "text": "\"TaBlA\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 303,
+            "text": "0:1:1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2496,8 +2873,51 @@
       {
         "block": "block_0007_0004",
         "path": "/explanation",
-        "sourceSha256": "ff0c1b43609b97f55be9989cf86255af54c50dafc30e73fea9b05b8fd2917932",
-        "spans": []
+        "sourceSha256": "6d93cfdc0ad00a67df0831223e74efca9b322828d9984a4d28184996d5681900",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "\"LaGo\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 36,
+            "text": "lago",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 85,
+            "text": "\"LaGo!\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 172,
+            "text": "lago!",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 215,
+            "text": "\"lago\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 224,
+            "text": "\"sol\"",
+            "role": "string",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
@@ -3111,21 +3531,49 @@
       {
         "block": "block_0000_0005",
         "path": "/explanation",
-        "sourceSha256": "0cc11144b6601b9a8be7c4b0c5de5e40bbef566d307a54cc0bd7bef07d8ab758",
+        "sourceSha256": "56a81cacdefc53b4ff6fd4666ecdcea695282af3810b938f76cd870bf03fc276",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "Cinco",
-            "role": "data",
-            "reading": "natural"
+            "start": 12,
+            "end": 15,
+            "text": "'5'",
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 66,
+            "start": 41,
+            "end": 53,
+            "text": "std::isdigit",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 82,
+            "text": "std::isalpha",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 98,
+            "text": "std::isspace",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 170,
             "text": "bool",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 229,
+            "text": "0:1:0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3166,26 +3614,33 @@
       {
         "block": "block_0000_0006",
         "path": "/explanation",
-        "sourceSha256": "03c74f52beba9cd8729831f4965b061a5dfec023945e6ae4d673ff281a3df6bc",
+        "sourceSha256": "990f84c69798ec37b993de3e26ce1bdaff55f16d6d81ab2f8522c29aaa9a8b37",
         "spans": [
           {
-            "start": 22,
-            "end": 26,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
+            "start": 3,
+            "end": 23,
+            "text": "std::isalpha(unidad)",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 32,
-            "end": 36,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
+            "start": 97,
+            "end": 101,
+            "text": "!= 0",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 57,
-            "end": 58,
-            "text": "1",
+            "start": 147,
+            "end": 151,
+            "text": "== 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 284,
+            "end": 290,
+            "text": "unidad",
             "role": "cpp",
             "reading": "technical"
           }
@@ -3394,8 +3849,51 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "6a10ed241077fd2dfe4495b5ad2fdf8abd6eeeb540359716b22989001c120213",
-        "spans": []
+        "sourceSha256": "796f49039f708c476a7639e30c57d901cb8c70b7e58f7fe2a96fe473f9397c75",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "unsigned char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 16,
+            "end": 29,
+            "text": "char unsigned",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 107,
+            "text": "std::isalpha",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 238,
+            "end": 241,
+            "text": "'Q'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 260,
+            "text": "1:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 427,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -3526,8 +4024,65 @@
       {
         "block": "block_0001_0005",
         "path": "/explanation",
-        "sourceSha256": "bc1a9e366b930882b45419f94400822f9aeb87852dd650150fc06a628bd0d55b",
-        "spans": []
+        "sourceSha256": "0273e3031262033d5f175117c86bac56f4bc6af18e7e53cbb74c6ce9933559f7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 136,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 150,
+            "text": "std::tolower",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 213,
+            "end": 216,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 225,
+            "end": 226,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 243,
+            "text": "0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 283,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0005",
@@ -3574,8 +4129,30 @@
       {
         "block": "block_0001_0006",
         "path": "/explanation",
-        "sourceSha256": "6b5c62f92c9063d9583a117289de170ea336217d9c6084f00fd31beafcdf632f",
-        "spans": []
+        "sourceSha256": "b044814aed79e23801935b1444561f3793478d1a1bb2fc1a74399601148a1d74",
+        "spans": [
+          {
+            "start": 9,
+            "end": 45,
+            "text": "static_cast<unsigned char>(caracter)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 312,
+            "end": 324,
+            "text": "std::isalpha",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0006",
@@ -3766,13 +4343,34 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "a185577fe02967953cb2b878ba231b50d7d3bdfa4d941c35bfbb1c55f9bfc87c",
+        "sourceSha256": "de8c90d641448a523b226e5e3a66f7228fc6c44ca9fa603b418cefb24a79802f",
         "spans": [
           {
-            "start": 79,
-            "end": 83,
-            "text": "tres",
-            "role": "data",
+            "start": 47,
+            "end": 51,
+            "text": "'\\r'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 114,
+            "end": 124,
+            "text": "biblioteca",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 285,
+            "end": 294,
+            "text": "separador",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 323,
+            "text": "1:0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3901,26 +4499,26 @@
       {
         "block": "block_0002_0005",
         "path": "/explanation",
-        "sourceSha256": "2b579a13e884ee7dea6af669fa88505c60f9e5e2e690ccd8600fe2b87c982720",
+        "sourceSha256": "1b46fcd49242b4ccc3324993125f091a98ad86218dbd43d728ee060516fa23a1",
         "spans": [
           {
-            "start": 119,
-            "end": 126,
-            "text": "isalpha",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 19,
+            "end": 20,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 132,
-            "end": 138,
-            "text": "cuatro",
-            "role": "output",
-            "reading": "natural"
+            "start": 83,
+            "end": 84,
+            "text": "9",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 152,
-            "end": 158,
-            "text": "cuatro",
+            "start": 289,
+            "end": 296,
+            "text": "1:1:1:1",
             "role": "output",
             "reading": "natural"
           }
@@ -4131,33 +4729,68 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "4d1999ed7f79cb4ddd43076c3b253bede8290370d4553a01438dafc4456d5165",
+        "sourceSha256": "ff8cc6f59b6aa88b469a78c1f437aadda3db1acfebd328d64f881b5e41ebcaaf",
         "spans": [
           {
-            "start": 36,
-            "end": 37,
+            "start": 0,
+            "end": 12,
+            "text": "std::toupper",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 55,
+            "text": "'k'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 95,
             "text": "K",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 39,
-            "end": 43,
-            "text": "ocho",
-            "role": "output",
-            "reading": "natural"
+            "start": 97,
+            "end": 109,
+            "text": "std::tolower",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 70,
+            "start": 125,
+            "end": 128,
+            "text": "'8'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 181,
             "text": "letra",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 80,
-            "end": 81,
-            "text": "k",
+            "start": 245,
+            "end": 248,
+            "text": "'k'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 268,
+            "text": "K:8:k",
             "role": "output",
             "reading": "natural"
           }
@@ -4529,8 +5162,44 @@
       {
         "block": "block_0004_0006",
         "path": "/explanation",
-        "sourceSha256": "15d510b9208488af292dc4d7ddcf62a21215d2f97f1115e05da15351716e84df",
-        "spans": []
+        "sourceSha256": "53efa36b0ca1e7fcb34819b0ec3e8dd6c7b269dd86f305ea6358980da829df0b",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "\"aZ09_\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": "Z",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 191,
+            "end": 192,
+            "text": "a",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 207,
+            "end": 212,
+            "text": "az09_",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 220,
+            "text": "AZ09_",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0006",
@@ -5199,6 +5868,550 @@
             "text": "primer",
             "role": "data",
             "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_titulo",
+        "path": "/text",
+        "sourceSha256": "da8f02dcafc9d584986012e7ad6f5e37e20b0d702c1f0c83d3bfed352e278940",
+        "spans": []
+      },
+      {
+        "block": "u12_caracteres_nul_interior_contrato_0",
+        "path": "/text",
+        "sourceSha256": "4f2eb2eebfa46fa2aa0e7ae6caf4e6e9d001db2b855080dbd277741b51b30549",
+        "spans": [
+          {
+            "start": 159,
+            "end": 163,
+            "text": "'\\0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 197,
+            "text": "'0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 208,
+            "end": 211,
+            "text": "127",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 345,
+            "text": "otros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 371,
+            "end": 404,
+            "text": "(ISO/IEC JTC 1/SC 22/WG 14, 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_contrato_1",
+        "path": "/text",
+        "sourceSha256": "65751dc7989ec56d447a58a2204572aaab7f30874080cd0434957bcf72d97e3b",
+        "spans": [
+          {
+            "start": 91,
+            "end": 147,
+            "text": "entrada = {'A', '\\0', 'Z', static_cast<char>(127), '9'};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 362,
+            "end": 382,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 482,
+            "text": "mostrar_unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 506,
+            "end": 519,
+            "text": "unsigned char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 532,
+            "end": 535,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_contrato_2",
+        "path": "/text",
+        "sourceSha256": "377e14f528710976508f4d4a786ccaa422cdc6639d1f16863ff746683580a8e1",
+        "spans": [
+          {
+            "start": 12,
+            "end": 26,
+            "text": "texto_admitido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 35,
+            "text": "resumir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 161,
+            "text": "127",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 453,
+            "end": 457,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 474,
+            "end": 510,
+            "text": "Admitido=resultado|Unidades=longitud",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 580,
+            "text": "Resumen=letras:digitos:blancos:otros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 683,
+            "end": 711,
+            "text": "Entrada conservada=resultado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_contrato_3",
+        "path": "/text",
+        "sourceSha256": "e0353272c99ec35459d1a8050e911134d1ea00e802a5030c53b184238a3300a6",
+        "spans": [
+          {
+            "start": 77,
+            "end": 78,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 125,
+            "text": "{'A', '\\0', 'Z', static_cast<char>(127), '9'}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 144,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 185,
+            "text": "{'A', '\\0', static_cast<char>(-1), 'Z'}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 253,
+            "text": "127",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 333,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 341,
+            "text": "{'\\0'}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 377,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 414,
+            "text": "{static_cast<char>(127), '\\t', 'b'}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 503,
+            "end": 505,
+            "text": "57",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 530,
+            "end": 531,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_ejecucion",
+        "path": "/text",
+        "sourceSha256": "49afa9fa3c84c6fe8375e2c2a0bc1423bcc06ad7d923223f5aedde3c1a86c970",
+        "spans": [
+          {
+            "start": 47,
+            "end": 57,
+            "text": "1, 2, 3, 4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_entrada_salida_0",
+        "path": "/text",
+        "sourceSha256": "c03446e3dce54fe525ae0b0cc61ab88c7d30456f2270b475230d850138b520f0",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 155,
+            "text": "Admitido=1|Unidades=5\nResumen=2:1:0:2\nOriginal=65:0:90:127:57\nMinusculas=97:0:122:127:57\nMayusculas=65:0:90:127:57\nEntrada conservada=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_entrada_salida_1",
+        "path": "/text",
+        "sourceSha256": "5742a1cb7cbc481e08cae06209124a7b6d8bb125d3edb87223529e758165d8ea",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 62,
+            "text": "Admitido=0|Unidades=4\nEntrada conservada=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_entrada_salida_2",
+        "path": "/text",
+        "sourceSha256": "e3ea4e505095cdc8cee522d9f144bc17d9a982c095f7b1dec5bbc3bfc987423a",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 115,
+            "text": "Admitido=1|Unidades=1\nResumen=0:0:0:1\nOriginal=0\nMinusculas=0\nMayusculas=0\nEntrada conservada=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_entrada_salida_3",
+        "path": "/text",
+        "sourceSha256": "943285ae6277762e34e814de0959dd8b4cb2ed899751eab5508efcde8635b415",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 136,
+            "text": "Admitido=1|Unidades=3\nResumen=1:0:1:1\nOriginal=127:9:98\nMinusculas=127:9:98\nMayusculas=127:9:66\nEntrada conservada=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1b028a7e1358c7c64c2e1e5e4ba79bb2c7b7b9a4f66e127ea45a4397ec70a4a6",
+        "spans": [
+          {
+            "start": 192,
+            "end": 199,
+            "text": "65 → 97",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 210,
+            "text": "90 → 122",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 226,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 228,
+            "end": 231,
+            "text": "127",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 236,
+            "text": "57",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "04f8af51237d49bdf95e7eeb08268eb192aaa4f17b99fca516de6e809e1d80a9",
+        "spans": [
+          {
+            "start": 70,
+            "end": 74,
+            "text": "'\\0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 350,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "f027f416f5eb28b9b2c0834ec9fe753a810ace7f112f6806a6a204076a17c3a7",
+        "spans": [
+          {
+            "start": 40,
+            "end": 41,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_construccion",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "04f8af51237d49bdf95e7eeb08268eb192aaa4f17b99fca516de6e809e1d80a9",
+        "spans": [
+          {
+            "start": 70,
+            "end": 74,
+            "text": "'\\0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 350,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_construccion",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "58bc85ba12ad80111bfa61b24f33b335bf65d3b8cfc6255ef65d1bf5ba2f9368",
+        "spans": [
+          {
+            "start": 72,
+            "end": 73,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 139,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_construccion",
+        "path": "/outputCheck/cases/2/reviewFeedback/0/text",
+        "sourceSha256": "04f8af51237d49bdf95e7eeb08268eb192aaa4f17b99fca516de6e809e1d80a9",
+        "spans": [
+          {
+            "start": 70,
+            "end": 74,
+            "text": "'\\0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 350,
+            "text": "EOF",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_construccion",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "813076ce6c51b8956c3bb31cd82cf56bcad1fa16ef14f7f0e6486718fc978e39",
+        "spans": [
+          {
+            "start": 123,
+            "end": 124,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 244,
+            "text": "98",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 251,
+            "text": "66",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_caracteres_nul_interior_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "cf7aa61ef3b23df4c19908288cdbc71d2b7579fa1a2bdafb4114280991a9dc57",
+        "spans": []
+      },
+      {
+        "block": "u12_caracteres_nul_interior_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "8c568d883e709379d3db3afc809d422b0a7128b895d638d06ae75384958a55ea",
+        "spans": [
+          {
+            "start": 326,
+            "end": 331,
+            "text": "otros",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 488,
+            "end": 504,
+            "text": "mostrar_unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 622,
+            "end": 625,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 685,
+            "end": 689,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

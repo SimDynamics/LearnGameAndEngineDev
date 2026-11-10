@@ -38,7 +38,7 @@
             "Usando rechazados==0 para descartar ambos casos."
           ],
           "correctIndex": 0,
-          "explanation": "Los ceros son valores permitidos. Necesitamos representar por separado si el registro existe.",
+          "explanation": "Una celda ausente puede contener Celda{false, {0, 0}}; el registro recibido con ambas cantidades cero se representa como Celda{true, {0, 0}}. Los dos recuentos son iguales, pero las marcas difieren.\n\nPor eso se consulta presente para decidir si existe un registro. Usar cualquiera de las cantidades como señal de ausencia perdería el registro válido que llegó con ceros.",
           "reviewFeedback": [
             "Identifica qué miembro indica que la posición recibió un registro y cuáles guardan sus cantidades.",
             "El dominio permite esa cantidad. Usarla como ausencia confundiría dos estados válidos diferentes.",
@@ -62,7 +62,7 @@
           "answers": [
             "0:1:0"
           ],
-          "explanation": "La celda 3 sigue ausente. La celda 7 está presente y su cantidad aceptados es cero. Reservar diez celdas no crea diez registros presentes.",
+          "explanation": "La construcción prepara diez celdas con presente falso y cantidades cero. La asignación posterior sólo cambia la celda de posición 7: su marca pasa a verdadera y conserva cantidades cero. La posición 3 no recibió ninguna asignación.\n\nLas tres consultas de salida leen, en orden, la marca falsa de la celda tres, la marca verdadera de la celda siete y su cantidad aceptada. Con la presentación numérica de los booleanos se obtiene 0:1:0, sin salto final. La última cantidad cero no anula la marca verdadera.",
           "reviewFeedback": "Distingue la creación de las diez celdas de la asignación que marca una de ellas como presente. Sigue por separado la marca y las cantidades; no deduzcas presencia a partir de una cantidad cero."
         },
         {
@@ -89,7 +89,7 @@
             "Sólo 2, porque el segundo registro reemplaza siempre al primero."
           ],
           "correctIndex": 1,
-          "explanation": "La tabla conserva la asociación entre ID y recuento, pero no el orden de llegada.",
+          "explanation": "El registro que llegó primero se guarda en la posición 7, y el siguiente en la posición 2. Recorrer posiciones crecientes visita la dos antes que la siete; por eso aparecen 2 y 7.\n\nLos recuentos siguen unidos a sus identificadores. Lo que ya no describe ese recorrido es el orden de llegada. Dos colecciones que sólo difieran en ese orden pueden producir la misma tabla.",
           "reviewFeedback": [
             "La tabla asocia cada posición con un identificador. Recorre las posiciones en el orden indicado, no en el de las inserciones.",
             "Localiza qué información conserva la posición de la celda y qué orden establece el recorrido.",
@@ -106,7 +106,7 @@
             "Sí, siempre que la nueva cantidad sea distinta de cero."
           ],
           "correctIndex": 1,
-          "explanation": "El bool de presencia decide si ese ID ya está ocupado. Cero es una cantidad válida y no habilita reemplazar un registro repetido.",
+          "explanation": "La primera inserción dejó presente verdadero en la celda 7, aunque su recuento sea Recuento{0,0}. La segunda llamada debe consultar esa marca y rechazar el identificador repetido antes de asignar Recuento{1,1}.\n\nAsí conserva el recuento cero de un registro que sí existe. Comprobar si las cantidades son distintas de cero confundiría ocupación con contenido y permitiría un reemplazo prohibido.",
           "reviewFeedback": [
             "La celda ya tiene una marca de presencia. Revisa si las cantidades cero permiten ignorarla.",
             "La comprobación de repetición se realiza sobre presente antes de asignar el nuevo recuento.",
@@ -168,6 +168,15 @@
                 "standardInput": "",
                 "outputs": [
                   "1:0:0\n1:0:0\n0:9:9\nFronteras:1:1:0:0:0:0\n0:9:9\n0:9:9\nTamano:0:0:9:9\n"
+                ],
+                "explanation": "Los siete informes coinciden con el objetivo. La primera inserción admite el identificador siete con cantidades cero; la repetición y el identificador diez se rechazan. Consultar siete produce 1:0:0 y consultar tres conserva 9:9.\n\nEn la batería de fronteras se admiten los extremos cero y nueve; se rechazan identificadores fuera del dominio y cantidades fuera del intervalo. La tabla de nueve celdas se rechaza aunque su posición cero exista. Con el cliente solicitado, estos informes permiten contrastar la distinción entre presencia, valor y dominio.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no produjo los informes. El editor inicial sólo define los tipos y termina. Implementa insertar y consultar, construye las llamadas en el orden de la consigna y muestra sus resultados desde main. Cada uno de los siete informes necesita su salto final."
+                  }
                 ]
               }
             ]
@@ -401,6 +410,15 @@
                 "standardInput": "",
                 "outputs": [
                   "Conversion:1\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:0\n2:3:1\n7:0:0\nConversion:1\n"
+                ],
+                "explanation": "La salida coincide con las cuatro conversiones. La primera presenta los identificadores 2 y 7 por orden creciente de posición, aunque llegaron en el orden contrario. Las dos llamadas rechazadas vuelven a mostrar esos mismos registros. La última sólo muestra Conversion:1 porque la colección vacía deja todas las celdas ausentes.\n\nEl objetivo observa los registros presentes. Para revisar además el tamaño y todas las celdas del destino ante un rechazo, la práctica posterior utilizará otro cliente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La consola quedó vacía. Además de implementar convertir, llama a la función con las cuatro colecciones indicadas. Muestra la cabecera de cada llamada y recorre los registros presentes; no reinicies la tabla entre los intentos. La colección vacía también necesita su cabecera aunque no produzca filas de registros."
+                  }
                 ]
               }
             ]
@@ -449,13 +467,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La conversión conserva qué recuento pertenece a cada identificador, representa la ausencia de forma explícita y protege el destino hasta completar la validación. Sin embargo, recorrer la tabla por posiciones crecientes cambia el orden de presentación.\n\nSi un informe necesita el orden original, debe conservarlo mediante la colección correspondiente u otra información adecuada. La tabla por identificador, por sí sola, no permite reconstruir qué registro llegó primero.",
-          "emphasis": [
-            {
-              "text": "qué registro llegó primero",
-              "style": "bold"
-            }
-          ]
+          "text": "La primera colección contiene el identificador 7 con cantidades cero y después el 2 con cantidades 3 y 1. La tabla resultante conserva esas dos asociaciones, pero un recorrido creciente presenta primero el identificador dos.\n\nInvertir el orden de esos dos registros de entrada produciría las mismas celdas finales. La marca de presencia permite distinguir los registros de las posiciones ausentes, pero no registra cuándo llegó cada uno. Si un informe necesita el orden original, debe conservar el vector correspondiente u otra información que lo describa; la tabla por identificador no permite reconstruirlo por sí sola."
         },
         {
           "type": "note",
@@ -479,6 +491,89 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nbool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino) {\n    std::vector<Celda> candidatos(10, Celda{false, {0, 0}});\n    for (const Registro& registro : registros) {\n        if (!insertar(candidatos, registro)) {\n            return false;\n        }\n    }\n    destino = candidatos;\n    return true;\n}\n\nvoid probar(const std::vector<Registro>& registros, std::vector<Celda>& tabla) {\n    const bool convertido = convertir(registros, tabla);\n    std::cout << \"Conversion:\" << convertido << \"\\n\";\n    for (int id = 0; id < 10; ++id) {\n        Recuento recuento{0, 0};\n        if (consultar(tabla, id, recuento))\n            std::cout << id << ':' << recuento.aceptados << ':' << recuento.rechazados << \"\\n\";\n    }\n}\n\nint main() {\n    std::vector<Celda> tabla;\n    probar({{7, {0, 0}}, {2, {3, 1}}}, tabla);\n    probar({{4, {1, 1}}, {4, {2, 2}}}, tabla);\n    probar({{1, {11, 0}}}, tabla);\n    probar({}, tabla);\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Conservar también el tamaño y las celdas anteriores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye convertir en el editor y conserva las funciones dadas y el cliente. Recibe una colección de registros y un vector de celdas que puede tener cualquier tamaño previo. Si un registro tiene ID fuera de 0 a 9, cantidades fuera de 0 a 10 o un ID repetido en la colección, devuelve false y conserva todo el destino: tamaño, marcas y cantidades de cada celda.\n\nSi admite toda la colección, reemplaza el destino por diez celdas: sólo están presentes los registros recibidos, con sus recuentos en las posiciones correspondientes. Devuelve true. Una colección vacía también se admite y deja diez celdas ausentes. El contrato no asigna significado de registro a las cantidades de una celda ausente; pueden inicializarse con otro recuento sin cambiar qué registros existen. Las funciones no imprimen; el cliente presenta el resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente conserva una copia de la tabla antes de cada llamada. Si la conversión devuelve false, mismas_celdas compara el tamaño y todos los miembros de cada posición, incluidas las cantidades de celdas ausentes. La cabecera es Conversion=resultado|Tamano=cantidad; sólo ante un rechazo añade |Conservada=resultado_de_la_comparacion. Debe mostrar conservación verdadera ante cada rechazo.\n\nDespués presenta una fila por posición: ID:1:aceptados:rechazados cuando está presente o ID:0 cuando está ausente. Así no impone cantidades a las posiciones ausentes después de un éxito. Todas las líneas terminan con salto y no hay líneas vacías entre informes.\n\nEsta inspección directa permite observar un destino previo de tamaño distinto de diez sin pasarlo a consultar, cuyo contrato sí exige diez celdas. La inspección no asigna a la tabla ni interpreta las cantidades de una celda ausente como un registro recibido."
+        },
+        {
+          "type": "paragraph",
+          "text": "El destino previo puede tener otra organización; no se le aplican las precondiciones de insertar. Para el selector 1, empieza con tres celdas: {true, {4, 2}}, {false, {6, 5}} y {true, {1, 9}}. La primera colección, {{8, {1, 2}}, {8, {4, 5}}}, repite el identificador ocho y debe conservar esas tres celdas. La segunda, {{7, {0, 0}}, {2, {3, 1}}}, reemplaza el destino completo. La tercera, {{0, {2, 2}}, {10, {1, 1}}}, contiene un ID fuera del dominio y conserva el último destino aceptado. La cuarta colección está vacía.\n\nPara el selector 2, el destino empieza vacío. La colección {{3, {2, 1}}, {9, {11, 0}}} tiene una cantidad inválida y debe conservar el vector vacío. Después se admite {{9, {10, 10}}, {0, {1, 2}}} y, por último, una colección vacía. En cada ejecución se mantiene una sola tabla entre las llamadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "En Entrada escribe sólo uno de los selectores: 1, 2. Puedes rodearlo con espacios, tabuladores o saltos de línea ASCII. Las muestras ya están preparadas en el cliente. Prueba cada selector con el mismo programa y pulsa «Compilar, ejecutar y comprobar». A continuación se muestra la salida completa requerida para cada entrada; conserva los separadores y el salto final de todas las líneas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 1. Salida:\nConversion=0|Tamano=3|Conservada=1\n0:1:4:2\n1:0\n2:1:1:9\nConversion=1|Tamano=10\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=0|Tamano=10|Conservada=1\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrada: 2. Salida:\nConversion=0|Tamano=0|Conservada=1\nConversion=1|Tamano=10\n0:1:1:2\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:1:10:10\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nbool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino) {\n    // Completa la conversion sin cambiar el cliente ni las funciones anteriores.\n    (void)registros;\n    (void)destino;\n    return false;\n}\n\nbool mismas_celdas(const std::vector<Celda>& a, const std::vector<Celda>& b) {\n    if (a.size() != b.size()) { return false; }\n    int id = 0;\n    for (const Celda& primera : a) {\n        const Celda& segunda = b.at(id);\n        if (primera.presente != segunda.presente\n            || primera.recuento.aceptados != segunda.recuento.aceptados\n            || primera.recuento.rechazados != segunda.recuento.rechazados) {\n            return false;\n        }\n        ++id;\n    }\n    return true;\n}\n\nvoid mostrar_conversion(const std::vector<Registro>& registros,\n                        std::vector<Celda>& tabla) {\n    const std::vector<Celda> anterior = tabla;\n    const bool convertido = convertir(registros, tabla);\n    std::cout << \"Conversion=\" << convertido << \"|Tamano=\" << tabla.size();\n    if (!convertido) { std::cout << \"|Conservada=\" << mismas_celdas(anterior, tabla); }\n    std::cout << '\\n';\n    int id = 0;\n    for (const Celda& celda : tabla) {\n        std::cout << id << ':' << celda.presente;\n        if (celda.presente) {\n            std::cout << ':' << celda.recuento.aceptados << ':' << celda.recuento.rechazados;\n        }\n        std::cout << '\\n';\n        ++id;\n    }\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<Celda> tabla;\n    if (caso == 1) {\n        tabla = {{true, {4, 2}}, {false, {6, 5}}, {true, {1, 9}}};\n        mostrar_conversion({{8, {1, 2}}, {8, {4, 5}}}, tabla);\n        mostrar_conversion({{7, {0, 0}}, {2, {3, 1}}}, tabla);\n        mostrar_conversion({{0, {2, 2}}, {10, {1, 1}}}, tabla);\n        mostrar_conversion({}, tabla);\n    } else if (caso == 2) {\n        mostrar_conversion({{3, {2, 1}}, {9, {11, 0}}}, tabla);\n        mostrar_conversion({{9, {10, 10}}, {0, {1, 2}}}, tabla);\n        mostrar_conversion({}, tabla);\n    } else { return 1; }\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "Conversion=0|Tamano=3|Conservada=1\n0:1:4:2\n1:0\n2:1:1:9\nConversion=1|Tamano=10\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=0|Tamano=10|Conservada=1\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los informes coinciden: el primer rechazo conserva tamaño 3 y las tres celdas anteriores, incluidas las cantidades de la celda ausente. La conversión válida produce tamaño 10 con los registros dos y siete. El ID diez de la siguiente colección provoca un rechazo que conserva ese último estado; el registro cero preparado antes del error no aparece. La colección vacía reemplaza finalmente el destino por diez celdas ausentes.\n\nEl cliente compara todos los miembros antes y después de cada rechazo, además de presentar el tamaño, las marcas y los recuentos de los registros presentes.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Conversion=0|Tamano=10|Conservada=0\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=0|Tamano=10|Conservada=1\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0\n"
+                    ],
+                    "text": "La salida muestra diez celdas y conservación falsa ya en el primer rechazo, aunque ese destino todavía debía conservar su tamaño anterior. Este patrón es compatible con preparar las diez posiciones directamente en el destino antes de validar todos los registros. Prepara un candidato separado y alcanza la asignación al destino sólo después de aceptar la colección completa. Un rechazo conserva también las celdas que no representan registros presentes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "Conversion=0|Tamano=0|Conservada=1\nConversion=1|Tamano=10\n0:1:1:2\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:1:10:10\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera colección tiene una cantidad 11 fuera del intervalo. La cabecera Conversion=0|Tamano=0|Conservada=1 y la ausencia de filas corresponden a conservar el destino vacío. La conversión siguiente se admite y coloca los registros en las posiciones cero y nueve. La última se admite con todas las celdas ausentes.\n\nUn vector de tamaño cero antes de un rechazo y uno de diez celdas ausentes después de un éxito son estados distintos, aunque ninguno contenga un registro presente en ese momento.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Conversion=0|Tamano=10|Conservada=0\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:1:1:2\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:1:10:10\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0\n"
+                    ],
+                    "text": "La salida muestra diez celdas y conservación falsa ya en el primer rechazo, aunque ese destino todavía debía conservar su tamaño anterior. Este patrón es compatible con preparar las diez posiciones directamente en el destino antes de validar todos los registros. Prepara un candidato separado y alcanza la asignación al destino sólo después de aceptar la colección completa. Un rechazo conserva también las celdas que no representan registros presentes."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Una implementación y el estado observado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nbool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino) {\n    std::vector<Celda> candidatos(10, Celda{false, {0, 0}});\n    for (const Registro& registro : registros) {\n        if (!insertar(candidatos, registro)) {\n            return false;\n        }\n    }\n    destino = candidatos;\n    return true;\n}\n\nbool mismas_celdas(const std::vector<Celda>& a, const std::vector<Celda>& b) {\n    if (a.size() != b.size()) { return false; }\n    int id = 0;\n    for (const Celda& primera : a) {\n        const Celda& segunda = b.at(id);\n        if (primera.presente != segunda.presente\n            || primera.recuento.aceptados != segunda.recuento.aceptados\n            || primera.recuento.rechazados != segunda.recuento.rechazados) {\n            return false;\n        }\n        ++id;\n    }\n    return true;\n}\n\nvoid mostrar_conversion(const std::vector<Registro>& registros,\n                        std::vector<Celda>& tabla) {\n    const std::vector<Celda> anterior = tabla;\n    const bool convertido = convertir(registros, tabla);\n    std::cout << \"Conversion=\" << convertido << \"|Tamano=\" << tabla.size();\n    if (!convertido) { std::cout << \"|Conservada=\" << mismas_celdas(anterior, tabla); }\n    std::cout << '\\n';\n    int id = 0;\n    for (const Celda& celda : tabla) {\n        std::cout << id << ':' << celda.presente;\n        if (celda.presente) {\n            std::cout << ':' << celda.recuento.aceptados << ':' << celda.recuento.rechazados;\n        }\n        std::cout << '\\n';\n        ++id;\n    }\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso)) { return 1; }\n    std::vector<Celda> tabla;\n    if (caso == 1) {\n        tabla = {{true, {4, 2}}, {false, {6, 5}}, {true, {1, 9}}};\n        mostrar_conversion({{8, {1, 2}}, {8, {4, 5}}}, tabla);\n        mostrar_conversion({{7, {0, 0}}, {2, {3, 1}}}, tabla);\n        mostrar_conversion({{0, {2, 2}}, {10, {1, 1}}}, tabla);\n        mostrar_conversion({}, tabla);\n    } else if (caso == 2) {\n        mostrar_conversion({{3, {2, 1}}, {9, {11, 0}}}, tabla);\n        mostrar_conversion({{9, {10, 10}}, {0, {1, 2}}}, tabla);\n        mostrar_conversion({}, tabla);\n    } else { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia construye las diez celdas en candidatos. Las inserciones de una colección pueden avanzar en ese vector local: si una de ellas falla, return false; evita la asignación final y el vector del llamador conserva incluso un tamaño previo distinto.\n\nEn el selector uno se acepta el primer registro ocho en el candidato y se rechaza el segundo por repetición. Ninguna de esas dos operaciones cambia las tres celdas originales. Más tarde, tras aceptar los registros dos y siete, otro intento alcanza el ID diez y vuelve a descartar sólo su candidato. La colección vacía no ejecuta inserciones; alcanza la asignación y reemplaza el destino por las diez celdas ausentes ya preparadas.\n\nModificar o redimensionar el destino antes de esa decisión haría visibles cambios de una conversión rechazada. Comparar todos los miembros con la copia previa permite observarlos incluso cuando afectan sólo a una celda ausente. Después de un éxito, las filas muestran sus marcas sin prescribir el recuento de las ausentes; otra inicialización de esas cantidades también cumple este contrato."
         }
       ]
     }
@@ -737,7 +832,18 @@
         "id": "page_0007",
         "blocks": [
           "block_0007_0000",
-          "block_0007_0001"
+          "block_0007_0001",
+          "u12_tabla_conservar_tamano_titulo",
+          "u12_tabla_conservar_tamano_contrato_0",
+          "u12_tabla_conservar_tamano_contrato_1",
+          "u12_tabla_conservar_tamano_contrato_2",
+          "u12_tabla_conservar_tamano_ejecucion",
+          "u12_tabla_conservar_tamano_entrada_salida_0",
+          "u12_tabla_conservar_tamano_entrada_salida_1",
+          "u12_tabla_conservar_tamano_construccion",
+          "u12_tabla_conservar_tamano_referencia_titulo",
+          "u12_tabla_conservar_tamano_referencia_codigo",
+          "u12_tabla_conservar_tamano_referencia_razonamiento"
         ]
       }
     ],
@@ -1235,6 +1341,105 @@
           "block": 0
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_contrato_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_contrato_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_contrato_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_ejecucion",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_entrada_salida_0",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_entrada_salida_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 7
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_construccion",
+        "sha256": "951809dc57cf277e4fa49092af16ee292b92000a6f12d0d995f30704f098895e",
+        "storage": {
+          "page": 8,
+          "block": 8
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 9
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_referencia_codigo",
+        "sha256": "ef69a73c9114c4bb03c0f9745b517e9a5d7f5d4d9d23ef376d7fc50a8febdece",
+        "storage": {
+          "page": 8,
+          "block": 10
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u12_tabla_conservar_tamano_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 11
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1357,6 +1562,41 @@
         "id": "block_0007_0000",
         "beforeSha256": "5bdcef20b48f1693ea03f049774a19295857c2975eb9239e022a8715601e4dd0",
         "afterSha256": "f04a0f8fe24e1ba8fbfa2927d6b7ec651d9ebef6e5b074feca7616e4c1c0b9e4"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "baacb2d876b3fc26a562a1ef585ff45d378fdafd61def589823e31e1cba733db",
+        "afterSha256": "8620dea59cee70c47c53644423dd7bb9d1051dfd3b89b0be221a810360e8e124"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "17ead8a29e91d2673c277f7436d4927ac9d77d43b1c04c47d4b6d2aae5ba0a2f",
+        "afterSha256": "1c910f2b66e05191f6801f949e3636f6d80f96a5399085a977beca7d24039ad6"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "3c45f886010fab743687c6a8125f1d1b595b7dabfa53f127fc235f4cee1597a5",
+        "afterSha256": "9809dc85f7d58e47b6c6be0462bf7443208ce7998bdd4e8c5196befa43fbd61b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "0263beedffeb19416ed02fd137e8d31c4556e8054dbd984bb8a646c3cfbb001d",
+        "afterSha256": "ed398b81c9f17c85b06591132aa9bcbae5306b8213cb13fd346d759de1c8e5ef"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "421dd9ac2bbcd32a42b809ad6c0327dc2350418e1bc272509f8c2191de4bc0af",
+        "afterSha256": "80fe5d402e7cc64083a98a0e38edd0d73e1e57b699fd76c1ab034ba69e8ce135"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "20a6bf366099f738b7ca275190e6976b598300a085df9865e39ba3cfa0182781",
+        "afterSha256": "9a3bab0a0049e91eed5d72939bb7c99b9b47e58052c421f99bced17b4ff08ee2"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "51333826492b0362815af6252bc351a0217f4157d70aba604b1a49160a262d31",
+        "afterSha256": "6128c7a0541a726582acd128f99388b261440f65f934ed47b4080746dfb30a5d"
       }
     ]
   },
@@ -1387,6 +1627,14 @@
         "block_0007_0000",
         "block_0007_0001"
       ]
+    },
+    {
+      "activity": "u12_tabla_conservar_tamano_construccion",
+      "blocks": [
+        "u12_tabla_conservar_tamano_referencia_titulo",
+        "u12_tabla_conservar_tamano_referencia_codigo",
+        "u12_tabla_conservar_tamano_referencia_razonamiento"
+      ]
     }
   ],
   "activityAfter": [
@@ -1400,6 +1648,12 @@
       "activity": "block_0004_0003",
       "requires": [
         "block_0002_0004"
+      ]
+    },
+    {
+      "activity": "u12_tabla_conservar_tamano_construccion",
+      "requires": [
+        "block_0004_0003"
       ]
     }
   ],
@@ -1499,8 +1753,30 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "c4b0c5efa4aea9d759a135c6e41e4b02d099f11acf851461a6e989f38a0b7be7",
-        "spans": []
+        "sourceSha256": "d594464da899a710a0f7eaf822d961c602ef6e20afd55486c48b306458471e05",
+        "spans": [
+          {
+            "start": 33,
+            "end": 53,
+            "text": "Celda{false, {0, 0}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 140,
+            "text": "Celda{true, {0, 0}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 228,
+            "text": "presente",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1574,27 +1850,35 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "47590dd1128fdbf3424c3b5cf8ee9d317feafffbc6ca39c018445c5545c03e9d",
+        "sourceSha256": "4d501518c85720443a23d56bbb7989ffbebbc0e9fc1dd799080b22209ef71ba9",
         "spans": [
           {
-            "start": 9,
-            "end": 10,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
+            "start": 40,
+            "end": 48,
+            "text": "presente",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 36,
+            "start": 131,
+            "end": 132,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 65,
-            "end": 74,
-            "text": "aceptados",
-            "role": "cpp"
+            "start": 200,
+            "end": 201,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 435,
+            "text": "0:1:0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1660,8 +1944,30 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "d8abe4d4260028f30efe589bfbc5b2eb53d73d616d631f3abaebbac19a781322",
-        "spans": []
+        "sourceSha256": "bccd039a7354f594b48c364deff6c2911036bd72bec6926e1510c2a2f928836f",
+        "spans": [
+          {
+            "start": 55,
+            "end": 56,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 178,
+            "text": "2 y 7",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1773,13 +2079,35 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "e36bf72299fdd7a8869a839ada1747b135982ae20af9cb7764f37364e330a526",
+        "sourceSha256": "6ab4f0e20ec029d68279a30a13a69079a14f1cab551471f7938507f1dab8574a",
         "spans": [
           {
-            "start": 3,
-            "end": 7,
-            "text": "bool",
-            "role": "cpp"
+            "start": 26,
+            "end": 34,
+            "text": "presente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 96,
+            "text": "Recuento{0,0}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 209,
+            "text": "Recuento{1,1}",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2502,8 +2830,37 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "053dc81576f40d883aee277828eac66bf4677865375dd96ae8c6e1a16c7fcf11",
-        "spans": []
+        "sourceSha256": "00554063a04253d01000dd817bbf9b45b81990482587248833b75d4f04a39dbf",
+        "spans": [
+          {
+            "start": 47,
+            "end": 48,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 83,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0005",
@@ -2524,6 +2881,436 @@
         "path": "/text",
         "sourceSha256": "361121c531b18a65273a8f4a23fc07fc9c52782acf28e8a7d986124a35df9ce2",
         "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "54265cdb961f1c3f783888736eb64691b56eb1373a97b0884554299fde76d111",
+        "spans": [
+          {
+            "start": 193,
+            "end": 198,
+            "text": "1:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 228,
+            "text": "9:9",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "0dabae7a1004b5fd05869a163ea43b84a8ec52c04aea983847b7f56493c2233d",
+        "spans": [
+          {
+            "start": 100,
+            "end": 108,
+            "text": "insertar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 120,
+            "text": "consultar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 207,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "d2c7be1e92bbf7b01514701edc8048d0bafe7c8afcf080f3d2067f40ddcc28e5",
+        "spans": [
+          {
+            "start": 88,
+            "end": 89,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 270,
+            "text": "Conversion:1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "f8e152c7f807c9125f90fa9d1e368fa06a8fb092ad42ac445bd9c436a7ec4986",
+        "spans": [
+          {
+            "start": 46,
+            "end": 55,
+            "text": "convertir",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_titulo",
+        "path": "/text",
+        "sourceSha256": "658b97ec015af61dc4d336d7ee8ec2909d44b3b72fe543b552945c60dac457a0",
+        "spans": []
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_contrato_0",
+        "path": "/text",
+        "sourceSha256": "5104a160776ef8e7379d23d4e9915f029d4b8890e3beeb28202d62059e62f57c",
+        "spans": [
+          {
+            "start": 12,
+            "end": 21,
+            "text": "convertir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 211,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 215,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 238,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 243,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 292,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 541,
+            "end": 545,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_contrato_1",
+        "path": "/text",
+        "sourceSha256": "b5271ae5cc9cc4ff84c8539cffede94aba53b5696d0a24565a2ab990908cb465",
+        "spans": [
+          {
+            "start": 91,
+            "end": 96,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 111,
+            "text": "mismas_celdas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 265,
+            "text": "Conversion=resultado|Tamano=cantidad",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 333,
+            "text": "|Conservada=resultado_de_la_comparacion",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 431,
+            "end": 456,
+            "text": "ID:1:aceptados:rechazados",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 484,
+            "text": "ID:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 754,
+            "end": 763,
+            "text": "consultar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_contrato_2",
+        "path": "/text",
+        "sourceSha256": "f95a1a1cac1847cffb4b849802832a8febe177ec0a14ca60b32421bd309ab5a1",
+        "spans": [
+          {
+            "start": 88,
+            "end": 96,
+            "text": "insertar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 116,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 157,
+            "text": "{true, {4, 2}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 174,
+            "text": "{false, {6, 5}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 191,
+            "text": "{true, {1, 9}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 241,
+            "text": "{{8, {1, 2}}, {8, {4, 5}}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 319,
+            "end": 345,
+            "text": "{{7, {0, 0}}, {2, {3, 1}}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 390,
+            "end": 417,
+            "text": "{{0, {2, 2}}, {10, {1, 1}}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 541,
+            "end": 542,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 583,
+            "end": 610,
+            "text": "{{3, {2, 1}}, {9, {11, 0}}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 691,
+            "end": 719,
+            "text": "{{9, {10, 10}}, {0, {1, 2}}}",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_ejecucion",
+        "path": "/text",
+        "sourceSha256": "3c1809bd773aa93beaed94aab552911b799da6a731c2fdd475ad864f272a2f99",
+        "spans": [
+          {
+            "start": 47,
+            "end": 51,
+            "text": "1, 2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_entrada_salida_0",
+        "path": "/text",
+        "sourceSha256": "af3e21606fbc43b79ce84f137987760f769ac9be7a8313462111cb591351525e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 292,
+            "text": "Conversion=0|Tamano=3|Conservada=1\n0:1:4:2\n1:0\n2:1:1:9\nConversion=1|Tamano=10\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=0|Tamano=10|Conservada=1\n0:0\n1:0\n2:1:3:1\n3:0\n4:0\n5:0\n6:0\n7:1:0:0\n8:0\n9:0\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_entrada_salida_1",
+        "path": "/text",
+        "sourceSha256": "91099aca808fd35cf45c3ec616bcffa382fa3dd7bd4be147ebf0c6917d0a1f3d",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 190,
+            "text": "Conversion=0|Tamano=0|Conservada=1\nConversion=1|Tamano=10\n0:1:1:2\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:1:10:10\nConversion=1|Tamano=10\n0:0\n1:0\n2:0\n3:0\n4:0\n5:0\n6:0\n7:0\n8:0\n9:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "b7f92c0602fff46659693bc4693cf5637f2bfd7f83717d1bef62274fb95b9082",
+        "spans": [
+          {
+            "start": 58,
+            "end": 59,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 174,
+            "text": "10",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_construccion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "532a54ea600c1e1126621722486ad474160c894c75ec4a2b158f91c22989188d",
+        "spans": []
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "2472c4a04af971ae29048c0c6bfcb90b9ecc65b391a8dc71f58910d04ac0cf13",
+        "spans": [
+          {
+            "start": 40,
+            "end": 42,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 110,
+            "text": "Conversion=0|Tamano=0|Conservada=1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_construccion",
+        "path": "/outputCheck/cases/1/reviewFeedback/0/text",
+        "sourceSha256": "532a54ea600c1e1126621722486ad474160c894c75ec4a2b158f91c22989188d",
+        "spans": []
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "cf7aa61ef3b23df4c19908288cdbc71d2b7579fa1a2bdafb4114280991a9dc57",
+        "spans": []
+      },
+      {
+        "block": "u12_tabla_conservar_tamano_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "fd3379c7eb4c2693006358dfb80803a43ef97d3e861b4568c5f186304d306a51",
+        "spans": [
+          {
+            "start": 43,
+            "end": 53,
+            "text": "candidatos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 160,
+            "text": "return false;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

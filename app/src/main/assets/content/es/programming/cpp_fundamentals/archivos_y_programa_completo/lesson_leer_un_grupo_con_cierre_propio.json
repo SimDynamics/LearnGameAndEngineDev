@@ -26,7 +26,7 @@
             "Inválido: falta cerrar el grupo que ya comenzó."
           ],
           "correctIndex": 2,
-          "explanation": "EOF termina la fuente de caracteres. No completa un objeto al que aún le falta su cierre.",
+          "explanation": "El recuento [2;1] está completo: se obtuvieron sus dos cantidades y su corchete final. Pero ese corchete sólo termina el recuento. El grupo comenzó con una llave y necesita su propio carácter } para terminar.\n\nAl llegar al final de la entrada, el lector ya no puede obtener ese cierre. Debe devolver false y conservar el grupo anterior del llamador. Tener eofbit indica que se alcanzó el final de los caracteres; no prueba que se hayan encontrado todos los elementos exigidos por el formato.",
           "reviewFeedback": [
             "Comprueba qué objeto quedó completo: el registro y el grupo tienen cierres distintos. Revisa si el texto contiene el cierre del grupo después del último registro.",
             "eofbit informa que se alcanzó el final de la entrada; no añade al texto el signo de cierre que falta. Separa el estado del flujo de los requisitos del formato.",
@@ -58,7 +58,7 @@
           "answers": [
             "1:}:fin"
           ],
-          "explanation": "peek observó }, pero get lo extrajo. La cadena posterior sigue disponible.",
+          "explanation": "Primero std::ws consume los dos espacios iniciales y deja la llave como siguiente carácter. entrada.peek() == '}' resulta verdadero, por lo que se escribe 1:. La consulta no extrae la llave; entrada.get(caracter) la obtiene después y la guarda en caracter.\n\nLa extracción de siguiente omite el espacio que separa la llave de fin y guarda esa palabra. Por eso la salida completa es 1:}:fin. Si la consulta inicial ya hubiera consumido la llave, la lectura posterior no habría obtenido ese mismo carácter (Köppe et al., 2023, [istream.unformatted]).",
           "reviewFeedback": "Sigue por separado la posición del flujo y lo que se imprime: std::ws descarta los blancos, peek() observa sin consumir y get() sí extrae. Después se extrae siguiente. Conserva los separadores de la consola en tu respuesta."
         },
         {
@@ -75,7 +75,7 @@
             "Borrar el estado y guardar un registro con ID inicial 0."
           ],
           "correctIndex": 0,
-          "explanation": "Sólo } es el cierre permitido. Una extracción inválida no crea un registro ni justifica aceptar el grupo.",
+          "explanation": "El carácter [ no es el cierre de un grupo. Por tanto, el lector intenta obtener un registro, cuyo primer campo debe ser un entero. Esa extracción falla delante del corchete: no se obtuvo un identificador que permita aceptar el registro.\n\nEl valor inicial 0 de una variable local no procede de la entrada y no debe usarse para fabricar un registro. Tampoco corresponde tratar el fallo como un cierre. Sólo reconocer y consumir } permite aceptar el candidato completo; en este caso se devuelve false sin modificar el destino.",
           "reviewFeedback": [
             "Comprueba que primero se obtiene un ID y que sólo después se aceptan los campos de un Registro.",
             "El carácter [ no coincide con el cierre del grupo. Un fallo al extraer un ID no sustituye [ por }.",
@@ -92,7 +92,7 @@
             "Rechazar siempre porque el grupo está vacío."
           ],
           "correctIndex": 0,
-          "explanation": "El cierre pertenece a ese grupo. La función no exige que se agote todo el texto y un grupo vacío sigue siendo un grupo presente válido.",
+          "explanation": "El lector reconoce la apertura, la etiqueta grupo y el nombre verde. Después encuentra inmediatamente el cierre, por lo que el candidato es un grupo verde presente con cero registros. Al consumir esa llave puede aceptar el grupo y reemplazar el destino.\n\nEl espacio y la palabra aviso que siguen al cierre pertenecen al llamador. leer_grupo no debe consumirlos ni exigir que desaparezcan. Un lector exterior decidirá si continúa con otro componente o si ese sufijo hace inválida una muestra que debía contener sólo un grupo.",
           "reviewFeedback": [
             "Distingue el cierre de un grupo de la terminación de toda la fuente de entrada.",
             "El contrato pide consumir un solo grupo. Después de su cierre todavía puede haber caracteres del llamador, como aviso; no confundas leer_grupo con un lector de archivo completo.",
@@ -138,6 +138,52 @@
         {
           "type": "note",
           "text": "El modelo mantiene cero como cantidad válida. Un grupo sin registros es un grupo presente y válido: al aceptarlo, el destino se sustituye por ese grupo vacío."
+        },
+        {
+          "type": "heading",
+          "text": "Construcción: conservar el grupo y el límite de lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa leer_grupo(std::istream& entrada, Grupo& destino) en el editor con el mismo contrato de la construcción anterior. Reutiliza o ajusta tu implementación: un éxito reemplaza el grupo completo y consume hasta su propia llave de cierre, incluida; un rechazo conserva exactamente el grupo que había antes de esa llamada. Mantén los tipos, los operadores y el cliente proporcionados.\n\nAhora varias llamadas comparten el mismo destino. El cliente comienza con rojo y los registros 4[6;3] y 7[2;0]. Una aceptación cambia ese estado; un rechazo posterior debe conservar el último estado aceptado, que puede tener varios registros o estar vacío. El grupo previo no participa en la búsqueda de duplicados del nuevo candidato."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente usa peek() para observar el carácter inmediatamente posterior a un cierre aceptado. TabPendiente:1, EspacioPendiente:1 y AperturaPendiente:1 indican, respectivamente, que siguen disponibles un tabulador, un espacio y la apertura del grupo siguiente. Estas consultas no omiten blancos ni extraen el carácter; std::ws, en cambio, sí consume los blancos que encuentra (Köppe et al., 2023, [istream.unformatted], [istream.manip]).\n\nEl número 1 o 2 que escribas en Entrada selecciona las muestras ya incluidas en el programa. No tienes que escribir tabuladores ni copiar las cadenas de datos. Cada línea de estado muestra aceptación, identificador del grupo y cantidad de registros, separados por dos puntos; a continuación enumera los registros en su orden. Tras un rechazo no se comprueba la posición ni los indicadores del flujo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe 1 en Entrada, compila y ejecuta. El cliente lee dos grupos del mismo flujo: primero verde con dos registros y después azul vacío. Luego obtiene aviso y prueba, en otro flujo, un grupo con un identificador repetido. La salida requerida es:\n\n1:1:2 8[0;0] 1[10;2]\nTabPendiente:1\n1:2:0\nEspacioPendiente:1\nSufijo:aviso\n0:2:0\n\nCada línea termina con un salto de línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después cambia Entrada a 2 y vuelve a ejecutar. La primera muestra tiene una apertura incorrecta. La siguiente reemplaza el destino por azul con tres registros; los tres rechazos siguientes deben conservarlos. Las dos lecturas finales comparten un flujo y aceptan el mismo identificador de registro en dos grupos distintos. La salida requerida es:\n\n0:0:2 4[6;3] 7[2;0]\n1:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n1:0:1 9[0;1]\nAperturaPendiente:1\n1:1:1 9[2;0]\n\nCada línea termina con un salto de línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream&, Grupo&) {\n    // Implementa el contrato sin cambiar el cliente.\n    return false;\n}\n\nvoid mostrar(bool aceptado, const Grupo& grupo) {\n    std::cout << aceptado << ':' << grupo.id << ':' << grupo.registros.size();\n    for (const Registro& registro : grupo.registros) {\n        std::cout << ' ' << registro.id << registro.recuento;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 2) return 1;\n    Grupo destino{0, {{4, {6, 3}}, {7, {2, 0}}}};\n    if (caso == 1) {\n        std::istringstream entrada{\n            \"{ grupo verde 8[0;0] 1[10;2] }\\t{ grupo azul } aviso\"\n        };\n        bool aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"TabPendiente:\" << (entrada.peek() == '\\t') << '\\n';\n        aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"EspacioPendiente:\" << (entrada.peek() == ' ') << '\\n';\n        std::string sufijo;\n        entrada >> sufijo;\n        std::cout << \"Sufijo:\" << sufijo << '\\n';\n        std::istringstream repetido{\"{ grupo rojo 2[3;4] 2[1;0] }\"};\n        aceptado = leer_grupo(repetido, destino);\n        mostrar(aceptado, destino);\n    } else {\n        const std::vector<std::string> muestras{\n            \"[ grupo rojo }\",\n            \"{ grupo azul 9[10;0] 0[0;0] 4[2;7] }\",\n            \"{ grupo verde 3[1;2]\",\n            \"{ equipo verde }\",\n            \"{ grupo verde 10[1;0] }\"\n        };\n        for (const std::string& texto : muestras) {\n            std::istringstream entrada{texto};\n            const bool aceptado = leer_grupo(entrada, destino);\n            mostrar(aceptado, destino);\n        }\n        std::istringstream entrada{\n            \"{ grupo rojo 9[0;1] }{ grupo verde 9[2;0] }\"\n        };\n        bool aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"AperturaPendiente:\" << (entrada.peek() == '{') << '\\n';\n        aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "1\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "1\n",
+                "outputs": [
+                  "1:1:2 8[0;0] 1[10;2]\nTabPendiente:1\n1:2:0\nEspacioPendiente:1\nSufijo:aviso\n0:2:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La primera aceptación guarda verde con los registros 8[0;0] y 1[10;2]. El tabulador que sigue a su cierre queda pendiente para el llamador. La segunda aceptación reemplaza esos registros por azul vacío y deja disponible el espacio anterior a aviso.\n\nEl grupo rojo posterior repite el identificador 2 y se rechaza. En ese momento el estado anterior es azul vacío, por lo que la última línea debe ser 0:2:0. Volver al grupo rojo inicial o recuperar los registros verdes no conservaría el estado recibido por esa llamada."
+              },
+              {
+                "standardInput": "2\n",
+                "outputs": [
+                  "0:0:2 4[6;3] 7[2;0]\n1:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n1:0:1 9[0;1]\nAperturaPendiente:1\n1:1:1 9[2;0]\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La apertura [ provoca el primer rechazo y conserva los dos registros iniciales. Después se acepta azul con tres registros. La falta de cierre, la etiqueta equipo y el identificador 10 invalidan las tres muestras siguientes; ninguna puede cambiar aquel grupo azul.\n\nEl grupo rojo y el verde del último flujo son válidos por separado. El identificador 9 puede aparecer en ambos porque cada grupo tiene su propia colección. La apertura del segundo debe seguir disponible inmediatamente después de leer el primero. El grupo verde aceptado al final contiene únicamente 9[2;0]."
+              }
+            ]
+          }
         }
       ]
     },
@@ -181,7 +227,7 @@
           "answers": [
             "1:2:0:resto"
           ],
-          "explanation": "El grupo azul vacío es válido; resto sigue disponible. La validación de toda la muestra debe decidir si ese sufijo está permitido.",
+          "explanation": "La función reconoce azul, cuyo identificador es 2, y consume la llave que cierra ese grupo sin registros. Devuelve true y reemplaza el grupo rojo inicial por el candidato azul vacío; por eso los tres primeros campos son 1:2:0.\n\nTodavía quedan un espacio y resto en el flujo. La extracción posterior de la cadena omite el espacio y obtiene la palabra. La salida queda 1:2:0:resto. Ese resultado muestra que se leyó un grupo completo; no afirma que todo el texto fuera una muestra válida de un solo grupo.",
           "reviewFeedback": "Comprueba el ID asignado a azul en la tabla, la cantidad de registros que hay entre las llaves y el valor devuelto por leer_grupo. Después de aceptar el grupo, sigue la extracción de siguiente: ese texto aún pertenece al flujo."
         },
         {
@@ -194,7 +240,7 @@
             "Buscar el ID dentro del candidato azul actual."
           ],
           "correctIndex": 2,
-          "explanation": "La identidad de un registro incluye su grupo. La colección superior comprobará que el grupo no esté repetido.",
+          "explanation": "El registro 7[0;0] pertenece al grupo rojo ya aceptado. Al comenzar el grupo azul se crea una colección candidata vacía, por lo que el identificador 7 todavía no está presente dentro de ella. El nuevo registro 7[3;1] puede admitirse en azul.\n\nSi apareciera otro identificador 7 dentro de ese mismo grupo azul, sí habría que rechazarlo. La búsqueda local conserva la asociación de cada registro con su grupo. Buscar en todos los grupos anteriores confundiría dos registros distintos; omitir toda búsqueda permitiría duplicados dentro del candidato.",
           "reviewFeedback": [
             "Compara las identidades completas: el registro 7 de rojo y el registro 7 de azul pertenecen a grupos distintos. La búsqueda de repetidos debe usar la colección del grupo que se está construyendo.",
             "Aceptar el nombre del grupo no comprueba los ID de sus registros. Revisa también si el ID recién leído ya aparece entre los registros del candidato.",
@@ -221,6 +267,19 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    Grupo grupo{2, {{9, {1, 1}}}};\n    bool aceptado = leer_grupo(entrada, grupo);\n    std::cout << aceptado << ':' << grupo.id << ':' << grupo.registros.size();\n    for (const Registro& registro : grupo.registros) {\n        std::cout << ' ' << registro.id << registro.recuento;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    probar(\"{ grupo rojo 7[0;0] 2[3;1] }\");\n    probar(\"{ grupo verde }\");\n    probar(\"{ grupo rojo 7[0;0] 7[3;1] }\");\n    probar(\"{ grupo rojo 7[0;0]\");\n    probar(\"{ grupo rojo 0[-1;0] }\");\n    probar(\"{ grupo rojo 0[0;11] }\");\n    probar(\"{ grupo rojo -1[1;1] }\");\n    probar(\"{ grupo rojo 10[1;1] }\");\n    probar(\"{ grupo gris }\");\n    probar(\"{ equipo rojo }\");\n    probar(\"{ grupo rojo 7\");\n    probar(\"{ grupo rojo 7[\");\n    probar(\"{ grupo rojo 7[1\");\n    probar(\"{ grupo rojo 7[1;\");\n    probar(\"{ grupo rojo 7[1;2\");\n    probar(\"{ grupo rojo 7[1;2]\");\n    probar(\"{ grupo rojo\\n7[0;0]\\n2[3;1]\\n} aviso\");\n    std::istringstream entrada{\"{ grupo rojo\\n7[0;0]\\n2[3;1]\\n} aviso\"};\n    Grupo grupo{2, {{9, {1, 1}}}};\n    std::string sufijo;\n    if (!leer_grupo(entrada, grupo) || !(entrada >> sufijo)) return 1;\n    std::cout << \"Sufijo:\" << sufijo << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Referencia: conservar datos entre intentos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nvoid mostrar(bool aceptado, const Grupo& grupo) {\n    std::cout << aceptado << ':' << grupo.id << ':' << grupo.registros.size();\n    for (const Registro& registro : grupo.registros) {\n        std::cout << ' ' << registro.id << registro.recuento;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    int caso{0};\n    if (!(std::cin >> caso) || caso < 1 || caso > 2) return 1;\n    Grupo destino{0, {{4, {6, 3}}, {7, {2, 0}}}};\n    if (caso == 1) {\n        std::istringstream entrada{\n            \"{ grupo verde 8[0;0] 1[10;2] }\\t{ grupo azul } aviso\"\n        };\n        bool aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"TabPendiente:\" << (entrada.peek() == '\\t') << '\\n';\n        aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"EspacioPendiente:\" << (entrada.peek() == ' ') << '\\n';\n        std::string sufijo;\n        entrada >> sufijo;\n        std::cout << \"Sufijo:\" << sufijo << '\\n';\n        std::istringstream repetido{\"{ grupo rojo 2[3;4] 2[1;0] }\"};\n        aceptado = leer_grupo(repetido, destino);\n        mostrar(aceptado, destino);\n    } else {\n        const std::vector<std::string> muestras{\n            \"[ grupo rojo }\",\n            \"{ grupo azul 9[10;0] 0[0;0] 4[2;7] }\",\n            \"{ grupo verde 3[1;2]\",\n            \"{ equipo verde }\",\n            \"{ grupo verde 10[1;0] }\"\n        };\n        for (const std::string& texto : muestras) {\n            std::istringstream entrada{texto};\n            const bool aceptado = leer_grupo(entrada, destino);\n            mostrar(aceptado, destino);\n        }\n        std::istringstream entrada{\n            \"{ grupo rojo 9[0;1] }{ grupo verde 9[2;0] }\"\n        };\n        bool aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n        std::cout << \"AperturaPendiente:\" << (entrada.peek() == '{') << '\\n';\n        aceptado = leer_grupo(entrada, destino);\n        mostrar(aceptado, destino);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta referencia, cada llamada crea un Grupo candidato vacío con el identificador recién leído. El destino sólo se sustituye después de reconocer y extraer el cierre. Por eso un fallo en cualquier registro conserva todo el grupo que estaba vigente antes de esa llamada, incluso después de varias aceptaciones.\n\nLa función devuelve el control inmediatamente después de consumir su llave. Añadir entrada >> std::ws; en ese punto conservaría la palabra aviso para una extracción posterior, pero ya habría consumido el tabulador o el espacio que pertenecían al llamador. Una prueba que sólo extrae esa palabra no distingue ambos comportamientos; las consultas del carácter siguiente sí los distinguen.\n\nConservar el destino y conservar la posición del flujo son garantías diferentes. Los casos observan la posición después de un éxito porque forma parte del contrato. Tras un rechazo sólo exigen el resultado booleano y el grupo anterior; no suponen que el lector haya retrocedido ni que todos los rechazos dejen los mismos indicadores."
         }
       ]
     }
@@ -441,8 +500,37 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "5f229c5b7a54ba63624dcf62bcab26742e01ac19acc7edabe2e7a0114440a69d",
-        "spans": []
+        "sourceSha256": "a154a168d5c4b5c5c28b535e0e5eeb651baa222cd0d4173b7833a22a47686ff9",
+        "spans": [
+          {
+            "start": 12,
+            "end": 17,
+            "text": "[2;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "}",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 300,
+            "end": 305,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 356,
+            "end": 362,
+            "text": "eofbit",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -618,28 +706,70 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "844d52ce167297185f1e1bed3d0dde4913502542b4975dae09446cda072c236b",
+        "sourceSha256": "c14bf252c00e7be55a6c4e6d2a9bf3ca14e011efb8a6bd27526a029c08b32875",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
-            "text": "peek",
+            "start": 8,
+            "end": 15,
+            "text": "std::ws",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 13,
-            "end": 14,
-            "text": "}",
+            "start": 92,
+            "end": 113,
+            "text": "entrada.peek() == '}'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 157,
+            "text": "1:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 212,
+            "text": "entrada.get(caracter)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 255,
+            "text": "caracter",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 284,
+            "text": "siguiente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 328,
+            "text": "fin",
             "role": "data",
-            "reading": "characters"
+            "reading": "natural"
           },
           {
-            "start": 21,
-            "end": 24,
-            "text": "get",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 381,
+            "end": 388,
+            "text": "1:}:fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 546,
+            "text": "(Köppe et al., 2023, [istream.unformatted])",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -709,14 +839,35 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "76e1ba36ed51af66de2dac840704e479b0e9f57e9fb9e89727c47c2474cece93",
+        "sourceSha256": "3f0fc970a5b74201cf966d7cba7f8ec6c49afdaab4fe98d498d8a9b3fe30a69f",
         "spans": [
           {
-            "start": 5,
-            "end": 6,
+            "start": 12,
+            "end": 13,
+            "text": "[",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 255,
+            "end": 256,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 426,
+            "end": 427,
             "text": "}",
             "role": "data",
             "reading": "characters"
+          },
+          {
+            "start": 492,
+            "end": 497,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -785,8 +936,37 @@
       {
         "block": "block_0001_0005",
         "path": "/explanation",
-        "sourceSha256": "1e3149de26e5e0ba1b295e716e0f72dc66127ce2e270f8e34d13eb899a1e9706",
-        "spans": []
+        "sourceSha256": "83f9df9182dc28397cd3377a9553bf0b565bcd7216776dd70364122116ea72d8",
+        "spans": [
+          {
+            "start": 44,
+            "end": 49,
+            "text": "grupo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 67,
+            "text": "verde",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 279,
+            "end": 284,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 340,
+            "text": "leer_grupo",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0005",
@@ -1459,19 +1639,47 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "02a41cfeb05d9e15a5a9591d170631f5897d4881c0728fb38bb56b755d504a94",
+        "sourceSha256": "099228b0da26cf563b0e44a1654833c11264ba493e281dc5711279dc76cae3b7",
         "spans": [
           {
-            "start": 9,
-            "end": 13,
+            "start": 20,
+            "end": 24,
             "text": "azul",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 31,
-            "end": 36,
+            "start": 48,
+            "end": 49,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 225,
+            "text": "1:2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 261,
             "text": "resto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 367,
+            "end": 378,
+            "text": "1:2:0:resto",
             "role": "output",
             "reading": "natural"
           }
@@ -1515,8 +1723,37 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "729ef9ddc4d7eeced80b7775440c1d83f71cd2d6530a75c249da68f4c1ab2b41",
-        "spans": []
+        "sourceSha256": "3aa22bd776dbf0292d6e7bb426e60e0024ee24e51cbdb8cbe0a1588085d423ce",
+        "spans": [
+          {
+            "start": 12,
+            "end": 18,
+            "text": "7[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 150,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 216,
+            "text": "7[3;1]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 277,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -1872,6 +2109,270 @@
         "path": "/reviewFeedback/2",
         "sourceSha256": "b2fcbe5dfc3e65c5ddd93cee15c59c2c09f1bf95f23389cbcd7a8308c6d40027",
         "spans": []
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_titulo",
+        "path": "/text",
+        "sourceSha256": "af99ac458d3aa6094208d1181e15b64359e5d6d319329168de742460f997d97f",
+        "spans": []
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_contrato",
+        "path": "/text",
+        "sourceSha256": "21bfe6f45d40bf33ffed2f3eb3ed0866632071a680667e7110446aef0068036e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 58,
+            "text": "leer_grupo(std::istream& entrada, Grupo& destino)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 482,
+            "end": 488,
+            "text": "4[6;3]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 491,
+            "end": 497,
+            "text": "7[2;0]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_cliente",
+        "path": "/text",
+        "sourceSha256": "2e8f14ae78f27ca575b18a4a0f8bf00cb83c39e1d1e1db088de78344cd039665",
+        "spans": [
+          {
+            "start": 15,
+            "end": 21,
+            "text": "peek()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 109,
+            "text": "TabPendiente:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 129,
+            "text": "EspacioPendiente:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 151,
+            "text": "AperturaPendiente:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 319,
+            "end": 326,
+            "text": "std::ws",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 436,
+            "text": "(Köppe et al., 2023, [istream.unformatted], [istream.manip])",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 450,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 453,
+            "end": 454,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_caso_1",
+        "path": "/text",
+        "sourceSha256": "4b8ba1a0363666c0f6abb9b1f5df01d0f25130f77a4fb633bb462e8b5cc67cad",
+        "spans": [
+          {
+            "start": 8,
+            "end": 9,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 157,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 327,
+            "text": "1:1:2 8[0;0] 1[10;2]\nTabPendiente:1\n1:2:0\nEspacioPendiente:1\nSufijo:aviso\n0:2:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_caso_2",
+        "path": "/text",
+        "sourceSha256": "dea2f605568f43798d38cfd8839fc97c550dd72668c969e4b2bf77a95028bfb6",
+        "spans": [
+          {
+            "start": 25,
+            "end": 26,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 526,
+            "text": "0:0:2 4[6;3] 7[2;0]\n1:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n0:2:3 9[10;0] 0[0;0] 4[2;7]\n1:0:1 9[0;1]\nAperturaPendiente:1\n1:1:1 9[2;0]",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_construccion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "dbe6a37b18909fa8754e2f3edb7096d7cb0d09e331764b3ae297df02798096ad",
+        "spans": [
+          {
+            "start": 53,
+            "end": 59,
+            "text": "8[0;0]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 69,
+            "text": "1[10;2]",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 247,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 299,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 404,
+            "text": "0:2:0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_construccion",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "46f531eaae05c38935bd71cef44f2fb6fcf261fc81210ff02fbbe6e684e40c8d",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "[",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 155,
+            "end": 161,
+            "text": "equipo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 183,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 350,
+            "end": 351,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 570,
+            "text": "9[2;0]",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "3c4efb8e7a548959dee19ee80a8f4396a54f94de1a260f07107985a81ef60890",
+        "spans": []
+      },
+      {
+        "block": "u12_grupo_limites_y_recargas_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "43d76ab4b43ecb469f2c7f3f8bce5b2873bc7efaa10e639d3b8cbbf600f874a7",
+        "spans": [
+          {
+            "start": 41,
+            "end": 56,
+            "text": "Grupo candidato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 415,
+            "text": "entrada >> std::ws;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 452,
+            "end": 457,
+            "text": "aviso",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [
@@ -2058,7 +2559,13 @@
           "block_0002_0001",
           "block_0002_0002",
           "block_0002_0003",
-          "block_0002_0004"
+          "block_0002_0004",
+          "u12_grupo_limites_y_recargas_titulo",
+          "u12_grupo_limites_y_recargas_contrato",
+          "u12_grupo_limites_y_recargas_cliente",
+          "u12_grupo_limites_y_recargas_caso_1",
+          "u12_grupo_limites_y_recargas_caso_2",
+          "u12_grupo_limites_y_recargas_construccion"
         ]
       },
       {
@@ -2085,7 +2592,10 @@
         "id": "page_0005",
         "blocks": [
           "block_0005_0000",
-          "block_0005_0001"
+          "block_0005_0001",
+          "u12_grupo_limites_y_recargas_referencia_titulo",
+          "u12_grupo_limites_y_recargas_referencia_codigo",
+          "u12_grupo_limites_y_recargas_referencia_razonamiento"
         ]
       }
     ],
@@ -2498,7 +3008,89 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u12_grupo_limites_y_recargas_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 0
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_contrato",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 1
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_cliente",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 2
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_caso_1",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 3
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_caso_2",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 4
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_construccion",
+        "sha256": "d2bfa05ef60438800f1a9ef0a748609d108db60f66f08186e397ba48d8e77b08",
+        "storage": {
+          "page": 6,
+          "block": 5
+        },
+        "progressPage": "page_0002"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 6,
+          "block": 6
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_referencia_codigo",
+        "sha256": "7a0927c95f2deaf0e9734dae43d7652684ae0d0b250204440eab9c0d71ee21c2",
+        "storage": {
+          "page": 6,
+          "block": 7
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u12_grupo_limites_y_recargas_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 6,
+          "block": 8
+        },
+        "progressPage": "page_0005"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0003",
@@ -2549,7 +3141,68 @@
         "id": "block_0004_0003",
         "beforeSha256": "d68edef9149978f29a1f0ab366a46e520cbe6193dbd237aaf8c43f34e723cdfc",
         "afterSha256": "1556192d37b7e011f93d75e302cae4f72fb7b7e04a9c342384f02c34ec3a8ca2"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "b4d3a57b4a1daf1f3b5bd3ab0dbfbb6c3be44d61e7d05ac0012798c04f8d5fc3",
+        "afterSha256": "a1deecc4030efac13ecaed0e924c12b3228ee3e70b413f0792fb68645618b6f0"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "72f4373329ebcb3edd42d71776b432a96f911c944e63a555479c70c4c8e3760e",
+        "afterSha256": "87ee12683728f44fa0ebeb670cc36e057cb5ce2cd12bb211d9cc112a4c56a9b9"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "8d08360769ea58e05e6a65b15b943df0367010dd8f594ebd75f8270dce498d0c",
+        "afterSha256": "9cd210d9580130a69c47b1f6ec083640220708d9da96a782688ff1c2c717dd4e"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "a7dbbf851d64da70c2b67f2213dc86422b742b0c4dff7ddb4fe37e3710502086",
+        "afterSha256": "fb06ab7fde5f160dfbd2c0afbadac8d8fdab3e8611f494ac418164a5072d3d92"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "2c92bd2c9e8af1df62d4cfb95b100ed3fe0ca750069fad79cd8ae03299ff4cfd",
+        "afterSha256": "9483fc3046888d0d3f31f44cadaedc73134dd015226c640a8060605f0f044af8"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "777fd88d5c1f03c24a2bb8dc9048d355c6afe8e6cc94affd4d75a4f3241f3685",
+        "afterSha256": "bdf70d7e3b4ce25e2eb73bfc8c96bc3fe0dfc9ef45d78e5372a7ed55aa46219a"
       }
     ]
-  }
+  },
+  "referenceAfter": [
+    {
+      "activity": "u12_grupo_limites_y_recargas_construccion",
+      "blocks": [
+        "block_0003_0000",
+        "block_0003_0001",
+        "block_0003_0002",
+        "block_0003_0003",
+        "block_0003_0004",
+        "block_0005_0000",
+        "block_0005_0001",
+        "u12_grupo_limites_y_recargas_referencia_titulo",
+        "u12_grupo_limites_y_recargas_referencia_codigo",
+        "u12_grupo_limites_y_recargas_referencia_razonamiento"
+      ]
+    }
+  ],
+  "activityAfter": [
+    {
+      "activity": "u12_grupo_limites_y_recargas_construccion",
+      "requires": [
+        "block_0002_0003"
+      ]
+    },
+    {
+      "activity": "block_0004_0001",
+      "requires": [
+        "u12_grupo_limites_y_recargas_construccion"
+      ]
+    }
+  ]
 }
