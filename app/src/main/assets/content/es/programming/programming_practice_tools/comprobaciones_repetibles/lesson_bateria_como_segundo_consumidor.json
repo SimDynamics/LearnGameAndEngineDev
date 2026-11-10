@@ -10,11 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya construiste comprobaciones con esperados independientes, conservaste casos anteriores y usaste un código de terminación no nulo cuando alguna fallaba. También sabes que dos ejecutables pueden consumir una biblioteca. Ahora unirás esas prácticas en un proyecto: la aplicación y el comprobador tendrán sus propios main y objetivos, pero llamarán a la misma implementación."
+          "text": "Ya construiste comprobaciones con esperados independientes y conservaste los casos anteriores al añadir otros. Una batería reúne esas comprobaciones para repetirlas juntas. Ahora la guardarás en un proyecto con dos ejecutables: la aplicación muestra los resultados que necesita su usuario; el comprobador llama al componente, compara sus respuestas con los esperados y comunica si encontró discrepancias. Cada ejecutable tendrá su propio main y su propio objetivo de CMake, pero ambos usarán la misma biblioteca."
         },
         {
           "type": "paragraph",
-          "text": "El trabajo nuevo consiste en guardar la batería como una fuente del proyecto, construir el objetivo que la contiene y volver a ejecutarlo después de cada cambio pertinente. No basta recordar una salida ni modificar una copia de la función dentro del comprobador. Automatizar comparaciones facilita repetirlas; conservar una expectativa antigua exige comprobar que procede de un requisito correcto (Kernighan & Pike, 1999, pp. 149–150)."
+          "text": "Guardar la batería como una fuente del proyecto permite reconstruirla y ejecutarla después de modificar el componente. Si el comprobador incluyera una copia independiente de la función, reparar la biblioteca de la aplicación no actualizaría necesariamente esa copia. Repetir las comparaciones ayuda a descubrir cambios de comportamiento; para interpretar sus resultados, también hay que revisar que las expectativas conservadas procedan de requisitos correctos (Kernighan & Pike, 1999, pp. 149–150)."
         },
         {
           "type": "multiple_choice",
@@ -43,7 +43,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El componente cajas_para recibe un entero entre 0 y 20. Una caja admite hasta cuatro piezas. Debe devolver el menor número de cajas que permita guardar todas las piezas; cero piezas requiere cero cajas. Una caja parcialmente ocupada también cuenta. No estamos definiendo cómo tratar entradas fuera del dominio."
+          "text": "La función cajas_para recibe una cantidad entera de piezas entre 0 y 20, ambos incluidos. Cada caja admite hasta cuatro piezas. Debe devolver el menor número de cajas que permita guardar todas las piezas; cero piezas requiere cero cajas. Una caja parcialmente ocupada también cuenta. En esta práctica el acuerdo sólo establece el comportamiento para ese dominio: no define qué hacer con cantidades negativas o superiores a veinte."
         },
         {
           "type": "paragraph",
@@ -58,7 +58,7 @@
             "0:1:4"
           ],
           "outputComparison": "exact",
-          "explanation": "La división entre enteros descarta el resto: 0/4=0, 5/4=1 y 17/4=4. Esa es la salida de la revisión, pero una y cuatro cajas no bastan para cinco y diecisiete piezas. Predecirla correctamente no convierte la implementación en correcta.",
+          "explanation": "La revisión calcula 0 / 4, 5 / 4 y 17 / 4 con enteros no negativos: obtiene 0, 1 y 4 y escribe 0:1:4. Cinco piezas necesitan dos cajas y diecisiete necesitan cinco; el cociente entero omite la caja de las piezas sobrantes. La predicción describe lo que ejecuta ese cuerpo, aunque incumpla el acuerdo.",
           "reviewFeedback": "Traza la expresión que realmente ejecuta este cuerpo con enteros. Después separa ese resultado del número de cajas exigido por la capacidad."
         },
         {
@@ -71,7 +71,7 @@
             "De la capacidad acordada y de si las cajas bastan para guardar las seis piezas."
           ],
           "correctIndex": 2,
-          "explanation": "El acuerdo permite comprobar si la capacidad total basta y si se usaron cajas innecesarias. Repetir o copiar la salida del cuerpo no aporta una expectativa independiente.",
+          "explanation": "Una caja ofrece cuatro plazas y no guarda las seis piezas; dos ofrecen ocho y sí bastan. Por eso el esperado es dos. Copiar el uno observado o repetir la misma llamada conservaría el defecto sin contrastar la capacidad requerida.",
           "reviewFeedback": [
             "Reconsidera qué estás tomando como autoridad: una observación muestra lo que hizo la revisión, no justifica por sí sola lo que debía hacer.",
             "Distingue repetibilidad y cumplimiento. Una segunda ejecución puede repetir exactamente el mismo defecto.",
@@ -88,7 +88,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El proyecto conservará publico/envio/cajas.h, src/cajas.cpp, app/consulta.cpp y pruebas/cajas_casos.cpp. La biblioteca envios contiene la definición. consultar_cajas usa app/consulta.cpp; comprobar_cajas usa pruebas/cajas_casos.cpp. Cada ejecutable tiene un main distinto; la biblioteca no contiene ninguno."
+          "text": "El archivo publico/envio/cajas.h declara cajas_para y su acuerdo; src/cajas.cpp contiene su definición. CMake reúne esa implementación en la biblioteca envios. El ejecutable consultar_cajas se construye desde app/consulta.cpp y el ejecutable comprobar_cajas desde pruebas/cajas_casos.cpp. Cada uno tiene un main distinto en su propia fuente; la biblioteca no contiene ninguno. Así, las llamadas de la aplicación y las comparaciones de la batería utilizan una misma implementación del componente."
         },
         {
           "type": "code",
@@ -97,7 +97,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ambos consumidores reciben la ruta PUBLIC de envios al declarar su enlace PRIVATE con ella. El segundo enlace no publica nada global ni ejecuta las pruebas. Construir un objetivo obtiene ese programa y sus dependencias; para comprobar los casos todavía debes ejecutar comprobar_cajas. La separación deja el código de prueba fuera del ejecutable de la aplicación, sin mantener otra implementación del componente."
+          "text": "La orden target_include_directories declara publico como búsqueda PUBLIC de envios: sirve para compilar la biblioteca y se transmite a sus consumidores. Cada target_link_libraries conecta uno de los ejecutables con envios; el alcance PRIVATE de ese enlace no impide que el ejecutable reciba la búsqueda pública de la biblioteca (Scott, 2025, pp. 20–21, 176).\n\nConstruir comprobar_cajas obtiene el comprobador y las dependencias necesarias. Ese enlace no ejecuta sus llamadas: las comparaciones ocurren al ejecutar el programa. Su main permanece fuera de consultar_cajas y no hace falta copiar cajas_para en las pruebas."
         },
         {
           "type": "multiple_choice",
@@ -144,7 +144,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La función comprobar obtiene el resultado una vez y devuelve si coincide. main conserva un bool que pasa a false al encontrar alguna discrepancia. Las llamadas están en if separados, como en la práctica anterior, de modo que un fallo no evita observar los siguientes. Cada línea identifica datos, esperado y obtenido; el resumen y return 0/1 comunican el resultado conjunto."
+          "text": "En cada llamada, comprobar ejecuta cajas_para una vez y guarda su respuesta en obtenido. La expresión obtenido == esperado calcula coincide; ese bool determina el mensaje y el valor devuelto. En main, correcto comienza en true. Si una llamada devuelve false, su if asigna false a correcto; ninguna llamada posterior vuelve a ponerlo en true. Los if separados permiten examinar los demás casos aunque ya haya un fallo. Al final, correcto decide entre el resumen Bateria: FALLO con retorno 1 y el resumen Bateria: OK con retorno 0."
         },
         {
           "type": "paragraph",
@@ -177,7 +177,7 @@
             "Mantener cada llamada en su propio if y acumular el resultado conjunto."
           ],
           "correctIndex": 2,
-          "explanation": "Los if independientes observan todos los datos y conservan el fallo en correcto. Es recuperación de la práctica anterior: aquí importa mantenerla al trasladar la batería al segundo ejecutable.",
+          "explanation": "Cada if realiza su propia llamada. Si comprobar devuelve false, correcto queda en false, pero el flujo llega al siguiente if y examina su caso. Una cadena con && puede omitir llamadas al encontrar false; retornar inmediatamente también impide observar las restantes. El resultado conjunto debe conservar el fallo sin cortar esas observaciones.",
           "reviewFeedback": [
             "Revisa las reglas de evaluación de && cuando el operando anterior es false. El resultado conjunto no demuestra que se hicieron todas las llamadas.",
             "Traza qué instrucciones del main dejan de ejecutarse al retornar antes de llegar al resto de los datos.",
@@ -194,11 +194,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Conserva las cuatro comprobaciones iniciales. Primero configura, construye y ejecuta consultar_cajas; identifica qué datos usa su main. Después cambia el objetivo a comprobar_cajas, construye ese objetivo y ejecútalo. No tomes la salida de un objetivo como evidencia del otro."
+          "text": "Conserva las cuatro comprobaciones iniciales. En «Objetivo CMake», selecciona consultar_cajas; pulsa «Configurar y generar», después «Construir objetivo» y finalmente «Ejecutar objetivo construido». Relaciona su salida con las llamadas de app/consulta.cpp. Cambia entonces el objetivo a comprobar_cajas, construye ese ejecutable y ejecútalo. Su informe procede de pruebas/cajas_casos.cpp. Compartir la biblioteca no hace intercambiables las observaciones de los dos programas."
         },
         {
           "type": "paragraph",
-          "text": "Antes de editar, calcula del requisito los esperados para 1,5,17. Añade esas tres llamadas al comprobador sin borrar las cuatro anteriores ni modificar src/cajas.cpp. Construye comprobar_cajas y contrasta las siete líneas y el código final: tu objetivo aquí es que la batería distinga la implementación defectuosa. La reparación del componente se realiza después en otro editor."
+          "text": "Calcula desde la capacidad acordada los esperados para 1, 5 y 17 piezas y escríbelos al añadir esas llamadas en pruebas/cajas_casos.cpp. Conserva las cuatro anteriores y src/cajas.cpp sin cambios. Con comprobar_cajas seleccionado, reconstruye y ejecuta el programa; contrasta las siete líneas y el código final. El objetivo de esta actividad es construir una batería que detecte la implementación defectuosa. La reparación del componente tiene su propio editor posterior."
         },
         {
           "type": "cpp_compiler",
@@ -258,11 +258,11 @@
         },
         {
           "type": "note",
-          "text": "Consulta esta referencia después de intentar la práctica. No exige copiar mensajes, nombres internos ni organización; sí conservar los criterios y los casos anteriores."
+          "text": "La referencia muestra una organización posible de la batería ampliada. Pueden variar los mensajes, los nombres internos y la organización, siempre que se conserven los casos pedidos, las comparaciones independientes y la observación de todos ellos."
         },
         {
           "type": "paragraph",
-          "text": "La revisión piezas/4 coincide con las cuatro entradas iniciales porque son múltiplos de cuatro, incluido cero. Las entradas añadidas tienen restos y exigen otra caja. Al conservarlas en el segundo ejecutable, el defecto queda observable después de reconstruir la biblioteca y el comprobador."
+          "text": "Con piezas / 4, las entradas 0, 4, 8 y 20 producen exactamente sus esperados porque no dejan piezas sobrantes. En cambio, una pieza necesita una caja aunque el cociente entero sea cero; cinco necesitan dos aunque el cociente sea uno; diecisiete necesitan cinco aunque el cociente sea cuatro. Los tres casos añadidos hacen observable el defecto y los cuatro anteriores siguen comprobándose."
         },
         {
           "type": "code",
@@ -271,7 +271,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una referencia de la implementación es (piezas + 3) / 4. Para un múltiplo 4k el cociente sigue siendo k; para 4k+1, 4k+2 o 4k+3 pasa a k+1. También devuelve cero para cero. El mayor numerador del dominio es 23, por lo que la suma no se acerca al límite de int. Este razonamiento explica la regla; las siete comprobaciones aportan evidencia repetible sobre esos datos, sin convertirse en una prueba de todos los programas posibles."
+          "text": "Una implementación posible es (piezas + 3) / 4. Para cuatro piezas calcula 7 / 4 y devuelve una caja; para cinco calcula 8 / 4 y devuelve dos. El desplazamiento de tres hace que las piezas sobrantes alcancen el siguiente múltiplo de cuatro. Si no había resto, sumar tres todavía no alcanza ese múltiplo y conserva el cociente.\n\nLa división entera de cantidades no negativas sólo puede dejar restos de cero, uno, dos o tres; esos casos explican la regla. Con cero piezas se calcula 3 / 4 y se devuelve cero. En el dominio acordado, el mayor numerador es 23, que cabe en int. Las siete comprobaciones permiten repetir la observación de sus datos; el razonamiento explica por qué funciona la fórmula en todo el dominio."
         },
         {
           "type": "code",
@@ -301,7 +301,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente conserva siete casos ya escritos y la implementación que redondea hacia abajo. Repara sólo src/cajas.cpp para cumplir el mínimo de cajas de cuatro plazas. Compila, ejecuta y comprueba comprobar_cajas; conserva todos los datos y esperados. El cliente sigue utilizando esa misma biblioteca."
+          "text": "Este editor independiente conserva siete casos ya escritos y la implementación que redondea hacia abajo. Repara sólo src/cajas.cpp para cumplir el mínimo de cajas de cuatro plazas. Mantén seleccionado comprobar_cajas y usa «Compilar, ejecutar y comprobar»; conserva todos los datos, esperados y comparaciones. El cliente sigue utilizando esa misma biblioteca."
         },
         {
           "type": "cpp_compiler",
@@ -341,7 +341,7 @@
                 "outputs": [
                   "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
                 ],
-                "explanation": "Las siete comparaciones conservadas pasan con el mínimo número de cajas exigido por el contrato, incluidos los datos que no son múltiplos de cuatro."
+                "explanation": "Con el comprobador conservado, 0, 4, 8 y 20 piezas requieren 0, 1, 2 y 5 cajas; 1, 5 y 17 requieren 1, 2 y 5. Cada comparación coincide, el informe termina en Bateria: OK y el proceso retorna 0. Los tres casos que dejan piezas sobrantes distinguían la división entera sin redondeo."
               }
             ]
           }
@@ -389,7 +389,7 @@
             "Usar la biblioteca real para obtener el resultado y conservar esperados justificados desde el acuerdo."
           ],
           "correctIndex": 2,
-          "explanation": "La definición debe ser compartida por ambos consumidores, pero la expectativa requiere justificación independiente. Repetir el mismo cálculo bajo prueba no crea un criterio externo.",
+          "explanation": "El comprobador llama a cajas_para para obtener la respuesta de la biblioteca compartida, pero el esperado de diecisiete piezas es cinco porque cuatro cajas sólo ofrecen dieciséis plazas. Si el esperado también se calcula llamando a una implementación defectuosa que devuelve cuatro, ambas llamadas coinciden y la comparación deja pasar el defecto.",
           "reviewFeedback": [
             "Considera qué ocurriría si el cuerpo repite el mismo resultado defectuoso en las dos llamadas.",
             "Revisa qué entradas observa ese cliente y de dónde obtiene sus resultados. Un consumidor de la biblioteca también puede mostrar su defecto.",
@@ -418,7 +418,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El comprobador debe poder avisar ante una discrepancia conocida. Puedes introducir una alteración temporal en el editor de código, ejecutar la batería contra ella y deshacer esa alteración para volver a la implementación correcta. No estás aprobando la revisión mala: estás observando si la prueba sabe rechazar ese defecto concreto. Probar las propias pruebas y conservar el caso que descubre un fallo refuerza su utilidad (Thomas & Hunt, 2020, pp. 277–278)."
+          "text": "Una contraprueba introduce un defecto conocido para comprobar si la batería lo detecta. Por ejemplo, al cambiar la biblioteca correcta por piezas / 4, diecisiete piezas dan cuatro cajas, pero el esperado independiente sigue siendo cinco. La comparación debe fallar y el retorno conjunto debe comunicarlo. Después se recupera la implementación correcta y se repite la misma batería. Examinar así las propias pruebas y conservar los casos que descubren fallos ayuda a que sigan siendo útiles (Thomas & Hunt, 2020, pp. 277–278)."
         },
         {
           "type": "multiple_choice",
@@ -491,7 +491,7 @@
                 "outputs": [
                   "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
                 ],
-                "explanation": "Los siete casos conservados coinciden con sus esperados. El resumen de la batería y el retorno cero acreditan esta ejecución; los esperados proceden del requisito, no de copiar la implementación."
+                "explanation": "Diecisiete piezas requieren cinco cajas porque cuatro sólo ofrecen dieciséis plazas. Ese acuerdo justifica corregir el esperado del caso, conservando la biblioteca y las otras seis comparaciones. El informe completo coincide con la salida solicitada y el proceso termina con 0."
               }
             ]
           }
@@ -523,7 +523,7 @@
         },
         {
           "type": "note",
-          "text": "Referencia posterior al intento: para 17 piezas el caso debe esperar 5. Los cuatro casos iniciales y los tres añadidos permanecen en pruebas/cajas_casos.cpp; no se sustituyen por una sola entrada que falle."
+          "text": "Para 17 piezas el caso debe esperar 5. Los cuatro casos iniciales y los tres añadidos permanecen en pruebas/cajas_casos.cpp; no se sustituyen por una sola entrada que falle."
         },
         {
           "type": "code",
@@ -532,7 +532,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con la biblioteca piezas/4, fallan 1,5,17; los demás siguen observándose. Con (piezas+3)/4, los siete coinciden. En este editor de código siempre se reconstruye el objetivo después de editar. La batería queda guardada en el proyecto y puede repetirse sin volver a escribir manualmente cada comparación. La repetibilidad necesita conservar entradas, expectativas, descripción y fuentes pertinentes (Thomas & Hunt, 2020, pp. 274–275)."
+          "text": "Con piezas / 4 fallan los casos de 1, 5 y 17 piezas; los otros cuatro siguen observándose. Con (piezas + 3) / 4, los siete coinciden. Después de editar, reconstruye el objetivo que vayas a ejecutar para observar la nueva revisión. La batería queda guardada y puede repetirse sin reescribir sus comparaciones. Conservar las fuentes, la descripción, las entradas y las expectativas permite relacionar cada resultado con el proyecto que lo produjo (Thomas & Hunt, 2020, pp. 274–275). Volver a comprobar comportamientos ya aceptados ayuda a detectar una regresión: un cambio que estropea algo que antes funcionaba según su acuerdo (Kernighan & Pike, 1999, p. 149)."
         },
         {
           "type": "order_code",
@@ -563,7 +563,7 @@
             "El comprobador ya no debe conservar los cuatro casos iniciales porque todos pasaron."
           ],
           "correctIndex": 1,
-          "explanation": "La batería aporta evidencia repetible de sus casos y de esa construcción. Su permanencia ayuda a detectar regresiones, pero un resultado verde no certifica datos o revisiones que no se han examinado.",
+          "explanation": "Esa construcción produjo los siete resultados esperados. Conservarlos permite repetir la comprobación después de editar y detectar cambios en esos casos. La batería no incluye, por ejemplo, 6 ni 7 piezas: un defecto limitado a esas entradas no aparecería en este informe. Tampoco se ejecutaron las revisiones futuras; el alcance de esta evidencia no se extiende automáticamente a ellas.",
           "reviewFeedback": [
             "Distingue las observaciones de esta ejecución y una afirmación sobre datos o revisiones que no se ejecutaron.",
             "Relaciona la afirmación con los casos que se ejecutaron y con el dominio del componente.",
@@ -576,7 +576,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto prepara la batería de siete esperados correctos y una biblioteca que usa piezas/4. Construye el comprobador y observa las discrepancias de 1, 5 y 17, con retorno 1; esos fallos deben proceder del componente. Recupera después la regla correcta modificando sólo su cuerpo y comprueba las siete líneas OK. Este control no cambia las expectativas ni la actividad anterior."
+          "text": "Este proyecto conserva siete esperados correctos y una biblioteca que usa piezas / 4. Con comprobar_cajas seleccionado, usa «Compilar, ejecutar y comprobar» y observa las discrepancias de 1, 5 y 17, con retorno 1. La comparación de esta revisión debe fallar. Recupera después la regla correcta modificando sólo src/cajas.cpp y repite la acción para contrastar las siete líneas OK y el retorno 0. Las expectativas se mantienen durante el control."
         },
         {
           "type": "cpp_compiler",
@@ -616,7 +616,7 @@
                 "outputs": [
                   "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
                 ],
-                "explanation": "Las siete comparaciones conservadas pasan con el mínimo número de cajas exigido por el contrato, incluidos los datos que no son múltiplos de cuatro."
+                "explanation": "Con piezas / 4, las entradas 1, 5 y 17 producían 0, 1 y 4 frente a los esperados 1, 2 y 5. Al recuperar la regla correcta y conservar la batería, coinciden las siete comparaciones y el proceso retorna 0. Son los mismos casos y expectativas con otra revisión del componente."
               }
             ]
           }
@@ -635,7 +635,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar, calcula los esperados para 0,6,7,18 desde la nueva capacidad. Escribe las cuatro comparaciones en pruebas/lotes_casos.cpp, con diagnóstico por caso y retorno final 0 si todas coinciden o 1 si hay alguna discrepancia. No copies la fórmula al comprobador para fabricar esperados. Puedes organizar tu solución con los recursos ya conocidos; no existe un único texto válido. El control de una implementación alterada se trabaja después en otra actividad."
+          "text": "Calcula los esperados para 0, 6, 7 y 18 desde la capacidad de seis plazas y escribe las cuatro comparaciones en pruebas/lotes_casos.cpp. Cada caso debe llamar a lotes_para, comparar su respuesta y mostrar un diagnóstico; todos deben ejecutarse aunque alguno discrepe. Conserva la biblioteca, el cliente y la descripción CMake. Con verificar_lotes seleccionado, configura, construye y ejecuta la batería: debe terminar con 0 si todas las comparaciones coinciden y con 1 si hay alguna discrepancia. No obtengas los esperados de la misma función evaluada. Se admiten nombres, mensajes y organización equivalentes; el control con una implementación alterada tiene otro editor."
         },
         {
           "type": "cpp_compiler",
@@ -695,7 +695,7 @@
         },
         {
           "type": "note",
-          "text": "Consulta después de escribir y contrastar tu comprobador. La referencia organiza las cuatro llamadas con el mismo mecanismo conocido; el contrato nuevo decide sus cantidades."
+          "text": "Esta referencia organiza las cuatro llamadas con el mecanismo ya conocido. El acuerdo de lotes de seis plazas determina los esperados, independientemente de la fórmula que utilice la biblioteca."
         },
         {
           "type": "code",
@@ -704,7 +704,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La biblioteca de referencia usa (piezas+5)/6. Para cero devuelve cero; para un múltiplo de seis conserva el cociente y para el resto necesita un lote adicional. El numerador máximo también es 23. La contraprueba piezas/6 debe fallar en siete piezas y la recuperación debe conservar los cuatro casos. Al seguir ampliando el proyecto, vuelve a ejecutar los casos pertinentes después de cambios de fuentes, requisitos o descripción; no confundas un cliente que muestra dos cantidades con la batería completa."
+          "text": "La biblioteca usa (piezas + 5) / 6. Para seis piezas calcula 11 / 6 y obtiene un lote; para siete calcula 12 / 6 y obtiene dos. Sumar cinco conserva el cociente de los múltiplos de seis y hace contar el lote adicional cuando sobran piezas. Para cero, 5 / 6 devuelve cero; el mayor numerador del dominio es 23.\n\nLa alteración piezas / 6 devuelve un solo lote para siete piezas y la batería debe señalar esa discrepancia, conservando también los otros tres casos. Al recuperar la regla correcta, repite todas las comparaciones. El cliente sólo muestra los resultados de seis y doce piezas: esas dos llamadas no sustituyen la batería."
         },
         {
           "type": "code",
@@ -733,7 +733,7 @@
             "Cambiar esperados copiando la nueva salida, sin contrastar la capacidad acordada."
           ],
           "correctIndex": 0,
-          "explanation": "Una modificación real del requisito puede justificar nuevos esperados; su origen debe ser el acuerdo revisado. Conservar el registro anterior ayuda a distinguir ese cambio de ocultar un defecto. Esta lección no sustituye las técnicas de validación posteriores.",
+          "explanation": "Con lotes de cinco plazas, dieciocho piezas necesitan cuatro lotes; los tres de la expectativa anterior sólo ofrecen quince plazas. El acuerdo revisado justifica cambiar ese esperado y comprobar la implementación nueva. Conservar qué requisito motivó el cambio permite distinguirlo de copiar cualquier salida para que una prueba pase.",
           "reviewFeedback": [
             "Comprueba que las expectativas y la revisión se juzguen según el nuevo acuerdo explícito.",
             "Conservar evidencia requiere saber a qué contrato corresponde. Revisa si las cantidades de una capacidad siguen siendo válidas para la nueva.",
@@ -746,7 +746,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor tiene el comprobador completo y una implementación de piezas/6. La primera ejecución debe permitir observar qué caso de la batería la distingue. Recupera después el mínimo de lotes de seis plazas modificando sólo el componente. Compila, ejecuta y comprueba con los cuatro casos conservados."
+          "text": "Este editor conserva el comprobador completo y una implementación de piezas / 6. Con verificar_lotes seleccionado, usa «Compilar, ejecutar y comprobar» para observar qué caso detecta la alteración y el retorno que comunica el fallo. Recupera después el mínimo de lotes de seis plazas modificando sólo motor/cantidad.cpp. Repite la acción con los cuatro casos conservados para contrastar el informe final y la terminación con 0."
         },
         {
           "type": "cpp_compiler",
@@ -786,12 +786,4108 @@
                 "outputs": [
                   "piezas=0 esperado=0 obtenido=0 OK\npiezas=6 esperado=1 obtenido=1 OK\npiezas=7 esperado=2 obtenido=2 OK\npiezas=18 esperado=3 obtenido=3 OK\nBateria: OK\n"
                 ],
-                "explanation": "El caso de siete piezas detecta el truncamiento a una sola caja; la reparación conserva las cuatro comparaciones independientes."
+                "explanation": "Para siete piezas, un lote de seis plazas no basta y se necesitan dos. La división piezas / 6 devolvía uno; el caso de siete distinguía ese defecto. Con la regla recuperada, los cuatro resultados coinciden con sus esperados y la batería termina con 0."
               }
             ]
           }
         }
       ]
     }
-  ]
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "3030b1fd49b30f92bc3cedf95e9d97758f7dac4bfd1d18f637c6a637c3c555db"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "19c944cec40569481c24f3dcc2f02e5e1bcc12cec2af270ab284d16b2dad30a5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "302430023938022b0acded11c0ea68b226edb5275dda1014f2e7c65c5bd2f58d"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "445b3c42849904ce0249e1a05cb5cea16120734ecd3316ff58b24b2b3f5b12e7"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "5447fcc087b16c6626b25ef160b3c3652b2ba316fc1ccecc3deadb95872b4310"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "d5c08db4f4538738d06748fc33f6f0da784f78a14dd907a7a20791361e29c514"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "c7063d7adc2194df748f17c1ed7ee5b3d27c05bea5e19769ff7db5da73713368"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "e0a2a6213879eca1233f3e80a11215a4c699bc7b8b8753c74594e32b66c8efd0"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "0141f5769377d143f313317cb6e4d6d90966922b8ac6a73d4f57f850f9e4b7aa"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "d4e9f3a563586763d6ae9ced46bcfb0945097a49401213ba05ab0610818a3a83"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "2d8e5c2b9824245cf77ca447a1bdf227ac02731c8f317f8aec748a488e213eb9"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "84e2c3c0ccd1634e9b1492465d730809418f6ea823281dff65b8b67b2926b503"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "0f77af0fb8971004c1f8bbd44a21c44e1515811b86df2ee150b48da030dcaed8"
+          },
+          {
+            "id": "block_0005_0006",
+            "sha256": "6615a72b5b8d6bdbaa90ca36b242bf755451f88abb1ff89ab77a46723ddcf9dc"
+          },
+          {
+            "id": "block_0005_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0009",
+            "sha256": "134b49d95ddda8ec7e88803a776ca6da7e5c2a046235d6f4af0b2789bd3986e8"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "3003ab6d1853875e197c44cd84fbf0ba2b63d21df5f096cf9bc430ac0928e8e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "d2ed0cbe1cf47ded89f1149e69cda783179b4f9cbbcb176a6bdd32fa7034ae82"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "14034d099459034548ca0aab139b07213078abc5e8b1e2917be44043609b4803"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1c8585084aa9e3de065a02ac225a66148e11c9495e3eb928e05a67dad4b5e4aa"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "ae3681122e23897f9d5bfc38bc5f28be7c7d53ad26a23f6a3944f8bfcab64abc"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "e655f8a75972fecd6603ea0f7d03096774b24c6d1996da6cd0d299c4584ccced"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "84e2c3c0ccd1634e9b1492465d730809418f6ea823281dff65b8b67b2926b503"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "1d3a02a356aeb30512c5a5b3784caf0cce073c4f2c395c6ce3e115275ac1b6b4"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "7bc74f5c9238912b461a3a5f0ba51873fc7161652f0e909018b412b874a66541"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0008",
+            "sha256": "134b49d95ddda8ec7e88803a776ca6da7e5c2a046235d6f4af0b2789bd3986e8"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "f53e305a8aebedffc21ef01e32ff36ed378e5a5b15137412db2d4e2432ab82d7"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "7c08245c47b54c20e408c25604a42694bb4f5fe8216722281a992c2cc32e0e2b"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "058e37db3ee98f1662644ef3ac42b379a0fdd069026bc6934ce9619333aa08cf"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1a9f7d50ab97c67dcb4d1578328e63a98094cf9ee40258ee00085849b221520f"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "da153d46a4896408a9ed60b21cd91852bc318952a7d45b039b2f977d0ac2267b"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "ff2340edd1e373ff36931160e5f39b69b77421e489f7375ed5dc225f168489ab"
+          },
+          {
+            "id": "block_0011_0007",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0008",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0009",
+            "sha256": "2f3a62c9ed3259a54cef1a8352b3371fe429f509bef1d0ed1fb5be76bb548f0f"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005",
+          "block_0005_0006",
+          "block_0005_0007",
+          "block_0005_0008",
+          "block_0005_0009"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006",
+          "block_0009_0007",
+          "block_0009_0008"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006",
+          "block_0011_0007",
+          "block_0011_0008",
+          "block_0011_0009"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "69a63df6e5def1015f8ecbe54155d994ecfc328bee942ae72b88d376b41cbe81",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "0a0f43ac494c75f746939762a71de3231d4b039c69256b236fd2805cbec5b276"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "19c944cec40569481c24f3dcc2f02e5e1bcc12cec2af270ab284d16b2dad30a5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "52438a891937e8538c9a37c158738f0b5f6f98f40f4ad0e0e1952bb9e41041a7"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "445b3c42849904ce0249e1a05cb5cea16120734ecd3316ff58b24b2b3f5b12e7"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "e8de80b74b3c4ba5167f9fdfb2e532ae5e8e980643d17400479e105a784df8fa"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "7355361cdfa6a1aa829cabe750cde193dd3cb166c28c1ade861d79cc194a417d"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "678984d13d5e836f23b50d8dba1fa145ff469d9e5b59c2f6eee3fa121ea22002"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "dc7054f28852e1f832845b7d14c48e384d6054612ac6854efa565b7f82b00166"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "3ce0ca5e0656e38b9d9953dbe43744b3325cd8169d9247667dbc8bcc0492da65"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "d439e2ac184227b2b6cbdd25bc7f314cad871488da84c154d436a1501da1d894"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "9a3638f63586319b2b79c8d5203d724d65edebc20695e4436bc2a9511823281a"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "951f2c8eb26c7133eed4dd55663db7245f7acd5a78caa97ba38e19e978cc19a9"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "0f77af0fb8971004c1f8bbd44a21c44e1515811b86df2ee150b48da030dcaed8"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "e948af64affcaff50d87a152101bb99a3e7938266c22f055795a7d8d3d4420ce"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "398057755beb913c71dfc34a4f70d7daf3413b575c44c6293a019171992ae930"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "325d918de0a4b79d43924b740a5621f9c3035390264d4255a384195f416c8409"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "14034d099459034548ca0aab139b07213078abc5e8b1e2917be44043609b4803"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "6df49d1e96d1cfd3db0d92bd276d67f84d9d7b7daffaf99932e0698b668f7ebb"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "47703875f66609225ea0e0cbe82e1381e5e96ed832de2c1836fd542ef924ff71"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "0816d3413116f6e7076b30fed7a0023eb97292f09f309ea807e524aeda7cafdc"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "951f2c8eb26c7133eed4dd55663db7245f7acd5a78caa97ba38e19e978cc19a9"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "03168ff2225762abdaf9a9448a62bd4f60c1fce894ba4c3d72578e91d09da9ec"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "45f3304cde683aaae142a6d2c9372ac90067bcbcaf1f1f3ff40289e11129bb3e"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "cc13d4749095973e7b98442a229b2cb7e5f36158420a387215239ad727636469"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "421b1918c935dfe9adce9ab5a25e0574b5539a46a3135b44e22aa042fcd69655"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "9284260454babb2bf50999ab19b483eca1562e28cd7edc22f89b0305620fcdb7"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1a9f7d50ab97c67dcb4d1578328e63a98094cf9ee40258ee00085849b221520f"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "da153d46a4896408a9ed60b21cd91852bc318952a7d45b039b2f977d0ac2267b"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "1f5f4b5478aae1028fc21f125f0993163cabee6ce8471a1f62f7aedaf8373274"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "66eb811ef62044951438ab215d8a5ab10c159907334b62b99b3ef4a9f7304f4f",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "3030b1fd49b30f92bc3cedf95e9d97758f7dac4bfd1d18f637c6a637c3c555db"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "19c944cec40569481c24f3dcc2f02e5e1bcc12cec2af270ab284d16b2dad30a5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "302430023938022b0acded11c0ea68b226edb5275dda1014f2e7c65c5bd2f58d"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "445b3c42849904ce0249e1a05cb5cea16120734ecd3316ff58b24b2b3f5b12e7"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "5447fcc087b16c6626b25ef160b3c3652b2ba316fc1ccecc3deadb95872b4310"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "d5c08db4f4538738d06748fc33f6f0da784f78a14dd907a7a20791361e29c514"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "c7063d7adc2194df748f17c1ed7ee5b3d27c05bea5e19769ff7db5da73713368"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "e0a2a6213879eca1233f3e80a11215a4c699bc7b8b8753c74594e32b66c8efd0"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "0141f5769377d143f313317cb6e4d6d90966922b8ac6a73d4f57f850f9e4b7aa"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "d4e9f3a563586763d6ae9ced46bcfb0945097a49401213ba05ab0610818a3a83"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "2d8e5c2b9824245cf77ca447a1bdf227ac02731c8f317f8aec748a488e213eb9"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "84e2c3c0ccd1634e9b1492465d730809418f6ea823281dff65b8b67b2926b503"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "0f77af0fb8971004c1f8bbd44a21c44e1515811b86df2ee150b48da030dcaed8"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "6615a72b5b8d6bdbaa90ca36b242bf755451f88abb1ff89ab77a46723ddcf9dc"
+              },
+              {
+                "id": "block_0005_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0009",
+                "sha256": "134b49d95ddda8ec7e88803a776ca6da7e5c2a046235d6f4af0b2789bd3986e8"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "3003ab6d1853875e197c44cd84fbf0ba2b63d21df5f096cf9bc430ac0928e8e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "d2ed0cbe1cf47ded89f1149e69cda783179b4f9cbbcb176a6bdd32fa7034ae82"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "14034d099459034548ca0aab139b07213078abc5e8b1e2917be44043609b4803"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1c8585084aa9e3de065a02ac225a66148e11c9495e3eb928e05a67dad4b5e4aa"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "ae3681122e23897f9d5bfc38bc5f28be7c7d53ad26a23f6a3944f8bfcab64abc"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "e655f8a75972fecd6603ea0f7d03096774b24c6d1996da6cd0d299c4584ccced"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "84e2c3c0ccd1634e9b1492465d730809418f6ea823281dff65b8b67b2926b503"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "1d3a02a356aeb30512c5a5b3784caf0cce073c4f2c395c6ce3e115275ac1b6b4"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "7bc74f5c9238912b461a3a5f0ba51873fc7161652f0e909018b412b874a66541"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0008",
+                "sha256": "134b49d95ddda8ec7e88803a776ca6da7e5c2a046235d6f4af0b2789bd3986e8"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "f53e305a8aebedffc21ef01e32ff36ed378e5a5b15137412db2d4e2432ab82d7"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "7c08245c47b54c20e408c25604a42694bb4f5fe8216722281a992c2cc32e0e2b"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "058e37db3ee98f1662644ef3ac42b379a0fdd069026bc6934ce9619333aa08cf"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1a9f7d50ab97c67dcb4d1578328e63a98094cf9ee40258ee00085849b221520f"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "da153d46a4896408a9ed60b21cd91852bc318952a7d45b039b2f977d0ac2267b"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "ff2340edd1e373ff36931160e5f39b69b77421e489f7375ed5dc225f168489ab"
+              },
+              {
+                "id": "block_0011_0007",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0008",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0009",
+                "sha256": "2f3a62c9ed3259a54cef1a8352b3371fe429f509bef1d0ed1fb5be76bb548f0f"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "40f578a45760e26e3066f48ecae299457e9ddf42b5920681f10b845932b289a4",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "25a245ed8f5a515325efa15ad8b5564a23014c006b1d6841651f8fc00a5a3dbe"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "19c944cec40569481c24f3dcc2f02e5e1bcc12cec2af270ab284d16b2dad30a5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "ae1777f82ce7724817b420e3e20f47bc014aafeed4f8e425b6fdcf72cb01a74c"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "445b3c42849904ce0249e1a05cb5cea16120734ecd3316ff58b24b2b3f5b12e7"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "dc681e1dc335e7b10e27d5f7dd1bcf46a4bf4dbadf8db107d6da061721471345"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "8949ccaa1a6cd33177769ddc3a97ff4b21ca71084be5a5d60aa3dcb177566f06"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "05f129d3ebfa4f785fc4b3037d7fa999859c5294c7392d989cb483691f79c885"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "6c5c9221b769ac606a3810513a32c189ec4ebedc30bf223576ad851b1bb412ba"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "c4e806bb4c4c0ecbf676d0193b76cf34d57354ccc0d787e0602c7b9c9c7be077"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "1b56ad01571a5167d0801952d86a84d458d1fd18e873f223c94d3a7bfa221f51"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "72d846f386aef8865afca8e7c892bc43ce9e90502dbe0e69a02f22fb54f5993c"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "b3896e7d709f55e851eb8e2a23d27e0dad36c91b9e0664c16828f53d68669b58"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "0f77af0fb8971004c1f8bbd44a21c44e1515811b86df2ee150b48da030dcaed8"
+              },
+              {
+                "id": "block_0005_0006",
+                "sha256": "b02fa7a8be841e5e98848b41350a707cd57a591fd7abe7ecbdc9475c62f5131f"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "bbec99322735c5db45dd738cb113158ca3b529848258c3b6338d64e3edba8c1c"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "15cf5a5ff8b75d73760482b130a7ec0ac9d8815a845641a5fb4d8f6a332b07c0"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "14034d099459034548ca0aab139b07213078abc5e8b1e2917be44043609b4803"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "50c0daea442a9031440577ac58fa83cf20d25fdee874ec81a48ade5d2bc04c5b"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "817e73653a5d280310e41616a8711ede2a02d0eab4fae540cce43b4fab7cd69a"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "abcc7a967050e0024be32622f3126646968b0f00bf2c4409b69f5c47dc1166d5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "b3896e7d709f55e851eb8e2a23d27e0dad36c91b9e0664c16828f53d68669b58"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "2edc068c3516cc447eb9cca0afed7e06da6e751fe19f86438a875e167ae762aa"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "5c1887e5bcbe61ee28912283c869d6aded620aee093253129b20fdbb01fae7fb"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "2290383ac715a76eace165e682ced97e5cdf6a5a40d61c54d12acd77a1db87ab"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "44f19005fe9c697233542ce27f8ca3897d2a24352d54f66d73ed1df6b471cf5c"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "9fd92ad63bd92c2e04493267133ae5fbc7e1c3fad5318eb3bf4eafbc7fcdcdd6"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1a9f7d50ab97c67dcb4d1578328e63a98094cf9ee40258ee00085849b221520f"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "da153d46a4896408a9ed60b21cd91852bc318952a7d45b039b2f977d0ac2267b"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "3dba1a0864c2e7bb94d00dc0e25c18f680acbee3bd411396a69f459fb4ea9b6f"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "ef446aff3a206b2284dd1d1702fd4f9551efa4bdcb0760cd32974f6a74dfe7fd",
+        "afterSha256": "9dbe04544757f5998788b5f307364db38d1901d48a62d882af57d744f5c9eaac"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "55a1d2142cf35b45a89abab89d2c5815aaac4df62a6b0a6330924c569beb986b",
+        "afterSha256": "f0a9c8b6796a08ff4f1824a88cb63641dd34d033e64ab0d9fa6a138bb04ac29b"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "7b7b67fb7c4352defd9f8de968ef5d52b2431f84b908f73717ad832fd675d6ea",
+        "afterSha256": "a224b59cb61e713a10a848a18ad56a550dafb58affdafcb02b39786d31bfa8da"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "80d8d289c5ea5a9f0924c271073ec6b3da86529c040d0786f9de8f610aeef3bb",
+        "afterSha256": "7de0c2084b630fe9c5df15810bf7fd5e256ec040fc0bb79614da92393be2de61"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "ce3a6017cf4bd85c2db6095df7012c877b198cb35921ee5c132ff16c7c10f873",
+        "afterSha256": "d8253c108f62dc9b834f7e8c69fdf47096cae5f7c7b0b7c6e0890a47252ba8de"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "f81d9e6e3f915379b24b498fd86abe59b5f4c3a98ec2e5c1dc2434103e64e437",
+        "afterSha256": "9a5457d6b8ac3bd5012e1a369a6bd7d2a50db49fdb11528ed4ce4d9ef6da39ba"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "593c4d0ea9d3ba77d90905c4a21115526b457eee1d0b91060d4f8d6558f29cf9",
+        "afterSha256": "285ce3be5cdc9b4ff2bdf31ffd9f1a69953e2b3861a06649365cb580626fee06"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f28d14a660c5bda60a2def828be624f7ef3feb4a61fc54da816a97411523607f",
+        "afterSha256": "8c008f71d698f84b05009bd218bb3de6a9ef5752f7bad6019e7076b736be7be3"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "872cb17225565b1f3ffcbbf6db0c5a21f3301a63593854adfaa0965c0059739c",
+        "afterSha256": "cd12acc3172b78d6f47f24d24c450b2997b4642619e5cabc1eb273319c7d4dbd"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "1ac2eaf6609bdad81030f649c1aa61e79430cd925da8dc4c97242e100c886bad",
+        "afterSha256": "fd850b3da66bb885a16638f5f25fc704b29e2f3d9d0587408c40481171980aa1"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "8dd9b79dcebb7238c8f0b9902066db4145a712d863c70cb7237728a57afd850b",
+        "afterSha256": "032e176f032ce83a0233a4383424bb536fb7f796024447adc05c7215f65a4f57"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "dc3a0f143fb13ee08a6a16763e32eb5d7e693d7bf7091b2e13d57209c6ea1244",
+        "afterSha256": "1f62e7b6e880b8fdb923e9b56869e172b9718ea46479c3576000e6575976c051"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5c2869c34a3eaa5e462d1981046e536652d597d3de94856ef98ae09f0c7396e9",
+        "afterSha256": "d77fef7cef1062c2f92045d1c4be0c7d81db0599fac8780d605f506861bf32c5"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "bace20bb21728ad84cea24d962770c2c21a9ac094e7b791da0a89658c7bcb04c",
+        "afterSha256": "47fbd0f3fb7ed4512b0fe39d0765cbfd86bc06d37fb28ba84a2400b4809f9fa8"
+      },
+      {
+        "id": "block_0005_0008",
+        "beforeSha256": "b31857aa600fa27f6edc55eab7d69ed70e112dd66ee31d9b2a47ee2efaa4ba5f",
+        "afterSha256": "9aceff009e7f1a233ed883e5d2c25364ac33ff207fcb94f12f178f6fe0c7d147"
+      },
+      {
+        "id": "block_0005_0009",
+        "beforeSha256": "89bcc380622312ba86fd49e879272f0c186394e1545b7b293396b28d028a45db",
+        "afterSha256": "407a5dd03afecb046966b408e699fb134e89e0cde80880c79db879d6a305f3bc"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "ca76c1870a49c1d425a87ccd640a0ec311c1c786e35f78f487a3bbee1e8c470c",
+        "afterSha256": "e9dd5c152928de468ac83617a581d3ce805d4af99f3fab14ee4a677c73c01463"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "9f49912cf0657d9d1514d04cc56df49baa851f1e6fb106fa217455784ff38fb6",
+        "afterSha256": "877d1d98b21c1f42225ddc5e36fb8d24370ff8ba0a23f310d6edf9c9389d9b10"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "d1d274ae856dd4ed9f5f51b36c67791ed99cf87fa7403b9c25c54e358746a9f4",
+        "afterSha256": "2c996ada1e2474223529fe833288d442f548bc2615cf95bf9d8401bacee373de"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "7305cdcd3806c2b752674650d5df6d7f8f9b04d2e83f828ddd686d9488c5fd9a",
+        "afterSha256": "abe2e25a86e42d7b21e8d17793cf8a62148334f6dbd08601a8dcc9dcd637c325"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "0cea4da5e6dfe37ae918ab61641afdeaba40f9a9cec07ba93b42e9dbb56078df",
+        "afterSha256": "d6dcde3184a71c258a6410eb3f6fd8727a459e05fd296f2feb133d1ffe062d51"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "04fa99a5ef497ac6a1d2bbf15342ceb35dec8dd4f464ee9a46fccf3d0aaf6d91",
+        "afterSha256": "4a9df4be86d7a2967df25da116f19a63d0dbe166885eab67d02769a7d8f09f51"
+      },
+      {
+        "id": "block_0009_0007",
+        "beforeSha256": "7236590bce01de13f74f96e9b022b6002308e800adcf7cadae30e1324e4a9766",
+        "afterSha256": "748b924f73fb3db00d6dae95a1f884986eec8a46209992cd41cf40e3e8eab339"
+      },
+      {
+        "id": "block_0009_0008",
+        "beforeSha256": "89bcc380622312ba86fd49e879272f0c186394e1545b7b293396b28d028a45db",
+        "afterSha256": "d5c6e2e54f967ebaca0ecb3205c85334da49cead0968945a48b5d941f367eebe"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "a8ebb23136b3dc5136f6abf968ce289ff83a3c6121738661920d194d2f028967",
+        "afterSha256": "91f72a3bce305ed66352443086bdaf13ba23e6f46536d86b434ac20f31bc6319"
+      },
+      {
+        "id": "block_0011_0001",
+        "beforeSha256": "59f2ad7899f577ca750fc4dd260e2d59204d3d874cfdc4137f643ab644310b3a",
+        "afterSha256": "be54c3ca4794b4d36782a9b2871db16b73986d9ce19055a37055203da7862e2b"
+      },
+      {
+        "id": "block_0011_0003",
+        "beforeSha256": "76dbcb27893e2bf8a7171273f43a7adf8e283c4e3caaebda477477b64d3e5328",
+        "afterSha256": "8cc229fb3b8c1cd215af4452f02727b4da082c5c30a0ebba6fc78da11ba273f0"
+      },
+      {
+        "id": "block_0011_0006",
+        "beforeSha256": "ebfdc1ebdc346a283a1afad62f7402af81d5c371156569e97f754f63e89801dd",
+        "afterSha256": "e49f23438ea48266ca7c07c233a8467b10122768b7558011e549610df17d2242"
+      },
+      {
+        "id": "block_0011_0008",
+        "beforeSha256": "abbab50023e7820f1cd734da7d897dbeaac3d51153b6aca2fec7442c9b9df189",
+        "afterSha256": "ed8cb6bc55f6f6b2270039d698596dcc483b1325350358b0f97a1945272f4fd0"
+      },
+      {
+        "id": "block_0011_0009",
+        "beforeSha256": "53fd4025f65a729135bd0554046cf41c426f249d3d5b1ab9543ccb722e3fb6b1",
+        "afterSha256": "5e9d8dffab8b0e35e3374ce506a28e605d4dd695230c48f821423577b81cec3f"
+      }
+    ]
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "154428d419e6ebd8a3e61ed6e020487e3f1d9cc133ee328b9d2f79f8d8869edc",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "3259adedac183a6eb3e584cfe94c6f12f01b8b65b76f86bb0c89d1b05f0d0b3c",
+        "spans": [
+          {
+            "start": 438,
+            "end": 442,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "49628fa69f87d4a52d34660f1cf8eafe860416600ca63f95e067b24c0ec48192",
+        "spans": [
+          {
+            "start": 461,
+            "end": 498,
+            "text": "(Kernighan & Pike, 1999, pp. 149–150)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "532e05a0c3e5d36c191956e839912cec0433616fd8415474fd279262c9a7580b",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "e7e757a3ec4ffea205d7b4997d19b7d0ef3a99afed0eb385ac5d309e0c33286a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "f9d8e13b85460fd89afc48d97ee112a3110bb8095ea9c1ad22a4879ba15e1d51",
+        "spans": [
+          {
+            "start": 26,
+            "end": 30,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "146817be6c71cb45cfcbfb86999d7137af9012fc895f993b6808abeebd20babb",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "b406ff96a2d23f35a0c9dd50907acdd07160ef433e85fd11232f8c494d5d5f06",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "865047d41bc7b296cb969e6edef5d1fb68a1b2a10922854f1b6e808ed169ad8f",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "430745a2e7c67437225d2435c4b8069096ec276f4afb289f70f9f21d3d56faf6",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c91973704f782095114eaa20e19da6be36013f46c08f64144d45ad44e59c4e21",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "9538909c61872828ce8cac6b134ece3738e0eb0ac2b0ed47c239396698984972",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "3a7730fdae249952365cccacbb68bd8fbdaa7e6728758a885135a25b3b2451fa",
+        "spans": [
+          {
+            "start": 11,
+            "end": 21,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "0 y 20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "cc41bb746973c42b42d60d92c8d6c4433ccaeefae9b9f323e1ae465994a0bec7",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/question",
+        "sourceSha256": "daf5434fd9375224632eee6814f60ad3f3d90a1fc5708ec77d817f5a098ed8e5",
+        "spans": [
+          {
+            "start": 47,
+            "end": 53,
+            "text": "0,5,17",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/explanation",
+        "sourceSha256": "c49a24f03f1b59f360f1d4e9f42e5da1382a43b3885ace57aa4090257180a45d",
+        "spans": [
+          {
+            "start": 20,
+            "end": 25,
+            "text": "0 / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 27,
+            "end": 32,
+            "text": "5 / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 35,
+            "end": 41,
+            "text": "17 / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 76,
+            "end": 84,
+            "text": "0, 1 y 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 100,
+            "text": "0:1:4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "fd64442ee9261c86cab70e01de35b7768ea22fb4169f62e9851131dfd86e43c1",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/question",
+        "sourceSha256": "3fb24df03bcda3d2876639835af01ed9499e8747113aa7dfd917fcc869e3ee65",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/explanation",
+        "sourceSha256": "bb4056fe99953cc545d028e7dea88df539461fa9b9a06a4649ba61c8069896e5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/0",
+        "sourceSha256": "2dc83477aa606ef1074cb9af63b6bcfd63ba5670976c4fb8c2f9e892ae2c9305",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/1",
+        "sourceSha256": "95a27a0d7f62477cad5872c582e3bd520946abf2dee7a385ba242d68b6c4f322",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/options/2",
+        "sourceSha256": "97338f9af902af7aa5597b6958b19a6f069d26dc077d7fe6a5070203e28dee16",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "452b10bf39ed063a0ba4eb8c14d970c51a26845ecb2d021a675a02642c46658d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9e87c431d24163d73124f8582413d3637156df4db44492a5483380789e2253c1",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "7b87ccd16971ffab87d53980b447e51f80f782e6ac563ec155af8e5517944664",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "4dab34b160a609e17b0c2fdfd252d742e2d61e3ab7e376bf54ea1f8ebcfa70ab",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "89dd579d52e4fa974db1719f33a83380d96c926a08367f3a21efbd0706b88adb",
+        "spans": [
+          {
+            "start": 11,
+            "end": 32,
+            "text": "publico/envio/cajas.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 51,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 66,
+            "end": 79,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 158,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 189,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 225,
+            "text": "app/consulta.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 257,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 287,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 311,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "a29ee1c304ce910cbd31d6a01e9d9e8c6523c78e19bd1073e8c1f79d54b6364f",
+        "spans": [
+          {
+            "start": 9,
+            "end": 35,
+            "text": "target_include_directories",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 51,
+            "text": "publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 72,
+            "text": "PUBLIC",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 82,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 179,
+            "text": "target_link_libraries",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 221,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 241,
+            "text": "PRIVATE",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 357,
+            "text": "(Scott, 2025, pp. 20–21, 176)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 385,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 530,
+            "end": 534,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 554,
+            "end": 569,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 593,
+            "end": 603,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/question",
+        "sourceSha256": "c59f665707827f72c3c01247399a6131ea0dd0fd6884addee6be17801f8e691c",
+        "spans": [
+          {
+            "start": 30,
+            "end": 45,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/explanation",
+        "sourceSha256": "da1f9d6f1b34629c8a9e9102c56b30e5bf412ac541dfcb58e84f3ce8a8b55e75",
+        "spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 45,
+            "end": 51,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 106,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 162,
+            "end": 172,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/0",
+        "sourceSha256": "2e4ea1e75999da76af5185351eff083198fc83c81ad3b2a4b4d5c689c3f9e301",
+        "spans": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 73,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/1",
+        "sourceSha256": "34b4b8889071032b94406a0d07a5c2ab808d909a777b2dfcfa7c45ea3c239273",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "app/consulta.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 42,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/options/2",
+        "sourceSha256": "c6878e718b4c6028e0a751c1f873aae5bffb83d04dff8c571fdf856613197577",
+        "spans": [
+          {
+            "start": 5,
+            "end": 28,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 67,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "bcddd083a8a9d9691886d9124897aa20754be92cbaf849d8f8e9af932d6008e2",
+        "spans": [
+          {
+            "start": 29,
+            "end": 33,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "ba4bfff6afc00ea0737b6fbdf6e4595f1a21c1e989af1449e3999b4c147cf35a",
+        "spans": [
+          {
+            "start": 33,
+            "end": 37,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "39e88db776ee24c0ea3bfbebb6d3ab8ba9b9b715c98150fd7f697a99bd8e1d54",
+        "spans": [
+          {
+            "start": 50,
+            "end": 63,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "426ec641d04fa11bbe636543f5f7dd8f5b230a0f2129eee6a7a57b413c6af027",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "562fbe166313c0621f2dc7010ddd09a9d5331fb469dd6e40d3966ec977ee5116",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "b6993d2e978d796574ea8f2723e87a751c2d2f6e70da55e17ef303c35238a1f1",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "02cc3f52c3cd81246ff153f76d0a0d2f5aac07cc6febab9f99b75dc7f70f1063",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "f3eef30d786228410b013123bf25b5c9346dca18fcc55a96e9ad82c0d9e6ff0f",
+        "spans": [
+          {
+            "start": 17,
+            "end": 26,
+            "text": "comprobar",
+            "role": "cpp"
+          },
+          {
+            "start": 35,
+            "end": 45,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 79,
+            "end": 87,
+            "text": "obtenido",
+            "role": "cpp"
+          },
+          {
+            "start": 102,
+            "end": 122,
+            "text": "obtenido == esperado",
+            "role": "cpp"
+          },
+          {
+            "start": 131,
+            "end": 139,
+            "text": "coincide",
+            "role": "cpp"
+          },
+          {
+            "start": 145,
+            "end": 149,
+            "text": "bool",
+            "role": "cpp"
+          },
+          {
+            "start": 195,
+            "end": 199,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 201,
+            "end": 209,
+            "text": "correcto",
+            "role": "cpp"
+          },
+          {
+            "start": 222,
+            "end": 226,
+            "text": "true",
+            "role": "cpp"
+          },
+          {
+            "start": 252,
+            "end": 257,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 262,
+            "end": 264,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 272,
+            "end": 277,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 280,
+            "end": 288,
+            "text": "correcto",
+            "role": "cpp"
+          },
+          {
+            "start": 336,
+            "end": 340,
+            "text": "true",
+            "role": "cpp"
+          },
+          {
+            "start": 346,
+            "end": 348,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 428,
+            "end": 436,
+            "text": "correcto",
+            "role": "cpp"
+          },
+          {
+            "start": 461,
+            "end": 475,
+            "text": "Bateria: FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 489,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 514,
+            "text": "Bateria: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 528,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "b79270b8fac9916e6fb10d2b3b0a722bc9be598f4384677bd87960373f1ab747",
+        "spans": [
+          {
+            "start": 47,
+            "end": 55,
+            "text": "0,4,8,20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 204,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "843335e4e5ff752dadf939458b807d00f19576b5dd4423c5ae323c0820339d42",
+        "spans": [
+          {
+            "start": 16,
+            "end": 31,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "b635d68c0f79b8d01e6c83679275c46cdb9bcde77b08126c629753a27e473195",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/0",
+        "sourceSha256": "02a1f47f2b5e395c048747157c9788205fda451bed5d7906182398fe940af8ea",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/1",
+        "sourceSha256": "aa5286d779f39aa6b9b4a31d3a3f613eca19c02d0180deb0bc4fd24f4653332a",
+        "spans": [
+          {
+            "start": 22,
+            "end": 26,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/2",
+        "sourceSha256": "d3a2c2227afb37f7ecf29976d707f510d21df9dbdaf315c2af66f6fc42ecc283",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "bae5866a7f6303630f1a5b4471c6714e6345409988b6c4d5a6ac2c373863fdd5",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "1c953fe16279a8bf946f3d198d37529088429a0a73c1f5c31d1c4f9dd3a2f246",
+        "spans": [
+          {
+            "start": 114,
+            "end": 123,
+            "text": "comprobar",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "450338010d42e078557df7abdc67f600bd4c6d87db078208ad2e2600acfcedec",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "3ea7827aa5e9759194f9a8fcada4127e386862f9b329e0e498f4f11e4927d02b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "8917e651205ecd255d36b1cc72b88c422619c9e365e155db406468f3ff66f627",
+        "spans": [
+          {
+            "start": 5,
+            "end": 7,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 38,
+            "end": 47,
+            "text": "comprobar",
+            "role": "cpp"
+          },
+          {
+            "start": 57,
+            "end": 62,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 72,
+            "text": "correcto",
+            "role": "cpp"
+          },
+          {
+            "start": 82,
+            "end": 87,
+            "text": "false",
+            "role": "cpp"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "if",
+            "role": "cpp"
+          },
+          {
+            "start": 159,
+            "end": 161,
+            "text": "&&",
+            "role": "cpp"
+          },
+          {
+            "start": 197,
+            "end": 202,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "8de975683ef5695ee5de6284085edf79724332f1fb764932a61cb3ca7071ab88",
+        "spans": [
+          {
+            "start": 28,
+            "end": 30,
+            "text": "&&",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "f3f987938fce0f22d15fb71a7db318eacaa0655514abae6d7243fc3efc8da356",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "0eafb114185e6d1b334dc663c51101ddd93cc254996be19e3156d9cde20c2416",
+        "spans": [
+          {
+            "start": 35,
+            "end": 37,
+            "text": "if",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "f2091fc8e9f1da83f62a142122d21611cc94818af030ce655d2d83816d0cab67",
+        "spans": [
+          {
+            "start": 35,
+            "end": 37,
+            "text": "&&",
+            "role": "cpp"
+          },
+          {
+            "start": 69,
+            "end": 74,
+            "text": "false",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "bf2c42eb49f016a7da13914f34ba88ef5aee3aa0fe2901ee27a05b79bd616818",
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "10781b231d8c32293d3990e71be1a486850b6a46986d5bd906637ab3528046a7",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "7cbb1b0f2f2f15c0076d3c6e3074bcbe6c9b50277a5377e4a14fc7a6c251fa0a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "e2119606faacaae91e0f2df5617c29dfce116e58a24d72dfe3008cd7677aba95",
+        "spans": [
+          {
+            "start": 78,
+            "end": 93,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 239,
+            "end": 255,
+            "text": "app/consulta.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 287,
+            "end": 302,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 364,
+            "end": 387,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "b36c702ea1eee34f4884acad062d40cf197d573a864475820ba5b5dc898a19d4",
+        "spans": [
+          {
+            "start": 55,
+            "end": 64,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 135,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 183,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 216,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "56c90004421d4678efb374ab3b22126341fd0d1730d7fbb68460f41456983082",
+        "spans": [
+          {
+            "start": 12,
+            "end": 27,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 45,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "3c7f9b3c31f150bcebf82a4f935e09a07b8bd7dfe0c3905a70804ce3f2f4b6ec",
+        "spans": [
+          {
+            "start": 52,
+            "end": 56,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/0",
+        "sourceSha256": "e5fc210239f79e016551e0ed0aac062b004438e5d6d6035fbb7a4fa0f5a09d33",
+        "spans": [
+          {
+            "start": 15,
+            "end": 21,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/1",
+        "sourceSha256": "aa7f7a45bf9b8329903872ae116f72b14eebc03218a41ec0e1bbda16c56d06c4",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/2",
+        "sourceSha256": "3cd7a1ed124e7b3e3c42d1485d1246ad4f054fd866a9499dbf1d45ce0e407394",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "6aee4dcdc963b85c4ffe38b25d0d8ec95547ddea268bbee2b1b8a3a8bb828935",
+        "spans": [
+          {
+            "start": 44,
+            "end": 48,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "34c101b55440c27e76d239b868f8d6b9dd42151846acaeee390cc9ed064fa5b3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "0bf4d3f5209eb99c934d4c91890aa655936933aca94e195532fdf170b6ac37d8",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "753f02e2959c3f1ff15fea3f9d7789b386bb0aebe554a4174077ac34f5fc2e62",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "a23daf1e1a80f423dc04ff3200461a346626b9514dccb21100593099c7e6b627",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "6d7934e59593e51d5129cf9fa7122ae7d3a11ecb2bf464cd8e8c29e17d219e51",
+        "spans": [
+          {
+            "start": 4,
+            "end": 14,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 29,
+            "end": 41,
+            "text": "0, 4, 8 y 20",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "ceb0e8a367bd54f57c64251750265818e7162c1940c6de9f41efa0ecf80e3333",
+        "spans": [
+          {
+            "start": 30,
+            "end": 46,
+            "text": "(piezas + 3) / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 75,
+            "end": 80,
+            "text": "7 / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 121,
+            "end": 126,
+            "text": "8 / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 481,
+            "end": 486,
+            "text": "3 / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 553,
+            "end": 555,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 572,
+            "text": "int",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/question",
+        "sourceSha256": "be32159ec0bcbb0ed5456abab9931f61ab4da032591713af69be6921f535c562",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/explanation",
+        "sourceSha256": "f01a4cfbfea32ca02798532af3748182ff91d5e0fb98260a798ef22d700e4b19",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/options/0",
+        "sourceSha256": "bdb0864a72c47fb371cdbb64598c1186dab40f9533fc29e3e017b6718ffc92a2",
+        "spans": [
+          {
+            "start": 48,
+            "end": 71,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/options/1",
+        "sourceSha256": "01932b8b51fb7438b048faed049fe1fecba502690b365cbf129db5a6fc329d36",
+        "spans": [
+          {
+            "start": 26,
+            "end": 31,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 38,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/options/2",
+        "sourceSha256": "c2a558b2d9d1f4564832c5a525c722fd9825bf8773d349834384994c88d4f9fc",
+        "spans": [
+          {
+            "start": 25,
+            "end": 38,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "43b956572c6b2487b84f5d597fa593bae6968b70b8937fc843ccda62c3d1e922",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "c39711a61106a9200e16f4557382a423dd31bb11065dee93fad8acab1552a767",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "ef73cce1be4acea51dd610ff6559634fb5f47d55addd9ddbcc52dd9ea4ca3347",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0007",
+        "path": "/text",
+        "sourceSha256": "93ef1f6a64aa48567a753663b744b037279a14c7c57f0e3826d0d97933122276",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0008",
+        "path": "/text",
+        "sourceSha256": "d3597273d09a9288030af33b29a5d97dc5feb70ebca2864c7cbc8208eef645bd",
+        "spans": [
+          {
+            "start": 117,
+            "end": 130,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 216,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0009",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "d960a048037bc9c6a75f8fc5921f875613efcc07e279bc2d4baa1a143b1a23ea",
+        "spans": [
+          {
+            "start": 31,
+            "end": 43,
+            "text": "0, 4, 8 y 20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 72,
+            "text": "0, 1, 2 y 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 89,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 108,
+            "text": "1, 2 y 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 170,
+            "text": "Bateria: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "40d2c933bc4a830507b0f1a023276ade2437c6f07187d09df52f3140d022dd77",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "3c3a27620a4ae3cb215b8a2fc1f12f03f4e750ffc447f7becf807cd51737edb2",
+        "spans": [
+          {
+            "start": 146,
+            "end": 156,
+            "text": "esperado=4",
+            "role": "cpp"
+          },
+          {
+            "start": 369,
+            "end": 401,
+            "text": "(Kernighan & Pike, 1999, p. 150)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/question",
+        "sourceSha256": "97e134db378a24efd9687928f88ddf0b0a9321a55da7491f7f02b0b5ecc59c8b",
+        "spans": [
+          {
+            "start": 23,
+            "end": 24,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 32,
+            "text": "17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/explanation",
+        "sourceSha256": "015f8b0ef7fe7974f92a4e068ad33755b3d24a02c2206b9ea086b3809b912f7e",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/0",
+        "sourceSha256": "23fc8bd12fc1e79ee8d8313e77f652fb7b7a2e248dfd71dd485d5d105b4e8aec",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/1",
+        "sourceSha256": "c8da3f51360823d89c1728a0f497052af4558902d1619c63b09a8c81e79016eb",
+        "spans": [
+          {
+            "start": 40,
+            "end": 41,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/options/2",
+        "sourceSha256": "c6be956ff3241a2dcb6f82fc93a9976d87e04ec60712c04ef7d99adb61ec606e",
+        "spans": [
+          {
+            "start": 17,
+            "end": 19,
+            "text": "17",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "19dc387f7546b7ff839707367982e0eabeb97cf7c339f161317f1691f0596614",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "ebd116475a319897ef75f581a208fa878848c7dbf32f46af5ef59d4ea98be060",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "350a23dd729e00a50d81da11f35d2b3c9873f3f7a97f1cfea4f447e6fa64141d",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "6cbb660634b5da393b624b72855b4cd6b7b16e06ffbc3c406ead47cbd3b47d9e",
+        "spans": [
+          {
+            "start": 87,
+            "end": 114,
+            "text": "esperado=cajas_para(piezas)",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/question",
+        "sourceSha256": "e8ab21673cff6cd3068329232a6b7239b96ccbc8bfca16c143e3039bf6a8b21b",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/explanation",
+        "sourceSha256": "40e32626297141dae18e366023f7baea7636883ad0a1bfb3888794b33ec5626e",
+        "spans": [
+          {
+            "start": 23,
+            "end": 33,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/0",
+        "sourceSha256": "2e8b7504d3fd4a64f220af5fd7e92ffa3d607952741fc14f42dc3eb8852264ae",
+        "spans": [
+          {
+            "start": 44,
+            "end": 54,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/1",
+        "sourceSha256": "23fac044989920e94ef24f4f2c793da8bdd09407e4cf59672e909c0b39343cb1",
+        "spans": [
+          {
+            "start": 44,
+            "end": 59,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/2",
+        "sourceSha256": "10214eba6dcb61ec268e4bf4e76fabac191be3e08728690e0096688456fef098",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "2c08530dca3ad544a6faf9627bfbacb109099ed4281cf501e58ecf61defe330b",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "4426cc457bdf5a562d4350fdbc89ebaaf83cf2a18eb6db93cb2e7408add6109d",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "352fa9f04afbf7cc6a60a4c770a6bb0fbfe24fa4022bc305efa39f0c61d46be2",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "17b5b32edc96847637964e047e7059b9556fa756c77b5bc77e172a6fca43470f",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/question",
+        "sourceSha256": "3db6441125d9e9feab0cb03bebf8dcae57ca8f0fc79311267feb7b3f67bb1d69",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/explanation",
+        "sourceSha256": "76d82af1b14d234a47b6a7c44babf50f23ad9c0a0abfe861401089d3e1820cee",
+        "spans": [
+          {
+            "start": 67,
+            "end": 71,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 78,
+            "text": "cout",
+            "role": "cpp"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/reviewFeedback",
+        "sourceSha256": "ee67550470b3fbba1170ccd565efef211ce1d44f695fead15eb018ddb2bbf13c",
+        "spans": [
+          {
+            "start": 84,
+            "end": 88,
+            "text": "bool",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "ec656692da413c8e7d8df183da312c768862e34413adb49ad1dee35103370d0a",
+        "spans": [
+          {
+            "start": 139,
+            "end": 149,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 490,
+            "end": 524,
+            "text": "(Thomas & Hunt, 2020, pp. 277–278)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/question",
+        "sourceSha256": "47c89743f858bebefd82d347e265e15784a919dfd898de913d336a4fa0e16845",
+        "spans": [
+          {
+            "start": 119,
+            "end": 127,
+            "text": "piezas/4",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/explanation",
+        "sourceSha256": "a78bbaaca096e4d4bbfc4a76b3eda370097e1b1d4a0f64069b3787b77d3d7af9",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/0",
+        "sourceSha256": "4469c746ed0fd8485d64f67dcd789855ab7451d8b6fcb4d71b4865208ce924f4",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/1",
+        "sourceSha256": "f0a32d31255cfadb2553589b40190865262596bc32f2e1e2295187d9c5002d68",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/options/2",
+        "sourceSha256": "86edadd356a724bfc7ed952d1b1f99f99a0f866b8f9a9123f1cda86d783e3023",
+        "spans": [
+          {
+            "start": 49,
+            "end": 57,
+            "text": "piezas/4",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "f7ca81325e045bc2cc64462769e3f76fd507b9adc08ee296f7e804631532f721",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "114eb3912ba3775a776e0dc7525c5651804b453829900ff94f788d79921ff89d",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "41b83f417b488044cda319be7043d0f4b970412c621d46268b8f205cd7efa818",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "2f2f959ca84734e218d5e7e77e5f6ea0a8b38af994eddb4a5230dd158e4c149b",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "13e70acf1c89afafcde2b74b3b2810a1ce638442d334ea6c944f2455144f4b5f",
+        "spans": [
+          {
+            "start": 132,
+            "end": 147,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/text",
+        "sourceSha256": "030fe34b4bb75975169ba687a86182e91009aeeaf7a646a4c69e2741459294cf",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "4a7b9195b2d6974d43d169aeef8e5b60b775e49ffbe5fec6c8aaca2de990fe84",
+        "spans": [
+          {
+            "start": 275,
+            "end": 276,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/question",
+        "sourceSha256": "5d14f7d11814ea021de2cb2e3f4e77f5484c683aaf33d28ae9f9f96697629e49",
+        "spans": [
+          {
+            "start": 65,
+            "end": 70,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/explanation",
+        "sourceSha256": "bae31e6116a7a4d81009cf33a0f1f6f82975ad145f2335a03719083bb2bb6619",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/0",
+        "sourceSha256": "b1748e83c3600008523a3ecda5cf10d5ceb034067451fa3b57e8ad9f67b30ccf",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/1",
+        "sourceSha256": "eb3d218fa8259d21d97d31b6994ffcf104aba4f29a35ceccda493efaa38847b0",
+        "spans": [
+          {
+            "start": 66,
+            "end": 67,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/2",
+        "sourceSha256": "548e2cbba807866ec71191f4e9d901c561ee1f6296d6af70806d7505d096b249",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "b46923a06f825f8d2615e3a91e7be29df1b96155590c0b6ca8b47d4161d2baa6",
+        "spans": [
+          {
+            "start": 46,
+            "end": 50,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "a75e1f6f287e1aab85eae7023b4c7a91495e22addd80aa528655836f54832958",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "9b0d898a6067d53372510110e71a08d4a7cd61253d27c519ae1d3751023f041f",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0000",
+        "path": "/text",
+        "sourceSha256": "cc1963248765afc59abe55f4ca994700ba1f74fb4c9913edce145da67dd15a72",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/text",
+        "sourceSha256": "7a1704f9cbe7c41f0b763e01522afd11723b50de9a195e4c1e4b47199814d7aa",
+        "spans": [
+          {
+            "start": 5,
+            "end": 7,
+            "text": "17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 37,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 123,
+            "text": "pruebas/cajas_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/text",
+        "sourceSha256": "8e0dfafc8017980df71b33135be2964fe14147ac631f896e2ce9059f676bc9de",
+        "spans": [
+          {
+            "start": 4,
+            "end": 14,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 35,
+            "end": 44,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 111,
+            "text": "(piezas + 3) / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 445,
+            "end": 479,
+            "text": "(Thomas & Hunt, 2020, pp. 274–275)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 627,
+            "end": 659,
+            "text": "(Kernighan & Pike, 1999, p. 149)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/question",
+        "sourceSha256": "2bbff8566fd253edfedcf82ea467cd50b5b1e0824d214d2381bb3ebe191910e3",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/explanation",
+        "sourceSha256": "0eecf022ac2c38eac00d6b505d1d1978f132c00ad873c0010f783dff131cf754",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0004",
+        "path": "/reviewFeedback",
+        "sourceSha256": "9ec192c52c0d445a70e4353fa4f0db2683dfbcd0f917a54de0b4d5d609d48132",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/question",
+        "sourceSha256": "4fdc5986feae78727b329cce7b424411007bb503f7c10cd816bafd5af17928cd",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/explanation",
+        "sourceSha256": "48a8dab28e7e6fa73d5df36bd062597d856daddac6614cfa1cf998c0c780d4bd",
+        "spans": [
+          {
+            "start": 190,
+            "end": 196,
+            "text": "6 ni 7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/options/0",
+        "sourceSha256": "6344ab6fffed49c61dddefa06af5308a3667009a42d7fea9f7ee761185b6943a",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/options/1",
+        "sourceSha256": "350db4127f8ca8640594fb7c1eca9aee62767f4a201a6b406a1f7c3e183924fb",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/options/2",
+        "sourceSha256": "f4e85f2e2b7b9e87aada728eedb8cb9e34090d4ea644b648b4926881640bb1af",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a9acc9c9f49482415b6af9592a4fdc7e29c62c0387b95c5165d2e13085fc0931",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "4c24221b76b4e909f4b03a10e77a258e89c13d5dcbd2c587e5395c1ec3fc2901",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "b00120fa0d9112626a39e52005284c2def20407bed8f594247f08574c15a13db",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0006",
+        "path": "/text",
+        "sourceSha256": "3d5bb0a7aba681fda83b4596ef1846305c3ec2feefc14b29f15fb7ee7a219437",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0007",
+        "path": "/text",
+        "sourceSha256": "df95bb009ec17193d49c764ee0928142d16338a4ec3d468d71ff9f644f17ddfb",
+        "spans": [
+          {
+            "start": 74,
+            "end": 84,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 90,
+            "end": 105,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 197,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 212,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 324,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 377,
+            "end": 379,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 393,
+            "end": 394,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "b3af24d134fe906215a2ed311bcd2dad1bd75e48c969ea57e018c1287168ee60",
+        "spans": [
+          {
+            "start": 4,
+            "end": 14,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 29,
+            "end": 38,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 57,
+            "text": "0, 1 y 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 89,
+            "text": "1, 2 y 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0000",
+        "path": "/text",
+        "sourceSha256": "7c816980a4dea206151230ee638ae78e73a2e56ce76d3059d63461420330b9b4",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0001",
+        "path": "/text",
+        "sourceSha256": "12c65781f1a315fc65b1db80368f85781583c36cd259c155b6583510023be3cd",
+        "spans": [
+          {
+            "start": 6,
+            "end": 16,
+            "text": "lotes_para",
+            "role": "cpp"
+          },
+          {
+            "start": 30,
+            "end": 36,
+            "text": "0 y 18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 190,
+            "text": "lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 216,
+            "text": "consultar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 233,
+            "text": "verificar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 295,
+            "end": 299,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/text",
+        "sourceSha256": "aef5520a882594e9cb3d359ba75163ebdf841a02ea4462681ad020dcf8839af1",
+        "spans": [
+          {
+            "start": 27,
+            "end": 39,
+            "text": "0, 6, 7 y 18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 135,
+            "text": "pruebas/lotes_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 171,
+            "text": "lotes_para",
+            "role": "cpp"
+          },
+          {
+            "start": 331,
+            "end": 346,
+            "text": "verificar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 423,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 467,
+            "end": 468,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/question",
+        "sourceSha256": "79156bd80b03698093f98b7584051ccc746e5bcb89747c313fcbecef2d7866bd",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "main",
+            "role": "cpp"
+          },
+          {
+            "start": 19,
+            "end": 34,
+            "text": "verificar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/explanation",
+        "sourceSha256": "caec2b241dc471498a61b0b326957864bbd6c90e3c98803b8f5437e6324e50e5",
+        "spans": [
+          {
+            "start": 3,
+            "end": 7,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/options/0",
+        "sourceSha256": "77d58fd65156c6ca87e57f9e83de52a6dce0d134789abfe9a0e427e2f9e11077",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/options/1",
+        "sourceSha256": "aa6671bcdfd06772e5992e61f68a79e89640e9daa51418a96acb557f26ec5bdd",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/options/2",
+        "sourceSha256": "b05b1ca269f854d828b9e48efcf39082d63b4b09b14e41c83e6021316b556a45",
+        "spans": [
+          {
+            "start": 63,
+            "end": 68,
+            "text": "lotes",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "9e2b734acf3432d7f7bcb965524d80dad56242793e631310ad667d9136925ee7",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "20ca469b2d67393df651d489b914024dd6d882dcba5f38ae7877bb3741fdc8b4",
+        "spans": [
+          {
+            "start": 64,
+            "end": 68,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "7851f94df51b0a5ab07e143ce62b5d8cce20aac2389b97ac069173d261f7ffb0",
+        "spans": [
+          {
+            "start": 97,
+            "end": 101,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0000",
+        "path": "/text",
+        "sourceSha256": "c314419bdfd4d33383e263840e91a6ebd9d27654706e15b6c6e9f18d814071dc",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0001",
+        "path": "/text",
+        "sourceSha256": "8cd58114eb8a7db5d9d6568f51cf5d6b2bc1f451ba81600629006198ad35a2c1",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0003",
+        "path": "/text",
+        "sourceSha256": "b4271225d86c8aef4599bc26900a29c5d65e805b2ae5e18c5df50c21cda2c069",
+        "spans": [
+          {
+            "start": 18,
+            "end": 34,
+            "text": "(piezas + 5) / 6",
+            "role": "cpp"
+          },
+          {
+            "start": 61,
+            "end": 67,
+            "text": "11 / 6",
+            "role": "cpp"
+          },
+          {
+            "start": 106,
+            "end": 112,
+            "text": "12 / 6",
+            "role": "cpp"
+          },
+          {
+            "start": 251,
+            "end": 256,
+            "text": "5 / 6",
+            "role": "cpp"
+          },
+          {
+            "start": 306,
+            "end": 308,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 335,
+            "text": "piezas / 6",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/question",
+        "sourceSha256": "7663b1d3cc17d8e85f2b17e849b41967631b88efeaeb98cd970bb4e17149cdc2",
+        "spans": [
+          {
+            "start": 56,
+            "end": 63,
+            "text": "1,12,13",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/explanation",
+        "sourceSha256": "df7272f2999c9d52ec3630ef0a5a1de1b073d1a7ebeb00d6cd125eefa474f093",
+        "spans": [
+          {
+            "start": 50,
+            "end": 55,
+            "text": "0,2,2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/reviewFeedback",
+        "sourceSha256": "1e320530617cac7a1e9c4256310f087eae77c4d4e89cdc111737e04fe0f107c8",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/question",
+        "sourceSha256": "3adec6309ccd390f48a0d6e3ff8658ea9f8465a570247acb689b89c93102698f",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/explanation",
+        "sourceSha256": "a930a7f97aa944e2937c9a793c58de6753dde19de4011829b23e0644b9af5d06",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/options/0",
+        "sourceSha256": "bd80fa7f956bd5f0d163e7deaad65d4193abd8f5f0bc3b90b2d2919ff4b444c0",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/options/1",
+        "sourceSha256": "8eec143a9746a8a74f9468e623f29655ddfb15d573b5146ef7301daf9115369f",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/options/2",
+        "sourceSha256": "e7ca54dbe6e27b7e2e473506747ff3c0ed426d446ad8f9e7fcf182d7deb59177",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "7666fec94edd1ce0001899c4dd1b93922686cf0a7d1d326a47beca5525473474",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "918dc8675419ce24e421e38107e49bbf5dc5dc55b4b7653a2f86ffb72b347844",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c74a58c0630444cb13df31e872c70dc1729759c5fc7e75eb237e817cc6d6028b",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0007",
+        "path": "/text",
+        "sourceSha256": "5420a630118b0d86d245d5be56a013e413d0698a30ee3721bafc60b2c462a3c4",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0008",
+        "path": "/text",
+        "sourceSha256": "4ab6b394dfd01bdba231de4cc5ed8b6b675110962bf1547a91c3ab8d850bc920",
+        "spans": [
+          {
+            "start": 69,
+            "end": 79,
+            "text": "piezas / 6",
+            "role": "cpp"
+          },
+          {
+            "start": 85,
+            "end": 100,
+            "text": "verificar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 319,
+            "text": "motor/cantidad.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 426,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0009",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "2ebc7b46abbe1b64b6e5e7791b66af973ad1178d9525f7e2fe00ab2079ad013e",
+        "spans": [
+          {
+            "start": 83,
+            "end": 93,
+            "text": "piezas / 6",
+            "role": "cpp"
+          },
+          {
+            "start": 249,
+            "end": 250,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "f3eefd8a5243408ff94679b203e591be29cc7596765d695a3546c428877ec51b",
+        "spans": []
+      }
+    ]
+  }
 }

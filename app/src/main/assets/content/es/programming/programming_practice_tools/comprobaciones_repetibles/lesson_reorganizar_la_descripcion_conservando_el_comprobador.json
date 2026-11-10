@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La novedad no consiste en añadir más carpetas. Consiste en decidir qué descripción se procesa y desde dónde se interpretan las rutas que contiene. Mantendrás en la raíz la composición del proyecto y junto al componente su biblioteca y sus requisitos de uso. Esa localización reduce cuánto necesita conocer la raíz de los archivos internos del componente (Scott, 2025, pp. 68–69, 79)."
+          "text": "La raíz seguirá declarando el proyecto completo y sus dos consumidores. El archivo situado en componente/ describirá la biblioteca envios y sus requisitos de uso: qué fuente la construye y qué directorio de cabeceras necesitan sus clientes. Al reunir esas decisiones junto al componente, la raíz puede incorporarlo por su carpeta y relacionar los consumidores con envios sin enumerar sus archivos internos. Para hacerlo debemos saber qué descripción procesa CMake y desde dónde interpreta sus rutas (Scott, 2025, pp. 68–69, 79)."
         },
         {
           "type": "multiple_choice",
@@ -43,11 +43,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La orden add_subdirectory(componente) hace que CMake procese componente/CMakeLists.txt en ese punto. Cuando acaba ese archivo, continúa con la siguiente orden de la raíz. La carpeta debe tener su propio CMakeLists.txt; su mera existencia no provoca que CMake la recorra. Aquí usamos sólo una ruta de origen relativa, dentro del proyecto (Scott, 2025, p. 68)."
+          "text": "La orden add_subdirectory(componente), escrita en la raíz, hace que CMake procese componente/CMakeLists.txt en ese punto. Llamaremos hijo a ese archivo y al directorio que incorpora. Cuando termina de procesarlo, CMake continúa con la siguiente orden de la raíz. La carpeta debe contener su propio CMakeLists.txt; tener la carpeta preparada no basta para incorporarla. Aquí el argumento componente es una ruta de origen relativa al directorio de la raíz (Scott, 2025, p. 68)."
         },
         {
           "type": "paragraph",
-          "text": "Para observar ese recorrido usaremos message(STATUS \"texto\"): durante la configuración escribe un aviso con ese texto. STATUS es el modo del mensaje, no un objetivo. Los avisos describen el procesamiento de CMake; no son la salida del programa C++. Las siguientes dos tarjetas representan archivos distintos; entre estos tres avisos pueden aparecer otros mensajes de las herramientas. Este uso informativo de STATUS se apoya en la descripción del comando message (Scott, 2025, pp. 151–152)."
+          "text": "Para observar ese recorrido usaremos message(STATUS \"texto\"). Durante la configuración esta orden escribe un aviso con el texto entre comillas. STATUS selecciona un mensaje informativo: no declara un objetivo ni ejecuta el programa C++. Las dos tarjetas siguientes representan archivos distintos. Al configurar pueden aparecer otros mensajes de las herramientas entre los tres avisos que hemos escrito (Scott, 2025, pp. 151–152)."
         },
         {
           "type": "note",
@@ -111,7 +111,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En las órdenes que usamos aquí, las rutas de fuentes y los directorios de búsqueda relativos se interpretan desde el directorio de origen del CMakeLists.txt que los declara. En la raíz, componente/src/cajas.cpp llega a la definición. Dentro de componente/CMakeLists.txt, src/cajas.cpp llega al mismo archivo. Mantener el prefijo componente/ en el hijo conduciría a otra ruta, componente/componente/src/cajas.cpp."
+          "text": "Las rutas relativas de las fuentes de estos objetivos y de sus directorios de cabeceras parten del directorio de origen del CMakeLists.txt que las declara. En la raíz, componente/src/cajas.cpp llega a la definición. Dentro de componente/CMakeLists.txt, src/cajas.cpp llega al mismo archivo: componente/ ya forma parte del punto de partida. Repetir ese prefijo en el hijo conduciría a componente/componente/src/cajas.cpp, que no es la fuente preparada. Esta relación se refiere a las declaraciones que usamos aquí; no supone que toda ruta de cualquier comando de CMake tenga el mismo punto de partida (Scott, 2025, pp. 68–69, 183)."
         },
         {
           "type": "code",
@@ -171,15 +171,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Todos los archivos necesarios están preparados, incluido componente/CMakeLists.txt vacío. Configura primero la descripción plana, construye consultar_cajas y ejecuta: observa 1:2. Selecciona después comprobar_cajas, constrúyelo y ejecuta sus siete casos. Conserva sus líneas, sus esperados y su retorno final como referencia anterior al cambio."
+          "text": "Todos los archivos necesarios están preparados, incluido componente/CMakeLists.txt vacío. La descripción plana concentra las decisiones en el CMakeLists.txt de la raíz. Con consultar_cajas seleccionado, usa «Configurar y generar», «Construir objetivo» y «Compilar, ejecutar y comprobar»: debe mostrar 1:2, sin salto final, y terminar con 0. Selecciona después comprobar_cajas, constrúyelo y comprueba sus siete casos. Identifica las líneas, sus esperados y el retorno final que corresponden a cada objetivo antes de cambiar la descripción."
         },
         {
           "type": "paragraph",
-          "text": "Edita sólo los dos CMakeLists.txt para localizar en el componente la biblioteca, su búsqueda pública, su requisito C++20 y su desactivación de extensiones. La raíz conservará project, los dos ejecutables y sus enlaces y requisitos. Haz que alcance el hijo con add_subdirectory. No dupliques envios ni cambies archivos C++ para acomodar una ruta mal interpretada. Conserva los nombres de los tres objetivos. Añade los avisos raiz_antes y raiz_despues alrededor de add_subdirectory y componente dentro del hijo."
+          "text": "Edita sólo los dos CMakeLists.txt para localizar en el componente la biblioteca, su búsqueda pública, su mínimo de características de C++20 y su desactivación de extensiones. La raíz conservará project, los dos ejecutables y sus enlaces y requisitos. Haz que alcance el hijo con add_subdirectory. No dupliques envios ni cambies archivos C++ para acomodar una ruta mal interpretada. Conserva los nombres de los tres objetivos. Añade los avisos raiz_antes y raiz_despues alrededor de add_subdirectory y componente dentro del hijo."
         },
         {
           "type": "paragraph",
-          "text": "Después de cambiar la descripción, vuelve a configurar; construye y ejecuta el comprobador y la aplicación. Compara sus resultados con los anteriores: el objetivo es repartir la descripción conservando comportamiento y requisitos. Todos los archivos C++ deben permanecer intactos. La contraprueba que controla la sensibilidad de la batería se realiza después en otro editor (Kernighan & Pike, 1999, pp. 149–150)."
+          "text": "Después de cambiar la descripción, vuelve a configurar; construye y comprueba los dos objetivos desde este mismo editor. Compara sus resultados con los anteriores: repartir la descripción debe conservar tanto el comportamiento como los requisitos y todos los archivos C++. Ejecutar de nuevo los casos conservados ayuda a detectar cambios no previstos; sus esperados siguen procediendo del requisito, no de copiar una salida nueva (Kernighan & Pike, 1999, pp. 149–150). La contraprueba que controla la sensibilidad de la batería se realiza en el editor independiente de la página siguiente."
         },
         {
           "type": "cpp_compiler",
@@ -264,11 +264,11 @@
         },
         {
           "type": "note",
-          "text": "Consulta después de intentar la reorganización. Ésta es una descripción de referencia; puedes justificar otra organización compatible que conserve las mismas fuentes, objetivos, requisitos y comportamiento."
+          "text": "Esta descripción de referencia reparte las responsabilidades entre raíz e hijo. También son válidas otras descripciones que cumplan la organización solicitada y conserven las mismas fuentes, objetivos, requisitos y comportamiento."
         },
         {
           "type": "paragraph",
-          "text": "En la raíz, project sigue declarando el proyecto completo. El hijo no necesita otra orden project para aportar una biblioteca. add_subdirectory procesa su descripción antes de los consumidores, que enlazan con el objetivo envios. El nombre del objetivo no es una ruta: en el selector se sigue eligiendo comprobar_cajas (Scott, 2025, pp. 68, 72, 79–80)."
+          "text": "En la raíz, project declara el proyecto completo. El hijo aporta envios sin necesitar otra orden project. Cuando add_subdirectory termina de procesarlo, la raíz declara los dos ejecutables y relaciona cada uno con esa biblioteca. El selector de la app solicita el nombre lógico declarado para el objetivo: comprobar_cajas. La ubicación de su fuente en pruebas/ y la de la biblioteca en componente/ no se anteponen a ese nombre (Scott, 2025, pp. 68, 72, 79–80)."
         },
         {
           "type": "note",
@@ -393,7 +393,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Repetir un prefijo puede afectar dos clases de ruta. Si add_library nombra una fuente que no existe, CMake puede leer las órdenes pero no terminar de generar la construcción. Si la fuente existe y el directorio de búsqueda de cabeceras es incorrecto, la configuración puede terminar y la compilación fallar al procesar #include. Conserva el diagnóstico de la fase que realmente falló; no atribuyas ambos problemas al cálculo de cajas_para."
+          "text": "Repetir un prefijo puede producir dos fallos en fases distintas. Si add_library nombra componente/src/cajas.cpp desde el hijo, intenta incorporar componente/componente/src/cajas.cpp. CMake lee la orden, pero no puede terminar de generar una construcción con esa fuente inexistente. Si la fuente está bien indicada y sólo se repite el prefijo en la búsqueda pública, CMake puede terminar de generar; después el compilador no encuentra envio/cajas.h al procesar el #include. El diagnóstico identifica qué fase falló: ninguno de esos dos resultados evalúa todavía el cálculo de cajas_para."
         },
         {
           "type": "paragraph",
@@ -452,7 +452,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye después comprobar_cajas y relaciona el diagnóstico con el directorio de búsqueda pública. Repara ese directorio en el hijo, vuelve a configurar y construye/ejecuta el comprobador. Selecciona también consultar_cajas y constrúyelo/ejecútalo. Mantén intactos todos los archivos C++, sus includes, los casos y los esperados. Tu registro debe distinguir la generación que no terminó, la construcción que no terminó y las dos ejecuciones posteriores."
+          "text": "Construye después comprobar_cajas y relaciona el diagnóstico con el directorio de búsqueda pública. Repara ese directorio en el hijo y vuelve a configurar. Construye el comprobador y usa «Compilar, ejecutar y comprobar»; selecciona también consultar_cajas y compruébalo. Mantén intactos todos los archivos C++, sus includes, los casos y los esperados. Distingue en los registros de las herramientas la generación que no terminó, la construcción que no terminó y las dos ejecuciones posteriores."
         },
         {
           "type": "cpp_compiler",
@@ -537,11 +537,11 @@
         },
         {
           "type": "note",
-          "text": "Consulta después de intentar el diagnóstico por fases. Las dos reparaciones siguientes pertenecen al hijo; la raíz y todos los archivos C++ se conservan."
+          "text": "Las dos reparaciones pertenecen al hijo: una corrige la fuente de la biblioteca y la otra su directorio público. La raíz y todos los archivos C++ se conservan."
         },
         {
           "type": "paragraph",
-          "text": "En componente/CMakeLists.txt se quita el prefijo que ya aporta el origen del hijo. Primero se recupera la fuente física; después se recupera el directorio que contiene envio/. El objetivo continúa llamándose envios. No se añade una copia de cajas.cpp a ninguno de los dos ejecutables."
+          "text": "En componente/CMakeLists.txt, src/cajas.cpp se combina con componente/ y alcanza la fuente física. En la búsqueda de cabeceras, publico se combina con ese mismo origen y alcanza componente/publico, el directorio que contiene envio/. El objetivo sigue llamándose envios; ambos consumidores lo enlazan y reciben su requisito público. No se añade una copia de cajas.cpp a ninguno de los ejecutables."
         },
         {
           "type": "code",
@@ -579,11 +579,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera lotes_para: recibe de cero a dieciocho piezas y calcula los lotes de seis plazas necesarios. Ya están conservadas la definición correcta y las comparaciones para 0,6,7,18. Esta vez los archivos físicos están en codigo/lotes/motor/ y codigo/lotes/publico/, y la aplicación sigue en programa/. La raíz sólo declara el proyecto y el hijo está vacío: todavía no hay objetivos descritos, aunque los archivos C++ existan."
+          "text": "Recupera lotes_para: recibe de cero a dieciocho piezas y calcula el mínimo número de lotes de seis plazas que permite guardarlas; cero piezas requiere cero lotes. Ya están conservadas la definición correcta y las comparaciones para 0,6,7,18. Esta vez los archivos físicos están en codigo/lotes/motor/ y codigo/lotes/publico/, y la aplicación está en programa/. La raíz sólo declara el proyecto y el hijo está vacío: todavía no hay objetivos descritos, aunque los archivos C++ existan."
         },
         {
           "type": "paragraph",
-          "text": "Escribe las dos descripciones sin cambiar esos archivos C++. Localiza en codigo/lotes/CMakeLists.txt la biblioteca lotes, su directorio público y sus requisitos. La raíz debe incorporar esa carpeta y declarar consultar_lotes y verificar_lotes enlazados con lotes. Usa C++20 y desactiva extensiones en los tres objetivos como en las prácticas anteriores. Antes de ejecutar, comprueba las rutas desde cada declaración. Configura, construye y ejecuta ambos consumidores; atribuye los cuatro casos al comprobador y 1:2 al cliente. Una configuración inicial vacía puede terminar, pero no crea los objetivos que faltan."
+          "text": "Escribe las dos descripciones sin cambiar esos archivos C++. Localiza en codigo/lotes/CMakeLists.txt la biblioteca lotes, su directorio público y sus requisitos. La raíz debe incorporar esa carpeta y declarar consultar_lotes y verificar_lotes enlazados con lotes. Exige como mínimo las características de C++20 y desactiva extensiones en los tres objetivos, como en las prácticas anteriores. Antes de ejecutar, comprueba las rutas desde cada declaración. Configura, construye y comprueba ambos consumidores; atribuye los cuatro casos al comprobador y 1:2 al cliente. CMake por sí solo puede terminar de configurar una descripción sin objetivos; en la app aún faltaría encontrar y construir el objetivo solicitado."
         },
         {
           "type": "cpp_compiler",
@@ -668,7 +668,7 @@
         },
         {
           "type": "note",
-          "text": "Contrasta después de intentar la transferencia. Una descripción equivalente puede variar su orden donde no haya dependencias, pero debe alcanzar las mismas fuentes y conservar los requisitos de los tres objetivos."
+          "text": "Esta descripción incorpora el componente y conserva los requisitos de los tres objetivos. Puede variar el orden de instrucciones que no dependan unas de otras, siempre que se alcancen las mismas fuentes y se respete la organización solicitada."
         },
         {
           "type": "paragraph",
@@ -694,7 +694,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El comprobador conserva cuatro OK y Bateria: OK, con retorno cero. El cliente conserva 1:2. Guarda qué descripciones y objetivos produjeron esa evidencia. Cuando retomes un proyecto, verifica primero qué cambió: una descripción editada requiere volver a configurar; tras cambiar sólo un cuerpo C++ corresponde reconstruir el objetivo pertinente antes de atribuirle una nueva ejecución."
+          "text": "El comprobador conserva cuatro OK y Bateria: OK, con retorno cero. El cliente conserva 1:2. Relaciona cada resultado del editor con la descripción y el objetivo que lo produjeron. Cuando retomes un proyecto, verifica primero qué cambió: una descripción editada requiere volver a configurar; tras cambiar sólo un cuerpo C++ corresponde reconstruir el objetivo pertinente antes de atribuirle una nueva ejecución."
         },
         {
           "type": "multiple_choice",
@@ -723,7 +723,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El historial local del editor de código permite registrar deliberadamente una revisión de sus archivos, compararla con el borrador y recuperar después un archivo concreto. El borrador conserva lo que estás editando; una revisión registrada mantiene el punto que decidiste guardar. Editar después el borrador no actualiza automáticamente ese punto. La fuente destaca conservar cambios identificables y consultar diferencias para poder recuperar trabajo anterior (Thomas & Hunt, 2020, pp. 84–85). Aquí practicarás esas operaciones locales con el proyecto que ya comprendes.\n\nAl elegir una revisión, Archivos de la revisión muestra el estado de cada ruta respecto de ese punto. Al abrir una ruta puedes ver sus diferencias: − revisión registrada y + borrador actual. Recuperar este archivo afecta sólo a la ruta elegida; esa selección permite conservar una edición independiente de otro archivo."
+          "text": "Conservar revisiones identificables y comparar sus diferencias permite localizar cambios y recuperar estados anteriores del trabajo (Thomas & Hunt, 2020, pp. 84–85). Aquí lo practicarás con el historial local del editor de código de la app. Una revisión registrada guarda los archivos en el estado que elegiste; el borrador conserva lo que estás editando ahora. Editar el borrador no actualiza automáticamente la revisión guardada.\n\nAl elegir una revisión, «Archivos de la revisión» muestra el estado de cada ruta respecto de ese punto. Al abrir una ruta puedes ver sus diferencias: − revisión registrada y + borrador actual. «Recuperar este archivo» afecta sólo a la ruta elegida y permite conservar una edición independiente de otro archivo."
         },
         {
           "type": "paragraph",
@@ -779,7 +779,7 @@
                 "outputs": [
                   "piezas=0 esperado=0 obtenido=0 OK\npiezas=4 esperado=1 obtenido=1 OK\npiezas=8 esperado=2 obtenido=2 OK\npiezas=20 esperado=5 obtenido=5 OK\npiezas=1 esperado=1 obtenido=1 OK\npiezas=5 esperado=2 obtenido=2 OK\npiezas=17 esperado=5 obtenido=5 OK\nBateria: OK\n"
                 ],
-                "explanation": "Los siete casos conservados pasan con la fuente recuperada. Comprueba además en Historial que se recuperó sólo ese archivo y que el comentario independiente continúa en la raíz."
+                "explanation": "Las siete llamadas coinciden con sus esperados y la ejecución termina con cero. La recuperación selectiva solicitada requiere además que la fuente coincida con la revisión elegida en Historial y que el comentario continúe como diferencia independiente del borrador."
               }
             ]
           }
@@ -806,7 +806,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La recuperación selectiva devuelve la fuente elegida a la revisión base y conserva el comentario de la raíz. No equivale a recuperar todas las rutas ni a reescribir manualmente la fórmula. Elegir el archivo correcto es parte del objetivo que se comprobó en la actividad."
+          "text": "La recuperación selectiva devuelve la fuente elegida a la revisión base y conserva el comentario de la raíz. Recuperar todas las rutas también retiraría ese comentario; reescribir manualmente la fórmula cambiaría el borrador sin recuperar el archivo desde Historial. El objetivo incluye elegir la revisión y la ruta correctas y conservar la otra edición, además de volver a comprobar el programa resultante."
         },
         {
           "type": "paragraph",
@@ -839,7 +839,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después de intentar el recorrido, contrasta tu decisión. Antes de recuperar, componente/src/cajas.cpp y CMakeLists.txt de la raíz aparecen como Modificado en el borrador respecto de la base elegida. En la fuente, la revisión conserva (piezas + 3) / 4 y el borrador contiene piezas / 4. En la raíz, el comentario nuevo pertenece al borrador. Un ejemplo de comentario independiente es «# Nota independiente: conservar la separacion por componente.»; el tuyo puede ser distinto. Recuperar sólo componente/src/cajas.cpp devuelve esa fuente al punto elegido y deja intacto el comentario de la raíz."
+          "text": "Antes de recuperar, componente/src/cajas.cpp y CMakeLists.txt de la raíz aparecen como Modificado en el borrador respecto de la base elegida. En la fuente, la revisión conserva (piezas + 3) / 4 y el borrador contiene piezas / 4. En la raíz, el comentario nuevo pertenece al borrador.\n\nUn ejemplo de comentario independiente es «# Nota independiente: conservar la separacion por componente.»; el tuyo puede ser distinto. Recuperar sólo componente/src/cajas.cpp devuelve esa fuente al punto elegido y deja intacto el comentario de la raíz."
         },
         {
           "type": "paragraph",
@@ -869,5 +869,4607 @@
       ]
     }
   ],
-  "compilerPuzzlesRequired": true
+  "compilerPuzzlesRequired": true,
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "b32cd353ec67be63696d366b2fa894c2e7c5e019aed56b2cd0eb67f16e889303"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "41321b7cc5d42c14942ed927a0ba3e91b1246d24d94882fbb371cbe2f407b2bd"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0001_0006",
+            "sha256": "abbe3f1ddb6b019f962fe7216f997df9d37e3387f47352ce4b8ac367a8d1c4d3"
+          },
+          {
+            "id": "block_0001_0007",
+            "sha256": "d15ba5e5838a7fa9dbd3e8ef683c47702a134a692e00cb0b7ce197b9afe3ae76"
+          },
+          {
+            "id": "block_0001_0008",
+            "sha256": "66f03ec969ffd9bda3fc1b30524fad9ea6bad734700cfc5ba33df85fb0a3fd81"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "5c863609b66cc497a6b3773bd662a1df4e0090959997db18177d4c99ea8f7dbe"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "7cc13bf7d43733f11059615dfec7ddca54e26ecd0c1a035695fd19bc2d5d30ee"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "e98b5bdb9bf722ea0f22b55411bb7eb0d60894f967715190a28db283efb62393"
+          },
+          {
+            "id": "block_0002_0006",
+            "sha256": "32fd40b9858c2207401e5dbf1265a2042e5a25b21376b3d91f2195a701e1bdcd"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "33465ad000ba88715b2e135dfd8a0281dc5331f421f0dae7f6f99429abf2d4fc"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "da370135f22f3989d23223c05974e3f3c8859977231357e6deb6095768828145"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "c447f444466c833c1dfd3240a2b442806ac1002b6a92626d69abb679d004e84f"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0004_0006",
+            "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+          },
+          {
+            "id": "block_0004_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0008",
+            "sha256": "154616abf7da27425178e5416718fbbc2679485addef02ef733d00e456c67fbc"
+          },
+          {
+            "id": "block_0004_0009",
+            "sha256": "ac20b2adaaaa938c6b30f69f556dadbb8fa85e56122a034fd69383940e74a283"
+          },
+          {
+            "id": "block_0004_0010",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0011",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0012",
+            "sha256": "19933a7d005cca0c35f41d3089ff648eeb6ee19a3eaea58a1f3fe1fc5193089a"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "3836a9520a530c747ce201d62094adec02d24a6e7f8b2d77c0465524c978d126"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "28363faeacff6de4e031f6a3f9ead587906e965cc440821644ce9dc5b344a8ed"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "37641aebc9f6b9796704347c2c379c300d4cbba15323f4f412762bbe6daedd3b"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "b52b6ad93f07d5aa48576fb070d746a55015f6ec9d7f267a4c45acebf7072ebb"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "fc3eb21a66b0619b1bb290c15b517dfb1fbc6b8a35ad0ebd726c4ce4890dcbb3"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0005",
+            "sha256": "04b6fcccd7a1763bbe19db0f84a916853bff366ec83471ef8214dbe94bfc3728"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "9ec356e43eb5803552932af5cdce8ecc2e7742a08688ebdda1fb554f68c8617d"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "b08fa7927f383cfca98784a7c56defac8f1fad86f068f57541c4a34f9c0abd42"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "09c59a7d517ac92cce79c907fccfdfb987f71b7bdef5b85607d50f8798f02ab2"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "8e183b02034a676292104522b3316ad12731766d1c37a6f01bdfb09c0311bbbb"
+          },
+          {
+            "id": "block_0009_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0008",
+            "sha256": "d74dfb085d05ea8faf5bb7a7717127eb787ae32dd380de0161f38397b717b40e"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "a59912cbdf1656ace0a6573221ee290688279d7cdade580738b269abc37e533f"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "cb1d7f5eaa790d9155e180e2aeb51dd51c317e177df49688b3608a9d309ec178"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "71795d5d833859f5436b4325cb2e468b1b6c490161a9dc38cc946d966ab8e4fb"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005",
+          "block_0001_0006",
+          "block_0001_0007",
+          "block_0001_0008"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005",
+          "block_0002_0006"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005",
+          "block_0004_0006",
+          "block_0004_0007",
+          "block_0004_0008",
+          "block_0004_0009",
+          "block_0004_0010",
+          "block_0004_0011",
+          "block_0004_0012"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004",
+          "block_0007_0005"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006",
+          "block_0009_0007",
+          "block_0009_0008"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004"
+        ]
+      }
+    ],
+    "family": {
+      "en": {
+        "sha256": "745b0576f18d77a32d600f35e7a8b46c017f9112573451052c8302767af85eae",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "46105898b921828c01b6dd6c2b3d1442f86792430444a71723bf548e475a07f2"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "41321b7cc5d42c14942ed927a0ba3e91b1246d24d94882fbb371cbe2f407b2bd"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "abbe3f1ddb6b019f962fe7216f997df9d37e3387f47352ce4b8ac367a8d1c4d3"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "d15ba5e5838a7fa9dbd3e8ef683c47702a134a692e00cb0b7ce197b9afe3ae76"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "f54659fcc926df72593ced419114cc6184b97db6be7b437ceb186baf09664001"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "8cc29793939bff16aeeb2416931c05e0b3a8daf2423a03aaeaf2974ff7989492"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "e633db137a872aad5223b1332d428623848774c84bbe8ddd40f5dd52caa50c89"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "2c694961d64e89c5a6f037e4594554d2176c7355eb456c42b582581041567400"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "661f88132e6a1507dedb4a3cdb58c0023cd27c261eb84be93c53c71f9ca9cbf3"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "0b7e2381d4cd2a7f556458ee1c453d36d19f7cd5b643a53da7448e786277fb1c"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "1e75c9dc9fa0bdd7c3ddfb3299ffe5f84d5a471ac795d9712adf224a8bbea313"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "c447f444466c833c1dfd3240a2b442806ac1002b6a92626d69abb679d004e84f"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "7c435c89aac6d0c7384dad1777e7d7a9876329105d65b5a897dc285704dc9bc0"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "ac20b2adaaaa938c6b30f69f556dadbb8fa85e56122a034fd69383940e74a283"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "3836a9520a530c747ce201d62094adec02d24a6e7f8b2d77c0465524c978d126"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "fc7d9db5cc9b8f7a330de258e35a6ab82a5101b541e0ac611dfbf653b08f6a13"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "baf8d2f6c0143bd8bb480ac93d5c6aa28896fe4aaa0c1afab0bbe217006ccc46"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "996f0fb8aa0d637b06d93e3ddf2cdbd78507fb74d96b125cfd6362593d0f2939"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "dcb3cacac5b102daafb54e6b4928b1b3eba8cc8cc735e4caa30579e24adf4fa5"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "8f915dfa8d45741cbf3d97e3751ee1cb10b70bbe8e3c19f9b775559abc78748d"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "7357278056df7db98d7bec56d2ee67d63549aee5e539d5e7fa1f8eb22e29a342"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "802ec63736ae4839d3f998adf40e8df46d59e62b88f617f32bef00b1cb2248c1"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "09c59a7d517ac92cce79c907fccfdfb987f71b7bdef5b85607d50f8798f02ab2"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "8e183b02034a676292104522b3316ad12731766d1c37a6f01bdfb09c0311bbbb"
+              },
+              {
+                "id": "block_0009_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0008",
+                "sha256": "07fb9976db3074bf1217dfa15c9e3d22be6f9e180f57235c4cd68b3436d0ef6a"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "8bb418effa38828bf2bf1a5c075b593b0309d09e992b79c54c96cf0b62225ec1"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "f9041bca555e1e146fbd43d14da0c813f48ac7c814cfff9bb7e0e2ebec217923"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1ef3e8986581b0bad88de6352408273d35fca59a6bad5ec95d1f1b0e3bed8eab"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "es": {
+        "sha256": "9da3211f56feb33457e47b86b59213da846fff8e4381fccbd086044325c50a01",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "b32cd353ec67be63696d366b2fa894c2e7c5e019aed56b2cd0eb67f16e889303"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "41321b7cc5d42c14942ed927a0ba3e91b1246d24d94882fbb371cbe2f407b2bd"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "abbe3f1ddb6b019f962fe7216f997df9d37e3387f47352ce4b8ac367a8d1c4d3"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "d15ba5e5838a7fa9dbd3e8ef683c47702a134a692e00cb0b7ce197b9afe3ae76"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "66f03ec969ffd9bda3fc1b30524fad9ea6bad734700cfc5ba33df85fb0a3fd81"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "5c863609b66cc497a6b3773bd662a1df4e0090959997db18177d4c99ea8f7dbe"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "7cc13bf7d43733f11059615dfec7ddca54e26ecd0c1a035695fd19bc2d5d30ee"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "e98b5bdb9bf722ea0f22b55411bb7eb0d60894f967715190a28db283efb62393"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "32fd40b9858c2207401e5dbf1265a2042e5a25b21376b3d91f2195a701e1bdcd"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "33465ad000ba88715b2e135dfd8a0281dc5331f421f0dae7f6f99429abf2d4fc"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "da370135f22f3989d23223c05974e3f3c8859977231357e6deb6095768828145"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "c447f444466c833c1dfd3240a2b442806ac1002b6a92626d69abb679d004e84f"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "154616abf7da27425178e5416718fbbc2679485addef02ef733d00e456c67fbc"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "ac20b2adaaaa938c6b30f69f556dadbb8fa85e56122a034fd69383940e74a283"
+              },
+              {
+                "id": "block_0004_0010",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0011",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0012",
+                "sha256": "19933a7d005cca0c35f41d3089ff648eeb6ee19a3eaea58a1f3fe1fc5193089a"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "3836a9520a530c747ce201d62094adec02d24a6e7f8b2d77c0465524c978d126"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "28363faeacff6de4e031f6a3f9ead587906e965cc440821644ce9dc5b344a8ed"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "37641aebc9f6b9796704347c2c379c300d4cbba15323f4f412762bbe6daedd3b"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "b52b6ad93f07d5aa48576fb070d746a55015f6ec9d7f267a4c45acebf7072ebb"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "fc3eb21a66b0619b1bb290c15b517dfb1fbc6b8a35ad0ebd726c4ce4890dcbb3"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "04b6fcccd7a1763bbe19db0f84a916853bff366ec83471ef8214dbe94bfc3728"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "9ec356e43eb5803552932af5cdce8ecc2e7742a08688ebdda1fb554f68c8617d"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "b08fa7927f383cfca98784a7c56defac8f1fad86f068f57541c4a34f9c0abd42"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "09c59a7d517ac92cce79c907fccfdfb987f71b7bdef5b85607d50f8798f02ab2"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "8e183b02034a676292104522b3316ad12731766d1c37a6f01bdfb09c0311bbbb"
+              },
+              {
+                "id": "block_0009_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0008",
+                "sha256": "d74dfb085d05ea8faf5bb7a7717127eb787ae32dd380de0161f38397b717b40e"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "a59912cbdf1656ace0a6573221ee290688279d7cdade580738b269abc37e533f"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "cb1d7f5eaa790d9155e180e2aeb51dd51c317e177df49688b3608a9d309ec178"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "71795d5d833859f5436b4325cb2e468b1b6c490161a9dc38cc946d966ab8e4fb"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      },
+      "fr": {
+        "sha256": "6467bd29705d0926f9f4f4fb6253fc9524b9ee1bbfd5f6df25e71d1e8c9bcc80",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "42693f1a05994cca9301400bdfab3e94cba39da77ff5f4ebd97ad9fb63e03fd7"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "41321b7cc5d42c14942ed927a0ba3e91b1246d24d94882fbb371cbe2f407b2bd"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0001_0006",
+                "sha256": "abbe3f1ddb6b019f962fe7216f997df9d37e3387f47352ce4b8ac367a8d1c4d3"
+              },
+              {
+                "id": "block_0001_0007",
+                "sha256": "d15ba5e5838a7fa9dbd3e8ef683c47702a134a692e00cb0b7ce197b9afe3ae76"
+              },
+              {
+                "id": "block_0001_0008",
+                "sha256": "9fbfa31203272017c5543a7c7f255f541116cf0e70338303cc40c46ef27d1b3b"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "b1b57ffaa7a856a47fe50bd5d560860d2ba251d685af7259f4066e27dc90177e"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "fded0bfaff7d347da6326e5e690ba8ff73432fd498706bc95eec4af5b6a233fe"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "a714ae0745c83e54cdc83158c3f33fc8395c2bc0a015c042630f1aa93cbf5fc4"
+              },
+              {
+                "id": "block_0002_0006",
+                "sha256": "bb42e02d3def1648788e0c4d7d396af7d2abfd959a40b728fb9fc82082354b4f"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "4bf1a98671fc42133f863f8130ac85e9567be7e6f6677d75035d299fe65ed5fa"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "e8b7b71382e4a88a2078386914d74cb73ec03aacb4d5521aa8665c4e23582304"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "c447f444466c833c1dfd3240a2b442806ac1002b6a92626d69abb679d004e84f"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0004_0006",
+                "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+              },
+              {
+                "id": "block_0004_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0008",
+                "sha256": "268aaba53cead9b9586235c25b443b41fe8f966037e6de8f068fbc9b7138ecb7"
+              },
+              {
+                "id": "block_0004_0009",
+                "sha256": "ac20b2adaaaa938c6b30f69f556dadbb8fa85e56122a034fd69383940e74a283"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "3836a9520a530c747ce201d62094adec02d24a6e7f8b2d77c0465524c978d126"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "d3daa607afde08819aed3ccb110b122e86c9c827dec2846de4f4baa0b9c75806"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "c9e4c4b5fb2f729a3d26468f2ed97c0781a244979ccc0cf9532683ff84f41f39"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1bcd7fbded5db803a9aea58496b4cad8bc7cf9788ddf3b9c2969ac5a595288aa"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "df5f020ce000ac5750b3026b2014492671a1e84b1c1933864617a8b90f6a3b0a"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "2bb9e93dc4b55384871997c2778d2bcdfe40bd8b7c88494cbd251c75beca9bf1"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0005",
+                "sha256": "69f08d50b718ad5d2ea45b094de2a9ae7aab2d3187f1659b99263d26e2463826"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "ea92fcb20630c4dfbedc6b3f54ee8f24d74c5f1e694dc35c7d9c7c528ab97b8e"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "8647ad0011b71eb26dd643f5bc0b360db93e6f6d7f4d0e4688cbf360173885f5"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "09c59a7d517ac92cce79c907fccfdfb987f71b7bdef5b85607d50f8798f02ab2"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "8e183b02034a676292104522b3316ad12731766d1c37a6f01bdfb09c0311bbbb"
+              },
+              {
+                "id": "block_0009_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0008",
+                "sha256": "c2ee6d45ecc21eb9153741fed559d3c12acc45d1a2a5a8fc353bb5b0adb2600c"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "a8918c90a50d630bf6bf2603b4e541e19a94cfdb7bfa1109a5a9b41823c556a8"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "b49db8ff7eee80f563e16e456b617ced885a3afef19a8e2bb87e7efbdbc2fa99"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "09f256d18c27d2e8f48cc1899f2a07529909b64a3d966b49368ad0555daa513c"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "8576c96347d3b695b0aaf3fa1c06dbd92910ad61287b48280f44227b304d0e1d",
+        "afterSha256": "f9023e8f7c68adba1cb8314961e3acae70771d525a7cd16e8e085babb96a520f"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "f942dbeb3c925389d22386c364c96c451fc6ae06dbb3354b6dfbc8fab9ef3661",
+        "afterSha256": "ffe6b36b559f59a6cb34b4ff19699f89b31f1357af84d70198218d51e5892182"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "efc8c3d6e850210a848174c394131941fba45c825c3c631c0316c80f31467c1c",
+        "afterSha256": "24b300aaf0ed8cb53a8f4e54039b73328f14486bf63cf6a4598c946af18b996b"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ac811f52f65161f372021010a6ef41453976880603de4da0eb68f062e3f08205",
+        "afterSha256": "de46b372e9a841b0dae6940c0453c2da362c932e404e0685687eb07152ba30f6"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "03db3243f97d65e39a13dbe9ccd6bf37a4cc3baff03d2410bf837b9d9053d0a9",
+        "afterSha256": "1d33c7d86afcafe03cbc1962bba96e3600067735bac5baaa73336177443997df"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "b1afc59f2dbd7b2d7762a40ee2b5cc7b57d4b21e7134b1161af749011afe604c",
+        "afterSha256": "9aeda2a3569a494b9ab14678b5efc94ecdb5297f4391ba2a4c7ee2a238cd0358"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "69585c320a18dae67ef5921961f0083495b890e425a629ac1e154f16064439f6",
+        "afterSha256": "e914d3569c04622c5fd5183a0b22173ffccb5cd63e1d526cb19790aa57617494"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "56d60dac78734d1893d8ba4767d4abd030a89bbcfb5637eaa380d2de28a7706c",
+        "afterSha256": "4bcfc82d82133e1cd8db3570da86797123ac3e1ba646f339358b3699b8a69bc2"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "0747b8343235f419e8cc729237181af30f117633cbe1af63d54665fb2ca27f7f",
+        "afterSha256": "6b08001e4e056d52730cfe48fbf77bda47006785fab9b64e7d124a205f87cc78"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "5894c598fd91c233e7f0791b6210cfa341b327758856333ffc646836f4a1dcf4",
+        "afterSha256": "c7938f0af9ac20f2f39f1b6c5616575d63c259b6586ba88c652b53aaac0c7e19"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "618f520119885a8c31fee694dbb9730a08c195e5387f481b6ff44cde7ebca586",
+        "afterSha256": "fcb0d36bf0237198dd11526136d60b049a4cd33005d474f10fae58856ae888c7"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "0ac0cc8286b4d821c3765334906020c88e6ef87bf79aa5a3988b4feacbbec368",
+        "afterSha256": "447336ed3a6e838f25f9f47d49eb1a6b6a62b8ccee481a1ae473afc7d726a749"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "01c6c10e31d58a2f5ac0c6d9900c3c96aa6b0ecacfd72040f30b363e5afc62e8",
+        "afterSha256": "00734a4321ba1ef17b1587f959e7c6ea3bdcb854e2639b04271594f49cdcea90"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "c3666fe1383b2e9ad16aac853fa62f562a5cb6183cbf0deb59d737b0bfda637c",
+        "afterSha256": "42fd9af8e954c2ecca35f14de3996058e72eb7d32007b9572a1f3252bce5064d"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "7e6ed0b16c3853b79a1aba70c7fe906249128ad778a74bae7e918231406a902f",
+        "afterSha256": "0b0e2ee1d7f9a94a7a6e427f8690dad9405bfd6be44c4c5a5aabe6c4e19d8c10"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "64425ec775dbfe010c615f33be46db80690de3dbcc73dd3407ed403dd169e2ca",
+        "afterSha256": "09b981bb309c4e35549089c6d96f900ae7b70e1005708c9d13e04af69f43fcce"
+      },
+      {
+        "id": "block_0009_0007",
+        "beforeSha256": "fe0305383a549889c4a7d1a3d48c944ba585e44821a8d846fcd53f526823001a",
+        "afterSha256": "daf96549a1c291481c8c071c4e159059db256b4ee5cf976ad7cd3eb3b3e1e68f"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "ec76fb26b0cf47f6056550230404feeec973a9a31397acfe556f0ae0a9682046",
+        "afterSha256": "fd6fe2c22cb3f9ab0fb8d867ab29e710c11ac0e5fc344a107473e79696d47e34"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "4fa9e1c3974307819aeddd8fa565c260ccdcc360b2a9fd4f1a0203184f6f630d",
+        "afterSha256": "ad98d847bea2a86c3daf60acf78841dcec889c0581dad200a3c374b837a34b82"
+      },
+      {
+        "id": "block_0011_0003",
+        "beforeSha256": "ef7885821b27d71aca7cbe237d059a1b5fa9db8d108320a3cde74f8c4b826f11",
+        "afterSha256": "3e3020004b3a359beee76bd443bd65f00ab86c1cc024413f4426f55e4ab1b545"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "98b49e4100fb1eea41c79b371a9729587440c7c6a27b2a196190125b6adeb79d",
+        "afterSha256": "cf493e69d22b485f5f3918102ba3a649cd69a39bdf53c8e4cb4a2d5986438759"
+      }
+    ]
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "bf995c721b2343379ddb9e2f1f37de65a0a68859309afbc211ad3e189055cf22",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "042c8e708cf0ba6c13326f9579ace6ceb2b069ef365ea4ecdc4aafd3091b6c9d",
+        "spans": [
+          {
+            "start": 25,
+            "end": 31,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 193,
+            "end": 204,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 219,
+            "text": "app/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 230,
+            "text": "pruebas/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 325,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "58f7467a863767b30a9776e5e9fd2f677d45a798339e958046a4486fdee3f0f2",
+        "spans": [
+          {
+            "start": 94,
+            "end": 105,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 137,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 364,
+            "end": 370,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 499,
+            "end": 527,
+            "text": "(Scott, 2025, pp. 68–69, 79)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "1de5b75c162ad9a1e67db0ae54fad8e4b9cc38f550a0fd0343ac665b2da66e02",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "8839597661f1c31c2c742637db2f6615ce77832c7ad46bee4f42c6176ab31695",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/0",
+        "sourceSha256": "fd133fa72c802b363d41a342bc07e81027946fe5f7c12251c95621e5ee5c1cb7",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/1",
+        "sourceSha256": "1ae247a690ec54153b888f9cbc524bf804c9cf0a2f77dba35acfcf865ee5959c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/options/2",
+        "sourceSha256": "197f34a7c51027b778a542db97c857ba52ffb13862f0535e819917b00da383cf",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "99a4ac02d88a90cfa7c03efb1b17e4c008a74bc3e9c62e40517bf54888cdf5d8",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "6c9cc4db92dd6136e7fe0f5b1d63a8d883b61a956d6b1890023940ed13042ab7",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "c2bc11234a4d5bd56df28dc3f8d34613f535cfa28cefd6e0646cae53d0840139",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "bcc01852baaae1c58755bf3f42002de1090426add4c5f4a9ace10f1f491bf331",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "008115783f379c78da1194c8cac6e49a0927a874bba9209f94dcccfa60c66370",
+        "spans": [
+          {
+            "start": 9,
+            "end": 37,
+            "text": "add_subdirectory(componente)",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 107,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 312,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 387,
+            "end": 397,
+            "text": "componente",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 454,
+            "end": 474,
+            "text": "(Scott, 2025, p. 68)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "8422335221a74c86f45680bd4392dde4a780faa4ad7780253f5ba232c5c70fb8",
+        "spans": [
+          {
+            "start": 37,
+            "end": 60,
+            "text": "message(STATUS \"texto\")",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 150,
+            "text": "STATUS",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 402,
+            "end": 428,
+            "text": "(Scott, 2025, pp. 151–152)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "651b93beac88c2e0f823a466cf778ce87f2116b585c6c6660c3059f2534dd84f",
+        "spans": [
+          {
+            "start": 20,
+            "end": 34,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/text",
+        "sourceSha256": "b646232f07fb36024dae266fe97ce83c2c4a4cbffae3f0f344150d4c743a5833",
+        "spans": [
+          {
+            "start": 24,
+            "end": 49,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/question",
+        "sourceSha256": "e80b37a5f349730ff1219ea3224650a734a5f5825b24b7408bc721627254009a",
+        "spans": [
+          {
+            "start": 47,
+            "end": 54,
+            "text": "message",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/explanation",
+        "sourceSha256": "ff02b474be7290be6957ba117b584c75e3f58028932f0a0c7cf9fca01776c470",
+        "spans": [
+          {
+            "start": 39,
+            "end": 55,
+            "text": "add_subdirectory",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 151,
+            "end": 177,
+            "text": "inicio, interior y regreso",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/0",
+        "sourceSha256": "698034b627f40a51d62f8bb368a87ded4c2a3a961d1c51d85cda35a7ea842335",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "inicio, interior, regreso",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/1",
+        "sourceSha256": "f6b4f0528f12b4367969267385b351f02bc86f2f55c5d75ff455458a0ac30624",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "inicio, regreso, interior",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/options/2",
+        "sourceSha256": "fa014e99bf128cfbef914fdf6e5f87ac353755ba5f35027680c0ac05a6d7f17a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "interior, inicio, regreso",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "f616fab41001d298e9a5f78acb9483c56ef2d6a1b6b60b7f4fc39581aeb85652",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "e1699adda422cbe0092e343a06fe80562202933f048320a564d2aa31cd9a27f0",
+        "spans": [
+          {
+            "start": 57,
+            "end": 73,
+            "text": "add_subdirectory",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0007",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "1e865e7fbe123b7b5fc42e0e63cc2cb090ce8cea2269c9cd56bf4e4484138a84",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/question",
+        "sourceSha256": "0a948c97a1e100c4ad7714284f916c76c7862c953ecf06410a3241aa88889e99",
+        "spans": [
+          {
+            "start": 103,
+            "end": 113,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/explanation",
+        "sourceSha256": "eaaa9cb6e4dd0e335841c981a7f7ecb9498954196f9ad19a89e0542230e8fc93",
+        "spans": [
+          {
+            "start": 125,
+            "end": 140,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/options/0",
+        "sourceSha256": "4f03472afeea1367e064dc8909f1245c94dd3b0d25fa938830532a02956e9fba",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/options/1",
+        "sourceSha256": "e393b9f0d7d092ae2454b9090d89e624cfb75d8a88708dca424ea54c5d95f724",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/options/2",
+        "sourceSha256": "9212f176656292f6363fa62bf21790581832db54315f54ece757fe993a61ecb8",
+        "spans": [
+          {
+            "start": 40,
+            "end": 46,
+            "text": "STATUS",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "80fc90400cf6ef26548cb0b0c95e02b61ea94e42673c5e85ea7fb6d9340fea26",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "8c0a77ee124c22d3c72027fd1f79353d4bb2fcea39d89ccc15f158f146ec94f8",
+        "spans": [
+          {
+            "start": 65,
+            "end": 69,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0008",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "b20f4707a6fc291c1de79020ff096836ab65757575e4c884dce7a31fcc0c46e1",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "b47d88992a35b58f026d11d486e9d5bc3fbb23b258dbf20fcf8278fd1219c343",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "2bcfa624ed035e05c6d2bfe93ae703b2a4d506290a04052c9312839274e7e9de",
+        "spans": [
+          {
+            "start": 124,
+            "end": 138,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 168,
+            "end": 192,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 251,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 266,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 302,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 384,
+            "end": 419,
+            "text": "componente/componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 600,
+            "end": 629,
+            "text": "(Scott, 2025, pp. 68–69, 183)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "e343676f1602060169d77795d3d0c7c32698f1e806e31941934611c39a16dc4e",
+        "spans": [
+          {
+            "start": 122,
+            "end": 136,
+            "text": "PUBLIC publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 251,
+            "end": 257,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 295,
+            "text": "app/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 306,
+            "text": "pruebas/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 338,
+            "text": "\"envio/cajas.h\"",
+            "role": "cpp"
+          },
+          {
+            "start": 397,
+            "end": 423,
+            "text": "(Scott, 2025, pp. 69, 183)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/question",
+        "sourceSha256": "8473dbf2f6995707a3daed74285f273f4c1f29dc0b77a3e93d39bf1ff51fc60b",
+        "spans": [
+          {
+            "start": 21,
+            "end": 45,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 82,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 142,
+            "text": "add_library(envios STATIC componente/src/cajas.cpp)",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/explanation",
+        "sourceSha256": "aba5cf00ae20efe3a803190387f64433aceda8cf8efa5a510b129d6774763a57",
+        "spans": [
+          {
+            "start": 17,
+            "end": 28,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 159,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/0",
+        "sourceSha256": "ac02be9c132f6123202123a320844f548c88344ea92864cf584c13e974026c81",
+        "spans": [
+          {
+            "start": 18,
+            "end": 35,
+            "text": "componente/envios",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/1",
+        "sourceSha256": "35ace5cfccd5899889db37a334e85074bd2e8372b2ef5f04937a8147f407fab6",
+        "spans": [
+          {
+            "start": 6,
+            "end": 41,
+            "text": "componente/componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/options/2",
+        "sourceSha256": "1fdda74c5d93fcc2c551f68dadcac34e4e275e4b5542567529ce117a01a1f6a7",
+        "spans": [
+          {
+            "start": 6,
+            "end": 34,
+            "text": "app/componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "219f2283d2df0ea193bca4b42e4d17360272358db412a56e56a5db0104c1581d",
+        "spans": [
+          {
+            "start": 109,
+            "end": 120,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9282e1c9e4150a8043f6547c5183a7c36796c727753ddf367d4854f17c7d9854",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "1778b976c31c13f5c97b947ca819afe159785da423beb275de5dbf08705385d4",
+        "spans": [
+          {
+            "start": 58,
+            "end": 72,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/question",
+        "sourceSha256": "abfc779f8a3dcb7acf03fff8680cd7266f3e5097305ec371a2a2ad2cb30aceda",
+        "spans": [
+          {
+            "start": 22,
+            "end": 36,
+            "text": "PUBLIC publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/explanation",
+        "sourceSha256": "8de3cd9bc6b021c2be6c74abd3f23f1bbcecd98000c54075890b6ba86071ea95",
+        "spans": [
+          {
+            "start": 111,
+            "end": 117,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/0",
+        "sourceSha256": "0d287aee9d09518ffbf9c9ab2e67daeb2d6107514b5a9add76bde3af3de16210",
+        "spans": [
+          {
+            "start": 5,
+            "end": 16,
+            "text": "app/publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 19,
+            "end": 34,
+            "text": "pruebas/publico",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/1",
+        "sourceSha256": "3d46fcfbf92ac5e64fb13e9153d6acd3222bf81371655c1108b9d609890efc5a",
+        "spans": [
+          {
+            "start": 24,
+            "end": 31,
+            "text": "publico",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/options/2",
+        "sourceSha256": "ce2af577d4790490cba2d3eb25b9550794994c2acee8935cffbf6a4e2d093d5b",
+        "spans": [
+          {
+            "start": 5,
+            "end": 23,
+            "text": "componente/publico",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "8d76ece911903ac54b225231568d0c199fed21121b8d862413313a954e9deb93",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "1e817748cd52dd1b244d02bed5699633b9dd64e23d4a9fd8a629f9404167adbf",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d2e6636fac849055cdd86d521011bdd9b3db312e4ccd08e65724626cb8a50a48",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "ae03d205afc3aa26cc4910d59bf1b875b2e4cc6617a74e0752867402fc53b5df",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "bfe0950c5f899e184aaaa828e96c6a1709e800cb7d17acd7155e5d5c8b8d896b",
+        "spans": [
+          {
+            "start": 57,
+            "end": 82,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 142,
+            "end": 156,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 188,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 304,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 339,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 375,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "787f833a3915418ad64d2e3084db40d4f15fcf4996408b8417d5d490c3d02409",
+        "spans": [
+          {
+            "start": 19,
+            "end": 33,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 139,
+            "text": "C++20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 201,
+            "text": "project",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 295,
+            "text": "add_subdirectory",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 310,
+            "end": 316,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 443,
+            "end": 453,
+            "text": "raiz_antes",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 468,
+            "text": "raiz_despues",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 482,
+            "end": 498,
+            "text": "add_subdirectory",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 501,
+            "end": 511,
+            "text": "componente",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "6ea16af1b2ddae5c3d13279f900aaf67739541510c6b0b6837c70f1e1d676801",
+        "spans": [
+          {
+            "start": 430,
+            "end": 467,
+            "text": "(Kernighan & Pike, 1999, pp. 149–150)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "c50516c519532b50e262c9e60da1ff2ff38f82b581b9cc0eeb51efa4ed4dcd41",
+        "spans": [
+          {
+            "start": 30,
+            "end": 45,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "2fc0a95e5276874b626e574fdb20e27a80a048d072e17b75d32f9d41b2209626",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "7a7b928f4849ed7e96ba1e3efb120dc8ebddf2afb79c47354ff9bbcedc28d563",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "bfc8fae8de5cd874ee9960f15c4ab8083f917ee8ce8d1661fa3c5e0cc4ec16b2",
+        "spans": [
+          {
+            "start": 10,
+            "end": 25,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "8026d908407ebc1da6daec33da671159bc17e9749791066620f5f1cc476ca611",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "313cdfbc7b5b17e974c1d2c93927952b61a1bff736f2307c31b76fd4d0af1948",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "907b81a58317e8d1a4c438cf06bd2e8afb5267b75086d41d6ade6bde17a5e3dd",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "0a2597e3b0f1cf3f751772de8387d0a6e25db32a51f1f2b4e43bb5c5eee9100a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "14b1fe1bb9901975f65a3cfe28496b4adcccfce76d67386b6944ef0f877f22ed",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "d3b93ec81978807a38d0f5f0172f83841ff717347ebf1875f79d603463b7348e",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "15520cda93daeb8981643710fa7b61961b216e692b7e2c5f64a990e191a103fc",
+        "spans": [
+          {
+            "start": 12,
+            "end": 19,
+            "text": "project",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 71,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 97,
+            "end": 104,
+            "text": "project",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 129,
+            "text": "add_subdirectory",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 306,
+            "end": 321,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 360,
+            "text": "pruebas/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 397,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 427,
+            "end": 459,
+            "text": "(Scott, 2025, pp. 68, 72, 79–80)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "f402609a9fb3ece709815bf51bf85bf26e08f19bec303e95540499335d47f0fa",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "695f19f6cfba481e88b19b51e01db3c0129a44180f64e157fc57d789b6694cc2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0007",
+        "path": "/text",
+        "sourceSha256": "be3bb748aed694598624dd49313143ed3f124d6bc4b463f69c5a0c9399d96ff3",
+        "spans": [
+          {
+            "start": 58,
+            "end": 64,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 269,
+            "text": "raiz_antes, componente, raiz_despues",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 297,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 349,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 363,
+            "text": "Bateria: OK",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/question",
+        "sourceSha256": "b0a6a26bba43637a017f474a289f154807eb4e081cab93b9b23d1e242915c07d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/explanation",
+        "sourceSha256": "f0e27783432b3350a2abf393c0afa0712289ce9c5fd0797cc763c559953ddfc9",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0008",
+        "path": "/reviewFeedback",
+        "sourceSha256": "8b90c7c2f16e3a9080e6566afc195fdc9a8df33675d813187f7503f15dde5f58",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/question",
+        "sourceSha256": "d25468a251e9d4adeb983c59792d9a671a8e29f70b2da611f50be11bae27fd61",
+        "spans": [
+          {
+            "start": 63,
+            "end": 74,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/explanation",
+        "sourceSha256": "fdf9ce173402d0ac43b11ecb85525a99580f486c27a3410b684fbf4a5fa2f47b",
+        "spans": [
+          {
+            "start": 21,
+            "end": 36,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 77,
+            "text": "add_executable",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/options/0",
+        "sourceSha256": "dfa2f7691c2d0eedd66f704f193fbe0d8104df727ac249565a135ec57e0a554a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/options/1",
+        "sourceSha256": "da7b30781d8dd72bff8337d3f67ba486e9242239caec6580ab18d04b9f563c79",
+        "spans": [
+          {
+            "start": 0,
+            "end": 23,
+            "text": "pruebas/comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/options/2",
+        "sourceSha256": "82bd0c7ceaa307730a7dc969ba2b1b084803cf7305b5339064fd15cc7de46583",
+        "spans": [
+          {
+            "start": 0,
+            "end": 26,
+            "text": "componente/comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "4dbf9346d8c05232975da9d18dc14b32938329cbcff82966b51471ddf8fe2a3c",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "f3bb8d860b91b82e57e47692fb7e719ee9915fa2ce7ff48dd62c6c4cc3e7cb2f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0009",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "80c366b84d8cc49d87bedc2051bf670e53ccd4b42603c1113157e3bfd19f6a70",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0010",
+        "path": "/text",
+        "sourceSha256": "0bd23272249443774e9759883ef81ed58ccc373f2929b2d00d917bb1e133db4a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0011",
+        "path": "/text",
+        "sourceSha256": "1568032e8b097016d209dcab2dcc173fb186f22f2974a9cc6e12cafc47270240",
+        "spans": [
+          {
+            "start": 120,
+            "end": 128,
+            "text": "piezas/4",
+            "role": "cpp"
+          },
+          {
+            "start": 140,
+            "end": 155,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 230,
+            "text": "cajas_para",
+            "role": "cpp"
+          },
+          {
+            "start": 283,
+            "end": 297,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0012",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1fecb00466312a6c41d3bbad286be02ae50706d438f98089175d59cd886002c0",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "70084e3adc1c11d4b4b9fd5564ec0d0c6b4e00032aee331ac13d4293d451789a",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "6df8208ce78c25759e058761d8398944ce375084065f1c5fcb9f0adb38370a86",
+        "spans": [
+          {
+            "start": 68,
+            "end": 79,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 87,
+            "end": 111,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 146,
+            "end": 181,
+            "text": "componente/componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 434,
+            "end": 447,
+            "text": "envio/cajas.h",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 463,
+            "end": 471,
+            "text": "#include",
+            "role": "cpp"
+          },
+          {
+            "start": 575,
+            "end": 585,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "4a3d1a7add4f955f35ddf555689687823bd4eabf51640f9652ad5a12eddf92c6",
+        "spans": [
+          {
+            "start": 290,
+            "end": 298,
+            "text": "#include",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/question",
+        "sourceSha256": "0533273728604343c05028734e76a494601249ec3af9995d07c6d2973c3f06a3",
+        "spans": [
+          {
+            "start": 96,
+            "end": 107,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/explanation",
+        "sourceSha256": "2b06cdac517eaf9e02b3ddd3f604ed8ec38f62a0312aedd49c51eb4fb1909aad",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/0",
+        "sourceSha256": "c9973bbb0aff11d2f3e69ddf8491494667fa057be371c71024708b4b4a2402ee",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/1",
+        "sourceSha256": "77f2ce1fc878e335a64e94012622033bf551e6afae32311e13e2430c073c1560",
+        "spans": [
+          {
+            "start": 25,
+            "end": 35,
+            "text": "cajas_para",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/options/2",
+        "sourceSha256": "a07e5fa5970b3fcc81440dbde6e2f879d124838f73acc2b23ceca87fceeb875b",
+        "spans": [
+          {
+            "start": 54,
+            "end": 68,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "66186fe9c7f5bc974ec0cf1707333de9957861043b492f33e9eaab2acdcda7ac",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "6ba12a36257e03c08b291443870b6dbefcf44b51cee1f385c30558d251d6f7fc",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "60d244aa1f188bcf309aa4a963ce63f07b0cf3bb67e9e3a8113d8584b2b75425",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/question",
+        "sourceSha256": "e524e55b59a6e43965637a44caf6aa01a6c5037f60a4f4cf3aeb2622f31c1b23",
+        "spans": [
+          {
+            "start": 108,
+            "end": 121,
+            "text": "envio/cajas.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/explanation",
+        "sourceSha256": "344ff3b8aff5780d1b18633d9ef2f15decd797e57ff319b3a1a06d195e96362d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/0",
+        "sourceSha256": "6645dedd7c826c2bc459e2810b409b9a9811a1197a6cfe37fbc944bcf154fb3c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/1",
+        "sourceSha256": "ce72be31a4e01083576a4cac11efd4aca59439f7f2714e808bf7894d71e1aadc",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/2",
+        "sourceSha256": "070b8963a294e2e01b57db452db69d6b47af9235aed88382e1812f8e961a0dc8",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "9016a746e835c1e9891b9d8b8998c790bea3358c06d689f2bc4e0d3c0758e75f",
+        "spans": [
+          {
+            "start": 71,
+            "end": 75,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "d4217ccbdb887588a82f2a7899d6715d82b5160ee61283d122592aafe786d27d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "017abb6658a2a6c316fe3d83d9a86849dd3e2084d36bf2b939cb07d1120e29a3",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "003addcd06cb8b489bff213c1c171abcf8734a4092038a7d22408844a3a1bc48",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "2e684e6e8aeed158a0f9d41b580ad84267f6b8b0e2dda83de11c46927540819f",
+        "spans": [
+          {
+            "start": 331,
+            "end": 342,
+            "text": "add_library",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "54e7bbfdca71fc5cd43bc818b9dee96625781bf93569f505f169eb3154eace2e",
+        "spans": [
+          {
+            "start": 18,
+            "end": 33,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 255,
+            "text": "consultar_cajas",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/question",
+        "sourceSha256": "70c7fb3a6c21a5903aabddbd2c38d402336d16b5d7811e70731aaa5b8c650984",
+        "spans": [
+          {
+            "start": 80,
+            "end": 86,
+            "text": "1,5,17",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/explanation",
+        "sourceSha256": "d63698ba247b935ca1abcf835ea656ec201ae23a3c34fc75596442d0d227cd0c",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/0",
+        "sourceSha256": "3f16d4879529cd06dcfce1138a7908a4586337c01b37530e776aaa22570953fd",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/1",
+        "sourceSha256": "94d058d81dfe7c95f7cf347b80074e7940fae5db83d2fa500fb94c297131fbd7",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/2",
+        "sourceSha256": "57aaf39b13fd270df17bacf9dbb3528a60a32560796b11a66e363e9e7628c183",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "6b0af80eb878586a32a94199bff1cb40706596c7fbb9dfdcbc9f0fe912dbf25f",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "35100fb5946a32aae0b255bf3b40848407b8c9d44abc70297409cbdee7064d47",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "6a99c878dd33380bf00bbcdacd49f8375dae58928bdf70246e6eaf77158c2d1f",
+        "spans": [
+          {
+            "start": 40,
+            "end": 44,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "82ac16cb720f4cc908ddb67bd2e6e0fce44a254355a01ccb5e8ab6156a4c64f3",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "0ac29daf5ab20c55a19a65083cbe251917b3903ac3309611d05da6a7e8ac7c57",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "d0a21511a51f063a5af41f571a85a27eebc6f926e9e09aa60e7f1b9d1868ab04",
+        "spans": [
+          {
+            "start": 3,
+            "end": 28,
+            "text": "componente/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 30,
+            "end": 43,
+            "text": "src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 70,
+            "text": "componente/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 135,
+            "text": "publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 196,
+            "text": "componente/publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 225,
+            "end": 231,
+            "text": "envio/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 268,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 357,
+            "end": 366,
+            "text": "cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/text",
+        "sourceSha256": "08082bb90ae89dba61c9ee032d7a6c09260f51fa90a8434d260c3c6a254add70",
+        "spans": [
+          {
+            "start": 43,
+            "end": 58,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 137,
+            "end": 140,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 192,
+            "text": "\"envio/cajas.h\"",
+            "role": "cpp"
+          },
+          {
+            "start": 239,
+            "end": 245,
+            "text": "envio/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 380,
+            "end": 409,
+            "text": "(Scott, 2025, pp. 68–69, 183)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/question",
+        "sourceSha256": "f5a66b0e68fd19afe987815b9a50ee911ae65178ee0195ee3438b4a7984f95a3",
+        "spans": [
+          {
+            "start": 4,
+            "end": 18,
+            "text": "PUBLIC publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 78,
+            "end": 102,
+            "text": "#include \"envio/cajas.h\"",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/explanation",
+        "sourceSha256": "d64a2503b03369c1c80a6a4ee2fddf826413c655ad9dfd9af973edc3dcf6cdd3",
+        "spans": [
+          {
+            "start": 114,
+            "end": 128,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/options/0",
+        "sourceSha256": "2660f725b3dd246a040b212e98729036592fba28848d7c2d604f518cd076e9ed",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/options/1",
+        "sourceSha256": "d6f6e0540883427566f0e8709fc7e581517643251315e17eaa9e0337a34f5e6b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "PUBLIC",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 41,
+            "end": 47,
+            "text": "envio/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 62,
+            "text": "envio/cajas.h",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/options/2",
+        "sourceSha256": "642e3a8aab40262ae3ba495c522aa0467445d5cd82afd74bfd9b2eb239731d28",
+        "spans": [
+          {
+            "start": 94,
+            "end": 100,
+            "text": "envios",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "70fa9e8da83c50451e79a98f040941db5598c85ac234e159d9873fc53c241a01",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "207b03ee17d2c50a9801371fcce84c040b917a69fcd16c0b5b7b33089e5be3da",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "6ec0dca3bb00a017460704bb949d60a6c66571a9676bd887b4b5d18435aa078c",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "fe56b6be34d0632c7678dec5be5e3084c7ffb847d8f7b369214cb99b6865b677",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "1d6aa5ec1692b1af4be4c33d47599ea7f77f0eb3b65c08573045060d06d15526",
+        "spans": [
+          {
+            "start": 9,
+            "end": 19,
+            "text": "lotes_para",
+            "role": "cpp"
+          },
+          {
+            "start": 232,
+            "end": 240,
+            "text": "0,6,7,18",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 300,
+            "text": "codigo/lotes/motor/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 303,
+            "end": 324,
+            "text": "codigo/lotes/publico/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 359,
+            "text": "programa/",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/text",
+        "sourceSha256": "0a865cb61677a485610673217ae40c1e35958aea082449a2faab350ef30365ab",
+        "spans": [
+          {
+            "start": 73,
+            "end": 100,
+            "text": "codigo/lotes/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 120,
+            "text": "lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 224,
+            "text": "consultar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 227,
+            "end": 242,
+            "text": "verificar_lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 262,
+            "text": "lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 305,
+            "end": 310,
+            "text": "C++20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 551,
+            "end": 554,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/question",
+        "sourceSha256": "af23a16036eba4069b3ef40438ededf8197ba5869bcfacd9e24ecbc577a4d798",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/explanation",
+        "sourceSha256": "8b89d2f800d94b52e635aedccfa1240390c75b68153a20665c184f22fe65ee79",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/0",
+        "sourceSha256": "a959500641c078d19e19cb5ff3c3f454564240cad93b456d50512af70913ab23",
+        "spans": [
+          {
+            "start": 21,
+            "end": 33,
+            "text": "codigo/lotes",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/1",
+        "sourceSha256": "6b35f4589bb92a27c1677ea9fcb029150add0158dc6b7b2c20c152e6553f2cf7",
+        "spans": [
+          {
+            "start": 53,
+            "end": 57,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/options/2",
+        "sourceSha256": "add1c4029a724c51f44304aca53dfdb670ae426b049cf636b250af81c5c4c55b",
+        "spans": [
+          {
+            "start": 32,
+            "end": 37,
+            "text": "lotes",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "ce25012730677d2862e91fa2b647071c16d4ab96250eadeb510cd323d0b2a142",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "5c918366179281a4f60820279d286006d7509a2e85775bf0e6a10ab27a334035",
+        "spans": [
+          {
+            "start": 156,
+            "end": 160,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "2ce580ea2b0a396dbe0d2965f67baab9de7b02df0589bdb6b3eb53232611f74e",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0000",
+        "path": "/text",
+        "sourceSha256": "420ee5e535ad16e3786b69c25cb85e48dccd27694ea3be31daec7d4bbee8b18f",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/text",
+        "sourceSha256": "452f790c1d15497e4c26b55300247e631dd98ebfa6039b2ad58765df6c36360e",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0002",
+        "path": "/text",
+        "sourceSha256": "25cb08c99d30ee963cc9b7636d917bc599579d315ce3938a95979c7782b4a8dd",
+        "spans": [
+          {
+            "start": 17,
+            "end": 30,
+            "text": "codigo/lotes/",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 62,
+            "text": "motor/cantidad.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 72,
+            "text": "publico",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 157,
+            "end": 178,
+            "text": "programa/consulta.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 204,
+            "text": "pruebas/lotes_casos.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 279,
+            "text": "lotes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 299,
+            "end": 312,
+            "text": "codigo/lotes/",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/text",
+        "sourceSha256": "f402609a9fb3ece709815bf51bf85bf26e08f19bec303e95540499335d47f0fa",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/text",
+        "sourceSha256": "846ad54e0e0de6cb757ca96f7800fc2048298e1511e9de0da7ef341030719d72",
+        "spans": [
+          {
+            "start": 0,
+            "end": 27,
+            "text": "codigo/lotes/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0007",
+        "path": "/text",
+        "sourceSha256": "60a4281e5c8a66a2492dc013624382686ae9ebadcb5307bdbcdeb92f7f1283ee",
+        "spans": [
+          {
+            "start": 31,
+            "end": 33,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 47,
+            "text": "Bateria: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 90,
+            "text": "1:2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/question",
+        "sourceSha256": "09e13957580a4f5942387ebfc808ec2a12c19623203d9a4cdbf2b8f31cc7f1b0",
+        "spans": [
+          {
+            "start": 43,
+            "end": 70,
+            "text": "codigo/lotes/CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/explanation",
+        "sourceSha256": "d55a3cd55bfc0f62a5a9fdb4bfaed02143e0a3ec4778c1a01c2205d222d9577b",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/options/0",
+        "sourceSha256": "ca9360ef6cd80f32c1a619f3dcaaa4390d752aef908bf0b43cda9f0d3b018148",
+        "spans": [
+          {
+            "start": 48,
+            "end": 62,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/options/1",
+        "sourceSha256": "96a17e0305c96e4e04c81e2582ed2b8c11ec430d870c0bc68a800bcbefbba169",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/options/2",
+        "sourceSha256": "f06d132e8bd868dadb3ff6e4691045fa6f7b7b0140ffc9988844338da362f687",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a4a0ca0ce88a897f82030aa260679c46872e930b7c8c4a16bba2dbc7df91924a",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "5bf28d5a6714152930d921cb2dd0651b964bb68fa8b2d6d928c1d52924742e7f",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "25f6bcc6f2c412fb4074ba0b14b6f9049e0bfbb263bb278ff2d09d69caa71f7d",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0000",
+        "path": "/text",
+        "sourceSha256": "3960bc92e46ccdd6f0dec850fa72523108487ce8d31309cd9ce7dec48d7a7c75",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0001",
+        "path": "/text",
+        "sourceSha256": "f559c243d1b176e10ec6fb7357d3f0cfd2bbe4708196bbdbbf54bd89975007d0",
+        "spans": [
+          {
+            "start": 132,
+            "end": 164,
+            "text": "(Thomas & Hunt, 2020, pp. 84–85)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 583,
+            "end": 584,
+            "text": "−",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 607,
+            "end": 608,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0002",
+        "path": "/text",
+        "sourceSha256": "faae0f96416c03609e71dfa0836bc722661a34c80a30700b6e46965eacad605c",
+        "spans": [
+          {
+            "start": 91,
+            "end": 113,
+            "text": "0, 4, 8, 20, 1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 243,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 486,
+            "end": 510,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 513,
+            "end": 523,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 693,
+            "end": 708,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 767,
+            "end": 776,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 799,
+            "end": 800,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 956,
+            "end": 980,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1112,
+            "end": 1127,
+            "text": "comprobar_cajas",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 1253,
+            "end": 1255,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1268,
+            "end": 1269,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0010_0003",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "9d4daa63dcf76d7c5e2a7284323862996bf2c11602097677595bdfa17b67c758",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/text",
+        "sourceSha256": "5c919637560e40fa83890cea8508e8f13af0e8bf539f89bb89268c1c5f581aeb",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0000",
+        "path": "/text",
+        "sourceSha256": "0933b6efaf98b72e9c4da19457ca50053d4c2d67a317f78b03f21fcb3262f452",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0001",
+        "path": "/text",
+        "sourceSha256": "8f570dc2fa8f3e20a96c73030d1aaa57c8a2ee524b18b9ed06fde4d95d21694a",
+        "spans": [
+          {
+            "start": 26,
+            "end": 50,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 67,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0002",
+        "path": "/text",
+        "sourceSha256": "f5a468905ede4249a3896752567abdb92644a6f32a0a7a0d7a9a080da19853dd",
+        "spans": [
+          {
+            "start": 134,
+            "end": 144,
+            "text": "piezas / 4",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0003",
+        "path": "/text",
+        "sourceSha256": "9fe4e6326467c5fc677028465ea080a4e61c3392be38164c7f6cdcaebc072f34",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0004",
+        "path": "/text",
+        "sourceSha256": "b6ca5ee7133c81895744f8a3be674d9fd25a5430c14493b7e9ec126258f051eb",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/question",
+        "sourceSha256": "036de2f3c8b7153168479dcd3d0e36e7afd3381207fd0d52cf6cf457a8c56040",
+        "spans": [
+          {
+            "start": 36,
+            "end": 37,
+            "text": "−",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 38,
+            "end": 62,
+            "text": "return (piezas + 3) / 4;",
+            "role": "cpp"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 69,
+            "end": 87,
+            "text": "return piezas / 4;",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/explanation",
+        "sourceSha256": "3efb09e9e7ca44a1ade2d6338b0bba32e698db0195fd0d6ed175de5ed3c797d7",
+        "spans": [
+          {
+            "start": 20,
+            "end": 21,
+            "text": "−",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/options/0",
+        "sourceSha256": "96f3dd49fdc994f947908ce0917e0bf698979a534221ae347fc406a6a2cf2d50",
+        "spans": [
+          {
+            "start": 32,
+            "end": 42,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 66,
+            "end": 82,
+            "text": "(piezas + 3) / 4",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/options/1",
+        "sourceSha256": "22a94fc8b805fc5ecc04a25fa440c46c9b5b6740399f5e38d3504dd7b50fb991",
+        "spans": [
+          {
+            "start": 32,
+            "end": 48,
+            "text": "(piezas + 3) / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 72,
+            "end": 82,
+            "text": "piezas / 4",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/options/2",
+        "sourceSha256": "e4fe49a7b07e0eb702cc9243fe30c82dfef4656985d9782571652ddc0d735ab9",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "09616b69da184b208c3813245a9945bae065f37d7d1a7de8fc507d9204623c8b",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "3dc01bd9ec25c11ba06d01fb5a6680cb8316e2975f1ca61c5ea2eb2997f7f9f1",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "d22104f3348ca2af9fb6e4c6e2ff80c89af9d4d9eac94e8dbcb47e5a9896c48b",
+        "spans": [
+          {
+            "start": 68,
+            "end": 72,
+            "text": "main",
+            "role": "cpp"
+          }
+        ]
+      },
+      {
+        "block": "block_0012_0000",
+        "path": "/text",
+        "sourceSha256": "1f7e029d29424281cfd62c18a1af6c173c430c029f85978201c4a38b82028e44",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0001",
+        "path": "/text",
+        "sourceSha256": "47b894cc33f1383580292ea787d959a52e546ef469fe9849472abe23a33391e6",
+        "spans": [
+          {
+            "start": 20,
+            "end": 44,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 61,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 193,
+            "text": "(piezas + 3) / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 217,
+            "end": 227,
+            "text": "piezas / 4",
+            "role": "cpp"
+          },
+          {
+            "start": 328,
+            "end": 389,
+            "text": "# Nota independiente: conservar la separacion por componente.",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 435,
+            "end": 459,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0012_0002",
+        "path": "/text",
+        "sourceSha256": "cf750eeeb4286534c374b78f6d61377e059b00d15df89e7b41e83b4388826225",
+        "spans": [
+          {
+            "start": 72,
+            "end": 74,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 92,
+            "text": "0, 4, 8 y 20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 115,
+            "text": "1, 5 y 17",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 132,
+            "text": "0, 1 y 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 165,
+            "text": "1, 2 y 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 205,
+            "text": "FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 231,
+            "text": "Bateria: FALLO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 246,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 357,
+            "text": "OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 380,
+            "text": "Bateria: OK",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 394,
+            "end": 395,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 397,
+            "end": 403,
+            "text": "stderr",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/question",
+        "sourceSha256": "6a1b9b92f57415ef21a91e56857f89935997b9c178e37d1deaa4c244ab92c9a8",
+        "spans": [
+          {
+            "start": 67,
+            "end": 91,
+            "text": "componente/src/cajas.cpp",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 139,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/explanation",
+        "sourceSha256": "38d8491cf7581231ea0bd6a4cba9ae31acaa11cf1f984fde2e6d09dfd7a2af0f",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/options/0",
+        "sourceSha256": "84057cbb269074c5478ed669816272b0bbc06435387cc99183d45490612274fc",
+        "spans": [
+          {
+            "start": 58,
+            "end": 72,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/options/1",
+        "sourceSha256": "279ba7ea3acf2615dbdac08e9020e2d6237d45350178d09a1b00cd80edc7ee83",
+        "spans": [
+          {
+            "start": 96,
+            "end": 110,
+            "text": "CMakeLists.txt",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/options/2",
+        "sourceSha256": "a6ad64ac9a88df3c2ee90bd5acdfad3684e0aa3d5eb57c18786faa060187e176",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "f1556b03025eadabea95ad46085da7d5088d2ee2d8a1d194928dec680c7384b7",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "b1ec61f3a63a495e59e23ed8055f1e85758096eed71411d5c0cb0233a5b9e098",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "725d5d6a9e1eaa7c7d67240cfc4de8464b863bf8134b1a074423c777bc2d1ee0",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/text",
+        "sourceSha256": "36c01fcb27af6b857fffa1d9d2482f53c3b72c713da56ca9d62760ac758d3d59",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "4054851d6053991846f3f4ce9fce0a6b0bc33d516a9dc62a3835d764f19d0e55",
+        "spans": []
+      }
+    ]
+  }
 }
