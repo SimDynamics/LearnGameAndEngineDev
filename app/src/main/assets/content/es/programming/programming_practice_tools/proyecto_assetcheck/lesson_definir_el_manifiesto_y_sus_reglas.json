@@ -1,0 +1,5553 @@
+{
+  "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas",
+  "title": "Definir el manifiesto y sus reglas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un acuerdo verificable para un paquete pequeño"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una persona prepara un paquete de muestras para compartirlo con otra. Antes de enviarlo quiere revisar su lista: que cada recurso tenga los datos necesarios, que el tamaño declarado cumpla el acuerdo y que un mismo identificador no se utilice dos veces. AssetCheck será el programa de consola que examine esa lista y señale qué líneas debe revisar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamaremos manifiesto al archivo de texto que contiene esas declaraciones. Cada registro ocupa una línea. En Roca malla 240 se declara un recurso llamado Roca, de tipo malla, con un tamaño de 240 bytes. Un byte es la unidad de tamaño utilizada en este acuerdo. La cifra está escrita por quien prepara el manifiesto; todavía no procede de medir un archivo.",
+          "emphasis": [
+            {
+              "text": "Cada registro ocupa una línea.",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Decir solamente «comprueba el manifiesto» deja decisiones abiertas: un programa podría aceptar tamaños con signo y otro rechazarlos; uno podría conservar el primer identificador y otro reemplazarlo. Concretar ejemplos y consecuencias ayuda a descubrir esos supuestos antes de dar por suficiente un requisito (Thomas & Hunt, 2020, pp. 244–247). En esta unidad fijamos un acuerdo propio para un paquete de muestras pequeñas y lo practicamos antes de construir el programa.",
+          "emphasis": [
+            {
+              "text": "un acuerdo propio",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__reconocer_campos",
+          "prompt": "Relaciona cada campo de Roca malla 240 con la información que declara. Cada destino se utiliza una vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "campos",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "identificador",
+                  "label": "Roca"
+                },
+                {
+                  "id": "tipo",
+                  "label": "malla"
+                },
+                {
+                  "id": "tamano",
+                  "label": "240"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "cantidad",
+                  "label": "Tamaño declarado en bytes"
+                },
+                {
+                  "id": "nombre",
+                  "label": "Identificador del recurso"
+                },
+                {
+                  "id": "clase",
+                  "label": "Tipo declarado del recurso"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "identificador": "nombre",
+                  "tipo": "clase",
+                  "tamano": "cantidad"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Roca distingue el recurso dentro del manifiesto; malla declara su tipo, y 240 declara cuántos bytes le atribuye la persona. Ninguno de esos campos contiene una ruta que el programa pueda abrir para medir el recurso.",
+            "incorrect": "Recupera el orden acordado: primero el nombre que identifica, después la clase de recurso y al final la cantidad con su unidad."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__alcance_de_una_aceptacion",
+          "question": "Un manifiesto cumple todas las reglas que acordaremos. ¿Qué conclusión respalda esa aceptación?",
+          "options": [
+            "Los recursos existen y sus tamaños reales coinciden con lo declarado.",
+            "Las declaraciones recibidas cumplen las reglas de formato, valores e identificadores.",
+            "El paquete puede cargarse sin errores en cualquier motor de videojuegos."
+          ],
+          "correctIndex": 1,
+          "explanation": "AssetCheck examinará las declaraciones del archivo de texto. No recibe rutas a los recursos ni interpreta sus contenidos. La aceptación respalda las reglas observadas en ese manifiesto; la existencia de los archivos, sus medidas reales y su uso en un motor necesitarían otras operaciones y pruebas.",
+          "reviewFeedback": [
+            "Para comparar un tamaño real habría que localizar y medir el recurso. Esta versión sólo recibe el tamaño declarado.",
+            "La conclusión debe corresponder a los datos y condiciones que el programa efectivamente examina.",
+            "Cargar recursos en un motor exige conocer sus formatos y requisitos; esos datos no están incluidos en este acuerdo."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tres campos completos, sin información sobrante"
+        },
+        {
+          "type": "paragraph",
+          "text": "La forma de una línea es id tipo tamano_bytes. Esos tres nombres indican posiciones; no se escribe una cabecera con ellos. Entre dos campos debe haber al menos un espacio ordinario o un tabulador. Se permiten varios separadores y también espacios o tabuladores al principio y al final. Un campo es la secuencia de caracteres comprendida entre esos separadores."
+        },
+        {
+          "type": "paragraph",
+          "text": "La línea debe contener exactamente tres campos. No hay comentarios ni comillas que agrupen palabras. Un signo dentro de un campo sigue perteneciendo a ese campo; no actúa como separador ni hace que el resto de la línea desaparezca. Obtener tres campos tampoco basta para aceptar: después se revisarán sus caracteres y valores.",
+          "emphasis": [
+            {
+              "text": "exactamente tres campos",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, Roca malla 12x contiene tres campos, aunque el tercero no cumple la escritura del tamaño. Roca malla 12 extra contiene cuatro: ignorar el último borraría información que el formato no permite. Separar campos y comprobar su contenido son decisiones distintas (Kernighan & Pike, 1999, pp. 85–87)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__contar_campos",
+          "prompt": "Cuenta los campos de cada línea usando sólo espacio y tabulador como separadores. En esta actividad no decidas todavía si sus valores son válidos. En las dos filas descritas con palabras, esa descripción indica los caracteres de la línea y no forma parte de ella.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conteo",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Línea o descripción exacta",
+                "Número de campos"
+              ],
+              "rows": [
+                [
+                  "Brisa sonido 9",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "Brisa sonido",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "Brisa sonido 9 nota",
+                  {
+                    "field": "c"
+                  }
+                ],
+                [
+                  "Brisa sonido 9#nota",
+                  {
+                    "field": "d"
+                  }
+                ],
+                [
+                  "Brisa, un tabulador, sonido, dos espacios y 9",
+                  {
+                    "field": "e"
+                  }
+                ],
+                [
+                  "Una línea con sólo tres espacios",
+                  {
+                    "field": "f"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Campos en la fila 1",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Campos en la fila 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Campos en la fila 3",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Campos en la fila 4",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Campos en la fila 5",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Campos en la fila 6",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "f": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los conteos son 3, 2, 4, 3, 3 y 0. 9#nota es un único campo: no hay un separador dentro y # no introduce comentarios. Un tabulador separa igual que un espacio. La línea de sólo espacios no contiene ningún campo; tener caracteres no equivale a tener un registro.",
+            "incorrect": "Recorre cada línea y cuenta las secuencias no vacías separadas por espacios o tabuladores. No cuentes separadores repetidos como campos ni elimines texto después de un signo."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__sobrante_no_ignorado",
+          "question": "Una lectura toma los tres primeros campos de Faro textura 24 autor y no examina el resto. ¿Por qué incumple el acuerdo?",
+          "options": [
+            "El cuarto campo debería incorporarse al identificador del recurso.",
+            "La palabra final convierte automáticamente la línea en un comentario.",
+            "Aceptaría una línea con información adicional que el formato obliga a rechazar."
+          ],
+          "correctIndex": 2,
+          "explanation": "Después de 24 aún queda el campo autor. La línea tiene cuatro campos y debe rechazarse por formato. No se ha acordado concatenar datos ni reconocer comentarios. La comprobación completa incluye confirmar que no queda un campo adicional.",
+          "reviewFeedback": [
+            "El identificador ya ocupa la primera posición; unir campos cambiaría el registro recibido.",
+            "Este formato no define comentarios. El lector no puede inventarlos para ignorar lo que sobra.",
+            "Contrasta el número total de campos con los tres que permite el acuerdo."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué caracteres y qué longitud recibe el lector"
+        },
+        {
+          "type": "paragraph",
+          "text": "El contenido de una línea, sin su terminador, admite como máximo 80 caracteres. Su repertorio es el ASCII imprimible: letras latinas sin acento, dígitos, espacio y signos básicos, con códigos de 32 a 126. También se admite el tabulador de código 9. Los separadores siguen siendo únicamente el espacio y el tabulador; los demás signos permitidos por el repertorio se examinan dentro de sus campos. Una letra acentuada, un emoji u otro carácter de control provoca rechazo de formato.",
+          "emphasis": [
+            {
+              "text": "como máximo 80 caracteres",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "El terminador es la marca que separa una línea de la siguiente en el archivo. No forma parte del contenido que aquí contamos. La lectura del lote distinguirá los terminadores admitidos de un carácter de control aislado. Un tabulador ocupa un carácter en este límite, aunque en una pantalla pueda desplazar el texto varias columnas. Los espacios de los bordes también cuentan."
+        },
+        {
+          "type": "paragraph",
+          "text": "El registro Roca malla 10 ocupa 13 caracteres: cuatro del identificador, dos separadores, cinco del tipo y dos del tamaño. Si añadimos 67 espacios al final, el contenido ocupa 80 y sigue dentro del límite. Añadir uno más produce 81 y rebasa el formato, aunque los tres campos sigan siendo los mismos. El límite pertenece a este proyecto; no es una propiedad de todos los archivos de recursos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__repertorio_y_limite",
+          "prompt": "Evalúa sólo el repertorio y el máximo de 80 caracteres de cada línea. Para medir la longitud, cuenta todos los espacios o tabuladores añadidos y excluye el terminador.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "limites",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Contenido de la línea",
+                "Cumple repertorio y longitud"
+              ],
+              "rows": [
+                [
+                  "Brisa sonido 9 seguida de 66 espacios",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "Brisa sonido 9 seguida de 67 espacios",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "Rocá malla 10",
+                  {
+                    "field": "c"
+                  }
+                ],
+                [
+                  "Roca, un tabulador, malla, un espacio y 10",
+                  {
+                    "field": "d"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Repertorio y longitud en la fila 1",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Repertorio y longitud en la fila 2",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Repertorio y longitud en la fila 3",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "d",
+                  "type": "dropdown",
+                  "label": "Repertorio y longitud en la fila 4",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "b": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "c": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "d": {
+                    "type": "text",
+                    "expected": "si"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Brisa sonido 9 tiene 14 caracteres: cinco, seis y uno de sus campos, más dos separadores. Las dos primeras líneas suman respectivamente 14 + 66 = 80 y 14 + 67 = 81. La letra á de la tercera queda fuera del repertorio acordado. En la última, sustituir un espacio por un tabulador conserva 13 caracteres y ambos separadores están permitidos. No hemos atribuido a esta comparación la revisión del resto de reglas.",
+            "incorrect": "Comprueba por separado que todos los caracteres estén permitidos y que la longitud total no supere el máximo. Cumplir una condición no compensa incumplir la otra."
+          }
+        },
+        {
+          "type": "note",
+          "text": "El futuro lector debe conservar la entrada. Validar no autoriza borrar un carácter desconocido, recortar una línea demasiado larga ni cambiarla hasta que pueda aceptarse. Un rechazo deja información que la persona debe poder localizar y corregir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un identificador con reglas propias"
+        },
+        {
+          "type": "paragraph",
+          "text": "El identificador tiene entre 1 y 12 caracteres. El primero debe ser una letra ASCII, de A a Z o de a a z. Los siguientes pueden ser esas letras, los dígitos de 0 a 9 o el guion bajo _. No se admiten espacios dentro del identificador. Estas reglas pertenecen al manifiesto; no se deducen de las reglas para nombres de variables de C++.",
+          "emphasis": [
+            {
+              "text": "entre 1 y 12 caracteres",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación distingue mayúsculas y minúsculas: Roca y roca son identificadores diferentes. El programa no convierte uno en otro. También debe conservar el identificador completo: truncarlo a doce caracteres podría hacer coincidir nombres originalmente distintos.",
+          "emphasis": [
+            {
+              "text": "distingue mayúsculas y minúsculas",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__identificadores",
+          "prompt": "Cada celda contiene el campo de identificador completo. Decide si cumple sus reglas. El repertorio de estos ejemplos es ASCII; no se examinan aquí el tipo ni el tamaño.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ids",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Identificador",
+                "Cumple sus reglas"
+              ],
+              "rows": [
+                [
+                  "A",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "a2_",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "_a",
+                  {
+                    "field": "c"
+                  }
+                ],
+                [
+                  "2a",
+                  {
+                    "field": "d"
+                  }
+                ],
+                [
+                  "abcdefghijkL",
+                  {
+                    "field": "e"
+                  }
+                ],
+                [
+                  "abcdefghijkLm",
+                  {
+                    "field": "f"
+                  }
+                ],
+                [
+                  "Ro-ca",
+                  {
+                    "field": "g"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Identificador de la fila 1",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Identificador de la fila 2",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Identificador de la fila 3",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "d",
+                  "type": "dropdown",
+                  "label": "Identificador de la fila 4",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "e",
+                  "type": "dropdown",
+                  "label": "Identificador de la fila 5",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "f",
+                  "type": "dropdown",
+                  "label": "Identificador de la fila 6",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "g",
+                  "type": "dropdown",
+                  "label": "Identificador de la fila 7",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "b": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "c": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "d": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "e": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "f": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "g": {
+                    "type": "text",
+                    "expected": "no"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A tiene una letra; a2_ empieza por letra y continúa con caracteres admitidos. _a y 2a fallan en el primer carácter. abcdefghijkL tiene 12 caracteres y abcdefghijkLm tiene 13. El guion - de Ro-ca no es el guion bajo permitido.",
+            "incorrect": "Examina primero la longitud, después la primera posición y después todas las restantes. No basta con que el nombre empiece correctamente."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__caja_y_normalizacion",
+          "question": "El campo Nube cumple las reglas y también nube. ¿Cómo debe relacionarlos AssetCheck?",
+          "options": [
+            "Conservarlos como identificadores diferentes, respetando cada escritura.",
+            "Convertir ambos a minúsculas antes de compararlos.",
+            "Rechazar cualquiera de ellos que contenga una mayúscula."
+          ],
+          "correctIndex": 0,
+          "explanation": "La primera letra puede ser mayúscula o minúscula, y la comparación conserva esa diferencia. Transformar los identificadores o prohibir las mayúsculas añadiría una política que no figura en el acuerdo. La lección del lote utilizará esta misma igualdad al detectar repeticiones.",
+          "reviewFeedback": [
+            "La igualdad del proyecto compara la escritura exacta admitida, sin normalizarla.",
+            "Convertir el texto modificaría qué identificadores coinciden; esa transformación no está acordada.",
+            "Las letras mayúsculas están incluidas explícitamente en el repertorio del identificador."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La etiqueta de tipo declara una intención"
+        },
+        {
+          "type": "paragraph",
+          "text": "El segundo campo admite exactamente textura, malla o sonido. Debe coincidir la palabra completa, con esas minúsculas. Textura y texturas no son otras escrituras admitidas. Tampoco se deduce el tipo a partir del identificador: un recurso llamado campana puede declararse malla si esa es la intención de quien prepara la lista."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aceptar la etiqueta indica que pertenece al vocabulario acordado. No demuestra que el contenido de un archivo sea una textura, una malla o un sonido. Esa distinción mantiene observable el alcance del programa y evita atribuirle una inspección que no realiza."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__tipos_exactos",
+          "prompt": "Clasifica el segundo campo de cada registro. Todos los identificadores y tamaños mostrados cumplen sus respectivas reglas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tipos",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Registro",
+                "Tipo admitido"
+              ],
+              "rows": [
+                [
+                  "campana malla 24",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "Fondo Textura 24",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "Paso sonido 24",
+                  {
+                    "field": "c"
+                  }
+                ],
+                [
+                  "Pared texturas 24",
+                  {
+                    "field": "d"
+                  }
+                ],
+                [
+                  "Logo textura 24",
+                  {
+                    "field": "e"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Tipo en la fila 1",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Tipo en la fila 2",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Tipo en la fila 3",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "d",
+                  "type": "dropdown",
+                  "label": "Tipo en la fila 4",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "e",
+                  "type": "dropdown",
+                  "label": "Tipo en la fila 5",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "b": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "c": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "d": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "e": {
+                    "type": "text",
+                    "expected": "si"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "malla, sonido y textura son las tres etiquetas exactas. Textura cambia la mayúscula y texturas añade una letra. El identificador campana no determina por sí mismo el tipo del recurso.",
+            "incorrect": "Compara el campo completo con las tres etiquetas. No uses el significado cotidiano del identificador para reemplazar el tipo declarado."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__corregir_automaticamente",
+          "question": "Una línea contiene Fondo Textura 24. ¿Qué actuación respeta este contrato?",
+          "options": [
+            "Cambiar la etiqueta a minúsculas y aceptar el resultado.",
+            "Rechazar el tipo y conservar la entrada para que la persona revise su declaración.",
+            "Aceptar el campo porque empieza por el mismo prefijo que una etiqueta permitida."
+          ],
+          "correctIndex": 1,
+          "explanation": "Textura no coincide con textura. El programa debe informar el rechazo y conservar el texto recibido. Corregirlo automáticamente o comparar sólo un prefijo cambiaría el criterio de aceptación. Si se quisiera admitir otras escrituras, habría que modificar el acuerdo y sus comprobaciones de manera explícita.",
+          "reviewFeedback": [
+            "Una transformación automática borraría la diferencia que el contrato exige detectar.",
+            "El rechazo comunica el incumplimiento sin apropiarse de la decisión de cambiar la declaración.",
+            "La coincidencia necesaria afecta al campo completo, incluidas las mayúsculas y minúsculas."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escritura decimal, valor y unidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "El tercer campo se llama tamano_bytes. Debe contener de uno a cinco dígitos decimales, todos de 0 a 9, y representar un valor entre 1 y 30000 bytes, incluidos ambos límites. No admite signos, separador decimal, exponentes ni sufijos. Estos tamaños corresponden al paquete pequeño que hemos elegido; no establecen una limitación general para recursos de videojuegos.",
+          "emphasis": [
+            {
+              "text": "incluidos ambos límites",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Se permiten ceros iniciales dentro del máximo de cinco dígitos. 00001 tiene 5 caracteres y representa 1 byte. 000001 representa la misma cantidad al interpretarlo como decimal, pero su escritura tiene 6 dígitos y se rechaza. 00000 sí tiene cinco dígitos, aunque su valor 0 queda fuera del intervalo. Longitud y valor son condiciones diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Obtener una cantidad a partir del principio de un campo no lo valida por completo. 12x no puede aceptarse como si fuese 12; +12 tampoco cumple la regla de sólo dígitos. La futura conversión deberá rechazar una escritura excesiva antes de acumular una cantidad que desborde. Aquí establecemos el resultado exigido; la construcción del lector enseñará y comprobará cómo obtenerlo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__valor_y_longitud",
+          "prompt": "En el campo 00120, distingue la cantidad de caracteres de la cantidad de bytes declarada.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cantidades",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Propiedad",
+                "Cantidad"
+              ],
+              "rows": [
+                [
+                  "Dígitos escritos",
+                  {
+                    "field": "digitos"
+                  }
+                ],
+                [
+                  "Bytes declarados",
+                  {
+                    "field": "bytes"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "digitos",
+                  "type": "numeric",
+                  "label": "Dígitos escritos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "bytes",
+                  "type": "numeric",
+                  "label": "Bytes declarados",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "digitos": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "bytes": {
+                    "type": "numeric",
+                    "expected": "120"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se escriben 5 dígitos: dos ceros iniciales y los tres de 120. El valor decimal es 120 bytes. El máximo de caracteres se aplica a la escritura; el intervalo numérico se aplica al valor.",
+            "incorrect": "No uses el valor del número como longitud. Cuenta cada dígito escrito y después interpreta el decimal."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__tamanos_en_los_limites",
+          "prompt": "Cada fila muestra el tercer campo completo. Decide si satisface tanto la escritura como el intervalo del tamaño.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tamanos",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Campo de tamaño",
+                "Cumple ambas condiciones"
+              ],
+              "rows": [
+                [
+                  "1",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "30000",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "30001",
+                  {
+                    "field": "c"
+                  }
+                ],
+                [
+                  "00000",
+                  {
+                    "field": "d"
+                  }
+                ],
+                [
+                  "00001",
+                  {
+                    "field": "e"
+                  }
+                ],
+                [
+                  "000001",
+                  {
+                    "field": "f"
+                  }
+                ],
+                [
+                  "+12",
+                  {
+                    "field": "g"
+                  }
+                ],
+                [
+                  "12x",
+                  {
+                    "field": "h"
+                  }
+                ],
+                [
+                  "1e3",
+                  {
+                    "field": "i"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 1",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 2",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 3",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "d",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 4",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "e",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 5",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "f",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 6",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "g",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 7",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "h",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 8",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                },
+                {
+                  "id": "i",
+                  "type": "dropdown",
+                  "label": "Tamaño de la fila 9",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí"
+                    },
+                    {
+                      "id": "no",
+                      "label": "No"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "b": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "c": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "d": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "e": {
+                    "type": "text",
+                    "expected": "si"
+                  },
+                  "f": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "g": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "h": {
+                    "type": "text",
+                    "expected": "no"
+                  },
+                  "i": {
+                    "type": "text",
+                    "expected": "no"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se admiten 1, 30000 y 00001. 30001 supera el valor máximo; 00000 representa cero. 000001 tiene seis dígitos. El signo de +12, la letra de 12x y el exponente de 1e3 no pertenecen a la escritura acordada. El lector no debe convertirlos en otros campos para aceptarlos.",
+            "incorrect": "Comprueba las condiciones por separado: entre uno y cinco caracteres, todos dígitos decimales, y valor desde uno hasta treinta mil. La validez de una sola condición no basta."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La primera condición rechazada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una línea puede incumplir varias reglas. Para que sus diagnósticos sean previsibles, el proyecto comunicará una sola causa por línea y seguirá este orden: primero formato, después identificador, después tipo y después tamaño. Una causa indica la primera condición que no se cumple en ese recorrido; no promete que sea el único defecto.",
+          "emphasis": [
+            {
+              "text": "una sola causa por línea",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "FORMATO significa repertorio inadmisible, más de ochenta caracteres o cantidad de campos distinta de tres. ID significa que el identificador incumple su regla. TIPO significa que la etiqueta no está entre las tres exactas. TAMANO cubre la escritura o el valor del tercer campo. Una línea que supera estas cuatro comprobaciones es válida por sí sola; todavía habrá que compararla con los identificadores del lote."
+        },
+        {
+          "type": "paragraph",
+          "text": "En 9R Textura 0 hay tres campos y el repertorio es permitido. El primer campo empieza por un dígito: corresponde ID, aunque el tipo y el tamaño también fallen. Si añadimos un cuarto campo, 9R Textura 0 extra, corresponde FORMATO antes de examinar el identificador. Acordar qué devuelve un componente y qué efectos produce forma parte de definir su interfaz (Kernighan & Pike, 1999, pp. 103–105)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__primera_causa",
+          "prompt": "Clasifica cada línea de manera independiente según la primera condición que incumple. «Válida por sí sola» significa que supera las reglas locales; aquí todavía no se comprueban duplicados.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "causas",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Línea",
+                "Primera causa o validez local"
+              ],
+              "rows": [
+                [
+                  "7Sol TEXTURA 0",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "Sol TEXTURA 0",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "Sol textura 0",
+                  {
+                    "field": "c"
+                  }
+                ],
+                [
+                  "7Sol TEXTURA 0 extra",
+                  {
+                    "field": "d"
+                  }
+                ],
+                [
+                  "Solá textura 4",
+                  {
+                    "field": "e"
+                  }
+                ],
+                [
+                  "Sol textura 00004",
+                  {
+                    "field": "f"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Decisión local de la fila 1",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Decisión local de la fila 2",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Decisión local de la fila 3",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "d",
+                  "type": "dropdown",
+                  "label": "Decisión local de la fila 4",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "e",
+                  "type": "dropdown",
+                  "label": "Decisión local de la fila 5",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "f",
+                  "type": "dropdown",
+                  "label": "Decisión local de la fila 6",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "text",
+                    "expected": "id"
+                  },
+                  "b": {
+                    "type": "text",
+                    "expected": "tipo"
+                  },
+                  "c": {
+                    "type": "text",
+                    "expected": "tamano"
+                  },
+                  "d": {
+                    "type": "text",
+                    "expected": "formato"
+                  },
+                  "e": {
+                    "type": "text",
+                    "expected": "formato"
+                  },
+                  "f": {
+                    "type": "text",
+                    "expected": "valida"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las decisiones son ID, TIPO, TAMANO, FORMATO, FORMATO y válida por sí sola. La primera fila llega al identificador y se detiene; la segunda alcanza el tipo; la tercera llega al tamaño. La cuarta tiene un campo adicional y la quinta incluye á, fuera del repertorio. La última declara 4 bytes con cinco dígitos, una escritura admitida.",
+            "incorrect": "Usa la precedencia completa. Cuando una regla ya rechaza la línea, no elijas otra causa posterior aunque también encuentres un defecto."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__un_diagnostico_no_agota_errores",
+          "question": "El diagnóstico de 8Luz TEXTURA 0 es ID. Se corrige sólo el primer campo a Luz. ¿Qué debe ocurrir al revisar la nueva línea?",
+          "options": [
+            "Se acepta porque el único diagnóstico anterior ya se corrigió.",
+            "Se informa TAMANO porque el cero es el último campo.",
+            "Se informa TIPO porque ahora es la primera condición incumplida."
+          ],
+          "correctIndex": 2,
+          "explanation": "El primer diagnóstico no afirmaba que todos los demás campos fueran correctos. Luz TEXTURA 0 supera formato e identificador; TEXTURA no coincide con textura, así que corresponde TIPO. Sólo después de corregirlo podría alcanzarse el rechazo del tamaño cero.",
+          "reviewFeedback": [
+            "Informar una sola causa limita el diagnóstico, no la cantidad de defectos que puede contener la línea.",
+            "Revisa el tipo antes que el tamaño; no elijas el último defecto encontrado.",
+            "Aplica otra vez el orden a la línea corregida y detente en el primer incumplimiento."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir casos que puedan distinguir un error"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una futura implementación acepta Roca malla 240, esa observación no basta para saber qué hace con un cuarto campo, con un signo o en el tamaño máximo. Para comprobar una regla, el caso debe cambiar de resultado cuando se introduce el defecto que queremos detectar. Examinar fronteras y entradas vacías permite descubrir errores y decisiones incompletas mientras se construye el programa (Kernighan & Pike, 1999, pp. 140–141)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La expectativa se obtiene del acuerdo antes de consultar el programa. Si el comprobador pidiera al propio lector investigado que le dijera qué debería aceptar, ambos repetirían el mismo error. Aquí trabajamos con defectos hipotéticos para elegir entradas sensibles; todavía no son ejecuciones de AssetCheck."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__testigos_de_defectos",
+          "prompt": "Relaciona cada defecto hipotético con el caso que lo descubre. En cada defecto se conservan todas las demás reglas. Los cuatro destinos se utilizan una vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "testigos",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "cero",
+                  "label": "Permite el valor cero como tamaño"
+                },
+                {
+                  "id": "maximo",
+                  "label": "Excluye el tamaño máximo, aunque el acuerdo lo incluye"
+                },
+                {
+                  "id": "resto_id",
+                  "label": "Sólo revisa la primera letra del identificador"
+                },
+                {
+                  "id": "sobrante",
+                  "label": "Ignora cualquier cuarto campo"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "extra",
+                  "label": "Paso sonido 8 extra"
+                },
+                {
+                  "id": "guion",
+                  "label": "Ro-ca malla 7"
+                },
+                {
+                  "id": "tope",
+                  "label": "Marco malla 30000"
+                },
+                {
+                  "id": "cero",
+                  "label": "Fondo textura 0"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "cero": "cero",
+                  "maximo": "tope",
+                  "resto_id": "guion",
+                  "sobrante": "extra"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cero debe rechazarse, pero el primer defecto lo aceptaría. 30000 debe admitirse, pero el segundo lo rechazaría. Ro-ca empieza por letra y contiene después un guion no permitido: observar sólo el inicio no detectaría ese error. El cuarto campo de Paso sonido 8 extra debe producir FORMATO. Cada caso tiene un resultado derivado del acuerdo que difiere del comportamiento defectuoso.",
+            "incorrect": "Busca un caso donde la decisión correcta y la defectuosa sean distintas. Un ejemplo permitido en el interior del intervalo puede pasar aunque la frontera esté mal."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__frontera_insuficiente",
+          "question": "Una batería contiene sólo los tamaños 2, 20 y 200 en líneas por lo demás válidas. Las tres pruebas coinciden. ¿Qué caso adicional separa una implementación correcta de otra que rechaza exactamente el límite superior?",
+          "options": [
+            "Una línea válida con tamaño 30000.",
+            "Otra línea válida con tamaño 200.",
+            "Una línea válida con tamaño 100."
+          ],
+          "correctIndex": 0,
+          "explanation": "El acuerdo incluye 30000, por lo que esa línea debe aceptarse. Una condición que use un límite superior estricto la rechazaría y aun así aceptaría 2, 20, 200 y 100. Repetir una observación interior no distingue estos dos comportamientos.",
+          "reviewFeedback": [
+            "La entrada debe situarse donde los dos comportamientos dejan de coincidir.",
+            "Ese tamaño ya está dentro del intervalo que ambos comportamientos admiten.",
+            "Una entrada interior nueva puede ser útil para otras preguntas, pero no observa la exclusión exacta del máximo."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el contrato sin corregir la entrada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aplica ahora las reglas juntas a declaraciones distintas de las anteriores. Cada fila es una línea independiente, sin terminador. Una línea localmente válida aún no acredita un manifiesto completo: la siguiente lección añade las relaciones entre líneas, los diagnósticos, la terminación y el alcance del informe."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__contrato_integrado",
+          "prompt": "Determina la primera causa de rechazo o la validez local. Conserva la escritura recibida; no normalices nombres, etiquetas ni números para hacerlos pasar.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "integracion",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Línea",
+                "Decisión local"
+              ],
+              "rows": [
+                [
+                  "brisa sonido 00006",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "Paso-2 sonido 6",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "Faro textura 6 extra",
+                  {
+                    "field": "c"
+                  }
+                ],
+                [
+                  "Faro TEXTURA 6",
+                  {
+                    "field": "d"
+                  }
+                ],
+                [
+                  "piedra2 malla 30000",
+                  {
+                    "field": "e"
+                  }
+                ],
+                [
+                  "X sonido 000000",
+                  {
+                    "field": "f"
+                  }
+                ],
+                [
+                  "X sonido -3",
+                  {
+                    "field": "g"
+                  }
+                ],
+                [
+                  "Ñ malla 4",
+                  {
+                    "field": "h"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 1",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 2",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 3",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "d",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 4",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "e",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 5",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "f",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 6",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "g",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 7",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                },
+                {
+                  "id": "h",
+                  "type": "dropdown",
+                  "label": "Decisión integrada de la fila 8",
+                  "options": [
+                    {
+                      "id": "formato",
+                      "label": "FORMATO"
+                    },
+                    {
+                      "id": "id",
+                      "label": "ID"
+                    },
+                    {
+                      "id": "tipo",
+                      "label": "TIPO"
+                    },
+                    {
+                      "id": "tamano",
+                      "label": "TAMANO"
+                    },
+                    {
+                      "id": "valida",
+                      "label": "Válida por sí sola"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "text",
+                    "expected": "valida"
+                  },
+                  "b": {
+                    "type": "text",
+                    "expected": "id"
+                  },
+                  "c": {
+                    "type": "text",
+                    "expected": "formato"
+                  },
+                  "d": {
+                    "type": "text",
+                    "expected": "tipo"
+                  },
+                  "e": {
+                    "type": "text",
+                    "expected": "valida"
+                  },
+                  "f": {
+                    "type": "text",
+                    "expected": "tamano"
+                  },
+                  "g": {
+                    "type": "text",
+                    "expected": "tamano"
+                  },
+                  "h": {
+                    "type": "text",
+                    "expected": "formato"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las filas primera y quinta son localmente válidas: declaran 6 y 30000 bytes. Paso-2 contiene un guion no permitido en el identificador. extra crea un cuarto campo; TEXTURA no es una etiqueta exacta. 000000 excede cinco dígitos y además representa cero, por lo que corresponde TAMANO. -3 incluye un signo. Ñ queda fuera del repertorio ASCII antes de comprobar la regla del identificador.",
+            "incorrect": "Recorre las condiciones en orden: repertorio, longitud y tres campos; identificador; tipo; escritura y valor del tamaño. No atribuyas validez de todo el lote a una sola línea."
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "programming_practice_tools__proyecto_assetcheck__definir_el_manifiesto_y_sus_reglas__entrada_conservada",
+          "question": "Una persona propone truncar abcdefghijkLm a doce caracteres, quitar el signo de +8 y convertir Textura a minúsculas antes de validar. ¿Qué cambiaría esa propuesta?",
+          "options": [
+            "Sólo la presentación del informe, sin afectar a las decisiones de aceptación.",
+            "El contrato: transformaría datos que esta versión debe conservar y rechazar.",
+            "Únicamente la rapidez de la lectura, con los mismos resultados para todas las entradas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las tres transformaciones convierten escrituras rechazadas en otras diferentes que podrían admitirse. Por tanto, modifican las decisiones, no sólo su presentación ni su velocidad. Una herramienta de corrección tendría que acordar y enseñar sus propios efectos. AssetCheck conserva el manifiesto y comunica qué debe revisarse.",
+          "reviewFeedback": [
+            "Compara el resultado de validar la escritura original con el de validar la transformada.",
+            "La propuesta altera qué dato llega a la comprobación y puede convertir un rechazo en aceptación.",
+            "Antes de comparar tiempos hay que comprobar si ambos programas hacen el mismo trabajo sobre los mismos datos."
+          ]
+        }
+      ]
+    }
+  ],
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "c7aeae996747c4e1e2f303e9db840cb75ce5e092e4386edc75900bc94b8f4a95"
+          },
+          {
+            "id": "block_0000_0005",
+            "sha256": "e1100aa8db5ae4740e9190c464288dafa62a0bb6b035a535ab20d1b8e1e54aaa"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "e4b8d0b0e8b42d2d22f556fbe1f9dbab934a4591b2f17e58e6c0284f33ff6322"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "4f94e446152f7f45f5d425a91b3bf564b51ba53ab0549701f7f688b89da1942b"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "68e19e9cff6cda823d02e006355e839620867aa742a8dfc84e0f31084cb10145"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "4aa3524a5ae47c82441881c4b6db9d3553534678a92d2bee9088217adb6253d2"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "8e8fa697f82a6976547df8b8f05b5ee9cffbda6fe51ec0a25b152e580b5d10a6"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "f209cd54ecd2ebeecf98edc085305b8e5aef102ab84c7adff328f9e08f844663"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "7781b450a2524c59da652b48c0939fdbb8f07316dc79a1545e0e59352f263404"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "27de43d191313e04068017e3d60119dbbc0a3af0d19f994f245be65686ca3176"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "493cc4ae41a1a2fde540f1b81af19117aae047dd61b3b29a22c0aeaf0804c8ac"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "c22d473ba364789369e86a5dbb8d606d737a04c72da189cae6d280220f559fbe"
+          },
+          {
+            "id": "block_0006_0005",
+            "sha256": "8a36039f844f6376e3f85d6f6a2f53c47362ce01b913a7c2c4fc19161cb42639"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "2b5dc4ab0be2d707f393ae96a7076634f4e61568ba2668b515a5377b8502e064"
+          },
+          {
+            "id": "block_0007_0004",
+            "sha256": "f7ddd10732f6176f5d9aa1b6d3279e67b492ff27fd24b86918587181c813e6ad"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "c9ef9c70cf132497cd84d4aba07338f02500cfa804927a8b1141a7f50081d10c"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "987eda48d1b026e559fe1a3d8f2bca6a0a6363661f3aaa8e79ed8fcab895a31f"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004",
+          "block_0000_0005"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004",
+          "block_0006_0005"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003",
+          "block_0007_0004"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "b4916b0374a13d9e1747fa18ac768d4be3ae3cc255ff149a578fac5f1245a4d5",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "c7aeae996747c4e1e2f303e9db840cb75ce5e092e4386edc75900bc94b8f4a95"
+              },
+              {
+                "id": "block_0000_0005",
+                "sha256": "e1100aa8db5ae4740e9190c464288dafa62a0bb6b035a535ab20d1b8e1e54aaa"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "e4b8d0b0e8b42d2d22f556fbe1f9dbab934a4591b2f17e58e6c0284f33ff6322"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "4f94e446152f7f45f5d425a91b3bf564b51ba53ab0549701f7f688b89da1942b"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "68e19e9cff6cda823d02e006355e839620867aa742a8dfc84e0f31084cb10145"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "4aa3524a5ae47c82441881c4b6db9d3553534678a92d2bee9088217adb6253d2"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "8e8fa697f82a6976547df8b8f05b5ee9cffbda6fe51ec0a25b152e580b5d10a6"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "f209cd54ecd2ebeecf98edc085305b8e5aef102ab84c7adff328f9e08f844663"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "7781b450a2524c59da652b48c0939fdbb8f07316dc79a1545e0e59352f263404"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "27de43d191313e04068017e3d60119dbbc0a3af0d19f994f245be65686ca3176"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "493cc4ae41a1a2fde540f1b81af19117aae047dd61b3b29a22c0aeaf0804c8ac"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "c22d473ba364789369e86a5dbb8d606d737a04c72da189cae6d280220f559fbe"
+              },
+              {
+                "id": "block_0006_0005",
+                "sha256": "8a36039f844f6376e3f85d6f6a2f53c47362ce01b913a7c2c4fc19161cb42639"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "2b5dc4ab0be2d707f393ae96a7076634f4e61568ba2668b515a5377b8502e064"
+              },
+              {
+                "id": "block_0007_0004",
+                "sha256": "f7ddd10732f6176f5d9aa1b6d3279e67b492ff27fd24b86918587181c813e6ad"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "c9ef9c70cf132497cd84d4aba07338f02500cfa804927a8b1141a7f50081d10c"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "987eda48d1b026e559fe1a3d8f2bca6a0a6363661f3aaa8e79ed8fcab895a31f"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  },
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "a0d70a6bf965472f74ac94c9388b3ec1eed3d36eeb75fa3ad165592a1f2e0b95",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "733f8c28084074ba44cdeba1e78d13feeb8b528affea09bfd251f5bd904dfb4c",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "ca53356559582b322b49cea1ca0b0ceccbb79fff31a9bda779a4e42cbfb1ce8f",
+        "spans": [
+          {
+            "start": 109,
+            "end": 123,
+            "text": "Roca malla 240",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 158,
+            "text": "Roca",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 173,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "240",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "c482b5675d763a93dbf02048b5c2420df305f95bd23d21e1edb862e832a1dc59",
+        "spans": [
+          {
+            "start": 308,
+            "end": 342,
+            "text": "(Thomas & Hunt, 2020, pp. 244–247)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/prompt",
+        "sourceSha256": "47c0e74ab633817b58ae8af721de18c072b37d64f1531b52808f55b3cb48acbc",
+        "spans": [
+          {
+            "start": 24,
+            "end": 38,
+            "text": "Roca malla 240",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "5ebd308d78e3e82a9fae1272f00f4d9f910c30901b11205a441c4fa2246e4443",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Roca",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 54,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "240",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "c9e47cd87ee17271d11140ee298b5d3dcfba9e290ddf8de1eccbcae92d5c58fc",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "6ec8d40f2c0a2255ad23bdd4c375f04a64d4d267cb494b22606951335ebf4715",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Roca",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "252b13683a3c596bb7281093de4c9f0980c67d009e971d1e393aa99258e0e6de",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "6af1f692e9496c6d0b668316eccb93276ae6b6774fa728aac31ff40a38318760",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "240",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "485335cb8de145ff93ac8f9038deb4c6b211cb0aebf88caa828f6b9e469216f0",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "c7d55850006de510326a889415c2daf23a6df7e2e00616e0cc694433ea408f19",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "6a5315b447c50af283c47365c9de0a1ba319ff171c8f63bf53216cdc0c38cd29",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/question",
+        "sourceSha256": "2494b7a530345ab922ad0d541ff53532318c4a307dcea3cfc65e931815e5dd95",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/explanation",
+        "sourceSha256": "b9366a837b88275ea1808d6122f1c6440297b2ea75ff27cd53dae0e37e9467e1",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/0",
+        "sourceSha256": "49da76e470a9ca99bd3c80cd7612c8787b1f683478612864dc487947d3e19c43",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/1",
+        "sourceSha256": "a0ba96568c57036c767444ca0c938f68e5b755188484c4ff59ab9b1e117797ef",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/options/2",
+        "sourceSha256": "09a25684aed34a5f120ac6da6587d2e46574f7416e6b3e8e27dfc578b714b6cc",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "0e878af85a870632f19af94cf60399c10678b1580c010fc7fa4255a5c4d27170",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "87944f303e1558ec97d1b2b56c308ccb76a5325e4fddfe734a7bdee326d4960d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "4486d65d3c5e2e3a016d6330c108b05a14a1c30bdab6357e2c7089f0bfb3a9e4",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "eccd41ccba91e72739822f5cbe1d46de6c3760fc1885c2b7f6206f99f7f16fc3",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "56399dae34406a5284faa59df0d9fedd683dc1b8ff3e28e5db32892f04a5ea16",
+        "spans": [
+          {
+            "start": 25,
+            "end": 45,
+            "text": "id tipo tamano_bytes",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "5918fc452a7fe1cb9fc0d4918fbc6f1da28a5c979f1ccb97dc9659741e331d7e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "8f8063b4a103d8476b3be4a09331782371e20128a0e30237c17723ab3e927441",
+        "spans": [
+          {
+            "start": 13,
+            "end": 27,
+            "text": "Roca malla 12x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 122,
+            "text": "Roca malla 12 extra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 306,
+            "text": "(Kernighan & Pike, 1999, pp. 85–87)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/prompt",
+        "sourceSha256": "7cd0155218613b18b879b4a34f1640c9c1366052dfdfca1489b4d8b7ab5841d9",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "3be4b31ed47747136a04ef3386eac8583cb648f47eee1cc7ba23fed5321572b3",
+        "spans": [
+          {
+            "start": 16,
+            "end": 33,
+            "text": "3, 2, 4, 3, 3 y 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 41,
+            "text": "9#nota",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "#",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "2b5f9fbea8a9597a86a37953982f537434b7f3fea729f66105a3d7681be01824",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "e9daa8be5e3ee47c26536a01e3cad55b40496b065f0d240d00798d9c01e8e9a5",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "dec72b98dea3b0b28b9d0837d00650ddd8be84d827a64f392eaafff7577a562c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/fields/2/label",
+        "sourceSha256": "7d712c7a8ede79c7b2687bdd24e6a8a226c6225fab7547bb97936f12ded3cebb",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/fields/3/label",
+        "sourceSha256": "d10e38b61c283cbf32c6c4d957cda3fab5053d5e1bba58a2249bd19048fb70bb",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/fields/4/label",
+        "sourceSha256": "3c4218e378688f87479742dcaeaba76239fd87b456b42804797409c8810590bf",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/fields/5/label",
+        "sourceSha256": "59ccee97f26f64547feb19c2aa6ada4c455f82243ac5c96b126d1c3d9ece0e9c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "af4a31366bde874ffb63258dcfbc6491910712e6ef9c3a6ab2d80048b7412a6b",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "956aa5a815d3288a6ab88c64d02b5888a4d79ed7c814f778890134f0468762cd",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "3de26f2b08e9056928ace82ebd1fa3f8a5c13c6ba1e644b13b24c1c24058fbbd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Brisa sonido 9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "5f47e810f75cc9f3851243dd9a106ec25482905e3f4dfcc1ff9a70753b67d78a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "Brisa sonido",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/rows/2/0",
+        "sourceSha256": "caafdddac581c01a873ab1eb90fbe8bd9439deacbb7c43fb83088c6b76afe150",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "Brisa sonido 9 nota",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/rows/3/0",
+        "sourceSha256": "495feba1f466809d83d4d8eb0484460a82c58b720531857866a4350502c5d75e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "Brisa sonido 9#nota",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/rows/4/0",
+        "sourceSha256": "fa78825aee76f09947fc0fb5f5af4ab19c84440f437b3759b1a0325a4326a291",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "Brisa",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 27,
+            "text": "sonido",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/responses/0/rows/5/0",
+        "sourceSha256": "84d977b67550355296e94070ea363f3fedd2e4ddb43550a3bd9e04e5079c4487",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "2ee1f10a5e9d3f3da0db5e61817d1703ac385159b6c460ee084d798fdc87fe20",
+        "spans": [
+          {
+            "start": 45,
+            "end": 66,
+            "text": "Faro textura 24 autor",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "1c211670a66b99537a65045b49c457422c11c68bf19844d854778877af429ac9",
+        "spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "24",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "text": "autor",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "ff74fd1388397628fb2560d6fc732dd05d01fdef8c050be93d0bfa6cbe2d848d",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "867271f3f3b9750a8bc32aac4382db21de21cd181bc22165ffeee803f4de5322",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "cb5e6dfd2dae80881d708483e9208b42663df8e112066c09f245546d130de60e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a9df0cd466a0c37f5f8a246ac60c448c4f0ef7ab1f8f13996226c6e13b4c8314",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "792a4e990e5e3abd805097eb3601558b32720c65777b974ffe2ca48b10047848",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "141bbdf5b61361b0cbe513bd02e4e36743d358aa2afed56b240fc95cb4f31e4c",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "5b1d6637a0c76d9e5a73a1afaaef29385d97dbd567e8f85e121e59475d587068",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "791554cad88bc36aa774d05477dc697a9d0d47a0821808906a23d6d383385728",
+        "spans": [
+          {
+            "start": 65,
+            "end": 67,
+            "text": "80",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 203,
+            "text": "32 a 126",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 247,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "96bea71e9414231d34f252f53f36b48e36aed6e6396bb1c4baf62aa03bdd9364",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0003",
+        "path": "/text",
+        "sourceSha256": "89f1e240055650e61225924a9ea318b380b78b2b1a8dc94d6a463c6f96ab4dfa",
+        "spans": [
+          {
+            "start": 12,
+            "end": 25,
+            "text": "Roca malla 10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 34,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 137,
+            "text": "67",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 178,
+            "text": "80",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 231,
+            "text": "81",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/prompt",
+        "sourceSha256": "746288a7f13554fc6be1ecfb462fdc9aaad43e9f8e8e9cb3e37386321e289c8a",
+        "spans": [
+          {
+            "start": 41,
+            "end": 43,
+            "text": "80",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "01ad4535e63a9d29af4c829f2530b75cffb0b277b89182c7a76cd6537bebbf0f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Brisa sonido 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 23,
+            "text": "14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 148,
+            "text": "14 + 66 = 80",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 163,
+            "text": "14 + 67 = 81",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 174,
+            "end": 175,
+            "text": "á",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 288,
+            "end": 290,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "32a66c42d1e92b0b5284e5b4142a3c2692fc7606b66488730f3c8a5f75a235f5",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "417d409203f1620fedcca5663b461c7f8fcafa7fad1ce8284ada6080b135bade",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "567e7d83d70a59310bc9547afda3da71ac80c2518dab78b39be97843b9049533",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/fields/2/label",
+        "sourceSha256": "20af6f82c7339471182d2ae57356659045075d95ad57d4627d4f070dfae2f99e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/fields/3/label",
+        "sourceSha256": "97a5aefbe8a524141ea1b9924c75ade24bd4180747dd26894c1dbd0fbba4bfaa",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "f6fc57295cbb517398c701075fc0adfdc48fbfe5a58639057c398b5f4ca443b2",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "1356c73fc433c154c944faf2ff8459651d0c1816eaa5cf0cb6f6cf4950e449de",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "d91bb27a5f6630acef505d12e658d8ccb6195201aa1b643af1d3dbcd79413633",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Brisa sonido 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 28,
+            "text": "66",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "5bd397e8ae14826c731b42af77b17aaae47a371e6f0bacd4065eed99f6c3babd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Brisa sonido 9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 28,
+            "text": "67",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/rows/2/0",
+        "sourceSha256": "c836727a604e188ff7a517c76750dbcdb5929f590dbdd2b1d145575b9b5b1a83",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Rocá malla 10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/responses/0/rows/3/0",
+        "sourceSha256": "2463cfcb66329fd5d6c8504b20b08ca4c9e9d9b96da8c94404618fe826d0f0f1",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Roca",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 20,
+            "end": 25,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 42,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/text",
+        "sourceSha256": "0871d7fb34fadd8cbe3b4c8313213428e84e707705d9a80748335342d27bd36b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "81093fa6286ab124f24592daf5e6b50b5bed46f2ce9b9c0331ee384e9ae3247a",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "7c8f893e5f138d5db309b0c4b69a0bd56caa24809458f0bc40c3c00d1ad92d09",
+        "spans": [
+          {
+            "start": 29,
+            "end": 35,
+            "text": "1 y 12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 89,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "text": "Z",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "a",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "text": "z",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 160,
+            "end": 161,
+            "text": "0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 164,
+            "end": 165,
+            "text": "9",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 182,
+            "end": 183,
+            "text": "_",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 330,
+            "end": 333,
+            "text": "C++",
+            "role": "data",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "60aceb8319ab6351874677bc99409e0b21d409cd6e36113105b8e64e256fee1a",
+        "spans": [
+          {
+            "start": 50,
+            "end": 54,
+            "text": "Roca",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 57,
+            "end": 61,
+            "text": "roca",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/prompt",
+        "sourceSha256": "4f0482aff3434ea39955dde79a403063bd087a59e2c802134b567735fa4e678c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/feedback/correct",
+        "sourceSha256": "66df80aa76a8f2020c11b0e19b79d5b04c45cab502148449ab0f0ab5c8960eed",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 22,
+            "text": "a2_",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 80,
+            "text": "_a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 85,
+            "text": "2a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 128,
+            "text": "abcdefghijkL",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 137,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 164,
+            "text": "abcdefghijkLm",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 173,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 185,
+            "text": "-",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 189,
+            "end": 194,
+            "text": "Ro-ca",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "bcb5b493d17b199ef489686f49b39d79c62bcda4b3d3616d08997e639e642f30",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "187f256bf326720531725ea2edf000c2ec0d40f4c0c98a2285ecf11a51c0b0ed",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "d2192239db8a9a7bbdc0bb3857779e27e2f7109695be889e70537a5260dd4d84",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/fields/2/label",
+        "sourceSha256": "ac5f8b5e751c3ded44508aa97ec4c1c31c4e3a87340ab001b02409e78292b3b8",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/fields/3/label",
+        "sourceSha256": "d1022548dd8ba6fbc43f04764c73128da93e5557d9b79f7706959fb5bc623b2d",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/fields/4/label",
+        "sourceSha256": "dae930eddf9f65e0cc75b2e6b3dac9d5f4118cec05504585124f01e2379a90c2",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/fields/5/label",
+        "sourceSha256": "c1e910bae01185af28051310b936613f93f26f4b3f4fc62e0ab51c7e98c9b513",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/fields/6/label",
+        "sourceSha256": "297d9e66196ad80e5aebbdc6ba5e70696676f7e10f499ea6199958585c928808",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "697131ead69b560965187bd77b9dc4c1338e1ce500dc281fde978dba51e4a647",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "8ca75c808a0ac235cc910dfd3db9ebc3c564486ef317e7950b1576c37cfda292",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "353b2a5179d4eb672a9d0f680847efdb0ccb99a1900aa1346a31a3d78c420f44",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "a2_",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/rows/2/0",
+        "sourceSha256": "34fb716034edaa881d9e64134f6c40f245d7b187d221ec6c63670c428a024f09",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "_a",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/rows/3/0",
+        "sourceSha256": "b2239ae33d9bc5614aeb2e439e5032b1fe77c32f7080d3211c1d03f1b17ffcf6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 2,
+            "text": "2a",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/rows/4/0",
+        "sourceSha256": "886fdf5e8b321f838ac50363280005dc282e9ee4e7d02c3d9eab02efe39afbd4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "abcdefghijkL",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/rows/5/0",
+        "sourceSha256": "7d198b409088a0bbec75d625c8c4f3bbb8f198defa11cd190c498027a3befd49",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "abcdefghijkLm",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/responses/0/rows/6/0",
+        "sourceSha256": "94af8d00b88a93142030d404869cf28b3ff9698ad31797a6cf108d0bcb46ae1d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "Ro-ca",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/question",
+        "sourceSha256": "10bf0128972cd18bd5ab18c0b831213bfbde767a147fe68993e173a618830f3e",
+        "spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "text": "Nube",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "text": "nube",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/explanation",
+        "sourceSha256": "3172060d2166935e0ed4a937bdaba0e1566ef3e82b4cbe93609fc4f601679bcf",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/0",
+        "sourceSha256": "9a2b915d65b9534ef92981513eb4757c5f10c0adb14d81da68abea72eeed83db",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/1",
+        "sourceSha256": "277ee2644fd8e5ff695f34edafe58bf136b91c8ec2e8aa11f0d6eb234c69477b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/options/2",
+        "sourceSha256": "4e64fd076c1a3c0e5b8b45d91f01c0c5946ccc645bc9589a2a6e8461b3532889",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "743d6ae8be03bd96c679098a3c1b89d436d462e76d0870a9270006b8e565a33b",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "83490a361a6fb7cf79cb9a776716accfb448efb1192f74af08a5e14e7281423c",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "cb0bac8a43f00a85c80ea804e4abdcb7d4ccdb73d8ad00698cd06334f08b8677",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "1afb24e1b50942c65202e89d16b11eceb242f7e50a57977811b089231f40405f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "b1a3d9ebd4315572e98b1e61ddf4e8c74e7e8e8a3bbf8001c6ff4596a463821a",
+        "spans": [
+          {
+            "start": 36,
+            "end": 43,
+            "text": "textura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 50,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 59,
+            "text": "sonido",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 125,
+            "text": "Textura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 136,
+            "text": "texturas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 252,
+            "text": "campana",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 275,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "96c273ca3647b9f1ae8b3320cfe26e5f36b5d97e6dd7a35e9a0e90c1e38787e7",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/prompt",
+        "sourceSha256": "bd0c13b8b309ac2ab6a0d7e737d166ea1216527159148e4a32c0cb62d36cfdda",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/feedback/correct",
+        "sourceSha256": "02b4af1a5aa1e776b66346e741a3235c8b56fd77c1cb217073ad61bf072fa224",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "malla",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 7,
+            "end": 13,
+            "text": "sonido",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 23,
+            "text": "textura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 56,
+            "end": 63,
+            "text": "Textura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 94,
+            "text": "texturas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 136,
+            "text": "campana",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "9735a2657b3edd95ec36ac7a95c6ddd905e3772c030396507ad15a5a203306cf",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "4438a55f5ead9c7497390767a35b876b8a59e5aba4992068bd59617351afffbd",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "6bdee1c38bfc36d9a3c574e397e5a21be617a0483a89810dcac9847eb466c001",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/fields/2/label",
+        "sourceSha256": "f3941a89022cf8862f11900a21f8bcea72b6b46ad418e605a55db61ede85fa50",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/fields/3/label",
+        "sourceSha256": "3d568f6f6233a2f9a248ffea5d0d562e5cae9cc9e8517d448d9b8b2130bf7f72",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/fields/4/label",
+        "sourceSha256": "cf710ac326291374be16ab636dd9c067ad84efd6375b32436d309dc05ed4fb0b",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "890086b16b4804070e738d2cd6b4966022becf5cd90d372afa97bc9f70b551c2",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "4bdb85cf2b0ecc3c8bb3a88a47886af6f10e1aab2a4dba78cdc676ec0ecde6c8",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "380df32c8482d39e72764ee4ed1831fbf4ac9ea55940f08654f649f2443f9134",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "campana malla 24",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "b70a25226f6e003de315469ece6c637b2fa3daa8ac6875ceccf05b8f5c0093fc",
+        "spans": [
+          {
+            "start": 0,
+            "end": 16,
+            "text": "Fondo Textura 24",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/rows/2/0",
+        "sourceSha256": "5842d067946193f4e828760bf274c7c3775e798631ea1e24bcc0e3e07720b155",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Paso sonido 24",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/rows/3/0",
+        "sourceSha256": "05adbab94fd11011b40fefb88ef717e35cfb0e5831bb1561f7dc047a72a2fbf8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Pared texturas 24",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/responses/0/rows/4/0",
+        "sourceSha256": "e153906c86c1265c47de1a20d54b4b8f4e6c57f308724821ec00785183835480",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "Logo textura 24",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/question",
+        "sourceSha256": "f508ae09260f495311c41ec0f01533c6fa3d67b2d4feece4ad153f46b211beb7",
+        "spans": [
+          {
+            "start": 19,
+            "end": 35,
+            "text": "Fondo Textura 24",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/explanation",
+        "sourceSha256": "82d8990e1f21489aa2d9e173f6694c7ff1ab43645b32d74b9244484ec4cf6b14",
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "Textura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 31,
+            "text": "textura",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/0",
+        "sourceSha256": "e97ba0d7e01624aef765b4f40028475ea4280c5eb95b1447cc1e8103fa6b4bc8",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/1",
+        "sourceSha256": "733627f39a127ef113b607c8e0ef2cbd8db8600bc2b00aa25a56598b43015044",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/options/2",
+        "sourceSha256": "1412e287bf6dedb3fd24ee72af0e5af5c2f829025c0fb0288319f20259974d8f",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "4664519113f23ff1e751177698848c1df41b1faf206141ac0558d4ced2e4ef9d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "8dd9785b563ae94e6ebc9b85fa63749d9506774ba593d5b39baaa6a4a08452c3",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "6db073f0e7b316edf371c21776c77df5a18076b55a889ece03f35499c0b620ba",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "2d8aa8aeb4358754a17feff911e77f7e585c1ddae19d8035d9b1cb41dbb69ff7",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "0f6b27a47e555f5f0db17a789a5ca18d53708e17683279a921e18dc5b9c67faa",
+        "spans": [
+          {
+            "start": 25,
+            "end": 37,
+            "text": "tamano_bytes",
+            "role": "data",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 67,
+            "text": "uno a cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 97,
+            "text": "0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "9",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 132,
+            "end": 141,
+            "text": "1 y 30000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0002",
+        "path": "/text",
+        "sourceSha256": "1ee4b4952b92480e5cc555de316819a6f51cacc2952e5116378855fbb6b57cdd",
+        "spans": [
+          {
+            "start": 64,
+            "end": 69,
+            "text": "00001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 103,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 116,
+            "text": "000001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 202,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 230,
+            "text": "00000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 272,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "5e8a564d4739d7c4c563ce9de5997cadb06e8a2e33d8a3065e4644d9619d9cf0",
+        "spans": [
+          {
+            "start": 83,
+            "end": 86,
+            "text": "12x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 122,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 127,
+            "text": "+12",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/prompt",
+        "sourceSha256": "e2b9839c2a965663dc20aad1a58c8446a17d09301ee51fa0bc540503c4cafa2f",
+        "spans": [
+          {
+            "start": 12,
+            "end": 17,
+            "text": "00120",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "0043d37e554bb39ba3598f65fbf8fff191c1fdd2e9d17c3d8c237c8cdfa01e90",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "120",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": "120",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "65f34d65889427a458f5a0a8d73c499a4bdb7e551afb1777ae94e89eeea6cc38",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "b7418c8ab8a2f799f8dbfa3d7614f35f5429e2482050f0765476a324c9dfd27c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "995e43baed99c9a38daa8dde05edd5192d53339b89d1854656c7193c66fdbb30",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "0cefd64415d26b0260bda8f09d04f01c28d01d81184036f4e016eeaa5d27443c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "8930e00fcc398a828c62ddfc8b9237e90da512814292e5f1c248d263abd1fc1d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "b7418c8ab8a2f799f8dbfa3d7614f35f5429e2482050f0765476a324c9dfd27c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "995e43baed99c9a38daa8dde05edd5192d53339b89d1854656c7193c66fdbb30",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/prompt",
+        "sourceSha256": "8b13a9e9e36774acaecf584b3b8258e734fc999fb7aae2d3d2a6d9d03c1e6d31",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/feedback/correct",
+        "sourceSha256": "acb954d7504fdc6a515752edc0b99e4e5eda39be1eb42e21f662465df79ac40f",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 14,
+            "end": 19,
+            "text": "30000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 27,
+            "text": "00001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 34,
+            "text": "30001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 64,
+            "text": "00000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 88,
+            "text": "000001",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 124,
+            "text": "+12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 138,
+            "end": 141,
+            "text": "12x",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 163,
+            "text": "1e3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "2f9a20eb16150db9b1b7592aac9563cc4b2dd1d81d5b4b70a136cbc07f9edaa3",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "13a283eaf05d077d32c8bd391151487f36096d695ceb3ee7775f531d4fa14cfe",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "57f90194eb30f51f65f0e32050d50f41b78db75f7c97b91571ea3484e4fa780d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/2/label",
+        "sourceSha256": "9050d6bccb2accb21258636f8d7cbf77a87e11db2cbb372a1086e7e88fb23504",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/3/label",
+        "sourceSha256": "a8b0d6e5eefb09554dbbb237ab71ee777358d480540691537ad5a0c673e6ca9d",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/4/label",
+        "sourceSha256": "16a5b433e3815453811a964d38b09d176cf1af443dd8baa0d8fbc65d7cd39f3b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/5/label",
+        "sourceSha256": "09aa3e275f77ebfb12af1736cfc20c09bb96715a926008219c6df77642f8d73b",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/6/label",
+        "sourceSha256": "a3e3d8ca1e72dad4c97c2d0ef94737dc149a127b34f3352c0c75c0355744d1b9",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/7/label",
+        "sourceSha256": "07bc4323ad5952210d1b60393a1795be6dd4d17b6cefb55adefa12e68326d06c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/fields/8/label",
+        "sourceSha256": "f1b2feeba6175d619a66a10945b19ccc9c79aa8d0ea1a455fc89fab5b3e3fd32",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "b5f0f760f7356a3d2d595fb4bf6128718e2b93a59a95381ecc1bef6f8c12f8d7",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "2287f19011867174e652ba70ffc11be9d3e5964b38b320832d81a4590cc5b025",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "891937cb335016e9c7074c3781dcb1364e0c660733a8889bbeae83e6aa759be6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "30000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/2/0",
+        "sourceSha256": "acb6af4c0a661cee72d9a0d1c1615f23d9b0f029acca7247b3eb89fed25b85c6",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "30001",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/3/0",
+        "sourceSha256": "e7042ac7d09c7bc41c8cfa5749e41858f6980643bc0db1a83cc793d3e24d3f77",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "00000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/4/0",
+        "sourceSha256": "8566ee8cc961a20f2f00208063764cfc75082eff5b90f989b36e4da08f935e2a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "00001",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/5/0",
+        "sourceSha256": "a7fda0b61e2047f0f1057d1f5f064c272fd5d490961c531f4df64b0dd354683a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "000001",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/6/0",
+        "sourceSha256": "544f3f867456df14a9e62879ec6fb221b98d8ef30b5baf81a6bddefba1a5148c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "+12",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/7/0",
+        "sourceSha256": "7fd6e9e6c65b725cc2fa41b65ca99b0a17539523b4bc2246f8cccb2ec4f754ab",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "12x",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/responses/0/rows/8/0",
+        "sourceSha256": "0b11ca015456e85e4a21de2d495f6bde1f3a7d8624c6d1ab181c4221bc1935eb",
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "1e3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "1715a04338b23d239293237e880b1402d06617c9592ff2324afc73c26e9734e2",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "067cd40810086542ff49d68f48aae321a019cfccd50db8f3d24ec78d9788cd7f",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "c9a9137d01388156fe39f918843b51ddf9174dc6d6a6b9ac08ec2c9fb0f6891d",
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "FORMATO",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 109,
+            "text": "ID",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 164,
+            "text": "TIPO",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 229,
+            "text": "TAMANO",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "e0368f0271a0e28dad8f33cf50323bdcee1512727f9776b24cc32b5236f50660",
+        "spans": [
+          {
+            "start": 3,
+            "end": 15,
+            "text": "9R Textura 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 115,
+            "text": "ID",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 207,
+            "text": "9R Textura 0 extra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 228,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 357,
+            "end": 394,
+            "text": "(Kernighan & Pike, 1999, pp. 103–105)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/prompt",
+        "sourceSha256": "75a80f5df716d85b7014956376d0b0eeab9e39e473db66da9328cad32a437b50",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "e2179645330d7714629888c66627203a460ceb7c2aa5361cb5c59f1df9aa4f8d",
+        "spans": [
+          {
+            "start": 19,
+            "end": 74,
+            "text": "ID, TIPO, TAMANO, FORMATO, FORMATO y válida por sí sola",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 241,
+            "text": "á",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 283,
+            "end": 284,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "df3cabb968c34528c0d3c5f1ce1d093f7506c042adf68efbdad14a1bffdbbd1b",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "b9a3c043d4bc7a2577dba231db033098875017144f980f7abec6f87929ac85d1",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "63e8070be0c6ed5f7d09cd5f522195f480717b9196608ccff40f48a7aed00963",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/fields/2/label",
+        "sourceSha256": "2f2378ee66e81ef6cb829f337d69a0f7ce7527acfafca61d14223074ea7383d1",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/fields/3/label",
+        "sourceSha256": "008a243044411deaa882e912a07bd4941709b84da0fad85fdfa15bfe50d289e7",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/fields/4/label",
+        "sourceSha256": "7cf4cbc7022080b94ae1acfd645490de853252e3ba5cac144a0be12f1181d48b",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/fields/5/label",
+        "sourceSha256": "45533388e3891a0380a83eb19136315c8e1b20aab0655acfbaba14ca688bff59",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "0ae1ea31051ce2ac1b99feaabc181c3043cf6da2459379d340adbbdc0376d610",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "d0435d59296eeadae20950bb06b45f560c77e167e307883649cc9532fda95ecd",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "63ede5d25aa41cbfbc46ea66e3dee890ce0f1ae3e56539edd4437e557eca1a90",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "7Sol TEXTURA 0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "1234715513a4314fcca8a7ad1b748f528cfb76a98da7f50cd1d0db8da7f0be60",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Sol TEXTURA 0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/rows/2/0",
+        "sourceSha256": "e226a8e53ca46d5e4450cb9e08ba7324c27c4b4cceef27ead932ddc44a25288c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Sol textura 0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/rows/3/0",
+        "sourceSha256": "0b3711028a0eacb8a2ff3a4b827cf353130c8275ecfba5432550610e68b1b0be",
+        "spans": [
+          {
+            "start": 0,
+            "end": 20,
+            "text": "7Sol TEXTURA 0 extra",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/rows/4/0",
+        "sourceSha256": "1eb97b5c5237d52a7fb6aba4f38c76f7dff3576205d9caad5f2acc9a0c5efb17",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Solá textura 4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/responses/0/rows/5/0",
+        "sourceSha256": "65b30ecc6de98feee76ba226a9e21fa2f184be160628ec5bedfe6767e164efb8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Sol textura 00004",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/question",
+        "sourceSha256": "d705705cbcbede82d307ec849236bfd3ff244dc2db7875c489c7406bf54d99aa",
+        "spans": [
+          {
+            "start": 18,
+            "end": 32,
+            "text": "8Luz TEXTURA 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 36,
+            "end": 38,
+            "text": "ID",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "Luz",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/explanation",
+        "sourceSha256": "c28b7899e30271144ba70f6153a576eacacb8e380e85d1e1aff270a25ba86e63",
+        "spans": [
+          {
+            "start": 79,
+            "end": 92,
+            "text": "Luz TEXTURA 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 132,
+            "text": "TEXTURA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 156,
+            "text": "textura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "TIPO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/options/0",
+        "sourceSha256": "546193f6df5078e74a9db29c2b0992cb7d27884acc72a26879063b0bf451defe",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/options/1",
+        "sourceSha256": "9ed7fc066564bec27da247d6da4a2636f909a80d6d5c42556bf506b0da8f0711",
+        "spans": [
+          {
+            "start": 11,
+            "end": 17,
+            "text": "TAMANO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/options/2",
+        "sourceSha256": "5118fb739c21fd7798f2c2c9a288c41101b6ea4ef93df5b0bf0b208aedb9fd9b",
+        "spans": [
+          {
+            "start": 11,
+            "end": 15,
+            "text": "TIPO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "930151d2bbf66272856ea5ce14899c0ff217d7ba706d560b505da0e2e0c6b22c",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "fb84feab77e29aa465194a671646ea84aaee988ee8755fda4312245730af0858",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "1f039762bf8b04c9a0614e59a69f2a44e7d2a9fcdc3c41b5c6a977a1918cd5a7",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "057e9b76d3573e4cefb2f414b80287349291f1667bbc7a105ed0e9a21e34987d",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "0cebf43a82c9f21b7b33760aba16b2bc8d257634c9ce5d35dec4499d2e3589ac",
+        "spans": [
+          {
+            "start": 36,
+            "end": 50,
+            "text": "Roca malla 240",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 427,
+            "text": "(Kernighan & Pike, 1999, pp. 140–141)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "b9f061a6229a131dc205950a064ed978ea440638e28b3394e6b1dc77c2f0312f",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/prompt",
+        "sourceSha256": "32ce498ea2c9996715e7b57cfbcabc24f209fb27eeb47e7f964895b319c0c481",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/feedback/correct",
+        "sourceSha256": "b947c3deb81e2c19bc4303dd6c5417e800e0b091d7cca30af9a474ccb4ef8099",
+        "spans": [
+          {
+            "start": 62,
+            "end": 67,
+            "text": "30000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 120,
+            "text": "Ro-ca",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 268,
+            "text": "Paso sonido 8 extra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 290,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "ac376380e52590a56063b7c34027155ecb83a3e8d4d2fcf17923cc1facbdd2b2",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "5caa08c63988d70eb5ed14bb55f689aa7109f89bacf7b0fecabe2495c2cef6d6",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "f69eff33defc13bf8acc2c94a517d1eaf1175946c5f9d9064ad2ad2383fdbb6c",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "3d2e1dc14d5be3a9ce84728443881a4bed62389ceb105b2f869167f71d55d872",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "4dd1b177a94f5a5a9ed4a43d5e255a9092c9c81b91fce2299798b39c9cd18372",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "4f8bcb81e9596f2beeb2d016a0ea7f3162ed3d9ede305648e8a1ca7e95777f6b",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "Paso sonido 8 extra",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "b4c04941f2d941c898a21e2dd3c9ca6979039ac48cbaed0e5d4bef3ec20ca05e",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Ro-ca malla 7",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "364fcc019a2a632ef65a8add13533b2ea17239d1bcae054266a06d9e1a000d28",
+        "spans": [
+          {
+            "start": 0,
+            "end": 17,
+            "text": "Marco malla 30000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "daac7f23fa7eb4bad51793e1cf1facd4817b0ff120c897dbd517f0f86cfee7f8",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "Fondo textura 0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/question",
+        "sourceSha256": "14f179a22620db920a9faf152d7d5598d61ae1ba26b631a1aaca8617e6cd5f19",
+        "spans": [
+          {
+            "start": 38,
+            "end": 49,
+            "text": "2, 20 y 200",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/explanation",
+        "sourceSha256": "c4ea2073cbb3d8114f2923cf35a49034d6d4f652a052eeb65279e7f096bd5dab",
+        "spans": [
+          {
+            "start": 19,
+            "end": 24,
+            "text": "30000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 163,
+            "text": "2, 20, 200 y 100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/0",
+        "sourceSha256": "e0c60d88751560a10238fe9d1740c4e2509f1574a36d7907c74051c66aadfc22",
+        "spans": [
+          {
+            "start": 28,
+            "end": 33,
+            "text": "30000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/1",
+        "sourceSha256": "e28ab29fbcf1b85ca0a868cb591c6530b6105ac5601f81a80228e8010457f7c0",
+        "spans": [
+          {
+            "start": 29,
+            "end": 32,
+            "text": "200",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/options/2",
+        "sourceSha256": "f797d2258795d761b67991151d4834adb296c681bcdd148d5a63fd64331519ef",
+        "spans": [
+          {
+            "start": 28,
+            "end": 31,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "4aeb0d33031909a878e90fe399264dbfd8acd64860d0a3e46fd866198a414c78",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "3b82f78b415fd5748830e586a3cfc7672960699a74e53666f8a5dbbb5e5f5b76",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "06889ff5683ad00bfa7720f827a97033fa88d6d9010a4d4374865e3ec21fd019",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "b3a176a4c31a57a881e174b9b7659b36b5d28c6a64d34c18820563dd3b9c1b71",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "06d3b66990fb9f1adb49cb9127f7126972d26ac2a62dc24234d976fbb678dbfb",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/prompt",
+        "sourceSha256": "a3959d1fd82a8688a61325f0efd50ec411d07add8750846d30d45793079faee6",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/feedback/correct",
+        "sourceSha256": "340e01328ef788e0a309aeb9f949490730ad3bf0e80a48af2c870e1fddb13389",
+        "spans": [
+          {
+            "start": 60,
+            "end": 61,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "30000",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 83,
+            "text": "Paso-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 141,
+            "text": "extra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 171,
+            "text": "TEXTURA",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 205,
+            "text": "000000",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 282,
+            "text": "TAMANO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 286,
+            "text": "-3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 306,
+            "text": "Ñ",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "5f0134286a310dcc0cebf4bb6515c17955d52dbe42fd545729594cef926e98e1",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/0/label",
+        "sourceSha256": "362544ba62630d5759bfb46de1dd9b4796ef866fe0c43fd85771ee3014e6da16",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/1/label",
+        "sourceSha256": "8fb19d36354cc4021cceffb2f5eabf33bab91f68ccbacbcddc5c91141f54aaf9",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/2/label",
+        "sourceSha256": "36ce6414796b6ccf920134f91ba9632ea33f9294f2fc531843e7b5d3e4b806d9",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/3/label",
+        "sourceSha256": "23e3b189a26f655fdbd9f9f73e69a4220e9d2c6631e2ae991cc3159c1558e836",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/4/label",
+        "sourceSha256": "f4bb2a48c3a002dc01e13385f790719956aeb6d5219a7a7d3d766d65c3ea1c9d",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/5/label",
+        "sourceSha256": "340933dd9e3e51c5e8d2701d850c97eaaebd8167dbec6a55834992ae0bf66028",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/6/label",
+        "sourceSha256": "19174ae4e0879f40b9733b93cdb8ed588c781b2bbb104343007c2ec0f6a533fc",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/fields/7/label",
+        "sourceSha256": "83fc06a8fdcb2735413d214a00d02ff1ffbc2184c776dce8670041013d0d39c8",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/headers/0",
+        "sourceSha256": "0ae1ea31051ce2ac1b99feaabc181c3043cf6da2459379d340adbbdc0376d610",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/headers/1",
+        "sourceSha256": "41d1d4bde6a6d2ccd7cf3e12787e5c36a96de19622dd724f12f12136097c7ef0",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/0/0",
+        "sourceSha256": "c521a6e1f3e1379d632f70504eb2e2eb44217ac0df87a014274a0c5f726f4030",
+        "spans": [
+          {
+            "start": 0,
+            "end": 18,
+            "text": "brisa sonido 00006",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/1/0",
+        "sourceSha256": "e9a998590e8c6fdcc2b9b899d234b0b046252b584d2882b8c5634b95f5339eff",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "Paso-2 sonido 6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/2/0",
+        "sourceSha256": "dfe0df50303829aaa0204852abcf7881125309743552059b8873c2cd44aeb381",
+        "spans": [
+          {
+            "start": 0,
+            "end": 20,
+            "text": "Faro textura 6 extra",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/3/0",
+        "sourceSha256": "7e0b6b5601264ac72733d334d307146f7290d97e1f2b76205ec099f22c156339",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Faro TEXTURA 6",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/4/0",
+        "sourceSha256": "1193eb9c204717e13cefc899a271dbe1aeba823a089990206c195d1231cd2fd3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 19,
+            "text": "piedra2 malla 30000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/5/0",
+        "sourceSha256": "e6ec9a97b64489792d530effffecde541ad19532f5118e97b820a2b37dd927a2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 15,
+            "text": "X sonido 000000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/6/0",
+        "sourceSha256": "cb9792efc754627deef89438d1bc8b9508b88ffef6692e1fd3c566b17eb5dc09",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "X sonido -3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0002",
+        "path": "/responses/0/rows/7/0",
+        "sourceSha256": "28a31e6140978e952cf6d296d71fb911e2d1e1803c5a79d44e8f2b8a441a21a7",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "Ñ malla 4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/question",
+        "sourceSha256": "eacb7a12815a3e0dc953c557e1cfaeab8b78c147f3a5de492202d907f96a4707",
+        "spans": [
+          {
+            "start": 28,
+            "end": 41,
+            "text": "abcdefghijkLm",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 82,
+            "text": "+8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 102,
+            "text": "Textura",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/explanation",
+        "sourceSha256": "06e48f30e4e99411b79b241e19e56573fb6dd3c0b0ac89fa8bf7ae17cdcb8f48",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/options/0",
+        "sourceSha256": "9b5199939640f748db6c6fdcaae24c6c22a1f171ce1f4f7e89e87342ca45d439",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/options/1",
+        "sourceSha256": "0f87df09bbaaf83a1dcfaea967fa1da3807925008f71732d73a408db3e956e78",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/options/2",
+        "sourceSha256": "2d1cd4ab34d1125537ce1053efaa4e38e9ef8904f95c66adcb657ce151c3b61f",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a6ddaf81b2da1b0c2d0c4a60da08cc351dcfcde0e6e0e36b99bbbe26bd481967",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "2aeb1ba791fbb6a849ab215960db06675ed05165f0b5387da6ba30296b92aac9",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "393abb00d881936e3cead090927f8b567c2f725958d8cbca95ef69590ec20a74",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "2a4f97a4edf43a2d08f4b06b7d52603c97ab3361aea7f2b33f7b5b7d9c9b09c5",
+        "spans": []
+      }
+    ]
+  }
+}
