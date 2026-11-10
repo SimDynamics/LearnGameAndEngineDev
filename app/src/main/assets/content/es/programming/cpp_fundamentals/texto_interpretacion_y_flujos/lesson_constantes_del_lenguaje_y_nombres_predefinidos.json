@@ -25,7 +25,7 @@
             "unidad+2;"
           ],
           "correctIndex": 2,
-          "explanation": "Consultar una constante en una expresión es válido. Asignarla se rechaza y volver a crear un nombre existente también se rechaza.",
+          "explanation": "unidad+2; consulta el valor predefinido 1 y calcula 1 + 2 = 3. Esa expresión utiliza el vínculo sin solicitar una escritura.\n\nunidad=2; intenta modificar un vínculo protegido y produce Nombre constante. crea unidad=2; intenta introducir un nombre que ya existe y produce Nombre ya definido. En ambos rechazos, unidad conserva su valor 1 y su protección.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e01",
           "reviewFeedback": [
             "Distingue consultar el valor de un vínculo de intentar sustituirlo. Revisa qué comprueba su marca de protección.",
@@ -58,7 +58,7 @@
             "Tres, porque no se permite leer base al inicializar."
           ],
           "correctIndex": 0,
-          "explanation": "Se guarda un int, no una fórmula ni una referencia al valor de base. La asignación posterior a base no recalcula copia.",
+          "explanation": "Cuando se acepta fija copia=base+1;, base vale 3. Se calcula 3 + 1 = 4 y se guarda ese entero en el vínculo protegido de copia.\n\nLa sentencia base=7; cambia después únicamente el vínculo de base. Consultar copia sigue obteniendo 4, porque su registro guarda el resultado aceptado de la creación y no vuelve a evaluar la expresión inicial.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e02",
           "reviewFeedback": [
             "Sigue el valor calculado al crear el vínculo y sepáralo de los cambios posteriores en otro vínculo.",
@@ -95,7 +95,7 @@
             0,
             1
           ],
-          "explanation": "Un vínculo protegido provoca un diagnóstico antes de la escritura. La misma regla se aplica a predefinidos y constantes del usuario.",
+          "explanation": "Si el vínculo encontrado tiene dato.modificable igual a false, la condición !dato.modificable es verdadera y se lanza Nombre constante. Por ejemplo, intentar asignar 2 a unidad termina por esa excepción antes de ejecutar dato.valor = valor;.\n\nEn un vínculo modificable, la condición es falsa: se omite el lanzamiento, se escribe el valor propuesto y return; termina la función. La comprobación debe preceder a la escritura tanto para un predefinido protegido como para una constante creada durante la sesión.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e03",
           "reviewFeedback": "Localiza la escritura del valor y la salida normal de la función. La comprobación de la protección debe impedir alcanzar esa escritura cuando la marca es falsa."
         },
@@ -140,7 +140,7 @@
           "answers": [
             "Valor: -100\nError: Nombre constante\nValor: -1\nValor: 1\nAceptadas: 3\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) borde=-100(C)"
           ],
-          "explanation": "La creación de borde llega al extremo inferior. La asignación no cambia su valor. -100%3 es -1, y unidad conserva uno.",
+          "explanation": "fija borde=-limite; consulta 100, aplica el signo y acepta el extremo -100. borde=0; se rechaza con Nombre constante, de modo que la consulta siguiente sigue usando -100.\n\nLa división entera de -100 entre 3 da -33; el resto es -1, pues -100 = (-33) * 3 + (-1). Así, borde%3; produce Valor: -1, y unidad; produce Valor: 1. Se aceptan tres operaciones y se rechaza una; la tabla conserva borde=-100(C).",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e04",
           "reviewFeedback": "Separa la creación, la asignación y las consultas. Sigue el valor que conserva el vínculo tras un rechazo y aplica la regla ya estudiada para el resto de una división entera negativa."
         },
@@ -153,7 +153,7 @@
             "Admitirla porque las constantes no ocupan espacio."
           ],
           "correctIndex": 1,
-          "explanation": "La capacidad cuenta todos los vínculos. La política de modificación no elimina una asociación del vector.",
+          "explanation": "Los dos predefinidos y los seis vínculos del usuario ocupan 2 + 6 = 8 entradas. Crear otra constante requeriría una novena entrada, por lo que corresponde Tabla llena y se conserva la tabla aceptada.\n\nLa marca de protección decide si puede asignarse otro valor a un vínculo que ya está guardado. Cada constante también ocupa una entrada del vector; su protección no aporta una plaza adicional ni autoriza a reemplazar un predefinido.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__constantes_del_lenguaje_y_nombres_predefinidos__e05",
           "reviewFeedback": [
             "Revisa si preparar un nombre al inicio autoriza después a sustituirlo para crear otro vínculo.",
@@ -171,7 +171,7 @@
             "Ninguno, porque todos los vínculos deben ser constantes."
           ],
           "correctIndex": 1,
-          "explanation": "Capacidad y mutabilidad son reglas diferentes. Dos plazas ya están presentes al inicio, y los seis vínculos nuevos pueden ser mutables o constantes dentro de la misma tabla.",
+          "explanation": "La tabla ya contiene unidad y limite cuando empieza a leer operaciones. De sus ocho plazas quedan 8 - 2 = 6 para nombres nuevos. Cada creación aceptada consume una de ellas.\n\nEsos seis vínculos pueden ser modificables, protegidos o una combinación de ambos. La capacidad se calcula contando entradas; la marca de cada entrada decide por separado si una asignación futura puede cambiar su valor.",
           "reviewFeedback": [
             "Incluye también los vínculos que se prepararon antes de leer las operaciones.",
             "Resta del máximo las entradas que ya están presentes al comenzar la sesión.",
@@ -217,11 +217,68 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Compartir las plazas y asignar con la tabla llena"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tus componentes del intérprete con constantes antes del main de este editor. Conserva las seis sesiones anteriores y la nueva que ya contiene el cliente: \"crea a=1;fija b=2;crea c=3;fija d=4;crea e=5;fija f=6;fija g=7;a=a+1;a;b;\". Adapta el nombre de probar si tu organización utiliza otro, conservando las cadenas y los informes.\n\nLa sesión combina creaciones modificables y protegidas, intenta crear otra constante con las plazas ocupadas y después asigna a un vínculo existente. Las ocho plazas cuentan todas las entradas, incluidos los dos predefinidos; una asignación válida conserva el número de vínculos.\n\nPulsa «Compilar, ejecutar y comprobar» con las siete sesiones del mismo programa. Revisa también las marcas del informe y el estado que permanece después de cada rechazo.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nCaso 1\nValor: 4\nValor: 6\nValor: 9\nValor: 6\nError: Nombre constante\nValor: 100\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) base=9(V) copia=6(C)\nCaso 2\nError: Se esperaba ;\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 3\nValor: 1\nError: Nombre constante\nValor: 1\nAceptadas: 2\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(C)\nCaso 4\nError: Nombre ya definido\nValor: 1\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C)\nCaso 5\nError: Resultado fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 6\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 1\nAceptadas: 7\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=2(V) c=3(V) d=4(V) e=5(V) f=6(V)\nCaso 7\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 2\nValor: 2\nValor: 2\nAceptadas: 9\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=2(V) b=2(C) c=3(V) d=4(C) e=5(V) f=6(C)"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin otro main.\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"crea base=4;fija copia=base+2;base=9;copia;limite=3;limite;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"fija x=5 2;x;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"fija x=unidad;x=x+1;x;\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"crea unidad=3;unidad;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"crea a=limite+1;a;\");\n    std::cout << \"Caso 6\\n\";\n    probar(\"crea a=1;crea b=2;crea c=3;crea d=4;crea e=5;crea f=6;crea g=7;a;\");\n    std::cout << \"Caso 7\\n\";\n    probar(\"crea a=1;fija b=2;crea c=3;fija d=4;crea e=5;fija f=6;fija g=7;a=a+1;a;b;\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nValor: 4\nValor: 6\nValor: 9\nValor: 6\nError: Nombre constante\nValor: 100\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) base=9(V) copia=6(C)\nCaso 2\nError: Se esperaba ;\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 3\nValor: 1\nError: Nombre constante\nValor: 1\nAceptadas: 2\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(C)\nCaso 4\nError: Nombre ya definido\nValor: 1\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C)\nCaso 5\nError: Resultado fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 6\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 1\nAceptadas: 7\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=2(V) c=3(V) d=4(V) e=5(V) f=6(V)\nCaso 7\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 2\nValor: 2\nValor: 2\nAceptadas: 9\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=2(V) b=2(C) c=3(V) d=4(C) e=5(V) f=6(C)\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los seis vínculos creados llenan las ocho plazas junto con unidad y limite. fija g=7; necesita otra plaza y se rechaza con Tabla llena. a=a+1; utiliza un vínculo modificable ya existente: acepta 2 y conserva las ocho entradas. Las consultas siguientes obtienen 2 de a y 2 de b.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 4\nValor: 6\nValor: 9\nValor: 6\nError: Nombre constante\nValor: 100\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) base=9(V) copia=6(C)\nCaso 2\nError: Se esperaba ;\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 3\nValor: 1\nError: Nombre constante\nValor: 1\nAceptadas: 2\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(C)\nCaso 4\nError: Nombre ya definido\nValor: 1\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C)\nCaso 5\nError: Resultado fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 6\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 1\nAceptadas: 7\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=2(V) c=3(V) d=4(V) e=5(V) f=6(V)\nCaso 7\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nValor: 7\nValor: 2\nValor: 2\nValor: 2\nAceptadas: 10\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=2(V) b=2(C) c=3(V) d=4(C) e=5(V) f=6(C) g=7(C)\n"
+                    ],
+                    "text": "Una creación protegida también necesita una entrada. Tras los seis nombres del usuario ya hay ocho vínculos, de modo que g no debe incorporarse. Revisa si la comprobación de capacidad se ejecuta sólo para las creaciones modificables."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 4\nValor: 6\nValor: 9\nValor: 6\nError: Nombre constante\nValor: 100\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) base=9(V) copia=6(C)\nCaso 2\nError: Se esperaba ;\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 3\nValor: 1\nError: Nombre constante\nValor: 1\nAceptadas: 2\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(C)\nCaso 4\nError: Nombre ya definido\nValor: 1\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C)\nCaso 5\nError: Resultado fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 6\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 1\nAceptadas: 7\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=2(V) c=3(V) d=4(V) e=5(V) f=6(V)\nCaso 7\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nError: Tabla llena\nValor: 1\nValor: 2\nAceptadas: 8\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C) a=1(V) b=2(C) c=3(V) d=4(C) e=5(V) f=6(C)\n"
+                    ],
+                    "text": "La tabla llena impide crear g, pero no impide cambiar el valor de a, que ya ocupa una plaza y es modificable. Revisa si estás exigiendo una plaza libre para una asignación que no añade ninguna entrada."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar crear una entrada de cambiar su valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las creaciones dejan a=1(V) b=2(C) c=3(V) d=4(C) e=5(V) f=6(C), después de los dos predefinidos. El tamaño es 2 + 6 = 8. La protección de b, d y f no reduce ese número. Por eso fija g=7; produce Error: Tabla llena y conserva los ocho vínculos.\n\na=a+1; consulta 1 y propone 2 para la entrada existente. Tras su terminador, a queda en 2 y la tabla sigue teniendo ocho entradas. Las consultas de a y b obtienen 2 en ambos casos; el informe cuenta nueve aceptaciones y un rechazo.\n\nLa batería anterior intentaba la novena creación con crea, y después de llenar la tabla sólo consultaba. No observaba una creación protegida sin plaza ni una asignación válida con la tabla llena. En la referencia, definir comprueba capacidad para ambas clases de vínculo, mientras asignar busca y modifica uno existente sin añadirlo otra vez."
+        },
         {
           "type": "heading",
           "text": "Distinguir nombres completos y conservar su protección"
@@ -235,7 +292,7 @@
           "answers": [
             "Valor: 3\nValor: 4\nValor: 6\nValor: 4\nError: Nombre constante\nValor: 6\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) fija2=6(V) Fija=4(C)"
           ],
-          "explanation": "Sólo la palabra completa `fija` es reservada; `fija2` y `Fija` son nombres distintos. La creación de `Fija` guarda 4, calculado con el valor 3 que tenía `fija2`. Cambiar `fija2` a 6 no recalcula `Fija`. El intento de asignar 2 a `Fija` se rechaza por su protección y las consultas conservan los valores aceptados. Se cuentan cinco operaciones aceptadas y una rechazada.",
+          "explanation": "La palabra completa fija selecciona una creación protegida; fija2 y Fija se reconocen como nombres distintos. Primero se guarda 3 en fija2. Al crear Fija, se calcula 3 + 1 = 4 y se guarda 4 con protección.\n\nLa asignación siguiente deja fija2 en 6, mientras la consulta de Fija sigue obteniendo 4. Intentar Fija=2; produce Nombre constante, y la última consulta de fija2 devuelve 6. El informe conserva fija2=6(V) Fija=4(C), con cinco aceptaciones y un rechazo.",
           "reviewFeedback": "Distingue las palabras completas antes de seguir cada vínculo. Una consulta usa el valor guardado y la marca decide si se permite sustituirlo; revisa también qué estado conserva una operación rechazada."
         },
         {
@@ -489,12 +546,18 @@
           "block_0005_0001",
           "block_0005_0003",
           "block_0005_0004",
-          "block_0005_0002"
+          "block_0005_0002",
+          "u11_capacidad_compartida_y_asignacion_sin_alta_titulo",
+          "u11_capacidad_compartida_y_asignacion_sin_alta_consigna",
+          "u11_capacidad_compartida_y_asignacion_sin_alta_salida",
+          "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion"
         ]
       },
       {
         "id": "page_0006",
         "blocks": [
+          "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_titulo",
+          "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_razonamiento",
           "block_0006_0000",
           "work_u11l21_nombres_completos",
           "block_0006_0001",
@@ -994,6 +1057,60 @@
           "block": 0
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_capacidad_compartida_y_asignacion_sin_alta_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_capacidad_compartida_y_asignacion_sin_alta_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_capacidad_compartida_y_asignacion_sin_alta_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion",
+        "sha256": "eb166583a017e46c7ab982ecfe23b4148ca7f3d5173a7f6710fd4ce65c154b36",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0006"
       }
     ],
     "editorial": [
@@ -1106,26 +1223,70 @@
         "id": "block_0003_0001",
         "beforeSha256": "28a7170ad4e5ca1503f01aef7de76cfb44c6ae1267a6cd9bddd458c00b0013d2",
         "afterSha256": "beab062d16d1b50119a34900b20363d5431477badb7f9d47aa13354826b7ceb5"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "51f2db8c8e62e09347b1ee0dce24989f1d8f6cb26a8676fe5c4f592fe9129adf",
+        "afterSha256": "7dbdd37c4283f88990af7582b29d4ad62d6c991446844b2c2e8051b218f4eff7"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "bdd26441435b3bf7c2d4fe2e89dc3f4bc9affd069acbc48b019b429ef1c6a0ec",
+        "afterSha256": "750d8b896d53b0f72a082bf27a72364e18b5d82c46675c34da33f2ba19be8c77"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "a526c515f721d985a08be8cbdd7d1ead3c484833214850c58c5421fd2002a306",
+        "afterSha256": "e38ed008079c8c1a78196b3cb858f50e727cc7d12c3acb2cf62d2d3d1a43bf2c"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "4d6068fec85b85ee54ed09eba423732df60e6a8f35bf1b8e6c9159e754744e21",
+        "afterSha256": "deeb325b8e2be5567382a96618a2b7311ef11ee8cbed3fd0cd65e28dc045f104"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "982e0dde426f8b9636c4aa3d5946cd763f3323fd77fb14e6447c58038c5d02a5",
+        "afterSha256": "a374df1d2c0c90d74ae01e2134c51108e100df2ce9842278935466dcdb2956c3"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "d5fe06aa0e3fc0bbd8a600c54efdefe11a5bebf61d59ea1e493146e4956d3c73",
+        "afterSha256": "c40aa46b0c576a3f5c840ae7dc6d6e059e7e3e01348b7547b03a36a7475b9ae8"
+      },
+      {
+        "id": "work_u11l21_nombres_completos",
+        "beforeSha256": "abf6928bee01857192be57ce4a62d567a9a2934b772a19d4408080f28216b779",
+        "afterSha256": "4ae846b0d01e2919c53b8a1fa39030dc66e653df5e45eb70324c4bc1ffa28b82"
       }
     ]
   },
   "compilerPuzzlesRequired": true,
   "referenceAfter": [
     {
-      "activity": "block_0005_0002",
+      "activity": "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion",
       "blocks": [
         "block_0006_0000",
         "block_0006_0001",
         "block_0006_0002",
         "block_0006_0003",
         "block_0007_0000",
-        "block_0007_0001"
+        "block_0007_0001",
+        "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_titulo",
+        "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_razonamiento"
       ]
     }
   ],
   "activityAfter": [
     {
       "activity": "work_u11l21_nombres_completos",
+      "requires": [
+        "block_0005_0002",
+        "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion"
+      ]
+    },
+    {
+      "activity": "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion",
       "requires": [
         "block_0005_0002"
       ]
@@ -1502,8 +1663,72 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "72f230779a2da3c5d9416ffef37278454fd71a0239d82c25e96e143fa44ad469",
-        "spans": []
+        "sourceSha256": "757ca54b66d083b84c42afa1030c3dfd8196e0e7523912858113e8874fff0c57",
+        "spans": [
+          {
+            "start": 0,
+            "end": 9,
+            "text": "unidad+2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 61,
+            "text": "1 + 2 = 3",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 135,
+            "text": "unidad=2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 185,
+            "end": 201,
+            "text": "Nombre constante",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 217,
+            "text": "crea unidad=2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 271,
+            "end": 289,
+            "text": "Nombre ya definido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 316,
+            "text": "unidad",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 336,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1738,32 +1963,68 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "50456741c1954a45a14df51b2ddcd9c8ce25c300f51af80788d401a895b7758c",
+        "sourceSha256": "a36fda393456ed371a9dce0c75c8f0a83b434af78d27711d8308e7840fedb3b2",
         "spans": [
           {
-            "start": 13,
-            "end": 16,
-            "text": "int",
-            "role": "cpp"
+            "start": 17,
+            "end": 35,
+            "text": "fija copia=base+1;",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 63,
-            "end": 67,
+            "start": 37,
+            "end": 41,
             "text": "base",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 95,
-            "end": 99,
-            "text": "base",
+            "start": 47,
+            "end": 48,
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 113,
-            "end": 118,
+            "start": 61,
+            "end": 70,
+            "text": "3 + 1 = 4",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 126,
             "text": "copia",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 149,
+            "text": "base=7;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 190,
+            "end": 194,
+            "text": "base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 211,
+            "text": "copia",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 230,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -1899,8 +2160,65 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "f21bbba888fd0b69f8854931a17e36c9403326dda60773eaf7618ff23ce9726a",
-        "spans": []
+        "sourceSha256": "b040a637daddf46287f9f8795bb4379fe57545e709516ba765ab7877308bb246",
+        "spans": [
+          {
+            "start": 31,
+            "end": 47,
+            "text": "dato.modificable",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 61,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 93,
+            "text": "!dato.modificable",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 134,
+            "text": "Nombre constante",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 167,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 176,
+            "text": "unidad",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 240,
+            "text": "dato.valor = valor;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 357,
+            "text": "return;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -2081,34 +2399,118 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "07d760bfea30f4940db36e6c050a06ddf6aae1af908c2a29a24595e73c7929ff",
+        "sourceSha256": "1ea3f28a8ab534ffd752eedeaac33481ef8acc68f09d9e243fbadedbb7a6c6fa",
         "spans": [
           {
-            "start": 15,
-            "end": 20,
-            "text": "borde",
+            "start": 0,
+            "end": 19,
+            "text": "fija borde=-limite;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 29,
+            "end": 32,
+            "text": "100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 82,
-            "end": 88,
-            "text": "-100%3",
+            "start": 70,
+            "end": 74,
+            "text": "-100",
             "role": "data",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 92,
-            "end": 94,
-            "text": "-1",
+            "start": 76,
+            "end": 84,
+            "text": "borde=0;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 100,
+            "end": 116,
+            "text": "Nombre constante",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 104,
-            "text": "unidad",
+            "start": 165,
+            "end": 169,
+            "text": "-100",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 198,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 206,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 213,
+            "text": "-33",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 229,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 259,
+            "text": "-100 = (-33) * 3 + (-1)",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 266,
+            "end": 274,
+            "text": "borde%3;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 283,
+            "end": 292,
+            "text": "Valor: -1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 296,
+            "end": 303,
+            "text": "unidad;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 312,
+            "end": 320,
+            "text": "Valor: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 399,
+            "text": "borde=-100(C)",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2128,8 +2530,23 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "2ac6a3ad8d1319cafb65fcd881b4837298545317a7d84d7841c1c7f6ff9cdbb7",
-        "spans": []
+        "sourceSha256": "69116b8c0dfbf8e703fc45f199e7e65bd68bc67767bec7a556cf130cce97f94b",
+        "spans": [
+          {
+            "start": 60,
+            "end": 69,
+            "text": "2 + 6 = 8",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 166,
+            "text": "Tabla llena",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2207,8 +2624,30 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "0781d03fd556d9b462dc4e29bf35a4deb98f6cbe2ac9378488ce720d34583f2b",
-        "spans": []
+        "sourceSha256": "47b583e9e45c8793aa9e8e02b08c8785282b4df7c74fae39a3921d1e7cc38f77",
+        "spans": [
+          {
+            "start": 21,
+            "end": 27,
+            "text": "unidad",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 36,
+            "text": "limite",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 107,
+            "text": "8 - 2 = 6",
+            "role": "math",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2665,90 +3104,125 @@
       {
         "block": "work_u11l21_nombres_completos",
         "path": "/explanation",
-        "sourceSha256": "d9345153299cd520631f191b040b1a3bd1085d74db1bb5c90e4e4a99cd8778e7",
+        "sourceSha256": "6b5058c8af455719a13e5bcc57d713812ad1f54912f5d9cfe986faf22e4849db",
         "spans": [
           {
-            "start": 26,
-            "end": 30,
+            "start": 20,
+            "end": 24,
             "text": "fija",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 47,
-            "end": 52,
+            "start": 60,
+            "end": 65,
             "text": "fija2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 57,
-            "end": 61,
+            "start": 68,
+            "end": 72,
             "text": "Fija",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 102,
-            "end": 106,
-            "text": "Fija",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 115,
-            "end": 116,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 141,
-            "end": 142,
+            "start": 128,
+            "end": 129,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 159,
+            "start": 133,
+            "end": 138,
             "text": "fija2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 176,
+            "start": 149,
+            "end": 153,
+            "text": "Fija",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 175,
+            "text": "3 + 1 = 4",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 189,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 241,
             "text": "fija2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 180,
-            "end": 181,
+            "start": 245,
+            "end": 246,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 196,
-            "end": 200,
+            "start": 272,
+            "end": 276,
             "text": "Fija",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 225,
-            "end": 226,
-            "text": "2",
+            "start": 294,
+            "end": 295,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 230,
-            "end": 234,
-            "text": "Fija",
+            "start": 306,
+            "end": 313,
+            "text": "Fija=2;",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 322,
+            "end": 338,
+            "text": "Nombre constante",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 369,
+            "text": "fija2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 380,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 422,
+            "text": "fija2=6(V) Fija=4(C)",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2904,6 +3378,305 @@
         "path": "/text",
         "sourceSha256": "7ccfca9a5eec7d1d851466d927a3cb88a83ec8becd33df89843aaf7fde9f3644",
         "spans": []
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_titulo",
+        "path": "/text",
+        "sourceSha256": "a476bf2dfd4f8dcc8d55cfe177e94b7a43b4d02630bf61d8af8f3a74b35e1d8b",
+        "spans": []
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_consigna",
+        "path": "/text",
+        "sourceSha256": "8d83eea0e1cc77ba3dca0f44f97dcfa7e5bea3022c0b5bb5f2d508a225f8535b",
+        "spans": [
+          {
+            "start": 62,
+            "end": 66,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 235,
+            "text": "\"crea a=1;fija b=2;crea c=3;fija d=4;crea e=5;fija f=6;fija g=7;a=a+1;a;b;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 263,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_salida",
+        "path": "/text",
+        "sourceSha256": "069d0391629af4eb152ec495a2277538b2a7d53f25cd8cb2a9db0cb32bf1ea70",
+        "spans": [
+          {
+            "start": 33,
+            "end": 1050,
+            "text": "Caso 1\nValor: 4\nValor: 6\nValor: 9\nValor: 6\nError: Nombre constante\nValor: 100\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) base=9(V) copia=6(C)\nCaso 2\nError: Se esperaba ;\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 3\nValor: 1\nError: Nombre constante\nValor: 1\nAceptadas: 2\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(C)\nCaso 4\nError: Nombre ya definido\nValor: 1\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C)\nCaso 5\nError: Resultado fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla: unidad=1(C) limite=100(C)\nCaso 6\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 1\nAceptadas: 7\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=2(V) c=3(V) d=4(V) e=5(V) f=6(V)\nCaso 7\nValor: 1\nValor: 2\nValor: 3\nValor: 4\nValor: 5\nValor: 6\nError: Tabla llena\nValor: 2\nValor: 2\nValor: 2\nAceptadas: 9\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=2(V) b=2(C) c=3(V) d=4(C) e=5(V) f=6(C)",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "1a1d14ae1613cc4b32d693232cc463a1f5088ac3995e16e07bc237f4879cbef9",
+        "spans": [
+          {
+            "start": 121,
+            "end": 122,
+            "text": "g",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "d8fe804955a98c1dd0bee8e8f332b8ad3679e9ed42e5f22b1990dc3d7ecf104c",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "g",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "1656e16ef0fd9a8bfc6ac2857eb6961ec06737f6db8a492118aaada2203f6953",
+        "spans": [
+          {
+            "start": 59,
+            "end": 65,
+            "text": "unidad",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 74,
+            "text": "limite",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 85,
+            "text": "fija g=7;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 123,
+            "end": 134,
+            "text": "Tabla llena",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 142,
+            "text": "a=a+1;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 195,
+            "end": 196,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 267,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 276,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "6f6c91c12fae603528960e2d48129da4b86bb113c7c68279bbbeba47d65abd9b",
+        "spans": []
+      },
+      {
+        "block": "u11_capacidad_compartida_y_asignacion_sin_alta_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "d96e7f783752ee0deb9187271af1bbb31225bb3661702897ee486f7985186754",
+        "spans": [
+          {
+            "start": 21,
+            "end": 62,
+            "text": "a=1(V) b=2(C) c=3(V) d=4(C) e=5(V) f=6(C)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "2 + 6 = 8",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 138,
+            "end": 139,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "d",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 146,
+            "text": "f",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 186,
+            "text": "fija g=7;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 195,
+            "end": 213,
+            "text": "Error: Tabla llena",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 251,
+            "text": "a=a+1;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 274,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 323,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 334,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 393,
+            "end": 394,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 397,
+            "end": 398,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 531,
+            "end": 535,
+            "text": "crea",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 692,
+            "end": 699,
+            "text": "definir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 759,
+            "end": 766,
+            "text": "asignar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

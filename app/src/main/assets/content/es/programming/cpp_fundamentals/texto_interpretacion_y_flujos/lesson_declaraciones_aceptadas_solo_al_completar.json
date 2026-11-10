@@ -36,7 +36,7 @@
             "crea ruta2;"
           ],
           "correctIndex": 1,
-          "explanation": "ruta2 es un nombre nuevo con inicializador válido. Repetir ruta se rechaza; omitir = y la expresión no cumple la gramática.",
+          "explanation": "La primera operación dejó ruta asociada a 3. En crea ruta2=ruta+1;, ruta2 es un nombre diferente y su inicializador puede consultar ruta: calcula 3 + 1 = 4. Después del terminador, se añade el nuevo vínculo con valor 4.\n\ncrea ruta=7; intenta definir de nuevo un nombre que ya existe. crea ruta2; omite el signo = y la expresión inicializadora. Ninguna de esas dos alternativas cumple el contrato de una creación nueva completa.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar__e01",
           "reviewFeedback": [
             "Comprueba si el nombre de esa creación ya pertenece a la tabla aceptada. Volver a escribir crea no convierte una redefinición en un nombre distinto.",
@@ -75,7 +75,7 @@
             "La copia del estado aceptado anterior, sin insertar el nombre nuevo."
           ],
           "correctIndex": 2,
-          "explanation": "La expresión consulta asociaciones aceptadas. Sólo después de calcular un valor válido se propone añadir el nuevo vínculo.",
+          "explanation": "La candidata comienza como copia de la tabla aceptada. Así, si ya se aceptó base con valor 4, el inicializador de crea doble=base*2; puede consultar ese vínculo y calcular 4 * 2 = 8. La copia no comienza vacía.\n\nEl nombre nuevo se propone después de evaluar su inicializador. Por eso, si nuevo no estaba registrado, crea nuevo=nuevo+1; falla al consultarlo: no se inserta antes un cero provisional. Calcular el valor y proponer la nueva asociación preceden todavía a aceptar el terminador.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar__e02",
           "reviewFeedback": [
             "Distingue consultar un nombre de insertarlo. Comprueba si el programa registra provisionalmente el nombre antes de evaluar su valor inicial.",
@@ -93,7 +93,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`leer_sentencia` toma un token para elegir una de las dos formas. Si su clase es `declaracion`, ya se reconoció `crea` y llama a `leer_definicion`. En otro caso devuelve el token al lector y llama a `leer_expresion`, que todavía necesita consumirlo. `leer_definicion` exige, en este orden, un token de nombre, el signo `=` y una expresión; calcula su valor y llama a `candidata.definir(destino.texto, valor)`. Ambas formas devuelven un entero, por lo que el cliente puede informar su resultado del mismo modo (Stroustrup, 2024).\n\n`leer_operacion` añade la aceptación de la operación completa. Primero ejecuta `Tabla_nombres candidata = tabla;`, creando una copia independiente de las asociaciones aceptadas. Después analiza la sentencia sobre esa copia y lee el token que debe ser `;`. Sólo si se cumplen esos pasos, `tabla = candidata;` reemplaza el contenido de la tabla aceptada. Copiar y asignar esta clase opera sobre el vector de registros que contiene, como se trabajó en la lección anterior (Köppe et al., 2023).\n\nSi aparece un diagnóstico del lenguaje antes de ese reemplazo, la copia se descarta y la tabla aceptada conserva su contenido. El lector sí ha consumido texto: la copia no retrocede su posición. El cliente usa `descartar_operacion` para recuperar la frontera siguiente. Los contadores registran por separado las operaciones aceptadas y las rechazadas; `Tabla:` muestra las asociaciones conservadas, no los intentos descartados.",
+          "text": "`leer_sentencia` toma un token para elegir una de las dos formas. Si su clase es `declaracion`, ya se reconoció `crea` y llama a `leer_definicion`. En otro caso devuelve el token al lector y llama a `leer_expresion`, que todavía necesita consumirlo. `leer_definicion` exige, en este orden, un token de nombre, el signo `=` y una expresión; calcula su valor y llama a `candidata.definir(destino.texto, valor)`. Ambas formas devuelven un entero, por lo que el cliente puede informar su resultado del mismo modo (Stroustrup, 2024).\n\nleer_termino obtiene la primera unidad y pasa su valor a continuar_termino, que recibe el operando izquierdo ya calculado. Con altura asociada a 5, en altura*3+1 la primera unidad vale 5; continuar_termino consume *3, calcula 15 y reserva + porque pertenece a otro nivel. Por su parte, leer_expresion obtiene ese primer término y lo entrega a continuar_expresion. Esta función consume +1, calcula 16 y conserva el token que detenga su recorrido. Así se separa obtener el primer operando de continuar un cálculo que ya dispone de ese valor.\n\n`leer_operacion` añade la aceptación de la operación completa. Primero ejecuta `Tabla_nombres candidata = tabla;`, creando una copia independiente de las asociaciones aceptadas. Después analiza la sentencia sobre esa copia y lee el token que debe ser `;`. Sólo si se cumplen esos pasos, `tabla = candidata;` reemplaza el contenido de la tabla aceptada. Copiar y asignar esta clase opera sobre el vector de registros que contiene, como se trabajó en la lección anterior (Köppe et al., 2023).\n\nSi aparece un diagnóstico del lenguaje antes de ese reemplazo, la copia se descarta y la tabla aceptada conserva su contenido. El lector sí ha consumido texto: la copia no retrocede su posición. El cliente usa `descartar_operacion` para recuperar la frontera siguiente. Los contadores registran por separado las operaciones aceptadas y las rechazadas; `Tabla:` muestra las asociaciones conservadas, no los intentos descartados.",
           "emphasis": [
             {
               "text": "Sólo si se cumplen esos pasos",
@@ -153,7 +153,7 @@
             0,
             4
           ],
-          "explanation": "La tabla real cambia después de la sentencia y del terminador. Un diagnóstico anterior al reemplazo descarta únicamente el candidato.",
+          "explanation": "La copia independiente se crea antes de llamar a leer_sentencia, de modo que cualquier asociación propuesta pertenece a candidata. Después, exigir_fin(lector) comprueba el ; que completa la operación.\n\nSólo entonces se ejecuta tabla = candidata; y se devuelve el valor calculado. Si la sentencia o el terminador provocan un diagnóstico, no se alcanza ese reemplazo: la tabla aceptada conserva sus asociaciones, aunque el lector ya haya consumido parte del texto.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar__e03",
           "reviewFeedback": "Localiza primero la copia independiente y después la comprobación del terminador. Decide qué instrucción puede reemplazar la tabla sólo si ambas etapas han terminado."
         },
@@ -165,7 +165,7 @@
           "answers": [
             "Error: Se esperaba ;\nError: Nombre no definido\nValor: 4\nValor: 5\nAceptadas: 2\nRechazadas: 2\nTabla: paso=4"
           ],
-          "explanation": "El primer candidato no se publica. La consulta confirma ausencia. La nueva creación completa y la expresión posterior sí se aceptan.",
+          "explanation": "En crea paso=7 2;, se calcula el prefijo 7, pero aparece 2 donde se exige el terminador. La candidata se descarta y se presenta Error: Se esperaba ;. La consulta paso; confirma que ese nombre no fue añadido y produce Error: Nombre no definido.\n\nDespués, crea paso=4; completa la creación y acepta 4. La expresión paso+1; consulta ese valor y acepta 5. Quedan dos operaciones aceptadas, dos rechazadas y una sola asociación, paso=4.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar__e04",
           "reviewFeedback": "Sigue por separado la candidata, la tabla aceptada y el lector. Un prefijo calculado todavía puede pertenecer a una operación rechazada."
         },
@@ -179,7 +179,7 @@
             "Se añade con cero para que las consultas posteriores no fallen."
           ],
           "correctIndex": 1,
-          "explanation": "El valor parcial no completa la operación. La candidata protege la tabla hasta validar su frontera; un rechazo no publica un vínculo nuevo.",
+          "explanation": "La expresión inicializadora obtiene 8, pero conserva el siguiente número 4 porque no puede incorporarlo a esa expresión. La regla de operación recupera ese número y comprueba que no es ;, por lo que lanza el diagnóstico antes del reemplazo de la tabla.\n\nLa asociación propuesta entre puerta y 8 existía únicamente en la candidata. Descartarla deja puerta ausente en la tabla aceptada. El cálculo de un prefijo no autoriza a guardar ese valor ni a sustituirlo por cero.",
           "reviewFeedback": [
             "Calcular un prefijo no acredita el terminador. Localiza la instrucción que reemplaza la tabla y comprueba si llega a ejecutarse.",
             "Sigue por separado las asociaciones propuestas en la copia y las que pertenecen a la tabla aceptada.",
@@ -239,6 +239,61 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Conservar la tabla y la frontera de una creación rechazada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Integra tus tipos y funciones del intérprete, incluida probar, antes del main proporcionado. El cliente conserva las ocho sesiones anteriores y añade crea saldo=6;crea pendiente=4, crea ;crea paso=2;paso; y crea falta;crea falta=3;falta;, en ese orden.\n\nEn la primera sesión nueva ya existe una asociación aceptada cuando la última creación llega al final sin terminador. Esa creación debe rechazarse conservando lo que se aceptó antes. En las otras dos, el lector encuentra ; donde la regla exige un nombre o el signo =. Conserva ese token para recuperar la frontera de la operación rechazada y poder procesar la creación siguiente.\n\nPulsa «Compilar, ejecutar y comprobar» con todas las sesiones y una implementación común. Mantén los informes anteriores de valores, errores, contadores y tabla. Cada sesión comienza vacía y conserva sus asociaciones entre operaciones; corregir un rechazo no debe borrar las aceptaciones anteriores ni descartar la operación siguiente.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nCaso 1\nValor: 4\nValor: 12\nError: Nombre ya definido\nValor: 4\nAceptadas: 3\nRechazadas: 1\nTabla: base=4\nCaso 2\nValor: 0\nValor: 0\nAceptadas: 2\nRechazadas: 0\nTabla: a=0\nCaso 3\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: a=-100\nCaso 4\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: a=100\nCaso 5\nError: Numero fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\nCaso 6\nError: Nombre no definido\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: a=2\nCaso 7\nError: Se esperaba ;\nAceptadas: 0\nRechazadas: 1\nTabla:\nCaso 8\nValor: 3\nValor: -3\nValor: 3\nValor: -3\nAceptadas: 4\nRechazadas: 0\nTabla: dato=3 dato2=-3\nCaso 9\nValor: 6\nError: Se esperaba ;\nAceptadas: 1\nRechazadas: 1\nTabla: saldo=6\nCaso 10\nError: Se esperaba un nombre\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: paso=2\nCaso 11\nError: Se esperaba =\nValor: 3\nValor: 3\nAceptadas: 2\nRechazadas: 1\nTabla: falta=3"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin repetir main.\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"crea base=4;base*3;crea base=8;base;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"crea a=0;a;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"crea a=-99-1;a;\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"crea a=99+1;a;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"crea a=100;a;\");\n    std::cout << \"Caso 6\\n\";\n    probar(\"crea a=a+1;crea a=2;a;\");\n    std::cout << \"Caso 7\\n\";\n    probar(\"crea a=5\");\n    std::cout << \"Caso 8\\n\";\n    probar(\"crea dato=3;crea dato2=-dato;dato;dato2;\");\n    std::cout << \"Caso 9\\n\";\n    probar(\"crea saldo=6;crea pendiente=4\");\n    std::cout << \"Caso 10\\n\";\n    probar(\"crea ;crea paso=2;paso;\");\n    std::cout << \"Caso 11\\n\";\n    probar(\"crea falta;crea falta=3;falta;\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nValor: 4\nValor: 12\nError: Nombre ya definido\nValor: 4\nAceptadas: 3\nRechazadas: 1\nTabla: base=4\nCaso 2\nValor: 0\nValor: 0\nAceptadas: 2\nRechazadas: 0\nTabla: a=0\nCaso 3\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: a=-100\nCaso 4\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: a=100\nCaso 5\nError: Numero fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\nCaso 6\nError: Nombre no definido\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: a=2\nCaso 7\nError: Se esperaba ;\nAceptadas: 0\nRechazadas: 1\nTabla:\nCaso 8\nValor: 3\nValor: -3\nValor: 3\nValor: -3\nAceptadas: 4\nRechazadas: 0\nTabla: dato=3 dato2=-3\nCaso 9\nValor: 6\nError: Se esperaba ;\nAceptadas: 1\nRechazadas: 1\nTabla: saldo=6\nCaso 10\nError: Se esperaba un nombre\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: paso=2\nCaso 11\nError: Se esperaba =\nValor: 3\nValor: 3\nAceptadas: 2\nRechazadas: 1\nTabla: falta=3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El caso 9 acepta saldo con 6 y rechaza la creación incompleta de pendiente; termina con Tabla: saldo=6. En los casos 10 y 11, el terminador conservado delimita el primer rechazo. La recuperación permite aceptar después la nueva creación y su consulta: paso con 2 y falta con 3, respectivamente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 4\nValor: 12\nError: Nombre ya definido\nValor: 4\nAceptadas: 3\nRechazadas: 1\nTabla: base=4\nCaso 2\nValor: 0\nValor: 0\nAceptadas: 2\nRechazadas: 0\nTabla: a=0\nCaso 3\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: a=-100\nCaso 4\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: a=100\nCaso 5\nError: Numero fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\nCaso 6\nError: Nombre no definido\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: a=2\nCaso 7\nError: Se esperaba ;\nAceptadas: 0\nRechazadas: 1\nTabla:\nCaso 8\nValor: 3\nValor: -3\nValor: 3\nValor: -3\nAceptadas: 4\nRechazadas: 0\nTabla: dato=3 dato2=-3\nCaso 9\nValor: 6\nError: Se esperaba ;\nAceptadas: 1\nRechazadas: 1\nTabla:\nCaso 10\nError: Se esperaba un nombre\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: paso=2\nCaso 11\nError: Se esperaba =\nValor: 3\nValor: 3\nAceptadas: 2\nRechazadas: 1\nTabla: falta=3\n"
+                    ],
+                    "text": "El caso 9 informó la aceptación de saldo, pero termina mostrando una tabla vacía. El final sin terminador rechaza únicamente la candidata de pendiente. Que descartar_operacion devuelva false termina el recorrido; no elimina las asociaciones aceptadas antes de ese intento."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 4\nValor: 12\nError: Nombre ya definido\nValor: 4\nAceptadas: 3\nRechazadas: 1\nTabla: base=4\nCaso 2\nValor: 0\nValor: 0\nAceptadas: 2\nRechazadas: 0\nTabla: a=0\nCaso 3\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: a=-100\nCaso 4\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: a=100\nCaso 5\nError: Numero fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\nCaso 6\nError: Nombre no definido\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: a=2\nCaso 7\nError: Se esperaba ;\nAceptadas: 0\nRechazadas: 1\nTabla:\nCaso 8\nValor: 3\nValor: -3\nValor: 3\nValor: -3\nAceptadas: 4\nRechazadas: 0\nTabla: dato=3 dato2=-3\nCaso 9\nValor: 6\nError: Se esperaba ;\nAceptadas: 1\nRechazadas: 1\nTabla: saldo=6\nCaso 10\nError: Se esperaba un nombre\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\nCaso 11\nError: Se esperaba =\nValor: 3\nValor: 3\nAceptadas: 2\nRechazadas: 1\nTabla: falta=3\n"
+                    ],
+                    "text": "En el caso 10 falta la creación válida posterior y su consulta falla. El token que no podía aceptarse como nombre era precisamente ;. Si se pierde antes del diagnóstico, el descarte avanza hasta el terminador de la operación siguiente y la consume. Conserva el token rechazado para recuperar la frontera correcta."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 4\nValor: 12\nError: Nombre ya definido\nValor: 4\nAceptadas: 3\nRechazadas: 1\nTabla: base=4\nCaso 2\nValor: 0\nValor: 0\nAceptadas: 2\nRechazadas: 0\nTabla: a=0\nCaso 3\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: a=-100\nCaso 4\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: a=100\nCaso 5\nError: Numero fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\nCaso 6\nError: Nombre no definido\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: a=2\nCaso 7\nError: Se esperaba ;\nAceptadas: 0\nRechazadas: 1\nTabla:\nCaso 8\nValor: 3\nValor: -3\nValor: 3\nValor: -3\nAceptadas: 4\nRechazadas: 0\nTabla: dato=3 dato2=-3\nCaso 9\nValor: 6\nError: Se esperaba ;\nAceptadas: 1\nRechazadas: 1\nTabla: saldo=6\nCaso 10\nError: Se esperaba un nombre\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: paso=2\nCaso 11\nError: Se esperaba =\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\n"
+                    ],
+                    "text": "En el caso 11 se pierde la creación posterior de falta. La primera creación encontró ; donde exigía =. Debe devolver ese terminador antes de lanzar el diagnóstico: así el descarte acaba allí y no elimina también crea falta=3;."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -285,7 +340,7 @@
           "answers": [
             "Valor: 3\nValor: 5\nError: Nombre ya definido\nError: Divisor cero\nValor: 5\nAceptadas: 3\nRechazadas: 2\nTabla: a=3 b=5"
           ],
-          "explanation": "a y b conservan sus valores aceptados. Ni el duplicado ni el candidato c se publican. La consulta final observa b=5.",
+          "explanation": "Las dos primeras creaciones aceptan a con valor 3 y b con 3 + 2 = 5. Intentar crear otra vez a produce Nombre ya definido y conserva el vínculo anterior.\n\nAl preparar c, se detecta que el operando derecho de 8/0 es 0. La comprobación lanza Divisor cero antes de ejecutar la división, de modo que no se obtiene un valor inicial válido ni se añade ese nombre. La consulta final de b acepta 5. El informe cuenta tres aceptaciones y dos rechazos; la tabla conserva a=3 b=5 en su orden de creación.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__declaraciones_aceptadas_solo_al_completar__e05",
           "reviewFeedback": "Conserva los vínculos de cada operación ya aceptada y sigue el punto de rechazo de las propuestas posteriores. Cuenta por separado el diagnóstico y la recuperación."
         },
@@ -299,7 +354,7 @@
             "Una creación no necesita ; porque ya contiene =."
           ],
           "correctIndex": 0,
-          "explanation": "La producción de creación introduce nombre y valor; la operación exige además su terminador. Sólo después se publica la tabla candidata.",
+          "explanation": "En crea plazas=6;, la sentencia de creación contiene la palabra crea, el nombre plazas, el signo = y la expresión inicializadora 6. El ; posterior completa la operación y permite aceptar la asociación.\n\nEn plazas+2;, la sentencia es una expresión que consulta el nombre existente; no propone otra creación. Ambas formas necesitan el terminador. El signo = cumple una función dentro de la declaración y no sustituye esa frontera final.",
           "reviewFeedback": [
             "Relaciona las dos formas de sentencia con la regla que exige el terminador de la operación completa.",
             "Una consulta de nombre no introduce automáticamente otra asociación. Localiza la palabra y los elementos que anuncian una creación.",
@@ -322,6 +377,14 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nombre invalido\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nombre ya definido\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Tabla llena\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint leer_expresion(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    if (profundidad > 8) throw std::runtime_error(\"Profundidad excedida\");\n    const Token token = lector.leer();\n    if (token.clase == numero) return token.valor;\n    if (token.clase == nombre) return tabla.consultar(token.texto);\n    if (token.clase == '+') return leer_unidad(lector, tabla, profundidad + 1);\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, tabla, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, tabla, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Se esperaba )\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Se esperaba una unidad\");\n}\n\nint continuar_termino(int izquierda, Lector_tokens& lector,\n        const Tabla_nombres& tabla, int profundidad) {\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*' || token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, tabla, profundidad);\n            if ((token.clase == '/' || token.clase == '%') && derecha == 0) {\n                throw std::runtime_error(\"Divisor cero\");\n            }\n            if (token.clase == '*') izquierda = resultado_en_dominio(izquierda * derecha);\n            else if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_termino(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    return continuar_termino(leer_unidad(lector, tabla, profundidad), lector, tabla, profundidad);\n}\n\nint continuar_expresion(int izquierda, Lector_tokens& lector,\n        const Tabla_nombres& tabla, int profundidad) {\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+' || token.clase == '-') {\n            const int derecha = leer_termino(lector, tabla, profundidad);\n            if (token.clase == '+') izquierda = resultado_en_dominio(izquierda + derecha);\n            else izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, const Tabla_nombres& tabla, int profundidad) {\n    return continuar_expresion(leer_termino(lector, tabla, profundidad), lector, tabla, profundidad);\n}\n\nint leer_definicion(Lector_tokens& lector, Tabla_nombres& candidata) {\n    const Token destino = lector.leer();\n    if (destino.clase != nombre) {\n        lector.devolver(destino);\n        throw std::runtime_error(\"Se esperaba un nombre\");\n    }\n    const Token igual = lector.leer();\n    if (igual.clase != '=') {\n        lector.devolver(igual);\n        throw std::runtime_error(\"Se esperaba =\");\n    }\n    const int valor = leer_expresion(lector, candidata, 0);\n    candidata.definir(destino.texto, valor);\n    return valor;\n}\n\nint leer_sentencia(Lector_tokens& lector, Tabla_nombres& candidata) {\n    const Token primero = lector.leer();\n    if (primero.clase == declaracion) {\n        return leer_definicion(lector, candidata);\n    }\n    lector.devolver(primero);\n    return leer_expresion(lector, candidata, 0);\n}\n\nint leer_operacion(Lector_tokens& lector, Tabla_nombres& tabla) {\n    Tabla_nombres candidata = tabla;\n    const int valor = leer_sentencia(lector, candidata);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Se esperaba ;\");\n    }\n    tabla = candidata;\n    return valor;\n}\n\nvoid probar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    Tabla_nombres tabla;\n    int aceptadas = 0;\n    int rechazadas = 0;\n    while (true) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == final_texto) break;\n            lector.devolver(inicio);\n            const int valor = leer_operacion(lector, tabla);\n            ++aceptadas;\n            std::cout << \"Valor: \" << valor << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Error: \" << error.what() << \"\\n\";\n            if (!lector.descartar_operacion()) break;\n        }\n    }\n    std::cout << \"Aceptadas: \" << aceptadas << \"\\nRechazadas: \" << rechazadas << \"\\n\";\n    std::cout << \"Tabla:\";\n    for (const Vinculo& dato : tabla.entradas()) {\n        std::cout << ' ' << dato.nombre << '=' << dato.valor;\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"crea base=4;base*3;crea base=8;base;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"crea a=0;a;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"crea a=-99-1;a;\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"crea a=99+1;a;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"crea a=100;a;\");\n    std::cout << \"Caso 6\\n\";\n    probar(\"crea a=a+1;crea a=2;a;\");\n    std::cout << \"Caso 7\\n\";\n    probar(\"crea a=5\");\n    std::cout << \"Caso 8\\n\";\n    probar(\"crea dato=3;crea dato2=-dato;dato;dato2;\");\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar el estado aceptado y el terminador conservado"
+        },
+        {
+          "type": "paragraph",
+          "text": "En crea saldo=6;crea pendiente=4, la primera operación ya completó su terminador y aceptó saldo con 6. La segunda propone pendiente con 4, pero encuentra el final donde exige ;. La candidata se descarta y el recorrido termina con un rechazo; la asociación anterior continúa en la tabla. El caso histórico incompleto empezaba con la tabla vacía y no distinguía una limpieza indebida de ese estado.\n\nEn crea ;, el destino no es un nombre. En crea falta;, después del nombre no aparece =. Ambas reglas encontraron ; y lo reservaron antes de diagnosticar. La recuperación toma ese token y termina inmediatamente, dejando disponible la operación siguiente. Perder el terminador haría descartar la creación válida posterior.\n\nPor eso cada una de esas dos sesiones presenta un rechazo, dos valores aceptados y un vínculo final. Se utilizan las mismas funciones de la referencia histórica junto con el main ampliado del editor. Conservar la tabla y conservar la frontera de lectura son obligaciones diferentes: el informe comprueba ambas."
         }
       ]
     }
@@ -540,7 +603,11 @@
           "block_0004_0001",
           "block_0004_0003",
           "block_0004_0004",
-          "block_0004_0002"
+          "block_0004_0002",
+          "u11_declaraciones_rechazadas_y_estado_previo_titulo",
+          "u11_declaraciones_rechazadas_y_estado_previo_consigna",
+          "u11_declaraciones_rechazadas_y_estado_previo_salida",
+          "u11_declaraciones_rechazadas_y_estado_previo_comprobacion"
         ]
       },
       {
@@ -565,7 +632,9 @@
         "id": "page_0007",
         "blocks": [
           "block_0007_0000",
-          "block_0007_0001"
+          "block_0007_0001",
+          "u11_declaraciones_rechazadas_y_estado_previo_referencia_titulo",
+          "u11_declaraciones_rechazadas_y_estado_previo_referencia_razonamiento"
         ]
       }
     ],
@@ -1053,6 +1122,60 @@
           "block": 0
         },
         "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_declaraciones_rechazadas_y_estado_previo_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_declaraciones_rechazadas_y_estado_previo_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_declaraciones_rechazadas_y_estado_previo_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_declaraciones_rechazadas_y_estado_previo_comprobacion",
+        "sha256": "7389882666ce400246cfea44913081b9b90ec6c762fb42e1f5f00d7f3e875e4b",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "u11_declaraciones_rechazadas_y_estado_previo_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_declaraciones_rechazadas_y_estado_previo_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1190,6 +1313,46 @@
         "id": "block_0006_0002",
         "beforeSha256": "da431749fec021f6584ca83ec7034159cb565f4f41041c3ff7ed482455a16da0",
         "afterSha256": "9202659fe524c3a4c7b22ef2ad7f8b0bb9e0dedc7494051493eafce308a46e91"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "59a0983c8a8f374ff6f527e92b8f984f2ce5126e322da65b0df01640e6e504cb",
+        "afterSha256": "2afc0c7cfe1db394f238ef8c53cccc593ce582023aa4f9e48ac8f3293fd04b08"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "7292f73cc00d516a6b7b45c7fb0421456d0f2a9adce695cb44cc5ff4a27c664c",
+        "afterSha256": "2b980d2566e296ccfe635185c7fc27f57111cd6cba9ecf11d983be1008bac204"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "287761e54b3174a8ce3b41f9653e53871128d68183c4652dd382b2524e00f6d0",
+        "afterSha256": "ed7f20048215b93058d8937f85859088e57e4843491e3626f36cde02bd2e3b6d"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f123359d1604e6657517bee09a5bd8b12d8821e6a67d90aeaa0873522660aa92",
+        "afterSha256": "2989fccca356f67599e7d35bf6c0ed99306953cedc1cc491bfa5534e0eb3e0d9"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "2400c3a4f9924f1866afb43001cc98eaa3cf319de0edcf3bf85a09bcdc99761a",
+        "afterSha256": "0f5489c0c7bb5bd5cec9913b8905eaaa59a8d6107dabfd19e06e352953ce3dfa"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "9da2860a5a6339c1aa0b96ee2136b23a522c5d6bef9d8837c1fa88023badbe4f",
+        "afterSha256": "26676c5b003aa029c4e62423ca714b93cb0c30841da7f2a32901bcccafa27193"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "c91e4f0959a8ce2ce04eda09f62d622fa8e2067d58ee75fc143861cf09d08a14",
+        "afterSha256": "200d31f04c75277cb55a7fa66632c9a95fda4bd576d5eea42e1a362f55035546"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "9202659fe524c3a4c7b22ef2ad7f8b0bb9e0dedc7494051493eafce308a46e91",
+        "afterSha256": "0af022f3003526be94fef8d66a5113a0a2e553f40cd7ea1dc4efb444a8b01f93"
       }
     ]
   },
@@ -1204,6 +1367,13 @@
         "block_0006_0003",
         "block_0007_0000",
         "block_0007_0001"
+      ]
+    },
+    {
+      "activity": "u11_declaraciones_rechazadas_y_estado_previo_comprobacion",
+      "blocks": [
+        "u11_declaraciones_rechazadas_y_estado_previo_referencia_titulo",
+        "u11_declaraciones_rechazadas_y_estado_previo_referencia_razonamiento"
       ]
     }
   ],
@@ -1222,6 +1392,12 @@
     },
     {
       "activity": "block_0006_0002",
+      "requires": [
+        "block_0004_0002"
+      ]
+    },
+    {
+      "activity": "u11_declaraciones_rechazadas_y_estado_previo_comprobacion",
       "requires": [
         "block_0004_0002"
       ]
@@ -1462,25 +1638,74 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "e990d5ea2bd7c5a38bf987773652f047d249b030ee197038c3627b93a8522e52",
+        "sourceSha256": "5e4994858188671c6a8d2bdd310c53825b300a43cdddbe8a70e54f18726132f4",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "ruta2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 59,
-            "end": 63,
+            "start": 26,
+            "end": 30,
             "text": "ruta",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 84,
+            "start": 42,
+            "end": 43,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 66,
+            "text": "crea ruta2=ruta+1;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "ruta2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 136,
+            "text": "ruta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 155,
+            "text": "3 + 1 = 4",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 233,
+            "text": "crea ruta=7;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 284,
+            "end": 295,
+            "text": "crea ruta2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 311,
+            "end": 312,
             "text": "=",
             "role": "data",
             "reading": "characters"
@@ -1758,8 +1983,51 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "63adf9e80c17c3bd151d5f9c663d2920a6687cbf345bec15469f0ef7892a5cda",
-        "spans": []
+        "sourceSha256": "9abc4bf8799adf60d233b1d10d33823c8b51dc5f56417a4b7f5546437258d1c5",
+        "spans": [
+          {
+            "start": 76,
+            "end": 80,
+            "text": "base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 132,
+            "text": "crea doble=base*2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 172,
+            "end": 181,
+            "text": "4 * 2 = 8",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 293,
+            "text": "nuevo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 316,
+            "end": 335,
+            "text": "crea nuevo=nuevo+1;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1806,7 +2074,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "e1ea9c8a3af5c7fdd507444b8c578d8064e6e2110f98ca65fe912de3d20b98c9",
+        "sourceSha256": "a43658bdf0954b0a2640a39219e5122b603c6ac228f53b989202acc5648fbd42",
         "spans": [
           {
             "start": 1,
@@ -1866,46 +2134,144 @@
             "reading": "natural"
           },
           {
-            "start": 531,
-            "end": 545,
+            "start": 530,
+            "end": 542,
+            "text": "leer_termino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 587,
+            "end": 604,
+            "text": "continuar_termino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 657,
+            "end": 663,
+            "text": "altura",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 675,
+            "end": 676,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 681,
+            "end": 691,
+            "text": "altura*3+1",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 715,
+            "end": 716,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 718,
+            "end": 735,
+            "text": "continuar_termino",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 744,
+            "end": 746,
+            "text": "*3",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 756,
+            "end": 758,
+            "text": "15",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 769,
+            "end": 770,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 816,
+            "end": 830,
+            "text": "leer_expresion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 873,
+            "end": 892,
+            "text": "continuar_expresion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 915,
+            "end": 917,
+            "text": "+1",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 927,
+            "end": 929,
+            "text": "16",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1072,
+            "end": 1086,
             "text": "leer_operacion",
             "role": "cpp"
           },
           {
-            "start": 610,
-            "end": 642,
+            "start": 1151,
+            "end": 1183,
             "text": "Tabla_nombres candidata = tabla;",
             "role": "cpp"
           },
           {
-            "start": 782,
-            "end": 783,
+            "start": 1323,
+            "end": 1324,
             "text": ";",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 818,
-            "end": 836,
+            "start": 1359,
+            "end": 1377,
             "text": "tabla = candidata;",
             "role": "cpp"
           },
           {
-            "start": 999,
-            "end": 1019,
+            "start": 1540,
+            "end": 1560,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 1233,
-            "end": 1252,
+            "start": 1774,
+            "end": 1793,
             "text": "descartar_operacion",
             "role": "cpp"
           },
           {
-            "start": 1375,
-            "end": 1381,
+            "start": 1916,
+            "end": 1922,
             "text": "Tabla:",
             "role": "output",
             "reading": "natural"
@@ -2130,8 +2496,44 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "cff40df74b02851af862c4072d08c34956e8354e54f1ce0cd290d8ac44a4dc24",
-        "spans": []
+        "sourceSha256": "87e2083cddbedb42393acc3c4f8fc4267790d6ade0ec5cafcb7ec225cb65449f",
+        "spans": [
+          {
+            "start": 49,
+            "end": 63,
+            "text": "leer_sentencia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 129,
+            "text": "candidata",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 158,
+            "text": "exigir_fin(lector)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 227,
+            "end": 245,
+            "text": "tabla = candidata;",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2148,8 +2550,86 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "f21e35bb3d86e2bfb5a1a24c461327f84dc71e961822c53cc5c53ed3bd58955b",
-        "spans": []
+        "sourceSha256": "531671fe273768b423fba7b2c97b61c09f3f4eb324ffddf2aa954a2ac193bbe7",
+        "spans": [
+          {
+            "start": 3,
+            "end": 17,
+            "text": "crea paso=7 2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 41,
+            "end": 42,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 148,
+            "text": "Error: Se esperaba ;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 167,
+            "text": "paso;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 217,
+            "end": 242,
+            "text": "Error: Nombre no definido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 266,
+            "text": "crea paso=4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 297,
+            "end": 298,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 313,
+            "end": 320,
+            "text": "paso+1;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 349,
+            "end": 350,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 430,
+            "text": "paso=4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2188,8 +2668,51 @@
       {
         "block": "block_0003_0004",
         "path": "/explanation",
-        "sourceSha256": "9538c8f33a1b22452efc5ef06a70561d5f0ca686308c4143f5972747d691bc14",
-        "spans": []
+        "sourceSha256": "97bedfdb064ad63f7dc7cf24df85d0eb111687ab98b603feb20fa6c3bc244630",
+        "spans": [
+          {
+            "start": 36,
+            "end": 37,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 186,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 284,
+            "end": 290,
+            "text": "puerta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 294,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 354,
+            "text": "puerta",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -2754,33 +3277,96 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "cc4e387132f83690d95e9cb4d7af1491c1bf47a2f5f0b32c4678987d137ee812",
+        "sourceSha256": "97de19837be7fe5db55314e7a74ffa72c115b922dc5278d5412339e011ab1d20",
         "spans": [
           {
-            "start": 0,
-            "end": 1,
+            "start": 36,
+            "end": 37,
             "text": "a",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 4,
-            "end": 5,
+            "start": 48,
+            "end": 49,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 53,
             "text": "b",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 72,
+            "start": 58,
+            "end": 67,
+            "text": "3 + 2 = 5",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 94,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 121,
+            "text": "Nombre ya definido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 168,
             "text": "c",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 115,
-            "text": "b=5",
+            "start": 208,
+            "end": 211,
+            "text": "8/0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 215,
+            "end": 216,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 252,
+            "text": "Divisor cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 380,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 389,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 461,
+            "end": 468,
+            "text": "a=3 b=5",
             "role": "output",
             "reading": "natural"
           }
@@ -2801,8 +3387,65 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "2826ef1e5b66cfaf198d3e82a833067e2ad72a76b85532c29ca656f02b1bbfc9",
-        "spans": []
+        "sourceSha256": "c9119380ace7269bb599e380fc758d72337a0943313f93c48e25c31c4bb2ca9a",
+        "spans": [
+          {
+            "start": 3,
+            "end": 17,
+            "text": "crea plazas=6;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 64,
+            "end": 68,
+            "text": "crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 80,
+            "end": 86,
+            "text": "plazas",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 97,
+            "end": 98,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 136,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 206,
+            "end": 215,
+            "text": "plazas+2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 354,
+            "end": 355,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0006_0002",
@@ -2903,6 +3546,361 @@
         "path": "/text",
         "sourceSha256": "7ccfca9a5eec7d1d851466d927a3cb88a83ec8becd33df89843aaf7fde9f3644",
         "spans": []
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_titulo",
+        "path": "/text",
+        "sourceSha256": "5e47d5dbece8ccfea2bf97c56db9e0a759596b17611040c236e4abd7d6e77174",
+        "spans": []
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_consigna",
+        "path": "/text",
+        "sourceSha256": "91b22653e059f91648ea68fad24d4ee3686f67b36a5484e3cc6963295d70ded5",
+        "spans": [
+          {
+            "start": 55,
+            "end": 61,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 179,
+            "text": "crea saldo=6;crea pendiente=4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 181,
+            "end": 204,
+            "text": "crea ;crea paso=2;paso;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 207,
+            "end": 237,
+            "text": "crea falta;crea falta=3;falta;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 475,
+            "end": 476,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 519,
+            "end": 520,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_salida",
+        "path": "/text",
+        "sourceSha256": "fd2b843ce2f5fba98a11b7cfab309800c9c9269c696ff751a7a6e5e6c3ce116f",
+        "spans": [
+          {
+            "start": 33,
+            "end": 946,
+            "text": "Caso 1\nValor: 4\nValor: 12\nError: Nombre ya definido\nValor: 4\nAceptadas: 3\nRechazadas: 1\nTabla: base=4\nCaso 2\nValor: 0\nValor: 0\nAceptadas: 2\nRechazadas: 0\nTabla: a=0\nCaso 3\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: a=-100\nCaso 4\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: a=100\nCaso 5\nError: Numero fuera de dominio\nError: Nombre no definido\nAceptadas: 0\nRechazadas: 2\nTabla:\nCaso 6\nError: Nombre no definido\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: a=2\nCaso 7\nError: Se esperaba ;\nAceptadas: 0\nRechazadas: 1\nTabla:\nCaso 8\nValor: 3\nValor: -3\nValor: 3\nValor: -3\nAceptadas: 4\nRechazadas: 0\nTabla: dato=3 dato2=-3\nCaso 9\nValor: 6\nError: Se esperaba ;\nAceptadas: 1\nRechazadas: 1\nTabla: saldo=6\nCaso 10\nError: Se esperaba un nombre\nValor: 2\nValor: 2\nAceptadas: 2\nRechazadas: 1\nTabla: paso=2\nCaso 11\nError: Se esperaba =\nValor: 3\nValor: 3\nAceptadas: 2\nRechazadas: 1\nTabla: falta=3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "b20caec42f6563b5f4b7a5d62ce72ebf51dd7b1b240670421e1c0f1801039191",
+        "spans": [
+          {
+            "start": 8,
+            "end": 9,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
+            "end": 40,
+            "text": "saldo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 150,
+            "text": "pendiente",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 175,
+            "text": "descartar_operacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 190,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "d2857d13e6172d6397011d23cfe0ea6ab0ddcae112e80bdc6cc6a447c18449e4",
+        "spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "1f08190e73d59cbf01f2eca4a40be2eff17a169b164e95bd898efad2fe4cd705",
+        "spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 54,
+            "text": "falta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 85,
+            "end": 86,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 212,
+            "end": 225,
+            "text": "crea falta=3;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "a1d4827b4a18f7e63372a30e952ec9f50117f31ed831d7218953a199023fe863",
+        "spans": [
+          {
+            "start": 8,
+            "end": 9,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
+            "end": 22,
+            "text": "saldo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 74,
+            "text": "pendiente",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 102,
+            "text": "Tabla: saldo=6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 119,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 124,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": "paso",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 270,
+            "text": "falta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 276,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "926fc347d9c14b543257f5fb68937755f661afa372000b9802594d3a2bfe5dca",
+        "spans": []
+      },
+      {
+        "block": "u11_declaraciones_rechazadas_y_estado_previo_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "4e4c46897141a07ca4f71f785d31082f52f9651fb348ac7fc2436f13c2cd631f",
+        "spans": [
+          {
+            "start": 3,
+            "end": 32,
+            "text": "crea saldo=6;crea pendiente=4",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 90,
+            "end": 95,
+            "text": "saldo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 131,
+            "text": "pendiente",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 136,
+            "end": 137,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 176,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 401,
+            "end": 407,
+            "text": "crea ;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 440,
+            "end": 451,
+            "text": "crea falta;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 483,
+            "end": 484,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 511,
+            "end": 512,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 894,
+            "end": 898,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

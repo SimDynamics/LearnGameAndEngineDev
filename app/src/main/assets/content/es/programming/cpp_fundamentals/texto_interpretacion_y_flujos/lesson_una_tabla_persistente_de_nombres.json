@@ -45,7 +45,7 @@
             "Diagnostica ausencia y conserva el tamaño anterior."
           ],
           "correctIndex": 1,
-          "explanation": "Cero es un valor legítimo. Consultar debe observar el estado; una ausencia se diagnostica y no inserta un vínculo.",
+          "explanation": "El valor 0 puede estar asociado legítimamente a un nombre. Si una consulta devuelve cero tanto cuando encuentra ese vínculo como cuando el nombre no existe, el resultado numérico ya no permite distinguir esas situaciones.\n\nAdemás, insertar el nombre ausente cambia el tamaño y las asociaciones de la tabla. El contrato exige que consultar recupere un valor existente o diagnostique la ausencia sin añadir nada; observar el estado no debe fabricar el dato que faltaba.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e01",
           "reviewFeedback": [
             "Distingue el valor que devuelve una operación del cambio que realiza en la colección. Revisa si el nombre ausente estaba antes y si aparece después.",
@@ -97,7 +97,7 @@
           "answers": [
             "Sur=8"
           ],
-          "explanation": "dato es una copia. La modificación no alcanza el segundo elemento del vector.",
+          "explanation": "El recorrido declara Vinculo dato, sin referencia. En la vuelta correspondiente a Sur, copia el registro cuyo valor es 8 y cambia el miembro de esa copia a 10. El segundo elemento del vector conserva su propio valor 8.\n\nLa salida consulta datos[1].nombre y datos[1].valor, no la copia local del recorrido. Por eso presenta Sur=8. Para modificar el registro almacenado, el recorrido tendría que designarlo mediante una referencia.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e02",
           "reviewFeedback": "Sigue qué objeto designa dato en cada vuelta. Después distingue el objeto que se modificó del elemento que utiliza la instrucción de salida."
         },
@@ -111,7 +111,7 @@
           ],
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e03",
           "reviewFeedback": "El recorrido debe trabajar con el elemento almacenado. Recupera la notación de referencia y comprueba que permita modificar ese elemento.",
-          "explanation": "En `Vinculo& dato`, `dato` designa el elemento del vector en esa vuelta. Por eso la asignación a `dato.valor` modifica el valor almacenado; con una copia local no lo cambiaría."
+          "explanation": "En Vinculo& dato, dato designa el elemento almacenado en la vuelta actual. Al encontrar el nombre Este, la asignación dato.valor = 7; cambia el valor de ese mismo registro. El hueco se completa con &.\n\nSin ese signo, cada vuelta tendría una copia local. Asignarle 7 modificaría la copia y dejaría intacto el elemento que otras consultas volverían a encontrar en el vector."
         }
       ]
     },
@@ -153,7 +153,7 @@
           "answers": [
             "8 3"
           ],
-          "explanation": "vista nombra el vector de la tabla y observa ocho; copia conservó los registros con valor tres. const impide escribir a través de vista, pero no prohíbe que una operación autorizada de la tabla cambie antes su valor. La tabla, la vista y la copia siguen vivas al imprimir; no se modifica la colección mientras se inspecciona.",
+          "explanation": "Al declarar const auto& vista, se conserva una referencia al vector de la tabla. Al declarar const auto copia, se crea otro vector con los registros que entonces tenían el valor 3. La actualización posterior cambia el vínculo Dique de la tabla a 8.\n\nLa inspección mediante vista observa ese 8, mientras copia conserva 3; de ahí la salida 8 3. El const de la vista impide modificar a través de ella, pero no prohíbe una actualización previa mediante la interfaz de la tabla. Los objetos siguen vivos y la colección no cambia durante la inspección.",
           "reviewFeedback": "Identifica qué declaración conserva una referencia y cuál crea otra colección. Sigue la actualización de la tabla y sólo después consulta las dos colecciones."
         }
       ]
@@ -172,7 +172,7 @@
           "answers": [
             "Nombre ya definido\nNombre no definido\n4 1"
           ],
-          "explanation": "Ni la redefinición ni la consulta ausente cambian la tabla. El valor sigue en cuatro y sólo existe un vínculo.",
+          "explanation": "La tabla comienza con Puerta asociado a 4. Al intentar definir otra vez ese nombre con 7, detecta el duplicado antes de insertar o cambiar el vínculo y presenta Nombre ya definido.\n\nLa consulta de Ventana recorre la tabla sin encontrar ese nombre, presenta Nombre no definido y no crea otra asociación. Al final, consultar(\"Puerta\") sigue devolviendo 4 y entradas().size() sigue siendo 1, por lo que la última línea es 4 1.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e04",
           "reviewFeedback": "Después de cada intento, comprueba si se llegó a la instrucción que modifica la colección. Sigue por separado el tamaño de la tabla y el valor de su vínculo original."
         },
@@ -185,7 +185,7 @@
             "Aceptar el noveno sólo si vale cero."
           ],
           "correctIndex": 0,
-          "explanation": "La capacidad es parte del dominio de esta tabla. Un rechazo no elige silenciosamente otro nombre que perder.",
+          "explanation": "Con ocho asociaciones ya aceptadas, añadir un nombre nuevo superaría la capacidad fijada. La comprobación debe rechazar la inserción antes de modificar la colección: quedan los mismos ocho nombres con sus valores.\n\nEliminar el primero cambiaría una asociación que ya era válida. Aceptar el noveno porque su valor fuera 0 también incumpliría el máximo: el cero es un valor permitido, pero ocupa una asociación igual que los demás.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e05",
           "reviewFeedback": [
             "Comprueba si el intento llegó a insertar o se detuvo antes. El tamaño y las asociaciones anteriores son datos que deben conservarse ante el rechazo.",
@@ -232,7 +232,7 @@
             1,
             2
           ],
-          "explanation": "La tabla candidata existe antes de modificarla. El reemplazo queda condicionado al éxito de la validación. Una validación fallida deja intacta tabla.",
+          "explanation": "Primero, Tabla_nombres candidata = tabla; crea una copia independiente. Después, candidata.asignar(\"Sala\", 8); modifica el vínculo existente en esa copia. La llamada a validar(candidata) examina el estado que se propone aceptar.\n\nSólo si devuelve true se ejecuta tabla = candidata; dentro del if. Si devuelve false, no se reemplaza la original y ésta conserva su asociación anterior. Cambiar primero la original impediría conservarla por el mero hecho de descartar la copia.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e06",
           "reviewFeedback": "La copia debe existir antes de usarla. Distingue el cambio sobre esa copia de la instrucción que reemplaza la tabla original y localiza el cuerpo condicionado por la validación."
         },
@@ -246,7 +246,7 @@
             "5, porque la copia contiene registros independientes y no se publicó."
           ],
           "correctIndex": 2,
-          "explanation": "Copiar Tabla_nombres copia su vector y registros. Modificar la copia no reemplaza la original; la aceptación debe realizar esa asignación de forma explícita.",
+          "explanation": "La tabla original contiene Zona con valor 5. Al copiarla, la candidata obtiene otro vector con sus propios registros. La asignación de 8 se realiza sobre esa candidata, mientras el vínculo de la original sigue conteniendo 5.\n\nDescartar la candidata no ejecuta tabla = candidata; ni borra la original. Por eso la consulta de Zona en la tabla aceptada devuelve 5. Para aceptar el cambio tendría que ejecutarse explícitamente el reemplazo.",
           "reviewFeedback": [
             "Revisa si el programa realizó una asignación del candidato a la tabla original. Crear una copia con el mismo contenido no convierte sus registros en un único objeto compartido.",
             "Descartar la copia no ejecuta una modificación sobre el vector original. Sigue qué tabla recibe cada operación.",
@@ -302,6 +302,55 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Actualizar una tabla llena y rechazar valores nuevos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Integra Vinculo, Tabla_nombres y sus funciones auxiliares antes del main proporcionado. El cliente conserva las trece líneas anteriores y utiliza después la tabla llena, que ya contiene ocho vínculos. Intenta asignar -100 a n7 e inspecciona todas sus entradas.\n\nActualizar un nombre existente no añade otra asociación: la capacidad completa no debe impedir esa actualización válida. Los otros siete vínculos deben conservarse. Después, otra tabla comienza con Fijo asociado a 6; se intenta definir Bajo con -101 y Alto con 101. Ambos valores quedan fuera del dominio y deben rechazarse antes de insertar.\n\nPulsa «Compilar, ejecutar y comprobar» y contrasta el informe completo. En Estado de valores:, los cuatro campos muestran el tamaño, la presencia de Bajo, la presencia de Alto y el valor de Fijo. Conserva los rótulos, los separadores y los saltos del cliente, con la misma implementación para todos los intentos.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nOriginal: 5\nCandidato: 8\nDescartado: 5\nAceptado: 11\nLimites: 0:-100:100\nError: Resultado fuera de dominio\nConservado: 100\nError: Nombre no definido\nAusente: 0;Tamano: 3\nError: Tabla llena\nTamano: 8\nError: Nombre ya definido\nDuplicado: 8:0\nActualizacion: aceptada\nTabla llena: n0=0 n1=1 n2=2 n3=3 n4=4 n5=5 n6=6 n7=-100\nBajo: Resultado fuera de dominio\nAlto: Resultado fuera de dominio\nEstado de valores: 1:0:0:6"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin repetir main.\n\nint main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Zona\", 5);\n    std::cout << \"Original: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres candidata = tabla;\n    candidata.asignar(\"Zona\", 8);\n    std::cout << \"Candidato: \" << candidata.consultar(\"Zona\") << \"\\n\";\n    std::cout << \"Descartado: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres segunda = tabla;\n    segunda.asignar(\"Zona\", 11);\n    tabla = segunda;\n    std::cout << \"Aceptado: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres limites;\n    limites.definir(\"Cero\", 0);\n    limites.definir(\"Min\", -100);\n    limites.definir(\"Max\", 100);\n    std::cout << \"Limites: \" << limites.consultar(\"Cero\") << ':' << limites.consultar(\"Min\") << ':' << limites.consultar(\"Max\") << \"\\n\";\n    try { limites.asignar(\"Max\", 101); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Conservado: \" << limites.consultar(\"Max\") << \"\\n\";\n    try { limites.consultar(\"Ausente\"); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Ausente: \" << limites.contiene(\"Ausente\") << \";Tamano: \" << limites.entradas().size() << \"\\n\";\n    Tabla_nombres llena;\n    const std::vector<std::string> nombres{\"n0\", \"n1\", \"n2\", \"n3\", \"n4\", \"n5\", \"n6\", \"n7\"};\n    int valor = 0;\n    for (const std::string& n : nombres) { llena.definir(n, valor); ++valor; }\n    try { llena.definir(\"n8\", 8); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Tamano: \" << llena.entradas().size() << \"\\n\";\n    try { llena.definir(\"n0\", 9); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Duplicado: \" << llena.entradas().size() << ':' << llena.consultar(\"n0\") << \"\\n\";\n    try {\n        llena.asignar(\"n7\", -100);\n        std::cout << \"Actualizacion: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Actualizacion: \" << error.what() << \"\\n\";\n    }\n    std::cout << \"Tabla llena:\";\n    for (const Vinculo& dato : llena.entradas()) {\n        std::cout << ' ' << dato.nombre << '=' << dato.valor;\n    }\n    std::cout << \"\\n\";\n    Tabla_nombres valores;\n    valores.definir(\"Fijo\", 6);\n    try { valores.definir(\"Bajo\", -101); }\n    catch (const std::runtime_error& error) { std::cout << \"Bajo: \" << error.what() << \"\\n\"; }\n    try { valores.definir(\"Alto\", 101); }\n    catch (const std::runtime_error& error) { std::cout << \"Alto: \" << error.what() << \"\\n\"; }\n    std::cout << \"Estado de valores: \" << valores.entradas().size() << ':'\n              << valores.contiene(\"Bajo\") << ':' << valores.contiene(\"Alto\")\n              << ':' << valores.consultar(\"Fijo\") << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Original: 5\nCandidato: 8\nDescartado: 5\nAceptado: 11\nLimites: 0:-100:100\nError: Resultado fuera de dominio\nConservado: 100\nError: Nombre no definido\nAusente: 0;Tamano: 3\nError: Tabla llena\nTamano: 8\nError: Nombre ya definido\nDuplicado: 8:0\nActualizacion: aceptada\nTabla llena: n0=0 n1=1 n2=2 n3=3 n4=4 n5=5 n6=6 n7=-100\nBajo: Resultado fuera de dominio\nAlto: Resultado fuera de dominio\nEstado de valores: 1:0:0:6\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Asignar -100 a n7 cambia ese valor y conserva las ocho asociaciones. Definir Bajo o Alto con un valor fuera del dominio se rechaza antes de insertar: la segunda tabla conserva únicamente Fijo con 6. Su tamaño es 1 y las dos consultas de presencia devuelven 0, de ahí Estado de valores: 1:0:0:6.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Original: 5\nCandidato: 8\nDescartado: 5\nAceptado: 11\nLimites: 0:-100:100\nError: Resultado fuera de dominio\nConservado: 100\nError: Nombre no definido\nAusente: 0;Tamano: 3\nError: Tabla llena\nTamano: 8\nError: Nombre ya definido\nDuplicado: 8:0\nActualizacion: aceptada\nTabla llena: n0=0 n1=1 n2=2 n3=3 n4=4 n5=5 n6=6 n7=-100\nEstado de valores: 3:1:1:6\n"
+                    ],
+                    "text": "La tabla incorpora Bajo y Alto sin presentar los rechazos previstos. Validar valores sólo al asignar deja sin protección la creación de un vínculo. definir también debe comprobar el valor antes de insertar; las definiciones anteriores sólo recibían valores admitidos."
+                  },
+                  {
+                    "outputs": [
+                      "Original: 5\nCandidato: 8\nDescartado: 5\nAceptado: 11\nLimites: 0:-100:100\nError: Resultado fuera de dominio\nConservado: 100\nError: Nombre no definido\nAusente: 0;Tamano: 3\nError: Tabla llena\nTamano: 8\nError: Nombre ya definido\nDuplicado: 8:0\nActualizacion: Tabla llena\nTabla llena: n0=0 n1=1 n2=2 n3=3 n4=4 n5=5 n6=6 n7=7\nBajo: Resultado fuera de dominio\nAlto: Resultado fuera de dominio\nEstado de valores: 1:0:0:6\n"
+                    ],
+                    "text": "La actualización de n7 se rechaza con Tabla llena y conserva el valor 7. Esa operación no crea otro vínculo: debe poder cambiarlo a -100 sin aumentar el tamaño. Aplica el límite de capacidad al añadir asociaciones, no como condición para toda modificación."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -348,6 +397,14 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nombre invalido\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nombre ya definido\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Tabla llena\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nombre no definido\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Zona\", 5);\n    std::cout << \"Original: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres candidata = tabla;\n    candidata.asignar(\"Zona\", 8);\n    std::cout << \"Candidato: \" << candidata.consultar(\"Zona\") << \"\\n\";\n    std::cout << \"Descartado: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres segunda = tabla;\n    segunda.asignar(\"Zona\", 11);\n    tabla = segunda;\n    std::cout << \"Aceptado: \" << tabla.consultar(\"Zona\") << \"\\n\";\n    Tabla_nombres limites;\n    limites.definir(\"Cero\", 0);\n    limites.definir(\"Min\", -100);\n    limites.definir(\"Max\", 100);\n    std::cout << \"Limites: \" << limites.consultar(\"Cero\") << ':' << limites.consultar(\"Min\") << ':' << limites.consultar(\"Max\") << \"\\n\";\n    try { limites.asignar(\"Max\", 101); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Conservado: \" << limites.consultar(\"Max\") << \"\\n\";\n    try { limites.consultar(\"Ausente\"); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Ausente: \" << limites.contiene(\"Ausente\") << \";Tamano: \" << limites.entradas().size() << \"\\n\";\n    Tabla_nombres llena;\n    const std::vector<std::string> nombres{\"n0\", \"n1\", \"n2\", \"n3\", \"n4\", \"n5\", \"n6\", \"n7\"};\n    int valor = 0;\n    for (const std::string& n : nombres) { llena.definir(n, valor); ++valor; }\n    try { llena.definir(\"n8\", 8); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Tamano: \" << llena.entradas().size() << \"\\n\";\n    try { llena.definir(\"n0\", 9); }\n    catch (const std::runtime_error& error) { std::cout << \"Error: \" << error.what() << \"\\n\"; }\n    std::cout << \"Duplicado: \" << llena.entradas().size() << ':' << llena.consultar(\"n0\") << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar creación y actualización con el mismo contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "La tabla llena contiene n0 a n7. Al asignar -100 a n7, la búsqueda encuentra el último registro y modifica su valor por referencia. Se conservan ocho entradas: la capacidad limita una inserción nueva, mientras esta actualización reutiliza una asociación existente.\n\nLa otra tabla empieza con Fijo y 6. Los candidatos -101 y 101 exceden el intervalo permitido -100..100, así que cada llamada a definir lanza el diagnóstico antes de push_back. Por eso ambos nombres siguen ausentes y el vínculo inicial conserva su valor.\n\nEl cliente anterior rechazaba 101 mediante asignar, pero todas sus definiciones recibían valores válidos. Tampoco actualizaba un nombre cuando ya había ocho asociaciones. Estos contrastes observan ambas obligaciones. Las funciones de la referencia histórica se conservan; el main ampliado del editor reutiliza cada objeto de tabla en los intentos que le corresponden."
         }
       ]
     }
@@ -574,7 +631,11 @@
           "block_0005_0000",
           "block_0005_0001",
           "block_0005_0003",
-          "block_0005_0002"
+          "block_0005_0002",
+          "u11_tabla_llena_y_valores_al_definir_titulo",
+          "u11_tabla_llena_y_valores_al_definir_consigna",
+          "u11_tabla_llena_y_valores_al_definir_salida",
+          "u11_tabla_llena_y_valores_al_definir_comprobacion"
         ]
       },
       {
@@ -591,7 +652,9 @@
         "id": "page_0007",
         "blocks": [
           "block_0007_0000",
-          "block_0007_0001"
+          "block_0007_0001",
+          "u11_tabla_llena_y_valores_al_definir_referencia_titulo",
+          "u11_tabla_llena_y_valores_al_definir_referencia_razonamiento"
         ]
       }
     ],
@@ -1079,6 +1142,60 @@
           "block": 0
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_tabla_llena_y_valores_al_definir_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_tabla_llena_y_valores_al_definir_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_tabla_llena_y_valores_al_definir_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_tabla_llena_y_valores_al_definir_comprobacion",
+        "sha256": "afde4ec355931edbcf1af7f6b948dbb1d35d6f60404860a87a3f7a0fbc95e933",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_tabla_llena_y_valores_al_definir_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_tabla_llena_y_valores_al_definir_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1206,6 +1323,46 @@
         "id": "block_0000_0003",
         "beforeSha256": "673e20034fb06a10a562cfc9c6517d0f980803d7101c53e0a7d9b0efa603817e",
         "afterSha256": "701e1b22c8409d748ac500845fced4328b27b02c16fd90e6e7b164a7400012d4"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "701e1b22c8409d748ac500845fced4328b27b02c16fd90e6e7b164a7400012d4",
+        "afterSha256": "bb4a8c2c1f36c595c7ccdea54e509936f63cd3193bdb04b3b478b3c9c238079b"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "f199470986729a2f1456d8447391bb656c65a1e9052ec68db2583b406183a91d",
+        "afterSha256": "dd79e2661bfab33d965e7236dc20062ff9d98783d48e5798ae82d119aaa830e8"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "9ae75d3c4d608efdc7f59a8095dea2081600fe9d1e7b4b02028ad53483a6bd50",
+        "afterSha256": "97e7d950fb8442d68d41c903fe816a2065efec812b8bf2c3c45648cddc4080e2"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "9c181deb435438ad33a97ffb725cc4ec868acab6fba77c78098c276a6b7547b8",
+        "afterSha256": "9d3b856312018954aad536cd0b40b617537df7cb2d298003d4ee277dbd2a5bb8"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "428b61f346948c4717a9426c563771728e3a626df93cc7d70b291290f3c36783",
+        "afterSha256": "da432c625fe30eea700acd43ec726118843dfa8c77cb4884301e1285f4087d67"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "0464d5da16b4fbcf16b28859a43b86ddc17fbc9dbb41964e2840648d877c7074",
+        "afterSha256": "fd0befc5b1732f00338788a10f3cbf24c19d197fe76131bc001c9d021d0242f9"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "73f816adb9359c37b5a686ff1be8dbbfaee4fe7ea460fdea47fa925a4fbc517c",
+        "afterSha256": "1d88070401d206e74aa7a0a3fe5a6cb3475341ad87f592f9ba5035aa89422347"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "1bff8e236ca22d1df9efb53f3bf755c7b6c8ce251aa3d62010ae01ddd845ae37",
+        "afterSha256": "1dc4dadf6f728de101a34d894f004358ba17e681da98cb9d7e4d6296112d91f5"
       }
     ],
     "orderRefinements": [
@@ -1264,11 +1421,24 @@
         "block_0007_0000",
         "block_0007_0001"
       ]
+    },
+    {
+      "activity": "u11_tabla_llena_y_valores_al_definir_comprobacion",
+      "blocks": [
+        "u11_tabla_llena_y_valores_al_definir_referencia_titulo",
+        "u11_tabla_llena_y_valores_al_definir_referencia_razonamiento"
+      ]
     }
   ],
   "activityAfter": [
     {
       "activity": "work_u11l18_rechazos_sin_cambio",
+      "requires": [
+        "block_0005_0002"
+      ]
+    },
+    {
+      "activity": "u11_tabla_llena_y_valores_al_definir_comprobacion",
       "requires": [
         "block_0005_0002"
       ]
@@ -1418,8 +1588,23 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "b46733c46beb488d6a86ef5db476c84ab1a6733861819dc93ce4cb4694127bc3",
-        "spans": []
+        "sourceSha256": "e676b37cb55bd3015067c0ee1679b0f26206d95ea536da879391929a83bf6ebc",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 338,
+            "text": "consultar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1579,13 +1764,63 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "ef75c50dab750df1be609c7cf250c6a0e6e5c6f072fbec20c426443a4f94cbfa",
+        "sourceSha256": "099cd0219866f02b613615fb36e666f0a60824dc444809f42b76cb80858ddf9c",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
-            "text": "dato",
-            "role": "cpp"
+            "start": 21,
+            "end": 33,
+            "text": "Vinculo dato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 158,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 217,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 254,
+            "text": "datos[1].nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 257,
+            "end": 271,
+            "text": "datos[1].valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 328,
+            "text": "Sur=8",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1611,25 +1846,49 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "ab4f8d3f13a5bb3ca63ebe8e6300f5a3788b647c57388e66411c8a1f201efe0f",
+        "sourceSha256": "cd0d7b3d6c357a1f782cad966eba6bc2d2d34df94e8e4deabfb5c359aa2b88ea",
         "spans": [
           {
-            "start": 4,
-            "end": 17,
+            "start": 3,
+            "end": 16,
             "text": "Vinculo& dato",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 21,
-            "end": 25,
+            "start": 18,
+            "end": 22,
             "text": "dato",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 98,
-            "end": 108,
-            "text": "dato.valor",
-            "role": "cpp"
+            "end": 102,
+            "text": "Este",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 133,
+            "text": "dato.valor = 7;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 198,
+            "end": 199,
+            "text": "&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 265,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1828,37 +2087,84 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "88aff6cbb7e56775249f31e3c424088ed1db11cce3cdf4ade305a7e3cd96f516",
+        "sourceSha256": "11dd69d656f06215d7435e293dcff1bd697050a2d14e7e59759898c20edc1a7e",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
-            "text": "vista",
-            "role": "cpp"
+            "start": 12,
+            "end": 29,
+            "text": "const auto& vista",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 51,
-            "end": 56,
+            "start": 93,
+            "end": 109,
+            "text": "const auto copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 178,
+            "end": 179,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 231,
+            "text": "Dique",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 247,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 278,
+            "text": "vista",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 292,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 308,
             "text": "copia",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 135,
-            "text": "vista",
-            "role": "cpp"
+            "start": 318,
+            "end": 319,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 230,
-            "end": 235,
-            "text": "vista",
-            "role": "cpp"
+            "start": 338,
+            "end": 341,
+            "text": "8 3",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 241,
-            "end": 246,
-            "text": "copia",
-            "role": "cpp"
+            "start": 346,
+            "end": 351,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1883,8 +2189,86 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "2ad1cfe2084eba098775d2d2bee7fb2e7ec7725c13a8f1d7dd916cf6598c656d",
-        "spans": []
+        "sourceSha256": "ab317c581cbd74cc97bdc0a3bf9bbd880b4ff2c1676fa4542b24fb8da6d29191",
+        "spans": [
+          {
+            "start": 22,
+            "end": 28,
+            "text": "Puerta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 88,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 179,
+            "text": "Nombre ya definido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 204,
+            "text": "Ventana",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 275,
+            "text": "Nombre no definido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 313,
+            "end": 332,
+            "text": "consultar(\"Puerta\")",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 351,
+            "end": 352,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 372,
+            "text": "entradas().size()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 387,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 419,
+            "end": 422,
+            "text": "4 1",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
@@ -1901,8 +2285,16 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "af0c754b6a7d273d3721c48c3c908c0356df639f385479c034161fe94cc4e41b",
-        "spans": []
+        "sourceSha256": "29c4140b535cf05e60540a389a3680ebeb48b3988d8f95d216eae90eda6ca9dd",
+        "spans": [
+          {
+            "start": 319,
+            "end": 320,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2054,19 +2446,56 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "d6306ed77a31870b55b1a58176c499b0e62ccb6e380e01f34c4e1b14b39980ef",
+        "sourceSha256": "bca4e86bba7379de754436e31ca52ae42fb0935ab3735441f820436c36f98eee",
         "spans": [
           {
-            "start": 3,
-            "end": 8,
-            "text": "tabla",
-            "role": "cpp"
+            "start": 9,
+            "end": 41,
+            "text": "Tabla_nombres candidata = tabla;",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 148,
-            "text": "tabla",
-            "role": "cpp"
+            "start": 81,
+            "end": 110,
+            "text": "candidata.asignar(\"Sala\", 8);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 168,
+            "end": 186,
+            "text": "validar(candidata)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 251,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 281,
+            "text": "tabla = candidata;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 295,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 309,
+            "end": 314,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2113,13 +2542,56 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "2f922e645a237264de04da58fbe26b2d71a789268d19edab5bafcfe6e4b91959",
+        "sourceSha256": "64fcaf30988602f63223bfad8481e096abcd023255d1ad28037b7e619c5cab7b",
         "spans": [
           {
-            "start": 7,
-            "end": 20,
-            "text": "Tabla_nombres",
-            "role": "cpp"
+            "start": 27,
+            "end": 31,
+            "text": "Zona",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 136,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 223,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 278,
+            "text": "tabla = candidata;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 324,
+            "end": 328,
+            "text": "Zona",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 360,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2630,6 +3102,389 @@
         "path": "/text",
         "sourceSha256": "ae9adeae29d24ad5c09d2b3ad6a8846d161aab6a86c971a68e980d325302a49a",
         "spans": []
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_titulo",
+        "path": "/text",
+        "sourceSha256": "28472aa166e16caa1f699cf9f41ce8f80a4fee315106ef4498dafb42e15f8322",
+        "spans": []
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_consigna",
+        "path": "/text",
+        "sourceSha256": "711c313de7e9453d4bc1aca8931cd5c7f612e453629b3357b3eecff2e4d361ea",
+        "spans": [
+          {
+            "start": 8,
+            "end": 15,
+            "text": "Vinculo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 30,
+            "text": "Tabla_nombres",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 72,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 163,
+            "end": 168,
+            "text": "llena",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 217,
+            "end": 221,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 226,
+            "text": "n7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 464,
+            "text": "Fijo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 476,
+            "end": 477,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 502,
+            "text": "Bajo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 507,
+            "end": 511,
+            "text": "-101",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 518,
+            "text": "Alto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 523,
+            "end": 526,
+            "text": "101",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 681,
+            "end": 699,
+            "text": "Estado de valores:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 755,
+            "end": 759,
+            "text": "Bajo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 777,
+            "end": 781,
+            "text": "Alto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 796,
+            "end": 800,
+            "text": "Fijo",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_salida",
+        "path": "/text",
+        "sourceSha256": "89f3288214d2afe005fba8aaf2a3243279b790d36066fef28a062f90d786e341",
+        "spans": [
+          {
+            "start": 33,
+            "end": 444,
+            "text": "Original: 5\nCandidato: 8\nDescartado: 5\nAceptado: 11\nLimites: 0:-100:100\nError: Resultado fuera de dominio\nConservado: 100\nError: Nombre no definido\nAusente: 0;Tamano: 3\nError: Tabla llena\nTamano: 8\nError: Nombre ya definido\nDuplicado: 8:0\nActualizacion: aceptada\nTabla llena: n0=0 n1=1 n2=2 n3=3 n4=4 n5=5 n6=6 n7=-100\nBajo: Resultado fuera de dominio\nAlto: Resultado fuera de dominio\nEstado de valores: 1:0:0:6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "8e9fb4bd0cfadc88345c69b1fe026fab6fd74cffa3e74439fb343de760a288ce",
+        "spans": [
+          {
+            "start": 19,
+            "end": 23,
+            "text": "Bajo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 30,
+            "text": "Alto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 155,
+            "text": "definir",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "702c26a851f4e044a9ee498e625f56a4027942162404f476aab450575218019e",
+        "spans": [
+          {
+            "start": 20,
+            "end": 22,
+            "text": "n7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 49,
+            "text": "Tabla llena",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 136,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "466fe132102edbd8e3363151e191a45cd36bfeaad260b1c7947bc7fc253fc693",
+        "spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 15,
+            "end": 17,
+            "text": "n7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 81,
+            "text": "Bajo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 88,
+            "text": "Alto",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 191,
+            "text": "Fijo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 197,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 213,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 293,
+            "text": "Estado de valores: 1:0:0:6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "5d4b9c52f432f452491ffb7a7ab686dcb1b284ce2e0004cca1babb692bddc665",
+        "spans": []
+      },
+      {
+        "block": "u11_tabla_llena_y_valores_al_definir_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "e408358b224c63f714452a99994ca342530da18efe84351aef5fa59a526e3d40",
+        "spans": [
+          {
+            "start": 24,
+            "end": 26,
+            "text": "n0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 31,
+            "text": "n7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 48,
+            "text": "-100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 53,
+            "text": "n7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 296,
+            "text": "Fijo",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 300,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 321,
+            "text": "-101",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 327,
+            "text": "101",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 368,
+            "text": "-100..100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 393,
+            "end": 400,
+            "text": "definir",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 431,
+            "end": 440,
+            "text": "push_back",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 551,
+            "end": 554,
+            "text": "101",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 571,
+            "text": "asignar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 796,
+            "end": 800,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

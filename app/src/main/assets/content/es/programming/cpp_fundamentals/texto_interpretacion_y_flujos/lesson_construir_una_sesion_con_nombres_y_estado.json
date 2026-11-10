@@ -53,7 +53,7 @@
             "Ausencia de a porque el último intento falló."
           ],
           "correctIndex": 1,
-          "explanation": "La creación completa guardó cero. El literal 100 se rechaza y su candidato no sustituye ese estado.",
+          "explanation": "crea a=0; completa la creación: la tabla recibe a=0(V) y el historial añade un 0. Ese resultado se conserva aunque no aumente la suma.\n\nEn a=100;, el reconocimiento del número supera el máximo 99 permitido para un literal escrito en la entrada. Se rechaza el intento sin aceptar una asignación ni añadir otro resultado. Quedan el vínculo con 0, un único cero en el historial y un rechazo.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e01",
           "reviewFeedback": [
             "Distingue el resultado de una creación aceptada del candidato que propone una operación rechazada. Revisa también si el historial admite cero.",
@@ -91,7 +91,7 @@
             "Historial 4 0 6, porque consultar debe crear un cero para fantasma."
           ],
           "correctIndex": 0,
-          "explanation": "La consulta no inserta y su terminador debe conservarse para recuperar sólo esa operación. La siguiente expresión completa todavía produce seis.",
+          "explanation": "La creación crea n=4; acepta 4 y lo añade al historial. Al leer fantasma;, la consulta falla con Nombre no definido y deja disponible su terminador para la recuperación; no inserta un vínculo ni un resultado provisional.\n\nDespués de consumir esa frontera todavía puede leerse n+2;, que calcula 4 + 2 = 6. La tabla conserva n=4(V), el historial contiene 4 6 y sólo se cuenta un rechazo.",
           "reviewFeedback": [
             "Localiza la frontera de la consulta fallida y sigue la operación que todavía queda después de ella.",
             "Revisa cuál es el primer terminador de la operación que falló y si pertenece a la expresión siguiente.",
@@ -165,7 +165,7 @@
             "Los resultados del historial deben convertirse en nombres."
           ],
           "correctIndex": 0,
-          "explanation": "Conservar sólo el historial no conserva el estado del lenguaje. La tabla candidata y el compromiso posterior al terminador resuelven ambas responsabilidades.",
+          "explanation": "En el caso inicial, base ya tiene aceptado el valor 8 cuando se intenta base=3 9;. La expresión del lado derecho proporciona 3, pero el token 9 impide reconocer el terminador. Si se hubiera escrito directamente en la tabla aceptada, base quedaría indebidamente en 3 aunque no se añadiera nada al historial.\n\nCon la copia candidata, esa propuesta se descarta y base conserva 8. La tabla sólo se sustituye después de aceptar ;, y el historial sólo se amplía después del retorno correcto de la operación. Hay que conservar ambas colecciones ante el rechazo.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e02",
           "reviewFeedback": [
             "Sigue por separado la tabla y el historial hasta el momento en que se comprueba el terminador. ¿Qué cambio ya se había hecho?",
@@ -183,7 +183,7 @@
             "Consultar un nombre ausente devuelve cero y asignar siempre puede crear otro."
           ],
           "correctIndex": 0,
-          "explanation": "Estas acciones tienen precondiciones y efectos diferentes. La tabla candidata no elimina esa distinción: sólo protege el estado hasta completar ;.",
+          "explanation": "Si a todavía no existe, crea a=4; puede introducir el vínculo y guardar 4. Una asignación posterior a=7; necesita encontrar ese vínculo y comprobar que sea modificable antes de proponer 7. La consulta a; obtiene el valor guardado sin añadir entradas.\n\nCada acción conserva sus condiciones al trabajar sobre la candidata: crear rechaza un nombre duplicado, asignar rechaza un destino ausente o protegido y consultar rechaza un nombre ausente. Completar el terminador permite aceptar una operación que ya cumplió esas condiciones; no sustituye su comprobación.",
           "reviewFeedback": [
             "Revisa qué necesita encontrar cada operación antes de actuar y qué datos puede cambiar al completarse.",
             "Compara introducir un nombre nuevo, sustituir un valor existente y obtener un valor sin cambiar la tabla.",
@@ -227,7 +227,7 @@
           "answers": [
             "Valor: 0\nValor: 2\nError: Nombre constante\nValor: 1\nValor: 3\nAceptadas: 4\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) x=1(V) k=2(C)\nHistorial: 0 2 1 3\nSuma: 6\nMutables: 1\nConstantes: 3"
           ],
-          "explanation": "El cero se acepta y guarda. La asignación a k falla sin cambiarlo; x pasa de cero a uno y la expresión final vale tres.",
+          "explanation": "crea x=0; acepta 0 y fija k=x+2; acepta 2. El intento k=4; se rechaza por protección y deja k igual a 2. Después, x=x+unidad; acepta 1 y x+k; obtiene 3.\n\nEl historial contiene 0 2 1 3 y su suma es 0 + 2 + 1 + 3 = 6. La tabla conserva x=1(V) k=2(C) además de los dos predefinidos. Por eso hay cuatro aceptaciones, un rechazo, un vínculo modificable y tres constantes.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_una_sesion_con_nombres_y_estado__e03",
           "reviewFeedback": "Sigue las operaciones en orden. Decide si cada una se acepta antes de actualizar la tabla o el historial y conserva el estado anterior cuando se rechaza. Después calcula los recuentos a partir de la tabla actual y la suma a partir del historial."
         },
@@ -254,11 +254,74 @@
               }
             ]
           }
+        },
+        {
+          "type": "heading",
+          "text": "Contar varios ceros y sumar el historial completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copia tu intérprete con el informe Ceros: antes del main proporcionado. El cliente conserva las cuatro sesiones anteriores y añade tres:\n\n1. \"crea a=0;fija b=0;crea c=0;a=unidad;fija d=-unidad;c=4 9;\"\n2. \"limite;limite;\"\n3. \"-limite;-limite;\"\n\nCuenta todos los vínculos cuyo valor actual sea exactamente cero. La suma utiliza todos los resultados aceptados del historial, con su signo y sus repeticiones; conserva el dominio del resumen ya justificado, aunque el total supere la magnitud cien. La asignación rechazada debe conservar tanto la tabla como el historial anteriores.\n\nPulsa «Compilar, ejecutar y comprobar» con las siete sesiones de la misma implementación y conserva todas las líneas del informe. Puedes adaptar las llamadas si diste otro nombre a probar, sin cambiar las cadenas ni su orden.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nCaso 1\nValor: 0\nAceptadas: 1\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=0(V)\nHistorial: 0\nSuma: 0\nMutables: 1\nConstantes: 2\nCeros: 1\nCaso 2\nValor: 0\nValor: 1\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=1(V)\nHistorial: 0 1\nSuma: 1\nMutables: 1\nConstantes: 2\nCeros: 0\nCaso 3\nValor: 1\nError: Nombre constante\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) k=1(C)\nHistorial: 1\nSuma: 1\nMutables: 0\nConstantes: 3\nCeros: 0\nCaso 4\nValor: 0\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=2(V) b=0(C)\nHistorial: 0 0 2\nSuma: 2\nMutables: 1\nConstantes: 3\nCeros: 1\nCaso 5\nValor: 0\nValor: 0\nValor: 0\nValor: 1\nValor: -1\nError: Se esperaba ;\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=0(C) c=0(V) d=-1(C)\nHistorial: 0 0 0 1 -1\nSuma: 0\nMutables: 2\nConstantes: 4\nCeros: 2\nCaso 6\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: 100 100\nSuma: 200\nMutables: 0\nConstantes: 2\nCeros: 0\nCaso 7\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: -100 -100\nSuma: -200\nMutables: 0\nConstantes: 2\nCeros: 0"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin otro main.\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    probar(\"crea a=0;\");\n    std::cout << \"Caso 2\\n\";\n    probar(\"crea a=0;a=1;\");\n    std::cout << \"Caso 3\\n\";\n    probar(\"fija k=unidad;k=0;\");\n    std::cout << \"Caso 4\\n\";\n    probar(\"crea a=0;fija b=0;a=2;\");\n    std::cout << \"Caso 5\\n\";\n    probar(\"crea a=0;fija b=0;crea c=0;a=unidad;fija d=-unidad;c=4 9;\");\n    std::cout << \"Caso 6\\n\";\n    probar(\"limite;limite;\");\n    std::cout << \"Caso 7\\n\";\n    probar(\"-limite;-limite;\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nValor: 0\nAceptadas: 1\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=0(V)\nHistorial: 0\nSuma: 0\nMutables: 1\nConstantes: 2\nCeros: 1\nCaso 2\nValor: 0\nValor: 1\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=1(V)\nHistorial: 0 1\nSuma: 1\nMutables: 1\nConstantes: 2\nCeros: 0\nCaso 3\nValor: 1\nError: Nombre constante\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) k=1(C)\nHistorial: 1\nSuma: 1\nMutables: 0\nConstantes: 3\nCeros: 0\nCaso 4\nValor: 0\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=2(V) b=0(C)\nHistorial: 0 0 2\nSuma: 2\nMutables: 1\nConstantes: 3\nCeros: 1\nCaso 5\nValor: 0\nValor: 0\nValor: 0\nValor: 1\nValor: -1\nError: Se esperaba ;\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=0(C) c=0(V) d=-1(C)\nHistorial: 0 0 0 1 -1\nSuma: 0\nMutables: 2\nConstantes: 4\nCeros: 2\nCaso 6\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: 100 100\nSuma: 200\nMutables: 0\nConstantes: 2\nCeros: 0\nCaso 7\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: -100 -100\nSuma: -200\nMutables: 0\nConstantes: 2\nCeros: 0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "En la quinta sesión, a termina en 1, b y c conservan 0 y d guarda -1. La asignación incompleta no cambia c. Corresponde Ceros: 2, mientras el historial 0 0 0 1 -1 suma 0. Las otras dos sesiones conservan 100 100 y -100 -100; sus sumas son 200 y -200, respectivamente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 0\nAceptadas: 1\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=0(V)\nHistorial: 0\nSuma: 0\nMutables: 1\nConstantes: 2\nCeros: 1\nCaso 2\nValor: 0\nValor: 1\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=1(V)\nHistorial: 0 1\nSuma: 1\nMutables: 1\nConstantes: 2\nCeros: 0\nCaso 3\nValor: 1\nError: Nombre constante\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) k=1(C)\nHistorial: 1\nSuma: 1\nMutables: 0\nConstantes: 3\nCeros: 0\nCaso 4\nValor: 0\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=2(V) b=0(C)\nHistorial: 0 0 2\nSuma: 2\nMutables: 1\nConstantes: 3\nCeros: 1\nCaso 5\nValor: 0\nValor: 0\nValor: 0\nValor: 1\nValor: -1\nError: Se esperaba ;\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=0(C) c=0(V) d=-1(C)\nHistorial: 0 0 0 1 -1\nSuma: 0\nMutables: 2\nConstantes: 4\nCeros: 1\nCaso 6\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: 100 100\nSuma: 200\nMutables: 0\nConstantes: 2\nCeros: 0\nCaso 7\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: -100 -100\nSuma: -200\nMutables: 0\nConstantes: 2\nCeros: 0\n"
+                    ],
+                    "text": "Encontrar al menos un cero no determina cuántos vínculos tienen ese valor. En la quinta sesión, b y c son dos entradas distintas con valor cero. Revisa si el recorrido se limita a señalar que encontró uno en vez de incrementar el recuento por cada coincidencia."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 0\nAceptadas: 1\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=0(V)\nHistorial: 0\nSuma: 0\nMutables: 1\nConstantes: 2\nCeros: 1\nCaso 2\nValor: 0\nValor: 1\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=1(V)\nHistorial: 0 1\nSuma: 1\nMutables: 1\nConstantes: 2\nCeros: 0\nCaso 3\nValor: 1\nError: Nombre constante\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) k=1(C)\nHistorial: 1\nSuma: 1\nMutables: 0\nConstantes: 3\nCeros: 0\nCaso 4\nValor: 0\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=2(V) b=0(C)\nHistorial: 0 0 2\nSuma: 2\nMutables: 1\nConstantes: 3\nCeros: 1\nCaso 5\nValor: 0\nValor: 0\nValor: 0\nValor: 1\nValor: -1\nError: Se esperaba ;\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=0(C) c=0(V) d=-1(C)\nHistorial: 0 0 0 1 -1\nSuma: 0\nMutables: 2\nConstantes: 4\nCeros: 3\nCaso 6\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: 100 100\nSuma: 200\nMutables: 0\nConstantes: 2\nCeros: 0\nCaso 7\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: -100 -100\nSuma: -200\nMutables: 0\nConstantes: 2\nCeros: 0\n"
+                    ],
+                    "text": "El vínculo d conserva -1, que no es cero. Deben contarse b y c, pero no añadir una tercera coincidencia por ese valor negativo. Revisa si la condición del recuento acepta todos los valores no positivos."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nValor: 0\nAceptadas: 1\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=0(V)\nHistorial: 0\nSuma: 0\nMutables: 1\nConstantes: 2\nCeros: 1\nCaso 2\nValor: 0\nValor: 1\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=1(V)\nHistorial: 0 1\nSuma: 1\nMutables: 1\nConstantes: 2\nCeros: 0\nCaso 3\nValor: 1\nError: Nombre constante\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) k=1(C)\nHistorial: 1\nSuma: 1\nMutables: 0\nConstantes: 3\nCeros: 0\nCaso 4\nValor: 0\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=2(V) b=0(C)\nHistorial: 0 0 2\nSuma: 2\nMutables: 1\nConstantes: 3\nCeros: 1\nCaso 5\nValor: 0\nValor: 0\nValor: 0\nValor: 1\nValor: -1\nError: Se esperaba ;\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=0(C) c=0(V) d=-1(C)\nHistorial: 0 0 0 1 -1\nSuma: 0\nMutables: 2\nConstantes: 4\nCeros: 2\nCaso 6\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: 100 100\nSuma: 100\nMutables: 0\nConstantes: 2\nCeros: 0\nCaso 7\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: -100 -100\nSuma: -100\nMutables: 0\nConstantes: 2\nCeros: 0\n"
+                    ],
+                    "text": "Cada consulta de limite acepta un resultado individual de 100, y cada consulta de -limite acepta -100. El historial conserva dos resultados en esas sesiones: suman 200 y -200. Revisa si estás recortando el total a la banda permitida para una sola operación."
+                  }
+                ]
+              }
+            ]
+          }
         }
       ]
     },
     {
       "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar la tabla actual con todos los resultados aceptados"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la quinta sesión se aceptan primero tres creaciones con valor cero. a=unidad; cambia el valor actual de a a 1, y fija d=-unidad; crea una constante con -1. c=4 9; propone 4, pero el token 9 impide aceptar su terminador; c conserva 0.\n\nLa tabla final tiene dos ceros: los de b y c. El negativo de d no se cuenta. El historial conserva 0 0 0 1 -1, con tres ceros de creaciones anteriores y suma 0. Esta diferencia exige recorrer la colección correspondiente a cada dato del informe. Los cuatro casos anteriores sólo pedían recuentos de cero o uno y no incluían valores negativos en la tabla.\n\nLas sesiones sexta y séptima aceptan dos resultados individuales de 100 y de -100, respectivamente. Sus historiales completos suman 100 + 100 = 200 y -100 - 100 = -200. Cada operación respeta su dominio; el resumen conserva el intervalo más amplio que ya permite el límite de texto. Las baterías anteriores daban sumas dentro de la banda de cien y no distinguían un recorte indebido del total.\n\nLa referencia suma cada resultado del historial y, por separado, incrementa el recuento de ceros por cada vínculo cuyo valor actual sea igual a cero. Ambos recorridos consultan los datos aceptados sin cambiarlos."
+        },
         {
           "type": "heading",
           "text": "Referencia de la consulta ampliada"
@@ -585,12 +648,18 @@
           "block_0006_0000",
           "block_0006_0001",
           "block_0006_0002",
-          "block_0006_0003"
+          "block_0006_0003",
+          "u11_ceros_actuales_y_sumas_fuera_de_cien_titulo",
+          "u11_ceros_actuales_y_sumas_fuera_de_cien_consigna",
+          "u11_ceros_actuales_y_sumas_fuera_de_cien_salida",
+          "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion"
         ]
       },
       {
         "id": "page_0007",
         "blocks": [
+          "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_titulo",
+          "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_razonamiento",
           "block_0007_0000",
           "block_0007_0001",
           "block_0007_0002",
@@ -1191,7 +1260,62 @@
         ]
       }
     },
-    "additions": [],
+    "additions": [
+      {
+        "id": "u11_ceros_actuales_y_sumas_fuera_de_cien_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 0
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_ceros_actuales_y_sumas_fuera_de_cien_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 1
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_ceros_actuales_y_sumas_fuera_de_cien_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 2
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion",
+        "sha256": "24938a12fe35bdcc9509df1c2ce43e775ae0728579c5d28b3e0d213bda440cab",
+        "storage": {
+          "page": 10,
+          "block": 3
+        },
+        "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 10,
+          "block": 4
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 10,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      }
+    ],
     "editorial": [
       {
         "id": "block_0000_0001",
@@ -1322,6 +1446,31 @@
         "id": "block_0007_0000",
         "beforeSha256": "7292a0c54478f45371c4ef850e657080e5fe447e45acc0f35979579cdc282a2e",
         "afterSha256": "9754a0ccaca9cbb0c221cbcac06e2609e6191a44b9d496816c5ae7226ab0a96b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "09a016cfe0637a8be64ccd67e0ec8f3bd57e8d63ca5e03c39ecbe760d7bacad1",
+        "afterSha256": "7e3db3459b670281b5dfdb8e6a84f4ea290d16806368d3198766cf5287f9c2c5"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "47d98a894b0d599c99b29ea69220846e3409c1760d654c30c205c3745329e16f",
+        "afterSha256": "4acc792ee6dbdb98ce10b49466725c70784f205580475a39c684f9bd11010608"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "715e13783f80686def2983e68ff936305884c45e789e99d80fbe6285440fd329",
+        "afterSha256": "bc8439044768786c0943255fa2769b5abe8c87e0998c5aa1ac381b507456b16c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "42e2986cd5cc5b760b9a09e5530a8e3863dedcbabb7d74c00e69214bd96d320a",
+        "afterSha256": "d29890f9b4589a1e4f9561753b12ff50c0485e13deb266ed153dc9338f995221"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "272ffc96fbf0bf98f73c385ec09d69d7046832f439fcb122704e846a256a9f07",
+        "afterSha256": "3437ad24cd51f5663a7786ab6b2be4c8139f710f0b6aeada55cdc68dba459235"
       }
     ]
   },
@@ -1339,14 +1488,16 @@
       ]
     },
     {
-      "activity": "block_0006_0003",
+      "activity": "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion",
       "blocks": [
         "block_0007_0000",
         "block_0007_0001",
         "block_0007_0002",
         "block_0007_0003",
         "block_0009_0000",
-        "block_0009_0001"
+        "block_0009_0001",
+        "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_titulo",
+        "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_razonamiento"
       ]
     }
   ],
@@ -1373,6 +1524,12 @@
       "activity": "block_0006_0003",
       "requires": [
         "block_0003_0001"
+      ]
+    },
+    {
+      "activity": "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion",
+      "requires": [
+        "block_0006_0003"
       ]
     }
   ],
@@ -1882,12 +2039,47 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "1219b910c0c8284002699f2dda3e8e79ee650460373d0236b894cdba87814b8f",
+        "sourceSha256": "bca01c0eb7618c89954f790fcd986f89075434c9745897b149a48e0436ca7cef",
         "spans": [
           {
-            "start": 45,
-            "end": 48,
-            "text": "100",
+            "start": 0,
+            "end": 9,
+            "text": "crea a=0;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 48,
+            "end": 54,
+            "text": "a=0(V)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 145,
+            "text": "a=100;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 193,
+            "end": 195,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 343,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           }
@@ -2221,8 +2413,65 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "fb032a557f19d58fbeb8320f905f4cd410aad0f3d1b534aa52f0ca4b88b955e4",
-        "spans": []
+        "sourceSha256": "55369ca890262285874339f906bd0baf9687fda62b233b6ed3ab6c50fff17330",
+        "spans": [
+          {
+            "start": 12,
+            "end": 21,
+            "text": "crea n=4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 73,
+            "text": "fantasma;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 97,
+            "end": 115,
+            "text": "Nombre no definido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 280,
+            "text": "n+2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 294,
+            "end": 303,
+            "text": "4 + 2 = 6",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 329,
+            "text": "n=4(V)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 356,
+            "text": "4 6",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -2672,8 +2921,79 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "3257e969e2ca03b45d50d26829ff3273b08a91a1953d2c005f99c5d03f25bd45",
-        "spans": []
+        "sourceSha256": "942d5ce086251d90c4ad996df43d6b2987f7f9cda34c1c167e06da5e3c3eba40",
+        "spans": [
+          {
+            "start": 20,
+            "end": 24,
+            "text": "base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 81,
+            "text": "base=3 9;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 125,
+            "end": 126,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 237,
+            "text": "base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 265,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 364,
+            "text": "base",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 374,
+            "end": 375,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 423,
+            "end": 424,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0004_0001",
@@ -2720,12 +3040,47 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "b514e387f106558ada461e6bbbaeafd89c1d55d29dae8603812e6b7d0c34480c",
+        "sourceSha256": "40750f6fedc289e6160340705012a38ec78620aa1941ea15a3e8196b92bb0759",
         "spans": [
           {
-            "start": 144,
-            "end": 145,
-            "text": ";",
+            "start": 3,
+            "end": 4,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 33,
+            "text": "crea a=4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 72,
+            "end": 73,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 104,
+            "text": "a=7;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 186,
+            "end": 187,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 201,
+            "end": 203,
+            "text": "a;",
             "role": "data",
             "reading": "characters"
           }
@@ -3021,20 +3376,104 @@
       {
         "block": "block_0006_0001",
         "path": "/explanation",
-        "sourceSha256": "ec8ac76d7cbef5ed2133c72ffde3915a4ae972c803081c483c16c556724ae617",
+        "sourceSha256": "5db20aa43e47c2be36643809d6fe50602af749dc3f3e1e53d75da79c446ea33c",
         "spans": [
           {
-            "start": 44,
-            "end": 45,
+            "start": 0,
+            "end": 9,
+            "text": "crea x=0;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 17,
+            "end": 18,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 32,
+            "text": "fija k=x+2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "k=4;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 92,
+            "end": 93,
             "text": "k",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 67,
-            "end": 68,
-            "text": "x",
+            "start": 102,
+            "end": 103,
+            "text": "2",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 125,
+            "text": "x=x+unidad;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 133,
+            "end": 134,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 141,
+            "text": "x+k;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 183,
+            "text": "0 2 1 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 214,
+            "text": "0 + 2 + 1 + 3 = 6",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 247,
+            "text": "x=1(V) k=2(C)",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3245,6 +3684,438 @@
         "path": "/text",
         "sourceSha256": "87438a9d1f64a6329e4cc84e5f23a04c659b016945714d23f021ae840a9741ca",
         "spans": []
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_titulo",
+        "path": "/text",
+        "sourceSha256": "190a1480e37ffd94bce4b2f7ae3d561e236c78ac6ab6537c006e76115719c73c",
+        "spans": []
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_consigna",
+        "path": "/text",
+        "sourceSha256": "e938b7e8bcb32612e0fa86dfe03b583217511a5809f36fe7bbe85ddb04bddd06",
+        "spans": [
+          {
+            "start": 35,
+            "end": 41,
+            "text": "Ceros:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 56,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 200,
+            "text": "\"crea a=0;fija b=0;crea c=0;a=unidad;fija d=-unidad;c=4 9;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 220,
+            "text": "\"limite;limite;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 242,
+            "text": "\"-limite;-limite;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 760,
+            "end": 766,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_salida",
+        "path": "/text",
+        "sourceSha256": "b7aa8df6dfc04b10591c22d65b14e8f04024aaa030ab8b7e22d3938c01901feb",
+        "spans": [
+          {
+            "start": 33,
+            "end": 1191,
+            "text": "Caso 1\nValor: 0\nAceptadas: 1\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=0(V)\nHistorial: 0\nSuma: 0\nMutables: 1\nConstantes: 2\nCeros: 1\nCaso 2\nValor: 0\nValor: 1\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=1(V)\nHistorial: 0 1\nSuma: 1\nMutables: 1\nConstantes: 2\nCeros: 0\nCaso 3\nValor: 1\nError: Nombre constante\nAceptadas: 1\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) k=1(C)\nHistorial: 1\nSuma: 1\nMutables: 0\nConstantes: 3\nCeros: 0\nCaso 4\nValor: 0\nValor: 0\nValor: 2\nAceptadas: 3\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C) a=2(V) b=0(C)\nHistorial: 0 0 2\nSuma: 2\nMutables: 1\nConstantes: 3\nCeros: 1\nCaso 5\nValor: 0\nValor: 0\nValor: 0\nValor: 1\nValor: -1\nError: Se esperaba ;\nAceptadas: 5\nRechazadas: 1\nTabla: unidad=1(C) limite=100(C) a=1(V) b=0(C) c=0(V) d=-1(C)\nHistorial: 0 0 0 1 -1\nSuma: 0\nMutables: 2\nConstantes: 4\nCeros: 2\nCaso 6\nValor: 100\nValor: 100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: 100 100\nSuma: 200\nMutables: 0\nConstantes: 2\nCeros: 0\nCaso 7\nValor: -100\nValor: -100\nAceptadas: 2\nRechazadas: 0\nTabla: unidad=1(C) limite=100(C)\nHistorial: -100 -100\nSuma: -200\nMutables: 0\nConstantes: 2\nCeros: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "e1496143ec5477d5a40d3c23b6f983b4b0030a07b690917efa692d8c3e35fece",
+        "spans": [
+          {
+            "start": 96,
+            "end": 97,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": "c",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "7b6ad80b1c9eda812eea17689a3bfe4bd4d11817fbf42447c6f2a1e9537bf522",
+        "spans": [
+          {
+            "start": 11,
+            "end": 12,
+            "text": "d",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 24,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "c",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "f368b7eec0cfe4b55cae79f063aa59c3411acef583374d7d5e94912d966223f9",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "limite",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 61,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 89,
+            "text": "-limite",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 97,
+            "end": 101,
+            "text": "-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 167,
+            "text": "200",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "-200",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "0abae0a9e21693e707e03aa7a6868d8018c6f06dae3959a0981821f70f9518e0",
+        "spans": [
+          {
+            "start": 21,
+            "end": 22,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 35,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 42,
+            "text": "c",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 54,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "d",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 68,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 106,
+            "text": "c",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 120,
+            "end": 128,
+            "text": "Ceros: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 162,
+            "text": "0 0 0 1 -1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 169,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 204,
+            "end": 211,
+            "text": "100 100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 223,
+            "text": "-100 -100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 242,
+            "text": "200",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 249,
+            "text": "-200",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "28f95a3812ae95fb54439f4931595654621f7051c1b76f03e618a9ffb47abe54",
+        "spans": []
+      },
+      {
+        "block": "u11_ceros_actuales_y_sumas_fuera_de_cien_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "0cda9ec5245af174cbe6a892efa399af54e78fa321f5e68938d8dd37b7cd6212",
+        "spans": [
+          {
+            "start": 71,
+            "end": 80,
+            "text": "a=unidad;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "a",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 131,
+            "text": "fija d=-unidad;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 155,
+            "end": 157,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 165,
+            "text": "c=4 9;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 174,
+            "end": 175,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 192,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 224,
+            "text": "c",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 235,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 278,
+            "text": "b",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 282,
+            "text": "c",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 300,
+            "text": "d",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 347,
+            "text": "0 0 0 1 -1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 397,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 662,
+            "end": 665,
+            "text": "100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 671,
+            "end": 675,
+            "text": "-100",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 726,
+            "end": 741,
+            "text": "100 + 100 = 200",
+            "role": "math",
+            "reading": "technical"
+          },
+          {
+            "start": 744,
+            "end": 761,
+            "text": "-100 - 100 = -200",
+            "role": "math",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [

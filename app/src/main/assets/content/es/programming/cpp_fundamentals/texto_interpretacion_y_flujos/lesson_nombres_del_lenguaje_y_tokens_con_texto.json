@@ -35,7 +35,7 @@
             "2saldo"
           ],
           "correctIndex": 1,
-          "explanation": "El inicio debe ser una letra. El guion bajo y los dígitos se admiten después del inicio.",
+          "explanation": "En saldo_2, el primer carácter es la letra s. Los siguientes son letras hasta llegar al guion bajo y al dígito 2, que sí están permitidos después del inicio. Sus siete caracteres también respetan el máximo de doce.\n\nEn _saldo, el primer carácter ya es un guion bajo; en 2saldo, es un dígito. Ambos fallan la regla del inicio, aunque esos caracteres puedan aparecer más adelante en otro nombre válido.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e01",
           "reviewFeedback": [
             "Revisa el carácter inicial: el guion bajo sólo se admite después de una letra.",
@@ -53,7 +53,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ampliamos `Token` con el campo `texto`, de tipo `std::string`, para conservar un nombre completo. El campo `clase` sigue indicando cómo interpretar los datos del token: un token numérico utiliza `valor`; uno de nombre utiliza `texto`. Esta ampliación permite representar categorías con datos diferentes (Stroustrup, 2024, sección 6.`8`.2).\n\nEn los tokens que construimos aquí, un número como `8` se representa mediante `Token{numero, 8, \"\"}`. Un nombre como `Turno_4` se representa mediante `Token{nombre, 0, \"Turno_4\"}`. Ese cero deja sin información el campo numérico del token de nombre: no asigna cero a una variable del lenguaje interpretado.\n\nUn signo, la palabra `crea` y el final del texto utilizan `valor` igual a cero y `texto` vacío, porque su categoría basta para identificarlos. Todas las formas de construcción mostradas proporcionan los tres campos. Al devolver un token al lector, `token_valido` comprueba que sus datos respetan estas reglas.",
+          "text": "Ampliamos `Token` con el campo `texto`, de tipo `std::string`, para conservar un nombre completo. El campo `clase` sigue indicando cómo interpretar los datos del token: un token numérico utiliza `valor`; uno de nombre utiliza `texto`. Esta ampliación permite representar categorías con datos diferentes (Stroustrup, 2024, sección 6.8.2).\n\nEn los tokens que construimos aquí, un número como `8` se representa mediante `Token{numero, 8, \"\"}`. Un nombre como `Turno_4` se representa mediante `Token{nombre, 0, \"Turno_4\"}`. Ese cero deja sin información el campo numérico del token de nombre: no asigna cero a una variable del lenguaje interpretado.\n\nUn signo, la palabra `crea` y el final del texto utilizan `valor` igual a cero y `texto` vacío, porque su categoría basta para identificarlos. Todas las formas de construcción mostradas proporcionan los tres campos. Al devolver un token al lector, `token_valido` comprueba que sus datos respetan estas reglas.",
           "emphasis": [
             {
               "text": "no asigna cero a una variable",
@@ -84,7 +84,7 @@
             "Mesa9"
           ],
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e02",
-          "explanation": "Un token de nombre conserva el nombre completo en `texto` y deja `valor` en cero, porque ese campo numérico no se utiliza en esta categoría. El cero no representa el `valor` de `Mesa9` en una tabla de variables.",
+          "explanation": "La categoría nombre indica que el dato reconocido se conserva en texto. Para este token, ese campo contiene Mesa9 completo y valor contiene 0, porque el campo numérico no aporta un valor en esta categoría. Por eso se completa Token t{nombre, 0, \"Mesa9\"};.\n\nEse cero describe la representación del token. Todavía no registra una asociación entre Mesa9 y cero en una tabla: reconocer la palabra y asignarle un valor son acciones diferentes.",
           "reviewFeedback": "Relaciona cada campo del token con su categoría. Distingue el dato numérico de un token y el valor que tendría una variable del lenguaje interpretado."
         }
       ]
@@ -101,7 +101,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Así, `saldo+2;` entrega un token de nombre con texto `\"saldo\"`, el signo `+`, el número `2`, el signo `;` y el final. La palabra reservada se compara después de reunir el nombre completo: `crea2` no se divide en `crea` seguido de `2`.\n\nUn nombre de más de doce caracteres se rechaza, tanto si el carácter adicional es una letra como si es un dígito o un guion bajo. En las inspecciones de esta lección, un rechazo termina ese caso. La batería continúa con otro texto y un lector nuevo`;` no ejecuta automáticamente el descarte de una operación del intérprete anterior."
+          "text": "Así, `saldo+2;` entrega un token de nombre con texto `\"saldo\"`, el signo `+`, el número `2`, el signo `;` y el final. La palabra reservada se compara después de reunir el nombre completo: `crea2` no se divide en `crea` seguido de `2`.\n\nUn nombre de más de doce caracteres se rechaza, tanto si el carácter adicional es una letra como si es un dígito o un guion bajo. En las inspecciones de esta lección, un rechazo termina ese caso. La batería continúa con otro texto y un lector nuevo; no ejecuta automáticamente el descarte de una operación del intérprete anterior."
         },
         {
           "type": "multiple_choice",
@@ -112,7 +112,7 @@
             "Entregar Nombre: Caja; la lectura posterior entrega final."
           ],
           "correctIndex": 2,
-          "explanation": "EOF termina el nombre, pero no completa una sentencia que exija ;. No se devuelve un carácter cuando su lectura falló.",
+          "explanation": "El lector ya reunió los caracteres de Caja cuando el intento siguiente de get alcanza el final sin obtener otro carácter. Ese final permite entregar el nombre completo, de modo que el inspector muestra Nombre: Caja. La llamada posterior reconoce el final del texto.\n\nNo hay un carácter nuevo que devolver mediante putback, ni apareció un ; en la entrada. Reconocer el nombre no completa por sí mismo una sentencia que exija ese terminador.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e03",
           "reviewFeedback": [
             "Comprueba si la última llamada a get obtuvo un carácter nuevo antes de considerar putback.",
@@ -157,7 +157,7 @@
           "answers": [
             "Nombre: crea2\nSigno: =\nNumero: 7\nSigno: ;\nNombre: A_3\nFin"
           ],
-          "explanation": "crea2 es un nombre completo. A_3 termina al agotarse el origen; ese final no aporta un ;.",
+          "explanation": "El lexer reúne crea2 antes de comparar la palabra completa con crea. Como el dígito forma parte del nombre, presenta Nombre: crea2 y conserva = para la lectura siguiente. Después reconoce ese signo, el número 7 y el terminador ;, en ese orden.\n\nLa última palabra es A_3: empieza por una letra y continúa con un guion bajo y un dígito admitidos. El final del origen termina su reconocimiento, por lo que aparecen Nombre: A_3 y Fin. No se añade otro ; que no estaba escrito.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e04",
           "reviewFeedback": "Reúne cada nombre completo antes de comparar con la palabra reservada. Sigue después cada signo y distingue el final de la palabra del terminador de una operación."
         },
@@ -169,7 +169,7 @@
           "answers": [
             "empty"
           ],
-          "explanation": "empty consulta si la cadena está vacía. El número cero por sí solo no comprueba el campo textual.",
+          "explanation": "La expresión token.valor == 0 comprueba únicamente el campo numérico. Un token podría cumplirla y conservar todavía texto que un signo no debe tener. Por eso se combina con token.texto.empty(), que devuelve true cuando la cadena está vacía.\n\nLa operación que completa el hueco es empty. Las dos condiciones deben cumplirse: el cero no sustituye la comprobación del texto, y una cadena vacía no comprueba por sí sola el valor numérico.",
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e05",
           "reviewFeedback": "Busca la consulta de string que indica si está vacía; no la confundas con el dato numérico de Token."
         }
@@ -205,7 +205,7 @@
             "Crea es nombre, crea es final y crea2 se divide en dos tokens."
           ],
           "correctIndex": 1,
-          "explanation": "La palabra reservada se reconoce por coincidencia completa y sensible a mayúsculas. Reunir el nombre antes de compararlo evita dividir crea2.",
+          "explanation": "La comparación se realiza sobre la palabra completa y distingue mayúsculas de minúsculas. Crea empieza por C, mientras la palabra reservada crea empieza por c; por eso la primera se clasifica como nombre. crea2 tampoco coincide: incluye un dígito adicional que pertenece a la misma palabra.\n\nSólo crea recibe la categoría de declaración. Ninguna de esas palabras es el final del flujo; esa categoría aparece cuando ya no queda otra unidad por leer.",
           "reviewFeedback": [
             "Compara las palabras completas y conserva la distinción entre mayúsculas y minúsculas.",
             "Revisa qué coincidencia exacta se ha reservado y qué caracteres siguen perteneciendo a un nombre.",
@@ -225,6 +225,67 @@
                 "standardInput": "",
                 "outputs": [
                   "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\n"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Comprobar los campos reservados y la palabra al final"
+        },
+        {
+          "type": "paragraph",
+          "text": "Integra tus definiciones de Token, el lexer, Lector_tokens, presentar e inspeccionar antes de examinar_devolucion en este editor. Conserva la interfaz y el cliente proporcionado: vuelve a ejecutar las nueve pruebas anteriores y añade cinco contrastes. Si utilizaste otros nombres para las funciones de inspección, adapta sus llamadas manteniendo datos e informes.\n\nEl caso 10 inspecciona crea sin otro carácter posterior. Los casos 11 a 14 intentan reservar los tokens Token{nombre, 0, \"Crea\"}, Token{nombre, 5, \"Caja\"}, Token{nombre, 0, \"crea\"} y Token{'+', 0, \"x\"}, respectivamente. Cada intento utiliza un lector nuevo con la secuencia 8; y después del intento se leen dos tokens para presentar sus tres campos.\n\nAplica el contrato de cada categoría: un nombre necesita texto válido y campo numérico cero; un signo necesita valor cero y texto vacío. Un rechazo no ocupa la reserva ni consume el texto. La palabra reservada debe clasificarse igual cuando termina ante un delimitador y cuando termina al agotarse el origen.\n\nPulsa «Compilar, ejecutar y comprobar» con la misma implementación y el cliente completo. Conserva los dos puntos entre categoría, valor y texto; cuando el texto está vacío, la línea acaba en ese último separador. Todas las líneas terminan con salto.",
+          "emphasis": [
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida completa esperada es:\n\nCaso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus tipos y funciones, sin repetir main.\n\nvoid examinar_devolucion(const Token& candidato) {\n    Lector_tokens lector{\"8;\"};\n    try {\n        lector.devolver(candidato);\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n    const Token leido = lector.leer();\n    std::cout << \"Leido: \" << leido.clase << ':' << leido.valor\n              << ':' << leido.texto << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.clase << ':' << siguiente.valor\n              << ':' << siguiente.texto << \"\\n\";\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto) break;\n    }\n    const std::vector<std::string> pruebas{\"n;\", \"Crea;\", \"crea;\", \"A1_B;\", \"abcdefghijkl;\", \"abcdefghijklm;\", \"_A;\", \"solo\"};\n    int caso = 2;\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    std::cout << \"Caso 10\\n\";\n    inspeccionar(\"crea\");\n    std::cout << \"Caso 11\\n\";\n    examinar_devolucion(Token{nombre, 0, \"Crea\"});\n    std::cout << \"Caso 12\\n\";\n    examinar_devolucion(Token{nombre, 5, \"Caja\"});\n    std::cout << \"Caso 13\\n\";\n    examinar_devolucion(Token{nombre, 0, \"crea\"});\n    std::cout << \"Caso 14\\n\";\n    examinar_devolucion(Token{'+', 0, \"x\"});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El caso 10 reconoce la palabra completa crea como declaración antes de entregar el final. Crea es un nombre válido y puede reservarse con valor auxiliar cero. Los otros tres tokens incumplen respectivamente el campo numérico del nombre, la exclusión de la palabra reservada y el texto vacío del signo. Al rechazarlos, las dos lecturas siguen obteniendo el número 8 y su terminador original.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nNombre: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                    ],
+                    "text": "La inspección del caso 10 muestra Nombre: crea en lugar de la categoría de declaración. Revisa la rama en que acaba el origen después de reunir la palabra: también debe comparar el texto completo con la palabra reservada. El caso anterior crea; sólo recorría la rama que encontraba un delimitador."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: aceptada\nLeido: v:5:Caja\nSiguiente: n:8:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                    ],
+                    "text": "El caso 12 admite un token de nombre cuyo campo numérico vale 5. Ese campo debe ser cero en esta categoría, aunque Caja sea un nombre válido. Comprueba ambas condiciones antes de guardar; el rechazo debe dejar las lecturas sobre 8; intactas."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: aceptada\nLeido: v:0:crea\nSiguiente: n:8:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\n"
+                    ],
+                    "text": "El caso 13 admite crea como texto de un token de nombre. Esa palabra está reservada por coincidencia exacta y tiene una categoría propia. Revisa también la validación de un token que se devuelve directamente: que el lexer clasifique bien la palabra no basta para validar otro token construido por el cliente."
+                  },
+                  {
+                    "outputs": [
+                      "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: aceptada\nLeido: +:0:x\nSiguiente: n:8:\n"
+                    ],
+                    "text": "El caso 14 admite un signo con texto x, aunque el contrato exige que ese campo esté vacío. El valor numérico cero y la categoría de signo no comprueban el campo textual. Rechaza el token antes de modificar la reserva."
+                  }
                 ]
               }
             ]
@@ -275,6 +336,14 @@
           "type": "code",
           "language": "cpp",
           "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nvoid presentar(const Token& token) {\n    if (token.clase == final_texto) std::cout << \"Fin\\n\";\n    else if (token.clase == numero) std::cout << \"Numero: \" << token.valor << \"\\n\";\n    else if (token.clase == nombre) std::cout << \"Nombre: \" << token.texto << \"\\n\";\n    else if (token.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n    else std::cout << \"Signo: \" << token.clase << \"\\n\";\n}\n\nvoid inspeccionar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    try {\n        while (true) {\n            const Token token = lector.leer();\n            presentar(token);\n            if (token.clase == final_texto) break;\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    std::cout << \"Caso 1\\n\";\n    Lector_tokens lector{\"Pasillo_2*4;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token token = lector.leer();\n        presentar(token);\n        if (token.clase == final_texto) break;\n    }\n    const std::vector<std::string> pruebas{\"n;\", \"Crea;\", \"crea;\", \"A1_B;\", \"abcdefghijkl;\", \"abcdefghijklm;\", \"_A;\", \"solo\"};\n    int caso = 2;\n    for (const std::string& texto : pruebas) {\n        std::cout << \"Caso \" << caso << \"\\n\";\n        inspeccionar(texto);\n        ++caso;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "heading",
+          "text": "Comparar el reconocimiento con la devolución directa"
+        },
+        {
+          "type": "paragraph",
+          "text": "crea termina al agotarse el texto, pero la palabra ya está completa. La clasificación sigue comparándola con la palabra reservada: el inspector presenta Palabra: crea y después Fin. El caso antiguo con crea; no observaba esa rama del final.\n\nEn la devolución válida, Crea conserva su mayúscula y no coincide con crea. La reserva entrega primero v:0:Crea; la lectura siguiente obtiene n:8: del origen. En los tres rechazos, no se guarda el candidato: se presenta Token invalido y se leen n:8: y ;:0:. Los campos textuales vacíos explican el separador final de esas trazas.\n\nLa batería anterior observaba la reserva de un nombre válido, pero no estos tres tokens incoherentes. Las comprobaciones de la referencia histórica ya expresan el contrato completo; se conservan sus funciones y se sustituye únicamente su cliente por la función de observación y el main ampliado del editor. La misma implementación debe satisfacer todas las trazas."
         }
       ]
     }
@@ -501,7 +570,11 @@
           "block_0005_0001",
           "block_0005_0002",
           "block_0005_0004",
-          "block_0005_0003"
+          "block_0005_0003",
+          "u11_coherencia_de_tokens_textuales_y_final_titulo",
+          "u11_coherencia_de_tokens_textuales_y_final_consigna",
+          "u11_coherencia_de_tokens_textuales_y_final_salida",
+          "u11_coherencia_de_tokens_textuales_y_final_comprobacion"
         ]
       },
       {
@@ -518,7 +591,9 @@
         "id": "page_0007",
         "blocks": [
           "block_0007_0000",
-          "block_0007_0001"
+          "block_0007_0001",
+          "u11_coherencia_de_tokens_textuales_y_final_referencia_titulo",
+          "u11_coherencia_de_tokens_textuales_y_final_referencia_razonamiento"
         ]
       }
     ],
@@ -1014,6 +1089,60 @@
           "block": 0
         },
         "progressPage": "page_0006"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 1
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_consigna",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 2
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_salida",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 3
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "sha256": "c2ad6c9234db6069a3fb95bef0ec71d925c3f702f3e8c40964a02cc9b5445e58",
+        "storage": {
+          "page": 8,
+          "block": 4
+        },
+        "progressPage": "page_0005"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_referencia_titulo",
+        "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a",
+        "storage": {
+          "page": 8,
+          "block": 5
+        },
+        "progressPage": "page_0007"
+      },
+      {
+        "id": "u11_coherencia_de_tokens_textuales_y_final_referencia_razonamiento",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 8,
+          "block": 6
+        },
+        "progressPage": "page_0007"
       }
     ],
     "editorial": [
@@ -1186,6 +1315,46 @@
         "id": "block_0003_0001",
         "beforeSha256": "4c0807ba339541ae920b6ca5cfb4308c4aec246a09688e7250f9b446e531174f",
         "afterSha256": "243af028daa08eae45c32b7228f665f5fda6ea1d51bd4f053efa00f2af97f79f"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "fb348aef82a5c32c1af0bc1c6ad2741739d89aa9f248cd8ba33ba4327027a589",
+        "afterSha256": "deb1b6575a488d24a8481722304e6a632e1a7e6967de6a2090bbc740e378fbc0"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3f2ea9d322fbf4d40a5aa410771e939d4300f00389e61c73b38cac9be6bd0c09",
+        "afterSha256": "46f8924c9fd1478f39c9a0e50240de4abd2aea0f5aa942386d0fdf5cad85676d"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "207caebce24ab124efe130d7be00a773c93d175aa08723534036a89e15edc167",
+        "afterSha256": "c9f902c7ffb20c72e00f50fe5be785dd94f147e4df4edf00ab9a28dd343cd65e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "d74ab4dbf6e3688d9621734560ebd56d434c46c7761102cfee0e26e2fdb53336",
+        "afterSha256": "08382f34927a5e25c69c024b85f5d73e88fdf5b8efe5810a9d25a9ab987dc1bd"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d5b0ed098060a49ab8cfd12b870ae2e0e3870887054ede2890aa3ed368186859",
+        "afterSha256": "05ac62f9ca863818c621a18bcc94190ac8f1a9f11698422acc5f41ddc479e0e2"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "fcc839f31189a4e2c776c21f8fdc90bf2b97109d8dd77d0f7054c56bd3a573bb",
+        "afterSha256": "517c1c7c78dafa882171cc4076b6d0f657ac310bcdc294c7ea7ff0ed3d8d025a"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "8654396a90bd3a2ba52000eecf3feb8216ad6ac4de17695debd108dd48542932",
+        "afterSha256": "3a40c2e77468a6ff5656aa61abe32d6c62a8bd86f480ef6f92c0e78ad147995e"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "229f9357276a99984de2505a3caffdaad48dbc9afb69f3b347f52a2b4f6eb26b",
+        "afterSha256": "5cf69ed1dc235e21edb0a53534ebcb1a1e1c7d44d9a48e5071327f89e00f1c1b"
       }
     ]
   },
@@ -1201,11 +1370,24 @@
         "block_0007_0000",
         "block_0007_0001"
       ]
+    },
+    {
+      "activity": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+      "blocks": [
+        "u11_coherencia_de_tokens_textuales_y_final_referencia_titulo",
+        "u11_coherencia_de_tokens_textuales_y_final_referencia_razonamiento"
+      ]
     }
   ],
   "activityAfter": [
     {
       "activity": "work_u11l17_reserva_textual",
+      "requires": [
+        "block_0005_0003"
+      ]
+    },
+    {
+      "activity": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
       "requires": [
         "block_0005_0003"
       ]
@@ -1474,8 +1656,44 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "e5b5ebc7bf84c2623e3205cab0518d5fdbc1d18af7e65b1e998effb3422ebfe1",
-        "spans": []
+        "sourceSha256": "a63d489505a4323f8df0922fd4433b4a89e95e38141f19f69f269c3988388fcb",
+        "spans": [
+          {
+            "start": 3,
+            "end": 10,
+            "text": "saldo_2",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 43,
+            "end": 44,
+            "text": "s",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "text": "2",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 219,
+            "end": 225,
+            "text": "_saldo",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 270,
+            "end": 276,
+            "text": "2saldo",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1546,7 +1764,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "7d63413961cf00e81a73e7b90f6e2fbfac085760ecc1b3eaf99cbb2f5573d1dd",
+        "sourceSha256": "a6d16fca3cddf5da2c2b2b6a2093a3d8aaa38108e2310221709cb73ada42cb1f",
         "spans": [
           {
             "start": 11,
@@ -1586,59 +1804,59 @@
           },
           {
             "start": 303,
-            "end": 338,
-            "text": "(Stroustrup, 2024, sección 6.`8`.2)",
+            "end": 336,
+            "text": "(Stroustrup, 2024, sección 6.8.2)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 393,
-            "end": 394,
+            "start": 391,
+            "end": 392,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 420,
-            "end": 440,
+            "start": 418,
+            "end": 438,
             "text": "Token{numero, 8, \"\"}",
             "role": "cpp"
           },
           {
-            "start": 459,
-            "end": 466,
+            "start": 457,
+            "end": 464,
             "text": "Turno_4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 492,
-            "end": 519,
+            "start": 490,
+            "end": 517,
             "text": "Token{nombre, 0, \"Turno_4\"}",
             "role": "cpp"
           },
           {
-            "start": 671,
-            "end": 675,
+            "start": 669,
+            "end": 673,
             "text": "crea",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 708,
-            "end": 713,
+            "start": 706,
+            "end": 711,
             "text": "valor",
             "role": "cpp"
           },
           {
-            "start": 731,
-            "end": 736,
+            "start": 729,
+            "end": 734,
             "text": "texto",
             "role": "cpp"
           },
           {
-            "start": 898,
-            "end": 910,
+            "start": 896,
+            "end": 908,
             "text": "token_valido",
             "role": "cpp"
           }
@@ -1809,29 +2027,53 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "da76d046a3268bead2656c0d9de60eb4e0d5375f914c009dddc1f946113f27f1",
+        "sourceSha256": "1620097b2232619d7c33fa342a0297271c21501b034a26c0355373e223b4e0f1",
         "spans": [
           {
-            "start": 51,
-            "end": 56,
+            "start": 13,
+            "end": 19,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 70,
             "text": "texto",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 71,
+            "start": 108,
+            "end": 113,
+            "text": "Mesa9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 130,
             "text": "valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 167,
-            "end": 172,
-            "text": "valor",
-            "role": "cpp"
+            "start": 140,
+            "end": 141,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 178,
-            "end": 183,
+            "start": 226,
+            "end": 254,
+            "text": "Token t{nombre, 0, \"Mesa9\"};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 350,
             "text": "Mesa9",
             "role": "data",
             "reading": "natural"
@@ -1932,14 +2174,14 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "2f9043b665657592d7c95c210ecb5677d3267468baad9a8bf5808ccba75130a7",
+        "sourceSha256": "d91310e19d0e6102b1e9865d377ff7a40a5090c9973b0ee6970c9f69ab368e1f",
         "spans": [
           {
             "start": 6,
             "end": 14,
             "text": "saldo+2;",
             "role": "data",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
             "start": 54,
@@ -1989,13 +2231,6 @@
             "text": "2",
             "role": "data",
             "reading": "natural"
-          },
-          {
-            "start": 485,
-            "end": 486,
-            "text": ";",
-            "role": "data",
-            "reading": "characters"
           }
         ]
       },
@@ -2016,11 +2251,39 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "70e2866b02b24f9b017d11b3e5dda0c06e768ad452c95daa5aac708b1a7b342c",
+        "sourceSha256": "7454c4d78403cffdc1d7e5174031471dfef987c3b30d421654aee87121845ac4",
         "spans": [
           {
-            "start": 64,
-            "end": 65,
+            "start": 38,
+            "end": 42,
+            "text": "Caja",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 202,
+            "end": 214,
+            "text": "Nombre: Caja",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 321,
+            "text": "putback",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 338,
+            "end": 339,
             "text": ";",
             "role": "data",
             "reading": "characters"
@@ -2191,32 +2454,74 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "0dbcd1f20a5e7a2436ce47ef93ad71bfa8e648cce3d585127afb3c58053a6c29",
+        "sourceSha256": "62e30512983a3a7d4ff5f2a83d9b2d85a93762f7183241f9068cd5b291a1a931",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
+            "start": 15,
+            "end": 20,
             "text": "crea2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 29,
-            "end": 32,
-            "text": "A_3",
+            "start": 63,
+            "end": 67,
+            "text": "crea",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 63,
+            "start": 117,
+            "end": 130,
+            "text": "Nombre: crea2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": "=",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 209,
+            "end": 210,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 228,
             "text": ";",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 87,
-            "end": 88,
+            "start": 266,
+            "end": 269,
+            "text": "A_3",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 412,
+            "end": 423,
+            "text": "Nombre: A_3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 426,
+            "end": 429,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 449,
             "text": ";",
             "role": "data",
             "reading": "characters"
@@ -2245,13 +2550,35 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "79b286256f3c33a0254110166d693563018df8fbf2f9a1a51582745d95e198cf",
+        "sourceSha256": "a72c08e0c323ec5183c8132285013b47e8ecd9097b28b9ac682a760577f50fc6",
         "spans": [
           {
-            "start": 0,
-            "end": 5,
+            "start": 13,
+            "end": 29,
+            "text": "token.valor == 0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 192,
+            "text": "token.texto.empty()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 211,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 285,
             "text": "empty",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2496,14 +2823,49 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "c7455c44105738e75baef5cb8eb135fad85d23d0210e7c55cd4f93b54c103802",
+        "sourceSha256": "0d3bc89fd7dac7f7f9eab5c180d1a48f0bd5fc8d77b5f64d7b5dfbf3a022bd82",
         "spans": [
           {
-            "start": 135,
-            "end": 140,
+            "start": 90,
+            "end": 94,
+            "text": "Crea",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 107,
+            "end": 108,
+            "text": "C",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 140,
+            "end": 144,
+            "text": "crea",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 157,
+            "end": 158,
+            "text": "c",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 205,
+            "end": 210,
             "text": "crea2",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
+          },
+          {
+            "start": 297,
+            "end": 301,
+            "text": "crea",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -2778,6 +3140,368 @@
         "path": "/text",
         "sourceSha256": "c85fdc4ad960ace613710e7c38e777fb958b6bf24b1154c5579775d4dcfb3fe3",
         "spans": []
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_titulo",
+        "path": "/text",
+        "sourceSha256": "f6efd2ae92c21cecaa15ccfeb97c71c86df7fc444fc03ac6b0de040e8ae80b4f",
+        "spans": []
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_consigna",
+        "path": "/text",
+        "sourceSha256": "1eba80c38e7ffa065d53f7c705983d587681d5f1773561e4f36729397c29d4a0",
+        "spans": [
+          {
+            "start": 28,
+            "end": 33,
+            "text": "Token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 45,
+            "end": 58,
+            "text": "Lector_tokens",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 69,
+            "text": "presentar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 84,
+            "text": "inspeccionar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 113,
+            "text": "examinar_devolucion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 375,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 392,
+            "text": "crea",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 432,
+            "end": 434,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 437,
+            "end": 439,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 493,
+            "text": "Token{nombre, 0, \"Crea\"}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 495,
+            "end": 519,
+            "text": "Token{nombre, 5, \"Caja\"}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 521,
+            "end": 545,
+            "text": "Token{nombre, 0, \"crea\"}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 548,
+            "end": 566,
+            "text": "Token{'+', 0, \"x\"}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 639,
+            "end": 641,
+            "text": "8;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_salida",
+        "path": "/text",
+        "sourceSha256": "bc2ed4f03c6866da37322c330f0c9b7324fd634144e4663d71ce36536bbfae7c",
+        "spans": [
+          {
+            "start": 33,
+            "end": 623,
+            "text": "Caso 1\nReservado: Pasillo_2\nSigno: *\nNumero: 4\nSigno: ;\nFin\nCaso 2\nNombre: n\nSigno: ;\nFin\nCaso 3\nNombre: Crea\nSigno: ;\nFin\nCaso 4\nPalabra: crea\nSigno: ;\nFin\nCaso 5\nNombre: A1_B\nSigno: ;\nFin\nCaso 6\nNombre: abcdefghijkl\nSigno: ;\nFin\nCaso 7\nError: Nombre demasiado largo\nCaso 8\nError: Caracter no admitido\nCaso 9\nNombre: solo\nFin\nCaso 10\nPalabra: crea\nFin\nCaso 11\nReserva: aceptada\nLeido: v:0:Crea\nSiguiente: n:8:\nCaso 12\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 13\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:\nCaso 14\nReserva: Token invalido\nLeido: n:8:\nSiguiente: ;:0:",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "7a66aff90bc1b49dde4efa534b1518ae89f25c505b57d33687ed2a4267ba0de4",
+        "spans": [
+          {
+            "start": 23,
+            "end": 25,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 46,
+            "text": "Nombre: crea",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 244,
+            "text": "crea;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "cb09172b14573fc0696810b3cb4f90c191d8705c522f1fbe317fbb92750a9640",
+        "spans": [
+          {
+            "start": 8,
+            "end": 10,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 119,
+            "text": "Caja",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 231,
+            "text": "8;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "2fec857e0c33a29514f83490711254b9c452c04713ad20b584713969648d9026",
+        "spans": [
+          {
+            "start": 8,
+            "end": 10,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 22,
+            "text": "crea",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/3/text",
+        "sourceSha256": "1063998a38a2ad5b95296cb672ec51867884ed739275fe5f7a2441e28b290973",
+        "spans": [
+          {
+            "start": 8,
+            "end": 10,
+            "text": "14",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "x",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "8c58c19417492224ef678b2dcc3a4cc2195fe4272731cc76012a24f3181f013c",
+        "spans": [
+          {
+            "start": 8,
+            "end": 10,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 44,
+            "text": "crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 94,
+            "text": "Crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 364,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "92ca4dee741486e85fde0fdf8b9814c90df3d4b9159a697ee1c22e8fcbcf2129",
+        "spans": []
+      },
+      {
+        "block": "u11_coherencia_de_tokens_textuales_y_final_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "28a86a149961cf11a2dffe41bf14e433e9683c94957bf066d73db943edb51ed0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "crea",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 153,
+            "end": 166,
+            "text": "Palabra: crea",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 207,
+            "text": "crea;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 267,
+            "end": 271,
+            "text": "Crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 312,
+            "end": 316,
+            "text": "crea",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 353,
+            "text": "v:0:Crea",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 388,
+            "text": "n:8:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 462,
+            "end": 476,
+            "text": "Token invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 487,
+            "end": 491,
+            "text": "n:8:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 494,
+            "end": 498,
+            "text": ";:0:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 854,
+            "end": 858,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       }
     ],
     "rootFields": [
