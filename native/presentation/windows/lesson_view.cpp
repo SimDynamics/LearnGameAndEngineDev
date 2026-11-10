@@ -1551,6 +1551,10 @@ struct LessonView {
             std::ranges::none_of(controls,[answer](const auto& vm){return vm.answer==answer||vm.source==answer||vm.input==answer;}))return;
         syncing_answer_viewport=true;
         struct SyncGuard { bool& value; ~SyncGuard(){value=false;} } guard{syncing_answer_viewport};
+        // Measuring an autoheight field temporarily hides its scrollbars.
+        // Keep the real native offset before that non-final measurement.
+        POINT pre_measure_scroll{};
+        SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&pre_measure_scroll));
         const bool compiler_source=!laboratory()&&!fullscreen_block&&
             std::ranges::any_of(controls,[answer](const auto& vm){return vm.source==answer;});
         if(final_edit&&(compiler_source||std::ranges::any_of(controls,[answer](const auto& vm){return vm.answer==answer;}))){
@@ -1571,7 +1575,13 @@ struct LessonView {
                 if(body->size_to_text)expected=std::max(expected,body->requested_height);
                 if(body->max_logical_height)expected=std::min(expected,px(body->max_logical_height));
                 RECT bounds{};GetWindowRect(answer,&bounds);
-                if(bounds.bottom-bounds.top!=expected){reflow();return;}
+                if(bounds.bottom-bounds.top!=expected){
+                    // Restore the native viewport BEFORE reflow snapshots it.
+                    // The provisional fit-height pass can otherwise replace a
+                    // legitimate line-7 view with the top of the editor.
+                    (void)update_answer_scrollbars(answer,16,compiler_source?16:0,16,false,-1,&pre_measure_scroll);
+                    reflow();return;
+                }
             }
         }
         // Home/End and selection moves change no text, so EN_CHANGE does not
@@ -1583,8 +1593,8 @@ struct LessonView {
             // final layout notification is queued until native line geometry
             // exists; measuring during EN_CHANGE sees the previous document.
             const bool source=owner->source==answer;
-            (void)update_answer_scrollbars(answer,source?16:0,source?16:0,source?16:0);
-        }else (void)update_answer_scrollbars(answer);
+            (void)update_answer_scrollbars(answer,source?16:0,source?16:0,source?16:0,false,-1,&pre_measure_scroll);
+        }else (void)update_answer_scrollbars(answer,16,0,16,false,-1,&pre_measure_scroll);
     }
     int update_answer_scrollbars(HWND answer,int top_padding=16,int right_padding=0,int bottom_padding=16,
                                  bool fit_height=false,int left_padding=-1,const POINT* restored_offset=nullptr) {
@@ -2720,6 +2730,19 @@ struct LessonView {
         updating = previous_update; sync_quiz_controls(index); reflow();
         notify_content();
     }
+    std::string compiler_progress_text(std::size_t index,bool just_passed=false) const {
+        const auto& current=block(index);
+        const auto checked=windows::compiler_puzzle_case_count(data,lesson,current);
+        const auto total=current.output_check?current.output_check->cases.size():0;
+        auto message=just_passed?ui("Caso correcto. ","Case passed. ","Cas correct. "):std::string{};
+        message+=ui("Casos comprobados: ","Checked cases: ","Cas vérifiés : ")+std::to_string(checked)
+            +ui(" de "," of "," sur ")+std::to_string(total)+".";
+        if(checked<total)message+=ui(
+            " Para continuar, comprueba los casos restantes indicados en la consigna sin cambiar el programa.",
+            "To continue, check the remaining cases in the instructions without changing the program.",
+            "Pour continuer, vérifiez les cas restants indiqués dans la consigne sans modifier le programme.");
+        return message;
+    }
     std::string compiler_history_text(const curriculum::Lesson& model,const curriculum::Block& current) const {
         if(current.type!=BlockType::cpp_compiler||!current.compiler_revision||
             windows::compiler_puzzle_completed(data,model,current))return {};
@@ -2992,8 +3015,7 @@ struct LessonView {
             }
             if(current.output_check&&vm.status&&!windows::compiler_puzzle_completed(data,lesson,current)){
                 const auto count=windows::compiler_puzzle_case_count(data,lesson,current);
-                if(count)set_rich_text(vm.status,ui("Casos comprobados: ","Checked cases: ","Cas vérifiés : ")
-                    +std::to_string(count)+ui(" de "," of "," sur ")+std::to_string(current.output_check->cases.size())+".");
+                if(count)set_rich_text(vm.status,compiler_progress_text(index));
             }
             return;
         }
@@ -3910,9 +3932,7 @@ struct LessonView {
                     mark_dirty();flush();
                 }
                 if(!correct||objective_completed){feedback(index,text,objective_completed,true,false,evaluation.feedback_path);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
-                else if(vm.status)set_rich_text(vm.status,ui("Caso correcto. Casos comprobados: ","Case passed. Checked cases: ","Cas correct. Cas vérifiés : ")
-                    +std::to_string(windows::compiler_puzzle_case_count(data,lesson,block(index)))+ui(" de "," of "," sur ")
-                    +std::to_string(block(index).output_check->cases.size())+".");
+                else if(vm.status)set_rich_text(vm.status,compiler_progress_text(index,true));
                 if (objective_completed && has_references(block(index))) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
                 }
