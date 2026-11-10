@@ -97,6 +97,25 @@ int main(int argc, char** argv) {
         }
     };
 
+    test("Windows policy-blocked executables are diagnosed without inventing C++ output", [&] {
+        const auto blocked=cpp_launch_failure_message(4551,
+            R"(C:\Projects\cpp-runs\run-9\program.exe)",false);
+        require(blocked.find("Windows error 4551")!=std::string::npos&&
+            blocked.find("newly compiled program")!=std::string::npos&&
+            blocked.find("program.exe")!=std::string::npos&&
+            blocked.find("no execution or output verification took place")!=std::string::npos&&
+            blocked.find("CodeIntegrity")!=std::string::npos,
+            "System Integrity policy denial must identify the blocked student binary, not a compiler error");
+        const auto tool=cpp_launch_failure_message(4551,R"(C:\Tools\lgaed_cpp_tool_host.exe)",true);
+        require(tool.find("build tool")!=std::string::npos&&tool.find("lgaed_cpp_tool_host.exe")!=std::string::npos,
+            "The same integrity code during compilation must identify the blocked native tool");
+        const auto generic=cpp_launch_failure_message(2,R"(C:\Projects\missing.exe)",false);
+        require(generic.find("Windows error 2")!=std::string::npos&&
+            generic.find("missing.exe")!=std::string::npos&&
+            generic.find("application-control policy")==std::string::npos,
+            "An unrelated launch failure was falsely labelled as a policy denial");
+    });
+
     test("C++23 single-file compilation executes consteval/runtime branches and expected success/error", [&] {
         const auto source = cpp23_contract() + R"cpp(int main() {
     constexpr int compile_phase = selected_phase(40);
