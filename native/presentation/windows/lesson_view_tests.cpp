@@ -1324,8 +1324,30 @@ void native_compiler_editor_overflow_bars(){
         }
         require(fixture.text(0,10)==large&&(bars(source)&WS_VSCROLL)&&!(bars(source)&WS_HSCROLL),
             "Undo lost the source or failed to restore its wrapped vertical overflow");
+        // Actual edit after scrolling to the middle of a long source. The
+        // lesson's deferred autoheight measurement must not send line 7 to 0.
+        SendMessageW(source,WM_VSCROLL,SB_TOP,0);
+        SendMessageW(source,EM_LINESCROLL,0,7);
+        pump(fixture.host);
+        const auto initial_line=SendMessageW(source,EM_GETFIRSTVISIBLELINE,0,0);
+        require(initial_line>=5,"The typing regression did not reach a scrolled source viewport");
+        const auto insertion=SendMessageW(source,EM_LINEINDEX,initial_line+1,0)+5;
+        require(insertion>=0,"The typing regression has no visible line for the caret");
+        SendMessageW(source,EM_SETSEL,insertion,insertion);
+        POINT before_typing{},after_typing{};
+        SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&before_typing));
+        const auto before_line=SendMessageW(source,EM_GETFIRSTVISIBLELINE,0,0);
+        SendMessageW(source,WM_CHAR,L'z',1);
+        pump(fixture.host);
+        SendMessageW(source,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&after_typing));
+        const auto after_line=SendMessageW(source,EM_GETFIRSTVISIBLELINE,0,0);
+        auto changed=large;changed.insert(static_cast<std::size_t>(insertion),1,'z');
+        require(before_line>=5&&before_typing.y>0&&after_typing.y>0&&after_line>=before_line-1,
+            "Typing in the middle of a scrolled compiler returned its viewport to line zero");
+        require(fixture.text(0,10)==changed,
+            "Preserving a scrolled compiler viewport changed or lost typed code");
     }
-    std::cout<<"PASS compiler editor/stdin native overflow in lessons and Laboratory, wrap, shrinking, offsets and Undo\n";
+    std::cout<<"PASS compiler editor/stdin native overflow in lessons and Laboratory, wrap, shrinking, offsets, typing from middle and Undo\n";
 }
 void native_compiler_short_sources_keep_a_usable_height(){
     const std::string seven_lines="#include <iostream>\n\nint main() {\n    std::cout << \"Texto\";\n    return 0;\n}\n";
@@ -2590,6 +2612,7 @@ void multiple_input_compiler_is_one_pending_objective_until_every_case_passes() 
       ]},{"blocks":[{"type":"paragraph","text":"Página final."}]}]})json");});
     f.run(0);
     require(f.text(0,4).empty()&&f.text(0,34).find("Caso correcto. Casos comprobados: 1 de 2.")!=std::string::npos
+        &&f.text(0,34).find("Para continuar, comprueba los casos restantes")!=std::string::npos
         &&!lesson_page_state(f.view).can_next&&!descendant(f.view,id(1,0)),
         "A single passing input displayed global Correcto, revealed later content or enabled advance");
     require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==0&&region.is_exercise&&!region.solved;}),
