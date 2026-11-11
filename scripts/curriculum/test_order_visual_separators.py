@@ -94,7 +94,7 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
         drag = original["pages"][8]["blocks"][5]
         self.assertEqual(drag["type"], "drag_fill_code")
         self.assertEqual(drag["template"].count("[]"), 4)
-        self.assertIn("#include <string>\\n\\nint main()", drag["template"])
+        self.assertIn("#include <string>\n\nint main()", drag["template"])
         self.assertEqual(drag["correctOrder"], [2, 3, 0, 1])
         self.assertEqual(len(drag["choices"]), 4)
         self.assertEqual(original["stateLayout"]["current"][8]["blocks"][5], "block_0008_0005")
