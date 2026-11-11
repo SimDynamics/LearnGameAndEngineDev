@@ -126,6 +126,61 @@ class StructureOnlyAuditTest(unittest.TestCase):
             self.assertEqual(audit.main(["--root", str(self.root)]), 0)
         self.assertEqual(before, {str(p): p.read_bytes() for p in self.lessons.values()})
 
+    def test_new_lesson_missing_from_active_unit_index_is_rejected_in_both_courses(self):
+        for course in audit.COURSES:
+            with self.subTest(course=course):
+                parent = self.lessons[course].parent
+                added = parent / "lesson_omitida.json"
+                self.write(added, {
+                    "id": f"{course}__unidad__omitida",
+                    "title": "Lección que el índice olvidó",
+                    "pages": [{"blocks": [{"type": "paragraph", "text": "Contenido"}]}],
+                })
+                result = audit.inspect(self.root)
+                self.assertTrue(any(
+                    issue["course"] == course and
+                    "lección publicada sin índice en unidad activa" in issue["message"]
+                    and f"{course}__unidad__omitida" in issue["message"]
+                    for issue in result["issues"]), result["issues"])
+                added.unlink()
+
+    def test_unindexed_auxiliary_unit_is_preserved_without_false_positive(self):
+        # Both courses contain historical/fixture units outside the displayed
+        # course index. They are checked as JSON, not treated as required
+        # members of the active teaching sequence.
+        for course in audit.COURSES:
+            folder = self.lessons[course].parents[1] / "auxiliar"
+            folder.mkdir(parents=True, exist_ok=True)
+            self.write(folder / "lesson_auxiliar.json", {
+                "id": f"{course}__auxiliar__auxiliar", "title": "Prueba auxiliar",
+                "pages": [{"blocks": [{"type": "note", "text": "Solo prueba"}]}],
+            })
+            self.write(folder / "unit_auxiliar.json", {
+                "courseId": course, "unitId": f"{course}__auxiliar",
+                "title": "Auxiliar",
+                "lessons": [{"number": 1, "id": f"{course}__auxiliar__auxiliar",
+                             "title": "Prueba auxiliar"}],
+            })
+        result = audit.inspect(self.root)
+        self.assertEqual(result["errors"], 0, result["issues"])
+        self.assertEqual(result["lessons"], 4)
+        self.assertEqual(result["files"], 10)
+
+    def test_active_unit_cannot_index_a_valid_lesson_from_another_directory(self):
+        for course in audit.COURSES:
+            with self.subTest(course=course):
+                unit_path = self.units[course]
+                doc = self.read(unit_path)
+                doc["lessons"][0]["id"] = f"{course}__auxiliar__ajena"
+                self.write(unit_path, doc)
+                result = audit.inspect(self.root)
+                self.assertTrue(any(
+                    issue["course"] == course and
+                    "lección de otra carpeta o ausente en unidad activa" in issue["message"]
+                    for issue in result["issues"]), result["issues"])
+                doc["lessons"][0]["id"] = f"{course}__unidad__ficticia"
+                self.write(unit_path, doc)
+
     def test_report_only_outside_assets_and_correct_exit_code(self):
         output = self.root / "out/qa/structure-audit.json"
         capture = StringIO()
