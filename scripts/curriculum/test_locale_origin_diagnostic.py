@@ -17,7 +17,48 @@ U4L7 = (ROOT / "app/src/main/assets/content/es/programming/"
         "lesson_disenar_probar_y_presentar_variante_propia.json")
 
 
+U4L3 = (ROOT / "app/src/main/assets/content/es/programming/"
+        "programming_practice_tools/proyecto_assetcheck/"
+        "lesson_preparar_y_comprobar_cmake_en_windows.json")
+
+
 class LocaleOriginDiagnosticTest(unittest.TestCase):
+    def test_exact_display_limit_does_not_claim_more_differences(self):
+        source = state.prepare_v2(fixture(), "es", {"es": fixture()})
+        own = source["stateLayout"]["origin"]
+        foreign = deepcopy(own)
+        foreign[0]["blocks"][0]["sha256"] = "0" * 64
+        foreign[1]["blocks"][1]["sha256"] = "1" * 64
+        exactly_two = state._describe_locale_origin_difference(
+            own, foreign, "es", limit=2)
+        self.assertEqual(exactly_two.count("family.es.origin="), 2)
+        self.assertNotIn("further differences omitted", exactly_two)
+        foreign[2]["blocks"][0]["sha256"] = "2" * 64
+        more_than_two = state._describe_locale_origin_difference(
+            own, foreign, "es", limit=2)
+        self.assertEqual(more_than_two.count("family.es.origin="), 2)
+        self.assertIn("further differences omitted", more_than_two)
+
+    def test_actual_u4l3_reports_every_disagreement_until_exact_limit(self):
+        if not U4L3.is_file():
+            self.skipTest("Published U4L3 is unavailable")
+        document = state.load(U4L3)
+        own = document["stateLayout"]["origin"]
+        foreign = document["stateLayout"]["family"]["es"]["origin"]
+        if own == foreign:
+            state.validate(document)
+            return  # Work may complete the historical correction in the future.
+        count = sum(left != right for old, new in zip(own, foreign)
+                    for left, right in zip(old["blocks"], new["blocks"]))
+        with self.assertRaisesRegex(
+                state.LayoutError, "This locale must keep its own historical origin") as caught:
+            state.validate(document)
+        detail = str(caught.exception)
+        displayed = min(8, count)
+        self.assertEqual(detail.count("family.es.origin="), displayed)
+        self.assertEqual("further differences omitted" in detail, count > 8)
+        self.assertIn("p1 b5 block_0000_0004", detail)
+
     def test_two_changes_in_an_immutable_origin_are_both_identified(self):
         initial = fixture()
         good = state.prepare_v2(initial, "es", {"es": initial})
