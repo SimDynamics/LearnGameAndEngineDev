@@ -87,6 +87,12 @@ add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
 add_custom_target(lgaed_u11_names_fixture DEPENDS "${LGAED_U11_NAMES_BEFORE_FILE}")
 
 function(lgaed_add_state_import_tests qa_root)
+    # The real Windows loader/evaluator must reject wrong stderr bytes while
+    # retaining previous stdout-only and nonzero-exit completion identities.
+    add_executable(lgaed_stderr_exact_tests native/core/stderr_exact_contract_tests.cpp)
+    target_link_libraries(lgaed_stderr_exact_tests PRIVATE lgaed_platform_windows lgaed_host_options)
+    add_test(NAME native.stderr_exact_contract COMMAND lgaed_stderr_exact_tests)
+    set_tests_properties(native.stderr_exact_contract PROPERTIES TIMEOUT 45)
     add_executable(lgaed_state_tests native/core/lesson_state_tests.cpp)
     target_link_libraries(lgaed_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
     target_compile_definitions(lgaed_state_tests PRIVATE LGAED_WORK_EXACT_EDITORIAL_DIR="${LGAED_WORK_EXACT_EDITORIAL_DIR}")
