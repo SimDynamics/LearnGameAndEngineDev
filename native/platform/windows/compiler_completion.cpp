@@ -1,4 +1,5 @@
 #include "platform/windows/compiler_completion.hpp"
+#include "platform/windows/cpp_history_training.hpp"
 #include "platform/windows/state_store.hpp"
 
 #include <algorithm>
@@ -14,6 +15,32 @@ std::string root(const curriculum::Lesson& lesson, const curriculum::Block& bloc
 }
 std::string base(const curriculum::Lesson& lesson, const curriculum::Block& block) {
     return root(lesson,block) + state::sha256(curriculum::reference_objective_frame(lesson,block)) + '/';
+}
+// A precise owner, not a generic option to require extra undocumented work.
+// The prior stdout receipt is still valid historical data but is insufficient
+// to prove this lesson's separate recorded/compared/restored CMake workflow.
+bool selective_history_owner(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return lesson.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
+        &&lesson.locale=="es"&&block.stable_id=="block_0010_0003"
+        &&block.type==curriculum::BlockType::cpp_compiler
+        &&block.output_check&&block.cmake
+        &&block.cmake->target=="comprobar_cajas";
+}
+std::string selective_history_key(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return base(lesson,block)+"history-sequence/v1";
+}
+std::string selective_history_seal(std::string_view key,std::string_view program) {
+    return state::sha256("compiler-selective-history-v1/"+token(key)+token(program));
+}
+bool selective_history_receipt_valid(const state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(!selective_history_owner(lesson,block))return true;
+    const auto key=selective_history_key(lesson,block);
+    const auto stored=state::find(data,"native_windows",key);
+    if(!stored)return false;
+    const auto fields=std::get_if<std::vector<std::string>>(stored);
+    return fields&&fields->size()==2&&!(*fields)[0].empty()
+        &&(*fields)[1]==selective_history_seal(key,(*fields)[0]);
 }
 std::vector<std::string_view> tokens(std::string_view text) {
     std::vector<std::string_view> result;
@@ -225,7 +252,7 @@ std::string compiler_program_frame(const CppRunRequest& request) {
     if(configuration)configuration->target.clear();
     return "project-v1/"+curriculum::cpp_project_frame(request.project_files,request.source_files,configuration);
 }
-bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+static bool stdout_or_diagnostic_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return false;
     const auto key=base(lesson,block);
     const auto captured=state::string_value(data,"native_windows",key+"program");
@@ -234,6 +261,10 @@ bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Le
     for(std::size_t index=0;index<proofs.size();++index)
         if(proofs[index]!=(block.compile_check?diagnostic_proof(key,captured,block):proof(key,captured,index,block.output_check->cases[index])))return false;
     return state::string_value(data,"native_windows",key+"completed")==complete_seal(key,captured,proofs);
+}
+bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return stdout_or_diagnostic_completed(data,lesson,block)
+        &&selective_history_receipt_valid(data,lesson,block);
 }
 std::string compiler_puzzle_feedback(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!compiler_puzzle_completed(data,lesson,block))return {};
@@ -339,7 +370,8 @@ void clear_compiler_puzzle_review(state::StateData& data,const curriculum::Lesso
         std::erase_if(domain->second,[&](const auto& item){return item.first.starts_with(prefix);});
 }
 std::size_t compiler_puzzle_case_count(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
-    if(!curriculum::has_compiler_objective(block))return 0;
+    if(!curriculum::has_compiler_objective(block)||
+        !selective_history_receipt_valid(data,lesson,block))return 0;
     if(block.compile_check)return compiler_puzzle_completed(data,lesson,block)?1:0;
     const auto key=base(lesson,block),captured=state::string_value(data,"native_windows",key+"program");
     const auto proofs=case_proofs(data,key);std::size_t count=0;
@@ -357,6 +389,12 @@ std::string compiler_puzzle_historical_feedback(const state::StateData& data,con
     return block.compiler_revision?compiler_puzzle_feedback(data,lesson,historical_block(block)):std::string{};
 }
 void validate_compiler_puzzle_state(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    // Never erase a malformed additional receipt. The original stdout proof
+    // stays intact; the new record must be independently authenticated.
+    if(selective_history_owner(lesson,block)&&
+        state::find(data,"native_windows",selective_history_key(lesson,block))&&
+        !selective_history_receipt_valid(data,lesson,block))
+        throw std::runtime_error("Invalid selective recovery provenance; historical completion was preserved.");
     // Existing objectives retain their historical permissive decoding. The
     // reviewed migration validates every receipt it is about to reuse.
     if(block.compile_check){validate_receipts(data,lesson,block);return;}
@@ -398,7 +436,7 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
-    if(compiler_puzzle_completed(data,lesson,block)){
+    if(stdout_or_diagnostic_completed(data,lesson,block)){
         record_feedback_origin(data,key,block,evaluation.feedback_path,state::string_value(data,"native_windows",key+"feedback"),state::string_value(data,"native_windows",key+"completed"));
         return true;
     }
@@ -416,6 +454,22 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     if(complete){values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);
         record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,std::get<std::string>(values.at(key+"completed")));}
     return complete;
+}
+bool record_compiler_selective_history_completion(state::StateData& data,
+        const curriculum::Lesson& lesson,const curriculum::Block& block,
+        const CppRunRequest& request,const curriculum::FreshExecution& execution,
+        const CmakeSelectiveRecoveryTrace& trace) {
+    if(!selective_history_owner(lesson,block) || !trace.completed_by(request) ||
+        !stdout_or_diagnostic_completed(data,lesson,block) ||
+        !matches_runtime_capture(request,execution) ||
+        evaluate_cpp_output_check(*block.output_check,execution,request.revision).verdict
+            !=curriculum::OutputVerdict::correct)
+        return false;
+    const auto key=selective_history_key(lesson,block);
+    const auto program=compiler_program_frame(request);
+    data.preferences["native_windows"][key]=std::vector<std::string>{
+        program,selective_history_seal(key,program)};
+    return compiler_puzzle_completed(data,lesson,block);
 }
 bool record_compiler_diagnostic_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const CppRunResult& result,std::string_view feedback) {
@@ -445,7 +499,7 @@ void invalidate_compiler_puzzle_attempt(state::StateData& data,const curriculum:
     // A rejected attempt is specific to stdin and target as well as source.
     // Partial success deliberately remains reusable across authored inputs.
     if(compiler_puzzle_review(data,lesson,block,current).empty())clear_compiler_puzzle_review(data,lesson,block);
-    if(curriculum::has_compiler_objective(block)&&!compiler_puzzle_completed(data,lesson,block)
+    if(curriculum::has_compiler_objective(block)&&!stdout_or_diagnostic_completed(data,lesson,block)
         &&state::string_value(data,"native_windows",base(lesson,block)+"program")!=compiler_program_frame(current)) {
         // Editing revokes only an incomplete attempt of this exact objective.
         // Older objectives remain historical data when an authored requirement

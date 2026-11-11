@@ -3982,15 +3982,24 @@ struct LessonView {
                     "Standard output is correct; the requested runtime diagnostic is missing from stderr.",
                     "La sortie standard est correcte ; le diagnostic d’exécution demandé manque dans stderr.");
                 else if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
-                const bool history_ready=!vm.selective_recovery||vm.selective_recovery->complete();
-                const bool objective_completed=correct&&history_ready&&
+                // A prior stdout-only receipt stays stored, but is not a new
+                // history achievement. A previously authenticated sequence
+                // remains earned across reopening or unrelated edits.
+                const bool history_earned=windows::compiler_puzzle_completed(data,lesson,block(index));
+                const bool history_ready=!vm.selective_recovery||vm.selective_recovery->complete()||history_earned;
+                const bool output_recorded=correct&&history_ready&&
                     windows::record_compiler_puzzle_case(data,lesson,block(index),running_program,fresh,text);
+                const bool objective_completed=output_recorded&&
+                    (!vm.selective_recovery||history_earned||
+                     windows::record_compiler_selective_history_completion(
+                         data,lesson,block(index),running_program,fresh,*vm.selective_recovery));
                 if(!correct&&windows::record_compiler_puzzle_review(data,lesson,block(index),running_program,fresh,text)){
                     mark_dirty();flush();
                 }
                 if(!correct||objective_completed){feedback(index,text,objective_completed,true,false,evaluation.feedback_path);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
-                else if(correct&&!history_ready){
-                    // stdout alone never credits U3's mandatory history workflow.
+                else if(correct&&!objective_completed){
+                    // stdout alone, or an unsealed action trace, cannot
+                    // credit U3's mandatory history workflow.
                     feedback(index,ui(
                         "Salida correcta, pero falta acreditar la secuencia: registrar la base, construir y ejecutar el fallo, comparar los dos archivos, recuperar sólo cajas.cpp, reconstruir y ejecutar nuevamente.",
                         "Output matches, but the required history sequence has not been verified: record the base, build and run the defect, compare both files, restore only cajas.cpp, rebuild and run again.",
@@ -4260,6 +4269,7 @@ struct LessonView {
         case ActionType::reset:
             if (running_block == action.block) cancel_run();
             windows::reset_compiler_puzzle(data,lesson,block(action.block));
+            if(vm.selective_recovery)vm.selective_recovery->invalidate();
             refresh_compiler_history(action.block);
             clear_reference_completion(action.block);feedback(action.block,"",false);mark_dirty();
             if(vm.project){vm.project->reset();capture_draft(action.block);mark_dirty();refresh_references();break;}

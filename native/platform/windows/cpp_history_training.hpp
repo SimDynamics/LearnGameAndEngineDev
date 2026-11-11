@@ -46,12 +46,23 @@ public:
 
     [[nodiscard]] Stage stage() const noexcept { return stage_; }
     [[nodiscard]] bool complete() const noexcept { return stage_==Stage::verified; }
+    [[nodiscard]] bool completed_by(const CppRunRequest& request) const {
+        return complete() && request.action==CppRunRequest::Action::execute &&
+            request.request_id==verified_request_id_ &&
+            request.revision==restored_revision_ &&
+            request.project_key==project_key_ &&
+            request.projects_directory==projects_directory_ &&
+            request.cmake==std::optional<curriculum::CmakeConfig>{config_} &&
+            curriculum::cpp_project_frame(request.project_files,request.source_files,request.cmake)
+                ==verified_project_frame_;
+    }
     // A subsequent edit cannot reuse a finished session to grade a new draft.
     void invalidate() noexcept {
         stage_=Stage::unrecorded;revision_id_.clear();failed_root_.clear();
         project_key_.clear();projects_directory_.clear();
         failed_fingerprint_.clear();restored_fingerprint_.clear();
-        failed_revision_=restored_revision_=failed_request_id_=0;compared_=0;
+        failed_revision_=restored_revision_=failed_request_id_=verified_request_id_=0;
+        verified_project_frame_.clear();compared_=0;
     }
 
     // The source of each event is the real record/compare/restore action.
@@ -147,6 +158,9 @@ public:
         } else {
             if (request.revision!=restored_revision_ || request.request_id==failed_request_id_)
                 return false;
+            verified_request_id_=request.request_id;
+            verified_project_frame_=curriculum::cpp_project_frame(
+                request.project_files,request.source_files,request.cmake);
             stage_=Stage::verified;
         }
         return true;
@@ -251,7 +265,8 @@ private:
     std::string revision_id_,failed_source_,failed_root_;
     std::string project_key_,failed_fingerprint_,restored_fingerprint_;
     std::filesystem::path projects_directory_;
-    std::uint64_t failed_revision_=0,restored_revision_=0,failed_request_id_=0;
+    std::uint64_t failed_revision_=0,restored_revision_=0,failed_request_id_=0,verified_request_id_=0;
+    std::string verified_project_frame_;
     unsigned compared_=0;
 };
 

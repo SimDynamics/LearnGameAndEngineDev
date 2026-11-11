@@ -1,4 +1,5 @@
 #include "platform/windows/cpp_history_training.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include <array>
 #include <iostream>
 #include <stdexcept>
@@ -163,6 +164,88 @@ void comments_between_unchanged_commands_are_allowed(){
     check(trace.run(b,result(b,false))&&trace.run(y,result(y,false))&&trace.complete(),
         "A valid comment between CMake commands was mistaken for a source edit");
 }
+void history_receipt_preserves_old_stdout_and_requires_new_actions(){
+    auto block=published();
+    block.stable_id="block_0010_0003";
+    block.address.page=10;block.address.block=3;
+    curriculum::OutputCase goal;goal.standard_input="";
+    goal.outputs={output(false)};goal.executable="comprobar_cajas";
+    block.output_check=curriculum::OutputCheck{};
+    block.output_check->cases.push_back(goal);
+    curriculum::Lesson lesson;lesson.locale="es";
+    lesson.id="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador";
+    state::StateData stored;
+    auto initial=request(block.project_files,CppRunRequest::Action::execute,40,4);
+    curriculum::FreshExecution observed;
+    observed.source_revision=initial.revision;
+    observed.compilation_succeeded=true;observed.execution_succeeded=true;
+    observed.execution_completed=true;observed.exit_code=0;
+    observed.executable="comprobar_cajas";
+    observed.standard_output=output(false);
+    check(record_compiler_puzzle_case(stored,lesson,block,initial,observed,"Correcto"),
+        "The old stdout-only case no longer accepts its original output");
+    check(!compiler_puzzle_completed(stored,lesson,block)&&
+        compiler_puzzle_case_count(stored,lesson,block)==0,
+        "An old output-only receipt unlocked the new selective-recovery sequence");
+    auto unchanged=stored;
+    auto edited=initial;edited.project_files.front().second+="# Comentario nuevo\n";
+    invalidate_compiler_puzzle_attempt(stored,lesson,block,edited);
+    check(stored.preferences==unchanged.preferences,
+        "Editing while U3 sequence is pending erased an earned historical stdout-only receipt");
+
+    const auto bad=broken(block.project_files),good=restored(bad,block.project_files);
+    CmakeSelectiveRecoveryTrace trace(block);
+    auto final=request(good,CppRunRequest::Action::execute,44,6);
+    observed.source_revision=final.revision;
+    check(!record_compiler_selective_history_completion(stored,lesson,block,final,observed,trace),
+        "Output alone created the new history-sequence receipt");
+    check(trace.record(registered(block.project_files)),"Cannot register the exact baseline");
+    auto badbuild=request(bad,CppRunRequest::Action::build,41,5);
+    auto badrun=request(bad,CppRunRequest::Action::execute,42,5);
+    auto goodbuild=request(good,CppRunRequest::Action::build,43,6);
+    check(trace.run(badbuild,result(badbuild,true)) &&
+        trace.run(badrun,result(badrun,true)) &&
+        trace.compare(compared(block.project_files,bad,std::string(root_path))) &&
+        trace.compare(compared(block.project_files,bad,std::string(source_path))) &&
+        trace.restore(recovery(block.project_files,bad)) &&
+        trace.run(goodbuild,result(goodbuild,false)) &&
+        trace.run(final,result(final,false)),
+        "The authenticated action chain did not reach the last exact execution");
+    check(trace.completed_by(final),"The completed trace does not belong to its actual final request");
+    auto replay=final;replay.request_id=42;
+    check(!trace.completed_by(replay),"A different request reused the verified action trace");
+    auto replaced=final;replaced.project_files.front().second+="# Otro cambio\n";
+    check(!trace.completed_by(replaced),"A changed draft reused the previous action trace");
+    check(record_compiler_puzzle_case(stored,lesson,block,final,observed,"Correcto"),
+        "The history-authorized fresh output did not match its original case");
+    check(!compiler_puzzle_completed(stored,lesson,block),
+        "The old receipt unlocked the new curriculum before the independent seal");
+    check(!record_compiler_selective_history_completion(stored,lesson,block,replay,observed,trace),
+        "A replayed request granted the new history achievement");
+    check(record_compiler_selective_history_completion(stored,lesson,block,final,observed,trace),
+        "The verified action chain failed to store its independent completion");
+    check(compiler_puzzle_completed(stored,lesson,block) &&
+        compiler_puzzle_case_count(stored,lesson,block)==1,
+        "The saved and sealed new goal was not restored by the normal curriculum gate");
+    validate_compiler_puzzle_state(stored,lesson,block);
+    auto corrupted=stored;
+    bool changed=false;
+    for(auto& [key,value]:corrupted.preferences["native_windows"])
+        if(key.ends_with("history-sequence/v1")){
+            value=std::vector<std::string>{"forged","forged"};changed=true;
+        }
+    check(changed,"The independent history receipt was not stored");
+    check(!compiler_puzzle_completed(corrupted,lesson,block),
+        "A forged history receipt was accepted");
+    bool rejected=false;
+    try{validate_compiler_puzzle_state(corrupted,lesson,block);}
+    catch(const std::runtime_error&){rejected=true;}
+    check(rejected,"The state validator accepted a forged sequence completion");
+    reset_compiler_puzzle(stored,lesson,block);
+    check(!compiler_puzzle_completed(stored,lesson,block)&&
+        compiler_puzzle_case_count(stored,lesson,block)==0,
+        "Explicit Reset did not clear both existing and new completion receipts");
+}
 void counterexamples(){
     const auto p=published();
     const auto base=registered(p.project_files);
@@ -203,7 +286,8 @@ void counterexamples(){
 }
 int main(){
     try{
-        full_sequence();comments_between_unchanged_commands_are_allowed();counterexamples();
+        full_sequence();comments_between_unchanged_commands_are_allowed();
+        history_receipt_preserves_old_stdout_and_requires_new_actions();counterexamples();
         std::cout<<"PASS CMake selective-history action chain: baseline, failed build/run, both diffs, one-file restore, rebuilt fresh success and negative cases; no credit stored\n";
         return 0;
     }catch(const std::exception& exc){
