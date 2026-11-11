@@ -30,6 +30,7 @@ _bibliography_spec.loader.exec_module(_bibliography_revision)
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals"
+STRUCTURAL_COURSES = ("cpp_fundamentals", "programming_practice_tools")
 # These five choices pass the ordinary editorial-preservation guard after the
 # complete state-layout proof has projected only their reviewed option. This
 # does not authorize a detached new option or arbitrary later prose changes.
@@ -1340,7 +1341,8 @@ def previous_exercise_difference(old, current):
 
 
 def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
-                                           previous_document, current_document):
+                                           previous_document, current_document,
+                                           course_id="cpp_fundamentals"):
     """Authorize one owner's explanation from complete, verified v2 sources.
 
     A detached block pair or its state fingerprint is insufficient: that
@@ -1357,10 +1359,13 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
             or not isinstance(previous_document, dict) or not isinstance(current_document, dict)):
         return False
     try:
-        lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT))
+        if course_id not in STRUCTURAL_COURSES:
+            return False
+        lesson_path = Path(relative).relative_to(
+            (CONTENT.parent / course_id).relative_to(ROOT))
         if len(lesson_path.parts) != 2 or not lesson_path.stem.startswith("lesson_"):
             return False
-        lesson_id = "__".join(("cpp_fundamentals", lesson_path.parent.name, lesson_path.stem[7:]))
+        lesson_id = "__".join((course_id, lesson_path.parent.name, lesson_path.stem[7:]))
         if (previous_document.get("id") != lesson_id or current_document.get("id") != lesson_id
                 or current_document.get("stateLayout", {}).get("version") != 2
                 or current_document["stateLayout"].get("locale") != "es"):
@@ -1386,14 +1391,20 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
 
 
 def preserves_previous_exercise(relative, pn, bn, old, current, *,
-                                previous_document=None, current_document=None):
+                                previous_document=None, current_document=None,
+                                course_id="cpp_fundamentals"):
     if preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
-                                               previous_document, current_document):
+                                               previous_document, current_document,
+                                               course_id=course_id):
         return True
     # A bibliographic revision is proved on the complete original block,
     # before any older guide/representation projection can hide another edit.
     if _bibliography_revision.is_bibliography_only_revision(old, current):
         return True
+    if course_id != "cpp_fundamentals":
+        # Do not inherit legacy answer aliases, guide relaxations, question
+        # revisions or historical authorizations from a different course.
+        return current == old
     old = without_review_feedback(old)
     current = without_review_feedback(current)
     # La explicación opcional nueva de inline no reemplaza ningún dato anterior.
@@ -1514,6 +1525,10 @@ def validate_lesson_state_contract(document, where):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-ref", help="Verified published commit; mandatory for stateLayout adoption/updates")
+    parser.add_argument("--course", choices=("all", *STRUCTURAL_COURSES), default="all",
+                        help="Curso estructural para validar; 'all' comprueba Programación 1 y 2")
+    parser.add_argument("--list-files", action="store_true",
+                        help="Mostrar las rutas de todos los JSON estructurales examinados")
     args = parser.parse_args(argv)
     # Check all routes/locales, including metadata removed from the working tree.
     # A self-consistent regenerated origin is not evidence of a safe migration.
@@ -1522,6 +1537,28 @@ def main(argv=None):
         base_commit = _state_layout.resolve_base_commit(ROOT, args.base_ref or "HEAD") if (ROOT / ".git").exists() else None
     except (ValueError, KeyError, TypeError, OSError) as error:
         parser.exit(1, f"Conservación de estado no verificada: {error}\n")
+    second_course = None
+    if args.course in {"all", "programming_practice_tools"}:
+        # Import only after the pinned, multilingual Git state check. The
+        # second course reuses this module's exact block validators.
+        from types import SimpleNamespace
+        import validate_programming_practice_tools
+        second_course = validate_programming_practice_tools.validate(
+            SimpleNamespace(**globals()), ROOT, base_commit)
+        if args.course == "programming_practice_tools":
+            if ERRORS:
+                print("\n".join(ERRORS))
+                raise SystemExit(1)
+            print(f"Curso {second_course['course']}: {second_course['lessons']} lecciones, "
+                  f"{second_course['units']} unidades, {second_course['blocks']} bloques; "
+                  f"{len(second_course['files'])} archivos JSON examinados; "
+                  f"{second_course['historical']} lecciones contrastadas con Git.")
+            if args.list_files:
+                for relative in second_course["files"]:
+                    print(f"  archivo: {relative}")
+            print("Contrato, referencias y posiciones previas correctos. "
+                  "No certifica semántica C++ ni ejecución de programas.")
+            return
     lessons = {}
     blocks = 0
     # Check the complete visible document first, including v2 additions. The
@@ -1646,7 +1683,26 @@ def main(argv=None):
     if ERRORS:
         print("\n".join(ERRORS))
         raise SystemExit(1)
-    print(f"Contrato, referencias y posiciones previas correctos: {len(lessons)} lecciones, {blocks} bloques. No certifica semántica C++ ni ejecución Android.")
+    cpp_files = [*sorted(CONTENT.glob("*/lesson_*.json")),
+                 *sorted(CONTENT.glob("*/unit_*.json")),
+                 CONTENT / "course_cpp_fundamentals.json"]
+    print(f"Curso cpp_fundamentals: {len(lessons)} lecciones, {blocks} bloques; "
+          f"{len(cpp_files)} archivos JSON examinados.")
+    if args.list_files:
+        for path in cpp_files:
+            print(f"  archivo: {path.relative_to(ROOT).as_posix()}")
+    if second_course is not None:
+        print(f"Curso {second_course['course']}: {second_course['lessons']} lecciones, "
+              f"{second_course['units']} unidades, {second_course['blocks']} bloques; "
+              f"{len(second_course['files'])} archivos JSON examinados; "
+              f"{second_course['historical']} lecciones contrastadas con Git.")
+        if args.list_files:
+            for relative in second_course["files"]:
+                print(f"  archivo: {relative}")
+    total = len(lessons) + (second_course["lessons"] if second_course else 0)
+    total_blocks = blocks + (second_course["blocks"] if second_course else 0)
+    print(f"Contrato, referencias y posiciones previas correctos: {total} lecciones, "
+          f"{total_blocks} bloques. No certifica semántica C++ ni ejecución de programas.")
 
 
 if __name__ == "__main__":
