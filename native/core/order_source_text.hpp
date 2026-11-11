@@ -19,10 +19,12 @@ namespace lgaed::curriculum {
         if(order[i]>=fragments.size())
             throw std::out_of_range("Invalid source fragment in code-order copy");
         // A fragment may already contain its physical terminal newline.
-        // Never invent an extra empty source line between such fragments:
-        // it can break a continued preprocessor directive or CMake syntax.
-        // An explicitly empty card still represents an extra physical row.
-        if(i&&(!output.ends_with('\n')||fragments[order[i]].empty()))
+        // An authored empty card consumes one source row even if the
+        // previous fragment ended with LF. Its separator is placed BEFORE
+        // the next card, not before the empty card, so neither an initial
+        // nor an internal empty source row disappears during copying.
+        // This also avoids doubling LF in continued macros or CMake text.
+        if(i&&(fragments[order[i-1]].empty()||!output.ends_with('\n')))
             output+='\n';
         output+=fragments[order[i]];
     }
