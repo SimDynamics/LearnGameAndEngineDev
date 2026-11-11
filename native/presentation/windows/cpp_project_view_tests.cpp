@@ -352,17 +352,28 @@ void verify_u2_exact_eof_client(HWND host,const std::filesystem::path& authored_
         "The published U2L3 original CMake client has moved");
     const auto& previous=original.pages[9].blocks[8];
     require(previous.stable_id=="block_0009_0008"&&
-        previous.type==curriculum::BlockType::cpp_compiler&&!previous.output_check&&
+        previous.type==curriculum::BlockType::cpp_compiler&&
         previous.cmake&&previous.project_files.size()==5,
         "The historical U2L3 editor was unexpectedly rewritten");
-    // Work owns the eventual curricular declaration. Verify this new engine
-    // capability using the original lesson plus an in-memory root extension.
+    // Work can publish the root declaration independently. Exercise the
+    // actual published contract when present, or synthesize the same root
+    // only in isolated QA before its first editorial integration.
     auto bytes=original.raw_json;
     const std::string marker="  \"stateLayout\": {";
     const auto at=bytes.find(marker);
     require(at!=std::string::npos&&bytes.find(marker,at+1)==std::string::npos,
         "No unique U2 v2 state-layout root is available");
-    bytes.insert(at,"  \"compilerRuntimeChecks\": [{\"activity\":\"block_0009_0008\",\"kind\":\"exactOriginalProjectRuntimeV1\"}],\n");
+    const bool published=bytes.find("\"compilerRuntimeChecks\"")!=std::string::npos;
+    if(!published) {
+        require(!previous.output_check,
+            "An undeclared U2L3 objective was activated without its root declaration");
+        bytes.insert(at,"  \"compilerRuntimeChecks\": [{\"activity\":\"block_0009_0008\",\"kind\":\"exactOriginalProjectRuntimeV1\"}],\n");
+    } else require(previous.output_check&&
+        previous.compiler_workflow_check==curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1,
+        "The published U2L3 root declaration failed to activate its original compiler");
+    const auto declaration=bytes.find("\"compilerRuntimeChecks\"");
+    require(declaration!=std::string::npos,
+        "The original U2L3 runtime declaration is missing");
     auto declared=windows::parse_lesson_json(bytes,"es");
     const auto progress=windows::parse_lesson_progress_metadata(bytes,"es");
     const auto owner=declared.pages[9].blocks[8];
@@ -380,7 +391,7 @@ void verify_u2_exact_eof_client(HWND host,const std::filesystem::path& authored_
         curriculum::exercise_key(declared,owner)==curriculum::exercise_key(original,previous),
         "The exact U2 client objective changed historical addresses or mismatched stderr/exit");
     auto rejects=[&](std::string from,std::string to){
-        auto invalid=bytes;const auto found=invalid.find(from,at);
+        auto invalid=bytes;const auto found=invalid.find(from,declaration);
         require(found!=std::string::npos,"Missing negative client declaration token");
         invalid.replace(found,from.size(),to);
         bool refused=false;
