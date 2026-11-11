@@ -199,12 +199,8 @@ def source_projection(current: dict, original: dict) -> dict:
         target[parts[-1]] = source
     return projected
 
-def require_source_format(original: dict, current: dict) -> bool:
-    """Only whitespace outside protected source syntax may differ.
-
-    The full non-source contract must be checked separately against the
-    historical block/state map. Returns False for an identical source.
-    """
+def require_source_lexical(original: dict, current: dict) -> bool:
+    """Validate code-only lexical equivalence without assuming prose is fixed."""
     before, after = code_slots(original), code_slots(current)
     if before.keys() != after.keys() or original.get("type") != current.get("type"):
         raise SourceFormatError("Source slots or owner type changed")
@@ -215,14 +211,19 @@ def require_source_format(original: dict, current: dict) -> bool:
         if newer == source: continue
         if language is None:
             raise SourceFormatError(f"Unknown project data may not be changed: {slot}")
+        # Translation-phase splicing can join an identifier across a line or
+        # change the content of a directive. Keep those sources byte-exact.
+        if "\\\n" in source or "\\\n" in newer or "\\\r\n" in source or "\\\r\n" in newer:
+            raise SourceFormatError(f"Physical line splices cannot be reformatted: {slot}")
         lexer = _cmake_tokens if language == "cmake" else _cpp_tokens
         if lexer(source) != lexer(newer):
             raise SourceFormatError(f"Tokens, literals, comments or directives changed: {slot}")
-        # Do not allow moving a line-splice across a physical boundary.
-        if source.count("\\\n") != newer.count("\\\n"):
-            raise SourceFormatError(f"Line continuations changed: {slot}")
         changed = True
-    # Do not accept non-code edits under a formatting-only authorization.
+    return changed
+
+def require_source_format(original: dict, current: dict) -> bool:
+    """Reject any non-source change under a new format-only authorization."""
+    changed = require_source_lexical(original, current)
     if source_projection(current, original) != original:
         raise SourceFormatError("Another field, answer, file path or evaluation rule changed")
     return changed
