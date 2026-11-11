@@ -153,6 +153,34 @@ int main() {
             "WASI compilation errors must remain compiler diagnostics, never execution credit");
     });
 
+    test("WASI C++23 exception handling and stream extraction execute with the pinned SDK", [&] {
+        const auto code=R"cpp(#include <iostream>
+#include <sstream>
+#include <stdexcept>
+int main() {
+    std::istringstream input{"42 end"};
+    int number=0;
+    std::string label;
+    if(!(input >> number >> label))return 7;
+    try {
+        if(number==42&&label=="end")throw std::runtime_error("detected");
+        return 8;
+    } catch(const std::runtime_error& error) {
+        std::cout << error.what() << ':' << number;
+    }
+    return 0;
+}
+)cpp";
+        auto current=request(code);
+        current.backend=CppRunRequest::Backend::wasi;
+        const auto result=run_cpp(current);
+        require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                result.execution.succeeded()&&result.execution.stdout_bytes=="detected:42"&&
+                result.execution.stderr_bytes.empty(),
+            "Pinned WASI C++23 exception ABI or stream reading failed: "+
+            result.error_utf8+result.compilation.stderr_bytes+result.execution.stderr_bytes);
+    });
+
     test("WASI real U3L8 original report editors preserve lines, duplicates, format and all counters", [&] {
         using namespace lgaed::curriculum;
         constexpr auto path=

@@ -484,10 +484,15 @@ void run_wasi_single(const CppRunRequest& request,CppRunResult& result,
     write_exact(result.run_directory/L"toolchain.txt",
         "backend=WASI (wasm32-wasip1)\nwasi-sdk=34.0\nwasmtime=50.0.1\n"
         "clang="+utf8(clang.wstring())+"\n");
+    // wasi-sdk 34 ships a separate libc++/libc++abi for WebAssembly EH.
+    // Enabling the standard EH proposal and linking libunwind is required
+    // for legitimate C++23 stream operations and user try/catch/throw.
+    // Do not silently compile the student's source with exceptions disabled.
     const std::vector<std::wstring> compile_args{
         L"--target=wasm32-wasip1",
         L"--sysroot="+sysroot.wstring(),L"-std=c++23",L"-Wall",L"-Wextra",
-        L"-fno-color-diagnostics",L"-o",wasm.wstring(),source.wstring()
+        L"-fwasm-exceptions",L"-mllvm",L"-wasm-use-legacy-eh=false",
+        L"-fno-color-diagnostics",L"-o",wasm.wstring(),source.wstring(),L"-lunwind"
     };
     // Clang emits UTF-8 diagnostics on Windows. Launch it directly so an
     // additional, locally built unsigned compiler-host PE is never necessary.
