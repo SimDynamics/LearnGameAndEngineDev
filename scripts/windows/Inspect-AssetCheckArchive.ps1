@@ -200,7 +200,7 @@ if ($fileCount -ne $expectedFiles) {
 # Inspect Git state if possible. A non-repository is explicitly reported,
 # never silently treated as clean; no Git commands change state.
 $gitState = 'git not found'
-$git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue
+$git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($git) {
     $insideGit = & $git.Source -C $project rev-parse --is-inside-work-tree 2>$null
     if ($LASTEXITCODE -eq 0 -and $insideGit -eq 'true') {
