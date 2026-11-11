@@ -261,6 +261,14 @@ if(LGAED_READER_BUILD_QA_ONLY)
             --u3-gates
             "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
     set_tests_properties(native.cpp_project_u3_original_gates PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    # The curricular declaration must preserve the original owner's stored keys.
+    # The root field is injected only into memory until Work publishes it.
+    add_test(NAME native.cpp_project_u3_declaration
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-declaration
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_declaration PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
     # Regression for other C++ activities with multiple independent inputs:
     # correct-but-partial answers must not display U3 History instructions.
     add_test(NAME native.cpp_project_other_cpp_multicase

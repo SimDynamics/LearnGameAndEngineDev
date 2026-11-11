@@ -199,6 +199,75 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
     }catch(...){cleanup();throw;}
 }
 
+
+void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_lesson) {
+    // Load the genuine 13-page curriculum. Until Work publishes the root
+    // declaration, simulate it only in memory, never in student profiles.
+    const auto published=windows::load_lesson(authored_lesson);
+    require(published.pages.size()==13&&published.pages[10].blocks.size()>3,
+        "The authentic U3 recovery owner is missing");
+    const auto& previous=published.pages[10].blocks[3];
+    require(windows::compiler_selective_history_required(published,previous),
+        "Existing U3 History protection disappeared before curricular adoption");
+    std::string declared_json=published.raw_json;
+    const std::string marker="  \"compilerPuzzlesRequired\": true,";
+    const std::string declaration=
+        "  \"compilerWorkflowChecks\": [{\"activity\":\"block_0010_0003\",\"kind\":\"cmakeSelectiveRecoveryV1\"}],\n";
+    if(declared_json.find("\"compilerWorkflowChecks\"")==std::string::npos) {
+        const auto at=declared_json.find(marker);
+        require(at!=std::string::npos&&declared_json.find(marker,at+1)==std::string::npos,
+            "The U3 root flow flag differs from its published identity");
+        declared_json.insert(at,declaration);
+    }
+    const auto declared=windows::parse_lesson_json(declared_json,"es");
+    const auto progress=windows::parse_lesson_progress_metadata(declared_json,"es");
+    const auto& owner=declared.pages[10].blocks[3];
+    const auto& summary=progress.pages[10].blocks[3];
+    require(owner.compiler_workflow_check==curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1&&
+            summary.compiler_workflow_check==owner.compiler_workflow_check&&
+            windows::compiler_selective_history_required(declared,owner)&&
+            windows::compiler_selective_history_required(progress,summary),
+        "The full and progress readers did not honor the same authored U3 workflow");
+    require(owner.raw_json==previous.raw_json&&owner.project_files==previous.project_files&&
+            owner.address.page==previous.address.page&&owner.address.block==previous.address.block&&
+            owner.address.addition_namespace==previous.address.addition_namespace&&
+            curriculum::exercise_key(declared,owner)==curriculum::exercise_key(published,previous)&&
+            curriculum::reference_objective_frame(declared,owner)==
+                curriculum::reference_objective_frame(published,previous),
+        "The U3 root declaration changed the original response or stored completion identity");
+    auto rejects=[&](std::string_view from,std::string_view replacement) {
+        auto invalid=declared_json;
+        const auto at=invalid.find(from);
+        require(at!=std::string::npos,"Missing source token for negative curriculum test");
+        invalid.replace(at,from.size(),replacement);
+        bool rejected=false;
+        try {(void)windows::parse_lesson_json(invalid,"es");}
+        catch(const std::exception&){rejected=true;}
+        require(rejected,"The runtime parser accepted a forged curricular workflow");
+    };
+    rejects("cmakeSelectiveRecoveryV1","unrecognizedWorkflow");
+    rejects("block_0010_0003\",\"kind","block_0003_0004\",\"kind");
+    rejects("\"kind\":\"cmakeSelectiveRecoveryV1\"",
+            "\"kind\":\"cmakeSelectiveRecoveryV1\",\"extra\":true");
+    {
+        auto duplicated=declared_json;
+        const std::string item="{\"activity\":\"block_0010_0003\",\"kind\":\"cmakeSelectiveRecoveryV1\"}";
+        const auto at=duplicated.find(item);
+        require(at!=std::string::npos,"Cannot locate the curricular declaration to duplicate");
+        duplicated.insert(at+item.size(),","+item);
+        bool rejected=false;
+        try {(void)windows::parse_lesson_json(duplicated,"es");}
+        catch(const std::exception&){rejected=true;}
+        require(rejected,"The runtime parser accepted duplicate History owners");
+    }
+    {
+        bool rejected=false;
+        try {(void)windows::parse_lesson_json(declared_json,"fr");}
+        catch(const std::exception&){rejected=true;}
+        require(rejected,"The Spanish U3 History contract was accepted under another locale");
+    }
+}
+
 void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem::path& authored_lesson){
     const auto published=windows::load_lesson(authored_lesson);
     require(published.pages.size()==13&&published.pages[10].blocks.size()==5,
@@ -421,9 +490,10 @@ int main(int argc,char** argv){
     const bool internal_only=argc==3&&std::string_view(argv[2])=="--internal-dialogs";
     const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
+    const bool u3_declaration=argc==4&&std::string_view(argv[2])=="--u3-declaration";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_gates||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_gates||u3_declaration||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -544,12 +614,14 @@ int main(int argc,char** argv){
         }
         if(other_cases)verify_unrelated_cpp_multicase_feedback(host);
         else if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
+        else if(u3_declaration)verify_declared_u3_compiler_workflow(std::filesystem::path(argv[3]));
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
         DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
+        else if(u3_declaration)std::cout<<"PASS declared U3 History: full/summary reader, immutable exercise identity and negative contracts\n";
         else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";
         else if(other_cases)std::cout<<"PASS unrelated C++ with two inputs: no U3 History advice, 1/2 then 2/2 exact executions and preserved completion after reopen\n";
         else std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
