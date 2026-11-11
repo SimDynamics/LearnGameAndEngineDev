@@ -85,6 +85,8 @@ $report = Invoke-TestInspector $goodZip 35 $goodSha
 if ($report.archiveFiles -ne 35 -or $report.existingIdentical -ne 1 -or
     $report.newFiles -ne 34 -or $report.conflicts -ne 0 -or
     $report.fullyDecodedAndCrcVerified -ne 35 -or
+    -not $report.archiveStableDuringInspection -or
+    -not $report.reportIsSnapshotNotInstallAuthorization -or
     @($report.memberDigests).Count -ne 35 -or
     $report.installableSelectionVerified -or
     -not $report.inventoryPathsAreNotInstallInstructions -or
@@ -286,6 +288,8 @@ $indexBefore = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
 $cleanReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
 $indexAfter = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
 if ($cleanReport.gitState -cne 'clean' -or $cleanReport.requiresManualReview -or
+    -not $cleanReport.archiveStableDuringInspection -or
+    -not $cleanReport.reportIsSnapshotNotInstallAuthorization -or
     $cleanReport.existingIdentical -ne 1 -or $indexBefore -cne $indexAfter) {
     throw 'Clean synthetic Git tree was misreported or index changed.'
 }
@@ -430,6 +434,8 @@ $summary = [ordered]@{
     gitStatesVerified = 3
     ignoredBuildAndIdeFoldersDetected = 2
     ignoredCacheBytesPreserved = $true
+    archiveStabilityCheckedAfterEnumeration = $true
+    inspectorReportsOnlySnapshot = $true
     ancestorJunctionsRejected = 1
     syntheticInventoryNeverAuthorizesDeployment = $true
     candidateListMatches = 31
