@@ -536,7 +536,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una batería propia de estadísticas debe llamar a procesar_linea y a contar_tipos, y comparar los cuatro valores con esperados derivados de la especificación. Incluye vacío, varios registros por tipo, un primer ID inválido que se corrige, un duplicado que no suma, diferencia entre mayúsculas y cien admisiones de 30000 bytes."
+          "text": "Una batería propia de estadísticas llama a procesar_linea para preparar el lote y a contar_tipos para calcular el resultado. Compara por separado texturas, mallas, sonidos y bytes_total con valores esperados fijados antes de ejecutar; no los obtengas de la propia función.\n\nOrganiza los casos de regresión por el comportamiento que deben distinguir:\n\n1. Lote vacío: los cuatro campos permanecen en cero.\n\n2. Varios registros admitidos por tipo: cada contador sólo aumenta por sus admisiones y la suma incluye sus bytes.\n\n3. Primer identificador inválido y posterior aparición válida: la primera línea no ocupa una admisión; la siguiente sí puede hacerlo.\n\n4. Identificador duplicado: el registro repetido no aumenta ningún contador ni la suma.\n\n5. Identificadores que difieren por mayúsculas: se conservan como identificadores distintos según el contrato.\n\n6. Cien admisiones con identificadores diferentes y 30000 bytes cada una: la suma esperada es 3000000 bytes.\n\nEstos casos sirven para probar la referencia y sus cambios, sin convertir cada uno en una pulsación obligatoria adicional del editor curricular."
         },
         {
           "type": "code",
@@ -708,7 +708,7 @@
         },
         {
           "type": "paragraph",
-          "text": "README.md debe indicar el problema del usuario, archivos principales, alcance del verificador, requisitos C++23, versiones de herramientas realmente usadas, comandos desde la carpeta correcta, pruebas, canales de salida y limitaciones conocidas. docs/VARIANTE.md debe justificar por qué un segundo consumidor y qué contratos y casos lo diferencian."
+          "text": "La documentación del proyecto tiene dos responsabilidades distintas:\n\n1. README.md. Explica el problema que resuelve el verificador, quién lo utiliza, los archivos principales, el alcance de las declaraciones que analiza, C++23, las versiones de herramientas realmente empleadas, los comandos reproducibles desde la carpeta correcta, las pruebas, stdout, stderr y las limitaciones conocidas.\n\n2. docs/VARIANTE.md. Explica por qué existe un segundo consumidor, qué datos presenta, cuáles son sus contratos y qué casos permiten diferenciarlo del cliente original.\n\nRegistra como verificados sólo los comandos, entornos y resultados realmente observados. El texto del proyecto debe actualizarse cuando cambien su comportamiento o sus pruebas."
         },
         {
           "type": "code",
@@ -835,7 +835,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe en docs/VARIANTE_PROPIA.md la necesidad, el contrato, los archivos del nuevo componente, una muestra normal, una frontera o entrada vacía, un duplicado y la regresión del cliente original. Implementa la variante en archivos propios, intégrala mediante objetivos CMake y verifica que sus resultados coincidan con expectativas independientes."
+          "text": "Construye la variante propia en un orden que conserve las decisiones y sus pruebas:\n\n1. Define en docs/VARIANTE_PROPIA.md la necesidad que cubre, el contrato observable y los archivos del componente nuevo.\n\n2. Antes de programar, fija expectativas independientes para una muestra normal, una frontera o entrada vacía, un duplicado y una regresión del cliente original.\n\n3. Implementa la función en archivos propios y relaciónala con los objetivos CMake adecuados, sin copiar el componente de referencia.\n\n4. Construye, ejecuta y compara los resultados con las expectativas: observa stdout, stderr y el código de retorno cuando corresponda. Si algo falla, documenta la causa y vuelve a probar tanto la variante como el cliente existente.\n\nLa ampliación personal sólo se presenta como realizada cuando sus archivos, decisiones y pruebas corresponden a la implementación del estudiante."
         },
         {
           "type": "paragraph",
@@ -1894,8 +1894,44 @@
       {
         "block": "block_0010_0001",
         "path": "/text",
-        "sourceSha256": "4300c1db75a2e4cc0af4f804f683d2fc950bbc8dabac78ac902bf73e705bb27a",
-        "spans": []
+        "sourceSha256": "dbeea5c1f54445b8919e3f6445687a59d8b518c943702a2e41084d0c853191cc",
+        "spans": [
+          {
+            "start": 43,
+            "end": 57,
+            "text": "procesar_linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 84,
+            "end": 96,
+            "text": "contar_tipos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 174,
+            "end": 185,
+            "text": "bytes_total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 909,
+            "end": 920,
+            "text": "30000 bytes",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 951,
+            "end": 964,
+            "text": "3000000 bytes",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0010_0003",
@@ -2143,8 +2179,44 @@
       {
         "block": "block_0013_0001",
         "path": "/text",
-        "sourceSha256": "9d2fc863d0c3710b0529bada80420a86dea4ae3e8cd95b7b395040a14aadf964",
-        "spans": []
+        "sourceSha256": "e2501940d496029c8836e6ec12d080a1bc10751ec706a9a2d9e31c1afb00ee5d",
+        "spans": [
+          {
+            "start": 73,
+            "end": 82,
+            "text": "README.md",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 227,
+            "text": "C++23",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 347,
+            "end": 353,
+            "text": "stdout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 355,
+            "end": 361,
+            "text": "stderr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 412,
+            "text": "docs/VARIANTE.md",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0013_0003",
@@ -2353,8 +2425,37 @@
       {
         "block": "block_0016_0002",
         "path": "/text",
-        "sourceSha256": "4d579dfb77fcdd5ea55ecd91339414f7ff4e0fb1f0346a3e46085d58c9e667ca",
-        "spans": []
+        "sourceSha256": "ab6b5ffc19962dfc8b30dfac18fe179b504eb98129e2f26fdbec5f4969704bc6",
+        "spans": [
+          {
+            "start": 98,
+            "end": 121,
+            "text": "docs/VARIANTE_PROPIA.md",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 447,
+            "end": 452,
+            "text": "CMake",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 582,
+            "end": 588,
+            "text": "stdout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 590,
+            "end": 596,
+            "text": "stderr",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0016_0003",
@@ -3724,6 +3825,22 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "c3ee66234144e0b8266593f9f6d20eaf892130b064fc7326fcce7858a4cfa4c7",
+        "afterSha256": "5dc079974555321514377ea6f08bc9dce9a3cae33a4c007c381a7a007cae75b5"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "bc36a29921f847959b733cd8918a808ae35fb155310ce4342c1e6a9a04150353",
+        "afterSha256": "a282e5aca845bc875d52fd3ebf30b3d0bf3ec8e3db8b6cc22b1d7356727e391a"
+      },
+      {
+        "id": "block_0016_0002",
+        "beforeSha256": "7acfd49abd69da299d45725c84173a76b29f568ed3bbde65ddc5a2cf50e2d898",
+        "afterSha256": "64962eb5b3ccbd3ac02462810ba412909290d70e24b31b2f3fd54917daa7de70"
+      }
+    ]
   }
 }
