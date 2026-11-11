@@ -55,6 +55,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
 #include <exception>
 #include <memory>
 #include <map>
@@ -3903,6 +3904,31 @@ struct LessonView {
         const auto fresh=windows::capture_cpp_execution(running_program,*result);
         const auto evaluation=block(index).output_check&&executed
             ?windows::evaluate_cpp_output_check(*block(index).output_check,fresh,vm.revision):curriculum::OutputEvaluation{};
+        if(environment.options.qa_instance&&vm.selective_recovery&&executed&&
+            evaluation.verdict==curriculum::OutputVerdict::unavailable){
+            // Diagnostic for isolated Win32 QA ONLY. Never log student source,
+            // input/output data, identifiers or personal state to app builds.
+            std::fprintf(stderr,
+                "U3 QA capture: action=%u request-id-match=%d revision-match=%d error-len=%zu"
+                " config=%d/%u compilation=%d/%u execution=%d/%u"
+                " fresh=%d/%d/%d exit=%d exe-match=%d"
+                " input-len=%zu stdout-len=%zu objective-cases=%zu\\n",
+                static_cast<unsigned>(running_action),
+                running_program.request_id==result->request_id,
+                running_program.revision==result->revision,
+                result->error_utf8.size(),
+                static_cast<int>(result->configuration.status),
+                result->configuration.exit_code.value_or(999),
+                static_cast<int>(result->compilation.status),
+                result->compilation.exit_code.value_or(999),
+                static_cast<int>(result->execution.status),
+                result->execution.exit_code.value_or(999),
+                fresh.compilation_succeeded,fresh.execution_succeeded,
+                fresh.execution_completed,fresh.exit_code,
+                fresh.executable==std::optional<std::string>{running_program.cmake->target},
+                fresh.standard_input.size(),fresh.standard_output.size(),
+                block(index).output_check->cases.size());
+        }
         const bool completed_for_objective=fresh.execution_completed&&evaluation.verdict!=curriculum::OutputVerdict::unavailable;
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
