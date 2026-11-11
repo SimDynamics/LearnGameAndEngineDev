@@ -2228,7 +2228,14 @@ void apply_reviewed_order_equivalences(const Lesson& lesson,Block& block) {
             "4380d9b5e34bdda15027e6d92939d391ad4b22864f3ded1dac00d22717111af6",{{2,3,4}}}
     };
     const auto found=std::ranges::find_if(reviewed,[&](const auto& item){return item.lesson==lesson.id&&item.identity==block.stable_id;});
-    if(found!=reviewed.end()&&state_fingerprint(JsonObject::Parse(key(block.raw_json)))==found->payload)
+    const auto source=block.source_format_original_fragments
+        ?[&]{
+            for(const auto& archive:lesson.state_layout.source_format_revisions)
+                if(archive.id==block.stable_id)return JsonObject::Parse(key(archive.raw_json));
+            return JsonObject::Parse(key(block.raw_json));
+        }()
+        :JsonObject::Parse(key(block.raw_json));
+    if(found!=reviewed.end()&&state_fingerprint(source)==found->payload)
         block.order_equivalence_groups=found->groups;
 }
 void resolve_addresses(Lesson& lesson) {
@@ -2265,6 +2272,8 @@ void resolve_addresses(Lesson& lesson) {
     std::map<std::string, StateAddress> addresses;
     std::map<std::string,const OrderRefinement*> refinements;
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
+    std::map<std::string,const SourceFormatRevision*> source_formats;
+    for (const auto& format : layout.source_format_revisions) source_formats.emplace(format.id,&format);
     std::map<std::string,ChoiceRevision*> choices;
     std::map<std::string,CompilerRevision*> compilers;
     for(auto& revision:layout.compiler_revisions) {
@@ -2292,6 +2301,17 @@ void resolve_addresses(Lesson& lesson) {
             auto& block = page.blocks[b];
             block.stable_id = layout.version ? layout.current[p].blocks[b] : "block_" + std::to_string(p) + '_' + std::to_string(b);
             block.address = layout.version ? addresses.at(block.stable_id) : StateAddress{p, b, {}, page.stable_id};
+            if(const auto format=source_formats.find(block.stable_id);format!=source_formats.end()) {
+                const auto& snapshot=*format->second;
+                const auto original=read_block(JsonObject::Parse(key(snapshot.raw_json)),snapshot.raw_json);
+                require(original.type==block.type,"A source-format archive changed its activity type");
+                if(block.type==BlockType::cpp_compiler){
+                    block.source_format_original_initial_code=original.initial_code;
+                    if(!original.project_files.empty())
+                        block.source_format_original_project_files=original.project_files;
+                }else if(block.type==BlockType::order_code)
+                    block.source_format_original_fragments=original.fragments;
+            }
             if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end()) {
                 require(block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature,
                     "An ordering refinement belongs to another visible representation");
