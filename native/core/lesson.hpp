@@ -24,7 +24,9 @@ enum class CompilerWorkflowCheck {
     cmake_selective_recovery_v1,
     // Source-pinned, normal nonzero runtime with byte-exact stderr.
     // The original project and its persisted editor identity are untouched.
-    exact_original_project_runtime_v1
+    exact_original_project_runtime_v1,
+    semantic_rejection_boxes_v1,
+    semantic_rejection_balance_v1
 };
 enum class TextComparison { trimmed, exact, tokens };
 enum class AnswerComparison { code, cpp_decimal_literal_value };

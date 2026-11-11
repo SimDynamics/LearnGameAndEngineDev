@@ -2140,6 +2140,14 @@ struct LessonView {
         if(block(index).compile_check){
             request.diagnostic=windows::prepare_cpp_diagnostic_request(block(index),request);
         }
+        const auto workflow=block(index).compiler_workflow_check;
+        if(workflow==curriculum::CompilerWorkflowCheck::semantic_rejection_boxes_v1||
+           workflow==curriculum::CompilerWorkflowCheck::semantic_rejection_balance_v1){
+            const auto operation=workflow==curriculum::CompilerWorkflowCheck::semantic_rejection_boxes_v1
+                ?curriculum::RejectionOperation::boxes:curriculum::RejectionOperation::balance;
+            if(curriculum::rejection_function_only_edit(block(index).initial_code,request.source_utf8,operation))
+                request.rejection_probe=operation;
+        }
         return request;
     }
     void refresh_project_actions(std::size_t index) {
@@ -3998,10 +4006,12 @@ struct LessonView {
                     "La salida estándar es correcta; el código de salida no coincide con el requerido.",
                     "Standard output is correct; the process exit code does not match the required code.",
                     "La sortie standard est correcte ; le code de sortie ne correspond pas au code demandé.");
-                else if(evaluation.stdout_correct&&!evaluation.stderr_correct)text+='\n'+ui(
-                    "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.",
-                    "Standard output is correct; the requested runtime diagnostic is missing from stderr.",
-                    "La sortie standard est correcte ; le diagnostic d’exécution demandé manque dans stderr.");
+                else if(evaluation.stdout_correct&&!evaluation.stderr_correct)text+='\n'+
+                    (block(index).output_check->rejection_operation&&!evaluation.feedback.empty()
+                        ?evaluation.feedback
+                        :ui("La salida estándar es correcta; falta el diagnóstico solicitado en stderr.",
+                            "Standard output is correct; the requested runtime diagnostic is missing from stderr.",
+                            "La sortie standard est correcte ; le diagnostic d’exécution demandé manque dans stderr."));
                 else if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
                 // A prior stdout-only receipt stays stored, but is not a new
                 // history achievement. A previously authenticated sequence
