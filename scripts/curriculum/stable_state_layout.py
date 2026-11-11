@@ -37,7 +37,7 @@ LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
-PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
+PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter", "orderVisualSeparators"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
@@ -1852,11 +1852,44 @@ def _validate_compiler_runtime_checks(document: dict) -> None:
             "The published client cannot be evaluated as the reviewed EOF case")
 
 
+def _validate_order_visual_separators(document: dict) -> None:
+    """A visual-only root extension, never an order fragment or progress slot."""
+    if "orderVisualSeparators" not in document:
+        return
+    entries = document["orderVisualSeparators"]
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es",
+            "Visual code-order separators require the Spanish v2 map")
+    require(type(entries) is list and 0 < len(entries) <= 16,
+            "A bounded nonempty visual-separator declaration is required")
+    owners = {}
+    for page, record in zip(document["pages"], meta["current"]):
+        for identity, block in zip(record["blocks"], page["blocks"]):
+            require(identity not in owners, "Duplicate original code-order owner")
+            owners[identity] = block
+    seen = set()
+    for record in entries:
+        require(type(record) is dict and set(record) == {"activity", "count"},
+                "A code-order separator accepts only activity and count")
+        identity = _identity(record["activity"])
+        count = record["count"]
+        require(identity not in seen and type(count) is int and 1 <= count <= 4,
+                "Duplicate or invalid visual separator count")
+        seen.add(identity)
+        source = owners.get(identity)
+        require(type(source) is dict and source.get("type") == "order_code"
+                and type(source.get("fragments")) is list
+                and source["fragments"] and type(source.get("correctOrder")) is list
+                and len(source["fragments"]) == len(source["correctOrder"]),
+                "Visual separators require an original, evaluated order-code owner")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     if "compilerPuzzlesRequired" in document:
         require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
+    _validate_order_visual_separators(document)
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
     _validate_presentation_relationships(document)
@@ -2123,6 +2156,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerRuntimeChecks") or
             baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
             "Published compiler runtime objective cannot be removed or rewritten")
+    require(not baseline.get("orderVisualSeparators") or
+            baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
+            "Published visual separators cannot lose an established source owner")
     def shells(document):
         return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
                 for page, record in zip(document["pages"], document["stateLayout"]["current"])}
@@ -2322,6 +2358,9 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerRuntimeChecks") or
             baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
             "Published compiler runtime objective cannot be removed or rewritten")
+    require(not baseline.get("orderVisualSeparators") or
+            baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
+            "Published visual separators cannot lose an established source owner")
     before_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
                      for page, item in zip(baseline["pages"], baseline["stateLayout"]["current"])}
     after_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
