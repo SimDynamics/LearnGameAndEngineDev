@@ -1,5 +1,6 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/bibliography_revision.hpp"
+#include "core/code_format_compat.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -323,6 +324,68 @@ std::optional<std::string> reviewed_crt_output_original(const JsonObject& block)
         &&outputs.back()==expanded&&expanded.size()==844,
         "The reviewed CRT spelling must expand LF only and retain every original control");
     return original;
+}
+// A format archive is a complete published block. Never normalize every
+// stored hash: project only the explicitly verified source fields back onto
+// the original bytes before checking their old signatures.
+JsonObject source_format_projection(const JsonObject& active,const JsonObject& snapshot) {
+    require(text(active,"type")==text(snapshot,"type"),"A format archive changed its activity type");
+    auto projected=JsonObject::Parse(active.Stringify());
+    const auto preserve=[&](const JsonObject& old,const JsonObject& current,
+            const JsonObject& target,const wchar_t* name,curriculum::code_format::Language language) {
+        require(old.HasKey(name)==current.HasKey(name),"Source formatting changed an authored field");
+        if(!old.HasKey(name))return;
+        const auto before=text(old,utf8(winrt::hstring(name)));
+        const auto after=text(current,utf8(winrt::hstring(name)));
+        require(curriculum::code_format::equivalent(before,after,language),
+            "Source formatting modified tokens, literals, comments or preprocessor lines");
+        target.Insert(name,old.GetNamedValue(name));
+    };
+    preserve(snapshot,active,projected,L"code",curriculum::code_format::Language::cpp);
+    if(text(active,"type")=="cpp_compiler") {
+        preserve(snapshot,active,projected,L"initialCode",curriculum::code_format::Language::cpp);
+        require(snapshot.HasKey(L"projectFiles")==active.HasKey(L"projectFiles"),
+            "Source formatting changed project file ownership");
+        if(snapshot.HasKey(L"projectFiles")) {
+            const auto originals=array(snapshot,"projectFiles"),current=array(active,"projectFiles");
+            auto replacing=projected.GetNamedArray(L"projectFiles");
+            require(originals.Size()==current.Size(),"Source formatting changed the file list");
+            for(unsigned i=0;i<originals.Size();++i) {
+                const auto before=originals.GetObjectAt(i),after=current.GetObjectAt(i);
+                const auto path=text(before,"path");
+                require(path==text(after,"path"),"Source formatting renamed a project file");
+                const auto cmake=path=="CMakeLists.txt"||std::string_view(path).ends_with(".cmake");
+                const auto dot=path.rfind('.');
+                const auto cpp=dot!=path.npos&&
+                    std::ranges::find(std::array<std::string_view,10>{
+                        ".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx",".inl",".ixx"},
+                        std::string_view(path).substr(dot))!=std::array<std::string_view,10>{}.end();
+                // Do not silently edit arbitrary project data files.
+                const auto language=cmake?curriculum::code_format::Language::cmake:
+                    cpp?curriculum::code_format::Language::cpp:curriculum::code_format::Language::immutable;
+                preserve(before,after,replacing.GetObjectAt(i),L"initialCode",language);
+            }
+        }
+    }
+    if(text(active,"type")=="inline_fill_code"||text(active,"type")=="drag_fill_code")
+        preserve(snapshot,active,projected,L"template",curriculum::code_format::Language::cpp);
+    for(const auto field:{L"fragments",L"choices"})if(
+            (std::wstring_view(field)==L"fragments"&&text(active,"type")=="order_code")||
+            (std::wstring_view(field)==L"choices"&&text(active,"type")=="drag_fill_code")) {
+        require(snapshot.HasKey(field)==active.HasKey(field),"Source formatting changed a puzzle source list");
+        if(!snapshot.HasKey(field))continue;
+        const auto old=array(snapshot,utf8(winrt::hstring(field)));
+        const auto now=array(active,utf8(winrt::hstring(field)));
+        require(old.Size()==now.Size(),"Source formatting changed the number of graded fragments");
+        for(unsigned i=0;i<old.Size();++i) {
+            require(old.GetAt(i).ValueType()==JsonValueType::String&&now.GetAt(i).ValueType()==JsonValueType::String&&
+                curriculum::code_format::equivalent(utf8(old.GetStringAt(i)),utf8(now.GetStringAt(i)),
+                    curriculum::code_format::Language::cpp),
+                "A formatted fragment changed its original C++ tokens or answer slot");
+        }
+        projected.Insert(field,snapshot.GetNamedValue(field));
+    }
+    return projected;
 }
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
