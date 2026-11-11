@@ -223,6 +223,13 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
         auto* config=child(view,1006);
         require(project&&source&&run&&config&&IsWindowEnabled(run),
             "The published U3 owner lacks its real project/CMake/run controls");
+        // The six project tabs reuse IDs 1000..1005. In particular, tab 1004
+        // is NOT the lesson feedback control 1004. Resolve feedback from the
+        // lesson pane, where the source editor itself is a direct child.
+        const auto feedback_item=GetDlgItem(GetParent(source),1004);
+        require(feedback_item&&GetParent(feedback_item)==GetParent(source)&&
+            feedback_item!=child(project,1004),
+            "The focused lesson QA selected a project tab instead of the feedback RichEdit");
         const auto replace_source=[&](const std::string& content){
             const auto wide_source=wide(content);
             SendMessageW(source,EM_SETSEL,0,-1);
@@ -236,7 +243,7 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
         await([&]{return IsWindowEnabled(run);},"Initial stdout-only CMake run did not finish");
         require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
             "A seven-case stdout match granted selective-history completion");
-        const auto initial_feedback=edit_text(child(view,1004));
+        const auto initial_feedback=edit_text(feedback_item);
         if(initial_feedback.find("falta acreditar la secuencia")==std::string::npos) {
             const auto initial_status=edit_text(child(view,1034));
             const auto initial_console=edit_text(child(view,1014));
