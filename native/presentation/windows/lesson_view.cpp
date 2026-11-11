@@ -2823,9 +2823,9 @@ struct LessonView {
         message+=ui("Casos comprobados: ","Checked cases: ","Cas vérifiés : ")+std::to_string(checked)
             +ui(" de "," of "," sur ")+std::to_string(total)+".";
         if(checked<total)message+=ui(
-            " Para continuar, comprueba los casos restantes indicados en la consigna sin cambiar el programa.",
-            "To continue, check the remaining cases in the instructions without changing the program.",
-            "Pour continuer, vérifiez les cas restants indiqués dans la consigne sans modifier le programme.");
+            " Basta con comprobar correctamente el primer caso para avanzar; los demás son ensayos optativos.",
+            "Passing the first authored case unlocks progress; the remaining cases are optional experiments.",
+            "La réussite du premier cas suffit pour avancer ; les autres sont des essais facultatifs.");
         return message;
     }
     std::string compiler_history_text(const curriculum::Lesson& model,const curriculum::Block& current) const {
