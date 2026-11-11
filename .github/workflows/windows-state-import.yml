@@ -46,6 +46,8 @@ jobs:
         run: python -B -m unittest discover -s scripts/curriculum -p test_u3_rejection_runtime_contract.py -v
       - name: Check original U3L8 report declarations against the stable state map
         run: python -B -m unittest discover -s scripts/curriculum -p test_u3_observation_runtime_contract.py -v
+      - name: Verify U3L9 assertion declarations preserve source and NDEBUG order
+        run: python -B -m unittest discover -s scripts/curriculum -p test_u3_assertion_runtime_contract.py -v
       - name: Verify MSVC and execute four historical suites plus exact stderr contract
         run: .\scripts\windows\Test-StateImportCI.ps1
       - name: Preserve configure and test results
