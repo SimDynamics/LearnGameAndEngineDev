@@ -111,6 +111,7 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
         frame+=token(item.standard_error==curriculum::StandardErrorExpectation::non_blank?"nonBlank":"ignored")
             +token(std::to_string(item.outputs.size()));
         if(item.exit_code!=0)frame+=token("process-exit-code/v1")+token(std::to_string(item.exit_code));
+        if(item.standard_error_exact)frame+=token("standard-error/exact/v1")+token(*item.standard_error_exact);
         for(const auto& output:item.outputs)frame+=token(output);
         frame+=token(std::to_string(item.review_feedback.size()));
         for(const auto& guide:item.review_feedback){
