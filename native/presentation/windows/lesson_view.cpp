@@ -20,6 +20,7 @@
 #include "presentation/windows/lesson_reader.hpp"
 #include "presentation/windows/reading_gate_policy.hpp"
 #include "presentation/windows/order_code_view.hpp"
+#include "core/order_source_text.hpp"
 #include "presentation/windows/curricular_image_view.hpp"
 #include "core/learning_flow.hpp"
 #include "core/compiler_flow.hpp"
@@ -1796,7 +1797,12 @@ struct LessonView {
             copy_text(text);return;
         }
         if(!vm.order.empty()){
-            std::string text;for(const auto option:vm.order){if(!text.empty())text+='\n';text+=current.fragments.at(option);}copy_text(text);return;
+            // Use the *visible* required-card order. Presentation-only blank
+            // separators never enter this copy, and an authored empty source
+            // card still contributes its own physical line boundary.
+            const auto order=vm.order_view?vm.order_view->order():vm.order;
+            copy_text(curriculum::ordered_source_text(current.fragments,order));
+            return;
         }
         if(vm.answer_editor){copy_text(vm.answer_editor->document().text);return;}
         std::string text=current.question+"\n\n";

@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/order_source_text.hpp"
 #include "core/lesson_state.hpp"
 #include <iostream>
 #include <stdexcept>
@@ -57,6 +58,27 @@ void preserve_original_contract(){
     check(lgaed::state::decode(bytes)==stored,
         "Original responses, references or progress were changed on state reopen");
 }
+void preserve_copied_source_with_empty_cards(){
+    const std::vector<std::string> fragments={
+        "", "    int value=4;", "", "    return value;", "\n",
+        "set(TEXT \"one\\ntwo\")", "  set(TEXT \"one\ntwo\")"};
+    check(ordered_source_text(fragments,std::vector<std::size_t>{0,1,2,3})==
+        "\n    int value=4;\n\n    return value;",
+        "Copy collapsed the leading or internal empty source cards");
+    check(ordered_source_text(fragments,std::vector<std::size_t>{1,2,3,4})==
+        "    int value=4;\n\n    return value;\n\n",
+        "Copy collapsed a trailing authored blank physical line");
+    check(ordered_source_text(fragments,std::vector<std::size_t>{5,6})==
+        "set(TEXT \"one\\ntwo\")\n  set(TEXT \"one\ntwo\")",
+        "Copy rewrote the distinction between a CMake quoted newline and backslash-n");
+    check(ordered_source_text(fragments,std::vector<std::size_t>{}).empty(),
+        "An empty unsolved order introduced source bytes");
+    bool rejected=false;
+    try{(void)ordered_source_text(fragments,std::vector<std::size_t>{1,99});}
+    catch(const std::out_of_range&){rejected=true;}
+    check(rejected,"Copy accepted an invented source-card identity");
+}
+
 void preserve_equivalence_and_meaningful_newlines(){
     auto grouped=example({"", "    abrir();", "\n", "    cerrar();", "    registrar();", " \t"},{1,2,3,4,0,5});
     grouped.order_equivalence_groups={{1,3}};
@@ -89,6 +111,7 @@ int main(){
     try {
         preserve_original_contract();
         preserve_equivalence_and_meaningful_newlines();
+        preserve_copied_source_with_empty_cards();
         std::cout<<"PASS exact historical order/source, explicit optional presentation only, state and references\n";
         return 0;
     }catch(const std::exception& e){
