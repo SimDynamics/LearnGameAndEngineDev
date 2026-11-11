@@ -263,10 +263,28 @@ int main() {
                 require(lgaed::windows::compiler_runtime_request_allowed(owner,current),
                     "A valid U3L8 main-only edit was not eligible for independent verification");
                 const auto result=run_cpp(current);
+                const auto evidence_details=[&] {
+                    std::string details="U3L8 page="+std::to_string(page+1)+
+                        " case="+std::to_string(i)+
+                        " error="+result.error_utf8+
+                        " compilation="+std::to_string(static_cast<int>(result.compilation.status))+
+                        " compilation_exit="+std::to_string(result.compilation.exit_code.value_or(999))+
+                        " execution="+std::to_string(static_cast<int>(result.execution.status))+
+                        " execution_exit="+std::to_string(result.execution.exit_code.value_or(999))+
+                        " probes="+std::to_string(result.observation_probes.size());
+                    details+=" compile_stderr="+result.compilation.stderr_bytes+
+                        " runtime_stderr="+result.execution.stderr_bytes;
+                    for(const auto& probe:result.observation_probes)
+                        details+=" probe_compilation="+std::to_string(static_cast<int>(probe.compilation.status))+
+                            " probe_compile_stderr="+probe.compilation.stderr_bytes+
+                            " probe_execution="+std::to_string(static_cast<int>(probe.execution.status))+
+                            " probe_exit="+std::to_string(probe.execution.exit_code.value_or(999));
+                    return details;
+                };
                 require(result.error_utf8.empty()&&result.compilation.succeeded()&&
                         result.execution.status==CppPhaseStatus::completed&&
                         result.observation_probes.size()==observation_probe_inputs.size(),
-                    "U3L8 failed to compile or complete its isolated observations: "+result.error_utf8);
+                    evidence_details());
                 const auto execution=capture_cpp_execution(current,result);
                 require(execution.report_probe_correct,"The U3L8 independent report observations failed");
                 const auto verdict=evaluate_cpp_output_check(
