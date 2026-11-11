@@ -1,0 +1,247 @@
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$true)]
+    [string] $ArchivePath,
+    [string] $ProjectPath = 'E:\Projects\LGAEDProjects\02_construccion_depuracion_y_practica_profesional\AssetCheck',
+    [switch] $SyntheticFixture,
+    [string] $SyntheticExpectedSha256 = '',
+    [int] $SyntheticExpectedFiles = 0
+)
+
+# READ-ONLY preflight. This never extracts, overwrites, creates backups, resets
+# Git, deletes caches, signs a result, or edits the student's project.
+# The real release identity is deliberately fixed.
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
+$releaseSha256 = 'b8e6c9abc2d611bfad391facf36f3da0e71993322c18087991ad9f314c51a589'
+$releaseFileCount = 35
+
+if ($SyntheticFixture) {
+    if ($env:GITHUB_ACTIONS -ne 'true' -or
+        $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
+        throw 'SyntheticFixture is restricted to disposable GitHub-hosted CI tests.'
+    }
+    if ($SyntheticExpectedSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+        $SyntheticExpectedFiles -lt 1) {
+        throw 'Synthetic tests must supply a valid checksum and positive file count.'
+    }
+    $expectedHash = $SyntheticExpectedSha256
+    $expectedFiles = $SyntheticExpectedFiles
+}
+else {
+    if ($SyntheticExpectedSha256 -or $SyntheticExpectedFiles) {
+        throw 'Production cannot override the pinned archive identity.'
+    }
+    $expectedHash = $releaseSha256
+    $expectedFiles = $releaseFileCount
+}
+
+if (-not [IO.Path]::IsPathFullyQualified($ArchivePath)) {
+    throw 'Use an absolute ZIP path. The current directory is not assumed.'
+}
+if (-not [IO.Path]::IsPathFullyQualified($ProjectPath)) {
+    throw 'Use an absolute project path. The current directory is not assumed.'
+}
+if (-not (Test-Path -LiteralPath $ArchivePath -PathType Leaf)) {
+    throw 'The reference archive is not present at the supplied path.'
+}
+if (-not (Test-Path -LiteralPath $ProjectPath -PathType Container)) {
+    throw 'The existing project directory is missing: no integration may proceed.'
+}
+
+$archive = [IO.Path]::GetFullPath($ArchivePath)
+$project = [IO.Path]::GetFullPath($ProjectPath).TrimEnd('\', '/')
+$projectRoot = $project + [IO.Path]::DirectorySeparatorChar
+if (((Get-Item -LiteralPath $project).Attributes -band
+        [IO.FileAttributes]::ReparsePoint) -ne 0) {
+    throw 'The project root is a reparse point and must be inspected manually.'
+}
+
+$actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actualHash -cne $expectedHash) {
+    throw "Archive SHA-256 mismatch. Expected $expectedHash, found $actualHash. No files inspected or installed."
+}
+Add-Type -AssemblyName System.IO.Compression
+$seen = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase
+)
+$conflicts = [Collections.Generic.List[string]]::new()
+$identical = [Collections.Generic.List[string]]::new()
+$new = [Collections.Generic.List[string]]::new()
+$blocked = [Collections.Generic.List[string]]::new()
+$directories = 0
+$fileCount = 0
+$uncompressed = [long]0
+
+$stream = [IO.File]::OpenRead($archive)
+try {
+    $zip = [IO.Compression.ZipArchive]::new(
+        $stream, [IO.Compression.ZipArchiveMode]::Read, $true
+    )
+    try {
+        foreach ($entry in $zip.Entries) {
+            $name = $entry.FullName
+            if ([string]::IsNullOrWhiteSpace($name) -or
+                $name.Contains('\') -or
+                $name.StartsWith('/') -or
+                $name.StartsWith('\')) {
+                throw "Unsafe or noncanonical ZIP entry: $name"
+            }
+            $directory = $name.EndsWith('/')
+            $trimmed = if ($directory) { $name.TrimEnd('/') } else { $name }
+            if (-not $trimmed -or -not $seen.Add($trimmed)) {
+                throw "Empty or duplicate ZIP entry, including case-folded aliases: $name"
+            }
+            $segments = $trimmed.Split('/')
+            if ($segments.Count -gt 60) {
+                throw "ZIP entry is unreasonably deeply nested: $name"
+            }
+            foreach ($segment in $segments) {
+                if ($segment -eq '.' -or $segment -eq '..' -or
+                    $segment.Length -eq 0 -or
+                    $segment -match '[<>:"|?*]' -or
+                    $segment -match '[\x00-\x1f]' -or
+                    $segment.EndsWith('.') -or $segment.EndsWith(' ') -or
+                    $segment.Split('.')[0] -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$') {
+                    throw "Unsafe Windows ZIP component in: $name"
+                }
+            }
+            # The high 16 bits of ZIP ExternalAttributes can encode Unix modes.
+            # Reject links and special file types. Normal DOS-mode entries use 0.
+            $unixKind = ($entry.ExternalAttributes -shr 16) -band 0xF000
+            if ($unixKind -ne 0 -and $unixKind -ne 0x8000 -and
+                $unixKind -ne 0x4000) {
+                throw "ZIP contains a symbolic link or special file: $name"
+            }
+            if (($directory -and $unixKind -eq 0x8000) -or
+                (-not $directory -and $unixKind -eq 0x4000)) {
+                throw "ZIP file/directory attributes disagree: $name"
+            }
+            if ($directory) {
+                ++$directories
+                continue
+            }
+
+            ++$fileCount
+            if ($entry.Length -gt 134217728) {
+                throw "An archive member is larger than 128 MiB: $name"
+            }
+            $uncompressed += $entry.Length
+            if ($uncompressed -gt 268435456) {
+                throw 'The ZIP would expand beyond 256 MiB.'
+            }
+
+            $relative = [IO.Path]::Combine([string[]] $segments)
+            $target = [IO.Path]::GetFullPath((Join-Path $project $relative))
+            if (-not $target.StartsWith($projectRoot,
+                [StringComparison]::OrdinalIgnoreCase)) {
+                throw "ZIP member escapes the project root: $name"
+            }
+
+            $cursor = $project
+            $reparse = $false
+            foreach ($segment in $segments) {
+                $cursor = Join-Path $cursor $segment
+                if (Test-Path -LiteralPath $cursor) {
+                    $item = Get-Item -LiteralPath $cursor -Force
+                    if (($item.Attributes -band
+                            [IO.FileAttributes]::ReparsePoint) -ne 0) {
+                        $reparse = $true
+                        break
+                    }
+                }
+            }
+            if ($reparse) {
+                [void] $blocked.Add($trimmed)
+                continue
+            }
+            if (Test-Path -LiteralPath $target -PathType Container) {
+                [void] $conflicts.Add($trimmed + ' (a directory exists at this file path)')
+                continue
+            }
+            if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
+                [void] $new.Add($trimmed)
+                continue
+            }
+
+            # Compare bytes of a ZIP member with a local file without writing.
+            $memberStream = $entry.Open()
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try {
+                $memberHash = [Convert]::ToHexString(
+                    $sha.ComputeHash($memberStream)
+                ).ToLowerInvariant()
+            }
+            finally {
+                $sha.Dispose()
+                $memberStream.Dispose()
+            }
+            $localHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($memberHash -ceq $localHash) {
+                [void] $identical.Add($trimmed)
+            }
+            else {
+                [void] $conflicts.Add($trimmed)
+            }
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
+}
+finally {
+    $stream.Dispose()
+}
+
+if ($fileCount -ne $expectedFiles) {
+    throw "Expected $expectedFiles files in the ZIP, found $fileCount. No installation performed."
+}
+
+# Inspect Git state if possible. A non-repository is explicitly reported,
+# never silently treated as clean; no Git commands change state.
+$gitState = 'git not found'
+$git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue
+if ($git) {
+    $insideGit = & $git.Source -C $project rev-parse --is-inside-work-tree 2>$null
+    if ($LASTEXITCODE -eq 0 -and $insideGit -eq 'true') {
+        $status = @(& $git.Source -C $project status --porcelain=v1 --untracked-files=normal 2>$null)
+        if ($LASTEXITCODE -ne 0) {
+            $gitState = 'git status failed; manual review required'
+        }
+        elseif ($status.Count -eq 0) {
+            $gitState = 'clean'
+        }
+        else {
+            $gitState = "dirty or untracked ($($status.Count) status lines); manual review required"
+        }
+    }
+    else {
+        $gitState = 'not a Git worktree; manual review required'
+    }
+}
+
+$manualReviewOnly = (
+    $conflicts.Count -gt 0 -or $blocked.Count -gt 0 -or $gitState -ne 'clean'
+)
+$result = [ordered]@{
+    scope = 'Read-only AssetCheck package preflight, NOT installation or Windows build'
+    archiveSha256 = $actualHash
+    authenticatedReference = (-not $SyntheticFixture)
+    archiveFiles = $fileCount
+    archiveDirectories = $directories
+    expandedBytes = $uncompressed
+    projectPath = $project
+    existingIdentical = $identical.Count
+    newFiles = $new.Count
+    conflicts = $conflicts.Count
+    unsafeExistingReparsePaths = $blocked.Count
+    gitState = $gitState
+    requiresManualReview = $manualReviewOnly
+    noFilesWereWritten = $true
+    installationPerformed = $false
+    identicalPaths = $identical.ToArray()
+    newPaths = $new.ToArray()
+    conflictPaths = $conflicts.ToArray()
+    blockedPaths = $blocked.ToArray()
+}
+$result | ConvertTo-Json -Depth 6
