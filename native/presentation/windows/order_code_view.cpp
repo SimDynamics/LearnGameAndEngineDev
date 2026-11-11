@@ -21,18 +21,27 @@ void prepare_graphics(){static const auto token=[](){Gdiplus::GdiplusStartupInpu
 struct OrderCodeView::Impl {
     HWND host=nullptr,pressed=nullptr;HMODULE rich=nullptr;HFONT font=nullptr,number_font=nullptr;
     std::vector<std::string> fragments;
-    std::vector<std::size_t> ordered,original;
+    std::size_t required_count=0; // Original graded indices only.
+    std::vector<std::size_t> ordered,original; // Also holds visual separator ids.
     std::vector<HWND> rows;
     std::vector<int> requested_heights;
     std::vector<RECT> cards;
     std::function<void()> changed;
     POINT down{};bool dragging=false,drag_changed=false,enabled=true,wrap=false,translucent=false;LONG_PTR pressed_style=0;std::size_t next_tap=0;
     int percentage=100,width=1,height=1,content_width=1,horizontal=0,gutter=18,number_pixels=0;
-    Impl(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,std::function<void()> callback)
-        :fragments(std::move(source)),changed(std::move(callback)){
+    Impl(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,
+            std::function<void()> callback,std::size_t optional_count)
+        :fragments(std::move(source)),required_count(fragments.size()),changed(std::move(callback)){
+        if(fragments.empty()||optional_count>4)
+            throw std::invalid_argument("Optional order cards require real fragments and at most four separators");
+        std::vector<std::size_t> identities(required_count);
+        std::iota(identities.begin(),identities.end(),0);
+        auto sorted=order;std::ranges::sort(sorted);if(sorted!=identities)order=identities;
+        ordered=std::move(order);
+        fragments.resize(required_count+optional_count);
+        for(std::size_t i=required_count;i<fragments.size();++i)ordered.push_back(i);
         original.resize(fragments.size());std::iota(original.begin(),original.end(),0);
         prepare_graphics();
-        auto sorted=order;std::ranges::sort(sorted);if(sorted!=original)order=original;
         // Creating/showing a native child can synchronously paint its parent.
         // Allocate every geometry slot before exposing the HWND, and publish
         // the ordered model only once every referenced text HWND exists.
@@ -63,7 +72,6 @@ struct OrderCodeView::Impl {
             SendMessageW(row,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
             SetWindowSubclass(row,child,1,reinterpret_cast<DWORD_PTR>(this));rows.push_back(row);
         }
-        ordered=std::move(order);
     }
     ~Impl(){release(false);if(host&&IsWindow(host))DestroyWindow(host);if(number_font)DeleteObject(number_font);if(font)DeleteObject(font);if(rich)FreeLibrary(rich);}
     int px(int n)const{return MulDiv(n,static_cast<int>(GetDpiForWindow(host)),96);}
