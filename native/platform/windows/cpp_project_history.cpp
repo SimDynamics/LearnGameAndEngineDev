@@ -103,10 +103,16 @@ curriculum::CppProjectFiles CppProjectHistory::restore_file(std::string_view pat
 }
 CppHistoryVerifiedRestoration CppProjectHistory::restore_file_verified(std::string_view path,
         const curriculum::CppProjectFiles& current,const CppHistoryRevision& revision)const{
-    // The caller obtains this revision through load(), which verifies the
-    // immutable on-disk SHA-256. A different project or invalid id is not
-    // admissible as recovery evidence.
+    // Read the immutable on-disk revision again at application time. A stale,
+    // forged or modified in-memory revision is not evidence of a recovery.
     require(hex_id(revision.id)&&revision.project_key==key_,"Invalid recovery revision identity");
+    const auto published=load(revision.id);
+    require(published.project_key==revision.project_key
+        &&published.uuid==revision.uuid&&published.label==revision.label
+        &&published.created_at==revision.created_at
+        &&published.files==revision.files&&published.sources==revision.sources
+        &&published.indentation==revision.indentation,
+        "The chosen recovery source differs from its immutable on-disk revision");
     auto recovered=restore_file(path,current,revision);
     const auto saved=file(revision.files,path);
     const auto prior=file(current,path);

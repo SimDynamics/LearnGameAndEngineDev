@@ -65,6 +65,12 @@ int main(int argc,char** argv){try{
     rejects([&]{(void)history.restore_file_verified("main.cpp",current,bad);});
     auto invalid_revision_id=original;invalid_revision_id.id="not-a-sha";
     rejects([&]{(void)history.restore_file_verified("main.cpp",current,invalid_revision_id);});
+    auto forged_revision=original;forged_revision.files[0].second="    return 999;\n";
+    rejects([&]{(void)history.restore_file_verified("main.cpp",current,forged_revision);});
+    auto forged_label=original;forged_label.label="Revisión falsa";
+    rejects([&]{(void)history.restore_file_verified("main.cpp",current,forged_label);});
+    auto missing_revision=original;missing_revision.id=std::string(64,'f');
+    rejects([&]{(void)history.restore_file_verified("main.cpp",current,missing_revision);});
     write(root/key/(id+".revision"),corrupt);rejects([&]{(void)history.summaries();});write(root/key/(id+".revision"),bytes);
     rejects([&]{(void)history.record({{"main.cpp",""},{"main.cpp","duplicate"}},{"main.cpp"},"duplicate");});
     rejects([&]{(void)history.record({{"../outside.cpp",""}},{},"outside");});rejects([&]{(void)history.record(current,{"include/nota.h"},"header");});
