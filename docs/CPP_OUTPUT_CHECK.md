@@ -363,9 +363,11 @@ cubren cero, múltiplos, sobrantes, la frontera superior y rechazos exteriores.
 El comprobador deriva independientemente los valores correctos y no admite
 una expresión literal que sólo acierte el primer caso.
 
-La activación por Work debe verificar la compatibilidad curricular antes de
-publicar estas declaraciones. Hasta entonces, los editores sin declaración
-conservan su estado original, sin crédito nuevo ni cambios de borradores.
+Work integró las tres declaraciones en la raíz del JSON español y conservó los
+editores, las entradas, las referencias, los identificadores y las direcciones
+históricas de progreso. La comprobación funcional en Windows y la aprobación
+de las nuevas ejecuciones de CI son requisitos separados para cerrar la ficha:
+la integración curricular por sí sola no acredita el aborto ni la reparación.
 
 ## Entrada del laboratorio
 

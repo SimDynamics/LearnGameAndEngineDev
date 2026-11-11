@@ -18,7 +18,10 @@ RECORDS = [
 class AssertionRuntimeDeclarationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original = layout.load(LESSON)
+        cls.published = layout.load(LESSON)
+        assert cls.published.get("compilerRuntimeChecks") == RECORDS
+        cls.original = copy.deepcopy(cls.published)
+        del cls.original["compilerRuntimeChecks"]
 
     def declared(self):
         revised = copy.deepcopy(self.original)
@@ -27,6 +30,7 @@ class AssertionRuntimeDeclarationTest(unittest.TestCase):
 
     def test_all_three_mapped_editors_and_historical_slots_remain_unchanged(self):
         revised = self.declared()
+        self.assertEqual(self.published, revised)
         self.assertEqual(layout.validate(self.original), layout.validate(revised))
         layout.validate_transition(self.original, revised)
         self.assertEqual(self.original["pages"], revised["pages"])
