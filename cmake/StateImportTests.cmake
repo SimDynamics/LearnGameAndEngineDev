@@ -96,6 +96,10 @@ function(lgaed_add_state_import_tests qa_root)
         add_test(NAME native.cpp_project_history COMMAND lgaed_cpp_project_history_tests
             "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history")
         set_tests_properties(native.cpp_project_history PROPERTIES TIMEOUT 40)
+        add_executable(lgaed_cpp_history_training_tests native/platform/windows/cpp_history_training_tests.cpp)
+        target_link_libraries(lgaed_cpp_history_training_tests PRIVATE lgaed_platform_windows)
+        add_test(NAME native.cpp_history_training COMMAND lgaed_cpp_history_training_tests)
+        set_tests_properties(native.cpp_history_training PROPERTIES TIMEOUT 40)
     endif()
     # The real Windows loader/evaluator must reject wrong stderr bytes while
     # retaining previous stdout-only and nonzero-exit completion identities.
