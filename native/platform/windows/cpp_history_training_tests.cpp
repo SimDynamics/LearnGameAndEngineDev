@@ -247,7 +247,8 @@ void history_receipt_preserves_old_stdout_and_requires_new_actions(){
         "Explicit Reset did not clear both existing and new completion receipts");
 }
 void combined_cmake_check_follows_the_real_lesson_button(){
-    const auto p=published(),bad=broken(p.project_files),good=restored(bad,p.project_files);
+    const auto p=published();
+    const auto bad=broken(p.project_files),good=restored(bad,p.project_files);
     const auto record=registered(p.project_files);
     for(const bool explicit_build:{false,true}){
         CmakeSelectiveRecoveryTrace trace(p);
