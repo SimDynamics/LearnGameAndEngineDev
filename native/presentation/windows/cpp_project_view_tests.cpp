@@ -150,8 +150,9 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
           {"standardInput":"2","outputs":["4"],"explanation":"Primer dato comprobado."},
           {"standardInput":"3","outputs":["6"],"explanation":"Segundo dato comprobado."}
         ]}
-      }]}]})json");
-    require(lesson.pages.size()==1&&lesson.pages[0].blocks.size()==1,
+      }]},{"blocks":[{"id":"continuacion","type":"paragraph","text":"El primer caso comprobado permite continuar."}]}]})json");
+    require(lesson.pages.size()==2&&lesson.pages[0].blocks.size()==1&&
+        lesson.pages[1].blocks.size()==1,
         "The independent two-case C++ QA fixture changed shape");
     const auto& block=lesson.pages[0].blocks[0];
     HWND view=create_lesson_view(host,environment,lesson);
@@ -176,7 +177,13 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
         require(first_feedback.find("Historial")==std::string::npos &&
             first_feedback.find("historial")==std::string::npos &&
             first_feedback.find("secuencia")==std::string::npos,
-            "An unrelated partial C++ objective displayed the U3 History sequence instructions");
+            "An unrelated first-case achievement displayed U3 History sequence instructions");
+        require(navigate_lesson_view(view,1)&&lesson_page_state(view).index==1,
+            "A valid first C++ case still blocks the following page until optional cases run");
+        require(navigate_lesson_view(view,0)&&lesson_page_state(view).index==0,
+            "Revisiting an earned first-case C++ editor failed");
+        input=child(view,1015);run=child(view,1011);
+        require(input&&run&&IsWindowEnabled(run),"The optional second C++ case cannot be tried after advancing");
         set_edit_text(input,"3");pump();
         click(view,1011);
         await([&]{return IsWindowEnabled(run);},"Second multicase C++ execution did not complete");
@@ -190,8 +197,9 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
         view=create_lesson_view(host,environment,lesson);
         require(view!=nullptr,"The independent two-case C++ lesson did not reopen");
         MoveWindow(view,0,0,920,720,TRUE);pump();
-        require(windows::compiler_puzzle_completed(read_lesson_state(view),lesson,block),
-            "The first-case achievement was lost after optional execution and reopening");
+        require(windows::compiler_puzzle_completed(read_lesson_state(view),lesson,block)&&
+            navigate_lesson_view(view,1)&&lesson_page_state(view).index==1,
+            "The first-case achievement or subsequent page access was lost on reopening");
         cleanup();
         require(environment.paths.root.parent_path().filename()==L"qa"&&
             environment.paths.root.parent_path().parent_path().filename()==L"Codex",
