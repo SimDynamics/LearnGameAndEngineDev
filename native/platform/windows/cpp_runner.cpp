@@ -884,6 +884,24 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    if(request.observation_probe &&
+        result.observation_probes.size()==curriculum::observation_probe_inputs.size()) {
+        const auto source_digest=state::sha256(request.source_utf8);
+        fresh.report_probe_correct=true;
+        for(std::size_t index=0;index<result.observation_probes.size();++index) {
+            const auto& evidence=result.observation_probes[index];
+            const bool valid=evidence.source_sha256==source_digest&&
+                evidence.standard_input==curriculum::observation_probe_inputs[index]&&
+                evidence.compilation.succeeded()&&
+                evidence.execution.status==CppPhaseStatus::completed&&
+                evidence.execution.exit_code&&*evidence.execution.exit_code<=255&&
+                curriculum::matches_observation_report(
+                    *request.observation_probe,evidence.standard_input,
+                    evidence.execution.stdout_bytes,evidence.execution.stderr_bytes,
+                    static_cast<int>(*evidence.execution.exit_code));
+            if(!valid){fresh.report_probe_correct=false;break;}
+        }
+    }
     if(request.rejection_probe&&result.rejection_probe&&
         result.rejection_probe->compilation.succeeded()&&result.rejection_probe->execution.succeeded()) {
         const auto source=curriculum::rejection_stream_probe_source(
@@ -946,6 +964,34 @@ void complete_rejection_stream_probe(const CppRunRequest& request,CppRunResult& 
         state::sha256(second.source_utf8),proof.compilation,proof.execution};
 }
 
+// Independent normal executions of the *same* source with unseen observations
+// catch printed constants, merged duplicate labels, skipped valid rows and
+// incorrect counters. Each result is sealed to the original source and input.
+// The isolated requests disable both probes to prevent recursion.
+void complete_observation_probes(const CppRunRequest& request,CppRunResult& result,std::stop_token stop) {
+    if(!request.observation_probe||request.rejection_probe||
+        request.action!=CppRunRequest::Action::compile_run||request.cmake||
+        !request.project_files.empty()||request.diagnostic||
+        !result.compilation.succeeded()||
+        result.execution.status!=CppPhaseStatus::completed||
+        !result.execution.exit_code||*result.execution.exit_code>255||
+        stop.stop_requested())return;
+    const auto hash=state::sha256(request.source_utf8);
+    for(std::size_t i=0;i<curriculum::observation_probe_inputs.size();++i) {
+        if(stop.stop_requested())break;
+        auto second=request;
+        second.observation_probe.reset();
+        second.rejection_probe.reset();
+        second.request_id=~(request.request_id+static_cast<std::uint64_t>(i)+1);
+        second.stdin_utf8=std::string(curriculum::observation_probe_inputs[i]);
+        const auto proof=run_cpp(second,stop);
+        if(!proof.error_utf8.empty())break;
+        result.observation_probes.push_back(CppObservationProbe{
+            hash,second.stdin_utf8,proof.compilation,proof.execution});
+        if(!proof.compilation.succeeded()||proof.execution.status!=CppPhaseStatus::completed)break;
+    }
+}
+
 CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     CppRunResult result;
     result.request_id = request.request_id;
@@ -984,6 +1030,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         if(request.backend==CppRunRequest::Backend::wasi) {
             run_wasi_single(request,result,source,input,compiler_input,stop);
             complete_rejection_stream_probe(request,result,stop);
+            complete_observation_probes(request,result,stop);
             return result;
         }
         if (!std::filesystem::is_regular_file(compiler))
@@ -1015,6 +1062,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
                 L"execution", request.execution_timeout, request.output_limit_bytes, false, stop);
         }
         complete_rejection_stream_probe(request,result,stop);
+        complete_observation_probes(request,result,stop);
     } catch (const std::exception& exception) {
         result.error_utf8 = exception.what();
         auto& phase = request.diagnostic?result.compilation:request.cmake&&request.action==CppRunRequest::Action::configure?result.configuration:
