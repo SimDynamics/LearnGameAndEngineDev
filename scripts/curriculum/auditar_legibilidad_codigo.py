@@ -40,11 +40,24 @@ def source_blocks(block: dict):
             yield field, source, "source"
     if block.get("type") == "order_code":
         fragments, order = block.get("fragments"), block.get("correctOrder")
-        if (isinstance(fragments, list) and all(isinstance(x, str) for x in fragments)
-                and isinstance(order, list) and len(order) == len(fragments)
-                and all(type(i) is int for i in order) and sorted(order) == list(range(len(order)))):
-            # Solo vista compuesta: las tarjetas evaluadas JAMAS se reescriben.
-            yield "fragments/correctOrder", "\n".join(fragments[i] for i in order), "composition"
+        if isinstance(fragments, list) and all(isinstance(x, str) for x in fragments):
+            # Inventariar las fuentes de cada tarjeta, sin alterar sus indices.
+            for index, fragment in enumerate(fragments):
+                if fragment.strip():
+                    yield f"fragments/{index}", fragment, "source"
+            if (isinstance(order, list) and len(order) == len(fragments)
+                    and all(type(i) is int for i in order)
+                    and sorted(order) == list(range(len(order)))):
+                # Vista compuesta solo para inspeccion humana: no es una fuente
+                # independiente ni autoriza a modificar la evaluacion.
+                yield "fragments/correctOrder", "\n".join(fragments[i] for i in order), "composition"
+    if block.get("type") == "drag_fill_code":
+        # Las opciones tambien son piezas de codigo, pero NUNCA huecos nuevos.
+        choices = block.get("choices")
+        if isinstance(choices, list):
+            for index, choice in enumerate(choices):
+                if isinstance(choice, str) and choice.strip():
+                    yield f"choices/{index}", choice, "source"
     project = block.get("projectFiles")
     if isinstance(project, list):
         for index, file in enumerate(project):
@@ -65,13 +78,22 @@ def code_language(field: str, block: dict) -> str:
         if name.endswith((".cpp", ".cxx", ".cc", ".h", ".hpp", ".c")):
             return "cpp"
     value = block.get("language", "cpp")
-    return "cmake" if isinstance(value, str) and value.lower() == "cmake" else "cpp"
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "cmake":
+            return "cmake"
+        if normalized in ("cpp", "c++", "c", "c++20", "c++23", "cpp20", "cpp23"):
+            return "cpp"
+        return "other:" + normalized
+    return "cpp"
 
 
 def suggestions(source: str, language: str) -> list[dict]:
     """Sugiere FRONTERAS entre renglones; jamas modifica ni normaliza el texto."""
     # splitlines() preserva las lineas verdaderas, no el escape escrito '\\n'.
     lines = source.splitlines()
+    if language not in ("cpp", "cmake"):
+        return []
     if len(lines) < (3 if language == "cmake" else 5):
         return []
     candidate = []
@@ -126,10 +148,28 @@ def suggestions(source: str, language: str) -> list[dict]:
     return candidate
 
 
+def manual_review_reasons(source: str, language: str) -> list[str]:
+    """Zonas delicadas: no omitirlas silenciosamente del inventario."""
+    reasons = []
+    if "\\\n" in source or "\\\r\n" in source:
+        reasons.append("physical_line_splice")
+    if language == "cpp":
+        if re.search(r'(?:u8|u|U|L)?R"', source):
+            reasons.append("raw_string_literal")
+        if "/*" in source:
+            reasons.append("multiline_comment")
+    elif language == "cmake":
+        if re.search(r"#?\\[[=]*\\[", source):
+            reasons.append("bracket_argument_or_comment")
+    if language.startswith("other:"):
+        reasons.append("unsupported_language")
+    return reasons
+
+
 def audit(content_root: Path) -> dict:
     """Inspecciona todos los idiomas/cursos, no solo los ejemplos reportados."""
     content_root = Path(content_root)
-    rows, counts, languages, reasons = [], Counter(), Counter(), Counter()
+    rows, counts, languages, reasons, manual = [], Counter(), Counter(), Counter(), Counter()
     for file in sorted(content_root.glob("**/lesson_*.json")):
         relative = file.relative_to(content_root)
         if len(relative.parts) < 4:
@@ -153,13 +193,20 @@ def audit(content_root: Path) -> dict:
                 for field, source, kind in source_blocks(block):
                     counts["sources"] += 1
                     counts[f"sources.{locale}.{area}"] += 1
-                    languages[code_language(field, block)] += 1
-                    observations = suggestions(source, code_language(field, block))
-                    if not observations:
+                    language = code_language(field, block)
+                    languages[language] += 1
+                    manual_flags = manual_review_reasons(source, language)
+                    for flag in manual_flags:
+                        manual[flag] += 1
+                    observations = suggestions(source, language)
+                    if not observations and not manual_flags:
                         continue
                     for item in observations:
                         reasons[item["reason"]] += 1
-                    counts["sourcesWithSuggestions"] += 1
+                    if observations:
+                        counts["sourcesWithSuggestions"] += 1
+                    if manual_flags:
+                        counts["sourcesRequiringManualReview"] += 1
                     rows.append({"lesson":relative.as_posix(), "locale":locale,
                                  "course": relative.parts[2] if len(relative.parts) > 2 else area,
                                  "page":pi+1, "block":bi+1,
@@ -167,11 +214,13 @@ def audit(content_root: Path) -> dict:
                                  "field":field, "mode":kind,
                                  "protectedByStateLayout":bool(stable),
                                  "sha256":sha256(source.encode("utf-8")).hexdigest(),
+                                 "language":language, "manualReview":manual_flags,
                                  "suggestions":observations})
     return {"scope":"ALL_LOCALES_ALL_LESSONS_READ_ONLY",
             "changesMade":False,"stateTransitionsVerified":False,
             "counts":dict(sorted(counts.items())),
             "languages":dict(languages),"reasons":dict(reasons),
+            "manualReviewReasons":dict(manual),
             "findings":rows}
 
 
@@ -190,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     print("Ubicaciones por idioma/curso:",json.dumps({k:v for k,v in result["counts"].items()
           if k.startswith("lessons.")},ensure_ascii=False,sort_keys=True))
     print("Motivos:",json.dumps(result["reasons"],ensure_ascii=False,sort_keys=True))
+    print("Revisión manual:",json.dumps(result["manualReviewReasons"],ensure_ascii=False,sort_keys=True))
     for issue in result["findings"][:max(0,args.limit)]:
         print(f"{issue['lesson']} p{issue['page']} b{issue['block']} "
               f"{issue['field']} {issue['suggestions'][0]['reason']}")
