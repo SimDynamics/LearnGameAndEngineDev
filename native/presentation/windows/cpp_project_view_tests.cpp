@@ -169,9 +169,9 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
         await([&]{return IsWindowEnabled(run);},"First multicase C++ execution did not complete");
         auto saved=read_lesson_state(view);
         require(windows::compiler_puzzle_case_count(saved,lesson,block)==1&&
-            !windows::compiler_puzzle_completed(saved,lesson,block)&&
+            windows::compiler_puzzle_completed(saved,lesson,block)&&
             edit_text(child(view,1014))=="4",
-            "The first real C++ input was not recorded as an incomplete 1/2 objective");
+            "The first verified C++ input failed to unlock progress with 1/2 cases");
         const auto first_feedback=edit_text(feedback);
         require(first_feedback.find("Historial")==std::string::npos &&
             first_feedback.find("historial")==std::string::npos &&
@@ -184,14 +184,14 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
         require(windows::compiler_puzzle_case_count(saved,lesson,block)==2&&
             windows::compiler_puzzle_completed(saved,lesson,block)&&
             edit_text(child(view,1014))=="6",
-            "A second valid C++ input failed to complete its original two-case objective");
+            "An optional second C++ input failed to preserve both execution receipts");
         require(flush_lesson_view(view),"The independent two-case objective was not saved");
         cleanup();
         view=create_lesson_view(host,environment,lesson);
         require(view!=nullptr,"The independent two-case C++ lesson did not reopen");
         MoveWindow(view,0,0,920,720,TRUE);pump();
         require(windows::compiler_puzzle_completed(read_lesson_state(view),lesson,block),
-            "The normal two-case success was lost on reopening");
+            "The first-case achievement was lost after optional execution and reopening");
         cleanup();
         require(environment.paths.root.parent_path().filename()==L"qa"&&
             environment.paths.root.parent_path().parent_path().filename()==L"Codex",
@@ -612,8 +612,7 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
         const auto data=read_lesson_state(view);
         require(owner.output_check&&
             windows::compiler_puzzle_case_count(data,lesson,owner)==count&&
-            windows::compiler_puzzle_completed(data,lesson,owner)==
-                (count==owner.output_check->cases.size())&&
+            windows::compiler_puzzle_completed(data,lesson,owner)==(count>0)&&
             edit_text(child(view,console))==expected,
             "The original CMake target execution did not produce its own authenticated case");
     };
@@ -658,7 +657,7 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
     phase(config7,406,"The real page-seven CMake checker did not build");
     execution(run7,"The real page-seven checker did not execute");
     proof(case7,1,1314,case7.output_check->cases[0].outputs[0]);
-    require(!navigate_lesson_view(view,7),"The page-seven checker skipped its second target");
+    require(!navigate_lesson_view(view,7),"The page-seven checker bypassed its unanswered same-page question");
     set_edit_text(child(config7,400),"consultar_cajas");pump();
     execution(run7,"The real page-seven client did not execute");
     proof(case7,2,1314,case7.output_check->cases[1].outputs[0]);
@@ -693,7 +692,7 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
     phase(config9,406,"The nested lotes checker did not build");
     execution(run9,"The nested lotes checker did not execute");
     proof(lotes,1,1314,lotes.output_check->cases[0].outputs[0]);
-    require(!navigate_lesson_view(view,9),"The lotes checker skipped its client");
+    require(!navigate_lesson_view(view,9),"The lotes checker bypassed its unanswered same-page question");
     set_edit_text(child(config9,400),"consultar_lotes");pump();
     execution(run9,"The nested lotes client did not execute");
     proof(lotes,2,1314,lotes.output_check->cases[1].outputs[0]);
@@ -926,11 +925,11 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
             "The original seven-case checker did not complete its real run");
         auto state=read_lesson_state(view);
         require(windows::compiler_puzzle_case_count(state,published,project_block)==1&&
-                !windows::compiler_puzzle_completed(state,published,project_block)&&
+                windows::compiler_puzzle_completed(state,published,project_block)&&
                 edit_text(child(view,1414))==project_block.output_check->cases[0].outputs[0],
-            "The first real CMake target did not earn exactly one of two cases");
+            "The first real CMake target failed to unlock progress with one verified case");
         require(!navigate_lesson_view(view,4),
-            "Only the checker ran; the reader skipped the remaining client target");
+            "The verified checker incorrectly skipped the unanswered same-page question");
         set_edit_text(target,"consultar_cajas");pump();
         click(view,run_id);
         await([&]{return IsWindowEnabled(run);},
@@ -939,7 +938,7 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
         require(windows::compiler_puzzle_case_count(state,published,project_block)==2&&
                 windows::compiler_puzzle_completed(state,published,project_block)&&
                 edit_text(child(view,1414))==project_block.output_check->cases[1].outputs[0],
-            "Two distinct CMake targets failed to preserve the full two-case achievement");
+            "The optional second CMake target failed to retain its own verified result");
         // Reopen this exact original page to make any same-page dependent
         // multiple-choice control visible before answering the next task.
         require(navigate_lesson_view(view,2)&&navigate_lesson_view(view,3),
@@ -1409,7 +1408,7 @@ int main(int argc,char** argv){
         else if(u3_declaration)std::cout<<"PASS declared U3 History: full/summary reader, immutable exercise identity and negative contracts\n";
         else if(u2_exact_eof)std::cout<<"PASS source-pinned U2 client with exact stderr, empty stdout, normal exit 2, forged edit rejection and reopen\n";
         else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";
-        else if(other_cases)std::cout<<"PASS unrelated C++ with two inputs: no U3 History advice, 1/2 then 2/2 exact executions and preserved completion after reopen\n";
+        else if(other_cases)std::cout<<"PASS unrelated C++ with two inputs: first case unlocks, second optional case remains verifiable, History isolated, completion retained after reopen\n";
         else std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
     }catch(const std::exception& error){if(host)DestroyWindow(host);if(rich)FreeLibrary(rich);std::cerr<<"Project controls failure: "<<error.what()<<'\n';return 1;}
 }
