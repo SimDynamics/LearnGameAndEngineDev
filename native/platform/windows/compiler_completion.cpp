@@ -143,6 +143,11 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
     if(check.observation_report)
         frame+=token(*check.observation_report==curriculum::ReportMode::complete
             ? "observation-complete-v1" : "observation-differences-v1");
+    if(check.assertion_check)
+        frame+=token(*check.assertion_check==curriculum::AssertionMode::enabled_abort
+            ? "wasm-assertion-abort-v1"
+            : *check.assertion_check==curriculum::AssertionMode::disabled
+                ? "wasm-assertion-suppressed-v1" : "wasm-assertion-repair-v1");
     for(const auto& item:check.cases){
         frame+=token(item.standard_input)+token(item.executable.value_or(""));
         if(item.balance_three_pairs)frame+=token("semantic-balance-three-pairs-v1");
@@ -257,6 +262,23 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
     const auto goal=block.compiler_workflow_check;
+    if(goal==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1||
+       goal==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1||
+       goal==curriculum::CompilerWorkflowCheck::assertion_repaired_wasi_v1) {
+        const auto mode=goal==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1
+            ?curriculum::AssertionMode::enabled_abort
+            :goal==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1
+                ?curriculum::AssertionMode::disabled:curriculum::AssertionMode::repaired;
+        return request.backend==CppRunRequest::Backend::wasi&&
+            !request.cmake&&!request.diagnostic&&
+            !request.rejection_probe&&!request.observation_probe&&
+            request.project_files.empty()&&request.source_files.empty()&&
+            request.action==CppRunRequest::Action::compile_run&&
+            request.assertion_mode==mode&&
+            (mode==curriculum::AssertionMode::repaired||
+                request.stdin_utf8==block.standard_input.value_or(""))&&
+            curriculum::assertion_source_allowed(mode,block.initial_code,request.source_utf8);
+    }
     if(goal==curriculum::CompilerWorkflowCheck::observation_complete_v1||
        goal==curriculum::CompilerWorkflowCheck::observation_differences_v1) {
         const auto mode=goal==curriculum::CompilerWorkflowCheck::observation_complete_v1

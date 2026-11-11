@@ -341,6 +341,11 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
     if(activity.output_check->observation_report)
         token(*activity.output_check->observation_report==ReportMode::complete
             ? "observation-complete-v1" : "observation-differences-v1");
+    if(activity.output_check->assertion_check)
+        token(*activity.output_check->assertion_check==AssertionMode::enabled_abort
+            ? "wasm-assertion-abort-v1"
+            : *activity.output_check->assertion_check==AssertionMode::disabled
+                ? "wasm-assertion-suppressed-v1" : "wasm-assertion-repair-v1");
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {
         token(item.standard_input); token(item.executable.value_or(""));
@@ -570,8 +575,9 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
     }
     if (!selected) return {};
     const auto selected_path="/outputCheck/cases/"+std::to_string(static_cast<std::size_t>(selected-check.cases.data()));
+    const bool verify_abort=check.assertion_check==AssertionMode::enabled_abort;
     if (selected->exit_code < 0 || selected->exit_code > 255 ||
-        (selected->exit_code == 0 && execution.exit_code != 0)) return {};
+        (selected->exit_code == 0 && execution.exit_code != 0 && !verify_abort)) return {};
     const auto equivalent_stdout=[](std::string_view expected,std::string_view actual) {
         if(expected==actual)return true;
         if(expected.find('\r')!=expected.npos||expected.find('\n')==expected.npos)return false;
@@ -599,6 +605,16 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         : (selected->standard_error == StandardErrorExpectation::ignored ||
            !trimmed(execution.standard_error).empty());
     std::string semantic_feedback;
+    if(verify_abort) {
+        if(!execution.assertion_abort_verified) {
+            semantic_feedback="La captura no demuestra un aborto causado por la aserción solicitada en WASI.";
+            stderr_correct=false;
+        }else stderr_correct=true;
+    } else if(check.assertion_check==AssertionMode::repaired &&
+              !execution.assertion_repair_probes_correct) {
+        semantic_feedback="El cálculo reparado no pasó las entradas independientes conservando assert.";
+        stderr_correct=false;
+    }
     if(check.observation_report) {
         if(!execution.report_probe_correct) {
             semantic_feedback="La salida no acredita las comparaciones en las entradas independientes del informe.";
@@ -626,7 +642,9 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
             if(expected->exit_code!=selected->exit_code) return {};
         }
     }
-    const bool exit_code_correct = execution.exit_code == selected->exit_code;
+    const bool exit_code_correct = verify_abort
+        ? execution.assertion_abort_verified&&execution.exit_code!=0
+        : execution.exit_code == selected->exit_code;
     if (!exit_code_correct) return {OutputVerdict::incorrect, {}, stdout_correct, stderr_correct, false};
     if (stdout_correct && stderr_correct) {
         OutputEvaluation result{OutputVerdict::correct, selected->explanation, true, true};
