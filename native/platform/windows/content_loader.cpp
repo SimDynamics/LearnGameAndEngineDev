@@ -356,10 +356,10 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
                 require(path==text(after,"path"),"Source formatting renamed a project file");
                 const auto cmake=path=="CMakeLists.txt"||std::string_view(path).ends_with(".cmake");
                 const auto dot=path.rfind('.');
-                const auto cpp=dot!=path.npos&&
-                    std::ranges::find(std::array<std::string_view,10>{
-                        ".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx",".inl",".ixx"},
-                        std::string_view(path).substr(dot))!=std::array<std::string_view,10>{}.end();
+                constexpr std::array<std::string_view,10> source_extensions{
+                    ".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx",".inl",".ixx"};
+                const auto cpp=dot!=path.npos&&std::ranges::find(
+                    source_extensions,std::string_view(path).substr(dot))!=source_extensions.end();
                 // Do not silently edit arbitrary project data files.
                 const auto language=cmake?curriculum::code_format::Language::cmake:
                     cpp?curriculum::code_format::Language::cpp:curriculum::code_format::Language::immutable;
