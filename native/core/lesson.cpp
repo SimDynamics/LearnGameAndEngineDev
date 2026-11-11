@@ -335,6 +335,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
     // project objective additionally owns all authored files and build inputs.
     if(!activity.project_files.empty()){token("cpp-project-v1");token(cpp_project_frame(activity.project_files,activity.source_files,activity.cmake));}
     token(activity.output_check->input_comparison == TextComparison::tokens ? "tokens" : "exact");
+    if(activity.output_check->rejection_operation)
+        token(*activity.output_check->rejection_operation==RejectionOperation::boxes
+            ? "semantic-rejection-boxes-v1" : "semantic-rejection-balances-v1");
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {
         token(item.standard_input); token(item.executable.value_or(""));
@@ -350,6 +353,7 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         result += std::to_string(equivalent_crt?1:item.outputs.size()) + '[';
         for(std::size_t index=0;index<(equivalent_crt?1:item.outputs.size());++index)token(item.outputs[index]);
         result += ']';
+        if(item.balance_three_pairs)token("semantic-balance-three-pairs-v1");
         // Keep stdout-only proof identities byte-for-byte compatible, while a
         // newly authored stderr objective always requires fresh native proof.
         if (item.standard_error == StandardErrorExpectation::non_blank) token("standard-error/nonBlank/v1");
@@ -550,8 +554,12 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         (execution.exit_code != 0 && !execution.execution_completed)) return {};
     const OutputCase* selected = nullptr;
     for (const auto& item : check.cases) {
-        const bool input_matches = check.input_comparison == TextComparison::tokens ?
-            tokens(item.standard_input) == tokens(execution.standard_input) : item.standard_input == execution.standard_input;
+        const bool input_matches = item.balance_three_pairs
+            ? check.rejection_operation==RejectionOperation::balance
+                &&balance_three_pair_variation(execution.standard_input).has_value()
+            : check.input_comparison == TextComparison::tokens
+                ? tokens(item.standard_input) == tokens(execution.standard_input)
+                : item.standard_input == execution.standard_input;
         if (input_matches && (!item.executable || item.executable == execution.executable)) {
             if (selected) throw std::logic_error("Ambiguous output check cases");
             selected = &item;
@@ -561,11 +569,38 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
     const auto selected_path="/outputCheck/cases/"+std::to_string(static_cast<std::size_t>(selected-check.cases.data()));
     if (selected->exit_code < 0 || selected->exit_code > 255 ||
         (selected->exit_code == 0 && execution.exit_code != 0)) return {};
-    const bool stdout_correct = std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end();
-    const bool stderr_correct = selected->standard_error_exact
+    const auto equivalent_stdout=[](std::string_view expected,std::string_view actual) {
+        if(expected==actual)return true;
+        if(expected.find('\r')!=expected.npos||expected.find('\n')==expected.npos)return false;
+        std::string native;native.reserve(expected.size());
+        for(const auto value:expected){if(value=='\n')native+='\r';native+=value;}
+        return native==actual;
+    };
+    const auto expected = check.rejection_operation
+        ? selected->balance_three_pairs
+            ? balance_three_pair_variation(execution.standard_input)
+            : rejection_expected_for_input(*check.rejection_operation,execution.standard_input)
+        : std::optional<RejectionExpected>{};
+    if(check.rejection_operation&&!expected)return {};
+    const bool stdout_correct = (selected->balance_three_pairs ||
+        std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end()) &&
+        (!expected||equivalent_stdout(expected->standard_output,execution.standard_output));
+    bool stderr_correct = selected->standard_error_exact
         ? execution.standard_error == *selected->standard_error_exact
         : (selected->standard_error == StandardErrorExpectation::ignored ||
            !trimmed(execution.standard_error).empty());
+    std::string semantic_feedback;
+    if(check.rejection_operation) {
+        if(!execution.rejection_probe_correct) {
+            semantic_feedback="Falta acreditar que la función conserve el std::ostream& recibido en otro flujo.";
+            stderr_correct=false;
+        }else {
+            const auto facts=evaluate_rejection_diagnostics(
+                execution.standard_error,*check.rejection_operation,expected->rejected);
+            if(!facts.correct){semantic_feedback=facts.reason;stderr_correct=false;}
+            if(expected->exit_code!=selected->exit_code) return {};
+        }
+    }
     const bool exit_code_correct = execution.exit_code == selected->exit_code;
     if (!exit_code_correct) return {OutputVerdict::incorrect, {}, stdout_correct, stderr_correct, false};
     if (stdout_correct && stderr_correct) {
@@ -574,9 +609,10 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         return result;
     }
     if (stdout_correct)
-        return {OutputVerdict::incorrect, selected->standard_error_exact
-            ? "La salida estándar coincide; stderr no coincide exactamente con el diagnóstico solicitado."
-            : "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.", true, false};
+        return {OutputVerdict::incorrect, !semantic_feedback.empty()
+            ? semantic_feedback : selected->standard_error_exact
+                ? "La salida estándar coincide; stderr no coincide exactamente con el diagnóstico solicitado."
+                : "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.", true, false};
     for (std::size_t n=0;n<selected->review_feedback.size();++n) {
         const auto& rule=selected->review_feedback[n];
         if(std::ranges::find(rule.outputs,execution.standard_output)!=rule.outputs.end()) {
