@@ -1726,6 +1726,38 @@ def _validate_compiler_runtime_checks(document: dict) -> None:
         return
     records = document["compilerRuntimeChecks"]
     if document.get("id") == (
+            "programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones"):
+        layout = document.get("stateLayout")
+        require(type(layout) is dict and layout.get("version") == 2 and
+                layout.get("locale") == "es" and
+                type(document.get("pages")) is list and len(document["pages"]) == 6,
+                "WASI assertion review requires the original Spanish U3L9 state map")
+        reviewed = (("block_0002_0003", "wasiAssertionAbortV1", 2, 3),
+                    ("block_0003_0007", "wasiAssertionSuppressedV1", 3, 7),
+                    ("block_0004_0007", "wasiAssertionRepairV1", 4, 3))
+        require(type(records) is list and len(records) == len(reviewed),
+                "The U3L9 assertion contract needs all three ordered owners")
+        original_code = document["pages"][2]["blocks"][3].get("initialCode")
+        for record, (identity, kind, page, position) in zip(records, reviewed):
+            require(type(record) is dict and record == {"activity": identity, "kind": kind},
+                    "Unknown, unordered or replaced U3L9 assertion owner")
+            blocks = document["pages"][page]["blocks"]
+            require(len(blocks) > position and layout["current"][page]["blocks"][position] == identity,
+                    "The U3L9 assertion owner moved from its original mapped slot")
+            owner = blocks[position]
+            code = owner.get("initialCode")
+            require(owner.get("type") == "cpp_compiler" and type(code) is str and
+                    owner.get("initialStandardInput") == "-1 5\n" and
+                    not any(field in owner for field in
+                        ("outputCheck", "compileCheck", "projectFiles", "sourceFiles", "cmake")) and
+                    "assert(cajas * piezas_por_caja >= piezas);" in code and
+                    "const int cajas = piezas / piezas_por_caja;" in code and
+                    (code.startswith("#define NDEBUG\n#include <cassert>")
+                     if page == 3 else code.startswith("#include <cassert>") and
+                     "NDEBUG" not in code and (page != 4 or code == original_code)),
+                    "The U3L9 source, NDEBUG, assert or prepared input was changed")
+        return
+    if document.get("id") == (
             "programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia"):
         layout = document.get("stateLayout")
         require(type(layout) is dict and layout.get("version") == 2 and layout.get("locale") == "es",

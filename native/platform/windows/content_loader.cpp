@@ -2341,6 +2341,63 @@ void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
 void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerRuntimeChecks"))return;
     const auto records=array(root,"compilerRuntimeChecks");
+    if(lesson.id=="programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones") {
+        require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            lesson.pages.size()==6&&records.Size()==3,
+            "WASI assertion contracts belong to the three original Spanish U3L9 editors");
+        const std::array targets{
+            std::tuple{2u,3u,"block_0002_0003","wasiAssertionAbortV1",
+                AssertionMode::enabled_abort,CompilerWorkflowCheck::assertion_abort_wasi_v1},
+            std::tuple{3u,7u,"block_0003_0007","wasiAssertionSuppressedV1",
+                AssertionMode::disabled,CompilerWorkflowCheck::assertion_suppressed_wasi_v1},
+            std::tuple{4u,3u,"block_0004_0007","wasiAssertionRepairV1",
+                AssertionMode::repaired,CompilerWorkflowCheck::assertion_repaired_wasi_v1}
+        };
+        const auto& initial=lesson.pages[2].blocks[3].initial_code;
+        for(std::size_t i=0;i<targets.size();++i) {
+            const auto& [page,position,identity,kind,mode,workflow]=targets[i];
+            const auto record=records.GetObjectAt(static_cast<unsigned>(i));
+            allowed_keys(record,{"activity","kind"},true);
+            require(text(record,"activity")==identity&&text(record,"kind")==kind&&
+                lesson.pages[page].blocks.size()>position,
+                "Unknown, reordered or displaced WASI assertion declaration");
+            auto& owner=lesson.pages[page].blocks[position];
+            require(owner.stable_id==identity&&owner.type==BlockType::cpp_compiler&&
+                !owner.output_check&&!owner.compile_check&&owner.project_files.empty()&&
+                owner.source_files.empty()&&!owner.cmake&&
+                owner.standard_input==std::optional<std::string>{"-1 5\n"}&&
+                owner.initial_code.find("assert(cajas * piezas_por_caja >= piezas);")!=std::string::npos&&
+                owner.initial_code.find("const int cajas = piezas / piezas_por_caja;")!=std::string::npos&&
+                (mode==AssertionMode::disabled
+                    ?owner.initial_code.starts_with("#define NDEBUG\n#include <cassert>")
+                    :owner.initial_code.starts_with("#include <cassert>")&&
+                     owner.initial_code.find("NDEBUG")==std::string::npos&&
+                     (mode!=AssertionMode::repaired||owner.initial_code==initial)),
+                "The U3L9 source, NDEBUG order, assertion or prepared input changed");
+            OutputCheck check;check.input_comparison=TextComparison::exact;
+            check.assertion_check=mode;
+            OutputCase run;run.standard_input="-1 5\n";
+            if(mode==AssertionMode::enabled_abort) {
+                run.outputs={""};
+                // Normal exit codes never authenticate a runtime trap. The
+                // special evaluator requires separately checked Wasmtime
+                // source, assertion expression, callstack and trap evidence.
+                run.exit_code=0;
+                run.explanation="La aserción activa detectó una condición interna falsa y abortó la ejecución WASI.";
+            } else {
+                run.outputs={mode==AssertionMode::disabled?"Cajas=1\n":"Cajas=2\n"};
+                run.exit_code=1;
+                run.standard_error_exact="Cajas: peticion 1, piezas=-1. Se admite un entero de 0 a 20. Revise la cantidad.\n";
+                run.explanation=mode==AssertionMode::disabled
+                    ?"NDEBUG desactiva la comprobación interna, no el rechazo público; se observa el cálculo anterior."
+                    :"La fórmula calcula el mínimo de cajas, mantiene assert y acepta las verificaciones independientes.";
+            }
+            check.cases.push_back(std::move(run));
+            owner.output_check=std::move(check);
+            owner.compiler_workflow_check=workflow;
+        }
+        return;
+    }
     if(lesson.id=="programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia") {
         require(lesson.locale=="es"&&lesson.state_layout.version==2&&
             lesson.pages.size()==9&&records.Size()==2,
@@ -2590,7 +2647,9 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                         (lesson.id=="programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion"&&
                             ((p==3&&b==3)||(p==6&&b==3)))||
                         (lesson.id=="programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia"&&
-                            ((p==3&&b==3)||(p==6&&b==3))));
+                            ((p==3&&b==3)||(p==6&&b==3)))||
+                        (lesson.id=="programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones"&&
+                            ((p==2&&b==3)||(p==3&&b==7)||(p==4&&b==3))));
                     if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||declared_runtime) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.

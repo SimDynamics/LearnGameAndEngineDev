@@ -2141,6 +2141,19 @@ struct LessonView {
             request.diagnostic=windows::prepare_cpp_diagnostic_request(block(index),request);
         }
         const auto workflow=block(index).compiler_workflow_check;
+        if(workflow==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1||
+           workflow==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1||
+           workflow==curriculum::CompilerWorkflowCheck::assertion_repaired_wasi_v1) {
+            const auto mode=workflow==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1
+                ?curriculum::AssertionMode::enabled_abort
+                :workflow==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1
+                    ?curriculum::AssertionMode::disabled:curriculum::AssertionMode::repaired;
+            // Assertions are observed on the actual WASI toolchain, never a
+            // guessed MSVC termination code or an unsigned native replacement.
+            request.backend=windows::CppRunRequest::Backend::wasi;
+            if(curriculum::assertion_source_allowed(mode,block(index).initial_code,request.source_utf8))
+                request.assertion_mode=mode;
+        }
         if(workflow==curriculum::CompilerWorkflowCheck::observation_complete_v1||
            workflow==curriculum::CompilerWorkflowCheck::observation_differences_v1) {
             const auto mode=workflow==curriculum::CompilerWorkflowCheck::observation_complete_v1
@@ -3966,6 +3979,17 @@ struct LessonView {
                 status=ui("Windows bloqueó un proceso por su política de control de aplicaciones (error 4551). Consulta los detalles en la consola.",
                     "Windows application control blocked a process (error 4551). See the console for details.",
                     "Le contrôle des applications Windows a bloqué un processus (erreur 4551). Consultez la console.");
+            else if(block(index).output_check&&
+                     block(index).output_check->assertion_check==curriculum::AssertionMode::enabled_abort&&
+                     result->compilation.succeeded()) {
+                status=fresh.assertion_abort_verified
+                    ?ui("Aserción comprobada: la ejecución fue abortada en WASI.",
+                        "Assertion verified: execution aborted in WASI.",
+                        "Assertion vérifiée : l'exécution a été interrompue dans WASI.")
+                    :ui("No se verificó el aborto por la aserción solicitada.",
+                        "The requested assertion abort was not verified.",
+                        "L'arrêt par l'assertion demandée n'a pas été vérifié.");
+            }
             else if(!cmake){
                 if(result->compilation.exit_code&&!result->compilation.succeeded())status=ui("La compilación falló (código ","Compilation failed (code ","Échec de la compilation (code ")+std::to_string(*result->compilation.exit_code)+").";
                 else if(result->execution.exit_code)status=(result->execution.succeeded()||normal_execution
