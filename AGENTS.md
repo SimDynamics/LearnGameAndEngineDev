@@ -7,12 +7,12 @@ El documento maestro vigente para Windows, indicado expresamente por el usuario,
 - Work: `E:\Projects\LearnGameAndEngineDev-Work`, exclusivamente en `main`. Diseña y verifica currículo, estudia referencias, redacta contenido y especifica las capacidades necesarias.
 - Codex: `E:\Projects\LearnGameAndEngineDev-Codex`, exclusivamente en la rama `Codex`. Implementa y verifica la aplicación Windows y sus componentes técnicos.
 - Cada agente trabaja en su directorio. No cambiar de rama el checkout del otro, sobrescribir sus cambios, crear worktrees adicionales ni ejecutar sus botones de publicación.
-- Guardar progresivamente en los archivos locales. Work y Codex no crean commits ni publican sin una instrucción expresa. El usuario utiliza sus botones para esas operaciones. La importación conserva los commits anteriores; no constituye una implementación Windows terminada.
+- Guardar progresivamente los archivos locales. Por instrucción posterior del usuario, Work publica directamente sus cambios curriculares en `main` y Codex publica los cambios técnicos únicamente en `Codex`. El usuario hace pull y sincroniza ambas ramas con sus botones; ninguno de los agentes ejecuta esos botones ni fusiona las ramas por su cuenta. La importación conserva los commits anteriores; no constituye una implementación Windows terminada.
 
 ## Registro único de pendientes
 
 - `PENDIENTES_RECURSOS_CURRICULARES.md` es el único registro de pedidos y capacidades pendientes. Work crea y mantiene los pedidos, incluidos los encargos de Windows.
-- Codex consulta ese archivo, implementa y verifica los componentes técnicos y retira de su copia local los encargos realizados, según la instrucción del usuario. Conserva los apartados cuya integración, aceptación visual, escucha o verificación sigan pendientes y comunica en el chat el alcance comprobado.
+- Codex consulta el registro, implementa y verifica los componentes técnicos y comunica los resultados en su chat. **No edita, elimina ni reorganiza `PENDIENTES_RECURSOS_CURRICULARES.md`, tampoco en su copia local.** Solo Work lo mantiene en `main`: cuando el usuario comunica la finalización de una ficha o subencargo, Work comprueba la integración correspondiente y retira únicamente el trabajo efectivamente concluido. La revisión visual y auditiva cotidiana corresponde al usuario mientras estudia.
 - Codex no modifica el checkout de Work ni crea registros paralelos, informes o reportes de avance. Los cambios de la aplicación y sus pruebas se guardan directamente en los archivos técnicos.
 - `PENDIENTES_WORK.md`, si se conserva, es una nota interna de Work; no contiene pedidos activos ni es un canal de encargos o actualizaciones de Codex. No recrear `ACTUALIZACIONES_CODEX.md`.
 - Conservar las fichas, identificadores y evidencias existentes. Distinguir implementación técnica, integración curricular y aceptación comprobada en Windows: las pruebas Android mantienen su alcance original y no acreditan Windows.
