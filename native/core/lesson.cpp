@@ -338,6 +338,9 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
     if(activity.output_check->rejection_operation)
         token(*activity.output_check->rejection_operation==RejectionOperation::boxes
             ? "semantic-rejection-boxes-v1" : "semantic-rejection-balances-v1");
+    if(activity.output_check->observation_report)
+        token(*activity.output_check->observation_report==ReportMode::complete
+            ? "observation-complete-v1" : "observation-differences-v1");
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {
         token(item.standard_input); token(item.executable.value_or(""));
@@ -582,14 +585,36 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
             : rejection_expected_for_input(*check.rejection_operation,execution.standard_input)
         : std::optional<RejectionExpected>{};
     if(check.rejection_operation&&!expected)return {};
+    const auto report_expected = check.observation_report
+        ? expected_observation_report(*check.observation_report,execution.standard_input)
+        : std::optional<ReportExpectation>{};
+    if(check.observation_report&&!report_expected)return {};
     const bool stdout_correct = (selected->balance_three_pairs ||
         std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end()) &&
-        (!expected||equivalent_stdout(expected->standard_output,execution.standard_output));
+        (!expected||equivalent_stdout(expected->standard_output,execution.standard_output)) &&
+        (!report_expected||report_detail::exact_or_native_crlf(
+            report_expected->standard_output,execution.standard_output));
     bool stderr_correct = selected->standard_error_exact
         ? execution.standard_error == *selected->standard_error_exact
         : (selected->standard_error == StandardErrorExpectation::ignored ||
            !trimmed(execution.standard_error).empty());
     std::string semantic_feedback;
+    if(check.observation_report) {
+        if(!execution.report_probe_correct) {
+            semantic_feedback="La salida no acredita las comparaciones en las entradas independientes del informe.";
+            stderr_correct=false;
+        } else if(!report_detail::exact_or_native_crlf(
+                report_expected->standard_error,execution.standard_error)) {
+            semantic_feedback="Las líneas de FORMATO no conservan sus números ni el texto exacto.";
+            stderr_correct=false;
+        } else if(report_expected->exit_code!=selected->exit_code) {
+            return {};
+        } else {
+            // This is an exact authored diagnostic, with the one native CRT
+            // line-ending conversion that stdout already supports.
+            stderr_correct=true;
+        }
+    }
     if(check.rejection_operation) {
         if(!execution.rejection_probe_correct) {
             semantic_feedback="Falta acreditar que la función conserve el std::ostream& recibido en otro flujo.";
