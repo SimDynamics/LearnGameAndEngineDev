@@ -448,9 +448,16 @@ void verify_u2_exact_eof_client(HWND host,const std::filesystem::path& authored_
             "An edited client forged a valid original-source runtime achievement");
         const auto edited_status=edit_text(child(view,1034));
         const auto edited_status_problem="The source-pinned rejection confused nonzero normal exit with a build failure: "+edited_status;
-        require(edit_text(child(view,1014)).empty()&&
-            edited_status=="Ejecución terminada (código 2).",
+        require(edited_status=="Ejecución terminada (código 2).",
             edited_status_problem.c_str());
+        // With empty stdout, the reader helpfully defaults to the nonempty
+        // stderr. Selecting stdout explicitly must still expose its empty
+        // byte stream rather than secretly switching back to stderr.
+        require(edit_text(child(view,1014))==*check->standard_error_exact,
+            "The edited U2 client did not present its nonempty stderr channel");
+        SendMessageW(view,WM_COMMAND,MAKEWPARAM(1078,BN_CLICKED),0);pump();
+        require(edit_text(child(view,1014)).empty(),
+            "The explicitly selected empty stdout channel was replaced by stderr");
         SendMessageW(view,WM_COMMAND,MAKEWPARAM(1079,BN_CLICKED),0);pump();
         require(edit_text(child(view,1014))==*check->standard_error_exact,
             "The real edited client did not produce the exact requested stderr bytes");
