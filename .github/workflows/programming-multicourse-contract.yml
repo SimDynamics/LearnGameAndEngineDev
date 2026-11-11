@@ -10,6 +10,7 @@ on:
       - scripts/curriculum/test_programming_multicourse_validation.py
       - scripts/curriculum/test_stable_state_layout.py
       - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_p2_u3_workflow_declaration.py
       - scripts/curriculum/test_locale_origin_diagnostic.py
       - scripts/curriculum/diagnosticar_estado_multicurso.py
       - scripts/curriculum/test_diagnosticar_estado_multicurso.py
@@ -38,6 +39,9 @@ jobs:
       - name: Conservar regresiones previas del mapa de estado
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_stable_state_layout
+      - name: Acreditar el esquema declarativo U3 sin modificar ejercicios ni progreso
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_p2_u3_workflow_declaration
       - name: Diagnosticar huellas históricas de idioma sin corregirlas automáticamente
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_locale_origin_diagnostic
