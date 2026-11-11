@@ -100,7 +100,7 @@ class AuditCodeReadabilityTest(unittest.TestCase):
         cpp = 'const char* text=R"(line\\nreturn 0;)";\\n'
         self.assertIn("raw_string_literal", audit.manual_review_reasons(cpp, "cpp"))
         self.assertIn("physical_line_splice",
-                      audit.manual_review_reasons("#define X " + chr(92) + "\\n 1", "cpp"))
+                      audit.manual_review_reasons("#define X " + chr(92) + "\n 1", "cpp"))
         self.assertIn("multiline_comment", audit.manual_review_reasons("/* comment */", "cpp"))
         self.assertIn("bracket_argument_or_comment",
                       audit.manual_review_reasons("message([=[value]=])", "cmake"))
