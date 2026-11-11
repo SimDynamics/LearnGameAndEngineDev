@@ -426,12 +426,18 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
         project_block.project_files.size()==6&&project_block.output_check&&
         project_block.output_check->cases.size()==2&&next_project.project_files.size()==6,
         "The original page-four CMake project or its two executable cases changed");
-    // The next page already contains the correctly distributed example.
-    // The source code of both executables, the library and the seven expected
-    // observations must be identical before and after this organization task.
-    for(std::size_t i=2;i<6;++i)
+    // Page five provides correct CMake organization but a separate, later
+    // faulty C++ formula. Reuse ONLY its distributed CMake descriptions here;
+    // page four must retain its own source and seven original expectations.
+    // Page five deliberately introduces a faulty capacity formula for the
+    // *next* exercise. It is not the answer to page four's CMake task.
+    for(const auto i:{std::size_t{2},std::size_t{4},std::size_t{5}})
         require(project_block.project_files[i]==next_project.project_files[i],
-            "The reviewed distribution altered non-CMake sources");
+            "The reviewed distribution altered a client, checker or header");
+    require(project_block.project_files[3].first==next_project.project_files[3].first&&
+            project_block.project_files[3].second.find("return (piezas + 3) / 4;")!=std::string::npos&&
+            next_project.project_files[3].second.find("return piezas / 4;")!=std::string::npos,
+        "The two U3 exercises must preserve their intentionally distinct C++ formulas");
     const auto environment=resolve_windows_environment({ProfileId::Codex,
         L"u3-first-cmake-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
     initialize_profile_directories(environment.paths);
