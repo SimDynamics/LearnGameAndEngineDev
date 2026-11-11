@@ -13,6 +13,8 @@ on:
       - scripts/curriculum/test_locale_origin_diagnostic.py
       - scripts/curriculum/diagnosticar_estado_multicurso.py
       - scripts/curriculum/test_diagnosticar_estado_multicurso.py
+      - scripts/curriculum/auditar_estructura_multicurso.py
+      - scripts/curriculum/test_auditar_estructura_multicurso.py
       - app/src/main/assets/content/es/programming/cpp_fundamentals/**
       - app/src/main/assets/content/es/programming/programming_practice_tools/**
   workflow_dispatch:
@@ -72,3 +74,27 @@ jobs:
           retention-days: 14
           if-no-files-found: error
           path: out/qa/multicourse-state-diagnostic.json
+
+  audit-visible-structure:
+    name: Auditar bloques e índices reales de ambos cursos (solo estructura)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Obtener lecciones y validadores sin modificar archivos
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Probar el alcance limitado y la detección de respuestas inválidas
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_auditar_estructura_multicurso
+      - name: Comprobar bloques e índices de 190 lecciones reales
+        run: |
+          python3 scripts/curriculum/auditar_estructura_multicurso.py --course all --output-json out/qa/multicourse-structure-only.json
+      - name: Conservar resultado visible aunque la auditoría falle
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: estructura-multicurso-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: out/qa/multicourse-structure-only.json
