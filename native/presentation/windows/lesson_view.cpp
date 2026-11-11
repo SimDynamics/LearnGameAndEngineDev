@@ -2146,7 +2146,9 @@ struct LessonView {
         try{const auto state=windows::inspect_cpp_project(program_snapshot(index));configured=state.configured;built=state.built;}
         catch(...){valid=false;}
         vm.project->set_availability(busy,configured,built);
-        EnableWindow(vm.compile,!busy&&valid&&(!block(index).cmake||block(index).output_check||built));
+        EnableWindow(vm.compile,!busy&&valid&&(!block(index).cmake||
+            (block(index).output_check&&block(index).compiler_workflow_check!=
+                curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1)||built));
     }
     void project_changed(std::size_t index,bool source_changed) {
         if(updating)return;auto& vm=controls.at(index);
@@ -3014,7 +3016,9 @@ struct LessonView {
                 rows.push_back({{vm.input}, {0}, 74, false});
             }
             vm.compile = button(current.compile_check ? ui("Compilar y comprobar diagnóstico","Compile and check diagnostic","Compiler et vérifier le diagnostic")
-                : current.output_check ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
+                : current.output_check&&current.compiler_workflow_check!=
+                    curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1
+                    ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
                 : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
                 : ui("Compilar y ejecutar","Compile and run","Compiler et exécuter"), control_id(index, 11), {0, ActionType::run, index});
             rows.push_back({{vm.compile}, {0}, 48, false});
@@ -3798,7 +3802,10 @@ struct LessonView {
         auto& vm = controls.at(index);
         vm.console_channels = {};
         request.request_id = ++request_id; request.revision = vm.revision;
-        if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&!block(index).output_check)action=windows::CppRunRequest::Action::execute;
+        if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&
+            (!block(index).output_check||block(index).compiler_workflow_check==
+                curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1))
+            action=windows::CppRunRequest::Action::execute;
         request.action=action;running_action=action;
         // Disabling the focused run button leaves the active app without a
         // keyboard target. Hand focus back synchronously; completion must not
@@ -3970,8 +3977,14 @@ struct LessonView {
         console_present(index,preferred_channel);
         if (block(index).output_check&&executed) {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
-                const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct;
+                const bool preserved_source=windows::compiler_runtime_request_allowed(
+                    block(index),running_program);
+                const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct&&preserved_source;
                 auto text = verdict_text(correct);
+                if(!preserved_source)text+='\n'+ui(
+                    "Este objetivo exige conservar todos los archivos originales, la entrada y las opciones CMake.",
+                    "This objective requires the exact original project files, input and CMake options.",
+                    "Cet objectif exige de conserver les fichiers, l'entrée et les options CMake d'origine.");
                 if(evaluation.stdout_correct&&!evaluation.exit_code_correct)text+='\n'+ui(
                     "La salida estándar es correcta; el código de salida no coincide con el requerido.",
                     "Standard output is correct; the process exit code does not match the required code.",

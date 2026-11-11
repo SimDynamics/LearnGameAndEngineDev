@@ -252,6 +252,13 @@ void validate_receipts(const state::StateData& data,const curriculum::Lesson& le
 bool compiler_selective_history_required(const curriculum::Lesson& lesson,const curriculum::Block& block) {
     return selective_history_owner(lesson,block);
 }
+bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(block.compiler_workflow_check!=curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1)
+        return true;
+    return request.backend==CppRunRequest::Backend::native_msvc&&
+        request.project_files==block.project_files&&request.source_files==block.source_files&&
+        request.cmake==block.cmake&&request.stdin_utf8==block.standard_input.value_or("");
+}
 std::string compiler_program_frame(const CppRunRequest& request) {
     if(request.project_files.empty())return "single-file-v1/"+token(request.source_utf8);
     auto configuration=request.cmake;
@@ -439,7 +446,8 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
 }
 bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
-    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||!matches_runtime_capture(captured,execution))return false;
+    if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
+       !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);

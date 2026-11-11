@@ -38,7 +38,7 @@ V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "e
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -1716,12 +1716,61 @@ def _validate_compiler_workflow_checks(document: dict) -> None:
             "U3 History owner no longer has its reviewed CMake objective")
 
 
+
+def _validate_compiler_runtime_checks(document: dict) -> None:
+    """One reviewed closed runtime rejection without rewriting its CMake editor.
+
+    This is deliberately separate from open semantic stderr objectives: a
+    nonempty diagnostic alone cannot accredit their factual content.
+    """
+    if "compilerRuntimeChecks" not in document:
+        return
+    records = document["compilerRuntimeChecks"]
+    require(type(records) is list and len(records) == 1,
+            "The source-pinned U2 runtime objective requires exactly one owner")
+    item = records[0]
+    require(type(item) is dict and set(item) == {"activity", "kind"} and
+            item["activity"] == "block_0009_0008" and
+            item["kind"] == "exactOriginalProjectRuntimeV1",
+            "Unknown compiler runtime owner or kind")
+    layout = document.get("stateLayout")
+    require(document.get("id") ==
+            "programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"
+            and type(layout) is dict and layout.get("version") == 2
+            and layout.get("locale") == "es",
+            "This runtime declaration requires its original Spanish v2 lesson")
+    pages = document.get("pages")
+    require(type(pages) is list and len(pages) == 14 and
+            len(pages[9]["blocks"]) > 8 and
+            layout["current"][9]["blocks"][8] == item["activity"],
+            "The declared runtime goal moved away from its historical editor")
+    block = pages[9]["blocks"][8]
+    cmake = block.get("cmake")
+    files = block.get("projectFiles")
+    require(block.get("type") == "cpp_compiler" and
+            "outputCheck" not in block and "compileCheck" not in block and
+            block.get("initialStandardInput") == "6" and
+            type(cmake) is dict and cmake.get("target") == "revisar" and
+            cmake.get("buildType") == "Debug" and
+            cmake.get("options") == {"ACEPTAR_IGUAL": "OFF"} and
+            type(files) is list and len(files) == 5 and
+            "sourceFiles" not in block,
+            "The U2 runtime owner changed its source, input or CMake conditions")
+    names = {entry.get("path"): entry.get("initialCode") for entry in files
+             if type(entry) is dict}
+    require(len(names) == 5 and "main.cpp" in names and
+            'std::cerr << "Entrada invalida";' in names["main.cpp"] and
+            "return 2;" in names["main.cpp"],
+            "The published client cannot be evaluated as the reviewed EOF case")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     if "compilerPuzzlesRequired" in document:
         require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
     _validate_compiler_workflow_checks(document)
+    _validate_compiler_runtime_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
     _validate_compile_checks(document)
@@ -1983,6 +2032,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerWorkflowChecks") or
             baseline.get("compilerWorkflowChecks") == current.get("compilerWorkflowChecks"),
             "Published compiler workflow cannot be removed or changed")
+    require(not baseline.get("compilerRuntimeChecks") or
+            baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
+            "Published compiler runtime objective cannot be removed or rewritten")
     def shells(document):
         return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
                 for page, record in zip(document["pages"], document["stateLayout"]["current"])}
@@ -2179,6 +2231,9 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerWorkflowChecks") or
             baseline.get("compilerWorkflowChecks") == current.get("compilerWorkflowChecks"),
             "Published compiler workflow cannot be removed or changed")
+    require(not baseline.get("compilerRuntimeChecks") or
+            baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
+            "Published compiler runtime objective cannot be removed or rewritten")
     before_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
                      for page, item in zip(baseline["pages"], baseline["stateLayout"]["current"])}
     after_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}

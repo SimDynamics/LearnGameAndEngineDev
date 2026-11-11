@@ -8,6 +8,10 @@
 
 namespace lgaed::windows {
 class CmakeSelectiveRecoveryTrace;
+// An execution objective that requires the published project, not merely
+// coincidentally matching stdout/stderr from a changed source.
+[[nodiscard]] bool compiler_runtime_request_allowed(const curriculum::Block&,
+    const CppRunRequest&);
 // The native evaluator and Win32 reader share the same curricular gate.
 [[nodiscard]] bool compiler_selective_history_required(const curriculum::Lesson&,
     const curriculum::Block&);
