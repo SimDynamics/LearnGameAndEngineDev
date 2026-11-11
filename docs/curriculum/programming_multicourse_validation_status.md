@@ -104,3 +104,48 @@ editorial antes de hacer la corrección. Después ejecutar el workflow completo;
 no se aceptará la edición como resuelta hasta que el control real de repositorio
 termine sin errores. No se han tocado el curso, sus traducciones ni los cinco
 pendientes técnicos del proyecto AssetCheck.
+
+## Barrido global por lecciones: segunda incidencia preexistente
+
+La validación global se detenía en U4L7. El diagnóstico complementario
+de solo lectura revisa cada lección visible con el mismo comprobador de
+estado, sin sustituir la puerta global y sin modificar JSON.
+
+La ejecución [42974249377](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/42974249377)
+inspeccionó **162 lecciones de Programación 1, sin incidencias de mapa**,
+y **28 lecciones de Programación 2, con dos lecciones afectadas**. La
+validación auténtica continúa fallando; el informe JSON se conserva como
+artefacto de Actions.
+
+**Nueva incidencia: U4L3, «Preparar y comprobar CMake en Windows».**
+Archivo: app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_preparar_y_comprobar_cmake_en_windows.json
+
+El blob 6ba7f1a8c2ab64ffd32461127fc87a3753e1138f es idéntico en
+main, Codex y la base anterior 838fc808. La lección se incorporó
+mediante el [commit inicial 45f61239](https://github.com/SimDynamics/LearnGameAndEngineDev/commit/45f61239fe30bf5b680a13ca527bbfeaba5c093b).
+Este problema es anterior a la nueva auditoría.
+
+El mapa de U4L3 tiene nueve páginas. Ocho bloques de opción múltiple
+presentan valores diferentes entre stateLayout.origin y
+stateLayout.family.es.origin:
+
+| Página, bloque e identidad | SHA-256 en origin | SHA-256 en family.es.origin |
+|---|---|---|
+| p1 b5 block_0000_0004 | 6e746e53ea337be355314eabc66b4cbf3eb0fdd96d4517c1cf58a8392ff67b48 | 64a3c87b566eac93ae62ef251eb9f6b11faa599d69b7dd7425a506a03c80d9ed |
+| p2 b5 block_0001_0004 | 1c9103e8777bc73bee31e43bf7542c6b12d78495c563895480435c7c518e0f81 | 8d7fc770bb1a0e1244861d641861bba709a10617871f7db9408784163d5161b3 |
+| p3 b6 block_0002_0005 | 87d40fde0daf7eade7f7e5f33925e61a4fe6a72d5a165cb371a998c5f1b85f75 | b97fd28dcf38db424c70010f79abeda60adc198e7d4fa0cae223d4dcce133ae2 |
+| p4 b5 block_0003_0004 | 04dc9b937d103bc7fee5758ee50f49d93c87adcdb535e1f983dd217f4ab8a3ca | da23ff18ceda6f1688753d91150b9451f56b842a32ad75c24ddec0476989f46b |
+| p5 b5 block_0004_0004 | d946280ff79526d1cf07d9d0f94a54b04337a084da9f6a904d59e8b38101eb40 | 259b35e375ff4fbc70c7286981269a07ef7946ca7e2fcae14c6eef3ea42fa3fe |
+| p7 b5 block_0006_0004 | a8d204584e3786aa0e692bcd8b7443eadadc7c7f632a32a13e216c5a5fd9b5ef | 8d15cfd2a1b946549bcf29fb1404dc63f59932b67e15e6c201caa9e7efc6d906 |
+| p8 b5 block_0007_0004 | 6da66c12ea4b0aed7c926893dafaaf3d26ce17963ce0e983a4e94a3c698b2b0c | ccd3bfa9e80265e63e09e750fcda4d412c9594f79ac0a7d2ab18706da545d365 |
+| p9 b5 block_0008_0004 | 61143ac9d84fb02e9a10896830f63ca729e3d22fd5c7b1c8cf3557ac4ddf88ba | 110f0b42987f21ea931460f82dd7cb9e780e9a2cc9cb0a3b6d6a6d509a41c725 |
+
+En total se localizaron **10 discrepancias históricas de huella**,
+ocho en U4L3 y dos en U4L7. No equivalen a diez errores de ejecución
+del proyecto. El diagnóstico ya no afirma que se omitieron otras
+diferencias cuando muestra exactamente ocho: solo anuncia truncamiento
+si se supera el límite.
+
+Work debe comprobar la cadena editorial original antes de rectificar
+cualquier metadato. Esta auditoría no autoriza regenerar los orígenes,
+cambiar las respuestas ni aprobar la validación global.
