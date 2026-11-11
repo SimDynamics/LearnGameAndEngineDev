@@ -2341,6 +2341,63 @@ void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
 void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerRuntimeChecks"))return;
     const auto records=array(root,"compilerRuntimeChecks");
+    if(lesson.id=="programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia") {
+        require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            lesson.pages.size()==9&&records.Size()==2,
+            "The two observation report editors require the original Spanish U3L8 v2 lesson");
+        const std::array targets{
+            std::tuple{3u,3u,"block_0003_0003","observationCompleteV1",
+                ReportMode::complete,CompilerWorkflowCheck::observation_complete_v1},
+            std::tuple{6u,3u,"block_0006_0003","observationDifferencesV1",
+                ReportMode::differences,CompilerWorkflowCheck::observation_differences_v1}
+        };
+        for(std::size_t index=0;index<targets.size();++index){
+            const auto& [page,position,identity,kind,mode,workflow]=targets[index];
+            const auto record=records.GetObjectAt(static_cast<unsigned>(index));
+            allowed_keys(record,{"activity","kind"},true);
+            require(text(record,"activity")==identity&&text(record,"kind")==kind&&
+                lesson.pages[page].blocks.size()>position,
+                "Unknown, unordered or misplaced U3L8 report declaration");
+            auto& owner=lesson.pages[page].blocks[position];
+            const std::string prepared=mode==ReportMode::complete
+                ? "A 0 0\nA 2 1\nB -1 -1\nA 2 1\nA 1-1\nC;=lote 0 1\nC;=lote 0 1\nA 1 -1\n"
+                : "N 0 0\nR -1 -1\nR 0 -1\nP 3\nR 0 -1\nZ 9 9\n";
+            require(owner.stable_id==identity&&owner.type==BlockType::cpp_compiler&&
+                !owner.output_check&&!owner.compile_check&&owner.project_files.empty()&&
+                owner.source_files.empty()&&!owner.cmake&&
+                owner.standard_input==prepared&&
+                report_main_only_edit(owner.initial_code,owner.initial_code)&&
+                owner.initial_code.find("bool leer_entero(")!=std::string::npos&&
+                owner.initial_code.find("bool leer_registro(")!=std::string::npos&&
+                owner.initial_code.find(mode==ReportMode::complete
+                    ? "if (hay_anterior && caso == caso_anterior)"
+                    : "if (coincide) {\n            continue;")!=std::string::npos,
+                "The U3L8 original parser, main, prepared input or historical editor changed");
+            OutputCheck objective;
+            objective.input_comparison=TextComparison::exact;
+            objective.observation_report=mode;
+            const auto add=[&](std::string input,std::string explanation) {
+                const auto expected=expected_observation_report(mode,input);
+                require(expected,"The U3L8 report oracle refused a reviewed fixture");
+                OutputCase case_goal;
+                case_goal.standard_input=std::move(input);
+                case_goal.outputs={expected->standard_output};
+                case_goal.standard_error_exact=expected->standard_error;
+                case_goal.exit_code=expected->exit_code;
+                case_goal.explanation=std::move(explanation);
+                objective.cases.push_back(std::move(case_goal));
+            };
+            add(prepared,"Conserva todas las observaciones, sus ocurrencias, número de línea y resumen.");
+            add("0 0 0\nN -2 -2",
+                "La última línea sin salto final cuenta y ambos casos coinciden.");
+            add("","La entrada vacía produce únicamente el resumen de cuatro ceros.");
+            add("Z 0 0\nZ 1 2\n\nH 3 3\nQ 2x 2\nH 3 2\nG 3 1\n",
+                "Las etiquetas repetidas, línea vacía, número parcial y filas posteriores cuentan por separado.");
+            owner.output_check=std::move(objective);
+            owner.compiler_workflow_check=workflow;
+        }
+        return;
+    }
     if(lesson.id=="programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion") {
         require(lesson.locale=="es"&&lesson.state_layout.version==2&&
             lesson.pages.size()==9&&records.Size()==2,
@@ -2531,6 +2588,8 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                     const bool declared_runtime=root.HasKey(L"compilerRuntimeChecks")&&(
                         (lesson.id=="programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"&&p==9&&b==8)||
                         (lesson.id=="programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion"&&
+                            ((p==3&&b==3)||(p==6&&b==3)))||
+                        (lesson.id=="programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia"&&
                             ((p==3&&b==3)||(p==6&&b==3))));
                     if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||declared_runtime) {
                         // Required compiler progress needs the whole authored
