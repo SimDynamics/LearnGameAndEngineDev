@@ -322,18 +322,23 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
     token(lesson.id); token(lesson.locale); token(activity.stable_id);
     token(activity.address.addition_namespace);
     token(std::to_string(activity.address.page)); token(std::to_string(activity.address.block));
-    token(activity.initial_code); token(activity.language);
+    token(activity.source_format_original_initial_code.value_or(activity.initial_code)); token(activity.language);
     if (activity.compile_check) {
         token("compile-check-v1"); token(activity.compile_check->diagnostic);
         if(!activity.project_files.empty()) {
             token("compile-check-project-v1");
-            token(cpp_project_frame(activity.project_files,activity.source_files,activity.cmake));
+            const auto& files=activity.source_format_original_project_files.value_or(activity.project_files);
+            token(cpp_project_frame(files,activity.source_files,activity.cmake));
         }
         return result;
     }
     // Keep historical single-file identities byte-for-byte compatible. A
     // project objective additionally owns all authored files and build inputs.
-    if(!activity.project_files.empty()){token("cpp-project-v1");token(cpp_project_frame(activity.project_files,activity.source_files,activity.cmake));}
+    if(!activity.project_files.empty()){
+        token("cpp-project-v1");
+        const auto& files=activity.source_format_original_project_files.value_or(activity.project_files);
+        token(cpp_project_frame(files,activity.source_files,activity.cmake));
+    }
     token(activity.output_check->input_comparison == TextComparison::tokens ? "tokens" : "exact");
     if(activity.output_check->rejection_operation)
         token(*activity.output_check->rejection_operation==RejectionOperation::boxes
