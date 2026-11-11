@@ -1718,10 +1718,9 @@ def _validate_compiler_workflow_checks(document: dict) -> None:
 
 
 def _validate_compiler_runtime_checks(document: dict) -> None:
-    """One reviewed closed runtime rejection without rewriting its CMake editor.
+    """Validate the reviewed U2 EOF and opt-in U3L6 semantic runtime goals.
 
-    This is deliberately separate from open semantic stderr objectives: a
-    nonempty diagnostic alone cannot accredit their factual content.
+    Both extensions stay at the lesson root, preserving historical editor slots.
     """
     if "compilerRuntimeChecks" not in document:
         return
@@ -1731,10 +1730,10 @@ def _validate_compiler_runtime_checks(document: dict) -> None:
         layout = document.get("stateLayout")
         require(type(layout) is dict and layout.get("version") == 2 and layout.get("locale") == "es",
                 "The U3L6 semantic review requires the original Spanish v2 state map")
-        expected = (("block_0003_0003", "semanticRejectionBoxesV1", 3, "-1 0 21 5\\n",
-                     'destino << "Error\\\\n";'),
-                    ("block_0006_0003", "semanticRejectionBalanceV1", 6, "2 3 10 0 0 -1 5 5\\n",
-                     'destino << "Error de saldo\\\\n";'))
+        expected = (("block_0003_0003", "semanticRejectionBoxesV1", 3, "-1 0 21 5\n",
+                     'destino << "Error\\n";'),
+                    ("block_0006_0003", "semanticRejectionBalanceV1", 6, "2 3 10 0 0 -1 5 5\n",
+                     'destino << "Error de saldo\\n";'))
         require(type(records) is list and len(records) == len(expected) and
                 type(document.get("pages")) is list and len(document["pages"]) == 9,
                 "U3L6 requires both ordered semantic diagnostic owners")
