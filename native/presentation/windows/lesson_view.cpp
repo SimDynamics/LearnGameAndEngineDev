@@ -1542,6 +1542,31 @@ struct LessonView {
             !PostMessageW(window,answer_viewport_message,reinterpret_cast<WPARAM>(answer),0))
             pending_answer_viewports.erase(answer);
     }
+    void settle_prediction_caret(HWND answer) {
+        // Only the autosized multiline output prediction needs this deferred
+        // caret policy. A RichEdit scroll triggered before the layout update
+        // is not evidence that its two rows actually overflow the final view.
+        bool prediction=false;
+        for(std::size_t index=0;index<controls.size();++index)
+            if(controls[index].answer==answer&&block(index).type==BlockType::output_prediction) {
+                prediction=!curriculum::uses_single_line_answer(block(index));break;
+            }
+        if(!prediction||!IsWindow(answer))return;
+        RECT format{};SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        const auto line_height=std::max(1,edit_line_height(answer,content_text_scale()));
+        const auto lines=std::max<LRESULT>(1,SendMessageW(answer,EM_GETLINECOUNT,0,0));
+        if(static_cast<std::int64_t>(lines)*line_height<=format.bottom-format.top){
+            POINT origin{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));
+            if(origin.y){origin.y=0;SendMessageW(answer,EM_SETSCROLLPOS,0,reinterpret_cast<LPARAM>(&origin));}
+            return;
+        }
+        // Genuine overflow still scrolls, but only after the final native
+        // document height and its visible formatting rectangle are established.
+        CHARRANGE cursor{};SendMessageW(answer,EM_EXGETSEL,0,reinterpret_cast<LPARAM>(&cursor));
+        POINTL caret{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&caret),cursor.cpMax);
+        if(caret.y<format.top||caret.y+line_height>format.bottom)
+            SendMessageW(answer,EM_SCROLLCARET,0,0);
+    }
     void sync_answer_viewport(HWND answer) {
         const auto pending=pending_answer_viewports.find(answer);
         if(pending==pending_answer_viewports.end())return;
@@ -1580,7 +1605,9 @@ struct LessonView {
                     // The provisional fit-height pass can otherwise replace a
                     // legitimate line-7 view with the top of the editor.
                     (void)update_answer_scrollbars(answer,16,compiler_source?16:0,16,false,-1,&pre_measure_scroll);
-                    reflow();return;
+                    reflow();
+                    if(final_edit)settle_prediction_caret(answer);
+                    return;
                 }
             }
         }
@@ -1595,6 +1622,7 @@ struct LessonView {
             const bool source=owner->source==answer;
             (void)update_answer_scrollbars(answer,source?16:0,source?16:0,source?16:0,false,-1,&pre_measure_scroll);
         }else (void)update_answer_scrollbars(answer,16,0,16,false,-1,&pre_measure_scroll);
+        if(final_edit)settle_prediction_caret(answer);
     }
     int update_answer_scrollbars(HWND answer,int top_padding=16,int right_padding=0,int bottom_padding=16,
                                  bool fit_height=false,int left_padding=-1,const POINT* restored_offset=nullptr) {
