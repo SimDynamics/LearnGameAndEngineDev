@@ -112,6 +112,8 @@ $malicious = @(
     ); Error='duplicate ZIP entry'},
     @{File='ads.zip'; Members=@(@{Name='src/a.txt:stream';Text='no'}); Error='Unsafe Windows ZIP component'},
     @{File='dotdot.zip'; Members=@(@{Name='src/../escape.txt';Text='no'}); Error='Unsafe Windows ZIP component'},
+    @{File='git-metadata.zip'; Members=@(@{Name='.git/config';Text='no'}); Error='Git metadata'},
+    @{File='cmake-cache.zip'; Members=@(@{Name='build/CMakeCache.txt';Text='no'}); Error='Git metadata'},
     @{File='symlink.zip'; Members=@(@{
         Name='external';Text='../../elsewhere';
         ExternalAttributes=[int](0xA1FF -shl 16)
@@ -133,14 +135,14 @@ $summary = [ordered]@{
     expectedReleaseSha256Unchanged = 'b8e6c9abc2d611bfad391facf36f3da0e71993322c18087991ad9f314c51a589'
     positiveMatches = 1
     localConflictsDetected = 1
-    malformedArchivesRejected = 10
+    malformedArchivesRejected = 12
     originalStudentFilesTouched = $false
     realArchiveInstalled = $false
 }
 $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
-Write-Host 'PASS: 2 non-destructive inspections and 10 malicious/mismatched archives rejected.'
+Write-Host 'PASS: 2 non-destructive inspections and 12 malicious/mismatched archives rejected.'
 # Git's expected non-worktree exit status remains in LASTEXITCODE even after
 # all PowerShell assertions pass. Finish the synthetic CI job explicitly.
 exit 0
