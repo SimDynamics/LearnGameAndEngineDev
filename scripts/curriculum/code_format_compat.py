@@ -160,25 +160,37 @@ def _language(path: str) -> str | None:
     if PurePosixPath(path).suffix.lower() in _CODE_EXT: return "cpp"
     return None
 
+def _block_language(block: dict) -> str | None:
+    authored = block.get("language", "cpp")
+    if not isinstance(authored, str):
+        return None
+    language = authored.strip().lower()
+    if language in {"cpp", "c++", "cxx", "c", "h", "hpp"}:
+        return "cpp"
+    if language == "cmake":
+        return "cmake"
+    return None
+
 def code_slots(block: dict) -> dict[str, tuple[str | None, str]]:
     """Return every authored code location and its language, not answer fields."""
     if not isinstance(block, dict): raise SourceFormatError("Expected a code block")
     kind = block.get("type")
+    language = _block_language(block)
     result: dict[str, tuple[str | None, str]] = {}
     if "code" in block:
-        result["code"] = ("cpp", block["code"])
+        result["code"] = (language, block["code"])
     if kind in ("inline_fill_code", "drag_fill_code") and "template" in block:
-        result["template"] = ("cpp", block["template"])
+        result["template"] = (language, block["template"])
     if kind == "cpp_compiler":
         if "initialCode" in block: result["initialCode"] = ("cpp", block["initialCode"])
         for i, value in enumerate(block.get("projectFiles", [])):
             result[f"projectFiles/{i}/initialCode"] = (_language(value["path"]), value["initialCode"])
     if kind == "order_code":
         for i, text in enumerate(block.get("fragments", [])):
-            result[f"fragments/{i}"] = ("cpp", text)
+            result[f"fragments/{i}"] = (language, text)
     if kind == "drag_fill_code":
         for i, text in enumerate(block.get("choices", [])):
-            result[f"choices/{i}"] = ("cpp", text)
+            result[f"choices/{i}"] = (language, text)
     if not all(type(value) is str for _, value in result.values()):
         raise SourceFormatError("Malformed source field")
     return result
