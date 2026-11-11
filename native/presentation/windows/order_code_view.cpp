@@ -212,7 +212,7 @@ struct OrderCodeView::Impl {
     void move(std::size_t from,std::size_t to,bool tap=false){
         if(!enabled||from>=ordered.size()||to>=ordered.size())return;
         if(from==to&&!tap)return;
-        const auto before=scored_order(),item=ordered[from];
+        const auto before=scored_order();const auto item=ordered[from];
         if(from!=to){
             ordered.erase(ordered.begin()+static_cast<std::ptrdiff_t>(from));
             ordered.insert(ordered.begin()+static_cast<std::ptrdiff_t>(to),item);

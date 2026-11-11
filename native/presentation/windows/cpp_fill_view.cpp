@@ -137,7 +137,9 @@ struct CppFillView::Impl {
     }
     void set_token_text(HWND item,std::string_view text,COLORREF ink=RGB(216,216,216)){
         reader_theme::set_text_color(item,ink);
-        set_rich_text(item,text,{},true);compact_code_spaces(item);
+        // Keep spaces at their full code-font width. Display-only changes
+        // must never collapse original C++/CMake source indentation.
+        set_rich_text(item,text,{},true);
         SendMessageW(item,EM_SETTARGETDEVICE,0,1);
         // Display-only code has no edit inset. Source characters and native
         // syntax spans remain intact, including deliberately repeated spaces.
