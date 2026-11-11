@@ -67,3 +67,40 @@ Evidencia: https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/429
 La prueba de C++ ejecutable, las capturas locales, el ZIP original de
 AssetCheck y los cinco pendientes del proyecto independiente son encargos
 distintos y no quedan certificados por esta implementación.
+
+## Diagnóstico reforzado: correspondencia con el código real
+
+El bloque `block_0005_0002` es `code` C++ y muestra la cabecera
+`include/assetcheck/estadisticas.hpp`. Su huella del contrato del bloque
+visible, calculada con el algoritmo canónico de `state_fingerprint`, es
+`c82fd37c3ded99ed44aafb2b757fd07c590def117e3ca8bc04d807fc722213ec`.
+
+El bloque `block_0008_0002` es `code` CMake y define los objetivos
+`assetcheck_estadisticas`, `assetcheck_tipos` y sus pruebas. Su huella del
+contrato visible es
+`fa0460ffd2c3b2296de310bd6ad697e6d79ae4471a2102f8f4bae7cdaa683174`.
+
+**Ambas huellas coinciden con `stateLayout.origin`, no con
+`stateLayout.family.es.origin`.** Es una pista concreta sobre el origen de
+la discrepancia, no autorización para reescribir la familia histórica sin
+acreditar su fuente y transición. El mismo blob con la inconsistencia existe
+en `main` y `Codex`, y la historia de esa ruta muestra su incorporación
+en el commit original
+[`8c3cde9c`](https://github.com/SimDynamics/LearnGameAndEngineDev/commit/8c3cde9c79e0acbadb873b92ddb108755bb4f839).
+
+El validador compartido `stable_state_layout.py` ahora informa las
+coordenadas, identidades y ambas huellas para cada discrepancia (hasta ocho),
+sin modificar ningún mapa ni relajar la condición de rechazo.
+
+**Última evidencia técnica comprobada:** ejecución
+[GitHub Actions 42973590898](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/42973590898):
+9/9 pruebas multicurso, 89/89 pruebas previas del mapa y 2/2 pruebas del nuevo
+diagnóstico correctas. La validación de la publicación real conserva
+`failure` por el mismo origen discordante, ahora identificado en detalle.
+
+**Acción curricular pendiente de Work:** verificar la huella de publicación
+autorizada, la identidad de la familia `es`, las dos versiones y su cadena
+editorial antes de hacer la corrección. Después ejecutar el workflow completo;
+no se aceptará la edición como resuelta hasta que el control real de repositorio
+termine sin errores. No se han tocado el curso, sus traducciones ni los cinco
+pendientes técnicos del proyecto AssetCheck.
