@@ -2338,6 +2338,36 @@ void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
     owner.compiler_workflow_check=CompilerWorkflowCheck::cmake_selective_recovery_v1;
 }
 
+// Presentation-only, declared at the lesson root; these blank cards do not
+// become fragments or answers and never allocate a historical state slot.
+void read_order_visual_separators(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"orderVisualSeparators"))return;
+    const auto records=array(root,"orderVisualSeparators");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            records.Size()>0&&records.Size()<=16,
+        "Optional code separators require a Spanish v2 source and a bounded declaration");
+    std::set<std::string> owners;
+    for(const auto& value:records) {
+        const auto record=value.GetObject();
+        allowed_keys(record,{"activity","count"},true);
+        const auto identity=text(record,"activity");
+        const auto count=integer(record.GetNamedValue(L"count"),4);
+        require(valid_id(identity)&&count>0&&owners.insert(identity).second,
+            "Invalid, duplicate or empty optional code separator declaration");
+        Block* target=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!target,"An optional separator has multiple owners");
+                target=&block;
+            }
+        require(target&&target->type==BlockType::order_code&&
+                !target->fragments.empty()&&
+                target->fragments.size()==target->correct_order.size(),
+            "Visual separators may be attached only to an existing mapped code-order owner");
+        target->optional_order_separators=count;
+    }
+}
+
 void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerRuntimeChecks"))return;
     const auto records=array(root,"compilerRuntimeChecks");
@@ -2590,6 +2620,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_text_semantics(root,lesson);
@@ -2676,6 +2707,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
         read_text_semantics(root,lesson);

@@ -21,18 +21,27 @@ void prepare_graphics(){static const auto token=[](){Gdiplus::GdiplusStartupInpu
 struct OrderCodeView::Impl {
     HWND host=nullptr,pressed=nullptr;HMODULE rich=nullptr;HFONT font=nullptr,number_font=nullptr;
     std::vector<std::string> fragments;
-    std::vector<std::size_t> ordered,original;
+    std::size_t required_count=0; // Original graded indices only.
+    std::vector<std::size_t> ordered,original; // Also holds visual separator ids.
     std::vector<HWND> rows;
     std::vector<int> requested_heights;
     std::vector<RECT> cards;
     std::function<void()> changed;
     POINT down{};bool dragging=false,drag_changed=false,enabled=true,wrap=false,translucent=false;LONG_PTR pressed_style=0;std::size_t next_tap=0;
     int percentage=100,width=1,height=1,content_width=1,horizontal=0,gutter=18,number_pixels=0;
-    Impl(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,std::function<void()> callback)
-        :fragments(std::move(source)),changed(std::move(callback)){
+    Impl(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,
+            std::function<void()> callback,std::size_t optional_count)
+        :fragments(std::move(source)),required_count(fragments.size()),changed(std::move(callback)){
+        if(fragments.empty()||optional_count>4)
+            throw std::invalid_argument("Optional order cards require real fragments and at most four separators");
+        std::vector<std::size_t> identities(required_count);
+        std::iota(identities.begin(),identities.end(),0);
+        auto sorted=order;std::ranges::sort(sorted);if(sorted!=identities)order=identities;
+        ordered=std::move(order);
+        fragments.resize(required_count+optional_count);
+        for(std::size_t i=required_count;i<fragments.size();++i)ordered.push_back(i);
         original.resize(fragments.size());std::iota(original.begin(),original.end(),0);
         prepare_graphics();
-        auto sorted=order;std::ranges::sort(sorted);if(sorted!=original)order=original;
         // Creating/showing a native child can synchronously paint its parent.
         // Allocate every geometry slot before exposing the HWND, and publish
         // the ordered model only once every referenced text HWND exists.
@@ -56,16 +65,40 @@ struct OrderCodeView::Impl {
             // WM_SETFONT replaces RichEdit's character defaults. It belongs
             // before the original syntax spans, never after their creation.
             SendMessageW(row,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
-            set_rich_text(row,fragments[i],{},true);compact_code_spaces(row);
+            // Code cards use the same full-width monospace spaces as the
+            // editor. Never narrow indentation or remove original blank lines.
+            set_rich_text(row,fragments[i],{},true);
             SendMessageW(row,EM_SETTARGETDEVICE,0,1);
             SendMessageW(row,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
             SetWindowSubclass(row,child,1,reinterpret_cast<DWORD_PTR>(this));rows.push_back(row);
         }
-        ordered=std::move(order);
     }
     ~Impl(){release(false);if(host&&IsWindow(host))DestroyWindow(host);if(number_font)DeleteObject(number_font);if(font)DeleteObject(font);if(rich)FreeLibrary(rich);}
     int px(int n)const{return MulDiv(n,static_cast<int>(GetDpiForWindow(host)),96);}
     std::size_t position(HWND row)const{return static_cast<std::size_t>(std::ranges::find(ordered,static_cast<std::size_t>(GetDlgCtrlID(row)-100))-ordered.begin());}
+    std::vector<std::size_t> scored_order()const{
+        std::vector<std::size_t> result;
+        result.reserve(required_count);
+        for(const auto id:ordered)if(id<required_count)result.push_back(id);
+        return result;
+    }
+    void omit_separator(HWND item){
+        const auto id=static_cast<std::size_t>(GetDlgCtrlID(item)-100);
+        if(!enabled||id<required_count||id>=fragments.size())return;
+        const auto at=position(item);
+        if(at>=ordered.size())return;
+        release(false);
+        ordered.erase(ordered.begin()+static_cast<std::ptrdiff_t>(at));
+        ShowWindow(item,SW_HIDE);layout(width);
+    }
+    void restore_separator(){
+        if(!enabled)return;
+        for(std::size_t i=required_count;i<fragments.size();++i)
+            if(std::ranges::find(ordered,i)==ordered.end()){
+                ordered.push_back(i);ShowWindow(rows[i],SW_SHOW);
+                layout(width);return;
+            }
+    }
     int prepare_number_font(){
         const auto pixels=std::max(1,MulDiv(px(18),percentage,100));
         if(pixels!=number_pixels){const auto replacement=CreateFontW(-pixels,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
@@ -116,7 +149,7 @@ struct OrderCodeView::Impl {
             if(length>0)include(static_cast<LONG>(start+length-1));
         }
         // Two device pixels cover final glyph overhang/rounding; all original
-        // text, compact spaces, syntax colors and selection remain untouched.
+        // text, full-width spaces, syntax colors and selection remain untouched.
         return {std::max(1L,right-first.x)+px(32)+2,std::max(1L,bottom-first.y)+px(16)+2};
     }
     void layout(int w){
@@ -167,19 +200,26 @@ struct OrderCodeView::Impl {
         graphics.SetClip(Gdiplus::Rect(gutter,0,std::max(0L,area.right-gutter),area.bottom),Gdiplus::CombineModeIntersect);
         for(const auto i:ordered)draw_card(graphics,cards[i],outline,&fill);
         SetBkMode(dc,TRANSPARENT);SetTextColor(dc,colors.high_contrast?colors.text:RGB(111,119,130));const auto old=SelectObject(dc,number_font?number_font:font);
-        for(std::size_t n=0;n<ordered.size();++n){auto rect=cards[ordered[n]];if(rect.right<=rect.left||rect.bottom<=rect.top)continue;
-            rect.left=0;rect.right=gutter-px(3);rect.top-=px(2);rect.bottom+=px(2);const auto label=std::to_wstring(n+1);
+        std::size_t scored=0;
+        for(std::size_t n=0;n<ordered.size();++n){
+            if(ordered[n]>=required_count)continue;
+            ++scored;
+            auto rect=cards[ordered[n]];if(rect.right<=rect.left||rect.bottom<=rect.top)continue;
+            rect.left=0;rect.right=gutter-px(3);rect.top-=px(2);rect.bottom+=px(2);const auto label=std::to_wstring(scored);
             DrawTextW(dc,label.c_str(),-1,&rect,DT_RIGHT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX);}
         SelectObject(dc,old);
     }
     void move(std::size_t from,std::size_t to,bool tap=false){
         if(!enabled||from>=ordered.size()||to>=ordered.size())return;
         if(from==to&&!tap)return;
-        if(from!=to){const auto value=ordered[from];ordered.erase(ordered.begin()+from);ordered.insert(ordered.begin()+to,value);layout(width);}
-        // Publishing clears reviewed feedback and can clamp the lesson's
-        // bottom scroll. Keep those screen destinations stable while the
-        // pointer is captured; the final arrangement is published on release.
-        // A deliberate tap still starts a sequence even at its current index.
+        const auto before=scored_order();const auto item=ordered[from];
+        if(from!=to){
+            ordered.erase(ordered.begin()+static_cast<std::ptrdiff_t>(from));
+            ordered.insert(ordered.begin()+static_cast<std::ptrdiff_t>(to),item);
+            layout(width);
+        }
+        // Visual-only changes never publish responses or clear prior credit.
+        if(before==scored_order()&&!(tap&&item<required_count))return;
         if(dragging)drag_changed=true;else if(changed)changed();
     }
     void release(bool publish=true){const auto item=pressed;const bool notify=publish&&drag_changed;
@@ -200,9 +240,20 @@ struct OrderCodeView::Impl {
             self.paint_row_outline(item,dc);if(message==WM_PAINT&&dc)ReleaseDC(item,dc);return result;
         }
         if(message==WM_GETDLGCODE)return DLGC_WANTARROWS|DLGC_WANTCHARS;
-        if(message==WM_LBUTTONDBLCLK)return 0;
+        if(message==WM_LBUTTONDBLCLK){
+            if(static_cast<std::size_t>(GetDlgCtrlID(item)-100)>=self.required_count)
+                self.omit_separator(item);
+            return 0;
+        }
+        if(message==WM_KEYDOWN&&(wp==VK_DELETE||wp==VK_BACK)){self.omit_separator(item);return 0;}
+        if(message==WM_KEYDOWN&&wp==VK_INSERT){self.restore_separator();return 0;}
         if(message==WM_SYSKEYDOWN&&(wp==VK_UP||wp==VK_DOWN)){
-            const auto at=self.position(item);if(wp==VK_UP&&at)self.move(at,at-1);else if(wp==VK_DOWN&&at+1<self.ordered.size())self.move(at,at+1);return 0;}
+            const auto at=self.position(item);
+            if(at>=self.ordered.size())return 0;
+            if(wp==VK_UP&&at)self.move(at,at-1);
+            else if(wp==VK_DOWN&&at+1<self.ordered.size())self.move(at,at+1);
+            return 0;
+        }
         if(message==WM_LBUTTONDOWN){if(!self.enabled)return 0;self.pressed=item;self.dragging=false;
             self.down={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(item,&self.down);SetFocus(item);SetCapture(item);return 0;}
         if(message==WM_MOUSEMOVE&&self.pressed==item&&(wp&MK_LBUTTON)){
@@ -216,8 +267,17 @@ struct OrderCodeView::Impl {
             if(self.dragging)for(std::size_t to=0;to<self.ordered.size();++to){RECT bounds{};GetWindowRect(self.rows[self.ordered[to]],&bounds);
                 if(PtInRect(&bounds,point)){self.move(self.position(item),to);break;}}
             return 0;}
-        if(message==WM_LBUTTONUP&&self.pressed==item){const bool drag=self.dragging;self.release();
-            if(!drag&&self.next_tap<self.ordered.size())self.move(self.position(item),self.next_tap++,true);return 0;}
+        if(message==WM_LBUTTONUP&&self.pressed==item){
+            const bool drag=self.dragging;self.release();
+            const auto id=static_cast<std::size_t>(GetDlgCtrlID(item)-100);
+            if(!drag&&id<self.required_count&&self.next_tap<self.ordered.size()){
+                while(self.next_tap<self.ordered.size()&&self.ordered[self.next_tap]>=self.required_count)
+                    ++self.next_tap;
+                if(self.next_tap<self.ordered.size())
+                    self.move(self.position(item),self.next_tap++,true);
+            }
+            return 0;
+        }
         if(message==WM_CAPTURECHANGED||message==WM_CANCELMODE){self.release();return 0;}
         if(message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL){const auto owner=self.host;self.release();
             return IsWindow(owner)?SendMessageW(owner,message,wp,lp):0;}
@@ -242,13 +302,20 @@ struct OrderCodeView::Impl {
         return DefWindowProcW(item,message,wp,lp);
     }
 };
-OrderCodeView::OrderCodeView(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,std::function<void()> changed)
-    :impl_(std::make_unique<Impl>(parent,std::move(source),std::move(order),std::move(changed))){}
+OrderCodeView::OrderCodeView(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,
+        std::function<void()> changed,std::size_t optional_separators)
+    :impl_(std::make_unique<Impl>(parent,std::move(source),std::move(order),
+        std::move(changed),optional_separators)){}
 OrderCodeView::~OrderCodeView()=default;
 HWND OrderCodeView::window()const{return impl_->host;}
 int OrderCodeView::height_for_width(int width){impl_->layout(width);return impl_->height;}
-std::vector<std::size_t> OrderCodeView::order()const{return impl_->ordered;}
-std::vector<std::pair<HWND,std::string>> OrderCodeView::reading_regions()const{std::vector<std::pair<HWND,std::string>> result;for(const auto i:impl_->ordered)result.emplace_back(impl_->rows[i],impl_->fragments[i]);return result;}
+std::vector<std::size_t> OrderCodeView::order()const{return impl_->scored_order();}
+std::vector<std::pair<HWND,std::string>> OrderCodeView::reading_regions()const{
+    std::vector<std::pair<HWND,std::string>> result;
+    for(const auto id:impl_->ordered)if(id<impl_->required_count)
+        result.emplace_back(impl_->rows[id],impl_->fragments[id]);
+    return result;
+}
 void OrderCodeView::set_completed(bool value){
     for(const auto row:impl_->rows)reader_theme::completed_control(row,value);
     InvalidateRect(impl_->host,nullptr,FALSE);
@@ -257,5 +324,10 @@ void OrderCodeView::set_enabled(bool value){impl_->enabled=value;if(!value)impl_
 void OrderCodeView::set_text_scale(int value){impl_->percentage=std::clamp(value,25,400);for(const auto row:impl_->rows)SendMessageW(row,EM_SETZOOM,impl_->percentage,100);impl_->layout(impl_->width);}
 void OrderCodeView::set_wrap(bool value){impl_->wrap=value;for(const auto row:impl_->rows)SendMessageW(row,EM_SETTARGETDEVICE,0,value?0:1);impl_->layout(impl_->width);}
 void OrderCodeView::restart_tap_sequence(){impl_->next_tap=0;}
-void OrderCodeView::reset(){impl_->release(false);set_completed(false);impl_->ordered=impl_->original;impl_->next_tap=0;impl_->layout(impl_->width);if(impl_->changed)impl_->changed();}
+void OrderCodeView::reset(){
+    impl_->release(false);set_completed(false);impl_->ordered=impl_->original;
+    for(std::size_t id=impl_->required_count;id<impl_->rows.size();++id)ShowWindow(impl_->rows[id],SW_SHOW);
+    impl_->next_tap=0;impl_->layout(impl_->width);
+    if(impl_->changed)impl_->changed();
+}
 }

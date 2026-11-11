@@ -1,6 +1,8 @@
 #include "presentation/windows/order_code_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "platform/windows/content_loader.hpp"
+#include "native_build_config.hpp"
 #include <commctrl.h>
 #include <richedit.h>
 #include <windowsx.h>
@@ -182,14 +184,173 @@ struct ReentrantPaint {
     }
 };
 }
+void optional_root_metadata_preserves_published_history(){
+    using namespace lgaed;
+    constexpr auto relative="app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        "programas_y_ejecucion/lesson_primer_programa_y_salida.json";
+    const auto original=windows::load_lesson(std::filesystem::path(build::source_root)/relative,"es");
+    check(original.pages.size()>3&&original.pages[3].blocks.size()>2,
+        "Original U1 code-order reader was not found");
+    const auto& block=original.pages[3].blocks[2];
+    check(block.stable_id=="block_0003_0002"&&block.type==curriculum::BlockType::order_code,
+        "Historical code-order identity no longer points to the same block");
+    auto bytes=original.raw_json;
+    constexpr std::string_view field="\"orderVisualSeparators\"";
+    const bool authored=bytes.find(field)!=bytes.npos;
+    if(!authored){
+        const auto location=bytes.find("  \"stateLayout\": {");
+        check(location!=bytes.npos,"Historical v2 state map lacks its single root");
+        bytes.insert(location,
+            "  \"orderVisualSeparators\": [{\"activity\":\"block_0003_0002\",\"count\":2}],\n");
+    }
+    const auto projected=windows::parse_lesson_json(bytes,"es");
+    const auto metadata=windows::parse_lesson_progress_metadata(bytes,"es");
+    const auto& owner=projected.pages[3].blocks[2];
+    const auto& progress=metadata.pages[3].blocks[2];
+    check(owner.optional_order_separators>0&&
+        progress.optional_order_separators==owner.optional_order_separators&&
+        owner.fragments==block.fragments&&owner.correct_order==block.correct_order&&
+        owner.raw_json==block.raw_json&&owner.address.page==block.address.page&&
+        owner.address.block==block.address.block&&
+        curriculum::order_representation_frame(owner)==curriculum::order_representation_frame(block)&&
+        curriculum::exercise_key(projected,owner)==curriculum::exercise_key(original,block)&&
+        curriculum::draft_key("programming",projected,owner)==curriculum::draft_key("programming",original,block),
+        "Root-only optional cards changed original answers, progress, source or reference keys");
+    if(!authored){
+        auto invalid=bytes;
+        const auto location=invalid.find("\"count\":2");
+        check(location!=std::string::npos,"Invalid count negative fixture missing");
+        invalid.replace(location,std::string_view("\"count\":2").size(),"\"count\":5");
+        bool rejected=false;
+        try{(void)windows::parse_lesson_json(invalid,"es");}
+        catch(const std::exception&){rejected=true;}
+        check(rejected,"An invalid root-only visual count bypassed loader validation");
+    }
+}
+
+void optional_visual_chips_do_not_publish_answers(HWND host){
+    using namespace lgaed::presentation;
+    const auto dpi=static_cast<int>(GetDpiForWindow(host));
+    const auto px=[&](int v){return MulDiv(v,dpi,96);};
+    int changes=0;
+    OrderCodeView view(host,{"    inicializar();", "    calcular();", "    devolver();"},
+        {0,1,2},[&]{++changes;},2);
+    MoveWindow(view.window(),0,0,px(650),view.height_for_width(px(650)),TRUE);pump();
+    const auto original=std::vector<std::size_t>{0,1,2};
+    auto first=GetDlgItem(view.window(),100);
+    auto first_blank=GetDlgItem(view.window(),103);
+    auto second_blank=GetDlgItem(view.window(),104);
+    check(first&&first_blank&&second_blank&&IsWindowVisible(first_blank)&&IsWindowVisible(second_blank),
+        "Declared optional blank visual cards were not shown");
+    check(view.order()==original&&view.reading_regions().size()==3,
+        "Optional visual cards polluted scored order or narration");
+    SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);pump();
+    check(view.order()==original&&changes==0,
+        "Moving one optional blank card changed scored order or published a response");
+    SendMessageW(second_blank,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(10,8));pump();
+    check(!IsWindowVisible(second_blank)&&view.order()==original&&changes==0,
+        "Omitting an optional blank published or invalidated a real response");
+    SendMessageW(first_blank,WM_KEYDOWN,VK_DELETE,0);pump();
+    check(!IsWindowVisible(first_blank)&&view.order()==original&&changes==0,
+        "Deleting a second optional card altered the source-only permutation");
+    SendMessageW(first,WM_KEYDOWN,VK_INSERT,0);pump();
+    check(IsWindowVisible(first_blank)&&view.order()==original&&changes==0,
+        "Restoring an omitted card changed the stored source order");
+    SendMessageW(first,WM_SYSKEYDOWN,VK_DOWN,0);pump();
+    check(view.order()==std::vector<std::size_t>({1,0,2})&&changes==1,
+        "A real instruction move failed to update the scored answer");
+    const auto scored=view.order();
+    SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);pump();
+    check(view.order()==scored&&changes==1,
+        "An optional blank invalidated an already edited authentic response");
+    view.reset();pump();
+    check(view.order()==original&&IsWindowVisible(first_blank)&&IsWindowVisible(second_blank),
+        "Reset lost original source indices or omitted blank presentation");
+}
+
+void preserve_code_spacing_in_rows_and_editor(HWND host){
+    using namespace lgaed::presentation;
+    const std::vector<std::string> fragments{
+        "    int piezas{4};\n\n        return piezas;", "", "  \t  ",
+        "set(A 1)\n\nset(B 2)", "std::cout << \"\\n\";"};
+    int changes=0;
+    OrderCodeView view(host,fragments,{0,1,2,3,4},[&]{++changes;});
+    const auto dpi=static_cast<int>(GetDpiForWindow(host));
+    const auto px=[&](int value){return MulDiv(value,dpi,96);};
+    MoveWindow(view.window(),0,0,px(700),view.height_for_width(px(700)),TRUE);pump();
+    for(std::size_t i=0;i<fragments.size();++i){
+        const auto row=GetDlgItem(view.window(),100+static_cast<int>(i));
+        check(row&&edit_text(row)==fragments[i],
+            "An authored C++/CMake fragment lost indentation or blank-line bytes");
+    }
+    const auto first=GetDlgItem(view.window(),100),empty=GetDlgItem(view.window(),101);
+    check(SendMessageW(first,EM_GETLINECOUNT,0,0)>=3&&
+        SendMessageW(GetDlgItem(view.window(),103),EM_GETLINECOUNT,0,0)>=3,
+        "The code-card renderer collapsed significant vertical blank lines");
+    RECT tall{},shorter{};
+    GetWindowRect(first,&tall);GetWindowRect(GetDlgItem(view.window(),104),&shorter);
+    check(tall.bottom-tall.top>shorter.bottom-shorter.top,
+        "Three lines of original code were flattened to one row");
+    POINTL x0{},x4{},x5{};
+    SendMessageW(first,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&x0),0);
+    SendMessageW(first,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&x4),4);
+    SendMessageW(first,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&x5),5);
+    const auto glyph=x5.x-x4.x;
+    check(glyph>0&&(x4.x-x0.x)*10>=glyph*36,
+        "Four indent spaces were rendered narrower than their full monospace advances");
+    SendMessageW(empty,WM_SYSKEYDOWN,VK_DOWN,0);pump();
+    check(view.order()==std::vector<std::size_t>({0,2,1,3,4})&&changes==1,
+        "An empty decorative card became immovable or changed another instruction");
+    const auto reading=view.reading_regions();
+    check(reading.size()==5&&reading[2].second.empty()&&reading[1].second=="  \t  ",
+        "Moving blank cards altered their original identity or narrated text");
+    view.set_text_scale(150);view.set_wrap(true);
+    (void)view.height_for_width(px(350));pump();
+    for(std::size_t i=0;i<fragments.size();++i)
+        check(edit_text(GetDlgItem(view.window(),100+static_cast<int>(i)))==fragments[i],
+            "Zoom or wrap changed source spaces, escaped newlines or blank lines");
+    view.reset();
+    check(view.order()==std::vector<std::size_t>({0,1,2,3,4}),
+        "Reset of optional blank cards did not retain the original positions");
+
+    // The same RichEdit engine backs editable C++ and CMake source fields.
+    // Formatting is a view operation; editing must keep literal LF, tabs and
+    // the escaped two-character sequence \n distinct.
+    const auto edit=CreateWindowExW(0,MSFTEDIT_CLASS,L"",
+        WS_CHILD|WS_VISIBLE|ES_MULTILINE|ES_WANTRETURN,
+        0,0,px(680),px(240),host,nullptr,GetModuleHandleW(nullptr),nullptr);
+    check(edit!=nullptr,"Cannot create the original native source edit control");
+    const std::string cpp="#include <iostream>\n\nint main() {\n    std::cout << \"\\n\";\n}\n";
+    const std::string cmake="cmake_minimum_required(VERSION 3.20)\n\nif(WITH_TOOLS)\n    add_executable(tool main.cpp)\nendif()\n";
+    try{
+        set_edit_text(edit,cpp);
+        style_cpp(edit);
+        check(edit_text(edit)==cpp,"The source editor collapsed C++ indentation, LF or the literal newline escape");
+        set_edit_text(edit,cmake);
+        check(edit_text(edit)==cmake,"The source editor collapsed a meaningful CMake statement break");
+        set_rich_text(edit,cpp,{},true);
+        check(edit_text(edit)==cpp,"The read-only code-example presentation changed source whitespace");
+        DestroyWindow(edit);
+    }catch(...){DestroyWindow(edit);throw;}
+}
+
 int main(int argc,char** argv){using namespace lgaed::presentation;
     const bool drag_commit_only=argc==2&&std::string_view(argv[1])=="--drag-commit";
-    if(argc>1&&!drag_commit_only)return 2;
+    const bool whitespace_only=argc==2&&std::string_view(argv[1])=="--whitespace";
+    if(argc>1&&!drag_commit_only&&!whitespace_only)return 2;
     struct DpiScope{DPI_AWARENESS_CONTEXT previous=SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);~DpiScope(){if(previous)SetThreadDpiAwarenessContext(previous);}} dpi_scope;
     check(SUCCEEDED(OleInitialize(nullptr)),"Cannot initialize the application's native OLE apartment");struct OleScope{~OleScope(){OleUninitialize();}} apartment;
     INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);
     const auto host=CreateWindowExW(0,L"STATIC",L"Code order QA",WS_OVERLAPPEDWINDOW|(drag_commit_only?0:WS_VISIBLE),40,40,800,640,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
     try{
+        if(whitespace_only){
+            optional_root_metadata_preserves_published_history();
+            optional_visual_chips_do_not_publish_answers(host);
+            preserve_code_spacing_in_rows_and_editor(host);
+            DestroyWindow(host);
+            std::cout<<"PASS native C++/CMake code/drag display retains indentation and vertical line spacing\n";
+            return 0;
+        }
         drag_commits_after_releasing_capture(host);
         if(drag_commit_only){DestroyWindow(host);return 0;}
         fast_drag_reaches_its_target(host);
@@ -227,8 +388,9 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
         const auto source_row=GetDlgItem(view.window(),100);const auto space=static_cast<LONG>(source[0].find(' '));POINTL before_space{},after_space{},letter0{},letter1{};
         SendMessageW(source_row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&before_space),space);SendMessageW(source_row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&after_space),space+1);
         SendMessageW(source_row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&letter0),0);SendMessageW(source_row,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&letter1),1);
-        check((after_space.x-before_space.x)*100<(letter1.x-letter0.x)*95&&
-            (after_space.x-before_space.x)*100>(letter1.x-letter0.x)*65,"The original80-percent space advance was lost or changed actual source characters");
+        check((after_space.x-before_space.x)*100<(letter1.x-letter0.x)*112&&
+            (after_space.x-before_space.x)*100>(letter1.x-letter0.x)*88,
+            "Code-card spaces no longer occupy the full monospace character width");
         // ClearType may leave only two fully opaque pixels in a thin numeral.
         // Measure its actual antialiased coverage against the known dark gutter,
         // retaining the same center tolerance and the zoom-growth assertion.
