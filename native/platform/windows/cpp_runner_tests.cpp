@@ -320,6 +320,24 @@ int main() {
                 require(verdict.verdict==OutputVerdict::correct,
                     "A correct U3L8 main was rejected for case "+std::to_string(i)+
                     ": "+verdict.feedback);
+                if(i==0) {
+                    // The actual Windows reader uses MSVC, not just WASI.
+                    // Re-evaluate its public case and both hidden observations
+                    // using real native x64 builds from exactly the same code.
+                    auto native=current;
+                    native.backend=CppRunRequest::Backend::native_msvc;
+                    const auto host=run_cpp(native);
+                    require(host.error_utf8.empty()&&host.compilation.succeeded()&&
+                            host.execution.status==CppPhaseStatus::completed&&
+                            host.observation_probes.size()==observation_probe_inputs.size(),
+                        "MSVC U3L8 report execution/probes failed: "+
+                        host.error_utf8+host.compilation.stderr_bytes);
+                    const auto captured=capture_cpp_execution(native,host);
+                    const auto native_verdict=evaluate_cpp_output_check(
+                        *owner.output_check,captured,native.revision);
+                    require(captured.report_probe_correct&&native_verdict.verdict==OutputVerdict::correct,
+                        "The original Windows/MSVC U3L8 report was not credited: "+native_verdict.feedback);
+                }
             }
             auto altered=request(candidate+"\n// source changed outside main\n",owner.standard_input.value_or(""));
             altered.observation_probe=mode;
