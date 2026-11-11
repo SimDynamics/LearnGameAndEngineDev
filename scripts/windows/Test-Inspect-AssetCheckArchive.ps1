@@ -141,3 +141,6 @@ $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
 Write-Host 'PASS: 2 non-destructive inspections and 10 malicious/mismatched archives rejected.'
+# Git's expected non-worktree exit status remains in LASTEXITCODE even after
+# all PowerShell assertions pass. Finish the synthetic CI job explicitly.
+exit 0
