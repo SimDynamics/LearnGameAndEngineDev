@@ -53,8 +53,9 @@ void prepare_compiler_puzzle_revisions(state::StateData&, const curriculum::Less
 void validate_compiler_puzzle_state(const state::StateData&, const curriculum::Lesson&, const curriculum::Block&);
 // Evaluates every real execution again, including after an earned achievement.
 // An incorrect/unavailable run returns false without changing that achievement;
-// a correct run clears its latest rejection. Initial completion still requires
-// every authored input/target to pass with the same captured program.
+// a correct first authored case earns a sealed completion for that exact program.
+// Remaining cases may be checked voluntarily, without changing the earned seal.
+// Legacy all-case achievements keep their original seals and identities.
 [[nodiscard]] bool record_compiler_puzzle_case(state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest&, const curriculum::FreshExecution&, std::string_view feedback);
 /* For the exact U3 recovery owner, a saved stdout proof remains historical;
