@@ -512,8 +512,11 @@ AnswerEvaluation evaluate_order(const Block& block, std::span<const std::size_t>
 }
 std::string order_representation_frame(const Block& block) {
     if (block.type != BlockType::order_code) throw std::invalid_argument("Invalid order representation");
-    std::string result = "order-representation-v1/" + std::to_string(block.fragments.size()) + '[';
-    for (const auto& fragment : block.fragments) result += std::to_string(fragment.size()) + ':' + fragment;
+    // The current cards show the improved source, but an authenticated
+    // formatting-only revision must retain the original answer representation.
+    const auto& fragments=block.source_format_original_fragments.value_or(block.fragments);
+    std::string result = "order-representation-v1/" + std::to_string(fragments.size()) + '[';
+    for (const auto& fragment : fragments) result += std::to_string(fragment.size()) + ':' + fragment;
     result += "]/" + std::to_string(block.correct_order.size()) + '[';
     for (const auto index : block.correct_order) result += std::to_string(index) + ';';
     result += ']';
