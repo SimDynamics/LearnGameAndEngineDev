@@ -76,6 +76,29 @@ struct OrderCodeView::Impl {
     ~Impl(){release(false);if(host&&IsWindow(host))DestroyWindow(host);if(number_font)DeleteObject(number_font);if(font)DeleteObject(font);if(rich)FreeLibrary(rich);}
     int px(int n)const{return MulDiv(n,static_cast<int>(GetDpiForWindow(host)),96);}
     std::size_t position(HWND row)const{return static_cast<std::size_t>(std::ranges::find(ordered,static_cast<std::size_t>(GetDlgCtrlID(row)-100))-ordered.begin());}
+    std::vector<std::size_t> scored_order()const{
+        std::vector<std::size_t> result;
+        result.reserve(required_count);
+        for(const auto id:ordered)if(id<required_count)result.push_back(id);
+        return result;
+    }
+    void omit_separator(HWND item){
+        const auto id=static_cast<std::size_t>(GetDlgCtrlID(item)-100);
+        if(!enabled||id<required_count||id>=fragments.size())return;
+        const auto at=position(item);
+        if(at>=ordered.size())return;
+        release(false);
+        ordered.erase(ordered.begin()+static_cast<std::ptrdiff_t>(at));
+        ShowWindow(item,SW_HIDE);layout(width);
+    }
+    void restore_separator(){
+        if(!enabled)return;
+        for(std::size_t i=required_count;i<fragments.size();++i)
+            if(std::ranges::find(ordered,i)==ordered.end()){
+                ordered.push_back(i);ShowWindow(rows[i],SW_SHOW);
+                layout(width);return;
+            }
+    }
     int prepare_number_font(){
         const auto pixels=std::max(1,MulDiv(px(18),percentage,100));
         if(pixels!=number_pixels){const auto replacement=CreateFontW(-pixels,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
@@ -177,8 +200,12 @@ struct OrderCodeView::Impl {
         graphics.SetClip(Gdiplus::Rect(gutter,0,std::max(0L,area.right-gutter),area.bottom),Gdiplus::CombineModeIntersect);
         for(const auto i:ordered)draw_card(graphics,cards[i],outline,&fill);
         SetBkMode(dc,TRANSPARENT);SetTextColor(dc,colors.high_contrast?colors.text:RGB(111,119,130));const auto old=SelectObject(dc,number_font?number_font:font);
-        for(std::size_t n=0;n<ordered.size();++n){auto rect=cards[ordered[n]];if(rect.right<=rect.left||rect.bottom<=rect.top)continue;
-            rect.left=0;rect.right=gutter-px(3);rect.top-=px(2);rect.bottom+=px(2);const auto label=std::to_wstring(n+1);
+        std::size_t scored=0;
+        for(std::size_t n=0;n<ordered.size();++n){
+            if(ordered[n]>=required_count)continue;
+            ++scored;
+            auto rect=cards[ordered[n]];if(rect.right<=rect.left||rect.bottom<=rect.top)continue;
+            rect.left=0;rect.right=gutter-px(3);rect.top-=px(2);rect.bottom+=px(2);const auto label=std::to_wstring(scored);
             DrawTextW(dc,label.c_str(),-1,&rect,DT_RIGHT|DT_VCENTER|DT_SINGLELINE|DT_NOPREFIX);}
         SelectObject(dc,old);
     }
