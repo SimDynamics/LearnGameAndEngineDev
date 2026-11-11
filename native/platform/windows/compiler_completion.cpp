@@ -140,6 +140,9 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
     if(check.rejection_operation)
         frame+=token(*check.rejection_operation==curriculum::RejectionOperation::boxes
             ? "semantic-rejection-boxes-v1" : "semantic-rejection-balances-v1");
+    if(check.observation_report)
+        frame+=token(*check.observation_report==curriculum::ReportMode::complete
+            ? "observation-complete-v1" : "observation-differences-v1");
     for(const auto& item:check.cases){
         frame+=token(item.standard_input)+token(item.executable.value_or(""));
         if(item.balance_three_pairs)frame+=token("semantic-balance-three-pairs-v1");
@@ -254,6 +257,16 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
     const auto goal=block.compiler_workflow_check;
+    if(goal==curriculum::CompilerWorkflowCheck::observation_complete_v1||
+       goal==curriculum::CompilerWorkflowCheck::observation_differences_v1) {
+        const auto mode=goal==curriculum::CompilerWorkflowCheck::observation_complete_v1
+            ?curriculum::ReportMode::complete:curriculum::ReportMode::differences;
+        return !request.cmake&&!request.diagnostic&&!request.rejection_probe&&
+            request.project_files.empty()&&request.source_files.empty()&&
+            request.action==CppRunRequest::Action::compile_run&&
+            request.observation_probe==mode&&
+            curriculum::report_main_only_edit(block.initial_code,request.source_utf8);
+    }
     if(goal==curriculum::CompilerWorkflowCheck::semantic_rejection_boxes_v1||
        goal==curriculum::CompilerWorkflowCheck::semantic_rejection_balance_v1){
         const auto operation=goal==curriculum::CompilerWorkflowCheck::semantic_rejection_boxes_v1

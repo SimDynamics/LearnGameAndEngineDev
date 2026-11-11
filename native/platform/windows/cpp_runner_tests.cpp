@@ -153,6 +153,222 @@ int main() {
             "WASI compilation errors must remain compiler diagnostics, never execution credit");
     });
 
+    test("WASI C++23 exception handling and stream extraction execute with the pinned SDK", [&] {
+        const auto code=R"cpp(#include <iostream>
+#include <sstream>
+#include <stdexcept>
+int main() {
+    std::istringstream input{"42 end"};
+    int number=0;
+    std::string label;
+    if(!(input >> number >> label))return 7;
+    try {
+        if(number==42&&label=="end")throw std::runtime_error("detected");
+        return 8;
+    } catch(const std::runtime_error& error) {
+        std::cout << error.what() << ':' << number;
+    }
+    return 0;
+}
+)cpp";
+        auto current=request(code);
+        current.backend=CppRunRequest::Backend::wasi;
+        const auto result=run_cpp(current);
+        require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                result.execution.succeeded()&&result.execution.stdout_bytes=="detected:42"&&
+                result.execution.stderr_bytes.empty(),
+            "Pinned WASI C++23 exception ABI or stream reading failed: "+
+            result.error_utf8+result.compilation.stderr_bytes+result.execution.stderr_bytes);
+    });
+
+    test("WASI real U3L8 original report editors preserve lines, duplicates, format and all counters", [&] {
+        using namespace lgaed::curriculum;
+        constexpr auto path=
+            "app/src/main/assets/content/es/programming/programming_practice_tools/"
+            "comprobaciones_repetibles/lesson_automatizar_la_revision_sin_borrar_evidencia.json";
+        const auto original=lgaed::windows::load_lesson(
+            std::filesystem::path(lgaed::build::source_root)/path);
+        require(original.pages.size()==9&&
+                !original.pages[3].blocks[3].output_check&&
+                !original.pages[6].blocks[3].output_check,
+            "The published U3L8 original editors differ from the QA baseline");
+        auto json=original.raw_json;
+        constexpr std::string_view marker="  \"stateLayout\": {";
+        const auto at=json.find(marker);
+        require(at!=json.npos&&json.find(marker,at+1)==json.npos,
+            "U3L8 has no unique canonical state-map root");
+        json.insert(at,R"json("compilerRuntimeChecks": [
+          {"activity":"block_0003_0003","kind":"observationCompleteV1"},
+          {"activity":"block_0006_0003","kind":"observationDifferencesV1"}
+        ],
+        )json");
+        const auto reviewed=lgaed::windows::parse_lesson_json(json,"es");
+        const auto progress=lgaed::windows::parse_lesson_progress_metadata(json,"es");
+        constexpr auto complete_main=R"cpp(int main() {
+    std::string linea;
+    int lineas{0};
+    int validos{0}, coinciden{0}, difieren{0}, formato{0};
+    while (std::getline(std::cin, linea)) {
+        ++lineas;
+        std::string caso;
+        int esperado{0}, obtenido{0};
+        if (!leer_registro(linea, caso, esperado, obtenido)) {
+            ++formato;
+            std::cerr << "Linea=" << lineas << ":FORMATO\n";
+            continue;
+        }
+        ++validos;
+        const bool coincide = esperado == obtenido;
+        if (coincide) ++coinciden;
+        else ++difieren;
+        std::cout << "Linea=" << lineas << " Caso=" << caso
+                  << " Esperado=" << esperado << " Obtenido=" << obtenido
+                  << " " << (coincide ? "COINCIDE" : "DIFIERE") << "\n";
+    }
+    if (std::cin.bad() || !std::cin.eof()) {
+        std::cerr << "Fallo del origen\n";
+        return 1;
+    }
+    std::cout << "Resumen: validos=" << validos << ";coinciden=" << coinciden
+              << ";difieren=" << difieren << ";formato=" << formato << "\n";
+    return (difieren > 0 || formato > 0) ? 1 : 0;
+}
+)cpp";
+        constexpr auto differences_main=R"cpp(int main() {
+    std::string linea;
+    int lineas{0};
+    int validos{0}, coinciden{0}, difieren{0}, formato{0};
+    while (std::getline(std::cin, linea)) {
+        ++lineas;
+        std::string caso;
+        int esperado{0}, obtenido{0};
+        if (!leer_registro(linea, caso, esperado, obtenido)) {
+            ++formato;
+            std::cerr << "Linea=" << lineas << ":FORMATO\n";
+            continue;
+        }
+        ++validos;
+        const bool coincide = esperado == obtenido;
+        if (coincide) ++coinciden;
+        else {
+            ++difieren;
+            std::cout << "Linea=" << lineas << " Caso=" << caso
+                      << " Esperado=" << esperado << " Obtenido=" << obtenido
+                      << " DIFIERE\n";
+        }
+    }
+    if (std::cin.bad() || !std::cin.eof()) {
+        std::cerr << "Fallo del origen\n";
+        return 1;
+    }
+    std::cout << "Resumen: validos=" << validos << ";coinciden=" << coinciden
+              << ";difieren=" << difieren << ";formato=" << formato << "\n";
+    return (difieren > 0 || formato > 0) ? 1 : 0;
+}
+)cpp";
+        const auto run_cases=[&](std::size_t page,ReportMode mode,std::string_view fixed_main) {
+            const auto& owner=reviewed.pages[page].blocks[3];
+            const auto& lean=progress.pages[page].blocks[3];
+            require(owner.output_check&&owner.output_check->observation_report==mode&&
+                    lean.output_check&&lean.output_check->cases.size()==4&&
+                    owner.output_check->cases.size()==4&&
+                    owner.initial_code==original.pages[page].blocks[3].initial_code&&
+                    owner.address.page==original.pages[page].blocks[3].address.page&&
+                    owner.address.block==original.pages[page].blocks[3].address.block,
+                "U3L8 reports changed original editor ownership or did not install the two goals");
+            std::string candidate=owner.initial_code;
+            const auto pos=candidate.find("int main() {");
+            require(pos!=candidate.npos&&candidate.find("int main() {",pos+1)==candidate.npos,
+                "U3L8 lost its unique original main");
+            candidate.replace(pos,candidate.size()-pos,fixed_main);
+            require(report_main_only_edit(owner.initial_code,candidate),
+                "The valid U3L8 implementation changed the parser or code outside main");
+            for(std::size_t i=0;i<owner.output_check->cases.size();++i) {
+                const auto& entry=owner.output_check->cases[i];
+                auto current=request(candidate,entry.standard_input);
+                current.backend=CppRunRequest::Backend::wasi;
+                current.observation_probe=mode;
+                require(lgaed::windows::compiler_runtime_request_allowed(owner,current),
+                    "A valid U3L8 main-only edit was not eligible for independent verification");
+                const auto result=run_cpp(current);
+                const auto evidence_details=[&] {
+                    std::string details="U3L8 page="+std::to_string(page+1)+
+                        " case="+std::to_string(i)+
+                        " error="+result.error_utf8+
+                        " compilation="+std::to_string(static_cast<int>(result.compilation.status))+
+                        " compilation_exit="+std::to_string(result.compilation.exit_code.value_or(999))+
+                        " execution="+std::to_string(static_cast<int>(result.execution.status))+
+                        " execution_exit="+std::to_string(result.execution.exit_code.value_or(999))+
+                        " probes="+std::to_string(result.observation_probes.size());
+                    details+=" compile_stderr="+result.compilation.stderr_bytes+
+                        " runtime_stderr="+result.execution.stderr_bytes;
+                    for(const auto& probe:result.observation_probes)
+                        details+=" probe_compilation="+std::to_string(static_cast<int>(probe.compilation.status))+
+                            " probe_compile_stderr="+probe.compilation.stderr_bytes+
+                            " probe_execution="+std::to_string(static_cast<int>(probe.execution.status))+
+                            " probe_exit="+std::to_string(probe.execution.exit_code.value_or(999));
+                    return details;
+                };
+                require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                        result.execution.status==CppPhaseStatus::completed&&
+                        result.observation_probes.size()==observation_probe_inputs.size(),
+                    evidence_details());
+                const auto execution=capture_cpp_execution(current,result);
+                require(execution.report_probe_correct,"The U3L8 independent report observations failed");
+                const auto verdict=evaluate_cpp_output_check(
+                    *owner.output_check,execution,current.revision);
+                require(verdict.verdict==OutputVerdict::correct,
+                    "A correct U3L8 main was rejected for case "+std::to_string(i)+
+                    ": "+verdict.feedback);
+            }
+            auto altered=request(candidate+"\n// source changed outside main\n",owner.standard_input.value_or(""));
+            altered.observation_probe=mode;
+            require(!lgaed::windows::compiler_runtime_request_allowed(owner,altered),
+                "The U3L8 proof accepted an edit outside the assigned main");
+            // A program engineered to pass the published prepared report must
+            // not be credited if the same executable omits an unseen case.
+            auto false_candidate=candidate;
+            constexpr std::string_view line="        ++lineas;\n";
+            const auto insertion=false_candidate.find(line);
+            require(insertion!=false_candidate.npos,"The valid main has no line-counter update");
+            false_candidate.insert(insertion+line.size(),
+                "        if (linea == \"Z 0 0\") return 0;\n");
+            auto false_request=request(false_candidate,owner.standard_input.value_or(""));
+            false_request.backend=CppRunRequest::Backend::wasi;
+            false_request.observation_probe=mode;
+            const auto false_result=run_cpp(false_request);
+            require(false_result.error_utf8.empty()&&false_result.compilation.succeeded()&&
+                    false_result.execution.status==CppPhaseStatus::completed,
+                "The deliberately overfitted U3L8 report did not run");
+            const auto false_execution=capture_cpp_execution(false_request,false_result);
+            require(!false_execution.report_probe_correct&&
+                    matches_observation_report(mode,false_execution.standard_input,
+                        false_execution.standard_output,false_execution.standard_error,
+                        false_execution.exit_code)&&
+                    evaluate_cpp_output_check(*owner.output_check,false_execution,
+                        false_request.revision).verdict!=OutputVerdict::correct,
+                "A fixed prepared report borrowed credit despite failing independent inputs");
+        };
+        run_cases(3,ReportMode::complete,complete_main);
+        run_cases(6,ReportMode::differences,differences_main);
+        const auto complete=expected_observation_report(ReportMode::complete,
+            original.pages[3].blocks[3].standard_input.value_or(""));
+        const auto differences=expected_observation_report(ReportMode::differences,
+            original.pages[6].blocks[3].standard_input.value_or(""));
+        require(complete&&differences&&complete->exit_code==1&&differences->exit_code==1&&
+                complete->standard_output.find("validos=7;coinciden=2;difieren=5;formato=1")!=std::string::npos&&
+                differences->standard_output.find("validos=5;coinciden=3;difieren=2;formato=1")!=std::string::npos,
+            "The independent expected reports lost their published count and format contracts");
+        require(!expected_observation_report(ReportMode::complete,"X 2147483648 0\n")->standard_error.empty(),
+            "An out-of-range integer was mistaken for an accepted observation");
+        require(!expected_observation_report(ReportMode::complete,"X 1-1 0\n")->standard_error.empty(),
+            "Adjacent numbers were silently split into invented fields");
+        require(!expected_observation_report(ReportMode::complete,"X 2x 2\n")->standard_error.empty(),
+            "A partial integer was accepted as a complete field");
+        require(!expected_observation_report(ReportMode::complete,"X 1 1 extra\n")->standard_error.empty(),
+            "A fourth field was silently dropped");
+    });
+
     test("WASI real U3L6 original editors require factual stderr and independent stream evidence", [&] {
         using namespace lgaed::curriculum;
         constexpr auto relative =
