@@ -144,6 +144,44 @@ Un logro anterior de stdout no acredita el requisito nuevo. La identidad de la p
 
 Work puede añadir el requisito a un caso existente sin cambiar sus `outputs`, entrada, objetivo CMake, programa ni identificadores. En lecciones con `stateLayout` v2, `prepare_v2` registra el cambio completo mediante la procedencia antes/después habitual, conservando origen, familia y direcciones. El validador permite esta ampliación compatible y rechaza retirar o debilitar un requisito publicado, así como cambiar las respuestas de stdout o el código bajo la misma identidad. No se regeneran mapas ni se convierten aciertos antiguos en pruebas del nuevo canal. Esta ampliación corresponde al motor Windows; no amplía por sí misma el contrato del motor Android conservado.
 
+### Diagnóstico literal en stderr para clientes con contrato fijo
+
+Cuando el ejercicio exige una frase concreta del **programa ejecutado** (no
+un mensaje variable de la biblioteca o del compilador), cada caso admite
+`standardErrorExact` como texto UTF-8, incluso la cadena vacía. Por ejemplo:
+
+```json
+"outputCheck": {
+  "cases": [{
+    "standardInput": "2x\n",
+    "outputs": ["Resumen: validos=0\n"],
+    "standardErrorExact": "Linea=1:FORMATO\n",
+    "exitCode": 1
+  }]
+}
+```
+
+El verificador exige simultáneamente stdout literal, stderr literal,
+entrada, objetivo CMake cuando exista y el código de salida **de la misma
+ejecución nueva, terminada normalmente**. Se comparan caracteres exactos:
+espacios, tildes, CR y LF son significativos; no se aplica trim ni
+normalización. La cadena vacía comprueba que el programa no escribió
+en stderr. Un fallo de construcción, timeout, aborto o una ejecución
+anterior no aporta evidencia del diagnóstico solicitado.
+
+El campo antiguo `standardError: "nonBlank"` permanece compatible.
+Cada caso puede declarar uno de esos dos criterios, **nunca ambos**.
+Al añadir el objetivo exacto a un ejercicio existente se mantienen
+identificadores, borradores y progreso histórico, pero una prueba anterior
+de stdout no acredita el requisito nuevo: cambia la identidad sellada de
+finalización. Un objetivo exacto ya publicado no puede sustituirse,
+retirarse o degradarse silenciosamente.
+
+**Alcance:** comprueba el texto observable, no demuestra que se haya
+realizado una validación interna específica ni que el contenido se haya
+calculado en vez de fijarse como literal. Las demás capacidades abiertas
+de Programación 2 siguen requiriendo comprobadores adicionales. Work
+deberá revisar y publicar cada caso curricular antes de activarlo.
 ## Entrada del laboratorio
 
 En un `cpp_compiler` curricular, el campo «Entrada» sólo aparece si el bloque declara `initialStandardInput` —también una cadena vacía, para permitir una actividad con EOF— o si algún caso de `outputCheck` declara una entrada no vacía. No se inspecciona el código del alumno para decidirlo. Sin esas declaraciones, la ejecución recibe entrada vacía y termina en EOF si intenta leer. Cualquier borrador de entrada anterior se conserva en almacenamiento, pero no se envía al programa mientras el campo no corresponda a esa actividad. El compilador libre del menú principal conserva su campo de entrada.
