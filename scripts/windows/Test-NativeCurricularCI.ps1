@@ -72,7 +72,8 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_u6_diagnostic_flow_tests',
                 'lgaed_cpp_project_view_tests',
                 'lgaed_order_spacing_contract_tests',
-                'lgaed_order_code_whitespace_view_tests'
+                'lgaed_order_code_whitespace_view_tests',
+                'lgaed_rich_text_tests'
             )
             Results = 'reader-build'
         }
