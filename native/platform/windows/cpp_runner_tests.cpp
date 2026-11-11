@@ -1,5 +1,6 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "core/lesson.hpp"
+#include "core/order_source_text.hpp"
 #include "core/rejection_diagnostic_facts.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/content_loader.hpp"
@@ -102,6 +103,38 @@ int main(int argc, char** argv) {
             std::cerr << "FAIL " << name << ": " << error.what() << '\n';
         }
     };
+
+    test("WASI copied order keeps real C++ macro, raw-string and line-comment boundaries", [&] {
+        using lgaed::curriculum::ordered_source_text;
+        const std::vector<std::string> fragments{
+            "#include <iostream>\n",
+            "#define DOUBLE(x) \\\n",
+            "    ((x) * 2)\n",
+            "",
+            "int main() {\n",
+            "    const char* text = R\"tag(first\nsecond)tag\";\n",
+            "    // The following output remains executable\n",
+            "    std::cout << DOUBLE(3) << ':' << text;\n",
+            "}\n"
+        };
+        const std::vector<std::size_t> original{0,1,2,3,4,5,6,7,8};
+        const auto source=ordered_source_text(fragments,original);
+        require(source.find("#define DOUBLE(x) \\\n    ((x) * 2)\n")!=std::string::npos&&
+                source.find("first\nsecond")!=std::string::npos&&
+                source.find("// The following output remains executable\n    std::cout")!=std::string::npos,
+            "Reconstruction inserted or removed a physical C++ source boundary");
+        auto current=request(source);
+        current.backend=CppRunRequest::Backend::wasi;
+        const auto result=run_cpp(current);
+        require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                result.execution.succeeded()&&
+                result.execution.stdout_bytes=="6:first\nsecond"&&
+                result.execution.stderr_bytes.empty(),
+            "Copied source did not preserve compiled C++23 meaning: "+
+            result.error_utf8+result.compilation.stderr_bytes+result.execution.stderr_bytes);
+        require(read(result.run_directory/L"main.cpp")==source,
+            "Execution altered source indentation or physical newline bytes");
+    });
 
     test("WASI C++23 four independent lesson inputs without unsigned program.exe", [&] {
         // Real current U2L9 page-10 program and its four authored cases.
