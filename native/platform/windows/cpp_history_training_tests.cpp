@@ -92,7 +92,7 @@ CppRunResult result(const CppRunRequest& r,bool broken_run){
     v.artifact=L"C:\\LGAED-QA\\history-tests\\built\\comprobar_cajas.exe";
     v.target_type="EXECUTABLE";
     v.compilation.status=CppPhaseStatus::completed;v.compilation.exit_code=0;
-    if(r.action==CppRunRequest::Action::execute){
+    if(r.action==CppRunRequest::Action::execute||r.action==CppRunRequest::Action::compile_run){
         v.executable="comprobar_cajas";
         v.execution.status=CppPhaseStatus::completed;
         v.execution.exit_code=broken_run?1u:0u;
@@ -246,6 +246,40 @@ void history_receipt_preserves_old_stdout_and_requires_new_actions(){
         compiler_puzzle_case_count(stored,lesson,block)==0,
         "Explicit Reset did not clear both existing and new completion receipts");
 }
+void combined_cmake_check_follows_the_real_lesson_button(){
+    const auto p=published(),bad=broken(p.project_files),good=restored(bad,p.project_files);
+    const auto record=registered(p.project_files);
+    for(const bool explicit_build:{false,true}){
+        CmakeSelectiveRecoveryTrace trace(p);
+        check(trace.record(record),"Cannot register baseline before combined CMake test");
+        const auto bad_build=request(bad,CppRunRequest::Action::build,10,21);
+        const auto bad_combined=request(bad,CppRunRequest::Action::compile_run,11,21);
+        if(explicit_build)
+            check(trace.run(bad_build,result(bad_build,true)),
+                "The optional actual CMake build did not register");
+        auto wrong=result(bad_combined,true);wrong.execution.exit_code=0;
+        check(!trace.run(bad_combined,wrong),"A combined CMake action accepted the wrong exit status");
+        check(trace.run(bad_combined,result(bad_combined,true))&&
+            trace.stage()==Stage::failed_executed,
+            "The real Compile-run-check action did not count its own fresh build and failed run");
+        check(trace.compare(compared(p.project_files,bad,std::string(root_path)))&&
+            trace.compare(compared(p.project_files,bad,std::string(source_path)))&&
+            trace.restore(recovery(p.project_files,bad)),
+            "The combined CMake state did not reach the source-only recovery");
+        const auto good_build=request(good,CppRunRequest::Action::build,12,22);
+        const auto good_combined=request(good,CppRunRequest::Action::compile_run,13,22);
+        if(explicit_build)
+            check(trace.run(good_build,result(good_build,false)),
+                "The optional final CMake build failed");
+        check(!trace.run(good_combined,result(good_combined,true)),
+            "A broken or replayed output was accepted as a final combined result");
+        check(trace.run(good_combined,result(good_combined,false))&&
+            trace.complete()&&trace.completed_by(good_combined),
+            "The real checked CMake button cannot finish a legitimate full history sequence");
+        auto wrong_revision=good_combined;wrong_revision.revision=21;
+        check(!trace.completed_by(wrong_revision),"The sealed sequence accepted the prior build revision");
+    }
+}
 void counterexamples(){
     const auto p=published();
     const auto base=registered(p.project_files);
@@ -262,6 +296,11 @@ void counterexamples(){
     check(!trace.run(altered,result(altered,true)),"Extra CMake commands were accepted as comments");
     check(trace.run(badbuild,result(badbuild,true)),"Legitimate build was rejected");
     auto badrun=request(bad,CppRunRequest::Action::execute,2,1);
+    auto changed_comment=badrun;
+    for(auto& [path,source]:changed_comment.project_files)
+        if(path==root_path)source+="# A comment added AFTER the first build\n";
+    check(!trace.run(changed_comment,result(changed_comment,true)),
+        "A changed CMake file reused the prior source revision");
     auto stderr_case=result(badrun,true);stderr_case.execution.stderr_bytes="Error\n";
     check(!trace.run(badrun,stderr_case),"Nonempty diagnostic passed the exact failed run");
     auto aborted=result(badrun,true);aborted.execution.status=CppPhaseStatus::timed_out;
@@ -286,7 +325,8 @@ void counterexamples(){
 }
 int main(){
     try{
-        full_sequence();comments_between_unchanged_commands_are_allowed();
+        full_sequence();combined_cmake_check_follows_the_real_lesson_button();
+        comments_between_unchanged_commands_are_allowed();
         history_receipt_preserves_old_stdout_and_requires_new_actions();counterexamples();
         std::cout<<"PASS CMake selective-history action chain: baseline, failed build/run, both diffs, one-file restore, rebuilt fresh success and negative cases; no credit stored\n";
         return 0;

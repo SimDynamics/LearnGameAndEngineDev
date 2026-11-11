@@ -47,7 +47,8 @@ public:
     [[nodiscard]] Stage stage() const noexcept { return stage_; }
     [[nodiscard]] bool complete() const noexcept { return stage_==Stage::verified; }
     [[nodiscard]] bool completed_by(const CppRunRequest& request) const {
-        return complete() && request.action==CppRunRequest::Action::execute &&
+        return complete() && (request.action==CppRunRequest::Action::execute||
+                request.action==CppRunRequest::Action::compile_run) &&
             request.request_id==verified_request_id_ &&
             request.revision==restored_revision_ &&
             request.project_key==project_key_ &&
@@ -112,43 +113,65 @@ public:
     // A wrong/stale action cannot advance, including a recycled stdout.
     bool run(const CppRunRequest& request,const CppRunResult& result) {
         if (!common(request,result)) return false;
-        const auto wanted=stage_==Stage::recorded||stage_==Stage::failed_built
-            ? Mode::broken : Mode::restored;
         if (stage_!=Stage::recorded&&stage_!=Stage::failed_built &&
             stage_!=Stage::source_restored&&stage_!=Stage::restored_built)return false;
-        if (!project_snapshot(request.project_files,wanted))return false;
-        if (stage_==Stage::source_restored||stage_==Stage::restored_built) {
+        const auto wanted=stage_==Stage::recorded||stage_==Stage::failed_built
+            ? Mode::broken : Mode::restored;
+        std::string current_root;
+        if (!project_snapshot(request.project_files,wanted,current_root))return false;
+        if ((stage_==Stage::failed_built||stage_==Stage::source_restored||
+             stage_==Stage::restored_built)&&current_root!=failed_root_)return false;
+        if (stage_==Stage::source_restored||stage_==Stage::restored_built)
             if (request.project_key!=project_key_ ||
                 request.projects_directory!=projects_directory_ ||
                 request.revision<=failed_revision_)return false;
-        }
+
+        const auto built_now=[&]{
+            return result.compilation.succeeded() &&
+                result.target_type=="EXECUTABLE" && !result.artifact.empty();
+        };
+        const auto completed_now=[&]{
+            return built_now() &&
+                result.executable==config_.target &&
+                result.execution.status==CppPhaseStatus::completed &&
+                result.execution.exit_code==std::optional<std::uint32_t>{
+                    wanted==Mode::broken?1u:0u} &&
+                result.execution.stderr_bytes.empty() &&
+                crlf_to_lf(result.execution.stdout_bytes)==oracle(wanted);
+        };
+        // The actual checked CMake editor has a COMBINED "Compile, run and
+        // check" button. It is a real build followed by a real execution,
+        // so both transitions can belong to the SAME captured request.
+        const bool combined=request.action==CppRunRequest::Action::compile_run;
         if (stage_==Stage::recorded || stage_==Stage::source_restored) {
-            if (request.action!=CppRunRequest::Action::build || !result.compilation.succeeded() ||
-                result.target_type!="EXECUTABLE" || result.artifact.empty())return false;
+            if (request.action!=CppRunRequest::Action::build&&!combined)return false;
+            if (!built_now()||(combined&&!completed_now()))return false;
             if (stage_==Stage::recorded) {
                 project_key_=request.project_key;projects_directory_=request.projects_directory;
+                failed_root_=std::move(current_root);
                 failed_revision_=request.revision;
                 failed_fingerprint_=result.project_fingerprint;
-                stage_=Stage::failed_built;
+                if(combined)failed_request_id_=request.request_id;
+                stage_=combined?Stage::failed_executed:Stage::failed_built;
             } else {
                 if (result.project_fingerprint==failed_fingerprint_ ||
                     request.request_id==failed_request_id_)return false;
                 restored_revision_=request.revision;
                 restored_fingerprint_=result.project_fingerprint;
-                stage_=Stage::restored_built;
+                if(combined) {
+                    verified_request_id_=request.request_id;
+                    verified_project_frame_=curriculum::cpp_project_frame(
+                        request.project_files,request.source_files,request.cmake);
+                }
+                stage_=combined?Stage::verified:Stage::restored_built;
             }
             return true;
         }
-        if (request.action!=CppRunRequest::Action::execute ||
-            !result.compilation.succeeded() ||
-            result.target_type!="EXECUTABLE" ||
-            result.executable!=config_.target ||
-            result.artifact.empty() ||
-            result.execution.status!=CppPhaseStatus::completed ||
-            !result.execution.exit_code || !result.execution.stderr_bytes.empty() ||
-            result.execution.exit_code!=std::optional<std::uint32_t>{
-                wanted==Mode::broken?1u:0u} ||
-            crlf_to_lf(result.execution.stdout_bytes)!=oracle(wanted) ||
+        // Explicit Build followed by either Execute or the app's combined
+        // checked action remains valid. Neither a build-only result nor a
+        // replay of the old run can complete the learner's restoration.
+        if (request.action!=CppRunRequest::Action::execute&&!combined ||
+            !completed_now() ||
             result.project_fingerprint!=(wanted==Mode::broken?failed_fingerprint_:restored_fingerprint_))
             return false;
         if (stage_==Stage::failed_built) {
@@ -227,7 +250,8 @@ private:
         }
         return old==baseline.size()&&has_comment;
     }
-    bool project_snapshot(const curriculum::CppProjectFiles& files,Mode mode) {
+    bool project_snapshot(const curriculum::CppProjectFiles& files,Mode mode,
+                          std::string& current_root) const {
         if (files.size()!=original_.size())return false;
         std::map<std::string,std::string> actual;
         for(const auto& [path,content]:files)if(!actual.emplace(path,content).second)return false;
@@ -238,8 +262,7 @@ private:
                 if (found->second!=(mode==Mode::broken?failed_source_:source))return false;
             } else if(path==root_path) {
                 if (!only_added_cmake_comments(source,found->second))return false;
-                if (mode==Mode::broken)failed_root_=found->second;
-                else if(found->second!=failed_root_)return false;
+                current_root=found->second;
             } else if(found->second!=source)return false;
         }
         return true;
