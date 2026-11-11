@@ -240,8 +240,25 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
         if(initial_feedback.find("falta acreditar la secuencia")==std::string::npos) {
             const auto initial_status=edit_text(child(view,1034));
             const auto initial_console=edit_text(child(view,1014));
+            curriculum::FreshExecution isolated;
+            isolated.source_revision=1;
+            isolated.compilation_succeeded=true;
+            isolated.execution_succeeded=true;
+            isolated.execution_completed=true;
+            isolated.exit_code=0;
+            isolated.executable=owner.cmake->target;
+            isolated.standard_input="";
+            isolated.standard_output=initial_console;
+            const auto isolated_verdict=windows::evaluate_cpp_output_check(
+                *owner.output_check,isolated,isolated.source_revision);
+            const auto& expected_output=owner.output_check->cases.front().outputs.front();
             std::cerr<<"U3 INITIAL QA feedback="<<initial_feedback.substr(0,900)
                 <<" status="<<initial_status.substr(0,900)
+                <<" visible_verdict="<<static_cast<int>(isolated_verdict.verdict)
+                <<" visible_output_bytes="<<initial_console.size()
+                <<" expected_bytes="<<expected_output.size()
+                <<" visible_sha="<<state::sha256(initial_console)
+                <<" expected_sha="<<state::sha256(expected_output)
                 <<" console="<<initial_console.substr(0,1500)<<"\\n";
         }
         require(initial_feedback.find("falta acreditar la secuencia")!=std::string::npos,
