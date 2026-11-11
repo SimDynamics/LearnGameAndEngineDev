@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/assetcheck-curricular-oracles.yml
       - scripts/curriculum/test_assetcheck_curricular_oracles.py
+      - scripts/curriculum/verify_assetcheck_editor_references_cpp23.py
       - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_leer_y_validar_un_registro.json
       - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_procesar_un_lote_y_detectar_duplicados.json
       - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_leer_manifiesto_y_publicar_informe.json
@@ -31,3 +32,37 @@ jobs:
           persist-credentials: false
       - name: Check the 16 curricular output cases and oracle regressions
         run: python3 -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
+
+  compile-curricular-references:
+    name: "Compile actual curricular C++23 references (${{ matrix.report }})"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            generator: Ninja
+            report: gcc
+          - os: windows-2025-vs2026
+            generator: "Visual Studio 18 2026"
+            report: msvc-x64
+    steps:
+      - name: Read original after-attempt reference and editor code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Select Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Build four isolated C++23 reference executables and verify outputs
+        run: python scripts/curriculum/verify_assetcheck_editor_references_cpp23.py --generator "${{ matrix.generator }}" --report "out/qa/assetcheck-curriculum/${{ matrix.report }}.json"
+      - name: Preserve exact curricular-only results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: assetcheck-curriculum-${{ matrix.report }}-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: out/qa/assetcheck-curriculum/${{ matrix.report }}.json
