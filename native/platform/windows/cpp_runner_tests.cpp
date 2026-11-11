@@ -539,6 +539,33 @@ int main(){return 0;}
         test_stream(RejectionOperation::boxes,boxes,true);
         test_stream(RejectionOperation::boxes,wrong_stream,false);
         test_stream(RejectionOperation::balance,balances,true);
+
+        // Explicit ranges must be distinguishable from two unrelated field
+        // values. The message is open prose, not a fixed expected sentence.
+        constexpr RejectionFacts one_box[]={{1,-1}},one_balance[]={{2,10,0}};
+        const auto check_message=[&](std::string_view message,RejectionOperation operation,
+                std::span<const RejectionFacts> expected,bool correct) {
+            const auto reviewed=evaluate_rejection_diagnostics(message,operation,expected);
+            require(reviewed.correct==correct,
+                "U3L6 incorrectly recognized or rejected a stated numeric interval: "+
+                std::string(message)+" / "+reviewed.reason);
+        };
+        check_message("Cajas: petición 1 piezas=-1. Rango 0..20. Revise la cantidad.\n",
+            RejectionOperation::boxes,one_box,true);
+        check_message("Cajas: petición 1 piezas=-1. Límite 0-20. Compruebe el valor.\n",
+            RejectionOperation::boxes,one_box,true);
+        check_message("Cajas: petición 1 piezas=-1. Enteros entre 0 y 20. Verifique.\n",
+            RejectionOperation::boxes,one_box,true);
+        check_message("Cajas: petición 1 piezas=-1. Números 0 20. Revise.\n",
+            RejectionOperation::boxes,one_box,false);
+        check_message("Cajas: petición 1 piezas=-1, obtenido 0, resultado 20. Revise.\n",
+            RejectionOperation::boxes,one_box,false);
+        check_message("Saldo: petición 2 cobros=10 devoluciones=0. Permitidos desde 0 hasta 9. Corrija los datos.\n",
+            RejectionOperation::balance,one_balance,true);
+        check_message("Saldo: petición 2 cobros=10 devoluciones=0 9. Revise.\n",
+            RejectionOperation::balance,one_balance,false);
+        check_message("Saldo: petición 2 cobros=10 devoluciones=0. Se admiten enteros 0 a 8. Revise.\n",
+            RejectionOperation::balance,one_balance,false);
     });
 
     test("Windows policy-blocked executables are diagnosed without inventing C++ output", [&] {
