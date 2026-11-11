@@ -2332,11 +2332,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         if bibliography_revision.is_bibliography_only_revision(block, actual):
             require(identity in appended and all("bibliography" in proof for proof in appended[identity]),
                     "A new bibliography-only revision requires its exact authored reading archive")
-        protected = actual
+        protected, previous_source = actual, block
         format_original = next((entry["block"] for entry in current_formats if entry["id"] == identity), None)
         if format_original is not None:
+            previous_source = code_format.source_projection(block, format_original)
             protected = code_format.source_projection(actual, format_original)
-        require(state_fingerprint(_historical_order_contract(baseline, identity, block))
+        require(state_fingerprint(_historical_order_contract(baseline, identity, previous_source))
                 == state_fingerprint(_historical_order_contract(current, identity, protected)),
                 "An existing response/code contract changed")
         if str(block.get("type", "")).startswith("math_"):
