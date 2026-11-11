@@ -357,12 +357,35 @@ if ($finalHash -cne $actualHash) {
 # Inspect Git state if possible. A non-repository is explicitly reported,
 # never silently treated as clean; no Git commands change state.
 $gitState = 'git not found'
+$gitTopLevel = $null
+$gitRootMatchesProject = $false
 $gitIgnoredScan = 'not applicable'
 $gitIgnoredPaths = @()
 $git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($git) {
     $insideGit = & $git.Source --no-optional-locks -C $project rev-parse --is-inside-work-tree 2>$null
     if ($LASTEXITCODE -eq 0 -and $insideGit -eq 'true') {
+        # git -C also accepts subdirectories of a parent repository. The
+        # separate educational project must be the real worktree root.
+        $topLevelOutput = @(& $git.Source --no-optional-locks -C $project rev-parse --show-toplevel 2>$null)
+        if ($LASTEXITCODE -ne 0 -or $topLevelOutput.Count -ne 1) {
+            $gitState = 'Git root discovery failed; manual review required'
+        }
+        else {
+            $gitTopLevel = [IO.Path]::GetFullPath($topLevelOutput[0]).TrimEnd('\', '/')
+            if (-not [string]::Equals($gitTopLevel, $project,
+                    [StringComparison]::OrdinalIgnoreCase)) {
+                $gitState = 'nested inside another Git worktree; manual review required'
+            }
+            else {
+                $gitRootMatchesProject = $true
+            }
+        }
+    }
+    else {
+        $gitState = 'not a Git worktree; manual review required'
+    }
+    if ($gitRootMatchesProject) {
         $status = @(& $git.Source --no-optional-locks -C $project status --porcelain=v1 --untracked-files=normal 2>$null)
         if ($LASTEXITCODE -ne 0) {
             $gitState = 'git status failed; manual review required'
@@ -386,9 +409,6 @@ if ($git) {
                 -not [string]::IsNullOrWhiteSpace($_)
             })
         }
-    }
-    else {
-        $gitState = 'not a Git worktree; manual review required'
     }
 }
 
@@ -434,6 +454,8 @@ $result = [ordered]@{
     conflicts = $conflicts.Count
     unsafeExistingReparsePaths = $blocked.Count
     gitState = $gitState
+    gitRootMatchesProject = $gitRootMatchesProject
+    gitTopLevel = $gitTopLevel
     gitIgnoredScan = $gitIgnoredScan
     ignoredGitPathsCount = $gitIgnoredPaths.Count
     ignoredGitPathsSample = @($gitIgnoredPaths | Select-Object -First 25)
