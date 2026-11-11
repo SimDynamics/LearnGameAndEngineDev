@@ -1,0 +1,27 @@
+name: P2 U2 original client EOF runtime contract
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/p2-u2-client-runtime.yml
+      - scripts/curriculum/test_p2_u2_client_runtime.py
+      - scripts/curriculum/stable_state_layout.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-original-client:
+    name: Preserve U2L3 original editor and reject fake EOF contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Read published curriculum, without modifying Work's lesson
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Verify immutable U2 client and exact-runtime declaration
+        run: PYTHONPATH=scripts/curriculum python3 -m unittest -v test_p2_u2_client_runtime
