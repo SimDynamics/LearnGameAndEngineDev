@@ -145,6 +145,20 @@ function Save-NativeConsole([IntPtr] $window, [string] $name) {
         try { $printed = [AssetCheckU4L3NativeWindow]::PrintWindow($window, $dc, 2) }
         finally { $graphics.ReleaseHdc($dc) }
         if (-not $printed) { throw 'Windows did not capture pixels from the real CMD window.' }
+        # A successful PrintWindow result may still contain an empty surface.
+        # Sample native pixels; do not generate text-based substitute images.
+        $qaBright = 0
+        for ($y = 60; $y -lt [Math]::Min($height, 680); $y += 5) {
+            for ($x = 15; $x -lt [Math]::Min($width, 1070); $x += 5) {
+                $pixel = $bitmap.GetPixel($x, $y)
+                if ($pixel.R -ge 165 -and $pixel.G -ge 165 -and $pixel.B -ge 165) {
+                    ++$qaBright
+                }
+            }
+        }
+        if ($qaBright -lt 55) {
+            throw "The genuine CMD screenshot for $name is blank or not legible enough."
+        }
         $bitmap.Save($png, [System.Drawing.Imaging.ImageFormat]::Png)
     }
     finally { $graphics.Dispose(); $bitmap.Dispose() }
@@ -210,6 +224,21 @@ function Confirm-Result([string] $stage, [string] $expected) {
     Write-Host ("PASS {0}: {1} (exit=0)" -f $stage, $actual)
 }
 
+Invoke-NativeCapture 'u4l3_herramientas' @'
+echo Host=%VSCMD_ARG_HOST_ARCH%
+echo Destino=%VSCMD_ARG_TGT_ARCH%
+where cl
+@if errorlevel 1 exit /b 16
+where cmake
+@if errorlevel 1 exit /b 17
+cmake --version
+@if errorlevel 1 exit /b 18
+where ninja
+@if errorlevel 1 exit /b 19
+ninja --version
+@if errorlevel 1 exit /b 20
+'@
+
 Invoke-NativeCapture 'u4l3_configurar' @'
 where cl
 where cmake
@@ -250,12 +279,29 @@ echo CodigoDespues=%ERRORLEVEL%
 '@
 Confirm-Result 'updated-after-rebuild' 'AssetCheck: entorno actualizado'
 
-$qaImages = @('u4l3_configurar.png', 'u4l3_construir.png', 'u4l3_reconstruir.png')
-foreach ($name in $qaImages) {
-    if (-not (Test-Path -LiteralPath (Join-Path $qaOutput $name))) {
-        throw "Missing actual native capture: $name"
+$qaImages = @('u4l3_herramientas.png', 'u4l3_configurar.png', 'u4l3_construir.png', 'u4l3_reconstruir.png')
+$qaHashes = @(
+    foreach ($name in $qaImages) {
+        $path = Join-Path $qaOutput $name
+        if (-not (Test-Path -LiteralPath $path)) {
+            throw "Missing actual native capture: $name"
+        }
+        $file = Get-Item -LiteralPath $path
+        if ($file.Length -lt 3000) { throw "Incomplete native PNG: $name" }
+        [ordered]@{
+            file = $name
+            bytes = $file.Length
+            sha256 = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
     }
+)
+if (@($qaHashes | ForEach-Object { $_.sha256 } | Select-Object -Unique).Count -ne $qaImages.Count) {
+    throw 'At least two CMD captures have identical bytes; evidence is not distinct.'
 }
+$qaPrincipal = [Security.Principal.WindowsPrincipal]::new(
+    [Security.Principal.WindowsIdentity]::GetCurrent()
+)
+$qaElevated = $qaPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 $qaOS = Get-CimInstance Win32_OperatingSystem
 $qaEvidence = [ordered]@{
     origin = 'Real visible native CMD windows captured with Win32 PrintWindow on a disposable GitHub-hosted Windows runner'
@@ -267,6 +313,9 @@ $qaEvidence = [ordered]@{
     visualStudioProduct = $qaInstance.productId
     visualStudioVersion = $qaInstance.installationVersion
     developerConsole = $qaDeveloper
+    hostedRunnerConsoleElevated = $qaElevated
+    lessonRequiresAdministrator = $false
+    consoleElevationNote = 'A GitHub-hosted runner may run elevated; this is not evidence that the student must use an administrator console.'
     cmakeVersion = (& cmake --version | Select-Object -First 1)
     ninjaVersion = (& ninja --version)
     lesson = 'U4L3 preparar y comprobar CMake en Windows'
@@ -281,9 +330,11 @@ $qaEvidence = [ordered]@{
     staleExitCode = 0
     rebuiltExitCode = 0
     captures = $qaImages
+    captureHashes = $qaHashes
+    captureArtifactRetentionDays = 14
     installationTested = $false
     studentComputerTested = $false
     standaloneAssetCheckTested = $false
 } 
 $qaEvidence | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $qaOutput 'provenance.json') -Encoding utf8
-Write-Host 'PASS: three real U4L3 Windows CMD screenshots, source rebuild and provenance preserved.'
+Write-Host 'PASS: four distinct native Windows CMD screenshots, source rebuild, tool paths and SHA-256 provenance preserved.'
