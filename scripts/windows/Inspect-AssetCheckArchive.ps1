@@ -65,6 +65,14 @@ Add-Type -AssemblyName System.IO.Compression
 $seen = [Collections.Generic.HashSet[string]]::new(
     [StringComparer]::OrdinalIgnoreCase
 )
+# Explicit and implicit directories both matter. Windows cannot extract a
+# file named "a" and another file named "a/b" into the same tree.
+$archiveFiles = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase
+)
+$archiveFolders = [Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase
+)
 $conflicts = [Collections.Generic.List[string]]::new()
 $identical = [Collections.Generic.List[string]]::new()
 $new = [Collections.Generic.List[string]]::new()
@@ -113,6 +121,33 @@ try {
                     throw "Unsafe Windows ZIP component in: $name"
                 }
             }
+            # Reject internal file/directory collisions before comparing with
+            # the local project. Check both archive entry orders, and include
+            # implicit parent folders that have no explicit directory entry.
+            $parentInArchive = ''
+            for ($index = 0; $index -lt $segments.Length - 1; ++$index) {
+                $parentInArchive = if ($parentInArchive) {
+                    $parentInArchive + '/' + $segments[$index]
+                } else {
+                    $segments[$index]
+                }
+                if ($archiveFiles.Contains($parentInArchive)) {
+                    throw "ZIP file is also an ancestor directory: $name"
+                }
+                [void] $archiveFolders.Add($parentInArchive)
+            }
+            if ($directory) {
+                if ($archiveFiles.Contains($trimmed)) {
+                    throw "ZIP directory collides with a file: $name"
+                }
+                [void] $archiveFolders.Add($trimmed)
+            } else {
+                if ($archiveFolders.Contains($trimmed)) {
+                    throw "ZIP file collides with a directory: $name"
+                }
+                [void] $archiveFiles.Add($trimmed)
+            }
+
             # The high 16 bits of ZIP ExternalAttributes can encode Unix modes.
             # Reject links and special file types. Normal DOS-mode entries use 0.
             $unixKind = ($entry.ExternalAttributes -shr 16) -band 0xF000
@@ -147,19 +182,33 @@ try {
 
             $cursor = $project
             $reparse = $false
-            foreach ($segment in $segments) {
-                $cursor = Join-Path $cursor $segment
-                if (Test-Path -LiteralPath $cursor) {
-                    $item = Get-Item -LiteralPath $cursor -Force
+            $parentIsFile = $false
+            for ($index = 0; $index -lt $segments.Length; ++$index) {
+                $cursor = Join-Path $cursor $segments[$index]
+                # Get-Item is needed even for dangling links. Test-Path may
+                # incorrectly report such an existing link as missing.
+                $item = Get-Item -LiteralPath $cursor -Force -ErrorAction SilentlyContinue
+                if ($null -ne $item) {
                     if (($item.Attributes -band
                             [IO.FileAttributes]::ReparsePoint) -ne 0) {
                         $reparse = $true
+                        break
+                    }
+                    if ($index -lt $segments.Length - 1 -and
+                        -not $item.PSIsContainer) {
+                        $parentIsFile = $true
                         break
                     }
                 }
             }
             if ($reparse) {
                 [void] $blocked.Add($trimmed)
+                continue
+            }
+            if ($parentIsFile) {
+                [void] $conflicts.Add(
+                    $trimmed + ' (an existing parent path is a file)'
+                )
                 continue
             }
             if (Test-Path -LiteralPath $target -PathType Container) {
