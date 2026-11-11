@@ -38,7 +38,7 @@ V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "e
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -1681,11 +1681,47 @@ def _validate_crt_output_variants(document: dict) -> None:
                             "A historical reviewed CRT spelling must retain its current archived or active contract")
 
 
+def _validate_compiler_workflow_checks(document: dict) -> None:
+    """Bind U3 History to its existing editor without changing any saved response."""
+    if "compilerWorkflowChecks" not in document:
+        return
+    checks = document["compilerWorkflowChecks"]
+    require(type(checks) is list and len(checks) == 1,
+            "The U3 History workflow needs exactly one owner")
+    item = checks[0]
+    require(type(item) is dict and set(item) == {"activity", "kind"}
+            and item["activity"] == "block_0010_0003"
+            and item["kind"] == "cmakeSelectiveRecoveryV1",
+            "Unknown or duplicated U3 History workflow")
+    meta = document.get("stateLayout")
+    require(document.get("id") ==
+            "programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
+            and type(meta) is dict and meta.get("version") == 2
+            and meta.get("locale") == "es",
+            "U3 History requires the original Spanish v2 lesson")
+    pages = document["pages"]
+    require(len(pages) == 13 and len(pages[10]["blocks"]) > 3
+            and meta["current"][10]["blocks"][3] == item["activity"],
+            "U3 History moved away from its immutable editor")
+    owner = pages[10]["blocks"][3]
+    cmake = owner.get("cmake")
+    require(owner.get("type") == "cpp_compiler"
+            and type(owner.get("projectFiles")) is list
+            and len(owner["projectFiles"]) == 6
+            and type(cmake) is dict
+            and cmake.get("target") == "comprobar_cajas"
+            and cmake.get("buildType") == "Debug"
+            and type(owner.get("outputCheck")) is dict
+            and len(owner["outputCheck"].get("cases", [])) == 1,
+            "U3 History owner no longer has its reviewed CMake objective")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     if "compilerPuzzlesRequired" in document:
         require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
+    _validate_compiler_workflow_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
     _validate_compile_checks(document)
@@ -1944,6 +1980,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             "A reorder cannot modify lesson metadata")
     require(not baseline.get("compilerPuzzlesRequired", False) or current.get("compilerPuzzlesRequired", False),
             "Published mandatory compiler puzzles cannot be silently disabled")
+    require(not baseline.get("compilerWorkflowChecks") or
+            baseline.get("compilerWorkflowChecks") == current.get("compilerWorkflowChecks"),
+            "Published compiler workflow cannot be removed or changed")
     def shells(document):
         return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
                 for page, record in zip(document["pages"], document["stateLayout"]["current"])}
@@ -2137,6 +2176,9 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(previous_other == current_other, "A reorder cannot modify lesson metadata")
     require(not baseline.get("compilerPuzzlesRequired", False) or current.get("compilerPuzzlesRequired", False),
             "Published mandatory compiler puzzles cannot be silently disabled")
+    require(not baseline.get("compilerWorkflowChecks") or
+            baseline.get("compilerWorkflowChecks") == current.get("compilerWorkflowChecks"),
+            "Published compiler workflow cannot be removed or changed")
     before_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
                      for page, item in zip(baseline["pages"], baseline["stateLayout"]["current"])}
     after_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
