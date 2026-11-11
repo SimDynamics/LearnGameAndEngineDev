@@ -447,9 +447,10 @@ void verify_u2_exact_eof_client(HWND host,const std::filesystem::path& authored_
         require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
             "An edited client forged a valid original-source runtime achievement");
         const auto edited_status=edit_text(child(view,1034));
+        const auto edited_status_problem="The source-pinned rejection confused nonzero normal exit with a build failure: "+edited_status;
         require(edit_text(child(view,1014)).empty()&&
             edited_status=="Ejecución terminada (código 2).",
-            "The source-pinned rejection confused nonzero normal exit with a build failure: "+edited_status);
+            edited_status_problem.c_str());
         SendMessageW(view,WM_COMMAND,MAKEWPARAM(1079,BN_CLICKED),0);pump();
         require(edit_text(child(view,1014))==*check->standard_error_exact,
             "The real edited client did not produce the exact requested stderr bytes");
