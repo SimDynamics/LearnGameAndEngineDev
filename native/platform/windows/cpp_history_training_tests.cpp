@@ -373,7 +373,10 @@ void first_output_case_unlocks_without_discarding_optional_evidence(){
         compiler_puzzle_completed(first_only,lesson,block),
         "The first case still requires the remaining authored inputs");
     const auto original_feedback=compiler_puzzle_feedback(first_only,lesson,block);
-    const auto sealed_first=first_only.preferences.at("native_windows");
+    std::string sealed_first;
+    for(const auto& [key,value]:first_only.preferences.at("native_windows"))
+        if(key.ends_with("/completed")){sealed_first=std::get<std::string>(value);break;}
+    check(!sealed_first.empty(),"A first-only completion seal was not stored");
     run.stdin_utf8=second.standard_input;
     check(record_compiler_puzzle_case(first_only,lesson,block,run,other,"Correcto\\nEnsayo optativo")&&
         compiler_puzzle_case_count(first_only,lesson,block)==2&&
@@ -385,8 +388,7 @@ void first_output_case_unlocks_without_discarding_optional_evidence(){
             if(name.ends_with(suffix))return std::get<std::string>(value);
         throw std::runtime_error("Missing first-case receipt suffix");
     };
-    check(state_key(first_only,"completed")==state_key(state::StateData{
-            .preferences={{"native_windows",sealed_first}}},"completed"),
+    check(state_key(first_only,"completed")==sealed_first,
         "Optional second case rewrote the first-case completion seal");
     auto altered=first_only;
     for(auto& [name,value]:altered.preferences["native_windows"])
