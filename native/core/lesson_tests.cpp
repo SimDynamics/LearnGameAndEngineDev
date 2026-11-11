@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/rejection_diagnostic_facts.hpp"
 #include "core/retirement_test_fixture.hpp"
 #include "core/choice_revision_test_fixture.hpp"
 #include "core/compiler_revision_test_fixture.hpp"
@@ -1059,6 +1060,66 @@ void integrated_retirement_contract_tests() {
     check(useful==8,"Current U1 no longer contains exactly eight useful mandatory compilers");
     std::cout<<"Integrated U1 assets: exact compiler/reading retirement batches and d1933ed source, preserved ordering provenance/slots, eight mandatory useful objectives and no repeated retirement: PASS\n";
 }
+void rejection_semantic_contract_tests() {
+    using namespace lgaed::curriculum;
+    constexpr RejectionFacts boxes[]={{1,-1},{3,21}};
+    const auto authored=std::string(
+        "Cajas: petición 1, piezas=-1. Se admite un entero de 0 a 20. Revise la cantidad.\n"
+        "Cajas: petición 3, piezas=21. Se admite un entero de 0 a 20. Revise la cantidad.\n");
+    check(evaluate_rejection_diagnostics(authored,RejectionOperation::boxes,boxes).correct,
+        "A factually complete Spanish boxes diagnostic was rejected");
+    const auto alternative=std::string(
+        "CAJAS / solicitud 1 / cantidad -1 / rango 0..20 / verificar datos\r\n"
+        "cajas / solicitud 3 / cantidad 21 / rango 0..20 / verificar datos\r\n");
+    check(evaluate_rejection_diagnostics(alternative,RejectionOperation::boxes,boxes).correct,
+        "Equivalent Spanish words and CRLF were rejected");
+    for(const auto& bad:{
+        "Error\nError\n",
+        "Cajas: petición 1 piezas=21 intervalo 0 a 20. Revise.\nCajas: petición 3 piezas=-1 intervalo 0 a 20. Revise.\n",
+        "Cajas: petición 1 piezas=-1 intervalo 0 a 19. Revise.\nCajas: petición 3 piezas=21 intervalo 0 a 20. Revise.\n",
+        "Cajas: petición 1 piezas=-1 intervalo 0 a 20.\nCajas: petición 3 piezas=21 intervalo 0 a 20. Revise.\n",
+        "Cajas: petición 1 piezas=-1 intervalo 0 a 20. Revise.\nCajas: petición 3 piezas=21 intervalo 0 a 20. Revise.\nError\n",
+        "Cajas: petición 1 piezas=-1 sin existencias, intervalo 0 a 20. Revise.\nCajas: petición 3 piezas=21 intervalo 0 a 20. Revise.\n",
+    })check(!evaluate_rejection_diagnostics(bad,RejectionOperation::boxes,boxes).correct,
+        "A missing, invented or mismatched boxes fact obtained semantic credit");
+
+    constexpr RejectionFacts balances[]={{2,10,0},{3,0,-1}};
+    const auto saldo=std::string(
+        "Saldo: petición 2, cobros=10, devoluciones=0. Permitidos enteros 0 a 9 por campo. Revise.\n"
+        "Saldo: petición 3, cobros=0, devoluciones=-1. Permitidos enteros 0 a 9 por campo. Revise.\n");
+    check(evaluate_rejection_diagnostics(saldo,RejectionOperation::balance,balances).correct,
+        "A factually complete balances diagnostic was rejected");
+    for(const auto& bad:{
+        "Saldo: petición 2 cobros=0 devoluciones=10. Permitidos 0 a 9. Revise.\nSaldo: petición 3 cobros=0 devoluciones=-1. Permitidos 0 a 9. Revise.\n",
+        "Saldo: petición 2 cobros=10. Permitidos 0 a 9. Revise.\nSaldo: petición 3 cobros=0 devoluciones=-1. Permitidos 0 a 9. Revise.\n",
+        "Saldo: petición 2 cobros=10 devoluciones=0. Ambos inválidos, permitidos 0 a 9. Revise.\nSaldo: petición 3 cobros=0 devoluciones=-1. Permitidos 0 a 9. Revise.\n",
+    })check(!evaluate_rejection_diagnostics(bad,RejectionOperation::balance,balances).correct,
+        "A swapped, omitted or falsely invalid balances field obtained credit");
+
+    const auto boxes_probe=rejection_stream_probe_source(RejectionOperation::boxes,
+        "#include <iostream>\nint main(){return 0;}\n");
+    check(boxes_probe.find("#define main lgaed_student_original_main")!=std::string::npos
+        &&boxes_probe.find("informar_rechazo_cajas(primero, 1, -1)")!=std::string::npos
+        &&boxes_probe.find("informar_rechazo_cajas(segundo, 3, 21)")!=std::string::npos
+        &&boxes_probe.find("std::ostringstream primero, segundo")!=std::string::npos,
+        "The alternative stream probe did not call the original student function");
+    const auto marker=std::string(1,'\x1e');
+    const auto expected_stdout=authored.substr(0,authored.find('\n')+1)+marker+
+        authored.substr(authored.find('\n')+1);
+    check(evaluate_rejection_stream_probe(expected_stdout,"",RejectionOperation::boxes).correct,
+        "The alternative boxes ostreams did not prove the two rejection facts");
+    check(!evaluate_rejection_stream_probe("",authored,RejectionOperation::boxes).correct,
+        "Writing directly to std::cerr passed the alternative ostream probe");
+    check(!evaluate_rejection_stream_probe(authored,"",RejectionOperation::boxes).correct,
+        "Unsegmented output passed the independent stream test");
+    const auto saldo_stdout=saldo.substr(0,saldo.find('\n')+1)+marker+saldo.substr(saldo.find('\n')+1);
+    check(evaluate_rejection_stream_probe(saldo_stdout,"",RejectionOperation::balance).correct,
+        "The alternative balance ostreams did not prove their independent fields");
+    check(!evaluate_rejection_diagnostics("Error\n",RejectionOperation::balance,balances).correct,
+        "One generic message passed two independently requested rejections");
+    std::cout << "Semantic Spanish runtime diagnostics: equivalent wording, fields, interval and alternate ostream probes: PASS\n";
+}
+
 void standard_error_objective_tests(const Lesson& real_lesson) {
     using lgaed::windows::parse_lesson_json;
     using winrt::Windows::Data::Json::JsonObject;
@@ -1612,6 +1673,7 @@ int main(int argc,char** argv) {
         retirement_contract_tests(lesson);
         integrated_retirement_contract_tests();
         standard_error_objective_tests(lesson);
+        rejection_semantic_contract_tests();
         {
             const auto reviewed=parse_lesson_json(R"({"id":"reviews","title":"Reviews","pages":[{"blocks":[{"type":"multiple_choice","question":"Q","options":["A","B","C"],"correctIndex":1,"explanation":"Success","reviewFeedback":["Review A","Review B","Review C"]}]}]})");
             const auto& choice=reviewed.pages[0].blocks[0];
