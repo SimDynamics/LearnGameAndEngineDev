@@ -137,7 +137,8 @@ void full_sequence(){
     check(trace.record(base)&&!trace.complete(),"Recording a new revision reused the previous completion");
 }
 void comments_between_unchanged_commands_are_allowed(){
-    auto p=published(),bad=broken(p.project_files);
+    auto p=published();
+    auto bad=broken(p.project_files);
     for(auto& [path,code]:bad)if(path==root_path) {
         const std::string comment="# Se conserva el comentario de la raíz.\n";
         check(code.ends_with(comment),"The appended QA comment was lost");
