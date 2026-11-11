@@ -75,6 +75,17 @@ struct OutputCase {
     // New optional byte-exact runtime stderr goal; absent keeps legacy behavior.
     std::optional<std::string> standard_error_exact;
 };
+// Only identical *evaluated requirements* may reuse an old execution receipt.
+// Explanations and guidance can change without changing the evidence; an
+// absent, added or changed exact stderr constraint cannot inherit old credit.
+inline bool same_output_case_requirements(const OutputCase& left, const OutputCase& right) {
+    return left.standard_input == right.standard_input
+        && left.outputs == right.outputs
+        && left.executable == right.executable
+        && left.standard_error == right.standard_error
+        && left.standard_error_exact == right.standard_error_exact
+        && left.exit_code == right.exit_code;
+}
 struct OutputCheck {
     TextComparison input_comparison = TextComparison::exact;
     std::vector<OutputCase> cases;

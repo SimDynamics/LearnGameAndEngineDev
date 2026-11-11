@@ -229,10 +229,6 @@ std::optional<CurrentCompilerGuidance> current_v2_guidance(const curriculum::Les
         return CurrentCompilerGuidance{block.output_check->cases.front().explanation,"/outputCheck/cases/0/explanation"};
     return {};
 }
-bool same_case(const curriculum::OutputCase& left,const curriculum::OutputCase& right) {
-    return left.standard_input==right.standard_input&&left.outputs==right.outputs&&left.executable==right.executable&&
-        left.standard_error==right.standard_error&&left.exit_code==right.exit_code;
-}
 void validate_receipts(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     if(!curriculum::has_compiler_objective(block))return;const auto key=base(lesson,block);
     for(const auto suffix:{"program","completed","feedback"})if(const auto value=state::find(data,"native_windows",key+suffix);value&&!std::holds_alternative<std::string>(*value))
@@ -431,7 +427,7 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
             if(original.output_check->input_comparison==block.output_check->input_comparison)
                 for(std::size_t index=0;index<block.output_check->cases.size();++index)
                     for(std::size_t prior=0;prior<old_proofs.size();++prior)
-                        if(!old_proofs[prior].empty()&&same_case(original.output_check->cases[prior],block.output_check->cases[index])) {
+                        if(!old_proofs[prior].empty()&&curriculum::same_output_case_requirements(original.output_check->cases[prior],block.output_check->cases[index])) {
                             proofs[index]=proof(key,program,index,block.output_check->cases[index]);break;
                         }
             // A wholly replaced expected report keeps its old achievement,

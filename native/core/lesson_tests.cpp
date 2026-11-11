@@ -1191,6 +1191,42 @@ void standard_error_objective_tests(const Lesson& real_lesson) {
     check(reference_objective_frame(exact_model,exact_block)!=
           reference_objective_frame(exact_model,old_exact_block),
         "An older stdout/exit proof could satisfy a newly authored exact stderr objective");
+    // Historical case adoption must not turn a previously earned stdout/exit
+    // receipt into proof of a newly required exact stderr message.
+    const auto& original_case = old_exact_block.output_check->cases.front();
+    const auto& strict_case = exact_goal.cases.front();
+    check(!same_output_case_requirements(original_case, strict_case),
+        "Compiler migration inherited a case without its newly required exact stderr");
+    auto candidate_case = strict_case;
+    check(same_output_case_requirements(strict_case, candidate_case),
+        "An unchanged evaluated case cannot retain its previous execution proof");
+    candidate_case.explanation = "Updated guidance only.";
+    check(same_output_case_requirements(strict_case, candidate_case),
+        "Guidance-only changes invalidated equivalent execution requirements");
+    candidate_case.standard_error_exact = "Linea=2:FORMATO\\n";
+    check(!same_output_case_requirements(strict_case, candidate_case),
+        "Compiler migration reused a receipt for a different exact stderr goal");
+    candidate_case = strict_case;
+    candidate_case.standard_error_exact.reset();
+    check(!same_output_case_requirements(strict_case, candidate_case),
+        "Compiler migration treated removing exact stderr as equivalent");
+    candidate_case = strict_case;
+    candidate_case.standard_error = StandardErrorExpectation::non_blank;
+    check(!same_output_case_requirements(strict_case, candidate_case),
+        "Compiler migration ignored the legacy nonblank stderr requirement");
+    candidate_case = strict_case;
+    candidate_case.exit_code = 0;
+    check(!same_output_case_requirements(strict_case, candidate_case),
+        "Compiler migration ignored a changed normal exit code");
+    candidate_case = strict_case;
+    candidate_case.outputs = {"Another report"};
+    check(!same_output_case_requirements(strict_case, candidate_case),
+        "Compiler migration ignored a changed expected stdout");
+    candidate_case = strict_case;
+    candidate_case.executable = "another_target";
+    check(!same_output_case_requirements(strict_case, candidate_case),
+        "Compiler migration inherited a receipt from a different target");
+
     for(const auto& malformed : {R"(null)",R"(true)",R"(42)",R"([])",R"({})"}) {
         auto corrupt=std::string(R"json({"id":"bad_exact","title":"Bad type","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main(){}","outputCheck":{"cases":[{"standardInput":"","outputs":[""],"standardErrorExact":"SENTINEL"}]}}]}]})json");
         replace_once(corrupt,R"("SENTINEL")",malformed);
