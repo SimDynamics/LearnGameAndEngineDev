@@ -116,12 +116,15 @@ def msvc_x64_environment() -> tuple[dict[str, str], str]:
         raise RuntimeError(
             f"Could not initialize x64 MSVC: {proc.stdout}\n{proc.stderr}"
         )
-    env = os.environ.copy()
+    # Windows environment keys are case-insensitive, unlike plain Python
+    # dictionaries. vcvarsall publishes "Path", which must be used when
+    # locating cl.exe, CMake and Ninja through "PATH".
+    env = {name.upper(): value for name, value in os.environ.items()}
     for line in proc.stdout.splitlines():
         if "=" in line:
             name, value = line.split("=", 1)
             if name and not name.startswith("="):
-                env[name] = value
+                env[name.upper()] = value
     target = env.get("VSCMD_ARG_TGT_ARCH", "").lower()
     host = env.get("VSCMD_ARG_HOST_ARCH", "").lower()
     if target not in ("x64", "amd64") or host not in ("x64", "amd64"):
