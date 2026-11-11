@@ -2313,6 +2313,30 @@ std::optional<std::string> narration_language_tag(std::string_view authored) {
     return narration_tag(winrt::to_hstring(authored));
 }
 
+void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerWorkflowChecks"))return;
+    // Bind the new evidence requirement only after the immutable addresses
+    // have been checked. Original editor JSON and stdout receipts stay intact.
+    const auto checks=array(root,"compilerWorkflowChecks");
+    require(checks.Size()==1,"The U3 History workflow requires a unique owner");
+    const auto item=checks.GetObjectAt(0);
+    allowed_keys(item,{"activity","kind"},true);
+    require(text(item,"activity")=="block_0010_0003"&&
+            text(item,"kind")=="cmakeSelectiveRecoveryV1",
+            "Unknown compiler workflow owner or kind");
+    require(lesson.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"&&
+            lesson.locale=="es"&&lesson.state_layout.version==2&&
+            lesson.pages.size()==13&&lesson.pages[10].blocks.size()>3,
+            "Selective History belongs to the original Spanish U3 lesson");
+    auto& owner=lesson.pages[10].blocks[3];
+    require(owner.stable_id=="block_0010_0003"&&owner.type==BlockType::cpp_compiler&&
+            owner.output_check&&owner.output_check->cases.size()==1&&
+            owner.cmake&&owner.cmake->target=="comprobar_cajas"&&
+            owner.cmake->build_type=="Debug"&&owner.project_files.size()==6,
+            "Declared U3 History owner has an incompatible CMake objective");
+    owner.compiler_workflow_check=CompilerWorkflowCheck::cmake_selective_recovery_v1;
+}
+
 curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view expected_locale) {
     require(known_locale(expected_locale), "Unsupported asset language");
     ensure_winrt_apartment();
@@ -2348,6 +2372,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_compiler_workflow_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
@@ -2424,6 +2449,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_compiler_workflow_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);

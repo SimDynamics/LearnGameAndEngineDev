@@ -17,6 +17,9 @@ namespace lgaed::curriculum {
 
 enum class BlockType { heading, paragraph, note, code, multiple_choice, output_prediction,
                        fill_code, order_code, cpp_compiler, inline_fill_code, drag_fill_code, math_puzzle, image };
+// Derived from validated lesson-level metadata, never stored in a historical
+// editor block or its persisted response/fingerprint.
+enum class CompilerWorkflowCheck { cmake_selective_recovery_v1 };
 enum class TextComparison { trimmed, exact, tokens };
 enum class AnswerComparison { code, cpp_decimal_literal_value };
 
@@ -140,6 +143,7 @@ struct Block {
     std::optional<OrderRefinement> order_refinement;
     std::optional<ChoiceRevision> choice_revision;
     std::optional<CompilerRevision> compiler_revision;
+    std::optional<CompilerWorkflowCheck> compiler_workflow_check;
     std::optional<MathLabelRevision> math_label_revision;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
