@@ -60,9 +60,7 @@ void use_plain_text_input(HWND edit);
 // exposes a false value to narration. Only its synthetic empty-paragraph
 // selection is collapsed; real document selection remains native.
 void set_edit_hint(HWND edit, std::string_view text, COLORREF color = RGB(140,145,155), bool centered = false);
-// Android's display-only compactCodeSpaces: narrow U+0020 visually, without
-// replacing characters, syntax spans, selection, scrolling or Undo.
-void compact_code_spaces(HWND edit);
+// Displayed and editable code retain full-width monospace indentation.
 // Uses the HWND's optional reader_theme surface; untouched controls keep their
 // system palette. Never changes text, selection, scroll or the undo history.
 void style_cpp(HWND edit);

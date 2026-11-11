@@ -56,7 +56,9 @@ struct OrderCodeView::Impl {
             // WM_SETFONT replaces RichEdit's character defaults. It belongs
             // before the original syntax spans, never after their creation.
             SendMessageW(row,WM_SETFONT,reinterpret_cast<WPARAM>(font),FALSE);
-            set_rich_text(row,fragments[i],{},true);compact_code_spaces(row);
+            // Code cards use the same full-width monospace spaces as the
+            // editor. Never narrow indentation or remove original blank lines.
+            set_rich_text(row,fragments[i],{},true);
             SendMessageW(row,EM_SETTARGETDEVICE,0,1);
             SendMessageW(row,EM_SETEVENTMASK,0,ENM_REQUESTRESIZE);
             SetWindowSubclass(row,child,1,reinterpret_cast<DWORD_PTR>(this));rows.push_back(row);
@@ -116,7 +118,7 @@ struct OrderCodeView::Impl {
             if(length>0)include(static_cast<LONG>(start+length-1));
         }
         // Two device pixels cover final glyph overhang/rounding; all original
-        // text, compact spaces, syntax colors and selection remain untouched.
+        // text, full-width spaces, syntax colors and selection remain untouched.
         return {std::max(1L,right-first.x)+px(32)+2,std::max(1L,bottom-first.y)+px(16)+2};
     }
     void layout(int w){

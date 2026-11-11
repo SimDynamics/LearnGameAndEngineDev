@@ -830,45 +830,6 @@ void use_plain_text_input(HWND edit) {
     // The subclass keeps the initial reference; RichEdit added its own.
     // Both are released by native destruction, regardless of callback order.
 }
-void compact_code_spaces(HWND edit) {
-    GETTEXTLENGTHEX length{GTL_PRECISE|GTL_NUMCHARS,1200};
-    const auto count=SendMessageW(edit,EM_GETTEXTLENGTHEX,reinterpret_cast<WPARAM>(&length),0);
-    if(count<=0)return;
-    if(count>16*1024*1024)throw std::length_error("Code display text is too long");
-    std::wstring source(static_cast<std::size_t>(count)+1,L'\0');
-    GETTEXTEX get{static_cast<DWORD>(source.size()*sizeof(wchar_t)),GT_RAWTEXT,1200,nullptr,nullptr};
-    const auto copied=SendMessageW(edit,EM_GETTEXTEX,reinterpret_cast<WPARAM>(&get),reinterpret_cast<LPARAM>(source.data()));
-    if(copied<0)throw std::runtime_error("Cannot read code display text");source.resize(static_cast<std::size_t>(copied));
-    FormatTransaction transaction(edit);
-    // Unlike EM_SETCHARFORMAT, TOM refuses format changes on a readonly
-    // display. Unlock only within this synchronous UI-thread transaction,
-    // with redraw/events/Undo suspended, then restore before any repaint.
-    struct ReadonlyFormat {
-        HWND edit;bool readonly;
-        explicit ReadonlyFormat(HWND target):edit(target),readonly((GetWindowLongPtrW(target,GWL_STYLE)&ES_READONLY)!=0){
-            if(readonly)SendMessageW(edit,EM_SETREADONLY,FALSE,0);
-        }
-        ~ReadonlyFormat(){if(readonly)SendMessageW(edit,EM_SETREADONLY,TRUE,0);}
-    } readonly(edit);
-    if(!transaction.document)throw std::runtime_error("Cannot format compact code spaces");
-    const auto scale=[&](LONG first,LONG last,LONG percent){
-        Microsoft::WRL::ComPtr<ITextRange> range;
-        Microsoft::WRL::ComPtr<ITextFont> font;
-        Microsoft::WRL::ComPtr<ITextFont2> extended;
-        if(FAILED(transaction.document->Range(first,last,&range))||FAILED(range->GetFont(&font))||
-            FAILED(font.As(&extended))||FAILED(extended->SetScaling(percent)))
-            throw std::runtime_error("Cannot scale native code display spaces");
-    };
-    // CHARFORMAT2::sSpacing is compatibility metadata: RichEdit does not draw
-    // it. TOM2 horizontal scaling changes actual advances without changing
-    // characters, height, syntax spans or the text undo history.
-    scale(0,static_cast<LONG>(source.size()),100);
-    for(std::size_t first=0;first<source.size();){
-        if(source[first]!=L' '){++first;continue;}
-        auto last=first+1;while(last<source.size()&&source[last]==L' ')++last;
-        scale(static_cast<LONG>(first),static_cast<LONG>(last),80);first=last;
-    }
-}
 bool rich_text_hit_test(HWND edit,POINT point) {
     const auto px=[&](int dip){return MulDiv(dip,static_cast<int>(GetDpiForWindow(edit)),96);};
     POINTL location{point.x,point.y};

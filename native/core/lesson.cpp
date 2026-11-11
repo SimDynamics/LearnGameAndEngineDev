@@ -473,37 +473,59 @@ AnswerEvaluation evaluate_choice(const Block& block, std::size_t option) {
 }
 AnswerEvaluation evaluate_order(const Block& block, std::span<const std::size_t> order) {
     if (block.type != BlockType::order_code) throw std::invalid_argument("Invalid order answer");
-    if (order.size() != block.fragments.size() || block.correct_order.size() != block.fragments.size()) return verdict(block, false);
-    auto seen = std::vector<bool>(order.size());
-    for (const auto index : order) {
-        if (index >= order.size() || seen[index]) return verdict(block, false);
-        seen[index] = true;
+    const auto count=block.fragments.size();
+    if (order.size()!=count||block.correct_order.size()!=count)return verdict(block,false);
+    std::vector<bool> seen(count,false),canonical_seen(count,false);
+    for(std::size_t i=0;i<count;++i){
+        if(order[i]>=count||seen[order[i]]||
+           block.correct_order[i]>=count||canonical_seen[block.correct_order[i]])
+            return verdict(block,false);
+        seen[order[i]]=true;
+        canonical_seen[block.correct_order[i]]=true;
     }
-    // Every physical card must occur once. A reviewed group exchanges its
-    // canonical text slots only; text-identical cards remain interchangeable
-    // even when one physical index lies outside that group. Compare text bags
-    // in those slots rather than inferring C++ semantics or normalizing source.
-    const auto ungrouped = order.size();
-    std::vector<std::size_t> groups(order.size(),ungrouped);
-    std::vector<std::multiset<std::string_view>> expected_groups(block.order_equivalence_groups.size()), actual_groups(expected_groups.size());
-    for (std::size_t group=0;group<block.order_equivalence_groups.size();++group) {
-        const auto& members=block.order_equivalence_groups[group];
+    // Blank *physical cards* are presentation separators, not C++ or CMake
+    // instructions. Their authored bytes and persisted indices stay exactly
+    // as they were; only their placement is ignored for the order verdict.
+    // A nonblank fragment may contain meaningful embedded LF/CRLF or indent,
+    // and is always compared byte-for-byte with the authored source.
+    const auto spacer=[](std::string_view source){
+        return source.find_first_not_of(" \t\r\n\f\v")==std::string_view::npos;
+    };
+    std::vector<std::size_t> required,submitted;
+    required.reserve(count);submitted.reserve(count);
+    for(std::size_t i=0;i<count;++i){
+        if(!spacer(block.fragments[block.correct_order[i]]))
+            required.push_back(block.correct_order[i]);
+        if(!spacer(block.fragments[order[i]]))
+            submitted.push_back(order[i]);
+    }
+    if(required.empty()||required.size()!=submitted.size())return verdict(block,false);
+    // Reviewed equivalence groups still exchange only their explicitly
+    // approved text slots. Omitting decorative cards from the comparison must
+    // never broaden equivalent *instructions* or change source strings.
+    const auto ungrouped=count;
+    std::vector<std::size_t> groups(count,ungrouped);
+    std::vector<std::multiset<std::string_view>> expected_groups(
+        block.order_equivalence_groups.size()),actual_groups(expected_groups.size());
+    for(std::size_t g=0;g<block.order_equivalence_groups.size();++g){
+        const auto& members=block.order_equivalence_groups[g];
         if(members.size()<2)return verdict(block,false);
-        for(const auto index:members) {
-            if(index>=order.size()||groups[index]!=ungrouped)return verdict(block,false);
-            groups[index]=group;expected_groups[group].insert(block.fragments[index]);
+        for(const auto index:members){
+            if(index>=count||groups[index]!=ungrouped)return verdict(block,false);
+            groups[index]=g;
+            if(!spacer(block.fragments[index]))
+                expected_groups[g].insert(block.fragments[index]);
         }
     }
-    std::fill(seen.begin(), seen.end(), false);
-    for (std::size_t i = 0; i < order.size(); ++i) {
-        const auto expected = block.correct_order[i];
-        if (expected >= order.size() || seen[expected]) return verdict(block, false);
-        seen[expected] = true;
-        if(groups[expected]!=ungrouped)actual_groups[groups[expected]].insert(block.fragments[order[i]]);
-        else if (block.fragments[order[i]] != block.fragments[expected]) return verdict(block, false);
+    for(std::size_t i=0;i<required.size();++i){
+        const auto expected=required[i],actual=submitted[i];
+        if(groups[expected]!=ungrouped)
+            actual_groups[groups[expected]].insert(block.fragments[actual]);
+        else if(block.fragments[actual]!=block.fragments[expected])
+            return verdict(block,false);
     }
     if(actual_groups!=expected_groups)return verdict(block,false);
-    return verdict(block, true);
+    return verdict(block,true);
 }
 std::string order_representation_frame(const Block& block) {
     if (block.type != BlockType::order_code) throw std::invalid_argument("Invalid order representation");
