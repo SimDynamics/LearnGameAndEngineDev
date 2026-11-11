@@ -320,12 +320,25 @@ void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem
     }catch(...){cleanup();throw;}
 }
 
-void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson){
-    // The actual published owner and its six sources are loaded by the same
-    // production JSON reader. Only unrelated preceding pages are omitted:
-    // this is a focused lesson-view integration, not a claim to have tested
-    // progression through all thirteen pages of the original lesson.
-    const auto published=windows::load_lesson(authored_lesson);
+void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson,
+        bool declared_workflow=false){
+    // Both variants load the genuine 13-page lesson, with one editor isolated
+    // only for exercising History. The declared variant adds its root field
+    // in memory until Work publishes it, never to a student file.
+    auto published=windows::load_lesson(authored_lesson);
+    if(declared_workflow&&!published.pages.at(10).blocks.at(3).compiler_workflow_check){
+        const std::string marker="  \"compilerPuzzlesRequired\": true,";
+        auto amended=published.raw_json;
+        const auto at=amended.find(marker);
+        require(at!=std::string::npos,"U3 declaration QA could not find its original flow flag");
+        amended.insert(at,
+            "  \"compilerWorkflowChecks\": [{\"activity\":\"block_0010_0003\",\"kind\":\"cmakeSelectiveRecoveryV1\"}],\n");
+        published=windows::parse_lesson_json(amended,"es");
+    }
+    if(declared_workflow)
+        require(published.pages.at(10).blocks.at(3).compiler_workflow_check==
+                    curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1,
+            "The integrated U3 lesson did not adopt its declarative workflow");
     require(published.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
         &&published.pages.size()==13&&published.pages[10].blocks.size()>=4,
         "The published U3L2 lesson structure differs from the reviewed owner");
@@ -489,11 +502,12 @@ int main(int argc,char** argv){
     using namespace lgaed;using namespace presentation;
     const bool internal_only=argc==3&&std::string_view(argv[2])=="--internal-dialogs";
     const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
+    const bool u3_selective_declared=argc==4&&std::string_view(argv[2])=="--u3-selective-declared";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
     const bool u3_declaration=argc==4&&std::string_view(argv[2])=="--u3-declaration";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_gates||u3_declaration||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -616,10 +630,12 @@ int main(int argc,char** argv){
         else if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
         else if(u3_declaration)verify_declared_u3_compiler_workflow(std::filesystem::path(argv[3]));
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
+        else if(u3_selective_declared)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true);
         else if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
         DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
+        else if(u3_selective_declared)std::cout<<"PASS declared Win32 U3 History: original editor, record, failure, compare, recover, success and reopen\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
         else if(u3_declaration)std::cout<<"PASS declared U3 History: full/summary reader, immutable exercise identity and negative contracts\n";
         else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";

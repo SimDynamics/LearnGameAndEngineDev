@@ -269,6 +269,14 @@ if(LGAED_READER_BUILD_QA_ONLY)
             --u3-declaration
             "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
     set_tests_properties(native.cpp_project_u3_declaration PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    # Exercise the full native History interaction with the root declaration
+    # active in an in-memory curriculum, preserving the original JSON.
+    add_test(NAME native.cpp_project_u3_declared_selective
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-selective-declared
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_declared_selective PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     # Regression for other C++ activities with multiple independent inputs:
     # correct-but-partial answers must not display U3 History instructions.
     add_test(NAME native.cpp_project_other_cpp_multicase
