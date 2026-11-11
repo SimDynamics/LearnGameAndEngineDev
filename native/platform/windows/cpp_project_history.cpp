@@ -68,6 +68,17 @@ CppProjectHistory::CppProjectHistory(std::filesystem::path root,std::string_view
 }
 CppHistoryRevision CppProjectHistory::load(std::string_view id)const{require(hex_id(id),"Invalid revision identity");const auto path=root_/key_/(std::string(id)+".revision");
     return decode_cpp_revision(state::read_bytes(path,revision_limit),id,key_);}
+void CppProjectHistory::authenticate_revision(const CppHistoryRevision& revision)const {
+    require(hex_id(revision.id)&&revision.project_key==key_,"Invalid revision identity or project");
+    // Verify the complete persisted record at the moment of the operation.
+    const auto published=load(revision.id);
+    require(published.project_key==revision.project_key
+        &&published.uuid==revision.uuid&&published.label==revision.label
+        &&published.created_at==revision.created_at
+        &&published.files==revision.files&&published.sources==revision.sources
+        &&published.indentation==revision.indentation,
+        "The selected revision differs from its immutable on-disk content");
+}
 std::vector<CppHistorySummary> CppProjectHistory::summaries(std::stop_token stop)const{const auto directory=root_/key_;state::require_safe_path(directory);std::vector<CppHistorySummary> result;
     if(!std::filesystem::exists(state::native_io_path(directory)))return result;
     for(const auto& entry:std::filesystem::directory_iterator(state::native_io_path(directory)))if(entry.path().extension()==L".revision"){
@@ -105,14 +116,7 @@ CppHistoryVerifiedRestoration CppProjectHistory::restore_file_verified(std::stri
         const curriculum::CppProjectFiles& current,const CppHistoryRevision& revision)const{
     // Read the immutable on-disk revision again at application time. A stale,
     // forged or modified in-memory revision is not evidence of a recovery.
-    require(hex_id(revision.id)&&revision.project_key==key_,"Invalid recovery revision identity");
-    const auto published=load(revision.id);
-    require(published.project_key==revision.project_key
-        &&published.uuid==revision.uuid&&published.label==revision.label
-        &&published.created_at==revision.created_at
-        &&published.files==revision.files&&published.sources==revision.sources
-        &&published.indentation==revision.indentation,
-        "The chosen recovery source differs from its immutable on-disk revision");
+    authenticate_revision(revision);
     auto recovered=restore_file(path,current,revision);
     const auto saved=file(revision.files,path);
     const auto prior=file(current,path);
@@ -136,6 +140,24 @@ CppHistoryVerifiedRestoration CppProjectHistory::restore_file_verified(std::stri
     CppHistoryRecoveryEvidence evidence{revision.id,std::string(path),
         digest(prior),digest(actual),preserved,changed};
     return {std::move(recovered),std::move(evidence)};
+}
+CppHistoryVerifiedComparison CppProjectHistory::diff_verified(std::string_view path,
+        const curriculum::CppProjectFiles& current,const CppHistoryRevision& revision)const {
+    authenticate_revision(revision);
+    const auto before=file(revision.files,path),after=file(current,path);
+    require(before||after,"No file exists at the requested comparison path");
+    const auto digest=[](const std::string* data)->std::optional<std::string>{
+        return data?std::optional<std::string>{state::sha256(*data)}:std::nullopt;};
+    auto differences=diff(path,current,revision);
+    std::size_t added=0,removed=0;
+    for(const auto& line:differences) {
+        if(line.type==CppHistoryLineType::added)++added;
+        if(line.type==CppHistoryLineType::removed)++removed;
+    }
+    const bool changed=(before==nullptr)!=(after==nullptr) ||
+        (before&&after&&*before!=*after);
+    require(!changed||(added+removed)>0,"A changed file has no comparison differences");
+    return {std::move(differences),{revision.id,std::string(path),digest(before),digest(after),added,removed,changed}};
 }
 std::vector<CppHistoryDiffLine> CppProjectHistory::diff(std::string_view path,const curriculum::CppProjectFiles& current,const CppHistoryRevision& revision)const{
     require(portable_path(path)&&revision.project_key==key_,"Invalid revision file or project");validate(current,{},{});validate(revision.files,revision.sources,revision.indentation);const auto before=file(revision.files,path),after=file(current,path);

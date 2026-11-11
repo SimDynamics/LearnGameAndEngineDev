@@ -34,6 +34,17 @@ int main(int argc,char** argv){try{
     require(recorded.files==current&&history.load(recorded.id).files==current&&history.summaries().size()==2,"Recording/reopening changed another revision or source bytes");
     require(state::read_bytes(root/key/(id+".revision"))==bytes,"Registering a new revision rewrote the imported record");
     const auto statuses=history.statuses(current,original);require(statuses.size()==3&&statuses[0].path=="include/nota.h"&&statuses[0].change==CppHistoryChange::modified&&statuses[2].change==CppHistoryChange::added,"History file statuses do not compare the current draft against the chosen revision");
+    const auto compared=history.diff_verified("main.cpp",current,original);
+    require(compared.evidence.revision_id==id&&compared.evidence.path=="main.cpp"
+        &&compared.evidence.revision_sha256==std::optional<std::string>{state::sha256(original.files[0].second)}
+        &&compared.evidence.draft_sha256==std::optional<std::string>{state::sha256(current[0].second)}
+        &&compared.evidence.changed&&compared.evidence.added_lines==1
+        &&compared.evidence.removed_lines==1&&compared.lines.size()==2,
+        "A comparison did not authenticate both the immutable revision and current draft");
+    const auto compared_unchanged=history.diff_verified("main.cpp",original.files,original);
+    require(!compared_unchanged.evidence.changed
+        &&compared_unchanged.evidence.added_lines==0&&compared_unchanged.evidence.removed_lines==0,
+        "Equal files were reported as a changed comparison");
     const auto restored=history.restore_file("main.cpp",current,original);
     require(restored==curriculum::CppProjectFiles{{"main.cpp",original.files[0].second},current[1],current[2]},"Restoring one file replaced or normalized an unrelated file");
     const auto verified=history.restore_file_verified("main.cpp",current,original);
@@ -49,6 +60,12 @@ int main(int argc,char** argv){try{
         "An unchanged restored file was incorrectly reported as a new recovery");
     rejects([&]{(void)history.restore_file_verified("inexistente.cpp",current,original);});
     const auto removed=history.restore_file("nuevo.cpp",current,original);require(removed==curriculum::CppProjectFiles{current[0],current[1]},"Removing a file absent from the revision changed another source");
+    const auto compared_removal=history.diff_verified("nuevo.cpp",current,original);
+    require(compared_removal.evidence.changed
+        &&!compared_removal.evidence.revision_sha256
+        &&compared_removal.evidence.draft_sha256==std::optional<std::string>{state::sha256("// nuevo\n")}
+        &&compared_removal.evidence.added_lines==1&&compared_removal.evidence.removed_lines==0,
+        "Comparing a file absent from the immutable revision lost the new-file state");
     const auto verified_removal=history.restore_file_verified("nuevo.cpp",current,original);
     require(verified_removal.files==removed&&verified_removal.evidence.changed
         &&verified_removal.evidence.before_sha256==std::optional<std::string>{state::sha256("// nuevo\n")}
@@ -67,6 +84,8 @@ int main(int argc,char** argv){try{
     rejects([&]{(void)history.restore_file_verified("main.cpp",current,invalid_revision_id);});
     auto forged_revision=original;forged_revision.files[0].second="    return 999;\n";
     rejects([&]{(void)history.restore_file_verified("main.cpp",current,forged_revision);});
+    rejects([&]{(void)history.diff_verified("main.cpp",current,forged_revision);});
+    rejects([&]{(void)history.diff_verified("missing.hpp",current,original);});
     auto forged_label=original;forged_label.label="Revisión falsa";
     rejects([&]{(void)history.restore_file_verified("main.cpp",current,forged_label);});
     auto missing_revision=original;missing_revision.id=std::string(64,'f');
@@ -92,12 +111,28 @@ int main(int argc,char** argv){try{
         &&before_status[1].change==CppHistoryChange::modified
         &&before_status[2].change==CppHistoryChange::unchanged,
         "U3 recovery fixture omitted either independent file edit");
+    const auto root_comparison=history.diff_verified("CMakeLists.txt",failed_project,cmake_revision);
+    const auto source_comparison=history.diff_verified("componente/src/cajas.cpp",failed_project,cmake_revision);
+    require(root_comparison.evidence.changed&&source_comparison.evidence.changed
+        &&root_comparison.evidence.revision_id==cmake_revision.id
+        &&source_comparison.evidence.revision_id==cmake_revision.id
+        &&root_comparison.evidence.path!=source_comparison.evidence.path
+        &&root_comparison.evidence.added_lines==1
+        &&source_comparison.evidence.removed_lines>=1
+        &&source_comparison.evidence.added_lines>=1,
+        "The two U3 CMake files were not independently compared with the same immutable revision");
     const auto selectively=history.restore_file_verified("componente/src/cajas.cpp",failed_project,cmake_revision);
     require(selectively.evidence.revision_id==cmake_revision.id
         &&selectively.evidence.changed&&selectively.evidence.preserved_other_files==2
         &&selectively.files[1]==cmake_base[1]&&selectively.files[0]==failed_project[0]
         &&selectively.files[2]==failed_project[2],
         "U3 recovery did not restore only its selected source from the recorded revision");
+    const auto residual=history.diff_verified("CMakeLists.txt",selectively.files,cmake_revision);
+    const auto source_after=history.diff_verified("componente/src/cajas.cpp",selectively.files,cmake_revision);
+    require(residual.evidence.changed&&!source_after.evidence.changed
+        &&residual.evidence.draft_sha256==root_comparison.evidence.draft_sha256
+        &&source_after.evidence.draft_sha256==source_comparison.evidence.revision_sha256,
+        "A selective recovery did not preserve the independently compared CMake comment");
     const auto after_status=history.statuses(selectively.files,cmake_revision);
     require(after_status[0].change==CppHistoryChange::modified
         &&after_status[1].change==CppHistoryChange::unchanged

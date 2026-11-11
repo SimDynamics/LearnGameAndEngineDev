@@ -298,7 +298,8 @@ void CppProjectView::Impl::open_history(){
                     capture();const auto status=statuses[file_index];
                     choices.async([&,history_copy=history,current=files,status,revision,locale=language](std::stop_token)->std::function<void()>{
                         const auto translate=[&](const char* es,const char* en,const char* fr){return pick(locale,es,en,fr);};
-                        const auto differences=history_copy.diff(status.path,current,revision);
+                        const auto verified=history_copy.diff_verified(status.path,current,revision);
+                        const auto& differences=verified.lines;
                         std::string text;if(status.change==windows::CppHistoryChange::added)text=translate(
                             "Esta revisión no contiene este archivo. Recuperar su estado lo quitará únicamente del borrador actual.\n",
                             "This revision does not contain this file. Recovering its state will remove only this file from the current draft.\n",
@@ -307,7 +308,7 @@ void CppProjectView::Impl::open_history(){
                         for(const auto& line:differences){text+=line.type==windows::CppHistoryLineType::context?"  ":line.type==windows::CppHistoryLineType::added?"+ ":"− ";text+=line.text;
                             if(line.type!=windows::CppHistoryLineType::context&&(line.ending=="\r"||line.ending=="\r\n"))text+=line.ending=="\r\n"?" ⏎ CRLF":" ⏎ CR";
                             text+='\n';if(line.ending.empty())text+=translate("(Sin salto de línea final)\n","(No final newline)\n","(Pas de saut de ligne final)\n");}
-                        return [&,life,status,revision,text=std::move(text)]{
+                        return [&,life,status,revision,text=std::move(text),evidence=verified.evidence]{
                             if(!*life)return;
                             Dialog comparison;comparison.title=status.path;comparison.close_text=root.close_text;
                             comparison.primary_text=status.change==windows::CppHistoryChange::added
@@ -320,6 +321,9 @@ void CppProjectView::Impl::open_history(){
                             SendMessageW(comparison.body,EM_SETSEL,0,-1);SendMessageW(comparison.body,EM_SETCHARFORMAT,SCF_SELECTION,reinterpret_cast<LPARAM>(&format));
                             SendMessageW(comparison.body,EM_SETSEL,0,0);SendMessageW(comparison.body,EM_SETBKGNDCOLOR,0,RGB(31,35,48));SendMessageW(comparison.body,EM_SETTARGETDEVICE,0,1);
                             EnableWindow(comparison.primary,status.change!=windows::CppHistoryChange::unchanged);
+                            // Observation of the real diff window, not an award
+                            // of curricular completion or evidence of a rerun.
+                            if(callbacks.compared_file)callbacks.compared_file(evidence);
                             comparison.accept=[&,life,status,revision]{
                                 if(!*life)return true;capture();const bool existed=std::ranges::any_of(files,[&](const auto& item){return item.first==status.path;});
                                 comparison.async([&,history_copy=history,current=files,status,revision,existed,locale=language](std::stop_token)->std::function<void()>{

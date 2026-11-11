@@ -34,6 +34,16 @@ struct CppHistoryVerifiedRestoration {
     curriculum::CppProjectFiles files;
     CppHistoryRecoveryEvidence evidence;
 };
+struct CppHistoryComparisonEvidence {
+    std::string revision_id, path;
+    std::optional<std::string> revision_sha256, draft_sha256;
+    std::size_t added_lines=0, removed_lines=0;
+    bool changed=false;
+};
+struct CppHistoryVerifiedComparison {
+    std::vector<CppHistoryDiffLine> lines;
+    CppHistoryComparisonEvidence evidence;
+};
 // The original Android binary format and SHA-256, also used by its importer.
 [[nodiscard]] CppHistoryRevision decode_cpp_revision(std::span<const std::uint8_t>,
     std::string_view id,std::string_view project_key);
@@ -49,6 +59,10 @@ public:
         const CppHistoryRevision&)const;
     [[nodiscard]] std::vector<CppHistoryDiffLine> diff(std::string_view path,
         const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
+    // A comparison is linked to the actual immutable revision on disk and
+    // the captured draft, not merely to two labels shown by the UI.
+    [[nodiscard]] CppHistoryVerifiedComparison diff_verified(std::string_view path,
+        const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
     [[nodiscard]] curriculum::CppProjectFiles restore_file(std::string_view path,
         const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
     // Authenticate the selected revision and compare EVERY sibling with the
@@ -56,6 +70,7 @@ public:
     [[nodiscard]] CppHistoryVerifiedRestoration restore_file_verified(std::string_view path,
         const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
 private:
+    void authenticate_revision(const CppHistoryRevision&)const;
     std::filesystem::path root_;
     std::string key_;
 };

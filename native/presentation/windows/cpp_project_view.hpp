@@ -17,6 +17,9 @@ struct CppProjectCallbacks {
     // Fired only after the existing UI actually applies a verified recovery.
     // This is one observation, never a complete curricular achievement.
     std::function<void(const windows::CppHistoryRecoveryEvidence&)> restored_file;
+    // Emitted when the app actually displays a comparison from the selected
+    // persisted revision to the captured draft. Viewing it is not grading.
+    std::function<void(const windows::CppHistoryComparisonEvidence&)> compared_file;
 };
 class CppProjectView {
 public:
