@@ -353,6 +353,8 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         // Keep stdout-only proof identities byte-for-byte compatible, while a
         // newly authored stderr objective always requires fresh native proof.
         if (item.standard_error == StandardErrorExpectation::non_blank) token("standard-error/nonBlank/v1");
+        // New exact stderr proof never inherits a previous stdout-only receipt.
+        if (item.standard_error_exact) { token("standard-error/exact/v1"); token(*item.standard_error_exact); }
         // A normal nonzero termination is a new objective, never an inherited
         // stdout-only proof. Omitted/explicit zero keeps every old byte intact.
         if (item.exit_code != 0) { token("process-exit-code/v1"); token(std::to_string(item.exit_code)); }
@@ -560,8 +562,10 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
     if (selected->exit_code < 0 || selected->exit_code > 255 ||
         (selected->exit_code == 0 && execution.exit_code != 0)) return {};
     const bool stdout_correct = std::ranges::find(selected->outputs, execution.standard_output) != selected->outputs.end();
-    const bool stderr_correct = selected->standard_error == StandardErrorExpectation::ignored ||
-        !trimmed(execution.standard_error).empty();
+    const bool stderr_correct = selected->standard_error_exact
+        ? execution.standard_error == *selected->standard_error_exact
+        : (selected->standard_error == StandardErrorExpectation::ignored ||
+           !trimmed(execution.standard_error).empty());
     const bool exit_code_correct = execution.exit_code == selected->exit_code;
     if (!exit_code_correct) return {OutputVerdict::incorrect, {}, stdout_correct, stderr_correct, false};
     if (stdout_correct && stderr_correct) {
@@ -570,7 +574,9 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
         return result;
     }
     if (stdout_correct)
-        return {OutputVerdict::incorrect, "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.", true, false};
+        return {OutputVerdict::incorrect, selected->standard_error_exact
+            ? "La salida estándar coincide; stderr no coincide exactamente con el diagnóstico solicitado."
+            : "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.", true, false};
     for (std::size_t n=0;n<selected->review_feedback.size();++n) {
         const auto& rule=selected->review_feedback[n];
         if(std::ranges::find(rule.outputs,execution.standard_output)!=rule.outputs.end()) {

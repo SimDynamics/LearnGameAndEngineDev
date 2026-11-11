@@ -64,6 +64,8 @@ struct OutputCase {
     StandardErrorExpectation standard_error = StandardErrorExpectation::ignored;
     // Omission keeps the historical successful-process objective.
     int exit_code = 0;
+    // New optional byte-exact runtime stderr goal; absent keeps legacy behavior.
+    std::optional<std::string> standard_error_exact;
 };
 struct OutputCheck {
     TextComparison input_comparison = TextComparison::exact;

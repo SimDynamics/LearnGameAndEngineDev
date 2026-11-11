@@ -848,9 +848,9 @@ class ExtendedRepositoryGateTest(unittest.TestCase):
                         mock.patch.object(contract, 'ERRORS', []), redirect_stderr(output), \
                         redirect_stdout(output):
                     if malformed:
-                        with self.assertRaises(SystemExit): contract.main(['--base-ref', published])
+                        with self.assertRaises(SystemExit): contract.main(['--base-ref', published, '--course', 'cpp_fundamentals'])
                     else:
-                        contract.main(['--base-ref', published])
+                        contract.main(['--base-ref', published, '--course', 'cpp_fundamentals'])
                 if malformed:
                     self.assertIn('initialCode debe ser texto', output.getvalue())
                 else:
@@ -877,6 +877,6 @@ class ExtendedRepositoryGateTest(unittest.TestCase):
                 mock.patch.object(contract, 'ERRORS', []), \
                 mock.patch.object(contract, 'APPROVED_EDITORIAL_REVISIONS', approval), \
                 redirect_stdout(io.StringIO()):
-            contract.main(['--base-ref', published])
+            contract.main(['--base-ref', published, '--course', 'cpp_fundamentals'])
 
 if __name__ == '__main__': unittest.main(verbosity=2)

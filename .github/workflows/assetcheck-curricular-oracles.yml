@@ -1,0 +1,119 @@
+name: AssetCheck curricular output contracts
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/assetcheck-curricular-oracles.yml
+      - scripts/curriculum/test_assetcheck_curricular_oracles.py
+      - scripts/curriculum/verify_assetcheck_editor_references_cpp23.py
+      - scripts/curriculum/assetcheck_differential_cases.py
+      - scripts/curriculum/verify_assetcheck_cmake_preparation_windows.py
+      - scripts/windows/Capture-AssetCheckCMakeU4L3.ps1
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_preparar_y_comprobar_cmake_en_windows.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_leer_y_validar_un_registro.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_procesar_un_lote_y_detectar_duplicados.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_leer_manifiesto_y_publicar_informe.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_disenar_probar_y_presentar_variante_propia.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: assetcheck-curriculum-oracles-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-contracts:
+    name: Verify 4 exercises against independent output oracles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read the actual Codex curriculum sources
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check the 16 curricular output cases and oracle regressions
+        run: python3 -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
+
+  compile-curricular-references:
+    name: "Compile actual curricular C++23 references (${{ matrix.report }})"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            generator: Ninja
+            report: gcc
+          - os: windows-2025-vs2026
+            generator: "Visual Studio 18 2026"
+            report: msvc-x64
+    steps:
+      - name: Read original after-attempt reference and editor code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Select Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Build four isolated C++23 reference executables and verify outputs
+        run: python scripts/curriculum/verify_assetcheck_editor_references_cpp23.py --generator "${{ matrix.generator }}" --report "out/qa/assetcheck-curriculum/${{ matrix.report }}.json"
+      - name: Preserve exact curricular-only results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: assetcheck-curriculum-${{ matrix.report }}-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: out/qa/assetcheck-curriculum/${{ matrix.report }}.json
+
+  check-cmake-preparation:
+    name: Reproduce U4L3 CMake edit/rebuild with MSVC x64 and Ninja
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 15
+    steps:
+      - name: Check out current lesson and verification script
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Select Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Configure, build, run, edit and rebuild isolated U4L3 with Ninja
+        run: python scripts/curriculum/verify_assetcheck_cmake_preparation_windows.py --report out/qa/assetcheck-curriculum/u4l3-cmake-msvc-x64.json
+      - name: Preserve CMake reconstruction evidence, not student screenshots
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: assetcheck-u4l3-msvc-x64-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: out/qa/assetcheck-curriculum/u4l3-cmake-msvc-x64.json
+
+  capture-u4l3-real-console:
+    name: Capture real U4L3 CMD screens on hosted Windows (not student screenshots)
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read actual curricular CMake and main.cpp examples
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Capture real CMD configure, build and edited rebuild on Windows
+        run: .\scripts\windows\Capture-AssetCheckCMakeU4L3.ps1
+      - name: Preserve genuine Windows screenshots, CMD recipes and provenance
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: assetcheck-u4l3-real-console-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: out/qa/assetcheck-u4l3-console/**

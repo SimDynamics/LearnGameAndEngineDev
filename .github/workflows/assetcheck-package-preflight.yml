@@ -1,0 +1,48 @@
+name: AssetCheck archive preflight safety
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/assetcheck-package-preflight.yml
+      - scripts/windows/Inspect-AssetCheckArchive.ps1
+      - scripts/windows/Compare-AssetCheckSelection.ps1
+      - scripts/windows/Read-AssetCheckIntegrationPlan.ps1
+      - scripts/windows/Test-Read-AssetCheckIntegrationPlan.ps1
+      - scripts/windows/Test-Inspect-AssetCheckArchive.ps1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: assetcheck-archive-preflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  synthetic-archive-safety:
+    name: Inspect only synthetic ZIPs on disposable Windows
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Read the non-destructive package inspector and its tests
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Reject traversal, collisions, malformed members and incorrect hashes
+        run: .\scripts\windows\Test-Inspect-AssetCheckArchive.ps1
+      - name: Parse embedded integrator source without executing it
+        run: .\scripts\windows\Test-Read-AssetCheckIntegrationPlan.ps1
+      - name: Preserve synthetic test report only, not private user files
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: assetcheck-synthetic-preflight-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/assetcheck-package-preflight/synthetic-results.json
+            out/qa/assetcheck-package-preflight/synthetic-integrator-review.json
