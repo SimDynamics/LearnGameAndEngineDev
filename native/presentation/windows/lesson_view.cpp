@@ -2964,9 +2964,7 @@ struct LessonView {
                 const auto saved_cmake=state::string_value(data,"cpp_lesson_drafts",draft_key(index)+"/cmake");
                 const auto active=store.root()/"active";
                 const auto history_root=(std::filesystem::exists(active/"android")?active/"android":active)/"files"/"cpp_project_history";
-                if(lesson.locale=="es"&&
-                    lesson.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"&&
-                    current.stable_id=="block_0010_0003")
+                if(windows::compiler_selective_history_required(lesson,current))
                     vm.selective_recovery=std::make_unique<windows::CmakeSelectiveRecoveryTrace>(current);
                 vm.project=std::make_unique<CppProjectView>(pane,current,vm.source,*vm.source_editor,saved_project,saved_cmake,
                     history_root,draft_key(index),interface_language(data),CppProjectCallbacks{

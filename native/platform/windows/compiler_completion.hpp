@@ -8,6 +8,9 @@
 
 namespace lgaed::windows {
 class CmakeSelectiveRecoveryTrace;
+// The native evaluator and Win32 reader share the same curricular gate.
+[[nodiscard]] bool compiler_selective_history_required(const curriculum::Lesson&,
+    const curriculum::Block&);
 // A completed curricular objective belongs to the successful captured program,
 // never to the editable draft. Only the explicit exercise reset revokes it.
 [[nodiscard]] std::string compiler_program_frame(const CppRunRequest&);

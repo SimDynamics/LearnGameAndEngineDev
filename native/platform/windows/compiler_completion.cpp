@@ -20,6 +20,11 @@ std::string base(const curriculum::Lesson& lesson, const curriculum::Block& bloc
 // The prior stdout receipt is still valid historical data but is insufficient
 // to prove this lesson's separate recorded/compared/restored CMake workflow.
 bool selective_history_owner(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    if(block.compiler_workflow_check==curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1)
+        return block.type==curriculum::BlockType::cpp_compiler&&
+            block.output_check&&block.cmake&&block.cmake->target=="comprobar_cajas";
+    // Keep the historical owner gated until its exact root declaration is
+    // published. Existing stdout receipts cannot replace History evidence.
     return lesson.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
         &&lesson.locale=="es"&&block.stable_id=="block_0010_0003"
         &&block.type==curriculum::BlockType::cpp_compiler
@@ -243,6 +248,9 @@ void validate_receipts(const state::StateData& data,const curriculum::Lesson& le
             throw std::runtime_error("Invalid compiler completion proof; data was preserved.");
     }
 }
+}
+bool compiler_selective_history_required(const curriculum::Lesson& lesson,const curriculum::Block& block) {
+    return selective_history_owner(lesson,block);
 }
 std::string compiler_program_frame(const CppRunRequest& request) {
     if(request.project_files.empty())return "single-file-v1/"+token(request.source_utf8);
