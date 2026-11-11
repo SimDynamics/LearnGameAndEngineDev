@@ -183,7 +183,15 @@ void integrated_selective_history_lesson(HWND host,const std::filesystem::path& 
         await([&]{return IsWindowEnabled(run);},"Initial stdout-only CMake run did not finish");
         require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
             "A seven-case stdout match granted selective-history completion");
-        require(edit_text(child(view,1004)).find("falta acreditar la secuencia")!=std::string::npos,
+        const auto initial_feedback=edit_text(child(view,1004));
+        if(initial_feedback.find("falta acreditar la secuencia")==std::string::npos) {
+            const auto initial_status=edit_text(child(view,1034));
+            const auto initial_console=edit_text(child(view,1014));
+            std::cerr<<"U3 INITIAL QA feedback="<<initial_feedback.substr(0,900)
+                <<" status="<<initial_status.substr(0,900)
+                <<" console="<<initial_console.substr(0,1500)<<"\\n";
+        }
+        require(initial_feedback.find("falta acreditar la secuencia")!=std::string::npos,
             "The real reader did not explain why stdout alone is insufficient");
 
         {ModalScenario modal(host,ModalScenario::Kind::record);click(project,302);modal.verified();}
