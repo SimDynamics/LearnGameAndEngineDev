@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada línea tiene exactamente tres campos: id tipo tamano_bytes. Aceptamos como máximo 80 bytes, ASCII imprimible y tabulaciones. El identificador tiene de 1 a 12 caracteres, comienza con una letra y continúa con letras, dígitos o guion bajo. Los tipos admitidos son textura, malla y sonido. El tamaño es un número de 1 a 30000 escrito con uno a cinco dígitos ASCII."
+          "text": "Cada línea del manifiesto contiene exactamente tres campos, en este orden: id tipo tamano_bytes. La línea completa admite como máximo 80 bytes; sólo son válidos los caracteres ASCII imprimibles y las tabulaciones.\n\nCada campo tiene su propio contrato:\n\n1. id. Contiene de 1 a 12 caracteres, comienza con una letra y continúa únicamente con letras, dígitos o guion bajo.\n\n2. tipo. Debe ser exactamente textura, malla o sonido.\n\n3. tamano_bytes. Contiene de uno a cinco dígitos ASCII y representa un tamaño entre 1 y 30000."
         },
         {
           "type": "paragraph",
@@ -94,7 +94,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Después se requieren exactamente tres campos. std::istringstream puede extraerlos con >>, pero hay que intentar una cuarta extracción para descubrir texto sobrante. Un lector que acepta «Roca malla 240 extra» no ha consumido correctamente su entrada."
+          "text": "Después de revisar la longitud y los bytes, la línea debe aportar exactamente tres campos. Usa std::istringstream y el operador >> en este orden:\n\n1. Extrae id, tipo y tamano_bytes. Si falta cualquiera de los tres, rechaza el registro por FORMATO.\n\n2. Intenta una cuarta extracción. No debe existir un cuarto campo.\n\n3. Si aparece texto sobrante, rechaza el registro por FORMATO. La línea «Roca malla 240 extra» es inválida aunque sus primeros tres campos parezcan correctos.\n\nSólo después de confirmar la estructura se comprueban ID, TIPO y TAMANO, respetando ese orden de causas."
         },
         {
           "type": "code",
@@ -350,7 +350,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la consola de desarrollo x64, desde la raíz del nuevo proyecto AssetCheck, se puede configurar con «cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug», construir «cmake --build build --target comprobar_registro», ejecutar «build\\comprobar_registro.exe» y comprobar con «ctest --test-dir build --output-on-failure». No ejecutes estas órdenes dentro de 01_prueba_cmake ni reutilices un build de otro generador."
+          "text": "Desde la raíz del proyecto externo AssetCheck, abre una consola de desarrollo x64 y realiza estas cuatro operaciones en orden:\n\n1. Configurar y generar: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug. CMake prepara los archivos de construcción en build.\n\n2. Construir el comprobador: cmake --build build --target comprobar_registro. Verifica que esta fase termine sin errores.\n\n3. Ejecutar el comprobador: build\\comprobar_registro.exe. Observa la salida y el código de terminación del programa.\n\n4. Ejecutar la batería: ctest --test-dir build --output-on-failure. Contrasta el resultado de CTest con las pruebas del programa.\n\nNo ejecutes estas órdenes dentro de 01_prueba_cmake ni reutilices una carpeta build de otra raíz o generador. Si ya existe una caché ajena, elige otro directorio de construcción y sustituye build en todas las órdenes; no borres datos de otros proyectos."
         },
         {
           "type": "paragraph",
@@ -442,8 +442,51 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "5d4315894db48d7dec8e34c71db4be24be25c3800c58566f1170019dab9430f0",
-        "spans": []
+        "sourceSha256": "40e1a6865ad157e3905254e7bee11a94a0a898c690db0fc041227f8caea8162f",
+        "spans": [
+          {
+            "start": 75,
+            "end": 95,
+            "text": "id tipo tamano_bytes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 142,
+            "text": "80 bytes",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 289,
+            "text": "1 a 12 caracteres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 401,
+            "end": 424,
+            "text": "textura, malla o sonido",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 481,
+            "text": "uno a cinco dígitos ASCII",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 520,
+            "text": "1 y 30000",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -580,8 +623,37 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "0a43422ff10f37263b6bc523def7cf411f6cc18a4aa1b1665f9f5fdfaf608cb7",
-        "spans": []
+        "sourceSha256": "d2e47af4a096425a99cccf451c35d54ed8ad6d542fa71f339264d5f87356cfb9",
+        "spans": [
+          {
+            "start": 95,
+            "end": 113,
+            "text": "std::istringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 390,
+            "end": 410,
+            "text": "Roca malla 240 extra",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 531,
+            "end": 548,
+            "text": "ID, TIPO y TAMANO",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0005",
@@ -886,8 +958,51 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "c9bd0abc88942bf383fad94a8732ccd2f5d08e4e027319de22f2ba1000e6ac1e",
-        "spans": []
+        "sourceSha256": "1137094f2fce499d6465f410fbfd58e42a47e61b3d1479c3bad62da219ac034a",
+        "spans": [
+          {
+            "start": 35,
+            "end": 45,
+            "text": "AssetCheck",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 153,
+            "end": 206,
+            "text": "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 338,
+            "text": "cmake --build build --target comprobar_registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 413,
+            "end": 441,
+            "text": "build\\comprobar_registro.exe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 527,
+            "end": 569,
+            "text": "ctest --test-dir build --output-on-failure",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 670,
+            "end": 685,
+            "text": "01_prueba_cmake",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
@@ -1588,6 +1703,22 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "5dbe78f16754758a99eb30f59eaf318dc29dd196aa3dd399a1aa1c6a585f362e",
+        "afterSha256": "4b36e6556d998d306ea311f7dfc82c03f0c3eec4e3d83d2b449c827133364d49"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "b8455423dd1f06f0738d1fd089920ef4b07a3f121a2303a6e444ba162b7379be",
+        "afterSha256": "d6af62e114d1412de423cd1c91a055a66ef15e7aa703081c4d5b485f1e922dd0"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "d58c08aaf6341b7f8ee2e70266983808978290409a4c86d9ba028214beac0834",
+        "afterSha256": "fe00342d07a0c12ded28bce94c6433669838a49ebbfe5fb13d67d8d0d1459c80"
+      }
+    ]
   }
 }
