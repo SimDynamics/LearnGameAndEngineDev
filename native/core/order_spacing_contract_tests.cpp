@@ -1,4 +1,5 @@
 #include "core/lesson.hpp"
+#include "core/order_source_text.hpp"
 #include "core/lesson_state.hpp"
 #include <iostream>
 #include <stdexcept>
@@ -57,6 +58,73 @@ void preserve_original_contract(){
     check(lgaed::state::decode(bytes)==stored,
         "Original responses, references or progress were changed on state reopen");
 }
+void preserve_copied_source_with_empty_cards(){
+    const std::vector<std::string> fragments={
+        "", "    int value=4;", "", "    return value;", "\n",
+        "set(TEXT \"one\\ntwo\")", "  set(TEXT \"one\ntwo\")"};
+    check(ordered_source_text(fragments,std::vector<std::size_t>{0,1,2,3})==
+        "\n    int value=4;\n\n    return value;",
+        "Copy collapsed the leading or internal empty source cards");
+    check(ordered_source_text(fragments,std::vector<std::size_t>{1,2,3,4})==
+        "    int value=4;\n\n    return value;\n\n",
+        "Copy collapsed a trailing authored blank physical line");
+    check(ordered_source_text(fragments,std::vector<std::size_t>{5,6})==
+        "set(TEXT \"one\\ntwo\")\n  set(TEXT \"one\ntwo\")",
+        "Copy rewrote the distinction between a CMake quoted newline and backslash-n");
+    const std::vector<std::string> continued={
+        "#define SUM(x) \\\n", "    ((x) + 1)", "std::cout << \"\\n\";",
+        "const char* code=R\"cpp(line one\nline two)cpp\";",
+        "// A line comment", "int next=2;", ""};
+    check(ordered_source_text(continued,std::vector<std::size_t>{0,1})==
+        "#define SUM(x) \\\n    ((x) + 1)",
+        "Copy inserted a second physical newline inside a continued macro");
+    check(ordered_source_text(continued,std::vector<std::size_t>{2,3})==
+        "std::cout << \"\\n\";\nconst char* code=R\"cpp(line one\nline two)cpp\";",
+        "Copy confused a C++ escaped newline and physical raw-string newline");
+    check(ordered_source_text(continued,std::vector<std::size_t>{4,5})==
+        "// A line comment\nint next=2;",
+        "Copy concatenated a subsequent statement into a line comment");
+    check(ordered_source_text(continued,std::vector<std::size_t>{0,1,6})==
+        "#define SUM(x) \\\n    ((x) + 1)\n",
+        "An explicit trailing blank source card was lost after a continued macro");
+    const std::vector<std::string> cmake={
+        "set(SCRIPT \"first\n", "second\")\n", "message(STATUS \"ready\")"};
+    check(ordered_source_text(cmake,std::vector<std::size_t>{0,1,2})==
+        "set(SCRIPT \"first\nsecond\")\nmessage(STATUS \"ready\")",
+        "Copy inserted a second newline into an existing CMake string or command boundary");
+    check(ordered_source_text(fragments,std::vector<std::size_t>{}).empty(),
+        "An empty unsolved order introduced source bytes");
+    bool rejected=false;
+    try{(void)ordered_source_text(fragments,std::vector<std::size_t>{1,99});}
+    catch(const std::out_of_range&){rejected=true;}
+    check(rejected,"Copy accepted an invented source-card identity");
+}
+
+void preserve_drag_fill_template_and_historical_answers(){
+    Block drag;drag.type=BlockType::drag_fill_code;
+    drag.stable_id="block_0005_0006";drag.address.page=5;drag.address.block=6;
+    drag.code_template="int main() {\n\n    const int group=4;\n    []\n\n    []\n}\n";
+    drag.choices={"std::cout << group;", "return 0;", "return 1;"};
+    drag.correct_order={0,1};
+    Lesson lesson;lesson.id="drag_spacing_contract";lesson.locale="es";
+    const auto key=exercise_key(lesson,drag);
+    const auto stored=drag;
+    const std::vector<std::size_t> correct{0,1},wrong{1,0},missing{0},duplicate{0,0};
+    check(evaluate_drag_answers(drag,correct).correct,
+        "A legitimate drag-fill result was rejected by template-only blank lines");
+    check(!evaluate_drag_answers(drag,wrong).correct&&
+          !evaluate_drag_answers(drag,missing).correct&&
+          !evaluate_drag_answers(drag,duplicate).correct,
+        "A missing, reused or reordered code fragment passed after adding visual separation");
+    check(drag.code_template==stored.code_template&&
+          drag.choices==stored.choices&&drag.correct_order==stored.correct_order&&
+          exercise_key(lesson,drag)==key,
+        "Drag-fill source, answer index, reference or saved response identity changed");
+    check(drag.code_template.find("\n\n")!=std::string::npos&&
+          drag.code_template.find("    []")!=std::string::npos,
+        "The drag-fill source lost its meaningful indentation or vertical whitespace");
+}
+
 void preserve_equivalence_and_meaningful_newlines(){
     auto grouped=example({"", "    abrir();", "\n", "    cerrar();", "    registrar();", " \t"},{1,2,3,4,0,5});
     grouped.order_equivalence_groups={{1,3}};
@@ -89,6 +157,8 @@ int main(){
     try {
         preserve_original_contract();
         preserve_equivalence_and_meaningful_newlines();
+        preserve_drag_fill_template_and_historical_answers();
+        preserve_copied_source_with_empty_cards();
         std::cout<<"PASS exact historical order/source, explicit optional presentation only, state and references\n";
         return 0;
     }catch(const std::exception& e){
