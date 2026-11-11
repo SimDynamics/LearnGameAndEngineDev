@@ -1,0 +1,2737 @@
+{
+  "id": "programming_practice_tools__proyecto_assetcheck__leer_manifiesto_y_publicar_informe",
+  "title": "Leer un manifiesto físico y publicar un informe completo",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De declaraciones individuales a un archivo real"
+        },
+        {
+          "type": "paragraph",
+          "text": "En U4L4 se validaba una línea sin consultar otras. En U4L5 el lote conserva la primera admisión válida de cada ID y detecta duplicados. Esta etapa añade la lectura de los bytes de un archivo, la distinción de sus terminadores, los fallos globales y un cliente que sólo publica resultados cuando conoce el desenlace completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "AssetCheck sigue siendo un verificador de declaraciones de recursos: id tipo tamano_bytes. No abre las texturas, mallas ni sonidos anunciados, no mide archivos ni comprueba formatos multimedia. El usuario puede interpretar el informe, corregir el manifiesto y volver a ejecutarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El contrato ya fijado permite hasta 80 bytes de contenido por línea, cien líneas físicas por archivo y LF o CRLF como terminadores. Cada línea localmente inválida se rechaza y la revisión continúa; no abrir el archivo, una lectura fallida o encontrar la línea 101 son errores globales que impiden publicar un informe parcial (Kernighan & Pike, 1999, capítulos 4 y 6)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_diferencia_lote_fisico",
+          "question": "¿Qué aporta U4L6 frente a procesar_linea de U4L5?",
+          "options": [
+            "Abre y recorre un archivo físico, controla fallos globales y publica sólo la revisión completa.",
+            "Comprueba que cada textura de verdad se pueda representar.",
+            "Sustituye las reglas de FORMATO por las del sistema de archivos."
+          ],
+          "correctIndex": 0,
+          "explanation": "La nueva capa alimenta al lote con líneas físicas y decide si puede presentar un resultado completo.",
+          "reviewFeedback": [
+            "La entrada y los fallos globales son la novedad.",
+            "El contenido real del recurso queda fuera del alcance.",
+            "Las reglas anteriores permanecen."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Abrir en modo binario para observar los mismos bytes"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Windows, una apertura de texto puede transformar ciertos finales de línea antes de que el programa los examine. Para distinguir exactamente LF, CRLF y CR aislado, el archivo del manifiesto se abre con std::ifstream y std::ios::binary. El modo binario no convierte la entrada en un archivo multimedia: sólo evita traducciones de bytes del flujo de texto."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\nstd::ifstream archivo(ruta, std::ios::binary);\nif (!archivo.is_open()) {\n    error = ErrorGlobal::apertura;\n    return false;\n}\n// La ruta se recibe del cliente y no se adivina."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un intento de apertura fallido sólo acredita que el programa no logró abrir ese origen. No permite atribuir sin evidencia la causa a permisos, ausencia del archivo, otro proceso o antivirus. El cliente mostrará ERROR causa=APERTURA y terminará con código 2, sin filas de aceptación ni resumen."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usaremos una interfaz std::istream& para probar la lectura con flujos en memoria. Así se puede inyectar un error sin depender de desconectar un disco, alterar archivos personales ni asumir condiciones particulares del equipo (Kernighan & Pike, 1999, capítulo 6)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_por_que_binario",
+          "question": "¿Por qué conviene abrir el manifiesto con std::ios::binary?",
+          "options": [
+            "Para conservar los bytes que distinguen CRLF de un CR aislado.",
+            "Para permitir nombres con cualquier emoji sin validarlos.",
+            "Para que el programa mida automáticamente las texturas."
+          ],
+          "correctIndex": 0,
+          "explanation": "El lector debe clasificar los terminadores originales, sin normalizaciones ocultas.",
+          "reviewFeedback": [
+            "Se preserva la secuencia recibida.",
+            "El repertorio permitido no cambia.",
+            "No se inspeccionan los recursos declarados."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "LF, CRLF y el significado de una línea vacía"
+        },
+        {
+          "type": "paragraph",
+          "text": "LF es el byte de valor 10. CRLF es la pareja de valores 13 y 10. Cuando llega LF, cerramos una línea y quitamos un único CR si está inmediatamente antes. CR seguido de otra cosa, incluso otro CR, queda como contenido y será FORMATO al validar la línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "El terminador no participa en el límite de 80 bytes. Una declaración que contiene exactamente 80 bytes más CRLF sigue dentro del límite. Si el contenido alcanza 81 bytes, es FORMATO. Un tabulador cuenta como un solo byte aunque su ancho visual sea mayor."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "if (c == '\\n') {\n    if (!linea.empty() && linea.back() == '\\r')\n        linea.pop_back();     // Retirar sólo el CR de CRLF.\n    procesar_linea(linea, numero, lote);\n    linea.clear();\n} else {\n    linea.push_back(c);       // No descartar CR aislados.\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un archivo vacío tiene cero líneas. «A malla 1» sin terminador final tiene una línea; «A malla 1\\n» también tiene una, no dos. «A malla 1\\n\\n» contiene dos: la segunda es vacía y se rechaza por FORMATO. El archivo se interpreta según la presencia real de bytes, no añadiendo líneas por conveniencia."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_archivo_marcas_de_linea",
+          "prompt": "Relaciona la secuencia de bytes con la cantidad de líneas físicas. Las barras inclinadas representan caracteres de escape, no texto literal del manifiesto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "Archivo completamente vacío"
+                },
+                {
+                  "id": "b",
+                  "label": "A malla 1\\n"
+                },
+                {
+                  "id": "c",
+                  "label": "A malla 1\\n\\n"
+                },
+                {
+                  "id": "d",
+                  "label": "A malla 1\\r\\nB sonido 2 (sin terminador final)"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "cero",
+                  "label": "0 líneas"
+                },
+                {
+                  "id": "uno",
+                  "label": "1 línea sin línea fantasma"
+                },
+                {
+                  "id": "dos_vacia",
+                  "label": "2 líneas, segunda vacía y rechazada"
+                },
+                {
+                  "id": "dos",
+                  "label": "2 líneas, ambas con datos"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "cero",
+                  "b": "uno",
+                  "c": "dos_vacia",
+                  "d": "dos"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El terminador cierra la línea que lo precede; por sí solo no crea una adicional al final del archivo. Dos terminadores consecutivos sí producen una línea vacía entre ellos.",
+            "incorrect": "Cuenta las líneas cerradas por LF/CRLF y sólo agrega la última si realmente contiene bytes al llegar a EOF."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La última línea y los caracteres que no se deben borrar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al alcanzar EOF normalmente, hay que procesar la última línea si permanecieron bytes desde el terminador anterior. Si acabábamos de consumir LF, no hay una línea adicional. Un CR al final sin LF sigue siendo contenido inválido, no se convierte automáticamente en terminador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool tiene_bytes = false;\nfor (;;) {\n    const auto dato = entrada.get();\n    if (dato == std::char_traits<char>::eof()) {\n        // Comprobar si fue EOF normal o fallo de lectura.\n        break;\n    }\n    const char c = static_cast<char>(dato);\n    if (c == '\\n') { /* cerrar línea; restablecer tiene_bytes */ }\n    else { tiene_bytes = true; /* conservar contenido */ }\n}\nif (tiene_bytes) { /* cerrar última línea sin terminador */ }"
+        },
+        {
+          "type": "paragraph",
+          "text": "El lector local de U4L4 recibe bytes, no un texto recortado para facilitar su aceptación. Rechazará NUL, acentos UTF-8, CR aislado, más de ochenta bytes y campos incompletos. La decisión FORMATO no sustituye la causa de un fallo al leer del sistema, que pertenece a la operación completa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Es posible conservar sólo los primeros 81 bytes de una línea mientras se consume el resto del flujo: 81 ya bastan para acreditar el exceso. La excepción es CRLF: si se almacenaron 81 bytes y el último era CR justo antes de LF, se retira y quedan 80 bytes válidos. No se debe recortar el último byte de una línea larga sin ese terminador."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_81_con_crlf",
+          "question": "Una línea tiene exactamente 80 bytes de contenido y después CRLF. ¿Qué longitud se entrega a leer_registro?",
+          "options": [
+            "82, porque CR y LF son caracteres del contenido.",
+            "80, porque la pareja CRLF es el terminador.",
+            "79, porque C++ resta automáticamente un carácter."
+          ],
+          "correctIndex": 1,
+          "explanation": "El terminador completo queda fuera de los ochenta bytes y no cambia la declaración.",
+          "reviewFeedback": [
+            "Se excluyen los dos bytes del terminador.",
+            "Se conserva el contenido original de 80 bytes.",
+            "La operación se implementa expresamente."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cien líneas incluyen todas las rechazadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El máximo de cien se aplica a líneas físicas, no a admisiones. Cien líneas con tamaño cero son cien rechazos normales y producen un informe completo. Si aparece una línea 101, aunque fuese válida o inválida, el archivo supera el alcance acordado."
+        },
+        {
+          "type": "paragraph",
+          "text": "La detección de la línea 101 es global: error LIMITE_LINEAS, código 2, stdout vacío y un único mensaje en stderr. No se puede sustituir esa salida por el resumen de las cien líneas anteriores, porque aparentaría haber revisado todo el archivo. Una línea 101 sin terminador también supera el límite."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "++numero;\nif (numero > 100) {\n    error = ErrorGlobal::limite_lineas;\n    return false;  // El cliente todavía no ha publicado nada.\n}\nprocesar_linea(linea, numero, candidato);"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el lector de referencia se usa una colección local candidato. Sólo después de terminar satisfactoriamente se sustituye destino. Esto evita publicar una revisión incompleta y mantiene un informe anterior en memoria sin presentarlo como si perteneciera al nuevo archivo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_cien_invalidas",
+          "question": "Un archivo contiene exactamente cien líneas, todas con TAMANO inválido, sin fallos de lectura. ¿Cuál es el resultado global?",
+          "options": [
+            "ERROR causa=LIMITE_LINEAS y código 2.",
+            "Informe completo con cien rechazos y código 1.",
+            "Un archivo vacío porque ninguna línea era admisible."
+          ],
+          "correctIndex": 1,
+          "explanation": "El límite se refiere a líneas físicas; los rechazos de contenido no bloquean el resto de la revisión.",
+          "reviewFeedback": [
+            "La línea 101 no apareció.",
+            "Las cien se clasifican y la revisión finaliza con rechazos.",
+            "El número de admisiones no define si hubo líneas."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "No confundir final normal con error al leer"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::istream::get devuelve un indicador especial cuando no obtiene otro carácter. Después se debe comprobar si el flujo terminó normalmente o si ocurrió un error. Un fallo real de lectura impide garantizar la cobertura completa: la causa global es LECTURA y el cliente no presenta resultados parciales."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "const auto dato = entrada.get();\nif (dato == std::char_traits<char>::eof()) {\n    if (entrada.bad() || !entrada.eof()) {\n        error = ErrorGlobal::lectura;\n        return false;\n    }\n    break;  // EOF normal: revisar si queda una última línea.\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado de abrir el archivo y el resultado de consumirlo son operaciones diferentes. Un archivo accesible puede fallar durante su lectura. Para las pruebas se puede usar un std::streambuf de ensayo que falle después de entregar algunos bytes; no hace falta provocar fallos sobre un disco real (Kernighan & Pike, 1999, capítulo 5)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al terminar una revisión correcta, stdout contiene todas las admisiones y un resumen, stderr los rechazos, y el código es 0 si no hubo ninguno o 1 si los hubo. Un error global cambia ese desenlace: stdout vacío, stderr con una sola línea ERROR causa=APERTURA, LECTURA o LIMITE_LINEAS y código 2."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_fallo_lectura",
+          "question": "Se admitieron dos líneas, pero después falló la lectura antes de alcanzar EOF normal. ¿Qué debe publicar el cliente?",
+          "options": [
+            "Dos aceptados y un resumen con sólo los datos conocidos.",
+            "Sólo ERROR causa=LECTURA en stderr, código 2.",
+            "Un código 0 porque las líneas anteriores eran correctas."
+          ],
+          "correctIndex": 1,
+          "explanation": "No sabemos si existen líneas posteriores. La revisión no está completa.",
+          "reviewFeedback": [
+            "El informe parcial aparenta una cobertura que no ocurrió.",
+            "Se distingue un error del flujo de un rechazo local.",
+            "El éxito exige completar la lectura."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: contar las líneas físicas sin inventarlas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este editor usa bytes preparados en memoria para practicar la regla de terminadores antes de abrir archivos. Completa únicamente contar_lineas. Cuenta líneas, vacías y líneas con CR suelto. Al encontrar la 101, devuelve sólo el indicador excedido y pone a cero los recuentos parciales. No modifiques los datos de cada escenario ni la función main."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "#include <iostream>\n#include <string>\nstruct Conteo {\n    int lineas = 0;\n    int vacias = 0;\n    int cr_sueltos = 0;\n    bool excedido = false;\n};\n\n// Trabaja con bytes preparados, sin abrir un archivo del equipo.\nConteo contar_lineas(const std::string& bytes) {\n    Conteo resultado;\n    // TODO: reconoce LF y CRLF, y cuenta cada línea física.\n    // Un CR sin LF es contenido y se cuenta como CR suelto.\n    // No inventes otra línea vacía después de un terminador final.\n    // Si aparece la línea 101, devuelve {0,0,0,true}.\n    return resultado;\n}\n\nstd::string datos(const std::string& nombre) {\n    if (nombre == \"VACIO\") return \"\";\n    if (nombre == \"LF\") return \"A malla 1\\nB sonido 2\\n\";\n    if (nombre == \"CRLF\") return \"A malla 1\\r\\nB sonido 2\\r\\n\";\n    if (nombre == \"ULTIMA\") return \"A malla 1\\nB sonido 2\";\n    if (nombre == \"BLANCO\") return \"A malla 1\\n\\nB sonido 2\\n\";\n    if (nombre == \"CRSUELTO\") return \"A malla\\r 1\\n\";\n    if (nombre == \"FINALCR\") return \"A malla 1\\r\";\n    if (nombre == \"CIEN\" || nombre == \"CIENTOUNO\") {\n        std::string x;\n        const int n = nombre == \"CIEN\" ? 100 : 101;\n        for (int i = 0; i < n; ++i) x += \"A malla 1\\n\";\n        return x;\n    }\n    return \"\";\n}\nint main() {\n    std::string nombre;\n    while (std::cin >> nombre) {\n        const Conteo r = contar_lineas(datos(nombre));\n        std::cout << nombre << ':' << r.lineas << ':' << r.vacias << ':'\n                  << r.cr_sueltos << ':' << r.excedido << '\\n';\n    }\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "VACIO LF CRLF\n",
+                "outputs": [
+                  "VACIO:0:0:0:0\nLF:2:0:0:0\nCRLF:2:0:0:0\n"
+                ],
+                "explanation": "El archivo vacío no contiene líneas; LF y CRLF delimitan dos, sin línea fantasma final."
+              },
+              {
+                "standardInput": "ULTIMA BLANCO\n",
+                "outputs": [
+                  "ULTIMA:2:0:0:0\nBLANCO:3:1:0:0\n"
+                ],
+                "explanation": "La última línea sin terminador sí existe; dos LF consecutivos crean una línea vacía intermedia."
+              },
+              {
+                "standardInput": "CRSUELTO FINALCR\n",
+                "outputs": [
+                  "CRSUELTO:1:0:1:0\nFINALCR:1:0:1:0\n"
+                ],
+                "explanation": "Un CR aislado, interior o al final sin LF, permanece como contenido inválido en la lectura real."
+              },
+              {
+                "standardInput": "CIEN CIENTOUNO\n",
+                "outputs": [
+                  "CIEN:100:0:0:0\nCIENTOUNO:0:0:0:1\n"
+                ],
+                "explanation": "Cien líneas están permitidas; la 101 invalida globalmente el intento y no publica contadores parciales."
+              }
+            ]
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Los escenarios VACIO, LF, CRLF, ULTIMA, BLANCO, CRSUELTO, FINALCR, CIEN y CIENTOUNO permiten diferenciar soluciones defectuosas que coincidirían con un solo archivo simple. La aplicación debe compilar el programa C++ y comparar las salidas por caso; superar las muestras no demuestra todavía la apertura de un archivo real."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_editor_cola",
+          "question": "¿Por qué el escenario ULTIMA cuenta dos líneas, aunque la segunda no tenga LF final?",
+          "options": [
+            "Porque llega a EOF con bytes pendientes desde el último terminador.",
+            "Porque todo archivo crea una línea extra al terminar.",
+            "Porque el programa interpreta cada espacio como salto."
+          ],
+          "correctIndex": 0,
+          "explanation": "La última declaración conserva su condición de línea aunque no esté cerrada por un terminador.",
+          "reviewFeedback": [
+            "El contenido pendiente exige cerrar la última línea.",
+            "No se añade una línea fantasma.",
+            "Los espacios separan campos dentro de la línea."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia protegida del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después del intento, contrasta esta función con la tuya. El punto decisivo es cerrar líneas únicamente cuando llega LF o cuando EOF deja bytes pendientes, retirar sólo el CR de CRLF y reiniciar el recuento ante la línea 101. Esta referencia sirve para el ejercicio en memoria; no sustituye la biblioteca del archivo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Conteo contar_lineas(const std::string& bytes) {\n    Conteo resultado;\n    std::string linea;\n    bool hay_bytes = false;\n    const auto terminar = [&]() -> bool {\n        ++resultado.lineas;\n        if (resultado.lineas > 100) {\n            resultado = Conteo{0, 0, 0, true};\n            return false;\n        }\n        if (linea.empty()) ++resultado.vacias;\n        if (linea.find('\\r') != std::string::npos)\n            ++resultado.cr_sueltos;\n        linea.clear();\n        hay_bytes = false;\n        return true;\n    };\n    for (char c : bytes) {\n        if (c == '\\n') {\n            if (!linea.empty() && linea.back() == '\\r')\n                linea.pop_back();\n            if (!terminar()) return resultado;\n        } else {\n            linea.push_back(c);\n            hay_bytes = true;\n        }\n    }\n    if (hay_bytes) terminar();\n    return resultado;\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "La prueba separada de referencia ejecutada en Linux utilizó C++23. En el proyecto externo real se añade además la detección de error de lectura, la validación de registros y la conservación de admisiones. Un contador correcto no acredita esas otras responsabilidades."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una interfaz para una revisión completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "La biblioteca nueva se llama assetcheck_manifiesto y depende de assetcheck_lote, que a su vez depende de assetcheck_registro. Su función revisar_archivo recibe la ruta como dato; revisar_flujo recibe un std::istream& para permitir pruebas. Ambas escriben la causa global por separado y sólo sustituyen el Lote destino si la revisión se completó."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#pragma once\n#include \"assetcheck/lote.hpp\"\n#include <filesystem>\n#include <iosfwd>\n#include <string>\nnamespace assetcheck {\nenum class ErrorGlobal { ninguno, apertura, lectura, limite_lineas };\nbool revisar_flujo(std::istream& origen, Lote& destino,\n                   ErrorGlobal& error);\nbool revisar_archivo(const std::filesystem::path& ruta, Lote& destino,\n                    ErrorGlobal& error);\nstd::string salida_admisiones(const Lote& lote);\nstd::string salida_rechazos(const Lote& lote);\nstd::string diagnostico_global(ErrorGlobal error);\nint codigo_terminacion(ErrorGlobal error, const Lote& lote);\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "En src/manifiesto.cpp el bucle lee byte por byte, mantiene como máximo 81 bytes de cada línea y usa procesar_linea con la numeración original. Una lectura completa de un archivo vacío produce un lote vacío y el resumen de cero líneas; en cambio, una apertura fallida no produce resumen."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "Lote candidato;\nstd::string linea;\nstd::size_t numero = 0;\nbool tiene_bytes = false;\n// Dentro de revisar_flujo, después de comprobar\n// los límites, finales de línea y estado del flujo:\nif (tiene_bytes) { /* procesar última línea */ }\ndestino = std::move(candidato); // Sólo en éxito.\nreturn true;"
+        },
+        {
+          "type": "paragraph",
+          "text": "La implementación externa de referencia incluye pruebas para las tres causas globales. Un fallo simulado de lectura no obliga a cambiar el sistema operativo; demuestra que la biblioteca separa correctamente datos incompletos y salida pública. Las pruebas de este componente y de la CLI se describen en las siguientes páginas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_destino_anterior",
+          "question": "Una revisión correcta anterior quedó en Lote destino. La siguiente revisión falla por LIMITE_LINEAS. ¿Qué ocurre?",
+          "options": [
+            "Se publica el informe anterior para evitar dejar stdout vacío.",
+            "La biblioteca conserva destino, pero el cliente nuevo no lo imprime como resultado del intento fallido.",
+            "Se mezclan los registros de ambos archivos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Conservar estado y publicar un resultado son obligaciones distintas.",
+          "reviewFeedback": [
+            "Un informe anterior no documenta el nuevo archivo.",
+            "La revisión fallida sólo produce diagnóstico global.",
+            "Los lotes independientes no se mezclan."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir el resultado en stdout, stderr y código de retorno"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cliente recibe exactamente una ruta de manifiesto. Si no puede abrirla, informa ERROR causa=APERTURA y código 2. Si la revisión global falla, tampoco imprime admisiones ni resumen. Cuando la lectura se completa, imprime primero todo stdout con admisiones y resumen, y deja los rechazos en stderr. No se promete un orden conjunto entre ambos canales."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main(int argc, char* argv[]) {\n    if (argc != 2) {\n        std::cerr << \"ERROR causa=APERTURA\\n\";\n        return 2;\n    }\n    assetcheck::Lote informe;\n    assetcheck::ErrorGlobal error = assetcheck::ErrorGlobal::ninguno;\n    if (!assetcheck::revisar_archivo(argv[1], informe, error)) {\n        std::cerr << assetcheck::diagnostico_global(error);\n        return 2;\n    }\n    std::cout << assetcheck::salida_admisiones(informe);\n    std::cerr << assetcheck::salida_rechazos(informe);\n    return assetcheck::codigo_terminacion(error, informe);\n}"
+        },
+        {
+          "type": "paragraph",
+          "text": "La muestra de U4L2, ocho declaraciones con las siete primeras cerradas por CRLF y la última sin terminador, exige este stdout exacto:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "ACEPTADO linea=1 id=Atlas tipo=textura bytes=12\nACEPTADO linea=3 id=Pieza tipo=malla bytes=3\nACEPTADO linea=5 id=atlas tipo=sonido bytes=1\nACEPTADO linea=8 id=Eco tipo=sonido bytes=2\nRESUMEN lineas=8 aceptados=4 rechazados=4\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Y este stderr exacto, independientemente del orden en el que una consola combine ambos canales:"
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "RECHAZO linea=2 causa=TAMANO\nRECHAZO linea=4 causa=DUPLICADO primera=1\nRECHAZO linea=6 causa=ID\nRECHAZO linea=7 causa=FORMATO\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El retorno es 1, porque hubo rechazos en una revisión completa. El código de retorno y el texto no son intercambiables: en un lote íntegramente correcto sería 0; en error global sería 2 y no aparecerían estas filas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_stdout_stderr",
+          "question": "La revisión finalizó con cuatro rechazos, pero no tuvo errores globales. ¿Cuál es el código?",
+          "options": [
+            "0, porque el ejecutable llegó al final.",
+            "1, porque la revisión está completa y contiene rechazos.",
+            "2, porque cada línea inválida es un error del sistema."
+          ],
+          "correctIndex": 1,
+          "explanation": "Se distingue completar el proceso de aceptar todos los datos.",
+          "reviewFeedback": [
+            "No todos los registros fueron admitidos.",
+            "Código 1 corresponde a rechazo de contenido.",
+            "Código 2 queda reservado para los fallos globales."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "CMake 4 y C++23: configurar todos los objetivos"
+        },
+        {
+          "type": "paragraph",
+          "text": "AssetCheck es un proyecto educativo independiente del motor de LearnGameAndEngineDev. Las referencias iniciales de U4L4–U4L5 mostraban cxx_std_20 como mínimo técnico; no era una decisión de limitar este proyecto a C++20. Para cumplir el estándar predeterminado elegido, la configuración integrada se eleva explícitamente a C++23 con exigencia estricta y sin extensiones del compilador."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(AssetCheckEtapa3 VERSION 0.3 LANGUAGES CXX)\nset(CMAKE_CXX_STANDARD 23)\nset(CMAKE_CXX_STANDARD_REQUIRED ON)\nset(CMAKE_CXX_EXTENSIONS OFF)\nenable_testing()\n\nadd_library(assetcheck_registro STATIC src/registro.cpp)\ntarget_include_directories(assetcheck_registro PUBLIC include)\ntarget_compile_features(assetcheck_registro PUBLIC cxx_std_23)\n\nadd_library(assetcheck_lote STATIC src/lote.cpp)\ntarget_include_directories(assetcheck_lote PUBLIC include)\ntarget_link_libraries(assetcheck_lote PUBLIC assetcheck_registro)\ntarget_compile_features(assetcheck_lote PUBLIC cxx_std_23)\n\nadd_library(assetcheck_manifiesto STATIC src/manifiesto.cpp)\ntarget_include_directories(assetcheck_manifiesto PUBLIC include)\ntarget_link_libraries(assetcheck_manifiesto PUBLIC assetcheck_lote)\ntarget_compile_features(assetcheck_manifiesto PUBLIC cxx_std_23)\n\nadd_executable(assetcheck src/cliente.cpp)\ntarget_link_libraries(assetcheck PRIVATE assetcheck_manifiesto)\nadd_executable(comprobar_registro pruebas/casos.cpp)\ntarget_link_libraries(comprobar_registro PRIVATE assetcheck_registro)\nadd_test(NAME comprobar_registro COMMAND comprobar_registro)\nadd_executable(comprobar_lote pruebas/lote_casos.cpp)\ntarget_link_libraries(comprobar_lote PRIVATE assetcheck_lote)\nadd_test(NAME comprobar_lote COMMAND comprobar_lote)\nadd_executable(comprobar_manifiesto pruebas/manifiesto_casos.cpp)\ntarget_link_libraries(comprobar_manifiesto PRIVATE assetcheck_manifiesto)\nadd_test(NAME comprobar_manifiesto COMMAND comprobar_manifiesto)"
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto completo también añade un caso CTest de consola que ejecuta assetcheck y comprueba stdout, stderr y códigos para archivos de muestra. target_compile_features declara requisitos de uso por objetivo, target_link_libraries registra dependencias, y CMAKE_CXX_STANDARD_REQUIRED impide aceptar una degradación silenciosa del estándar solicitado (Scott, 2025, capítulos 4, 5 y 17)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_estandar_requerido",
+          "question": "¿Qué diferencia hay entre el antiguo cxx_std_20 mínimo y este proyecto integrado?",
+          "options": [
+            "Se solicita C++23 explícitamente y se impide reducirlo sin advertencia.",
+            "Las reglas de los identificadores cambian automáticamente a C++23.",
+            "CMake deja de configurar antes de compilar."
+          ],
+          "correctIndex": 0,
+          "explanation": "El nivel de compilación se fija deliberadamente; el contenido del manifiesto sigue siendo el mismo.",
+          "reviewFeedback": [
+            "CXX_STANDARD_REQUIRED exige el nivel solicitado.",
+            "C++ no cambia el vocabulario acordado del manifiesto.",
+            "CMake conserva sus fases."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y contrastar en una consola Windows real"
+        },
+        {
+          "type": "paragraph",
+          "text": "En Windows abre Visual Studio 2026 Developer PowerShell x64. Comprueba cl, cmake y ninja con sus rutas y versiones antes de suponer que existen. El proyecto educativo vive en E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck, separado de la prueba U4L3 y de los ejecutables del repositorio principal."
+        },
+        {
+          "type": "code",
+          "language": "powershell",
+          "code": "Set-Location \"E:\\Projects\\LGAEDProjects\\02_construccion_depuracion_y_practica_profesional\\AssetCheck\"\nwhere.exe cl\ncl /Bv\nwhere.exe cmake\ncmake --version\nwhere.exe ninja\nninja --version\ncmake -S . -B build -G Ninja\ncmake --build build\nctest --test-dir build --output-on-failure\n.\\build\\assetcheck.exe .\\muestras\\lote.txt\n$LASTEXITCODE"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta secuencia -S identifica la carpeta con CMakeLists.txt, -B la carpeta de construcción, -G Ninja el generador; --build compila, ctest ejecuta la batería y la llamada final usa un archivo de muestra. El retorno esperado del lote de ocho líneas es 1 por sus rechazos. Se comprueba con $LASTEXITCODE justo después de assetcheck.exe, no después de otro programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "La carpeta build debe pertenecer a esta raíz y al mismo generador. Si CMake muestra que su caché pertenece a otro proyecto, no borres ni sustituyas esa caché ajena: elige una carpeta build exclusiva y confirma las rutas antes de repetir la configuración. No hacen falta permisos de administrador para estas comprobaciones normales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los resultados Windows todavía requieren ejecución efectiva con MSVC, capturas legibles de la configuración, construcción, batería y salidas, y comparación con el comportamiento esperado. Los ensayos previos en Linux no acreditan que esos pasos ya ocurrieron en tu PC."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_error_cache",
+          "question": "CMake informa que la caché de build pertenece a otra ruta. ¿Cuál es la acción correcta?",
+          "options": [
+            "Borrar todos los archivos del proyecto para comenzar desde cero.",
+            "Revisar el origen y seleccionar un directorio exclusivo de construcción, sin destruir la caché ajena.",
+            "Ignorar el aviso y ejecutar el archivo binario anterior."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una caché pertenece a una configuración concreta y no debe reutilizarse como prueba de otro proyecto.",
+          "reviewFeedback": [
+            "Eliminar archivos ajenos no es necesario.",
+            "Separa fuentes y productos de construcción.",
+            "Un binario anterior no comprueba los cambios."
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pruebas que distinguen un lector correcto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las pruebas del archivo físico no deben limitarse al ejemplo con ocho líneas. Incluye archivo vacío, una línea con y sin terminador, LF y CRLF mezclados, dos terminadores consecutivos, CR aislado, TAB, bytes no permitidos, longitud 80/81 antes del terminador, cien líneas inválidas permitidas y 101 líneas que cancelan toda publicación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Inyecta un fallo de lectura después de varias líneas válidas: el destino de biblioteca debe conservar el último informe completo, pero el cliente NO debe emitirlo para el intento nuevo. Una ruta inexistente debe producir APERTURA, y una línea mal formada dentro de un archivo legible debe ser FORMATO u otra causa local, nunca LECTURA."
+        },
+        {
+          "type": "paragraph",
+          "text": "La batería de referencia en Linux completó 10 comprobaciones del registro, 31 del lote y 215 del manifiesto mediante GCC 14.2 en C++23; también pasaron cuatro objetivos CTest. Clang 17 completó los mismos cuatro objetivos. Es evidencia de esas herramientas y pruebas, no de MSVC en Windows. Para comprobar las salidas del cliente, los casos CMake de consola comparan también los códigos de proceso."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "assetcheck_archivo_clasificar_error",
+          "prompt": "Relaciona la observación con el resultado permitido y su alcance.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "No se puede abrir el origen"
+                },
+                {
+                  "id": "b",
+                  "label": "Se encontró la línea física 101"
+                },
+                {
+                  "id": "c",
+                  "label": "Lectura interrumpida después de dos admisiones"
+                },
+                {
+                  "id": "d",
+                  "label": "Ocho líneas completas, cuatro rechazadas por contenido"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "apertura",
+                  "label": "Global APERTURA, código 2 y sólo stderr"
+                },
+                {
+                  "id": "limite",
+                  "label": "Global LIMITE_LINEAS, código 2 y sólo stderr"
+                },
+                {
+                  "id": "lectura",
+                  "label": "Global LECTURA, código 2 y sólo stderr"
+                },
+                {
+                  "id": "normal",
+                  "label": "Informe completo, código 1"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "apertura",
+                  "b": "limite",
+                  "c": "lectura",
+                  "d": "normal"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las causas globales interrumpen el informe; un rechazo local no lo hace y conserva el recuento. No confundas errores de contenido con fallos de lectura.",
+            "incorrect": "Un error de lectura del sistema impide declarar completo el informe; un dato mal formado es un rechazo local y permite continuar."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Los tests construyen expectativas independientes del resultado calculado. Un comprobador que deriva su esperado del mismo lector repetiría cualquier defecto de éste, en lugar de detectarlo. Las comprobaciones no dependen sólo de assert y siguen evaluando casos cuando uno falla (Kernighan & Pike, 1999, capítulo 6)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consolidar la versión, su evidencia y sus límites"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia contiene tres bibliotecas pequeñas y separadas, un cliente, una muestra de ocho líneas y pruebas de lectura y presentación. Las herramientas pueden reconstruir esos archivos en el proyecto externo con C++23. La carpeta de muestras no incluye recursos reales de videojuegos: el manifiesto declara datos y el programa sólo comprueba ese acuerdo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La variante propia del estudiante no debe consistir en copiar la salida del ejemplo. Después de construir el lector, prepara otro archivo de al menos seis líneas con una primera declaración rechazada, su corrección posterior, un duplicado intermedio, una diferencia de mayúsculas y una línea final sin terminador. Anticipa el resumen, las causas y el retorno antes de ejecutar el programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para documentar la pieza de portafolio se necesitan instrucciones para obtener herramientas, construir desde las fuentes, reproducir pruebas, describir las decisiones y registrar limitaciones. Los pasos de publicación del repositorio educativo independiente y la revisión visual con capturas reales todavía deben enseñarse y verificarse en el entorno final; una referencia de Linux no sustituye esa evidencia."
+        },
+        {
+          "type": "note",
+          "text": "Pendiente de acreditación: ejecución de U4L4–U4L6 en Windows con MSVC/CMake/Ninja y sus capturas reales; también la reconstrucción editada de U4L3. La presentación del portafolio y publicación de su repositorio son pasos posteriores. No cerrar esas tareas sólo por pasar estas actividades."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "assetcheck_archivo_alcance_final",
+          "question": "Un manifiesto se acepta sin rechazos y la batería del lector pasa. ¿Qué afirmación NO está demostrada?",
+          "options": [
+            "Que los registros cumplen las reglas de AssetCheck para ese archivo.",
+            "Que cada recurso declarado existe en el disco y coincide realmente en bytes y contenido.",
+            "Que el cliente puede terminar con código 0 al completar una revisión sin rechazos."
+          ],
+          "correctIndex": 1,
+          "explanation": "La herramienta verifica declaraciones, no inspecciona archivos de textura, malla o sonido.",
+          "reviewFeedback": [
+            "Eso sí corresponde a la revisión realizada.",
+            "La existencia y los datos reales de cada recurso están fuera del contrato.",
+            "Código 0 corresponde a esa condición, si no hubo fallos globales."
+          ]
+        }
+      ]
+    }
+  ],
+  "referenceAfter": [
+    {
+      "activity": "block_0006_0002",
+      "blocks": [
+        "block_0007_0000",
+        "block_0007_0001",
+        "block_0007_0002"
+      ]
+    }
+  ],
+  "textSemantics": {
+    "version": 1,
+    "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "fb52efe21f792c425764566b1b4e615057e2ff4c5bf61369e784b444daa449ba",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "7abbd5d53a0d8275c50d7115f0597e99e5e7a232ec68c0e9d3b880ceabe2ce98",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "a7ba17036e01f4db724066e4246f6e46b7726cbfe17d4ed1229c706cf224e551",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "f922e86b15d914d5aa1d7ec8642f393a6c0f4eed2440b5b0a8eb0cfecd211e5d",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "64cf5b251237661dab4e9a9420db34616e58badeaaed1ac5442b224e991c091a",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "f0f3851fc8853915dc01e2ecdc671cc307ac015e7230bac08ea2c719e8519d73",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/0",
+        "sourceSha256": "a0f44d501ad5c834aebf69e3cdbb124d8a30f130ccdd30887d54c20bcbe2b1d8",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/1",
+        "sourceSha256": "87d9299db00d15e222fe111b23605a78dc5628288228a9fbee6c62db201106a7",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/options/2",
+        "sourceSha256": "e616316d230b2b4cc8f2fce0edf43427d91dca5d4fed4c2ae022698d8c6249c7",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "da3586bd8b7020838325b31c3429566cc81e78708700ecb931dc11f5f4dc9490",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "5347a23d7c5eb23c12589e9f3d0fb2cda83ef0e2a002570ccbc182fb835c5484",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "13b7a90041375e505781cb8db3b771d216c821502be114a3d19b3a1a00371943",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "5403fb7fe74ad3af5c4808b8ab43455ceafe2e149244268ea9f30e4a2e3612ca",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "819d63ab297351c6af44e6f89d799b47eaec538a320d336e1dae7862bce8f398",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0003",
+        "path": "/text",
+        "sourceSha256": "b76bbfd2724071427ab506b4e032f1024445c75ebcc1de3540dad34e2c4b7606",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0004",
+        "path": "/text",
+        "sourceSha256": "9f9b45ae6072e5b49c9275d76a2f21e7f87c4f5fe6f80da269fbaca5abdb2c4c",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/question",
+        "sourceSha256": "26720fe2cdf27a41fa62a7beac7e2cc570fe69b9028e7b6e89372986df4a37fd",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/explanation",
+        "sourceSha256": "062d66c2ed9d85f541964996d677c29767047918f66c05085109cc4399b58c6e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/0",
+        "sourceSha256": "d897232213214788483404679960c54395f03cd29aa889c89c8cc6e72b028345",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/1",
+        "sourceSha256": "9b178e543a2b0afcff86f94167e1dbb9e3be4a2357d69487d0b9a5b8e5373e98",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/options/2",
+        "sourceSha256": "d8158b733500974eb1dcdf8b62d671259f26088d7df697202deac4378df4903e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "e0dbed6d0104738ff02d2c1c96cafd7021a006795d0256f51435f84b1134c118",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "b4c50599687bcbd1ab7951be70a46797dcd051ee918b317f0f5dbdcd8ce4103a",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "af68d7d79a4a5942b82f677d5f1e51fda87be7ff6358891d42381235b47982fe",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0000",
+        "path": "/text",
+        "sourceSha256": "dac9c6c8a90b92e4b5ec7718e4fa81c9c32d3718d3e5bcfad1d8be2edf53cc10",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "d683c844a49af2ca534b9aee3a86d1a4901e655241535f4d1c8e6bab73f1b861",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "ac09b0772f0edb6fb3f849ea3949f46f7197da7054bdc354c6a17eeb838e9930",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "9c4bca28e76c6bd353d8d8b0bef62d43a92e95196151a3ea93385721d69fe0a6",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/prompt",
+        "sourceSha256": "8dd4f5f4199634ed9827ecdeb4686d7f43afc52d8df575a35eaaba44183a2393",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/feedback/correct",
+        "sourceSha256": "da07bf74d4ae105a2bb6080cb834d9a8042f0b76bab680e85aad20924bbb246e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "fe7ce56bf0b7052ac9f396ee662ff1308068a066538d745bea97274b0897db3d",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "2be3ee1b770ee639954c3c9ffd4cb9c201e97ede3d1147df03c706219bf452cb",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "42654b4636ea435619eceaf31ade1bff48fff8cd9770fbd5104452b8f827af30",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "a81faa11a988a320be7d61a08aa38f6b00d7aa06fc438f11f454f9c6727c214e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "3ed9e60b6b083fca4850775a665828c1342efbd72dca72082d696b8381649d7e",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "8494ddf357ed765ded2c33f87f2ca7c05bb57df0ed63a39f3a73657761459ab3",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "0d7f01c8306e4ca65153c5aab5081e3f58a300ab1ab38d3ff57d27193b096834",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "dd78c11a32cc77815195b7fd41b1bb13409cb8e71b0f5b015bfd38535fc2cb41",
+        "spans": []
+      },
+      {
+        "block": "block_0002_0005",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "cc614784b23465f8357f151a03c75e240878f341cd29f3921a9e8ea4a75b8dc6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0000",
+        "path": "/text",
+        "sourceSha256": "8c0a9d5044a00f3045873f03cb9c83377d6d1a8bcabf9604da4ec32486f65bb9",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0001",
+        "path": "/text",
+        "sourceSha256": "20cd910a6edc827cc1477e93a900f8f19533eac63dfdde4895a4e1d5a9add944",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "ca8cbabbef9ef657dc7323b15cf1932eabf6035d3167e3807d253679504d2bb6",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0004",
+        "path": "/text",
+        "sourceSha256": "ad019171efec7771b8329cea440ca7bd67d464180f86de112d91e2147f2a4044",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/question",
+        "sourceSha256": "395fb0425e1ff63c7b17380e2812c2f64ad0780bbed9441e9fada8dff84424fc",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/explanation",
+        "sourceSha256": "c795d50d68a375a701ed6c39767d997c485a861c58745eb0e2d48cd8affb7f8e",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/0",
+        "sourceSha256": "d7afef9c3ca7823c0c64f91ae0e9fa16f14a2db651cee9f27f34525fc9f5b781",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/1",
+        "sourceSha256": "1c6b3ba31946d50243877556221a458f8c656145312ac1abe7245c68bbec4354",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/options/2",
+        "sourceSha256": "4d0dba59fff4beb30724b14161bfcdb0b515dc1cbb77f83b2edd5c616815224a",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "181872ddf99e74185417a1c1339f9516b9f632c4522d54962144d1b4bb9c98ae",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "1cbebb8a6b8fe092e9ddcfd684f1a6f5552d2ddadc8078e3e4c057ac6fd56d19",
+        "spans": []
+      },
+      {
+        "block": "block_0003_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "ce3c3973e9d00e3d706e6d083a1eb61f8d7f5656805fc79f7007101a50c2160c",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0000",
+        "path": "/text",
+        "sourceSha256": "8c998ed52fffe90d7f9875b43485255aee72e1bb21722c4fe1efa9182c20dee7",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "76deb07ee266ddf829f91dec406226e69afcbebef3d4876a702e4527dce5a736",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0002",
+        "path": "/text",
+        "sourceSha256": "f041ee7bb6a79f4022bd7de9b67e7dbc13c003ffe1aa10f204ac42970461df67",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0004",
+        "path": "/text",
+        "sourceSha256": "8068da5e25e73dfa801806722ac8c706222f1f0b0ba43280377eaf4b782be874",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/question",
+        "sourceSha256": "57a3d7ac3eaae553d9aae0a26cddc6a668ced72862c4cf7557abcd4715e41cd0",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/explanation",
+        "sourceSha256": "dedd70fe847d961eaa0052b2f0cfb50baaa3f651f2e8b0cc4d0d239acdcaaf54",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/options/0",
+        "sourceSha256": "6ecee494d3b503de14cc2b685f6e41581fd0bae389b1bca224843847cbee46d8",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/options/1",
+        "sourceSha256": "473c0dbfe4793f1ce15222fcbdcd5443aa8bc8acd466d705e79bf670d8bec35a",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/options/2",
+        "sourceSha256": "41c730cd6bfd84a20a2406eae88dacfc912fe167d019ec3833c352cb3a336916",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "3e0a2414e1797fed2961c9f1d87f65104f96953a1a74ffa4b52e6041adddba4d",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "ed5a056f39df0a42b402c33944a2abf3975587996fb56b4bedb977f081bbeaad",
+        "spans": []
+      },
+      {
+        "block": "block_0004_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "37aa8d3bb3576d4ad24bc69e342d258e891b62566dcc2d135c3cfbc60b856914",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "c46d91403ed6c3051e91de107fe10aa0e400992f5fff9806dfaf8562d5289f4c",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "f4e6844dc8b1778cf2de0376058c29bf1fa7403920d5edff05cabae7ea1aa378",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "037486199e242300e56347acdc56a9f4b800d6da06f52b804fe89a52be77d204",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0004",
+        "path": "/text",
+        "sourceSha256": "9071d9108be553008e63a01baa4550e84e96eefd603ed3cceba39530c2fb000a",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/question",
+        "sourceSha256": "07fa0d989bd9c8c9c54290f27dba86065ca880dde7f8dfb094057db277165693",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/explanation",
+        "sourceSha256": "fb846d75494ce332b8a38eb3136aaaf0dc69a489827328422e9d83d46b50bcdb",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/0",
+        "sourceSha256": "b98f510298cf48401b0c44550b13018cd88953c5b2db62325539805fade60db8",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/1",
+        "sourceSha256": "12b7893bf8b822ca67635982b3ac2855fd03c1feb3368997c5644040064c0d7f",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/options/2",
+        "sourceSha256": "ad8188178cd37f0cd337adf200dc3a9dcd4231cc9b8c35f5a7dd0e3876c93ba2",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "1cfb553897be7ab1910a2c9ca2284d14b23d949b8b0d51961618df44e8a525ad",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "333117aa7bc9594d9cd9054fe1439fc97ceac15a87a73855f8d2e9f0dfe02fe1",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "02709e089d79e09d241699fd25ebd1821fc70ce2ab0d0d9bc67edca8581ad118",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "da0adad948283bf42b4e13c35f419e1e6de57247f155969ace80f286c0caceb0",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/text",
+        "sourceSha256": "22dc863a6aa1794e42195f46d6168321c94e5b5ccfee60fcdef588623d04dac2",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "075f9979ea1cb43b69e5fab16c8f93c4c360999548ee3775db51512e82a0cf51",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/outputCheck/cases/1/explanation",
+        "sourceSha256": "f8c36adc21aaeb46feecf9bf240f4801169f3abf65ee518193944a49b127502f",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/outputCheck/cases/2/explanation",
+        "sourceSha256": "b008c0303aad81989cf4af64719a4df5633d41e306d9fcf955cc49b65d6c7466",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/outputCheck/cases/3/explanation",
+        "sourceSha256": "82ada9552ee13b38fb9af2936a2e50ab2c357a22f25fd7529d07d0562e008af3",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0003",
+        "path": "/text",
+        "sourceSha256": "3ac754059b8514ebc5e6c822c02ab8faf2cf003e87590d7c99349d58f57108b7",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/question",
+        "sourceSha256": "27eaa1f1ac673953b7a88aff3a4c5bdd1a02de58dafaf78c5f261d83cfab3987",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/explanation",
+        "sourceSha256": "a20c4e712e6adc8ff7b898016aee5233e729e181203d18703a439d95898c730e",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/0",
+        "sourceSha256": "fa11a74e8784eb0f816d26305c44b992f95989d430b233a0100821992dc785ad",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/1",
+        "sourceSha256": "dcc21db56dde9e093a473abbe21d033f1eff555f409dfd8817976581fe9d53d4",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/options/2",
+        "sourceSha256": "c5965e9a23b8672687c7f60e26ea384dddd85ef5d770e0b3981cd94d8276e756",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "bbde03d00b141c77ffd1e145c72b5ea83a5b8d62c944abcfe9fb28809d53d42e",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "0f6314e7cb2defba7117eb37d0ab04c09e3e462d99c8f876c5a92a303ba7b3cd",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e7be65ea8b1656866e69b5593298d65cdb1c96b536821cfdbb3aa7b0a3071134",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "40086bef54ae655e06d0dca99dc1fb41e1c14846b710d19fbe8402381a565d74",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "b95a09dbc3e1c56fe204ca36a6ab2184d0724fd974d0297ea3960ab41b039c93",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "5f037789a03c1beb5f7af4acb764ed6a7a0a7e464976e6f1ca9c6267f9552ec0",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "43c9d6c304c27c3019d46c9c4b5c99e95aa7fe67c8617b5abe43980a8853153f",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0001",
+        "path": "/text",
+        "sourceSha256": "47e10e044c58b693409c3251fc94abb13e59fa0420b7b9daccc3e799d5b0d177",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0003",
+        "path": "/text",
+        "sourceSha256": "4ab31a7d9ebc8b906e4be8f044d8fa1280e4bbf41f2522502f5d1ceb4b2e6d46",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0005",
+        "path": "/text",
+        "sourceSha256": "c559ab06bca1c7885b49a85dfd590d8b67f2e4b2a889009791a76cefe5eaceeb",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/question",
+        "sourceSha256": "e9ba3576e309fa3710f276dbe90d32ab7146e61864a3ef2e7e3ef92c97803bcb",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/explanation",
+        "sourceSha256": "202c685710457c795e0fc4fec051647724be5a6c3da6caf2c6bcc70472f21ee9",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/options/0",
+        "sourceSha256": "ca111f104da31a1f87ab79ec5e20caf1fef339a2e966c1d641cb4bdd23631165",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/options/1",
+        "sourceSha256": "d393ee1cde596f4d83fca9c0aac9e1029d47a63b15f527444ecd8884d26d8ae8",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/options/2",
+        "sourceSha256": "ff0717d9f13889859adfc903ec4fe21e512d537f16fcea84d92ec7774d261e64",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a6bc4fac46f77668c9829ac07b150ba9c9fe5a3d040a95468a8033c0814782bc",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "ee7f1c21dd99fb1d302a3273363c6409a5857c9c13dd22b19a3978dcf523dd92",
+        "spans": []
+      },
+      {
+        "block": "block_0008_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "e7e038acf846398c575b20e6fe658dd6459b9489dc6353542f4c69fde66a511b",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0000",
+        "path": "/text",
+        "sourceSha256": "cb87a79547b5d8eab12c46740175807b4eac6bce8c603eb91c8ca417857422ef",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0001",
+        "path": "/text",
+        "sourceSha256": "26207aa1fc0bdd24dd242c6702065323e5ad5c3162325bf327463942eb01493d",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0003",
+        "path": "/text",
+        "sourceSha256": "41299b9c7193644715360fd5d83db7ebc174909a720bdcfe6b3036846a5ee193",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0005",
+        "path": "/text",
+        "sourceSha256": "443b5e50678906acee2922b53c5b51400382e3a51c57a3e111e038092923bc36",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0007",
+        "path": "/text",
+        "sourceSha256": "99692eace6861d2988f83cae4e717375b858fc6aeff5c6b3fe914f94db929ee1",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/question",
+        "sourceSha256": "83f6bdb33f88236b32161b42a8eacbc610016269624ac233d3860d05f407b41d",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/explanation",
+        "sourceSha256": "fde7489ac4c33981c6da08a8b1d2aeb5d383e72485b0be2777c37a952f033ba3",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/options/0",
+        "sourceSha256": "3f1648a31963f8891b233cfde738495d32067789795fac93526265d1174ddc8b",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/options/1",
+        "sourceSha256": "2bdb5f10bd19b1444c3775c92e8666b9af65188ddf93cc4f481e622b0a851703",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/options/2",
+        "sourceSha256": "cf2c203681daecd5a2aadd5404326f1e1b1daf6b8038f20b98d9f89c0afd1f78",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "7bb2e1af58db36b4a2432c09290ccc42488b9435d24e9c67162a922eebaf038b",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "a9f2ea8385cdaa3a63d316992bd57b4b4f7519631ff92bf6466d3092d6bb0a50",
+        "spans": []
+      },
+      {
+        "block": "block_0009_0008",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "8a1fad41e70946c0f0ed4c8f2cc70b67647434a51bbbd2e3bf9a1a6a0d9a90a4",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0000",
+        "path": "/text",
+        "sourceSha256": "63dd2ae4c51f5943d0bf5cd05011c03d9be1687b4a40e9eff7c6822a492f190d",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0001",
+        "path": "/text",
+        "sourceSha256": "124e642bc411796f1c56f47062adf062c77121febe4e642f560a21185532f9e0",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0003",
+        "path": "/text",
+        "sourceSha256": "a91c8eea381993c1f7ca2da9460c90bbebe255696b3d8a5f611776fffb4a47c2",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/question",
+        "sourceSha256": "9a963d8a7b2bfb9ab24595d1fc78b0838216d0654b2d8a169616b90c5a8720e8",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/explanation",
+        "sourceSha256": "25cfa088843cc4c7477f5c80e7ad150da26a1d9b4885fb755e7af85bede05b37",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/options/0",
+        "sourceSha256": "e4463500fbb44842ef3622460c5be61f2e9c9d5e480a641a54f480fbef6f7dc9",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/options/1",
+        "sourceSha256": "36ab378b91b3f4e2deed8b5aac3b8a84f2c30ea39447923028fc1b41439bd911",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/options/2",
+        "sourceSha256": "3b1417bc4cf5be523b0790a2e5b86d6cbbcc79be28632c63af791ac7baf8e5ed",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "a9531568018c93b0bd333cb3a80e86cf71296ff9326848caf3bb0c55334f770a",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "ba0a2ecab87875ea718e39263291d1f4c8334b4d1ca5c2f20b2aa54eb30062db",
+        "spans": []
+      },
+      {
+        "block": "block_0010_0004",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "034b3204f1682e7ed3a7ce6e5298fa473dd38f482259fb4259d1c911edd43c92",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0000",
+        "path": "/text",
+        "sourceSha256": "0c98405de6592dc899644d9cf4d8e01c4cada567eddf03da45479367bda4ce7a",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0001",
+        "path": "/text",
+        "sourceSha256": "bec9076fbee6004574e4f690d2d37c769a32aa6e11ccaf925fefedda1e066a23",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0003",
+        "path": "/text",
+        "sourceSha256": "7e1768221d4a0eab4e25954b5a5bfe250bf9ff8dc3867b725b6aff3c00d3480e",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0004",
+        "path": "/text",
+        "sourceSha256": "6c7ce382a7c00b96fec12776ae964e718055e6a4d2a7875a3091a0f93a0a340c",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0005",
+        "path": "/text",
+        "sourceSha256": "705a5bb8023eb07cf1518b90f1599856dec140f14c50a0870815cd3af2e80895",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/question",
+        "sourceSha256": "3e41021ca50a3aa7d83b13dfa71e8575ea899eba1a779e31fbd2e4b3351d3b2a",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/explanation",
+        "sourceSha256": "6865b6cbc5dd120f32c5631538f67e232b1731670ce580a5e48d24106ff7eae0",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/options/0",
+        "sourceSha256": "5f1d64bf23cebe40d51c776da423fc40c4f4b1e69377ed2cacdcff626c111a15",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/options/1",
+        "sourceSha256": "096f820ee94dbcf1eca629bf8ddfa9e40767434136dd61364fdc60c527ffe5ce",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/options/2",
+        "sourceSha256": "8ba8356963f56cc4dd32471ca049a65a90c69f5168c8d24427372456e5306d59",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "b6d9317a34a352f2741794932a5222e13ce06984a4ca4d29e3817c22025161da",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "9f6a0c44f60b2241045e6af8f1ca06f96c120cd7ab3af7e074d94b67b3b25b56",
+        "spans": []
+      },
+      {
+        "block": "block_0011_0006",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "cf1d5adfb168ab0e7f03e698cde1fd138b90327383d312660378ef2896ad2111",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0000",
+        "path": "/text",
+        "sourceSha256": "f3f0ae4c67d3408e3e78759abbd4864cfee5f30d52c8079b8975744869bddadb",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0001",
+        "path": "/text",
+        "sourceSha256": "bec18a37f0987b8c802f2b76421fe18c66c2bc60b4960c6979e9995e3ab323cf",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0002",
+        "path": "/text",
+        "sourceSha256": "81076103225dfec7a724c6f8b26e5c70de88c6aa6aa31e65d22fe5831fda7163",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0003",
+        "path": "/text",
+        "sourceSha256": "69b623d8866d6d0a3401baf59e466283cb10092d1c3d1d7c48794f2b60a5fef9",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/prompt",
+        "sourceSha256": "5ef3b3ce6fa17b8e0566e9f8feb84fac8ec3b61770ad3879ba0a68b19058d35d",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/feedback/correct",
+        "sourceSha256": "d78c675b7674663359e32517985feba5b69ac89843b5f8e14560ed548415a39f",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/feedback/incorrect",
+        "sourceSha256": "0144cc30c50f2432be6b2a1aa8c50fc1e87045d92311cb171b416b92126a0a69",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/sources/0/label",
+        "sourceSha256": "77e7301e5126d070509fa60bc298cf198abdeb9ced52c4088b8447b47c7829c6",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/sources/1/label",
+        "sourceSha256": "aa354965ee96a289ec5792472a6e6b01319d8f25fff035c4431a71710c0d6635",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/sources/2/label",
+        "sourceSha256": "33e91be9158068510291577050672bfe878b4277fa03d66be5711bb77cf083d6",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/sources/3/label",
+        "sourceSha256": "0cd49ab4b5415c1a50e8a758453073350d5fb2d5d7de6655927b3ff2e5eb59c9",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/targets/0/label",
+        "sourceSha256": "28335062c1a54a1a3bd7e85cc7b56e9f38c7120b8013b6cb9d4e3ed01dafe252",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/targets/1/label",
+        "sourceSha256": "e8c28f2aaf9dac5cae4753d0da643022647cae497ff1634b1e1c21df8b4df2a4",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/targets/2/label",
+        "sourceSha256": "c3a035cf694487bff3420716224207cd6e3259cda56d997c006a6ef6a8df4df5",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0004",
+        "path": "/responses/0/targets/3/label",
+        "sourceSha256": "b930db99fc218c06565b46eed0bda3405a5e4922c8303c27a3a450d125da7a67",
+        "spans": []
+      },
+      {
+        "block": "block_0012_0005",
+        "path": "/text",
+        "sourceSha256": "8d2ca2a933c57cbee7f5751e3b237979378aaf64dc4b499a9b1f996d6e23ea0e",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0000",
+        "path": "/text",
+        "sourceSha256": "08acf399f64f101c130fc49cf084caf88a77c80148401b979da6dfb3f9deac03",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0001",
+        "path": "/text",
+        "sourceSha256": "683a9088b11caa062325b1f843b8409796caea64203d08c83f494ae270eeb786",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0002",
+        "path": "/text",
+        "sourceSha256": "3edb773bdd7aac8ce808e1ba68f42a2e42cea270a74d7632e207b5d2860a8cd1",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0003",
+        "path": "/text",
+        "sourceSha256": "b61b4e5b1e2e97d3ec0688d6fc38d9c89d5df5035bceb045d3f5debf70727a45",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0004",
+        "path": "/text",
+        "sourceSha256": "5c465c2ecf6f662f648efc66fa84a73d3204608682dd5f07acb798e6d53efedc",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/question",
+        "sourceSha256": "eb8b1d3f2b6a52eefb3233b7fb24971986733cf889bea58ba4be2103370fcd0f",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/explanation",
+        "sourceSha256": "91473c892c040b1ebcac0d9a945e749a9c8ce0abb17cd27f06ae0c3f373ee2c3",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/options/0",
+        "sourceSha256": "a0af2e2945d566cc1da0832ec4729a7927511e341436d5a07e8874284f7fa23e",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/options/1",
+        "sourceSha256": "f684d0ff96ba544853eff1ee45f72b53be80744825b64d8453e31d492b6c567a",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/options/2",
+        "sourceSha256": "6bb599034bc7ccc539e601649305e823865f75d6c68dfeea09a08ad3ccef057c",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "c88057951460207105f967bdd3872b8e1a369259b50628a073b7df422f108db8",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "1c2d6b1d7ee0e55879e6f8b53173576de9cdf7b85c924820d50041ca6b9b0c3a",
+        "spans": []
+      },
+      {
+        "block": "block_0013_0005",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "243bbf5a79b9dfe71517ebc6aaf2b9dff454e460c868339d81fedb084017b725",
+        "spans": []
+      }
+    ],
+    "rootFields": [
+      {
+        "path": "/title",
+        "sourceSha256": "9afd77eb08d1afd2e34f751b4c94b13a0906e378ce821a180fdfeda7b42085dc",
+        "spans": []
+      }
+    ]
+  },
+  "stateLayout": {
+    "version": 2,
+    "locale": "es",
+    "origin": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          {
+            "id": "block_0000_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0000_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0000_0004",
+            "sha256": "93c79f68bab7ea1c114088a77926a58fb6886af16387f4417f8bc775a3a61dd0"
+          }
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          {
+            "id": "block_0001_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0001_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0002",
+            "sha256": "56681d2e91a6cbb01686def4e5a99472e8dca32dcf0ef6bf4911c4ad86a15548"
+          },
+          {
+            "id": "block_0001_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0001_0005",
+            "sha256": "dd08b7c235918556af3a97595b3aa56e35f595275eb5a7ba7f0d216d5940cb17"
+          }
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          {
+            "id": "block_0002_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0002_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0003",
+            "sha256": "623367ec0be508182705a7404caa77958efdca1f69d1b4ded32b07df435839b6"
+          },
+          {
+            "id": "block_0002_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0002_0005",
+            "sha256": "185fef17d8f7300749d74909accad2f9b89136a16310eb00513e83f8d59b3048"
+          }
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          {
+            "id": "block_0003_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0003_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0002",
+            "sha256": "fbd24749166b491347a61a7871f9fc8d52ad9628d4894561c4bda39c2c39f0d0"
+          },
+          {
+            "id": "block_0003_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0003_0005",
+            "sha256": "6b49b07b18fd03db9152225d691a7f3569f56378adbf5cf9e67a519aff4ba929"
+          }
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          {
+            "id": "block_0004_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0004_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0003",
+            "sha256": "cb39b1c7c1972a1288c9f8ad25c4031995ab01b44d0f4187175f217d08be1dfb"
+          },
+          {
+            "id": "block_0004_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0004_0005",
+            "sha256": "86f470bcb9b1a35fbfaef975156af438375756622cb0860859031e71e5d7e58e"
+          }
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          {
+            "id": "block_0005_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0005_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0002",
+            "sha256": "7f0ef810b6ee6a61f304f6ee50535d753cbb677bfd9e6d172d33c9e305d492a8"
+          },
+          {
+            "id": "block_0005_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0005_0005",
+            "sha256": "cf38818e7db50e2da1c0d2f197ac3a8e96bdabe97c8e9f37d4eaeae743be32f7"
+          }
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          {
+            "id": "block_0006_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0006_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0002",
+            "sha256": "31cde82ec13474ebacda9c087638d4126c3df8158774205ab6013e93c3664804"
+          },
+          {
+            "id": "block_0006_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0006_0004",
+            "sha256": "b90b602b58bb2cf89e3c48cbb1c40b5d4c2798a62d8862334d813758f74950c8"
+          }
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          {
+            "id": "block_0007_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0007_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0007_0002",
+            "sha256": "570688f568c9294ba0a04027c6190969d56f7df27ca58c1117b09645c0ee5416"
+          },
+          {
+            "id": "block_0007_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          {
+            "id": "block_0008_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0008_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0002",
+            "sha256": "2599a84a8b8c1720f8801b9bc7a1d04a6f6c64818e7099a578c0748c58d89e7c"
+          },
+          {
+            "id": "block_0008_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0004",
+            "sha256": "7130af1c7620f1dfdc299469e85b7e8250f76e8b709270eb27beacc43f29ba4e"
+          },
+          {
+            "id": "block_0008_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0008_0006",
+            "sha256": "ce46617f992d803cdd846d12e184885cb391e818003308e91ab13b1bb52bf6af"
+          }
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          {
+            "id": "block_0009_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0009_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0002",
+            "sha256": "7f04bdb7020a7d81251961f8b1dfb6801ffa2779840dd8b9f48616bb2f6f8066"
+          },
+          {
+            "id": "block_0009_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0004",
+            "sha256": "b1989c6d1b00703202735e85c09c8521a8f3e7f73c97e427ce444b1343bcd960"
+          },
+          {
+            "id": "block_0009_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0006",
+            "sha256": "55f0a0fef1b9d654b73e9cf60f6ef0c4126b953e8ea330cbc5eef946727ac5cb"
+          },
+          {
+            "id": "block_0009_0007",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0009_0008",
+            "sha256": "f9881901e8c26f4066864500e6872234cac803100a9b7652b0c0e9e5763adfac"
+          }
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          {
+            "id": "block_0010_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0010_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0002",
+            "sha256": "42ec7c1242a88a24a46267a63f0010164fca0e06344e653b4c80894cdefdc9bc"
+          },
+          {
+            "id": "block_0010_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0010_0004",
+            "sha256": "d543c8c910c4c736ac6b80c5acb978232b4911956efafea8cfb9af6811120780"
+          }
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          {
+            "id": "block_0011_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0011_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0002",
+            "sha256": "f62b535eff7102e9d47e9b4b3360badcecfafe6658db8deb142b31f1f963f334"
+          },
+          {
+            "id": "block_0011_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0004",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0011_0006",
+            "sha256": "d96a6e94739509bbd47ed6f855a64630832c3883b95ca373fa169b2b57422263"
+          }
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          {
+            "id": "block_0012_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0012_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0012_0004",
+            "sha256": "07478993b9e10fce46835421aeb4126398d3527619feadac58706eb2f5da1bdc"
+          },
+          {
+            "id": "block_0012_0005",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          }
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          {
+            "id": "block_0013_0000",
+            "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+          },
+          {
+            "id": "block_0013_0001",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0002",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0003",
+            "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+          },
+          {
+            "id": "block_0013_0004",
+            "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+          },
+          {
+            "id": "block_0013_0005",
+            "sha256": "2951dc3fc5a72b1d38bebe12ea229b7912985d57b3ca25c67e109fef55a69aee"
+          }
+        ]
+      }
+    ],
+    "current": [
+      {
+        "id": "page_0000",
+        "blocks": [
+          "block_0000_0000",
+          "block_0000_0001",
+          "block_0000_0002",
+          "block_0000_0003",
+          "block_0000_0004"
+        ]
+      },
+      {
+        "id": "page_0001",
+        "blocks": [
+          "block_0001_0000",
+          "block_0001_0001",
+          "block_0001_0002",
+          "block_0001_0003",
+          "block_0001_0004",
+          "block_0001_0005"
+        ]
+      },
+      {
+        "id": "page_0002",
+        "blocks": [
+          "block_0002_0000",
+          "block_0002_0001",
+          "block_0002_0002",
+          "block_0002_0003",
+          "block_0002_0004",
+          "block_0002_0005"
+        ]
+      },
+      {
+        "id": "page_0003",
+        "blocks": [
+          "block_0003_0000",
+          "block_0003_0001",
+          "block_0003_0002",
+          "block_0003_0003",
+          "block_0003_0004",
+          "block_0003_0005"
+        ]
+      },
+      {
+        "id": "page_0004",
+        "blocks": [
+          "block_0004_0000",
+          "block_0004_0001",
+          "block_0004_0002",
+          "block_0004_0003",
+          "block_0004_0004",
+          "block_0004_0005"
+        ]
+      },
+      {
+        "id": "page_0005",
+        "blocks": [
+          "block_0005_0000",
+          "block_0005_0001",
+          "block_0005_0002",
+          "block_0005_0003",
+          "block_0005_0004",
+          "block_0005_0005"
+        ]
+      },
+      {
+        "id": "page_0006",
+        "blocks": [
+          "block_0006_0000",
+          "block_0006_0001",
+          "block_0006_0002",
+          "block_0006_0003",
+          "block_0006_0004"
+        ]
+      },
+      {
+        "id": "page_0007",
+        "blocks": [
+          "block_0007_0000",
+          "block_0007_0001",
+          "block_0007_0002",
+          "block_0007_0003"
+        ]
+      },
+      {
+        "id": "page_0008",
+        "blocks": [
+          "block_0008_0000",
+          "block_0008_0001",
+          "block_0008_0002",
+          "block_0008_0003",
+          "block_0008_0004",
+          "block_0008_0005",
+          "block_0008_0006"
+        ]
+      },
+      {
+        "id": "page_0009",
+        "blocks": [
+          "block_0009_0000",
+          "block_0009_0001",
+          "block_0009_0002",
+          "block_0009_0003",
+          "block_0009_0004",
+          "block_0009_0005",
+          "block_0009_0006",
+          "block_0009_0007",
+          "block_0009_0008"
+        ]
+      },
+      {
+        "id": "page_0010",
+        "blocks": [
+          "block_0010_0000",
+          "block_0010_0001",
+          "block_0010_0002",
+          "block_0010_0003",
+          "block_0010_0004"
+        ]
+      },
+      {
+        "id": "page_0011",
+        "blocks": [
+          "block_0011_0000",
+          "block_0011_0001",
+          "block_0011_0002",
+          "block_0011_0003",
+          "block_0011_0004",
+          "block_0011_0005",
+          "block_0011_0006"
+        ]
+      },
+      {
+        "id": "page_0012",
+        "blocks": [
+          "block_0012_0000",
+          "block_0012_0001",
+          "block_0012_0002",
+          "block_0012_0003",
+          "block_0012_0004",
+          "block_0012_0005"
+        ]
+      },
+      {
+        "id": "page_0013",
+        "blocks": [
+          "block_0013_0000",
+          "block_0013_0001",
+          "block_0013_0002",
+          "block_0013_0003",
+          "block_0013_0004",
+          "block_0013_0005"
+        ]
+      }
+    ],
+    "family": {
+      "es": {
+        "sha256": "c8afaaae5ec0eabc703d7c7bbe243a71beaaf15d5801800d56dce78718ff8c29",
+        "origin": [
+          {
+            "id": "page_0000",
+            "blocks": [
+              {
+                "id": "block_0000_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0000_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0000_0004",
+                "sha256": "93c79f68bab7ea1c114088a77926a58fb6886af16387f4417f8bc775a3a61dd0"
+              }
+            ]
+          },
+          {
+            "id": "page_0001",
+            "blocks": [
+              {
+                "id": "block_0001_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0001_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0002",
+                "sha256": "56681d2e91a6cbb01686def4e5a99472e8dca32dcf0ef6bf4911c4ad86a15548"
+              },
+              {
+                "id": "block_0001_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0001_0005",
+                "sha256": "dd08b7c235918556af3a97595b3aa56e35f595275eb5a7ba7f0d216d5940cb17"
+              }
+            ]
+          },
+          {
+            "id": "page_0002",
+            "blocks": [
+              {
+                "id": "block_0002_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0002_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0003",
+                "sha256": "623367ec0be508182705a7404caa77958efdca1f69d1b4ded32b07df435839b6"
+              },
+              {
+                "id": "block_0002_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0002_0005",
+                "sha256": "185fef17d8f7300749d74909accad2f9b89136a16310eb00513e83f8d59b3048"
+              }
+            ]
+          },
+          {
+            "id": "page_0003",
+            "blocks": [
+              {
+                "id": "block_0003_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0003_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0002",
+                "sha256": "fbd24749166b491347a61a7871f9fc8d52ad9628d4894561c4bda39c2c39f0d0"
+              },
+              {
+                "id": "block_0003_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0003_0005",
+                "sha256": "6b49b07b18fd03db9152225d691a7f3569f56378adbf5cf9e67a519aff4ba929"
+              }
+            ]
+          },
+          {
+            "id": "page_0004",
+            "blocks": [
+              {
+                "id": "block_0004_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0004_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0003",
+                "sha256": "cb39b1c7c1972a1288c9f8ad25c4031995ab01b44d0f4187175f217d08be1dfb"
+              },
+              {
+                "id": "block_0004_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0004_0005",
+                "sha256": "86f470bcb9b1a35fbfaef975156af438375756622cb0860859031e71e5d7e58e"
+              }
+            ]
+          },
+          {
+            "id": "page_0005",
+            "blocks": [
+              {
+                "id": "block_0005_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0005_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0002",
+                "sha256": "7f0ef810b6ee6a61f304f6ee50535d753cbb677bfd9e6d172d33c9e305d492a8"
+              },
+              {
+                "id": "block_0005_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0005_0005",
+                "sha256": "cf38818e7db50e2da1c0d2f197ac3a8e96bdabe97c8e9f37d4eaeae743be32f7"
+              }
+            ]
+          },
+          {
+            "id": "page_0006",
+            "blocks": [
+              {
+                "id": "block_0006_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0006_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0002",
+                "sha256": "31cde82ec13474ebacda9c087638d4126c3df8158774205ab6013e93c3664804"
+              },
+              {
+                "id": "block_0006_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0006_0004",
+                "sha256": "b90b602b58bb2cf89e3c48cbb1c40b5d4c2798a62d8862334d813758f74950c8"
+              }
+            ]
+          },
+          {
+            "id": "page_0007",
+            "blocks": [
+              {
+                "id": "block_0007_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0007_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0007_0002",
+                "sha256": "570688f568c9294ba0a04027c6190969d56f7df27ca58c1117b09645c0ee5416"
+              },
+              {
+                "id": "block_0007_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0008",
+            "blocks": [
+              {
+                "id": "block_0008_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0008_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0002",
+                "sha256": "2599a84a8b8c1720f8801b9bc7a1d04a6f6c64818e7099a578c0748c58d89e7c"
+              },
+              {
+                "id": "block_0008_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0004",
+                "sha256": "7130af1c7620f1dfdc299469e85b7e8250f76e8b709270eb27beacc43f29ba4e"
+              },
+              {
+                "id": "block_0008_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0008_0006",
+                "sha256": "ce46617f992d803cdd846d12e184885cb391e818003308e91ab13b1bb52bf6af"
+              }
+            ]
+          },
+          {
+            "id": "page_0009",
+            "blocks": [
+              {
+                "id": "block_0009_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0009_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0002",
+                "sha256": "7f04bdb7020a7d81251961f8b1dfb6801ffa2779840dd8b9f48616bb2f6f8066"
+              },
+              {
+                "id": "block_0009_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0004",
+                "sha256": "b1989c6d1b00703202735e85c09c8521a8f3e7f73c97e427ce444b1343bcd960"
+              },
+              {
+                "id": "block_0009_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0006",
+                "sha256": "55f0a0fef1b9d654b73e9cf60f6ef0c4126b953e8ea330cbc5eef946727ac5cb"
+              },
+              {
+                "id": "block_0009_0007",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0009_0008",
+                "sha256": "f9881901e8c26f4066864500e6872234cac803100a9b7652b0c0e9e5763adfac"
+              }
+            ]
+          },
+          {
+            "id": "page_0010",
+            "blocks": [
+              {
+                "id": "block_0010_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0010_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0002",
+                "sha256": "42ec7c1242a88a24a46267a63f0010164fca0e06344e653b4c80894cdefdc9bc"
+              },
+              {
+                "id": "block_0010_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0010_0004",
+                "sha256": "d543c8c910c4c736ac6b80c5acb978232b4911956efafea8cfb9af6811120780"
+              }
+            ]
+          },
+          {
+            "id": "page_0011",
+            "blocks": [
+              {
+                "id": "block_0011_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0011_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0002",
+                "sha256": "f62b535eff7102e9d47e9b4b3360badcecfafe6658db8deb142b31f1f963f334"
+              },
+              {
+                "id": "block_0011_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0004",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0011_0006",
+                "sha256": "d96a6e94739509bbd47ed6f855a64630832c3883b95ca373fa169b2b57422263"
+              }
+            ]
+          },
+          {
+            "id": "page_0012",
+            "blocks": [
+              {
+                "id": "block_0012_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0012_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0012_0004",
+                "sha256": "07478993b9e10fce46835421aeb4126398d3527619feadac58706eb2f5da1bdc"
+              },
+              {
+                "id": "block_0012_0005",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              }
+            ]
+          },
+          {
+            "id": "page_0013",
+            "blocks": [
+              {
+                "id": "block_0013_0000",
+                "sha256": "a30d0555835b703d0dd5a90aabb0134813afd11904b5364f69f03b01695f6d7a"
+              },
+              {
+                "id": "block_0013_0001",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0002",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0003",
+                "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5"
+              },
+              {
+                "id": "block_0013_0004",
+                "sha256": "5a25f39deebfacf70f31e9ed31d9496f83df3471d72bfcca57fec1493aee69a1"
+              },
+              {
+                "id": "block_0013_0005",
+                "sha256": "2951dc3fc5a72b1d38bebe12ea229b7912985d57b3ca25c67e109fef55a69aee"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "additions": [],
+    "editorial": []
+  }
+}
