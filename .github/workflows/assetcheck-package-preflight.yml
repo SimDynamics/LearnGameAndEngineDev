@@ -7,6 +7,8 @@ on:
       - .github/workflows/assetcheck-package-preflight.yml
       - scripts/windows/Inspect-AssetCheckArchive.ps1
       - scripts/windows/Compare-AssetCheckSelection.ps1
+      - scripts/windows/Read-AssetCheckIntegrationPlan.ps1
+      - scripts/windows/Test-Read-AssetCheckIntegrationPlan.ps1
       - scripts/windows/Test-Inspect-AssetCheckArchive.ps1
   workflow_dispatch:
 
@@ -32,6 +34,8 @@ jobs:
           persist-credentials: false
       - name: Reject traversal, collisions, malformed members and incorrect hashes
         run: .\scripts\windows\Test-Inspect-AssetCheckArchive.ps1
+      - name: Parse embedded integrator source without executing it
+        run: .\scripts\windows\Test-Read-AssetCheckIntegrationPlan.ps1
       - name: Preserve synthetic test report only, not private user files
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -39,4 +43,6 @@ jobs:
           name: assetcheck-synthetic-preflight-${{ github.sha }}
           retention-days: 14
           if-no-files-found: warn
-          path: out/qa/assetcheck-package-preflight/synthetic-results.json
+          path: |
+            out/qa/assetcheck-package-preflight/synthetic-results.json
+            out/qa/assetcheck-package-preflight/synthetic-integrator-review.json
