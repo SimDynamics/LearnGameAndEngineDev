@@ -1222,7 +1222,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             previous_block = target["previousBlock"]
             require(type(previous_block) is dict and fingerprint(previous_block) == before,
                     "An editorial return must archive its complete exact previous block")
-            require(state_fingerprint(previous_block) == state_fingerprint(actual[identity]),
+            require(state_fingerprint(previous_block) == state_fingerprint(
+                    code_format.source_projection(actual[identity], formatted[identity])
+                    if identity in formatted else actual[identity]),
                     "An editorial return previous block cannot change its protected owner contract")
             if "compileCheck" in previous_block:
                 require("compileCheck" in actual[identity]
@@ -1246,7 +1248,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             require(bibliography_revision.is_bibliography_only_revision(old_block, new_block),
                     "A bibliography archive may only remove optional citation locators from an explanation")
             require(state_fingerprint(old_block) == state_fingerprint(new_block)
-                    == state_fingerprint(actual[identity]),
+                    == state_fingerprint(code_format.source_projection(actual[identity], formatted[identity])
+                                         if identity in formatted else actual[identity]),
                     "A bibliography archive changed its owner's protected exercise contract")
             _validate_bibliography_semantics(archive["previousTextSemantics"], identity, old_block)
             _validate_bibliography_semantics(archive["currentTextSemantics"], identity, new_block)
@@ -1555,6 +1558,11 @@ def _validate_retirement_history(document: dict) -> None:
     require(type(history) is list and len(history) <= 100_000, "Malformed retirement reading history")
     archived = [entry["id"] for entry in meta.get("retired", [])]
     available = _all_blocks(document)
+    archives = {item["id"]: item["block"]
+                for item in meta.get("sourceFormatRevisions", [])}
+    protected_available = {identity: code_format.source_projection(block, archives[identity])
+                           if identity in archives else block
+                           for identity, block in available.items()}
     choices = _choice_revisions(document)
     compilers = _compiler_revisions(document)
     compiler_references = _compiler_references(document)
@@ -1596,13 +1604,13 @@ def _validate_retirement_history(document: dict) -> None:
                     # choice snapshots remain valid before a later revision.
                     require(meta["locale"] == "es" and block_id in choices
                             and CHOICE_OPTION_REVISIONS.get((document.get("id"), block_id)) == reviewed
-                            and _reviewed_choice(available[block_id]) == reviewed,
+                            and _reviewed_choice(protected_available[block_id]) == reviewed,
                             "A historical revised choice requires its matching active revision archive")
                 compiler_reviewed = _reviewed_compiler(block)
                 if compiler_reviewed is not None:
                     require(meta["locale"] == "es" and block_id in compilers
                             and COMPILER_CASE_REVISIONS.get((document.get("id"), block_id)) == compiler_reviewed
-                            and _reviewed_compiler(available[block_id]) == compiler_reviewed,
+                            and _reviewed_compiler(protected_available[block_id]) == compiler_reviewed,
                             "A historical revised compiler requires its matching active revision archive")
                 reference_reviewed = _reviewed_compiler_reference(block)
                 if reference_reviewed is not None:
@@ -1610,10 +1618,10 @@ def _validate_retirement_history(document: dict) -> None:
                                                if lesson == document.get("id") and reference["id"] == block_id), None)
                     require(meta["locale"] == "es" and block_id in compiler_references
                             and expected_reference == reference_reviewed
-                            and _reviewed_compiler_reference(available[block_id]) == reference_reviewed,
+                            and _reviewed_compiler_reference(protected_available[block_id]) == reference_reviewed,
                             "A historical revised compiler reference requires its matching active revision archive")
                 require(state_fingerprint(_historical_order_contract(document, block_id, block, allow_original=True))
-                        == state_fingerprint(_historical_order_contract(document, block_id, available[block_id])),
+                        == state_fingerprint(_historical_order_contract(document, block_id, protected_available[block_id])),
                         "Historical reading snapshot changed a response/code contract")
                 seen_blocks.add(block_id)
         historical_blocks = {identity: block for page, record in zip(pages, current)
