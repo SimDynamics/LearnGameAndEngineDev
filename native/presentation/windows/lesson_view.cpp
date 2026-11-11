@@ -3909,7 +3909,14 @@ struct LessonView {
         const auto fresh=windows::capture_cpp_execution(running_program,*result);
         const auto evaluation=block(index).output_check&&executed
             ?windows::evaluate_cpp_output_check(*block(index).output_check,fresh,vm.revision):curriculum::OutputEvaluation{};
-        const bool completed_for_objective=fresh.execution_completed&&evaluation.verdict!=curriculum::OutputVerdict::unavailable;
+        // A completed process can return a nonzero application status without
+        // crashing. Presentation must not depend on whether this source earned
+        // the authored objective (for example, a deliberately edited client).
+        // Windows abnormal termination codes lie outside the normal 0..255
+        // application-return domain, as do timed out and cancelled phases.
+        const bool normal_execution=result->error_utf8.empty()&&
+            result->execution.status==windows::CppPhaseStatus::completed&&
+            result->execution.exit_code&&*result->execution.exit_code<=255;
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
             output=diagnostic_text(phase.stdout_bytes+phase.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;
@@ -3919,7 +3926,7 @@ struct LessonView {
             if (!result->error_utf8.empty()) output += "\n" + result->error_utf8;
             if (result->compilation.status == windows::CppPhaseStatus::timed_out) output += '\n' + ui("La compilación superó el tiempo permitido.",
                 "Compilation exceeded the time limit.","La compilation a dépassé le temps autorisé.");
-        } else if (!result->execution.succeeded()&&!completed_for_objective) {
+        } else if (!result->execution.succeeded()&&!normal_execution) {
             output = ui("La ejecución no terminó correctamente.\n","Execution did not finish successfully.\n","L'exécution ne s'est pas terminée correctement.\n") + diagnostic_text(result->execution.stdout_bytes);
             output += diagnostic_text(result->execution.stderr_bytes);
             if (!result->error_utf8.empty()) output += "\n" + result->error_utf8;
@@ -3944,7 +3951,7 @@ struct LessonView {
                     "Le contrôle des applications Windows a bloqué un processus (erreur 4551). Consultez la console.");
             else if(!cmake){
                 if(result->compilation.exit_code&&!result->compilation.succeeded())status=ui("La compilación falló (código ","Compilation failed (code ","Échec de la compilation (code ")+std::to_string(*result->compilation.exit_code)+").";
-                else if(result->execution.exit_code)status=(result->execution.succeeded()||completed_for_objective
+                else if(result->execution.exit_code)status=(result->execution.succeeded()||normal_execution
                     ?ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")
                     :ui("La ejecución falló (código ","Execution failed (code ","L’exécution a échoué (code "))+std::to_string(*result->execution.exit_code)+").";
                 else status=ui("No se pudo ejecutar.","Could not execute.","Impossible d’exécuter.");
@@ -3957,7 +3964,7 @@ struct LessonView {
             else if(running_action==windows::CppRunRequest::Action::build)status=!result->compilation.succeeded()?failed(ui("Construcción","Build","Construction"),result->compilation):result->artifact.empty()
                 ?ui("Objetivo construido; no produce un programa ejecutable.","Target built; it does not produce an executable program.","Cible construite ; elle ne produit pas de programme exécutable.")
                 :ui("Objetivo construido. Ejecútalo para observar su comportamiento.","Target built. Run it to observe its behavior.","Cible construite. Exécutez-la pour observer son comportement.");
-            else if(result->execution.succeeded()||completed_for_objective)status=ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")+std::to_string(*result->execution.exit_code)+").";
+            else if(result->execution.succeeded()||normal_execution)status=ui("Ejecución terminada (código ","Execution finished (code ","Exécution terminée (code ")+std::to_string(*result->execution.exit_code)+").";
             else status=failed(ui("Ejecución","Execution","Exécution"),result->execution);
             set_rich_text(vm.status,status);
         }
@@ -3973,7 +3980,7 @@ struct LessonView {
         int preferred_channel = -1;
         if (configuration_failed||(cmake&&!executed)||(!cmake&&!result->compilation.succeeded())
             ||(cmake&&result->compilation.status!=windows::CppPhaseStatus::not_started&&!result->compilation.succeeded())) { vm.console_channels[2] = output; preferred_channel = 2; }
-        else if (!result->execution.succeeded()&&!completed_for_objective) { vm.console_channels[1] = output; preferred_channel = 1; }
+        else if (!result->execution.succeeded()&&!normal_execution) { vm.console_channels[1] = output; preferred_channel = 1; }
         console_present(index,preferred_channel);
         if (block(index).output_check&&executed) {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
