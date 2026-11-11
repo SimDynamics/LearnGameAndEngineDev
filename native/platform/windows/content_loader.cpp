@@ -353,6 +353,11 @@ std::string state_fingerprint(const JsonObject& original) {
                 require(text(object,"standardError") == "nonBlank", "Unknown runtime stderr expectation");
                 object.Remove(L"standardError");
             }
+            if (object.HasKey(L"standardErrorExact")) {
+                require(!object.HasKey(L"standardError"), "Conflicting runtime stderr objectives");
+                (void)text(object,"standardErrorExact");
+                object.Remove(L"standardErrorExact");
+            }
         }
     } else if (const auto reviewed=reviewed_math_label(value);type == "math_puzzle"&&reviewed) {
         value.GetNamedArray(L"responses").GetAt(0).GetObject().GetNamedArray(L"sources").GetAt(reviewed->source_index).GetObject()
@@ -1754,7 +1759,7 @@ OutputCheck read_output_check(const JsonObject& value,std::string_view original,
     require(original_cases.size() == cases.Size(), "Output check source cases differ from the parsed document");
     std::size_t case_index = 0;
     for (const auto& case_value : cases) {
-        const auto item = case_value.GetObject(); allowed_keys(item, {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError", "exitCode"});
+        const auto item = case_value.GetObject(); allowed_keys(item, {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError", "standardErrorExact", "exitCode"});
         OutputCase record; record.standard_input = text(item, "standardInput"); record.outputs = strings(array(item, "outputs"), true);
         record.explanation = optional_text(item, "explanation");
         if (item.HasKey(L"exitCode")) {
@@ -1768,6 +1773,10 @@ OutputCheck read_output_check(const JsonObject& value,std::string_view original,
         if (item.HasKey(L"standardError")) {
             require(text(item, "standardError") == "nonBlank", "Unknown runtime stderr expectation");
             record.standard_error = StandardErrorExpectation::non_blank;
+        }
+        if (item.HasKey(L"standardErrorExact")) {
+            require(!item.HasKey(L"standardError"), "Choose either nonBlank or exact stderr, never both");
+            record.standard_error_exact = text(item, "standardErrorExact");
         }
         if(item.HasKey(L"target")){require(cmake,"An outputCheck target requires a CMake project");record.executable=text(item,"target");validate_cmake_config(CmakeConfig{*record.executable,{},"Debug"});}
         if (item.HasKey(L"reviewFeedback")) {
