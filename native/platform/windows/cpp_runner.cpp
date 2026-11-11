@@ -889,6 +889,38 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
     if(result.execution.exit_code&&*result.execution.exit_code<=255)fresh.exit_code=static_cast<int>(*result.execution.exit_code);
     fresh.standard_input=request.stdin_utf8;fresh.standard_output=result.execution.stdout_bytes;
     fresh.standard_error=result.execution.stderr_bytes;fresh.executable=result.executable;
+    if(request.assertion_mode && request.backend==CppRunRequest::Backend::wasi &&
+        result.compilation.succeeded()&&
+        result.target_type=="WASI_COMMAND"&&
+        result.artifact.extension()==L".wasm"&&
+        std::filesystem::is_regular_file(result.artifact)) {
+        if(*request.assertion_mode==curriculum::AssertionMode::enabled_abort) {
+            fresh.assertion_abort_verified =
+                result.execution.status==CppPhaseStatus::completed&&
+                result.execution.exit_code&&*result.execution.exit_code>0&&
+                *result.execution.exit_code<=255&&
+                curriculum::assertion_runtime_trap(result.execution.stdout_bytes,
+                    result.execution.stderr_bytes);
+        }else if(*request.assertion_mode==curriculum::AssertionMode::repaired&&
+                 result.assertion_probes.size()==curriculum::repaired_assertion_inputs.size()) {
+            fresh.assertion_repair_probes_correct=true;
+            const auto digest=state::sha256(request.source_utf8);
+            for(std::size_t i=0;i<result.assertion_probes.size();++i) {
+                const auto& probe=result.assertion_probes[i];
+                if(probe.source_sha256!=digest||
+                   probe.standard_input!=curriculum::repaired_assertion_inputs[i]||
+                   !probe.compilation.succeeded()||
+                   probe.execution.status!=CppPhaseStatus::completed||
+                   !probe.execution.exit_code||*probe.execution.exit_code>255||
+                   !curriculum::assertion_repaired_matches(probe.standard_input,
+                       probe.execution.stdout_bytes,probe.execution.stderr_bytes,
+                       static_cast<int>(*probe.execution.exit_code))) {
+                    fresh.assertion_repair_probes_correct=false;
+                    break;
+                }
+            }
+        }
+    }
     if(request.observation_probe &&
         result.observation_probes.size()==curriculum::observation_probe_inputs.size()) {
         const auto source_digest=state::sha256(request.source_utf8);
@@ -997,6 +1029,35 @@ void complete_observation_probes(const CppRunRequest& request,CppRunResult& resu
     }
 }
 
+// A repaired formula must also work for new data without disabling assert
+// or fabricating the prepared stdout. These disposable WASI executions retain
+// the original source and are sealed to the captured revision and input.
+void complete_assertion_probes(const CppRunRequest& request,CppRunResult& result,
+        std::stop_token stop) {
+    if(request.assertion_mode!=curriculum::AssertionMode::repaired||
+       request.backend!=CppRunRequest::Backend::wasi||
+       request.action!=CppRunRequest::Action::compile_run||
+       !request.project_files.empty()||request.cmake||request.diagnostic||
+       !result.compilation.succeeded()||
+       result.execution.status!=CppPhaseStatus::completed||
+       !result.execution.exit_code||*result.execution.exit_code>255||
+       stop.stop_requested())return;
+    const auto hash=state::sha256(request.source_utf8);
+    for(std::size_t i=0;i<curriculum::repaired_assertion_inputs.size();++i) {
+        if(stop.stop_requested())break;
+        auto current=request;
+        current.assertion_mode.reset();
+        current.request_id=~(request.request_id+static_cast<std::uint64_t>(i)+7);
+        current.stdin_utf8=std::string(curriculum::repaired_assertion_inputs[i]);
+        const auto proof=run_cpp(current,stop);
+        if(!proof.error_utf8.empty())break;
+        result.assertion_probes.push_back(CppAssertionProbe{
+            hash,current.stdin_utf8,proof.compilation,proof.execution});
+        if(!proof.compilation.succeeded()||
+           proof.execution.status!=CppPhaseStatus::completed)break;
+    }
+}
+
 CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
     CppRunResult result;
     result.request_id = request.request_id;
@@ -1036,6 +1097,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             run_wasi_single(request,result,source,input,compiler_input,stop);
             complete_rejection_stream_probe(request,result,stop);
             complete_observation_probes(request,result,stop);
+            complete_assertion_probes(request,result,stop);
             return result;
         }
         if (!std::filesystem::is_regular_file(compiler))

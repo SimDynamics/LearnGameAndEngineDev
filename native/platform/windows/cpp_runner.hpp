@@ -16,6 +16,7 @@ struct OutputCheck;
 struct FreshExecution;
 enum class RejectionOperation;
 enum class ReportMode;
+enum class AssertionMode;
 struct OutputEvaluation;
 struct Block;
 }
@@ -97,6 +98,7 @@ struct CppRunRequest {
     // free laboratory or by a project without this reviewed C++ objective.
     std::optional<curriculum::RejectionOperation> rejection_probe;
     std::optional<curriculum::ReportMode> observation_probe;
+    std::optional<curriculum::AssertionMode> assertion_mode;
 };
 struct CppRejectionProbe {
     std::string source_sha256;
@@ -104,6 +106,11 @@ struct CppRejectionProbe {
 };
 
 struct CppObservationProbe {
+    std::string source_sha256, standard_input;
+    CppPhaseResult compilation, execution;
+};
+
+struct CppAssertionProbe {
     std::string source_sha256, standard_input;
     CppPhaseResult compilation, execution;
 };
@@ -122,6 +129,7 @@ struct CppRunResult {
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
     std::vector<CppObservationProbe> observation_probes;
+    std::vector<CppAssertionProbe> assertion_probes;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;
