@@ -129,6 +129,59 @@ void integrated_lesson(HWND host){
 }
 }
 
+
+void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem::path& authored_lesson){
+    const auto published=windows::load_lesson(authored_lesson);
+    require(published.pages.size()==13&&published.pages[10].blocks.size()==5,
+        "The authentic U3 lesson lost its thirteen-page layout");
+    const auto& owner=published.pages[10].blocks[3];
+    require(owner.stable_id=="block_0010_0003"&&owner.type==curriculum::BlockType::cpp_compiler
+        &&owner.output_check&&owner.cmake,"The exact U3 recovery owner is absent");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"u3-original-gates-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    auto initial=store.load();
+    initial.preferences["native_windows"]["ui_language"]=std::string("es");
+    store.save(initial);
+    HWND view=create_lesson_view(host,environment,published);
+    require(view!=nullptr,"The full thirteen-page lesson cannot be opened in isolated QA");
+    const auto cleanup=[&]{
+        if(view){(void)flush_lesson_view(view);DestroyWindow(view);view=nullptr;}
+    };
+    try{
+        MoveWindow(view,0,0,900,700,TRUE);pump();
+        const auto before=lesson_page_state(view);
+        const auto options=lesson_options_snapshot(view);
+        require(before.count==13&&before.index==0&&
+            options.page_count==13&&options.current_page==0&&!options.finish_enabled,
+            "A fresh profile entered U3 after its first page or enabled Finish");
+        require(std::ranges::find(options.available_pages,std::size_t{10})==options.available_pages.end()
+            &&std::ranges::find(options.available_pages,std::size_t{11})==options.available_pages.end()
+            &&std::ranges::find(options.available_pages,std::size_t{12})==options.available_pages.end(),
+            "The real Pages menu exposed gated U3 content in an unstarted profile");
+        require(!navigate_lesson_view(view,10)&&!navigate_lesson_view(view,12),
+            "The real page-navigation API bypassed earlier unanswered puzzles");
+        require(lesson_page_state(view).index==0&&
+            !windows::compiler_puzzle_completed(read_lesson_state(view),published,owner),
+            "A rejected navigation fabricated completion or changed the current page");
+        cleanup();
+        view=create_lesson_view(host,environment,published);
+        require(view!=nullptr,"The unchanged original lesson could not reopen");
+        MoveWindow(view,0,0,900,700,TRUE);pump();
+        const auto reopened=lesson_page_state(view);
+        require(reopened.count==13&&reopened.index==0&&
+            !navigate_lesson_view(view,10)&&
+            !windows::compiler_puzzle_completed(read_lesson_state(view),published,owner),
+            "Reopening the complete lesson bypassed an unanswered prerequisite");
+        cleanup();
+        require(environment.paths.root.parent_path().filename()==L"qa" &&
+            environment.paths.root.parent_path().parent_path().filename()==L"Codex",
+            "Full-lesson QA profile unexpectedly escaped Codex/qa");
+        cleanup_own_qa(environment.paths.root.parent_path(),environment.paths.root,"u3-original-gates-");
+    }catch(...){cleanup();throw;}
+}
+
 void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson){
     // The actual published owner and its six sources are loaded by the same
     // production JSON reader. Only unrelated preceding pages are omitted:
@@ -274,8 +327,9 @@ int main(int argc,char** argv){
     using namespace lgaed;using namespace presentation;
     const bool internal_only=argc==3&&std::string_view(argv[2])=="--internal-dialogs";
     const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
+    const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective,"Provide the existing isolated QA output directory, optionally --internal-dialogs or --u3-selective <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
+    try{require(argc==2||internal_only||u3_selective||u3_gates,"Provide the existing isolated QA output directory, optionally --internal-dialogs, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
         const auto editor_window=CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_MULTILINE|ES_AUTOHSCROLL|ES_AUTOVSCROLL,0,250,800,240,host,nullptr,GetModuleHandleW(nullptr),nullptr);require(editor_window!=nullptr,"Cannot create the existing source editor");
@@ -393,12 +447,14 @@ int main(int argc,char** argv){
             const auto changed_before=source_changes;set_edit_text(child(project.configuration_window(),400),"revised");set_edit_text(child(project.configuration_window(),402),"WITH_TRACE=OFF\nMODE=two words");project.snapshot(snapshot);require(snapshot.cmake->target=="revised"&&snapshot.cmake->options.at("MODE")=="two words"&&source_changes>changed_before&&cmake_json.find("revised")!=std::string::npos,"Configuration edits did not immediately persist and invalidate the exact request");
             project.reset();project.snapshot(snapshot);require(snapshot.cmake==block.cmake&&snapshot.project_files==block.project_files,"Reset did not restore the authored project and CMake settings only");
         }
-        if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
+        if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
+        else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
         DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
+        else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";
         else std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
     }catch(const std::exception& error){if(host)DestroyWindow(host);if(rich)FreeLibrary(rich);std::cerr<<"Project controls failure: "<<error.what()<<'\n';return 1;}
 }
