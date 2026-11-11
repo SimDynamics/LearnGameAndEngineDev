@@ -207,7 +207,7 @@ function Confirm-Result([string] $stage, [string] $expected) {
     if ($LASTEXITCODE -ne 0 -or $actual -cne $expected) {
         throw "$stage produced '$actual' (exit $LASTEXITCODE), not '$expected'."
     }
-    Write-Host "PASS $stage: $actual (exit=0)"
+    Write-Host ("PASS {0}: {1} (exit=0)" -f $stage, $actual)
 }
 
 Invoke-NativeCapture 'u4l3_configurar' @'
