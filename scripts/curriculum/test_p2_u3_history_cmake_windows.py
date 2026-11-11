@@ -12,7 +12,7 @@ class PublishedHistoryExerciseTests(unittest.TestCase):
         files, observed = scenario.published_project()
         self.assertEqual(len(files), 6)
         self.assertEqual(observed, scenario.oracle(False))
-        self.assertEqual(scenario.oracle(False).count(" OK\n"), 7)
+        self.assertEqual(sum(line.endswith(" OK") for line in scenario.oracle(False).splitlines() if line.startswith("piezas=")), 7)
         self.assertTrue(scenario.oracle(False).endswith("Bateria: OK\n"))
 
     def test_failed_stage_is_independently_different_from_correct_stage(self):
@@ -20,8 +20,8 @@ class PublishedHistoryExerciseTests(unittest.TestCase):
         broken, repaired = scenario.stages(files)
         self.assertNotEqual(broken[scenario.LIBRARY_SOURCE], files[scenario.LIBRARY_SOURCE])
         self.assertEqual(repaired[scenario.LIBRARY_SOURCE], files[scenario.LIBRARY_SOURCE])
-        self.assertEqual(scenario.oracle(True).count(" FALLO\n"), 3)
-        self.assertEqual(scenario.oracle(True).count(" OK\n"), 4)
+        self.assertEqual(sum(line.endswith(" FALLO") for line in scenario.oracle(True).splitlines() if line.startswith("piezas=")), 3)
+        self.assertEqual(sum(line.endswith(" OK") for line in scenario.oracle(True).splitlines() if line.startswith("piezas=")), 4)
         self.assertTrue(scenario.oracle(True).endswith("Bateria: FALLO\n"))
         self.assertNotEqual(scenario.sha(scenario.oracle(True)), scenario.sha(scenario.oracle(False)))
 
