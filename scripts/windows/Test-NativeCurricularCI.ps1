@@ -353,12 +353,14 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the project history UI test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    if ($qaUiNames.Count -ne 1 -or $qaUiNames[0] -ne 'native.cpp_project_internal_dialogs') {
-        throw 'ReaderBuild must register exactly the real project history dialog test.'
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson')
+    if ($qaUiNames.Count -ne $qaUiExpected.Count -or
+        (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
+        throw 'ReaderBuild must register the original History dialogs and the authentic U3 owner integration test.'
     }
-    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 90
-    if ($LASTEXITCODE -ne 0) { throw 'The real Win32 project history dialog regression failed.' }
-    Write-Host 'PASS original reader/U6 executables compiled and linked; actual Win32 history record/compare/recovery tested. No reader tests, synthesis or playback executed.'
+    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
+    if ($LASTEXITCODE -ne 0) { throw 'The native Win32 History or focused U3 lesson regression failed.' }
+    Write-Host 'PASS original reader/U6 executables compiled and linked; actual Win32 History dialogs and focused published U3 lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return
 }
 

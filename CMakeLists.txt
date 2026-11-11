@@ -244,6 +244,15 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_test(NAME native.cpp_project_internal_dialogs
         COMMAND lgaed_cpp_project_view_tests "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history" --internal-dialogs)
     set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
+    # Load the published U3 editor through the production Win32 lesson view.
+    # This focused QA uses its own profile; unrelated prerequisite pages are
+    # not artificially marked complete or silently granted to the student.
+    add_test(NAME native.cpp_project_u3_selective_lesson
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-selective
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_selective_lesson PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
     message(STATUS "Focused reader build plus one real Win32 history dialog regression; no reader/audio test, fixture, synthesis runtime or application build.")
     return()
 endif()

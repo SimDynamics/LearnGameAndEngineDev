@@ -5,6 +5,7 @@
 #include "presentation/windows/lesson_view.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include <commctrl.h>
 #include <richedit.h>
 #include <winrt/base.h>
@@ -27,9 +28,15 @@ void pump(){MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE))if(
 void await(const std::function<bool()>& done,const char* reason){const auto deadline=GetTickCount64()+90000;do{pump();if(done())return;MsgWaitForMultipleObjects(0,nullptr,FALSE,5,QS_ALLINPUT);}while(GetTickCount64()<deadline);throw std::runtime_error(reason);}
 void click(HWND owner,int id){const auto item=child(owner,id);require(item&&IsWindowEnabled(item),"Expected enabled project control is missing");SendMessageW(item,BM_CLICK,0,0);pump();}
 struct ModalScenario {
-    enum class Kind{create,record,restore};Kind kind;HWND host;UINT_PTR timer=0;ULONGLONG deadline;int stage=0;bool done=false;std::string error;
+    enum class Kind{create,record,restore,compare};Kind kind;HWND host;UINT_PTR timer=0;ULONGLONG deadline;int stage=0;bool done=false;std::string error;
+    std::string target_path,expected_before,expected_after;
     static inline ModalScenario* active=nullptr;
-    ModalScenario(HWND owner,Kind operation):kind(operation),host(owner),deadline(GetTickCount64()+15000){require(!active,"Nested QA scenarios");active=this;timer=SetTimer(host,991,15,tick);require(timer!=0,"Cannot schedule app-owned modal QA");}
+    ModalScenario(HWND owner,Kind operation,std::string file="main.cpp",
+                  std::string prior="return 0",std::string revised="return 9")
+        :kind(operation),host(owner),deadline(GetTickCount64()+30000),
+         target_path(std::move(file)),expected_before(std::move(prior)),expected_after(std::move(revised)){
+         require(!active,"Nested QA scenarios");active=this;timer=SetTimer(host,991,15,tick);
+         require(timer!=0,"Cannot schedule app-owned modal QA");}
     ~ModalScenario(){KillTimer(host,timer);active=nullptr;}
     static HWND dialog(int control){if(!active)return nullptr;HWND result=nullptr;std::pair<int,HWND*> search{control,&result};EnumChildWindows(active->host,[](HWND item,LPARAM lp)->BOOL{auto* found=reinterpret_cast<std::pair<int,HWND*>*>(lp);wchar_t name[128]{};GetClassNameW(item,name,128);if(std::wstring_view(name)==L"LearnGameAndEngineDev.CppProjectDialog"&&IsWindowVisible(item)&&GetDlgItem(item,found->first)&&IsWindowEnabled(item)){*found->second=item;return FALSE;}return TRUE;},reinterpret_cast<LPARAM>(&search));if(result)internal_surface_test::require_internal_surface(active->host,result);return result;}
     static void CALLBACK tick(HWND,UINT,UINT_PTR,DWORD){if(!active)return;auto& self=*active;try{self.step();}catch(const std::exception& failure){self.error=failure.what();self.close_all();}}
@@ -48,9 +55,12 @@ struct ModalScenario {
             if(stage==1){const auto window=dialog(501);if(!window)return;set_edit_text(GetDlgItem(window,501),"Primera revisión");stage=2;SendMessageW(window,WM_COMMAND,IDOK,0);return;}
             const auto window=dialog(505);if(!window||!IsWindowEnabled(GetDlgItem(window,505))||SendMessageW(GetDlgItem(window,505),LB_GETCOUNT,0,0)!=1)return;rendered_row(window);done=true;SendMessageW(window,WM_COMMAND,IDCANCEL,0);return;}
         if(stage<2){const auto window=dialog(505);if(!window||!IsWindowEnabled(GetDlgItem(window,505)))return;const auto list=GetDlgItem(window,505);const auto count=SendMessageW(list,LB_GETCOUNT,0,0);if(count<=0)return;int at=0;
-            if(stage==1){at=-1;for(int i=0;i<count;++i){const auto length=SendMessageW(list,LB_GETTEXTLEN,static_cast<WPARAM>(i),0);require(length>=0,"History file row could not be read");std::wstring label(static_cast<std::size_t>(length)+1,L'\0');SendMessageW(list,LB_GETTEXT,static_cast<WPARAM>(i),reinterpret_cast<LPARAM>(label.data()));if(label.starts_with(L"main.cpp")){at=i;break;}}require(at>=0,"History omitted main.cpp");}
+            if(stage==1){at=-1;for(int i=0;i<count;++i){const auto length=SendMessageW(list,LB_GETTEXTLEN,static_cast<WPARAM>(i),0);require(length>=0,"History file row could not be read");std::wstring label(static_cast<std::size_t>(length)+1,L'\0');SendMessageW(list,LB_GETTEXT,static_cast<WPARAM>(i),reinterpret_cast<LPARAM>(label.data()));if(label.starts_with(wide(target_path))){at=i;break;}}require(at>=0,"History omitted the requested file");}
             SendMessageW(list,LB_SETCURSEL,static_cast<WPARAM>(at),0);++stage;PostMessageW(window,WM_APP+235,0,0);return;}
-        if(stage==2){const auto window=dialog(506);if(!window)return;const auto difference=edit_text(GetDlgItem(window,506));require(difference.find("return 0")!=std::string::npos&&difference.find("return 9")!=std::string::npos,"History did not display the actual per-file diff");stage=3;SendMessageW(window,WM_COMMAND,IDOK,0);return;}
+        if(stage==2){const auto window=dialog(506);if(!window)return;const auto difference=edit_text(GetDlgItem(window,506));require((expected_before.empty()||difference.find(expected_before)!=std::string::npos)&&
+                 (expected_after.empty()||difference.find(expected_after)!=std::string::npos),
+                 "History did not display both actual versions of the selected file");
+             stage=3;SendMessageW(window,WM_COMMAND,kind==Kind::compare?IDCANCEL:IDOK,0);return;}
         const auto window=dialog(505);if(!window||!IsWindowEnabled(GetDlgItem(window,505)))return;done=true;SendMessageW(window,WM_COMMAND,IDCANCEL,0);
     }
     void verified()const{require(error.empty(),error.c_str());require(done,"Actual modal UI was not exercised");}
@@ -112,11 +122,146 @@ void integrated_lesson(HWND host){
     }catch(...){cleanup();throw;}
 }
 }
+
+void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson){
+    // The actual published owner and its six sources are loaded by the same
+    // production JSON reader. Only unrelated preceding pages are omitted:
+    // this is a focused lesson-view integration, not a claim to have tested
+    // progression through all thirteen pages of the original lesson.
+    const auto published=windows::load_lesson(authored_lesson);
+    require(published.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
+        &&published.pages.size()==13&&published.pages[10].blocks.size()>=4,
+        "The published U3L2 lesson structure differs from the reviewed owner");
+    const auto owner=published.pages[10].blocks[3];
+    require(owner.stable_id=="block_0010_0003"&&owner.project_files.size()==6
+        &&owner.cmake&&owner.cmake->target=="comprobar_cajas"
+        &&owner.output_check&&owner.output_check->cases.size()==1,
+        "The real recovery editor or its checked CMake target was replaced");
+    auto focused=published;
+    focused.pages={published.pages[10]};
+    focused.pages[0].blocks={owner};
+    focused.state_layout={};focused.reference_after.clear();
+    focused.activity_after.clear();focused.retired_blocks.clear();
+    focused.text_semantics.clear();focused.raw_json.clear();
+    focused.compiler_puzzles_required=true;
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"u3-history-lesson-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    auto initial=store.load();
+    initial.preferences["native_windows"]["ui_language"]=std::string("es");
+    store.save(initial);
+    HWND view=create_lesson_view(host,environment,focused);
+    require(view!=nullptr,"Cannot create the real focused U3 CMake lesson view");
+    const auto cleanup=[&]{
+        if(view){(void)flush_lesson_view(view);DestroyWindow(view);view=nullptr;}
+    };
+    try {
+        MoveWindow(view,0,0,1000,760,TRUE);pump();
+        auto* project=child(view,1005);
+        auto* source=child(view,1010);
+        auto* run=child(view,1011);
+        auto* config=child(view,1006);
+        require(project&&source&&run&&config&&IsWindowEnabled(run),
+            "The published U3 owner lacks its real project/CMake/run controls");
+        const auto replace_source=[&](const std::string& content){
+            const auto wide_source=wide(content);
+            SendMessageW(source,EM_SETSEL,0,-1);
+            SendMessageW(source,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(wide_source.c_str()));
+            pump();
+            require(edit_text(source)==content,"The native source editor did not adopt the changed bytes");
+        };
+        // This initial program already produces seven correct cases. It MUST
+        // NOT unlock the U3 history task without recording and comparing.
+        click(view,1011);
+        await([&]{return IsWindowEnabled(run);},"Initial stdout-only CMake run did not finish");
+        require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
+            "A seven-case stdout match granted selective-history completion");
+        require(edit_text(child(view,1004)).find("falta acreditar la secuencia")!=std::string::npos,
+            "The real reader did not explain why stdout alone is insufficient");
+
+        {ModalScenario modal(host,ModalScenario::Kind::record);click(project,302);modal.verified();}
+        // Both edits must occur in the very same existing project editor.
+        click(project,1000);
+        const std::string comment="# Comentario independiente de la prueba U3\n";
+        replace_source(owner.project_files[0].second+comment);
+        click(project,1003);
+        auto defective=owner.project_files[3].second;
+        const std::string original_formula="return (piezas + 3) / 4;";
+        const auto position=defective.find(original_formula);
+        require(position!=std::string::npos&&defective.find(original_formula,position+1)==std::string::npos,
+            "The published C++ source has no unique original formula");
+        defective.replace(position,original_formula.size(),"return piezas / 4;");
+        replace_source(defective);
+
+        const auto configure=child(config,405);
+        const auto build=child(config,406);
+        require(configure&&build,"CMake configuration buttons disappeared");
+        if(!IsWindowEnabled(build)){
+            click(config,405);
+            await([&]{return IsWindowEnabled(configure);},"Defective U3 CMake Configure did not finish");
+        }
+        require(IsWindowEnabled(build),"CMake could not build the modified project");
+        click(config,406);
+        await([&]{return IsWindowEnabled(configure);},"Defective U3 CMake Build did not finish");
+        click(view,1011);
+        await([&]{return IsWindowEnabled(run);},"Defective U3 CMake checked run did not finish");
+        require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
+            "A failing intentional execution granted a completed U3 objective");
+        // These are genuine comparison dialogs. The root comment and altered
+        // formula must both appear in independent diffs of ONE revision.
+        {ModalScenario modal(host,ModalScenario::Kind::compare,"CMakeLists.txt",
+            "target_link_libraries(comprobar_cajas PRIVATE envios)",comment);
+            click(project,302);modal.verified();}
+        {ModalScenario modal(host,ModalScenario::Kind::compare,"componente/src/cajas.cpp",
+            original_formula,"return piezas / 4;");
+            click(project,302);modal.verified();}
+        {ModalScenario modal(host,ModalScenario::Kind::restore,"componente/src/cajas.cpp",
+            original_formula,"return piezas / 4;");
+            click(project,302);modal.verified();}
+        require(edit_text(source)==owner.project_files[3].second,
+            "Recovering the selected file did not restore the exact original C++ bytes");
+        click(project,1000);
+        require(edit_text(source)==owner.project_files[0].second+comment,
+            "Recovering one file removed the independent CMake comment");
+        if(!IsWindowEnabled(build)){
+            click(config,405);
+            await([&]{return IsWindowEnabled(configure);},"CMake could not reconfigure the recovered draft");
+        }
+        require(IsWindowEnabled(build),"The restored source did not enable a new build");
+        click(config,406);
+        await([&]{return IsWindowEnabled(configure);},"Final U3 CMake Build did not finish");
+        click(view,1011);
+        await([&]{return IsWindowEnabled(run);},"Final checked U3 CMake run did not finish");
+        const auto completed=read_lesson_state(view);
+        require(windows::compiler_puzzle_completed(completed,focused,owner),
+            "The actual recorded/compared/restored/build/checked U3 reader sequence earned no completion");
+        require(windows::compiler_puzzle_case_count(completed,focused,owner)==1,
+            "The final authenticated U3 run has no current program-case receipt");
+        require(flush_lesson_view(view),"The correct U3 completion was not persisted");
+        cleanup();
+        view=create_lesson_view(host,environment,focused);
+        require(view!=nullptr,"Could not reopen the same isolated U3 lesson");
+        MoveWindow(view,0,0,1000,760,TRUE);pump();
+        require(windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
+            "Reopening the real lesson discarded its new history-completion receipt");
+        click(view,1012);pump();
+        require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
+            "Explicit Reiniciar código failed to revoke the independent U3 completion");
+        cleanup();
+        require(environment.paths.root.parent_path().filename()==L"qa"&&
+            environment.paths.root.parent_path().parent_path().filename()==L"Codex",
+            "The integrated test profile escaped Codex/qa");
+        cleanup_own_qa(environment.paths.root.parent_path(),environment.paths.root,"u3-history-lesson-");
+    }catch(...){cleanup();throw;}
+}
+
 int main(int argc,char** argv){
     using namespace lgaed;using namespace presentation;
     const bool internal_only=argc==3&&std::string_view(argv[2])=="--internal-dialogs";
+    const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only,"Provide the existing isolated QA output directory, optionally --internal-dialogs");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
+    try{require(argc==2||internal_only||u3_selective,"Provide the existing isolated QA output directory, optionally --internal-dialogs or --u3-selective <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
         const auto editor_window=CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_MULTILINE|ES_AUTOHSCROLL|ES_AUTOVSCROLL,0,250,800,240,host,nullptr,GetModuleHandleW(nullptr),nullptr);require(editor_window!=nullptr,"Cannot create the existing source editor");
@@ -234,10 +379,12 @@ int main(int argc,char** argv){
             const auto changed_before=source_changes;set_edit_text(child(project.configuration_window(),400),"revised");set_edit_text(child(project.configuration_window(),402),"WITH_TRACE=OFF\nMODE=two words");project.snapshot(snapshot);require(snapshot.cmake->target=="revised"&&snapshot.cmake->options.at("MODE")=="two words"&&source_changes>changed_before&&cmake_json.find("revised")!=std::string::npos,"Configuration edits did not immediately persist and invalidate the exact request");
             project.reset();project.snapshot(snapshot);require(snapshot.cmake==block.cmake&&snapshot.project_files==block.project_files,"Reset did not restore the authored project and CMake settings only");
         }
-        if(!internal_only)integrated_lesson(host);
+        if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
+        else if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
         DestroyWindow(host);host=nullptr;FreeLibrary(rich);rich=nullptr;
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
+        else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
         else std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
     }catch(const std::exception& error){if(host)DestroyWindow(host);if(rich)FreeLibrary(rich);std::cerr<<"Project controls failure: "<<error.what()<<'\n';return 1;}
 }
