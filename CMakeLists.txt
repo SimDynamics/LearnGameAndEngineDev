@@ -236,6 +236,18 @@ if(LGAED_READER_BUILD_QA_ONLY)
         message(FATAL_ERROR "LGAED_READER_BUILD_QA_ONLY requires BUILD_TESTING=ON.")
     endif()
     lgaed_add_curricular_reader_test_targets()
+    # Preserve authored code indentation and optional decorative cards without
+    # modifying any historical JSON, reference or saved response.
+    add_executable(lgaed_order_spacing_contract_tests native/core/order_spacing_contract_tests.cpp)
+    target_link_libraries(lgaed_order_spacing_contract_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.order_spacing_contract COMMAND lgaed_order_spacing_contract_tests)
+    set_tests_properties(native.order_spacing_contract PROPERTIES TIMEOUT 30)
+    add_executable(lgaed_order_code_whitespace_view_tests
+        native/presentation/windows/order_code_view_tests.cpp native/presentation/windows/app.manifest)
+    target_link_libraries(lgaed_order_code_whitespace_view_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.order_code_whitespace_view
+        COMMAND lgaed_order_code_whitespace_view_tests --whitespace)
+    set_tests_properties(native.order_code_whitespace_view PROPERTIES TIMEOUT 60)
     # The original reader tests are still only compiled. The history UI test
     # exercises the actual Win32 record/compare/restore dialogs, without
     # creating an app profile or evaluating learner completion.
