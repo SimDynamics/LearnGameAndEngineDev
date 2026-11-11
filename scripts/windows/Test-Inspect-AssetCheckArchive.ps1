@@ -84,6 +84,8 @@ New-Item -ItemType Directory -Path (Join-Path $project 'src') | Out-Null
 $report = Invoke-TestInspector $goodZip 35 $goodSha
 if ($report.archiveFiles -ne 35 -or $report.existingIdentical -ne 1 -or
     $report.newFiles -ne 34 -or $report.conflicts -ne 0 -or
+    $report.fullyDecodedAndCrcVerified -ne 35 -or
+    @($report.memberDigests).Count -ne 35 -or
     -not $report.noFilesWereWritten -or $report.installationPerformed) {
     throw "Unexpected valid-ZIP inspection: $($report | ConvertTo-Json -Compress)"
 }
@@ -102,6 +104,28 @@ Write-Host 'PASS: conflicting local work is reported and preserved byte-for-byte
 
 Assert-Rejected 'wrong release digest' $goodZip 35 ('0' * 64) 'SHA-256 mismatch'
 Assert-Rejected 'file-count mismatch' $goodZip 34 $goodSha 'Expected 34 files'
+
+# Corrupt the CRC-32 in the central directory for a file that does not
+# exist in the project. A preflight that reads only colliding files will
+# miss this case. The deliberately altered ZIP gets its own synthetic SHA.
+$oneNew = New-TestArchive 'synthetic-new-entry.zip' @(
+    @{Name='new-member.txt'; Text='member content with CRC'}
+)
+$rawCrc = [IO.File]::ReadAllBytes($oneNew)
+$centralOffset = -1
+for ($i=0; $i -lt $rawCrc.Length-46; ++$i) {
+    if ($rawCrc[$i] -eq 0x50 -and $rawCrc[$i+1] -eq 0x4b -and
+        $rawCrc[$i+2] -eq 0x01 -and $rawCrc[$i+3] -eq 0x02) {
+        $centralOffset = $i
+        break
+    }
+}
+if ($centralOffset -lt 0) { throw 'Test ZIP has no central directory signature.' }
+$rawCrc[$centralOffset + 16] = [byte]($rawCrc[$centralOffset + 16] -bxor 0x40)
+$badCrcZip = Join-Path $root 'synthetic-wrong-member-crc.zip'
+[IO.File]::WriteAllBytes($badCrcZip, $rawCrc)
+$badCrcHash = (Get-FileHash -LiteralPath $badCrcZip -Algorithm SHA256).Hash.ToLowerInvariant()
+Assert-Rejected 'CRC-32 mismatch for absent target' $badCrcZip 1 $badCrcHash 'CRC-32 mismatch'
 $malicious = @(
     @{File='traversal.zip'; Members=@(@{Name='../escape.txt';Text='no'}); Error='Unsafe Windows ZIP component'},
     @{File='absolute.zip'; Members=@(@{Name='C:/Windows/win.ini';Text='no'}); Error='Unsafe Windows ZIP component'},
@@ -254,7 +278,9 @@ $summary = [ordered]@{
     expectedReleaseSha256Unchanged = 'b8e6c9abc2d611bfad391facf36f3da0e71993322c18087991ad9f314c51a589'
     positiveMatches = 1
     localConflictsDetected = 1
-    malformedArchivesRejected = 15
+    malformedArchivesRejected = 16
+    absentEntryCrcTamperingRejected = 1
+    membersFullyVerifiedInPositiveCase = 35
     parentFileConflictsDetected = 1
     explicitDirectoryConflictsDetected = 1
     junctionTypesBlocked = 2
@@ -265,7 +291,7 @@ $summary = [ordered]@{
 $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
-Write-Host 'PASS: 9 non-destructive inspections, 15 malicious/mismatched ZIPs rejected, junctions and Git status safeguarded.'
+Write-Host 'PASS: 9 non-destructive inspections, 16 malformed ZIPs rejected, all 35 members decoded and CRC-verified.'
 # Git's expected non-worktree exit status remains in LASTEXITCODE even after
 # all PowerShell assertions pass. Finish the synthetic CI job explicitly.
 exit 0
