@@ -1,0 +1,33 @@
+name: AssetCheck curricular output contracts
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/assetcheck-curricular-oracles.yml
+      - scripts/curriculum/test_assetcheck_curricular_oracles.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_leer_y_validar_un_registro.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_procesar_un_lote_y_detectar_duplicados.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_leer_manifiesto_y_publicar_informe.json
+      - app/src/main/assets/content/es/programming/programming_practice_tools/proyecto_assetcheck/lesson_disenar_probar_y_presentar_variante_propia.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: assetcheck-curriculum-oracles-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-contracts:
+    name: Verify 4 exercises against independent output oracles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Read the actual Codex curriculum sources
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check the 16 curricular output cases and oracle regressions
+        run: python3 -m unittest -v scripts/curriculum/test_assetcheck_curricular_oracles.py
