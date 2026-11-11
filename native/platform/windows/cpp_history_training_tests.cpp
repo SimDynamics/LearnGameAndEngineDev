@@ -136,6 +136,32 @@ void full_sequence(){
     check(trace.complete()&&trace.stage()==Stage::verified,"Complete action chain was not recognized");
     check(trace.record(base)&&!trace.complete(),"Recording a new revision reused the previous completion");
 }
+void comments_between_unchanged_commands_are_allowed(){
+    auto p=published(),bad=broken(p.project_files);
+    for(auto& [path,code]:bad)if(path==root_path) {
+        const std::string comment="# Se conserva el comentario de la raíz.\n";
+        check(code.ends_with(comment),"The appended QA comment was lost");
+        code.resize(code.size()-comment.size());
+        const auto first=code.find('\n');
+        check(first!=code.npos,"The first CMake command has no newline");
+        code.insert(first+1,comment);
+    }
+    CmakeSelectiveRecoveryTrace trace(p);
+    check(trace.record(registered(p.project_files)),"The original snapshot did not record");
+    auto a=request(bad,CppRunRequest::Action::build,10,5);
+    auto x=request(bad,CppRunRequest::Action::execute,11,5);
+    check(trace.run(a,result(a,true))&&trace.run(x,result(x,true)),
+        "A harmless inserted comment should not invalidate the failing build");
+    check(trace.compare(compared(p.project_files,bad,std::string(root_path)))&&
+        trace.compare(compared(p.project_files,bad,std::string(source_path))),
+        "Both files with the inserted comment must be compared");
+    check(trace.restore(recovery(p.project_files,bad)),"Source restoration failed");
+    auto fixed=restored(bad,p.project_files);
+    auto b=request(fixed,CppRunRequest::Action::build,12,6);
+    auto y=request(fixed,CppRunRequest::Action::execute,13,6);
+    check(trace.run(b,result(b,false))&&trace.run(y,result(y,false))&&trace.complete(),
+        "A valid comment between CMake commands was mistaken for a source edit");
+}
 void counterexamples(){
     const auto p=published(),base=registered(p.project_files);
     const auto bad=broken(p.project_files),good=restored(bad,p.project_files);
@@ -175,7 +201,7 @@ void counterexamples(){
 }
 int main(){
     try{
-        full_sequence();counterexamples();
+        full_sequence();comments_between_unchanged_commands_are_allowed();counterexamples();
         std::cout<<"PASS CMake selective-history action chain: baseline, failed build/run, both diffs, one-file restore, rebuilt fresh success and negative cases; no credit stored\n";
         return 0;
     }catch(const std::exception& exc){

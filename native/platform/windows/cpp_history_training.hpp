@@ -189,6 +189,30 @@ private:
         result+=all?"Bateria: OK\n":"Bateria: FALLO\n";
         return result;
     }
+    static bool only_added_cmake_comments(std::string_view baseline,std::string_view revised) {
+        // Student comments may be inserted before, between or after unchanged
+        // CMake commands. Reject replacement/reordering of every old line,
+        // new CMake commands and a draft with no actual added comment.
+        std::size_t old=0,current=0;
+        bool has_comment=false;
+        while(current<revised.size()){
+            const auto newline=revised.find('\n',current);
+            const auto end=newline==std::string_view::npos?revised.size():newline+1;
+            const auto row=revised.substr(current,end-current);
+            const auto oldline=baseline.find('\n',old);
+            const auto oldend=oldline==std::string_view::npos?baseline.size():oldline+1;
+            if(old<baseline.size()&&row==baseline.substr(old,oldend-old)){
+                old=oldend;
+            }else{
+                auto extra=row;
+                while(!extra.empty()&&(extra.front()==' '||extra.front()=='\t'))extra.remove_prefix(1);
+                if(!extra.empty()&&extra.front()=='#')has_comment=true;
+                else if(extra.find_first_not_of(" \t\r\n")!=std::string_view::npos)return false;
+            }
+            current=end;
+        }
+        return old==baseline.size()&&has_comment;
+    }
     bool project_snapshot(const curriculum::CppProjectFiles& files,Mode mode) {
         if (files.size()!=original_.size())return false;
         std::map<std::string,std::string> actual;
@@ -199,14 +223,7 @@ private:
             if(path==source_path) {
                 if (found->second!=(mode==Mode::broken?failed_source_:source))return false;
             } else if(path==root_path) {
-                if (!found->second.starts_with(source))return false;
-                const auto added=found->second.substr(source.size());
-                if(added.empty()||added.front()!='#'||added.find_first_not_of(" \t\r\n")==std::string::npos)
-                    return false;
-                // Only a free CMake comment (and optional following blanks).
-                const auto newline=added.find_first_of("\r\n");
-                if(newline!=std::string::npos &&
-                    added.substr(newline).find_first_not_of(" \t\r\n")!=std::string::npos)return false;
+                if (!only_added_cmake_comments(source,found->second))return false;
                 if (mode==Mode::broken)failed_root_=found->second;
                 else if(found->second!=failed_root_)return false;
             } else if(found->second!=source)return false;
