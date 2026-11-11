@@ -83,6 +83,28 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.validate(different_type)
 
+    def test_original_drag_fill_template_and_holes_are_not_new_separators(self):
+        # Real published 4-hole C++ drag editor, with a deliberate blank line.
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[2]
+        asset = (root / "app/src/main/assets/content/es/programming/cpp_fundamentals"
+                 / "objetos_y_estado/lesson_leer_una_entrada_conocida.json")
+        original = layout.load(asset)
+        layout.validate(original)
+        drag = original["pages"][8]["blocks"][5]
+        self.assertEqual(drag["type"], "drag_fill_code")
+        self.assertEqual(drag["template"].count("[]"), 4)
+        self.assertIn("#include <string>\\n\\nint main()", drag["template"])
+        self.assertEqual(drag["correctOrder"], [2, 3, 0, 1])
+        self.assertEqual(len(drag["choices"]), 4)
+        self.assertEqual(original["stateLayout"]["current"][8]["blocks"][5], "block_0008_0005")
+        # Visual-only declarations cannot be attached to this original
+        # answer-bearing drag_fill_code, so they cannot create a fifth choice.
+        invalid = self.declared(original, "block_0008_0005")
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(invalid)
+        self.assertEqual(drag, original["pages"][8]["blocks"][5])
+
     def test_existing_declaration_cannot_be_deleted_or_moved_silently(self):
         original, identity = self.fixture()
         decorated = self.declared(original, identity)
