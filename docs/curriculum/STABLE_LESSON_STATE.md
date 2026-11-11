@@ -618,6 +618,38 @@ veredictos guardados. Un intento antes incorrecto no se convierte en acierto al
 abrirlo: el estudiante debe volver a comprobarlo. Las traducciones y las copias
 históricas de los grupos anteriores conservan su evaluación propia.
 
+### Separadores visuales optativos en puzles de orden
+
+Para los `order_code` españoles con `stateLayout` v2, Work puede declarar de una a
+cuatro tarjetas **visualmente vacías** en la raíz de la lección. No se escriben
+dentro de `fragments` ni se añaden índices a `correctOrder`:
+
+```json
+"orderVisualSeparators": [
+  {"activity": "block_0003_0002", "count": 1}
+]
+```
+
+`activity` es la identidad estable de un bloque `order_code` real de la misma
+lección; `count` es un entero entre 1 y 4. Cada tarjeta vacía puede moverse u
+omitirse para dar aire visual entre instrucciones. La calificación conserva
+**exclusivamente el orden y la presencia de las tarjetas de código**; un
+separador visual no consume una respuesta obligatoria. La vista guarda y
+restaura los intentos originales sin registrar las tarjetas decorativas en el
+contrato de `stateLayout` o en una representación de respuesta nueva.
+
+Esta ampliación no corrige la indentación original ni divide sintaxis. Los
+saltos de línea verdaderos que pertenezcan a un literal crudo, un comentario,
+una macro continuada o un archivo de proyecto mantienen su significado y no
+deben alterarse. El escape escrito `\\n` no es un salto físico del fuente.
+Los `drag_fill_code` ya admiten líneas vacías reales en su `template`; no
+se agregan elecciones vacías a `choices` ni huecos extra porque cambiarían
+sus respuestas. Work comprueba el contrato previo y el nuevo mediante
+`validate_transition`, sin reescribir `pages`, `stateLayout` o las
+traducciones. Los pasos de captura visual y escucha siguen correspondiendo a
+la revisión durante el estudio, sin atribuir a esas comprobaciones un resultado
+que no se haya observado.
+
 ## Procedimiento v2 para Work
 
 Usar el SHA publicado verificado, no un commit que ya contenga el mapa que se
