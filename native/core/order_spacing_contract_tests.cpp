@@ -71,6 +71,27 @@ void preserve_copied_source_with_empty_cards(){
     check(ordered_source_text(fragments,std::vector<std::size_t>{5,6})==
         "set(TEXT \"one\\ntwo\")\n  set(TEXT \"one\ntwo\")",
         "Copy rewrote the distinction between a CMake quoted newline and backslash-n");
+    const std::vector<std::string> continued={
+        "#define SUM(x) \\\n", "    ((x) + 1)", "std::cout << \"\\n\";",
+        "const char* code=R\"cpp(line one\nline two)cpp\";",
+        "// A line comment", "int next=2;", ""};
+    check(ordered_source_text(continued,std::vector<std::size_t>{0,1})==
+        "#define SUM(x) \\\n    ((x) + 1)",
+        "Copy inserted a second physical newline inside a continued macro");
+    check(ordered_source_text(continued,std::vector<std::size_t>{2,3})==
+        "std::cout << \"\\n\";\nconst char* code=R\"cpp(line one\nline two)cpp\";",
+        "Copy confused a C++ escaped newline and physical raw-string newline");
+    check(ordered_source_text(continued,std::vector<std::size_t>{4,5})==
+        "// A line comment\nint next=2;",
+        "Copy concatenated a subsequent statement into a line comment");
+    check(ordered_source_text(continued,std::vector<std::size_t>{0,1,6})==
+        "#define SUM(x) \\\n    ((x) + 1)\n",
+        "An explicit trailing blank source card was lost after a continued macro");
+    const std::vector<std::string> cmake={
+        "set(SCRIPT \"first\n", "second\")\n", "message(STATUS \"ready\")"};
+    check(ordered_source_text(cmake,std::vector<std::size_t>{0,1,2})==
+        "set(SCRIPT \"first\nsecond\")\nmessage(STATUS \"ready\")",
+        "Copy inserted a second newline into an existing CMake string or command boundary");
     check(ordered_source_text(fragments,std::vector<std::size_t>{}).empty(),
         "An empty unsolved order introduced source bytes");
     bool rejected=false;
