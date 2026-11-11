@@ -345,6 +345,142 @@ void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem
 }
 
 
+
+void verify_u2_exact_eof_client(HWND host,const std::filesystem::path& authored_lesson){
+    const auto original=windows::load_lesson(authored_lesson);
+    require(original.pages.size()==14&&original.pages[9].blocks.size()>8,
+        "The published U2L3 original CMake client has moved");
+    const auto& previous=original.pages[9].blocks[8];
+    require(previous.stable_id=="block_0009_0008"&&
+        previous.type==curriculum::BlockType::cpp_compiler&&!previous.output_check&&
+        previous.cmake&&previous.project_files.size()==5,
+        "The historical U2L3 editor was unexpectedly rewritten");
+    // Work owns the eventual curricular declaration. Verify this new engine
+    // capability using the original lesson plus an in-memory root extension.
+    auto bytes=original.raw_json;
+    const std::string marker="  \"stateLayout\": {";
+    const auto at=bytes.find(marker);
+    require(at!=std::string::npos&&bytes.find(marker,at+1)==std::string::npos,
+        "No unique U2 v2 state-layout root is available");
+    bytes.insert(at,"  \"compilerRuntimeChecks\": [{\"activity\":\"block_0009_0008\",\"kind\":\"exactOriginalProjectRuntimeV1\"}],\n");
+    auto declared=windows::parse_lesson_json(bytes,"es");
+    const auto progress=windows::parse_lesson_progress_metadata(bytes,"es");
+    const auto owner=declared.pages[9].blocks[8];
+    const auto lean=progress.pages[9].blocks[8];
+    require(owner.compiler_workflow_check==curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1&&
+        lean.compiler_workflow_check==owner.compiler_workflow_check&&
+        owner.output_check&&owner.output_check->cases.size()==1&&
+        lean.output_check&&lean.project_files==owner.project_files&&
+        owner.output_check->cases[0].standard_input=="6"&&
+        owner.output_check->cases[0].outputs==std::vector<std::string>{""}&&
+        owner.output_check->cases[0].standard_error_exact=="Entrada invalida"&&
+        owner.output_check->cases[0].exit_code==2&&
+        owner.raw_json==previous.raw_json&&owner.address.page==previous.address.page&&
+        owner.address.block==previous.address.block&&
+        curriculum::exercise_key(declared,owner)==curriculum::exercise_key(original,previous),
+        "The exact U2 client objective changed historical addresses or mismatched stderr/exit");
+    auto rejects=[&](std::string from,std::string to){
+        auto invalid=bytes;const auto found=invalid.find(from,at);
+        require(found!=std::string::npos,"Missing negative client declaration token");
+        invalid.replace(found,from.size(),to);
+        bool refused=false;
+        try{(void)windows::parse_lesson_json(invalid,"es");}
+        catch(const std::exception&){refused=true;}
+        require(refused,"An invalid U2 client runtime owner or kind was accepted");
+    };
+    rejects("exactOriginalProjectRuntimeV1","madeUpRuntime");
+    rejects("block_0009_0008","block_0009_0007");
+    bool refused=false;
+    try{(void)windows::parse_lesson_json(bytes,"fr");}
+    catch(const std::exception&){refused=true;}
+    require(refused,"The Spanish U2 client was accepted with a foreign locale");
+    // Focus a single authentic owner without inventing prerequisite answers.
+    // All real Win32 source, project/CMake and run controls are exercised.
+    auto focused=declared;
+    focused.pages={declared.pages[9]};
+    focused.pages[0].blocks={owner};
+    focused.state_layout={};focused.reference_after.clear();
+    focused.activity_after.clear();focused.retired_blocks.clear();
+    focused.text_semantics.clear();focused.raw_json.clear();
+    focused.compiler_puzzles_required=true;
+    const auto env=resolve_windows_environment({ProfileId::Codex,
+        L"u2-client-eof-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    initialize_profile_directories(env.paths);
+    state::StateStore store(env.paths.root);
+    auto initial=store.load();
+    initial.preferences["native_windows"]["ui_language"]=std::string("es");
+    store.save(initial);
+    HWND view=create_lesson_view(host,env,focused);
+    require(view,"Cannot create isolated U2 client CMake reader");
+    const auto cleanup=[&]{if(view){(void)flush_lesson_view(view);DestroyWindow(view);view=nullptr;}};
+    try{
+        MoveWindow(view,0,0,1050,760,TRUE);pump();
+        auto* source=child(view,1010);
+        auto* project=child(view,1005);
+        auto* run=child(view,1011);
+        auto* config=child(view,1006);
+        require(source&&project&&run&&config&&
+            caption(run)=="Ejecutar objetivo construido"&&!IsWindowEnabled(run)&&
+            edit_text(child(view,1015))=="6",
+            "The original U2 client lost its prepared input or staged CMake actions");
+        const auto* check=&owner.output_check->cases.front();
+        auto* configure=child(config,405);
+        auto* build=child(config,406);
+        require(configure&&build&&IsWindowEnabled(configure),"The native U2 phase controls are missing");
+        // A harmless source comment must not pass a source-pinned objective,
+        // even when it produces the same stderr, stdout and exit code.
+        click(project,1004);
+        const auto old=edit_text(source);
+        require(old==owner.project_files[4].second,"The original main.cpp is no longer the active client");
+        const auto comment=wide(old+"// Unrelated QA edit\n");
+        SendMessageW(source,EM_SETSEL,0,-1);
+        SendMessageW(source,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(comment.c_str()));pump();
+        require(edit_text(source)!=old,"The QA edit did not change the actual source");
+        click(config,405);
+        await([&]{return IsWindowEnabled(configure);},"Edited U2 client could not configure");
+        require(IsWindowEnabled(build),"The edited U2 client could not build");
+        click(config,406);
+        await([&]{return IsWindowEnabled(configure);},"Edited U2 client could not build its target");
+        require(IsWindowEnabled(run),"The edited U2 client did not enable execution");
+        click(view,1011);
+        await([&]{return IsWindowEnabled(run);},"Edited U2 client did not complete a real execution");
+        require(!windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
+            "An edited client forged a valid original-source runtime achievement");
+        require(edit_text(child(view,1014)).empty()&&
+            edit_text(child(view,1034))=="Ejecución terminada (código 2).",
+            "The source-pinned rejection confused nonzero normal exit with a build failure");
+        SendMessageW(view,WM_COMMAND,MAKEWPARAM(1079,BN_CLICKED),0);pump();
+        require(edit_text(child(view,1014))==*check->standard_error_exact,
+            "The real edited client did not produce the exact requested stderr bytes");
+        const auto reverted=wide(old);
+        SendMessageW(source,EM_SETSEL,0,-1);
+        SendMessageW(source,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(reverted.c_str()));pump();
+        require(edit_text(source)==old,"The original source could not be restored as a normal draft edit");
+        click(config,405);
+        await([&]{return IsWindowEnabled(configure);},"Restored U2 client could not configure");
+        require(IsWindowEnabled(build),"The original client could not build");
+        click(config,406);
+        await([&]{return IsWindowEnabled(configure);},"Original U2 client could not build");
+        click(view,1011);
+        await([&]{return IsWindowEnabled(run);},"Original U2 client did not complete its real execution");
+        require(windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner)&&
+            windows::compiler_puzzle_case_count(read_lesson_state(view),focused,owner)==1,
+            "The unmodified client did not earn exact stdout/stderr/exit accreditation");
+        require(flush_lesson_view(view),"The real U2 objective could not save its result");
+        cleanup();
+        view=create_lesson_view(host,env,focused);
+        require(view,"Could not reopen the original-source U2 objective");
+        MoveWindow(view,0,0,1050,760,TRUE);pump();
+        require(windows::compiler_puzzle_completed(read_lesson_state(view),focused,owner),
+            "The verified U2 client achievement disappeared after reopening");
+        cleanup();
+        require(env.paths.root.parent_path().filename()==L"qa"&&
+            env.paths.root.parent_path().parent_path().filename()==L"Codex",
+            "U2 client QA attempted to access a real student profile");
+        cleanup_own_qa(env.paths.root.parent_path(),env.paths.root,"u2-client-eof-");
+    }catch(...){cleanup();throw;}
+}
+
 void verify_genuine_u3_first_prerequisites(HWND host,const std::filesystem::path& authored_lesson){
     // Work through the ORIGINAL first three pages using the actual radio
     // controls and Check actions. No direct response writes, page unlocks,
@@ -1100,6 +1236,7 @@ int main(int argc,char** argv){
     const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
     const bool u3_selective_declared=argc==4&&std::string_view(argv[2])=="--u3-selective-declared";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
+    const bool u2_exact_eof=argc==4&&std::string_view(argv[2])=="--u2-exact-eof";
     const bool u3_declaration=argc==4&&std::string_view(argv[2])=="--u3-declaration";
     const bool u3_prerequisites=argc==4&&std::string_view(argv[2])=="--u3-prerequisites";
     const bool u3_first_cmake=argc==4&&std::string_view(argv[2])=="--u3-first-cmake";
@@ -1108,7 +1245,7 @@ int main(int argc,char** argv){
     const bool u3_entire_original=argc==4&&std::string_view(argv[2])=="--u3-entire-original";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||u2_exact_eof||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -1229,6 +1366,7 @@ int main(int argc,char** argv){
         }
         if(other_cases)verify_unrelated_cpp_multicase_feedback(host);
         else if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
+        else if(u2_exact_eof)verify_u2_exact_eof_client(host,std::filesystem::path(argv[3]));
         else if(u3_declaration)verify_declared_u3_compiler_workflow(std::filesystem::path(argv[3]));
         else if(u3_prerequisites)verify_genuine_u3_first_prerequisites(host,std::filesystem::path(argv[3]));
         else if(u3_first_cmake)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]));
@@ -1249,6 +1387,7 @@ int main(int argc,char** argv){
         else if(u3_first_cmake)std::cout<<"PASS original U3 first CMake project: five true questions, distributed CMake, two target runs, page-five access and reopening\n";
         else if(u3_prerequisites)std::cout<<"PASS U3 original pages one through four: five genuinely checked quiz answers, no fake precompletion, blocked CMake laboratory after reopen\n";
         else if(u3_declaration)std::cout<<"PASS declared U3 History: full/summary reader, immutable exercise identity and negative contracts\n";
+        else if(u2_exact_eof)std::cout<<"PASS source-pinned U2 client with exact stderr, empty stdout, normal exit 2, forged edit rejection and reopen\n";
         else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";
         else if(other_cases)std::cout<<"PASS unrelated C++ with two inputs: no U3 History advice, 1/2 then 2/2 exact executions and preserved completion after reopen\n";
         else std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
