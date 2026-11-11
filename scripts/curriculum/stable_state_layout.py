@@ -37,7 +37,8 @@ LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
-PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter", "orderVisualSeparators"})
+PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
+VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
 FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
@@ -1915,7 +1916,7 @@ def _transition_metadata(document: dict) -> dict:
     # Only these validated root presentation extensions may change independently
     # of an immutable origin. All other lesson metadata remains protected.
     return {k: v for k, v in document.items()
-            if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS | FLOW_FIELDS | TEXT_PRESENTATION_FIELDS}
+            if k not in {"pages", "stateLayout"} | PRESENTATION_FIELDS | VISUAL_PRESENTATION_FIELDS | FLOW_FIELDS | TEXT_PRESENTATION_FIELDS}
 
 
 def add_compile_check(document: dict, identity: str, explanation: str | None = None) -> dict:
@@ -2644,7 +2645,7 @@ def check_repository(repository: Path, base_ref: str | None) -> dict:
     documents = {path.relative_to(repository).as_posix(): load(path)
                  for path in sorted(content.rglob("lesson_*.json"))}
     for path, document in documents.items():
-        if (PRESENTATION_FIELDS | FLOW_FIELDS | TEXT_PRESENTATION_FIELDS) & document.keys():
+        if (PRESENTATION_FIELDS | VISUAL_PRESENTATION_FIELDS | FLOW_FIELDS | TEXT_PRESENTATION_FIELDS) & document.keys():
             try:
                 validate(document)
             except (ValueError, KeyError, TypeError) as exc:
