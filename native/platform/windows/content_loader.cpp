@@ -349,12 +349,13 @@ std::string state_fingerprint(const JsonObject& original) {
             if (object.HasKey(L"reviewFeedback")) object.Remove(L"reviewFeedback");
             // Adding this runtime objective cannot change historical block
             // addresses/drafts. Native completion hashes include it separately.
+            require(!(object.HasKey(L"standardError") && object.HasKey(L"standardErrorExact")),
+                "Conflicting runtime stderr objectives");
             if (object.HasKey(L"standardError")) {
                 require(text(object,"standardError") == "nonBlank", "Unknown runtime stderr expectation");
                 object.Remove(L"standardError");
             }
             if (object.HasKey(L"standardErrorExact")) {
-                require(!object.HasKey(L"standardError"), "Conflicting runtime stderr objectives");
                 (void)text(object,"standardErrorExact");
                 object.Remove(L"standardErrorExact");
             }
