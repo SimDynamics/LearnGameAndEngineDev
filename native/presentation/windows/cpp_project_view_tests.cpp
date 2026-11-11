@@ -320,6 +320,80 @@ void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem
     }catch(...){cleanup();throw;}
 }
 
+
+void verify_genuine_u3_first_prerequisites(HWND host,const std::filesystem::path& authored_lesson){
+    // Work through the ORIGINAL first three pages using the actual radio
+    // controls and Check actions. No direct response writes, page unlocks,
+    // pre-marked completions, or altered source/lesson JSON are permitted.
+    const auto published=windows::load_lesson(authored_lesson);
+    require(published.pages.size()==13,"The U3 QA fixture lost its complete published pages");
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"u3-prerequisites-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    auto initial=store.load();
+    initial.preferences["native_windows"]["ui_language"]=std::string("es");
+    store.save(initial);
+    HWND view=create_lesson_view(host,environment,published);
+    require(view!=nullptr,"The original thirteen-page lesson did not open in isolated QA");
+    const auto cleanup=[&]{if(view){(void)flush_lesson_view(view);DestroyWindow(view);view=nullptr;}};
+    try{
+        MoveWindow(view,0,0,1000,760,TRUE);pump();
+        require(lesson_page_state(view).index==0&&!navigate_lesson_view(view,3),
+            "A fresh U3 reader bypassed prerequisites before any answer");
+        std::size_t credited=0;
+        for(std::size_t page=0;page<3;++page){
+            require(lesson_page_state(view).index==page,"U3 prerequisite QA arrived at a different page");
+            const auto& blocks=published.pages[page].blocks;
+            std::size_t page_exercises=0;
+            for(std::size_t index=0;index<blocks.size();++index){
+                const auto& exercise=blocks[index];
+                if(exercise.type!=curriculum::BlockType::multiple_choice)continue;
+                ++page_exercises;
+                require(exercise.correct_index&&*exercise.correct_index<exercise.options.size(),
+                    "The published U3 prerequisite has no valid authored correct option");
+                require(!navigate_lesson_view(view,page+1),
+                    "The authentic lesson allowed progression before checking a required answer");
+                const int radio_id=1000+static_cast<int>(index)*100+20+
+                    static_cast<int>(*exercise.correct_index)*2;
+                const int check_id=1000+static_cast<int>(index)*100+3;
+                click(view,radio_id);
+                require(child(view,check_id)&&IsWindowEnabled(child(view,check_id)),
+                    "A selected real U3 answer did not enable its Check control");
+                click(view,check_id);
+                require(caption(child(view,check_id)).find("Correcto")!=std::string::npos,
+                    "The published answer was not accepted by the real Win32 evaluator");
+                ++credited;
+            }
+            require(page_exercises>0,"U3 prerequisite QA accidentally skipped a page without exercises");
+            require(navigate_lesson_view(view,page+1),
+                "Correctly checked U3 predecessor exercises did not release the next page");
+        }
+        require(credited==5&&lesson_page_state(view).index==3,
+            "The U3 learner did not actually complete all five first-page prerequisite checks");
+        const auto& first_compiler=published.pages[3].blocks[4];
+        require(first_compiler.type==curriculum::BlockType::cpp_compiler&&first_compiler.output_check,
+            "The first mandatory CMake editor moved off the original page four");
+        require(!windows::compiler_puzzle_completed(read_lesson_state(view),published,first_compiler)
+            &&!navigate_lesson_view(view,4)&&!navigate_lesson_view(view,10),
+            "Answering the introductory U3 questions incorrectly credited or bypassed its CMake laboratory");
+        require(flush_lesson_view(view),"The QA profile could not persist the real checked answers");
+        cleanup();
+        view=create_lesson_view(host,environment,published);
+        require(view!=nullptr,"The original U3 lesson did not reopen after its introductory answers");
+        MoveWindow(view,0,0,1000,760,TRUE);pump();
+        require(lesson_page_state(view).index==3
+            &&!navigate_lesson_view(view,4)&&!navigate_lesson_view(view,10)
+            &&!windows::compiler_puzzle_completed(read_lesson_state(view),published,first_compiler),
+            "The reopened reader lost the correct entry point or bypassed the first CMake requirement");
+        cleanup();
+        require(environment.paths.root.parent_path().filename()==L"qa"&&
+                environment.paths.root.parent_path().parent_path().filename()==L"Codex",
+            "Original U3 prerequisite QA escaped its isolated profile");
+        cleanup_own_qa(environment.paths.root.parent_path(),environment.paths.root,"u3-prerequisites-");
+    }catch(...){cleanup();throw;}
+}
+
 void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson,
         bool declared_workflow=false){
     // Both variants load the genuine 13-page lesson, with one editor isolated
@@ -505,9 +579,10 @@ int main(int argc,char** argv){
     const bool u3_selective_declared=argc==4&&std::string_view(argv[2])=="--u3-selective-declared";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
     const bool u3_declaration=argc==4&&std::string_view(argv[2])=="--u3-declaration";
+    const bool u3_prerequisites=argc==4&&std::string_view(argv[2])=="--u3-prerequisites";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -629,6 +704,7 @@ int main(int argc,char** argv){
         if(other_cases)verify_unrelated_cpp_multicase_feedback(host);
         else if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
         else if(u3_declaration)verify_declared_u3_compiler_workflow(std::filesystem::path(argv[3]));
+        else if(u3_prerequisites)verify_genuine_u3_first_prerequisites(host,std::filesystem::path(argv[3]));
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(u3_selective_declared)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true);
         else if(!internal_only)integrated_lesson(host);
@@ -637,6 +713,7 @@ int main(int argc,char** argv){
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
         else if(u3_selective_declared)std::cout<<"PASS declared Win32 U3 History: original editor, record, failure, compare, recover, success and reopen\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
+        else if(u3_prerequisites)std::cout<<"PASS U3 original pages one through four: five genuinely checked quiz answers, no fake precompletion, blocked CMake laboratory after reopen\n";
         else if(u3_declaration)std::cout<<"PASS declared U3 History: full/summary reader, immutable exercise identity and negative contracts\n";
         else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";
         else if(other_cases)std::cout<<"PASS unrelated C++ with two inputs: no U3 History advice, 1/2 then 2/2 exact executions and preserved completion after reopen\n";
