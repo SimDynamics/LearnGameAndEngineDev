@@ -498,6 +498,91 @@ int main() {
             "The in-memory test changed the real lesson or its open diagnostic contract");
     });
 
+    test("WASI original U3L9 assert, NDEBUG and repaired formula use real runtime evidence", [&] {
+        // Capture the actual Windows WASI SDK 34 / Wasmtime 50 behavior before
+        // designing an assertion receipt. A nonzero exit alone never proves
+        // which C++ assertion or runtime failure caused the termination.
+        constexpr auto path=
+            "app/src/main/assets/content/es/programming/programming_practice_tools/"
+            "comprobaciones_repetibles/lesson_comprobar_acuerdos_internos_con_aserciones.json";
+        const auto lesson=lgaed::windows::load_lesson(
+            std::filesystem::path(lgaed::build::source_root)/path);
+        require(lesson.pages.size()==6,
+            "Original U3L9 page count changed");
+        const auto& enabled=lesson.pages[2].blocks[3],
+                  &disabled=lesson.pages[3].blocks[7],
+                  &repair=lesson.pages[4].blocks[3];
+        require(enabled.stable_id=="block_0002_0003"&&
+                disabled.stable_id=="block_0003_0007"&&
+                repair.stable_id=="block_0004_0007"&&
+                !enabled.output_check&&!disabled.output_check&&!repair.output_check&&
+                enabled.initial_code==repair.initial_code&&
+                enabled.standard_input==std::optional<std::string>{"-1 5\n"}&&
+                disabled.standard_input==enabled.standard_input&&
+                repair.standard_input==enabled.standard_input,
+            "Original U3L9 source, mapped owners or prepared input moved");
+        const auto current=[&](std::string source,std::string input) {
+            auto req=request(std::move(source),std::move(input));
+            req.backend=CppRunRequest::Backend::wasi;
+            return std::pair{req,run_cpp(req)};
+        };
+        const auto [enabled_req,enabled_result]=current(
+            enabled.initial_code,enabled.standard_input.value_or(""));
+        require(enabled_result.error_utf8.empty()&&enabled_result.compilation.succeeded(),
+            "Original enabled assertion did not compile: "+
+            enabled_result.error_utf8+enabled_result.compilation.stderr_bytes);
+        std::cout<<"WASI U3L9 enabled assertion: status="<<
+            static_cast<int>(enabled_result.execution.status)<<" exit="<<
+            enabled_result.execution.exit_code.value_or(999999u)
+            <<" stdout="<<enabled_result.execution.stdout_bytes
+            <<" stderr="<<enabled_result.execution.stderr_bytes<<'\n';
+        require(enabled_result.execution.status==CppPhaseStatus::completed&&
+                enabled_result.execution.exit_code&&
+                *enabled_result.execution.exit_code!=0,
+            "Original enabled assertion did not terminate with a nonzero runtime result");
+
+        const auto [disabled_req,disabled_result]=current(
+            disabled.initial_code,disabled.standard_input.value_or(""));
+        require(disabled_result.error_utf8.empty()&&disabled_result.compilation.succeeded()&&
+                disabled_result.execution.status==CppPhaseStatus::completed&&
+                disabled_result.execution.exit_code==1&&
+                disabled_result.execution.stdout_bytes=="Cajas=1\n"&&
+                disabled_result.execution.stderr_bytes==
+                    "Cajas: peticion 1, piezas=-1. Se admite un entero de 0 a 20. Revise la cantidad.\n",
+            "NDEBUG original did not produce the normal, handled rejection and unchecked defective result: "+
+            disabled_result.error_utf8+disabled_result.execution.stdout_bytes+
+            disabled_result.execution.stderr_bytes);
+        auto corrected=repair.initial_code;
+        constexpr std::string_view wrong="const int cajas = piezas / piezas_por_caja;";
+        const auto index=corrected.find(wrong);
+        require(index!=corrected.npos&&corrected.find(wrong,index+1)==corrected.npos,
+            "Original U3L9 formula is not the same unique defective statement");
+        corrected.replace(index,wrong.size(),
+            "const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;");
+        const auto [repair_req,repair_result]=current(
+            corrected,repair.standard_input.value_or(""));
+        require(repair_result.error_utf8.empty()&&repair_result.compilation.succeeded()&&
+                repair_result.execution.status==CppPhaseStatus::completed&&
+                repair_result.execution.exit_code==1&&
+                repair_result.execution.stdout_bytes=="Cajas=2\n"&&
+                repair_result.execution.stderr_bytes==disabled_result.execution.stderr_bytes,
+            "The minimally repaired formula did not preserve the enabled assertion and public rejection");
+        const auto [edge_req,edge_result]=current(corrected,"0 1 4 5 20");
+        require(edge_result.error_utf8.empty()&&edge_result.compilation.succeeded()&&
+                edge_result.execution.status==CppPhaseStatus::completed&&
+                edge_result.execution.exit_code==0&&
+                edge_result.execution.stdout_bytes==
+                    "Cajas=0\nCajas=1\nCajas=1\nCajas=2\nCajas=5\n"&&
+                edge_result.execution.stderr_bytes.empty(),
+            "Repaired U3L9 formula did not handle zero, boundary, multiples and remainders");
+        require(std::filesystem::is_regular_file(enabled_result.artifact)&&
+                enabled_result.target_type=="WASI_COMMAND"&&
+                std::filesystem::is_regular_file(disabled_result.artifact)&&
+                std::filesystem::is_regular_file(repair_result.artifact)&&
+                enabled_result.artifact.extension()==L".wasm",
+            "Assert evidence was not produced by the expected WASI artifacts");
+    });
+
     test("WASI semantic diagnostics exercise the student's supplied ostream", [&] {
         using namespace lgaed::curriculum;
         const auto test_stream = [&](RejectionOperation kind,std::string_view student,bool expected) {
