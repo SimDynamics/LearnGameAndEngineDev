@@ -298,7 +298,7 @@ void preserve_code_spacing_in_rows_and_editor(HWND host){
     const auto glyph=x5.x-x4.x;
     check(glyph>0&&(x4.x-x0.x)*10>=glyph*36,
         "Four indent spaces were rendered narrower than their full monospace advances");
-    SendMessageW(empty,WM_KEYDOWN,VK_DOWN,0);pump();
+    SendMessageW(empty,WM_SYSKEYDOWN,VK_DOWN,0);pump();
     check(view.order()==std::vector<std::size_t>({0,2,1,3,4})&&changes==1,
         "An empty decorative card became immovable or changed another instruction");
     const auto reading=view.reading_regions();
