@@ -31,7 +31,7 @@ LIBRARY_SOURCE = "componente/src/cajas.cpp"
 RUN_TARGET = "comprobar_cajas"
 ORIGINAL_EXPR = "return (piezas + 3) / 4;"
 BROKEN_EXPR = "return piezas / 4;"
-QA_COMMENT = "// QA: conservar esta modificación independiente tras la recuperación.\n"
+QA_COMMENT = "# QA: conservar esta modificación independiente tras la recuperación.\n"
 CASES = ((0, 0), (4, 1), (8, 2), (20, 5), (1, 1), (5, 2), (17, 5))
 
 
