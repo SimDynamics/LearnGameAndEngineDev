@@ -205,6 +205,11 @@ def validate(contract, root: Path, base_commit: str | None, *,
                                  or contract.preserves_ordinary_explanation_revision(
                                      relative, origin_p, origin_b, old, new,
                                      previous, delivered, course_id=course_id))
+                    if not valid:
+                        valid = contract.preserves_source_format_revision(
+                            relative, origin_p, origin_b, old, new,
+                            previous_document=previous, current_document=delivered,
+                            course_id=course_id)
                     require(valid, relative,
                             f"[{course_id}] campos previos modificados sin autorización: "
                             f"{contract.previous_exercise_difference(old, new)} p{pn+1} b{bn+1}")
