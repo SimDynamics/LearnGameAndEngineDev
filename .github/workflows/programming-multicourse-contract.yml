@@ -9,6 +9,7 @@ on:
       - scripts/curriculum/validate_programming_practice_tools.py
       - scripts/curriculum/test_programming_multicourse_validation.py
       - scripts/curriculum/test_stable_state_layout.py
+      - scripts/curriculum/test_order_visual_separators.py
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/test_p2_u3_workflow_declaration.py
       - scripts/curriculum/test_u3_rejection_runtime_contract.py
@@ -54,6 +55,9 @@ jobs:
       - name: Verificar las tres declaraciones WASI U3L9 sin alterar sus fuentes
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_u3_assertion_runtime_contract
+      - name: Probar separadores visuales opcionales sin modificar 14 puzles históricos
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_order_visual_separators
       - name: Diagnosticar huellas históricas de idioma sin corregirlas automáticamente
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_locale_origin_diagnostic
