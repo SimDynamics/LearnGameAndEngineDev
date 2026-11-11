@@ -4,7 +4,9 @@ A mismatch must remain rejected. Detail helps Work locate its historical
 publication; this test never rewrites either origin or approves a baseline.
 """
 from copy import deepcopy
+import json
 from pathlib import Path
+import subprocess
 import unittest
 
 import stable_state_layout as state
@@ -105,6 +107,73 @@ class LocaleOriginDiagnosticTest(unittest.TestCase):
                       detail)
         self.assertIn("origin=fa0460ffd2c3b2296de310bd6ad697e6d79ae4471a2102f8f4bae7cdaa683174",
                       detail)
+
+
+    def test_assetcheck_repairs_are_anchored_to_first_git_delivery(self):
+        """Read the actual first commits, not a regenerated or invented baseline."""
+        published = (
+            (U4L3, "45f61239fe30bf5b680a13ca527bbfeaba5c093b",
+             "6ba7f1a8c2ab64ffd32461127fc87a3753e1138f", 8),
+            (U4L7, "8c3cde9c79e0acbadb873b92ddb108755bb4f839",
+             "525dd1aa69467125118b29db3a8ce29611e6fd3f", 2),
+        )
+        for path, commit, initial_blob, mismatch_count in published:
+            with self.subTest(path=path.name):
+                relative = path.relative_to(ROOT).as_posix()
+                source = f"{commit}:{relative}"
+                real_blob = subprocess.check_output(
+                    ["git", "rev-parse", source], cwd=ROOT, text=True).strip()
+                self.assertEqual(real_blob, initial_blob)
+                initial = json.loads(subprocess.check_output(
+                    ["git", "show", source], cwd=ROOT, text=True, encoding="utf-8"))
+                preserved = deepcopy(initial)
+                original_source = state._without_layout(initial)
+                literal = state.prepare(original_source)["stateLayout"]["origin"]
+                meta = initial["stateLayout"]
+                self.assertEqual(meta["origin"], literal)
+                self.assertEqual(meta["family"]["es"]["sha256"],
+                                 state.fingerprint(original_source))
+                disagreements = sum(
+                    left != right
+                    for left_page, right_page in zip(meta["origin"],
+                                                     meta["family"]["es"]["origin"])
+                    for left, right in zip(left_page["blocks"], right_page["blocks"]))
+                self.assertEqual(disagreements, mismatch_count)
+                with self.assertRaisesRegex(state.LayoutError, "historical origin"):
+                    state.validate(initial)
+
+                # The only permitted repair is the family metadata copied from
+                # the literal FIRST delivery, not from mutable student answers.
+                repair = deepcopy(initial)
+                repair["stateLayout"]["family"]["es"]["origin"] = deepcopy(literal)
+                self.assertTrue(state._is_exact_assetcheck_initial_origin_repair(initial, repair))
+                state.validate(repair)
+                state.validate_transition(initial, repair)
+                current = state.load(path)
+                self.assertEqual(current["stateLayout"]["origin"], literal)
+                self.assertEqual(current["stateLayout"]["family"]["es"],
+                                 repair["stateLayout"]["family"]["es"])
+
+                # Exercise the repository family's protection as well as the
+                # single-lesson transition, including the defective old HEAD.
+                family = relative.split("app/src/main/assets/content/es/", 1)[1]
+                state._validate_family_baseline(
+                    ROOT, commit, family, [(relative, repair)], {relative},
+                    {relative: initial}, {initial["id"]: {family}})
+
+                changed_repair = deepcopy(repair)
+                changed_repair["title"] += " - cambio no autorizado"
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(initial, changed_repair)
+                changed_previous = deepcopy(initial)
+                changed_previous["title"] += " - origen ajeno"
+                with self.assertRaises(state.LayoutError):
+                    state.validate_transition(changed_previous, repair)
+                corrupt_family = deepcopy(repair)
+                corrupt_family["stateLayout"]["family"]["es"]["origin"][0]["blocks"][0]["sha256"] = "0" * 64
+                with self.assertRaises(state.LayoutError):
+                    state.validate(corrupt_family)
+                self.assertEqual(initial, preserved, "The first Git source was mutated in memory")
 
 
 if __name__ == "__main__":

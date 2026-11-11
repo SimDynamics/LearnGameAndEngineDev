@@ -2060,10 +2060,51 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 "Published content was assigned to another identity without a verified move")
 
 
+# These two AssetCheck lessons were first published with ten incorrect SHA
+# values in family.es.origin. Their own origin and literal source were correct.
+# Authenticate the exact malformed first deliveries, never a later revision.
+_ASSETCHECK_FIRST_DELIVERY_ORIGIN_REPAIRS = {
+    "programming_practice_tools__proyecto_assetcheck__preparar_y_comprobar_cmake_en_windows":
+        "8a51e32a9094c27e4cd6f3ae685c851774edec54b480808081795359269865cd",
+    "programming_practice_tools__proyecto_assetcheck__disenar_probar_y_presentar_variante_propia":
+        "35fb6217e01e487d0ec5a976e362b1c86e8bbb560b360ceeeeae3ca7012dfce1",
+}
+
+
+def _is_exact_assetcheck_initial_origin_repair(previous: dict, current: dict) -> bool:
+    """Accept only the single, source-authenticated correction of two bad manifests.
+
+    The existing original block identities, all source content, answers and
+    layout data must remain untouched. A later family rewrite cannot use this.
+    """
+    published = _ASSETCHECK_FIRST_DELIVERY_ORIGIN_REPAIRS.get(previous.get("id"))
+    if published is None or fingerprint(previous) != published:
+        return False
+    prior = previous.get("stateLayout")
+    if (type(prior) is not dict or prior.get("version") != 2 or
+            prior.get("locale") != "es" or
+            type(prior.get("family")) is not dict or set(prior["family"]) != {"es"}):
+        return False
+    original_source = _without_layout(previous)
+    literal_origin = prepare(original_source)["stateLayout"]["origin"]
+    require(prior["origin"] == literal_origin,
+            "The original AssetCheck owners differ from the first published lesson")
+    require(prior["family"]["es"]["sha256"] == fingerprint(original_source),
+            "The AssetCheck family does not belong to the first published source")
+    repaired = deepcopy(previous)
+    repaired["stateLayout"]["family"]["es"]["origin"] = deepcopy(literal_origin)
+    if repaired == previous or current != repaired:
+        return False
+    validate(current)
+    return True
+
+
 def validate_transition(previous: dict, current: dict) -> None:
     """Never authorize a renamed origin or changed answer while allowing a reorder."""
     require("stateLayout" in current, "A reordered lesson needs an identity manifest")
     if type(current["stateLayout"]) is dict and current["stateLayout"].get("version") == 2:
+        if _is_exact_assetcheck_initial_origin_repair(previous, current):
+            return
         _validate_transition_v2(previous, current)
         return
     require(not (type(previous.get("stateLayout")) is dict and previous["stateLayout"].get("version") == 2),
@@ -2337,7 +2378,11 @@ def _validate_family_baseline(repository: Path, commit: str, family: str, member
         previous = prior_documents[relative]
         old_meta = previous.get("stateLayout")
         if type(old_meta) is dict and old_meta.get("version") == 2:
-            require(source == old_meta["family"][locale], "The published language provenance was replaced")
+            if source != old_meta["family"][locale]:
+                corrected = next((document for path, document in members if path == relative), None)
+                require(corrected is not None
+                        and _is_exact_assetcheck_initial_origin_repair(previous, corrected),
+                        "The published language provenance was replaced")
         else:
             require(source["sha256"] == fingerprint(_without_layout(previous))
                     and source["origin"] == prepare(previous)["stateLayout"]["origin"],
