@@ -1263,33 +1263,34 @@ int main(int argc,char** argv) {
         SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second_before),1);
         const auto syntax_before=character(editor.value,0);POINT scroll_before{};SendMessageW(editor.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll_before));
         SendMessageW(editor.value,EM_SETREADONLY,TRUE,0);
-        compact_code_spaces(editor.value);
-        check((GetWindowLongPtrW(editor.value,GWL_STYLE)&ES_READONLY)!=0,"Compacting a real readonly code display left it editable");
+        // Styling a readonly code card must preserve the same full-width
+        // monospace advance as an editable card. Syntax is paint, not text.
+        style_cpp(editor.value);
+        check((GetWindowLongPtrW(editor.value,GWL_STYLE)&ES_READONLY)!=0,
+            "Restyling a readonly code display left it editable");
         POINTL space_after{},next_after{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_after),8);
         SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next_after),9);
         POINTL first_after{},second_after{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first_after),0);
         SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second_after),1);
         POINT scroll_after{};SendMessageW(editor.value,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll_after));
-        const auto normal_width=next_before.x-space_before.x,compact_width=next_after.x-space_after.x;
-        // MSFTEDIT may return tomUndefined for GetScaling even when it draws
-        // the requested scale. Assert real advances, not format metadata.
+        const auto normal_width=next_before.x-space_before.x,restyled_width=next_after.x-space_after.x;
         const auto space_format=character(editor.value,8);
-        const bool compact_geometry=normal_width>compact_width&&std::abs(compact_width-normal_width*.8)<=1&&
+        const bool preserved_geometry=normal_width>0&&restyled_width==normal_width&&
             second_before.x-first_before.x==second_after.x-first_after.x&&
             space_format.yHeight==syntax_before.yHeight&&first_after.y==first_before.y;
-        if(!compact_geometry)std::cerr<<"Compact-space geometry: width="<<normal_width<<" -> "<<compact_width
+        if(!preserved_geometry)std::cerr<<"Monospace geometry: width="<<normal_width<<" -> "<<restyled_width
             <<", first advance="<<second_before.x-first_before.x<<" -> "<<second_after.x-first_after.x
             <<", y="<<first_before.y<<" -> "<<first_after.y<<", height="<<syntax_before.yHeight
             <<"/"<<space_format.yHeight<<", font="<<utf8(syntax_before.szFaceName)<<"/"<<utf8(space_format.szFaceName)
             <<", DPI="<<GetDpiForWindow(editor.value)<<'\n';
-        check(compact_geometry,
-            "Display-only code spaces did not narrow their actual native advance independently of other characters");
-        compact_code_spaces(editor.value);
+        check(preserved_geometry,
+            "Restyling code changed actual monospace indentation width or character geometry");
+        style_cpp(editor.value);
         POINTL space_again{},next_again{};SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&space_again),8);
         SendMessageW(editor.value,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&next_again),9);
-        check(next_again.x-space_again.x==compact_width&&character(editor.value,0).crTextColor==syntax_before.crTextColor&&
+        check(next_again.x-space_again.x==normal_width&&character(editor.value,0).crTextColor==syntax_before.crTextColor&&
             character(editor.value,0).yHeight==syntax_before.yHeight&&scroll_after.x==scroll_before.x&&scroll_after.y==scroll_before.y,
-            "Compacting code was cumulative or changed syntax, font or scrolling");
+            "Repeated code restyling changed geometry, syntax, font or scrolling");
         CHARRANGE after{}; SendMessageW(editor.value, EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&after));
         check(before.cpMin == after.cpMin && before.cpMax == after.cpMax, "Syntax formatting moved selection");
         check(SendMessageW(editor.value, EM_GETMODIFY, 0, 0) == modified, "Syntax formatting changed modified state");
