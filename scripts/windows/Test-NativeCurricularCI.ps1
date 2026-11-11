@@ -36,13 +36,14 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Targets = @('lgaed_state_tests')
+            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests')
             Results = 'state-import'
             Tests = @(
                 'native.remainder_published26_state_import',
                 'native.remainder_published30_state_import',
                 'native.u11_assignment_state_import',
-                'native.compiler_contract_state_import'
+                'native.compiler_contract_state_import',
+                'native.stderr_exact_contract'
             )
         }
     }
