@@ -109,6 +109,50 @@ class StructuralCourseFixtures(unittest.TestCase):
         self.assertIn("ID de curso distinto del loader", output)
         self.assertIn("numeración de lecciones discontinua", output)
 
+    def test_usual_programming2_cli_rejects_an_unindexed_active_lesson(self):
+        orphan = self.lesson_path.parent / "lesson_omitida.json"
+        orphan.write_text(json.dumps({
+            "id": f"{COURSE}__fixture__omitida",
+            "title": "Lección omitida en índice",
+            "pages": [{"blocks": [{"type": "paragraph", "text": "Contenido"}]}],
+        }, ensure_ascii=False), encoding="utf-8")
+        output = self.run_course(reject=True)
+        self.assertIn("lección publicada sin índice en unidad activa", output)
+        self.assertIn(f"{COURSE}__fixture__omitida", output)
+
+    def test_usual_programming1_cli_rejects_an_unindexed_active_lesson(self):
+        course = "cpp_fundamentals"
+        folder = self.cpp / "fixture"
+        folder.mkdir(parents=True, exist_ok=True)
+        def write(path, value):
+            path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+        lesson = {"id": f"{course}__fixture__primera", "title": "Primera",
+                  "pages": [{"blocks": [{"type": "paragraph", "text": "Texto"}]}]}
+        orphan = {"id": f"{course}__fixture__omitida", "title": "Omitida",
+                  "pages": [{"blocks": [{"type": "paragraph", "text": "Texto"}]}]}
+        write(folder / "lesson_primera.json", lesson)
+        write(folder / "lesson_omitida.json", orphan)
+        write(folder / "unit_fixture.json", {
+            "courseId": course, "unitId": f"{course}__fixture",
+            "title": "Unidad",
+            "lessons": [{"number": 1, "id": lesson["id"], "title": lesson["title"]}],
+        })
+        write(self.cpp / "course_cpp_fundamentals.json", {
+            "id": course, "title": "Curso",
+            "units": [{"number": 1, "id": f"{course}__fixture", "title": "Unidad"}],
+        })
+        output = StringIO()
+        with mock.patch.object(validator, "ROOT", self.root), \
+             mock.patch.object(validator, "CONTENT", self.cpp), \
+             mock.patch.object(validator, "ERRORS", []), \
+             mock.patch.object(validator._state_layout, "check_repository", return_value={}), \
+             redirect_stdout(output):
+            with self.assertRaises(SystemExit) as failure:
+                validator.main(["--course", course])
+            self.assertEqual(failure.exception.code, 1)
+        self.assertIn("lección publicada sin índice en unidad activa", output.getvalue())
+        self.assertIn(orphan["id"], output.getvalue())
+
     def test_missing_programming2_directory_is_not_silently_skipped(self):
         self.course_path.unlink()
         self.unit_path.unlink()
