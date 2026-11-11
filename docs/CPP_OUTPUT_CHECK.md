@@ -182,6 +182,40 @@ realizado una validación interna específica ni que el contenido se haya
 calculado en vez de fijarse como literal. Las demás capacidades abiertas
 de Programación 2 siguen requiriendo comprobadores adicionales. Work
 deberá revisar y publicar cada caso curricular antes de activarlo.
+### Declaración raíz de U2L3: rechazo EOF sin modificar el proyecto
+
+Para el propietario histórico `block_0009_0008` de
+`programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion`,
+el cargador de Windows reconoce esta declaración en la **raíz** de la lección:
+
+```json
+"compilerRuntimeChecks": [
+  {"activity": "block_0009_0008", "kind": "exactOriginalProjectRuntimeV1"}
+]
+```
+
+El registro no se añade al bloque `cpp_compiler` ni modifica sus `projectFiles`,
+`stateLayout`, entradas, traducciones o referencias. El contrato derivado exige
+el proyecto **sin editar**, el objetivo CMake `revisar` con
+`ACEPTAR_IGUAL=OFF`, entrada literal `6`, stdout vacío, stderr literal
+`Entrada invalida` (sin salto de línea) y terminación normal con código `2`.
+Una edición que produzca la misma salida no acredita este objetivo. El botón
+del lector mantiene las fases **Configurar y generar → Construir objetivo →
+Ejecutar objetivo construido**; el resultado pertenece a la ejecución real
+de los archivos y opciones actuales.
+
+La validación de `stable_state_layout.py` permite incorporar únicamente esa
+declaración a la lección española v2 correspondiente. No autoriza reemplazar
+las fuentes ni cambiar el objetivo para imitar el diagnóstico. Una vez
+publicado, el registro no puede retirarse o reescribirse en una transición.
+
+Esta extensión está preparada para su **integración curricular por Work**.
+Hasta entonces, la lección publicada no la activa. Las dos funciones abiertas
+de U3L6 necesitan todavía una evaluación semántica de los hechos del mensaje
+y del flujo `std::ostream&` recibido. `standardErrorExact` o `nonBlank` no
+son sustitutos de esa capacidad. Los informes U3L8 requieren, además,
+conservar filas, índices y contadores, no solamente imprimir una cadena fija.
+
 ## Entrada del laboratorio
 
 En un `cpp_compiler` curricular, el campo «Entrada» sólo aparece si el bloque declara `initialStandardInput` —también una cadena vacía, para permitir una actividad con EOF— o si algún caso de `outputCheck` declara una entrada no vacía. No se inspecciona el código del alumno para decidirlo. Sin esas declaraciones, la ejecución recibe entrada vacía y termina en EOF si intenta leer. Cualquier borrador de entrada anterior se conserva en almacenamiento, pero no se envía al programa mientras el campo no corresponda a esa actividad. El compilador libre del menú principal conserva su campo de entrada.
