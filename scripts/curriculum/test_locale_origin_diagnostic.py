@@ -128,7 +128,7 @@ class LocaleOriginDiagnosticTest(unittest.TestCase):
                     ["git", "show", source], cwd=ROOT, text=True, encoding="utf-8"))
                 preserved = deepcopy(initial)
                 original_source = state._without_layout(initial)
-                literal = state.prepare(original_source)["stateLayout"]["origin"]
+                literal = state._literal_first_published_origin(initial)
                 meta = initial["stateLayout"]
                 self.assertEqual(meta["origin"], literal)
                 self.assertEqual(meta["family"]["es"]["sha256"],

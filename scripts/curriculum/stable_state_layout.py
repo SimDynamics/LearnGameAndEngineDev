@@ -2071,6 +2071,24 @@ _ASSETCHECK_FIRST_DELIVERY_ORIGIN_REPAIRS = {
 }
 
 
+def _literal_first_published_origin(document: dict) -> list[dict]:
+    """Recalculate first-delivery slots without discarding required v2 links.
+
+    Calling prepare() on a layout-free copy would invalidate textSemantics and
+    referenceAfter, which themselves require stable page/block identities.
+    The caller must authenticate the exact original document first.
+    """
+    return [
+        {"id": f"page_{page_index:04d}",
+         "blocks": [
+             {"id": f"block_{page_index:04d}_{block_index:04d}",
+              "sha256": state_fingerprint(block)}
+             for block_index, block in enumerate(page["blocks"])
+         ]}
+        for page_index, page in enumerate(_pages(document))
+    ]
+
+
 def _is_exact_assetcheck_initial_origin_repair(previous: dict, current: dict) -> bool:
     """Accept only the single, source-authenticated correction of two bad manifests.
 
@@ -2086,7 +2104,7 @@ def _is_exact_assetcheck_initial_origin_repair(previous: dict, current: dict) ->
             type(prior.get("family")) is not dict or set(prior["family"]) != {"es"}):
         return False
     original_source = _without_layout(previous)
-    literal_origin = prepare(original_source)["stateLayout"]["origin"]
+    literal_origin = _literal_first_published_origin(previous)
     require(prior["origin"] == literal_origin,
             "The original AssetCheck owners differ from the first published lesson")
     require(prior["family"]["es"]["sha256"] == fingerprint(original_source),
