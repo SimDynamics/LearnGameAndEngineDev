@@ -927,6 +927,41 @@ def _all_blocks(document: dict) -> dict[str, dict]:
                                   for item in document["stateLayout"].get("retired", [])}}
 
 
+def _describe_locale_origin_difference(own: list[dict], family: list[dict],
+                                       locale: str, limit: int = 8) -> str:
+    """Report concrete historical map disagreements, never reconcile them.
+
+    Only called after both origins pass the immutable identity/digest contract.
+    Positions are 1-based for Work's curricular page/block review.
+    """
+    differences = []
+    if len(own) != len(family):
+        differences.append(f"number of pages: origin={len(own)}, family.{locale}.origin={len(family)}")
+    for pn, (left_page, right_page) in enumerate(zip(own, family), 1):
+        if left_page["id"] != right_page["id"]:
+            differences.append(
+                f"p{pn} page identity: origin={left_page['id']}, "
+                f"family.{locale}.origin={right_page['id']}")
+        left_blocks, right_blocks = left_page["blocks"], right_page["blocks"]
+        if len(left_blocks) != len(right_blocks):
+            differences.append(
+                f"p{pn} number of blocks: origin={len(left_blocks)}, "
+                f"family.{locale}.origin={len(right_blocks)}")
+        for bn, (left, right) in enumerate(zip(left_blocks, right_blocks), 1):
+            if left != right:
+                differences.append(
+                    f"p{pn} b{bn} {left['id']}: "
+                    f"origin={left['sha256']} "
+                    f"family.{locale}.origin={right['sha256']}"
+                    + (f" (family identity={right['id']})"
+                       if left["id"] != right["id"] else ""))
+            if len(differences) >= limit:
+                return "; ".join(differences[:limit]) + "; further differences omitted"
+        if len(differences) >= limit:
+            return "; ".join(differences[:limit]) + "; further differences omitted"
+    return "; ".join(differences) or "different map metadata"
+
+
 def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     pages = _pages(document)
     meta = document["stateLayout"]
@@ -943,8 +978,13 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         _digest(entry["sha256"])
         _, identities, _ = _origin(entry["origin"])
         family_ids.update(identities)
-    require(family[meta["locale"]]["origin"] == meta["origin"],
-            "This locale must keep its own historical origin")
+    if family[meta["locale"]]["origin"] != meta["origin"]:
+        # Keep the rejection and immutable history intact, but identify which
+        # original slots Work must authenticate. Never repair hashes here.
+        raise LayoutError(
+            "This locale must keep its own historical origin: "
+            + _describe_locale_origin_difference(
+                meta["origin"], family[meta["locale"]]["origin"], meta["locale"]))
     reserved_pages = max(len(entry["origin"]) for entry in family.values())
     additions = meta["additions"]
     require(type(additions) is list and len(historical) + len(additions) <= 100_000,
