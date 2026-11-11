@@ -71,6 +71,18 @@ void preserve_copied_source_with_empty_cards(){
     check(ordered_source_text(fragments,std::vector<std::size_t>{5,6})==
         "set(TEXT \"one\\ntwo\")\n  set(TEXT \"one\ntwo\")",
         "Copy rewrote the distinction between a CMake quoted newline and backslash-n");
+    const std::vector<std::string> authored_blanks={
+        "int a;\n", "", "int b;", "", ""};
+    check(ordered_source_text(authored_blanks,std::vector<std::size_t>{0,1,2})==
+        "int a;\n\nint b;",
+        "A blank authored card after an existing LF lost its physical row");
+    check(ordered_source_text(authored_blanks,std::vector<std::size_t>{0,1,2,3,4})==
+        "int a;\n\nint b;\n\n",
+        "Multiple trailing authored empty cards were merged or omitted");
+    check(ordered_source_text(authored_blanks,std::vector<std::size_t>{1,3,2})==
+        "\n\nint b;",
+        "Two leading authored empty cards were merged");
+
     const std::vector<std::string> continued={
         "#define SUM(x) \\\n", "    ((x) + 1)", "std::cout << \"\\n\";",
         "const char* code=R\"cpp(line one\nline two)cpp\";",
