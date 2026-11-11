@@ -101,6 +101,36 @@ curriculum::CppProjectFiles CppProjectHistory::restore_file(std::string_view pat
     const auto saved=file(revision.files,path);auto target=std::ranges::find(result,path,[](const auto& item)->const std::string&{return item.first;});
     if(saved){if(target==result.end())result.emplace_back(path,*saved);else target->second=*saved;}else if(target!=result.end())result.erase(target);validate(result,{},{});return result;
 }
+CppHistoryVerifiedRestoration CppProjectHistory::restore_file_verified(std::string_view path,
+        const curriculum::CppProjectFiles& current,const CppHistoryRevision& revision)const{
+    // The caller obtains this revision through load(), which verifies the
+    // immutable on-disk SHA-256. A different project or invalid id is not
+    // admissible as recovery evidence.
+    require(hex_id(revision.id)&&revision.project_key==key_,"Invalid recovery revision identity");
+    auto recovered=restore_file(path,current,revision);
+    const auto saved=file(revision.files,path);
+    const auto prior=file(current,path);
+    const auto actual=file(recovered,path);
+    require(prior||saved,"No saved or current file exists at the requested recovery path");
+    require((saved==nullptr)==(actual==nullptr),"Recovered path existence differs from the revision");
+    require(!saved||*saved==*actual,"Recovered path differs from the selected revision");
+    std::size_t preserved=0;
+    for(const auto& [other,content]:current)if(other!=path){
+        const auto after=file(recovered,other);
+        require(after&&*after==content,"A selective recovery modified an unrelated file");
+        ++preserved;
+    }
+    for(const auto& [other,content]:recovered)if(other!=path)
+        require(file(current,other)!=nullptr,
+            "A selective recovery created an unrelated file");
+    const auto digest=[](const std::string* source)->std::optional<std::string>{
+        return source?std::optional<std::string>{state::sha256(*source)}:std::nullopt;};
+    const bool changed=(prior==nullptr)!=(actual==nullptr) ||
+        (prior&&actual&&*prior!=*actual);
+    CppHistoryRecoveryEvidence evidence{revision.id,std::string(path),
+        digest(prior),digest(actual),preserved,changed};
+    return {std::move(recovered),std::move(evidence)};
+}
 std::vector<CppHistoryDiffLine> CppProjectHistory::diff(std::string_view path,const curriculum::CppProjectFiles& current,const CppHistoryRevision& revision)const{
     require(portable_path(path)&&revision.project_key==key_,"Invalid revision file or project");validate(current,{},{});validate(revision.files,revision.sources,revision.indentation);const auto before=file(revision.files,path),after=file(current,path);
     const auto old=lines(before?*before:std::string{}),now=lines(after?*after:std::string{});std::vector<CppHistoryDiffLine> result;

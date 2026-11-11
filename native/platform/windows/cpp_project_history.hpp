@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <span>
 #include <stop_token>
 #include <string>
@@ -21,6 +22,18 @@ enum class CppHistoryChange {unchanged,added,modified,removed};
 struct CppHistoryStatus {std::string path;CppHistoryChange change;};
 enum class CppHistoryLineType {context,added,removed};
 struct CppHistoryDiffLine {CppHistoryLineType type;std::string text,ending;};
+// An observation of an actual selected-file restoration. It is not, by
+// itself, proof of a curricular test run or of the preceding diff review.
+struct CppHistoryRecoveryEvidence {
+    std::string revision_id, path;
+    std::optional<std::string> before_sha256, after_sha256;
+    std::size_t preserved_other_files=0;
+    bool changed=false;
+};
+struct CppHistoryVerifiedRestoration {
+    curriculum::CppProjectFiles files;
+    CppHistoryRecoveryEvidence evidence;
+};
 // The original Android binary format and SHA-256, also used by its importer.
 [[nodiscard]] CppHistoryRevision decode_cpp_revision(std::span<const std::uint8_t>,
     std::string_view id,std::string_view project_key);
@@ -37,6 +50,10 @@ public:
     [[nodiscard]] std::vector<CppHistoryDiffLine> diff(std::string_view path,
         const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
     [[nodiscard]] curriculum::CppProjectFiles restore_file(std::string_view path,
+        const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
+    // Authenticate the selected revision and compare EVERY sibling with the
+    // original draft. Only the requested path may change or disappear.
+    [[nodiscard]] CppHistoryVerifiedRestoration restore_file_verified(std::string_view path,
         const curriculum::CppProjectFiles&,const CppHistoryRevision&)const;
 private:
     std::filesystem::path root_;

@@ -124,7 +124,11 @@ int main(int argc,char** argv){
         curriculum::Block block;block.type=curriculum::BlockType::cpp_compiler;block.project_files={{"main.cpp","    return 0;\n"},{"include/value.hpp","// header\n"}};block.source_files={"main.cpp"};
         const auto history_root=std::filesystem::absolute(argv[1])/("cpp-project-view-"+std::to_string(GetCurrentProcessId())+"-"+std::to_string(GetTickCount64()));
         std::string project_json,cmake_json;int source_changes=0,view_changes=0;std::vector<windows::CppRunRequest::Action> actions;
-        const CppProjectCallbacks events{[&](std::string value,std::string configuration){project_json=std::move(value);cmake_json=std::move(configuration);},[&](bool changed){changed?++source_changes:++view_changes;},[&](auto action){actions.push_back(action);}};
+        std::vector<windows::CppHistoryRecoveryEvidence> recovery_events;
+        const CppProjectCallbacks events{[&](std::string value,std::string configuration){project_json=std::move(value);cmake_json=std::move(configuration);},
+            [&](bool changed){changed?++source_changes:++view_changes;},
+            [&](auto action){actions.push_back(action);},
+            [&](const windows::CppHistoryRecoveryEvidence& event){recovery_events.push_back(event);}};
         {
             CppProjectView project(host,block,editor_window,editor,"","",history_root,"qa/project","es",events);MoveWindow(project.window(),0,0,800,project.height_for_width(800),TRUE);
             require(editor.document().text==block.project_files[0].second&&editor.document().indentation_starts==std::vector<std::int64_t>{0},"Initial main.cpp lost its original text or predefined tab origin");
@@ -156,8 +160,16 @@ int main(int argc,char** argv){
             SendMessageW(editor_window,EM_SETSEL,4,4);SendMessageW(editor_window,WM_KEYDOWN,VK_BACK,1);SendMessageW(editor_window,WM_CHAR,L'\b',1);SendMessageW(editor_window,WM_KEYUP,VK_BACK,LPARAM{1}<<31);editor.capture_change();project.capture();require(editor.document().text=="return 0;\n","Backspace did not remove the predefined tab as one unit");
             editor.undo();project.capture();require(editor.document().text==block.project_files[0].second&&editor.document().indentation_starts==std::vector<std::int64_t>{0},"Undo lost per-file indentation identity");
             {ModalScenario scenario(host,ModalScenario::Kind::record);click(project.window(),302);scenario.verified();}
+            require(recovery_events.empty(),"Recording a revision claimed a completed restoration");
             editor.reset({"    return 9;\n",{},4,4});project.capture();
             {ModalScenario scenario(host,ModalScenario::Kind::restore);click(project.window(),302);scenario.verified();}
+            require(recovery_events.size()==1&&recovery_events[0].changed
+                &&recovery_events[0].revision_id.size()==64
+                &&recovery_events[0].path=="main.cpp"
+                &&recovery_events[0].preserved_other_files==1
+                &&recovery_events[0].before_sha256==std::optional<std::string>{state::sha256("    return 9;\n")}
+                &&recovery_events[0].after_sha256==std::optional<std::string>{state::sha256("    return 0;\n")},
+                "The actual Recover this file dialog omitted or forged the verified operation receipt");
             require(editor.document().text==block.project_files[0].second&&editor.document().indentation_starts==std::vector<std::int64_t>{0},"Restoring the actual history diff lost the original per-file tab metadata");project.snapshot(snapshot);
             require(snapshot.project_files[1].second=="// manual header\t \n","Restoring main.cpp changed the independent header");
             {ModalScenario scenario(host,ModalScenario::Kind::create);click(project.window(),300);scenario.verified();}project.snapshot(snapshot);require(snapshot.project_files.back().first=="src/helper.cpp"&&snapshot.source_files.back()=="src/helper.cpp","Create-file dialog did not update the same project snapshot");

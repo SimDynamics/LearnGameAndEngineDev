@@ -87,6 +87,16 @@ add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
 add_custom_target(lgaed_u11_names_fixture DEPENDS "${LGAED_U11_NAMES_BEFORE_FILE}")
 
 function(lgaed_add_state_import_tests qa_root)
+    # In the isolated Windows QA mode, test the actual immutable project
+    # revision files and selective restoration, not only compiler state.
+    # The normal full build registers this same test separately below.
+    if(LGAED_STATE_IMPORT_QA_ONLY)
+        add_executable(lgaed_cpp_project_history_tests native/platform/windows/cpp_project_history_tests.cpp)
+        target_link_libraries(lgaed_cpp_project_history_tests PRIVATE lgaed_platform_windows)
+        add_test(NAME native.cpp_project_history COMMAND lgaed_cpp_project_history_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history")
+        set_tests_properties(native.cpp_project_history PROPERTIES TIMEOUT 40)
+    endif()
     # The real Windows loader/evaluator must reject wrong stderr bytes while
     # retaining previous stdout-only and nonzero-exit completion identities.
     add_executable(lgaed_stderr_exact_tests native/core/stderr_exact_contract_tests.cpp)

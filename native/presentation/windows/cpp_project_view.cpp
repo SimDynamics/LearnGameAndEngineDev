@@ -323,15 +323,23 @@ void CppProjectView::Impl::open_history(){
                             comparison.accept=[&,life,status,revision]{
                                 if(!*life)return true;capture();const bool existed=std::ranges::any_of(files,[&](const auto& item){return item.first==status.path;});
                                 comparison.async([&,history_copy=history,current=files,status,revision,existed,locale=language](std::stop_token)->std::function<void()>{
-                                    auto recovered=history_copy.restore_file(status.path,current,revision);
-                                    if(recovered.empty())throw std::runtime_error(pick(locale,"Conserva al menos un archivo en el proyecto.","Keep at least one file in the project.","Conservez au moins un fichier dans le projet."));
-                                    return [&,life,status,revision,existed,recovered=std::move(recovered)]{
-                                        if(!*life)return;files=recovered;
+                                    auto recovery=history_copy.restore_file_verified(status.path,current,revision);
+                                    if(!recovery.evidence.changed)throw std::runtime_error(pick(locale,
+                                        "Esta versión ya coincide con el archivo guardado. Compara de nuevo antes de recuperar.",
+                                        "The current file already matches this revision. Compare again before recovering.",
+                                        "Le fichier actuel correspond déjà à cette révision. Comparez à nouveau avant de récupérer."));
+                                    if(recovery.files.empty())throw std::runtime_error(pick(locale,"Conserva al menos un archivo en el proyecto.","Keep at least one file in the project.","Conservez au moins un fichier dans le projet."));
+                                    return [&,life,status,revision,existed,recovery=std::move(recovery)]{
+                                        if(!*life)return;files=std::move(recovery.files);
                                         if(std::ranges::any_of(files,[&](const auto& item){return item.first==status.path;})){
                                             const auto units=revision.indentation.find(status.path);indentation[status.path]=units==revision.indentation.end()?std::string{}:units->second;
                                             if(!existed&&std::ranges::find(revision.sources,status.path)!=revision.sources.end())sources.push_back(status.path);selected=status.path;
                                         }else{std::erase(sources,status.path);indentation.erase(status.path);cursors.erase(status.path);if(selected==status.path)selected=files.front().first;}
-                                        show_selected();notify(true);if(choices.window)DestroyWindow(choices.window);
+                                        show_selected();notify(true);
+                                        // The callback follows the actual recovered draft save; it
+                                        // never certifies comparison, execution or curricular progress.
+                                        if(callbacks.restored_file)callbacks.restored_file(recovery.evidence);
+                                        if(choices.window)DestroyWindow(choices.window);
                                     };
                                 });return false;
                             };
