@@ -40,10 +40,11 @@ function New-TestArchive([string] $fileName, [object[]] $members) {
     return $path
 }
 
-function Invoke-TestInspector([string] $zip, [int] $count, [string] $sha) {
+function Invoke-TestInspector([string] $zip, [int] $count, [string] $sha,
+    [string] $scanProject = $project) {
     $options = @{
         ArchivePath = $zip
-        ProjectPath = $project
+        ProjectPath = $scanProject
         SyntheticFixture = $true
         SyntheticExpectedSha256 = $sha
         SyntheticExpectedFiles = $count
@@ -159,6 +160,94 @@ if ($parentResult.conflicts -ne 1 -or $parentResult.newFiles -ne 0 -or
 }
 Write-Host 'PASS: existing parent file prevents a child path without overwriting.'
 
+# Test a directory entry against an existing regular file. A ZIP directory
+# entry has no installation content, but may still be unsafe to materialize.
+$dirZip = New-TestArchive 'directory-meets-file.zip' @(
+    @{Name='occupied/'; Text=''},
+    @{Name='safe.txt'; Text='still safe'}
+)
+$dirSha = (Get-FileHash -LiteralPath $dirZip -Algorithm SHA256).Hash.ToLowerInvariant()
+$dirReport = Invoke-TestInspector $dirZip 1 $dirSha
+if ($dirReport.conflicts -ne 1 -or $dirReport.newFiles -ne 1 -or
+    -not $dirReport.requiresManualReview) {
+    throw 'An explicit ZIP directory covering a local file was not detected.'
+}
+Write-Host 'PASS: explicit ZIP directory colliding with a local file is flagged.'
+
+# A junction is a reparse point even if it points at a valid external folder.
+# The read-only inspector must never treat descendants of that junction as
+# new files eligible for installation.
+$outside = Join-Path $root 'outside-target'
+New-Item -ItemType Directory -Path $outside | Out-Null
+$junction = Join-Path $project 'linked'
+New-Item -ItemType Junction -Path $junction -Target $outside | Out-Null
+$linkFileZip = New-TestArchive 'junction-child.zip' @(
+    @{Name='linked/new.txt';Text='external write must never happen'}
+)
+$linkFileSha = (Get-FileHash -LiteralPath $linkFileZip -Algorithm SHA256).Hash.ToLowerInvariant()
+$linkFileReport = Invoke-TestInspector $linkFileZip 1 $linkFileSha
+if ($linkFileReport.unsafeExistingReparsePaths -ne 1 -or
+    $linkFileReport.newFiles -ne 0 -or
+    -not $linkFileReport.requiresManualReview) {
+    throw 'Junction descendant was not marked as a blocked target.'
+}
+$linkDirectoryZip = New-TestArchive 'junction-directory.zip' @(
+    @{Name='linked/';Text=''},
+    @{Name='safe.txt';Text='safe path'}
+)
+$linkDirectorySha = (Get-FileHash -LiteralPath $linkDirectoryZip -Algorithm SHA256).Hash.ToLowerInvariant()
+$linkDirectoryReport = Invoke-TestInspector $linkDirectoryZip 1 $linkDirectorySha
+if ($linkDirectoryReport.unsafeExistingReparsePaths -ne 1 -or
+    $linkDirectoryReport.newFiles -ne 1 -or
+    -not $linkDirectoryReport.requiresManualReview) {
+    throw 'Explicit ZIP directory on a junction was not blocked.'
+}
+if (@(Get-ChildItem -LiteralPath $outside -Force).Count -ne 0) {
+    throw 'The inspector unexpectedly wrote content beyond the fixture project.'
+}
+Write-Host 'PASS: junction descendants and explicit ZIP directories are blocked.'
+
+# Test clean and dirty Git states against a second disposable project. Only
+# this throwaway fixture gets an initial Git commit, never the user's repo.
+$gitCommand = Get-Command git -CommandType Application | Select-Object -First 1
+if (-not $gitCommand) { throw 'Git is required for Git-state safety tests.' }
+$gitProject = Join-Path $root 'git-project'
+New-Item -ItemType Directory -Path $gitProject | Out-Null
+& $gitCommand.Source init --quiet $gitProject
+if ($LASTEXITCODE -ne 0) { throw 'Could not initialize synthetic Git fixture.' }
+$tracked = Join-Path $gitProject 'tracked.txt'
+[IO.File]::WriteAllText($tracked, 'reference', $utf8)
+& $gitCommand.Source -C $gitProject add -- tracked.txt
+if ($LASTEXITCODE -ne 0) { throw 'Git could not add the synthetic fixture.' }
+& $gitCommand.Source -C $gitProject -c user.name=Fixture -c user.email=fixture@example.invalid commit --quiet -m 'Synthetic CI fixture'
+if ($LASTEXITCODE -ne 0) { throw 'Git could not commit the synthetic fixture.' }
+$gitZip = New-TestArchive 'git-state.zip' @(
+    @{Name='tracked.txt';Text='reference'}
+)
+$gitSha = (Get-FileHash -LiteralPath $gitZip -Algorithm SHA256).Hash.ToLowerInvariant()
+$gitIndex = Join-Path $gitProject '.git\index'
+$indexBefore = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
+$cleanReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
+$indexAfter = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
+if ($cleanReport.gitState -cne 'clean' -or $cleanReport.requiresManualReview -or
+    $cleanReport.existingIdentical -ne 1 -or $indexBefore -cne $indexAfter) {
+    throw 'Clean synthetic Git tree was misreported or index changed.'
+}
+[IO.File]::WriteAllText((Join-Path $gitProject 'untracked.txt'), 'local data', $utf8)
+$untrackedReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
+if ($untrackedReport.gitState -notlike 'dirty or untracked*' -or
+    -not $untrackedReport.requiresManualReview) {
+    throw 'Untracked Git file was not classified as requiring review.'
+}
+[IO.File]::WriteAllText($tracked, 'changed source', $utf8)
+$modifiedReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
+if ($modifiedReport.gitState -notlike 'dirty or untracked*' -or
+    $modifiedReport.conflicts -ne 1 -or
+    -not $modifiedReport.requiresManualReview) {
+    throw 'Modified Git source was not marked as a conflict.'
+}
+Write-Host 'PASS: clean, untracked and modified Git states detected without Git index changes.'
+
 $summary = [ordered]@{
     scope = 'synthetic fixture tests only; never the authenticated AssetCheck ZIP'
     runner = $env:RUNNER_OS
@@ -167,13 +256,16 @@ $summary = [ordered]@{
     localConflictsDetected = 1
     malformedArchivesRejected = 15
     parentFileConflictsDetected = 1
+    explicitDirectoryConflictsDetected = 1
+    junctionTypesBlocked = 2
+    gitStatesVerified = 3
     originalStudentFilesTouched = $false
     realArchiveInstalled = $false
 }
 $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
-Write-Host 'PASS: 3 non-destructive inspections and 15 malicious/mismatched archives rejected.'
+Write-Host 'PASS: 9 non-destructive inspections, 15 malicious/mismatched ZIPs rejected, junctions and Git status safeguarded.'
 # Git's expected non-worktree exit status remains in LASTEXITCODE even after
 # all PowerShell assertions pass. Finish the synthetic CI job explicitly.
 exit 0
