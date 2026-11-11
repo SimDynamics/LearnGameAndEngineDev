@@ -130,6 +130,75 @@ void integrated_lesson(HWND host){
 }
 
 
+
+void verify_unrelated_cpp_multicase_feedback(HWND host){
+    // A normal C++ objective with two input cases must NEVER receive the
+    // U3 History instructions after its first correct-but-partial execution.
+    const auto environment=resolve_windows_environment({ProfileId::Codex,
+        L"cpp-other-cases-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
+    initialize_profile_directories(environment.paths);
+    state::StateStore store(environment.paths.root);
+    auto data=store.load();data.preferences["native_windows"]["ui_language"]=std::string("es");
+    store.save(data);
+    const auto lesson=windows::parse_lesson_json(R"json({
+      "id":"qa_cpp_two_independent_inputs","title":"QA C++ sin historial","compilerPuzzlesRequired":true,
+      "pages":[{"blocks":[{"id":"program","type":"cpp_compiler",
+        "initialCode":"#include <iostream>\nint main(){ int numero{}; if(!(std::cin>>numero))return 2; std::cout << numero*2; return 0; }\n",
+        "initialStandardInput":"2",
+        "outputCheck":{"cases":[
+          {"standardInput":"2","outputs":["4"],"explanation":"Primer dato comprobado."},
+          {"standardInput":"3","outputs":["6"],"explanation":"Segundo dato comprobado."}
+        ]}
+      }]}]})json");
+    require(lesson.pages.size()==1&&lesson.pages[0].blocks.size()==1,
+        "The independent two-case C++ QA fixture changed shape");
+    const auto& block=lesson.pages[0].blocks[0];
+    HWND view=create_lesson_view(host,environment,lesson);
+    require(view!=nullptr,"Could not open the independent multicase C++ lesson");
+    const auto cleanup=[&]{if(view){(void)flush_lesson_view(view);DestroyWindow(view);view=nullptr;}};
+    try{
+        MoveWindow(view,0,0,920,720,TRUE);pump();
+        auto source=child(view,1010),run=child(view,1011),input=child(view,1015);
+        require(source&&run&&input&&IsWindowEnabled(run)&&edit_text(input)=="2",
+            "The real C++ lesson did not expose its prepared standard input");
+        const auto feedback=GetDlgItem(GetParent(source),1004);
+        require(feedback&&GetParent(feedback)==GetParent(source),
+            "The independent C++ feedback is not in the lesson pane");
+        click(view,1011);
+        await([&]{return IsWindowEnabled(run);},"First multicase C++ execution did not complete");
+        auto saved=read_lesson_state(view);
+        require(windows::compiler_puzzle_case_count(saved,lesson,block)==1&&
+            !windows::compiler_puzzle_completed(saved,lesson,block)&&
+            edit_text(child(view,1014))=="4",
+            "The first real C++ input was not recorded as an incomplete 1/2 objective");
+        const auto first_feedback=edit_text(feedback);
+        require(first_feedback.find("Historial")==std::string::npos &&
+            first_feedback.find("historial")==std::string::npos &&
+            first_feedback.find("secuencia")==std::string::npos,
+            "An unrelated partial C++ objective displayed the U3 History sequence instructions");
+        set_edit_text(input,"3");pump();
+        click(view,1011);
+        await([&]{return IsWindowEnabled(run);},"Second multicase C++ execution did not complete");
+        saved=read_lesson_state(view);
+        require(windows::compiler_puzzle_case_count(saved,lesson,block)==2&&
+            windows::compiler_puzzle_completed(saved,lesson,block)&&
+            edit_text(child(view,1014))=="6",
+            "A second valid C++ input failed to complete its original two-case objective");
+        require(flush_lesson_view(view),"The independent two-case objective was not saved");
+        cleanup();
+        view=create_lesson_view(host,environment,lesson);
+        require(view!=nullptr,"The independent two-case C++ lesson did not reopen");
+        MoveWindow(view,0,0,920,720,TRUE);pump();
+        require(windows::compiler_puzzle_completed(read_lesson_state(view),lesson,block),
+            "The normal two-case success was lost on reopening");
+        cleanup();
+        require(environment.paths.root.parent_path().filename()==L"qa"&&
+            environment.paths.root.parent_path().parent_path().filename()==L"Codex",
+            "Multicase C++ QA profile escaped Codex/qa");
+        cleanup_own_qa(environment.paths.root.parent_path(),environment.paths.root,"cpp-other-cases-");
+    }catch(...){cleanup();throw;}
+}
+
 void verify_unmodified_thirteen_page_entry_gates(HWND host,const std::filesystem::path& authored_lesson){
     const auto published=windows::load_lesson(authored_lesson);
     require(published.pages.size()==13&&published.pages[10].blocks.size()==5,
@@ -352,8 +421,10 @@ int main(int argc,char** argv){
     const bool internal_only=argc==3&&std::string_view(argv[2])=="--internal-dialogs";
     const bool u3_selective=argc==4&&std::string_view(argv[2])=="--u3-selective";
     const bool u3_gates=argc==4&&std::string_view(argv[2])=="--u3-gates";
+    const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_gates,"Provide the existing isolated QA output directory, optionally --internal-dialogs, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
+    try{require(argc==2||internal_only||u3_selective||u3_gates||other_cases,
+        "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
         const auto editor_window=CreateWindowExW(0,MSFTEDIT_CLASS,L"",WS_CHILD|WS_VISIBLE|WS_TABSTOP|ES_MULTILINE|ES_AUTOHSCROLL|ES_AUTOVSCROLL,0,250,800,240,host,nullptr,GetModuleHandleW(nullptr),nullptr);require(editor_window!=nullptr,"Cannot create the existing source editor");
@@ -471,7 +542,8 @@ int main(int argc,char** argv){
             const auto changed_before=source_changes;set_edit_text(child(project.configuration_window(),400),"revised");set_edit_text(child(project.configuration_window(),402),"WITH_TRACE=OFF\nMODE=two words");project.snapshot(snapshot);require(snapshot.cmake->target=="revised"&&snapshot.cmake->options.at("MODE")=="two words"&&source_changes>changed_before&&cmake_json.find("revised")!=std::string::npos,"Configuration edits did not immediately persist and invalidate the exact request");
             project.reset();project.snapshot(snapshot);require(snapshot.cmake==block.cmake&&snapshot.project_files==block.project_files,"Reset did not restore the authored project and CMake settings only");
         }
-        if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
+        if(other_cases)verify_unrelated_cpp_multicase_feedback(host);
+        else if(u3_gates)verify_unmodified_thirteen_page_entry_gates(host,std::filesystem::path(argv[3]));
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(!internal_only)integrated_lesson(host);
         cleanup_own_qa(std::filesystem::absolute(argv[1]),history_root,"cpp-project-view-");
@@ -479,6 +551,7 @@ int main(int argc,char** argv){
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
         else if(u3_gates)std::cout<<"PASS original thirteen-page U3 lesson: new isolated profile cannot jump to U3 history or Finish; page gate survives reopen; no other lessons or student data modified\n";
+        else if(other_cases)std::cout<<"PASS unrelated C++ with two inputs: no U3 History advice, 1/2 then 2/2 exact executions and preserved completion after reopen\n";
         else std::cout<<"PASS real project file/header selection, independent source/cursor/tab origin and Undo, create/delete, Android history record/diff/individual restore, CMake controls and native multi-file/configure/build/execute integration\n";return 0;
     }catch(const std::exception& error){if(host)DestroyWindow(host);if(rich)FreeLibrary(rich);std::cerr<<"Project controls failure: "<<error.what()<<'\n';return 1;}
 }

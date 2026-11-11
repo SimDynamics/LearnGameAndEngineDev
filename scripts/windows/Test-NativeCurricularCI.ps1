@@ -353,10 +353,10 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the project history UI test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates')
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_other_cpp_multicase')
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
-        throw 'ReaderBuild must register original History dialogs, published U3 owner integration and full thirteen-page entry gates.'
+        throw 'ReaderBuild must register History dialogs, focused U3 recovery, thirteen-page entry gates and unrelated C++ multicase.'
     }
     & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
     if ($LASTEXITCODE -ne 0) { throw 'The native Win32 History or focused U3 lesson regression failed.' }
