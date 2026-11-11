@@ -244,6 +244,10 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_curricular_reader_test_targets()
     # Preserve authored code indentation and optional decorative cards without
     # modifying any historical JSON, reference or saved response.
+    add_executable(lgaed_code_format_compat_tests native/core/code_format_compat_tests.cpp)
+    target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
+    set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     add_executable(lgaed_order_spacing_contract_tests native/core/order_spacing_contract_tests.cpp)
     target_link_libraries(lgaed_order_spacing_contract_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.order_spacing_contract COMMAND lgaed_order_spacing_contract_tests)
@@ -1640,6 +1644,10 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_editorial_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
         --remainder-editorial "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json")
     set_tests_properties(native.remainder_editorial_state_import PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_code_format_compat_tests native/core/code_format_compat_tests.cpp)
+    target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
+    set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
