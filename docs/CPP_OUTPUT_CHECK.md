@@ -260,6 +260,49 @@ históricos publicados no se acreditan automáticamente ni se convierten en
 opcionales. Esta capacidad tampoco sustituye la comprobación de conservación
 de filas y contadores de U3L8.
 
+### U3L8: informes completos y diferencias sin perder observaciones
+
+Los editores originales de `programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia`
+admiten, tras revisión e integración curricular de Work, esta declaración **sólo en la raíz**
+de la lección española v2:
+
+```json
+"compilerRuntimeChecks": [
+  {"activity": "block_0003_0003", "kind": "observationCompleteV1"},
+  {"activity": "block_0006_0003", "kind": "observationDifferencesV1"}
+]
+```
+
+No se modifican sus `cpp_compiler`, código inicial, funciones de lectura, respuestas,
+borradores, `stateLayout`, mapas de idiomas ni referencias. Cada editor recibe
+cuatro ejecuciones exigibles: entrada publicada, dos registros coincidentes con
+última línea sin `LF`, entrada vacía y un lote con repeticiones, campos
+malformados y observaciones posteriores. Para cada entrada, un cálculo separado
+deduce filas, diagnóstico `Linea=N:FORMATO`, contadores y código de salida
+normal. El informe completo muestra cada fila válida; la vista de diferencias
+cuenta todas las válidas, pero sólo muestra las discrepantes.
+
+También se ejecuta **el mismo programa** con dos entradas de control
+independientes de los casos anteriores, dentro del rango curricular de doce
+líneas físicas. Incluyen etiquetas repetidas antes y después de un error,
+línea vacía, sólo blancos, enteros incompletos, campos unidos y una cuarta
+columna. El veredicto exige igualdad de las dos salidas y códigos de salida de
+estas ejecuciones, con los recibos asociados a la fuente y revisión capturadas.
+En la consola nativa, se admite únicamente la traducción textual propia del
+CRT de `LF` a `CRLF`; no se recortan caracteres ni se ignora el diagnóstico.
+
+El editor sólo puede corregir el cuerpo de `main`: `leer_entero` y
+`leer_registro`, sus firmas, sus inclusiones y el resto del archivo deben
+permanecer intactos. Una salida preparada codificada como constante no
+acredita las entradas independientes. Una ejecución que no termine normalmente
+o un error de construcción tampoco cuenta como resultado esperado.
+
+**Estado:** el motor y sus pruebas se integran en `Codex`, pero la ficha
+`P2_U2_DIAGNOSTICO_CLIENTE` permanece abierta hasta que Work publique las
+declaraciones compatibles y se comprueben los cinco editores reales sin
+dar crédito por ejecuciones anteriores. La revisión visual y auditiva
+personal continúa a cargo del estudiante.
+
 ## Entrada del laboratorio
 
 En un `cpp_compiler` curricular, el campo «Entrada» sólo aparece si el bloque declara `initialStandardInput` —también una cadena vacía, para permitir una actividad con EOF— o si algún caso de `outputCheck` declara una entrada no vacía. No se inspecciona el código del alumno para decidirlo. Sin esas declaraciones, la ejecución recibe entrada vacía y termina en EOF si intenta leer. Cualquier borrador de entrada anterior se conserva en almacenamiento, pero no se envía al programa mientras el campo no corresponda a esa actividad. El compilador libre del menú principal conserva su campo de entrada.
