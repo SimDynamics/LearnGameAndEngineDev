@@ -1,5 +1,6 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/bibliography_revision.hpp"
+#include "core/code_format_compat.hpp"
 #include "platform/windows/winrt_apartment.hpp"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -323,6 +324,74 @@ std::optional<std::string> reviewed_crt_output_original(const JsonObject& block)
         &&outputs.back()==expanded&&expanded.size()==844,
         "The reviewed CRT spelling must expand LF only and retain every original control");
     return original;
+}
+// A format archive is a complete published block. Never normalize every
+// stored hash: project only the explicitly verified source fields back onto
+// the original bytes before checking their old signatures.
+JsonObject source_format_projection(const JsonObject& active,const JsonObject& snapshot) {
+    require(text(active,"type")==text(snapshot,"type"),"A format archive changed its activity type");
+    auto projected=JsonObject::Parse(active.Stringify());
+    const auto preserve=[&](const JsonObject& old,const JsonObject& current,
+            const JsonObject& target,const wchar_t* name,curriculum::code_format::Language language) {
+        require(old.HasKey(name)==current.HasKey(name),"Source formatting changed an authored field");
+        if(!old.HasKey(name))return;
+        const auto before=text(old,utf8(winrt::hstring(name)));
+        const auto after=text(current,utf8(winrt::hstring(name)));
+        require(curriculum::code_format::equivalent(before,after,language),
+            "Source formatting modified tokens, literals, comments or preprocessor lines");
+        target.Insert(name,old.GetNamedValue(name));
+    };
+    // Examples and ordering puzzles can be authored explicitly as CMake.
+    // Do not reinterpret their exact CMake syntax as C++ for source revisions.
+    const auto authored_language=optional_text(active,"language");
+    const auto language=authored_language=="cmake"?curriculum::code_format::Language::cmake:
+        authored_language.empty()||authored_language=="cpp"||authored_language=="c++"?
+            curriculum::code_format::Language::cpp:curriculum::code_format::Language::immutable;
+    preserve(snapshot,active,projected,L"code",language);
+    if(text(active,"type")=="cpp_compiler") {
+        preserve(snapshot,active,projected,L"initialCode",curriculum::code_format::Language::cpp);
+        require(snapshot.HasKey(L"projectFiles")==active.HasKey(L"projectFiles"),
+            "Source formatting changed project file ownership");
+        if(snapshot.HasKey(L"projectFiles")) {
+            const auto originals=array(snapshot,"projectFiles"),current=array(active,"projectFiles");
+            auto replacing=projected.GetNamedArray(L"projectFiles");
+            require(originals.Size()==current.Size(),"Source formatting changed the file list");
+            for(unsigned i=0;i<originals.Size();++i) {
+                const auto before=originals.GetObjectAt(i),after=current.GetObjectAt(i);
+                const auto path=text(before,"path");
+                require(path==text(after,"path"),"Source formatting renamed a project file");
+                const auto cmake=path=="CMakeLists.txt"||std::string_view(path).ends_with(".cmake");
+                const auto dot=path.rfind('.');
+                constexpr std::array<std::string_view,10> source_extensions{
+                    ".cpp",".cc",".cxx",".c",".h",".hpp",".hh",".hxx",".inl",".ixx"};
+                const auto cpp=dot!=path.npos&&std::ranges::find(
+                    source_extensions,std::string_view(path).substr(dot))!=source_extensions.end();
+                // Do not silently edit arbitrary project data files.
+                const auto language=cmake?curriculum::code_format::Language::cmake:
+                    cpp?curriculum::code_format::Language::cpp:curriculum::code_format::Language::immutable;
+                preserve(before,after,replacing.GetObjectAt(i),L"initialCode",language);
+            }
+        }
+    }
+    if(text(active,"type")=="inline_fill_code"||text(active,"type")=="drag_fill_code")
+        preserve(snapshot,active,projected,L"template",language);
+    for(const auto field:{L"fragments",L"choices"})if(
+            (std::wstring_view(field)==L"fragments"&&text(active,"type")=="order_code")||
+            (std::wstring_view(field)==L"choices"&&text(active,"type")=="drag_fill_code")) {
+        require(snapshot.HasKey(field)==active.HasKey(field),"Source formatting changed a puzzle source list");
+        if(!snapshot.HasKey(field))continue;
+        const auto old=array(snapshot,utf8(winrt::hstring(field)));
+        const auto now=array(active,utf8(winrt::hstring(field)));
+        require(old.Size()==now.Size(),"Source formatting changed the number of graded fragments");
+        for(unsigned i=0;i<old.Size();++i) {
+            require(old.GetAt(i).ValueType()==JsonValueType::String&&now.GetAt(i).ValueType()==JsonValueType::String&&
+                curriculum::code_format::equivalent(utf8(old.GetStringAt(i)),utf8(now.GetStringAt(i)),
+                    language),
+                "A formatted fragment changed its original code tokens or answer slot");
+        }
+        projected.Insert(field,snapshot.GetNamedValue(field));
+    }
+    return projected;
 }
 std::string state_fingerprint(const JsonObject& original) {
     const auto value = JsonObject::Parse(original.Stringify());
@@ -1332,7 +1401,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -1451,6 +1520,27 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             result.order_refinements.push_back(std::move(expanded.record));
         }
     }
+    // Full pre-format snapshots are authored once, under existing active
+    // identities. They are not extra answers, storage slots or drafts.
+    std::map<std::string,JsonObject> source_format_originals;
+    if(metadata.HasKey(L"sourceFormatRevisions")) {
+        require(result.version==2,"Source format archives require stateLayout v2");
+        const auto revisions=array(metadata,"sourceFormatRevisions");
+        require(revisions.Size()<=100000,"Too many source-format archives");
+        for(const auto& item_value:revisions){
+            const auto item=item_value.GetObject();allowed_keys(item,{"id","block"},true);
+            const auto id=text(item,"id");
+            require(valid_id(id)&&current_blocks.contains(id)&&!source_format_originals.contains(id),
+                "Unknown, inactive or duplicated source-format owner");
+            const auto previous=item.GetNamedObject(L"block");
+            const auto before=state_fingerprint(previous);
+            const auto expected=refined_order_signatures.contains(id)?
+                refined_order_signatures.at(id):result.signatures.at(id);
+            require(before==expected,"Source format archive does not match its historical contract");
+            source_format_originals.emplace(id,previous);
+            result.source_format_revisions.push_back({id,utf8(previous.Stringify()),fingerprint(previous)});
+        }
+    }
     std::map<std::string, std::string> successors;
     if (metadata.HasKey(L"retired")) {
         require(result.version == 2, "Retirement requires state layout v2");
@@ -1566,6 +1656,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             editorial_edges[id].emplace(before,after);
         }
     }
+    for(const auto& revision:result.source_format_revisions)
+        require(editorial.contains(revision.id)&&seen.at(revision.id).contains(revision.sha256),
+            "A source format archive needs its original exact editorial predecessor");
     for (const auto& refinement : result.order_refinements)
         require(editorial.contains(refinement.id) && seen.at(refinement.id).contains(refinement.sha256),
             "An ordering refinement needs its complete original published editorial provenance");
@@ -1589,10 +1682,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(editorial.contains(id) && editorial.at(id) == reviewed->after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(reviewed->before)),
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
-            const auto digest=state_fingerprint(block);
-            validate_choice_pair(block,reviewed_choice_owner(lesson_id,id));
-            if(block.HasKey(L"compileCheck")) {
-                const auto spec=reviewed_compile_check(text(block.GetNamedObject(L"compileCheck"),"diagnostic"));
+            const auto projected=source_format_originals.contains(id)?
+                source_format_projection(block,source_format_originals.at(id)):block;
+            const auto digest=state_fingerprint(projected);
+            validate_choice_pair(projected,reviewed_choice_owner(lesson_id,id));
+            if(projected.HasKey(L"compileCheck")) {
+                const auto spec=reviewed_compile_check(text(projected.GetNamedObject(L"compileCheck"),"diagnostic"));
                 require(spec&&result.version==2&&locale=="es"&&lesson_id==spec->lesson&&id==spec->identity,
                     "A reviewed compilation diagnostic belongs to its original Spanish v2 editor");
                 require(editorial.contains(id)&&seen.at(id).contains(std::string(spec->payload_sha256)),
@@ -2139,7 +2234,14 @@ void apply_reviewed_order_equivalences(const Lesson& lesson,Block& block) {
             "4380d9b5e34bdda15027e6d92939d391ad4b22864f3ded1dac00d22717111af6",{{2,3,4}}}
     };
     const auto found=std::ranges::find_if(reviewed,[&](const auto& item){return item.lesson==lesson.id&&item.identity==block.stable_id;});
-    if(found!=reviewed.end()&&state_fingerprint(JsonObject::Parse(key(block.raw_json)))==found->payload)
+    const auto source=block.source_format_original_fragments
+        ?[&]{
+            for(const auto& archive:lesson.state_layout.source_format_revisions)
+                if(archive.id==block.stable_id)return JsonObject::Parse(key(archive.raw_json));
+            return JsonObject::Parse(key(block.raw_json));
+        }()
+        :JsonObject::Parse(key(block.raw_json));
+    if(found!=reviewed.end()&&state_fingerprint(source)==found->payload)
         block.order_equivalence_groups=found->groups;
 }
 void resolve_addresses(Lesson& lesson) {
@@ -2176,6 +2278,8 @@ void resolve_addresses(Lesson& lesson) {
     std::map<std::string, StateAddress> addresses;
     std::map<std::string,const OrderRefinement*> refinements;
     for (const auto& refinement : layout.order_refinements) refinements.emplace(refinement.id,&refinement);
+    std::map<std::string,const SourceFormatRevision*> source_formats;
+    for (const auto& format : layout.source_format_revisions) source_formats.emplace(format.id,&format);
     std::map<std::string,ChoiceRevision*> choices;
     std::map<std::string,CompilerRevision*> compilers;
     for(auto& revision:layout.compiler_revisions) {
@@ -2203,6 +2307,17 @@ void resolve_addresses(Lesson& lesson) {
             auto& block = page.blocks[b];
             block.stable_id = layout.version ? layout.current[p].blocks[b] : "block_" + std::to_string(p) + '_' + std::to_string(b);
             block.address = layout.version ? addresses.at(block.stable_id) : StateAddress{p, b, {}, page.stable_id};
+            if(const auto format=source_formats.find(block.stable_id);format!=source_formats.end()) {
+                const auto& snapshot=*format->second;
+                const auto original=read_block(JsonObject::Parse(key(snapshot.raw_json)),snapshot.raw_json);
+                require(original.type==block.type,"A source-format archive changed its activity type");
+                if(block.type==BlockType::cpp_compiler){
+                    block.source_format_original_initial_code=original.initial_code;
+                    if(!original.project_files.empty())
+                        block.source_format_original_project_files=original.project_files;
+                }else if(block.type==BlockType::order_code)
+                    block.source_format_original_fragments=original.fragments;
+            }
             if (const auto refinement = refinements.find(block.stable_id); refinement != refinements.end()) {
                 require(block.type == BlockType::order_code && sha256(order_representation_frame(block)) == refinement->second->representation_signature,
                     "An ordering refinement belongs to another visible representation");

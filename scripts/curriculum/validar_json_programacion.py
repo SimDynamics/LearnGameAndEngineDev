@@ -1399,9 +1399,59 @@ def preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
         return False
 
 
+def preserves_source_format_revision(relative, pn, bn, old, current, *,
+                                     previous_document=None, current_document=None,
+                                     course_id="cpp_fundamentals"):
+    """Allow only an authenticated, lexically equivalent source edit.
+
+    This older per-block guard remains strict unless the complete published
+    lesson has already passed the existing v2 state/layout transition checker.
+    The original Git publication, not a matching ad-hoc source snippet, owns
+    the archive and historical exercise address.
+    """
+    if (course_id not in STRUCTURAL_COURSES or
+            not isinstance(previous_document, dict) or
+            not isinstance(current_document, dict) or
+            not isinstance(old, dict) or not isinstance(current, dict) or
+            old.get("type") != current.get("type") or
+            not str(relative).replace("\\", "/").startswith(
+                "app/src/main/assets/content/es/programming/" + course_id + "/")):
+        return False
+    meta = current_document.get("stateLayout")
+    if (not isinstance(meta, dict) or meta.get("version") != 2 or
+            meta.get("locale") != "es" or
+            previous_document.get("id") != current_document.get("id")):
+        return False
+    try:
+        baseline = _state_layout.prepare(previous_document)
+        storage = _state_layout.validate(baseline)
+        identities = [baseline["stateLayout"]["current"][page]["blocks"][block]
+                      for (page, block), position in storage.items() if position == (pn, bn)]
+        if len(identities) != 1:
+            return False
+        identity = identities[0]
+        archives = meta.get("sourceFormatRevisions", [])
+        if not isinstance(archives, list) or not any(
+                isinstance(entry, dict) and entry.get("id") == identity for entry in archives):
+            return False
+        # This also validates the original immutable origin, the complete
+        # append-only editorial proof and the exact archive/source ownership.
+        _state_layout.validate_transition(previous_document, current_document)
+        if _state_layout._blocks(current_document).get(identity) != current:
+            return False
+        return _state_layout.code_format.require_source_format(old, current)
+    except (ValueError, KeyError, TypeError, IndexError, AttributeError):
+        return False
+
+
 def preserves_previous_exercise(relative, pn, bn, old, current, *,
                                 previous_document=None, current_document=None,
                                 course_id="cpp_fundamentals"):
+    if preserves_source_format_revision(relative, pn, bn, old, current,
+                                        previous_document=previous_document,
+                                        current_document=current_document,
+                                        course_id=course_id):
+        return True
     if preserves_ordinary_explanation_revision(relative, pn, bn, old, current,
                                                previous_document, current_document,
                                                course_id=course_id):
@@ -1701,7 +1751,11 @@ def main(argv=None):
                     # even when the published baseline was already rearranged.
                     origin_p, origin_b = historical_positions[pn, bn]
                     if kind == "cpp_compiler":
-                        require(preserves_previous_compiler(relative, origin_p, origin_b, block, current, historical_lesson), relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
+                        allowed = (preserves_previous_compiler(relative, origin_p, origin_b, block, current, historical_lesson)
+                                   or preserves_source_format_revision(
+                                       relative, origin_p, origin_b, block, current,
+                                       previous_document=old, current_document=delivered))
+                        require(allowed, relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
                     elif kind != "multiple_choice" or block.get("explanation") != current.get("explanation") or (
                         Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
                         origin_p + 1,

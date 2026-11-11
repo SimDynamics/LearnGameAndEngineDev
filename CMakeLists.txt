@@ -159,13 +159,10 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         include(cmake/StateImportTests.cmake)
         lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
-        # Protect first-case completion, optional follow-ups and unchanged
-        # historical guidance in the focused Windows state pipeline.
-        add_executable(lgaed_compiler_guidance_state_tests native/platform/windows/compiler_guidance_state_tests.cpp)
-        target_link_libraries(lgaed_compiler_guidance_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
-        add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
-        set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 45)
-        message(STATUS "Focused native import QA: historical suites, exact stderr and first-case guidance; no application, reader or audio verification.")
+        # Keep the historical import suite focused on its seven self-contained
+        # tests. Compiler guidance is exercised by the full native configuration;
+        # this isolated profile lacks all resources those fixtures reference.
+        message(STATUS "Focused native import QA: historical suites and exact runtime stderr; no application, reader or audio verification.")
     else()
         include(cmake/NarrationPlayerTests.cmake)
         lgaed_add_narration_player_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/narration-player")
@@ -244,6 +241,10 @@ if(LGAED_READER_BUILD_QA_ONLY)
     lgaed_add_curricular_reader_test_targets()
     # Preserve authored code indentation and optional decorative cards without
     # modifying any historical JSON, reference or saved response.
+    add_executable(lgaed_code_format_compat_tests native/core/code_format_compat_tests.cpp)
+    target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
+    set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     add_executable(lgaed_order_spacing_contract_tests native/core/order_spacing_contract_tests.cpp)
     target_link_libraries(lgaed_order_spacing_contract_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.order_spacing_contract COMMAND lgaed_order_spacing_contract_tests)
@@ -1640,6 +1641,10 @@ if(BUILD_TESTING)
     add_test(NAME native.remainder_editorial_state_import COMMAND lgaed_state_tests "${CMAKE_SOURCE_DIR}/out/qa/state"
         --remainder-editorial "${LGAED_WORK_EXACT_EDITORIAL_DIR}/remainder-before.json")
     set_tests_properties(native.remainder_editorial_state_import PROPERTIES TIMEOUT 120)
+    add_executable(lgaed_code_format_compat_tests native/core/code_format_compat_tests.cpp)
+    target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
+    set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
     add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
         native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
     target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)

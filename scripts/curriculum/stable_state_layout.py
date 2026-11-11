@@ -27,6 +27,9 @@ _images_spec.loader.exec_module(image_resources)
 _bibliography_spec = import_util.spec_from_file_location("lgaed_bibliography_revision", Path(__file__).with_name("bibliography_revision.py"))
 bibliography_revision = import_util.module_from_spec(_bibliography_spec)
 _bibliography_spec.loader.exec_module(bibliography_revision)
+_format_spec = import_util.spec_from_file_location("lgaed_code_format", Path(__file__).with_name("code_format_compat.py"))
+code_format = import_util.module_from_spec(_format_spec)
+_format_spec.loader.exec_module(code_format)
 
 
 class LayoutError(ValueError):
@@ -35,7 +38,7 @@ class LayoutError(ValueError):
 
 LOCALES = frozenset({"es", "en", "fr"})
 V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "editorial"}
-V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
+V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
@@ -1028,6 +1031,31 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         require(lines != original["fragments"] or order != original["correctOrder"], "An order refinement must split its original presentation")
         require(state_fingerprint(original) == digests[identity], "The order snapshot does not match its immutable response contract")
         refined[identity] = original
+    # A complete, original authored block belongs to the old state signature.
+    # Later code bytes are displayed and compiled, but only a lexical-format
+    # equivalent version can borrow this immutable historical identity.
+    formatted = {}
+    revisions = meta.get("sourceFormatRevisions", [])
+    require(type(revisions) is list and len(revisions) <= 100_000,
+            "Malformed source format history")
+    active_blocks = _blocks(document)
+    for entry in revisions:
+        require(type(entry) is dict and set(entry) == {"id", "block"},
+                "A source format revision needs its identity and complete original block")
+        identity = _identity(entry["id"])
+        require(identity in active_blocks and identity not in formatted,
+                "Unknown, inactive or duplicate source format owner")
+        original = entry["block"]
+        require(type(original) is dict, "Source format history must preserve a full original block")
+        source_before = (order_contract_projection(original, refined[identity])
+                         if identity in refined else original)
+        require(state_fingerprint(source_before) == digests[identity],
+                "Source formatting archive changed the historical answer contract")
+        try:
+            code_format.require_source_lexical(original, active_blocks[identity])
+        except code_format.SourceFormatError as exc:
+            raise LayoutError(f"Unsafe source formatting for {identity}: {exc}") from exc
+        formatted[identity] = original
     choice_revisions = meta.get("choiceRevisions", [])
     require(type(choice_revisions) is list and len(choice_revisions) <= len(CHOICE_OPTION_REVISIONS),
             "Malformed reviewed choice archive")
@@ -1119,7 +1147,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 require(meta["locale"] == "es" and identity in compiler_references
                         and compiler_references[identity] == reference_reviewed,
                         "A revised compiler reference requires its matching expanded compiler and archive")
-            projected = order_contract_projection(block, refined[identity]) if identity in refined else block
+            source = (code_format.source_projection(block, formatted[identity])
+                      if identity in formatted else block)
+            projected = order_contract_projection(source, refined[identity]) if identity in refined else source
             require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
             seen_blocks.append(identity)
@@ -1223,6 +1253,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
         chains[identity].append(after)
     for identity, chain in chains.items():
         require(chain[-1] == fingerprint(actual[identity]), "Editorial proof does not describe the current block")
+    for identity, original in formatted.items():
+        require(fingerprint(original) in chains.get(identity, []),
+                "A source format archive needs an authentic exact editorial predecessor")
     for identity, original in refined.items():
         require(fingerprint(original) in chains.get(identity, [])
                 and chains[identity][-1] == fingerprint(actual[identity]),
@@ -1319,6 +1352,18 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
                 "Explicit editorial returns require the unchanged published proof prefix")
         if result["stateLayout"].get("editorial") == previous["stateLayout"]["editorial"]:
             before, after = _all_blocks(previous), _all_blocks(result)
+            recorded = {item["id"] for item in result["stateLayout"].get("sourceFormatRevisions", [])}
+            for identity, block in before.items():
+                if identity in recorded or code_format.code_slots(block) == code_format.code_slots(after[identity]):
+                    continue
+                try:
+                    changed = code_format.require_source_format(block, after[identity])
+                except code_format.SourceFormatError as exc:
+                    raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
+                if changed:
+                    result["stateLayout"].setdefault("sourceFormatRevisions", []).append(
+                        {"id": identity, "block": deepcopy(block)})
+                    recorded.add(identity)
             for identity, block in before.items():
                 require(identity in after, "An existing activity was removed")
                 if fingerprint(block) != fingerprint(after[identity]):
@@ -1352,6 +1397,15 @@ def prepare_v2(document: dict, locale: str, family_documents: dict[str, dict],
         "additions": [], "editorial": [],
     }
     before, after = _blocks(baseline), _blocks(result)
+    for identity, block in before.items():
+        if code_format.code_slots(block) != code_format.code_slots(after[identity]):
+            try:
+                changed = code_format.require_source_format(block, after[identity])
+            except code_format.SourceFormatError as exc:
+                raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
+            if changed:
+                result["stateLayout"].setdefault("sourceFormatRevisions", []).append(
+                    {"id": identity, "block": deepcopy(block)})
     for identity, block in before.items():
         if fingerprint(block) != fingerprint(after[identity]):
             result["stateLayout"]["editorial"].append(
@@ -2200,6 +2254,27 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             require(reference["id"] in before and fingerprint(reference["block"]) == fingerprint(before[reference["id"]]),
                     "A new compiler reference must preserve its complete previous published block")
     _preserve_compiler_channel_requirements(before, after)
+    old_formats = old_meta.get("sourceFormatRevisions", []) if old_v2 else []
+    current_formats = meta.get("sourceFormatRevisions", [])
+    require(current_formats[:len(old_formats)] == old_formats,
+            "Published source-format archives are append-only")
+    archived = {entry["id"] for entry in old_formats}
+    for entry in current_formats[len(old_formats):]:
+        identity = entry["id"]
+        require(identity in before and identity not in archived and entry["block"] == before[identity],
+                "A new source-format archive must copy its exact published predecessor")
+        try:
+            require(code_format.require_source_format(before[identity], after[identity]),
+                    "Source formatting archive did not change any source")
+        except code_format.SourceFormatError as exc:
+            raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
+        archived.add(identity)
+    for identity in archived:
+        if identity not in before or identity not in after: continue
+        try:
+            code_format.require_source_lexical(before[identity], after[identity])
+        except code_format.SourceFormatError as exc:
+            raise LayoutError(f"Unsafe source edit for {identity}: {exc}") from exc
     old_positions = {identity: (record["id"], index, record["blocks"])
                      for record in old_meta["current"] for index, identity in enumerate(record["blocks"])}
     newly_retired = {item["id"] for item in retired[len(old_retired):]}
@@ -2257,8 +2332,13 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
         if bibliography_revision.is_bibliography_only_revision(block, actual):
             require(identity in appended and all("bibliography" in proof for proof in appended[identity]),
                     "A new bibliography-only revision requires its exact authored reading archive")
-        require(state_fingerprint(_historical_order_contract(baseline, identity, block))
-                == state_fingerprint(_historical_order_contract(current, identity, actual)),
+        protected, previous_source = actual, block
+        format_original = next((entry["block"] for entry in current_formats if entry["id"] == identity), None)
+        if format_original is not None:
+            previous_source = code_format.source_projection(block, format_original)
+            protected = code_format.source_projection(actual, format_original)
+        require(state_fingerprint(_historical_order_contract(baseline, identity, previous_source))
+                == state_fingerprint(_historical_order_contract(current, identity, protected)),
                 "An existing response/code contract changed")
         if str(block.get("type", "")).startswith("math_"):
             serialize = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)

@@ -11,6 +11,8 @@ on:
       - scripts/curriculum/test_stable_state_layout.py
       - scripts/curriculum/test_order_visual_separators.py
       - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/code_format_compat.py
+      - scripts/curriculum/test_code_format_compat.py
       - scripts/curriculum/test_p2_u3_workflow_declaration.py
       - scripts/curriculum/test_u3_rejection_runtime_contract.py
       - scripts/curriculum/test_u3_observation_runtime_contract.py
@@ -43,6 +45,9 @@ jobs:
       - name: Conservar regresiones previas del mapa de estado
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_stable_state_layout
+      - name: Probar formato físico C++ y CMake sin alterar el progreso histórico
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_code_format_compat
       - name: Acreditar el esquema declarativo U3 sin modificar ejercicios ni progreso
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_p2_u3_workflow_declaration

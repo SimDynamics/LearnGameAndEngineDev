@@ -179,6 +179,12 @@ struct Block {
     // canonical positions. This is supplied by the native loader, not JSON,
     // and does not change the stored representation or historical answer key.
     std::vector<std::vector<std::size_t>> order_equivalence_groups;
+    // Authenticated formatting-only provenance. Visible/compiled code is the
+    // current source, while these exact historical bytes retain old receipt
+    // and order-representation identities. No student draft is rewritten.
+    std::optional<std::string> source_format_original_initial_code;
+    std::optional<CppProjectFiles> source_format_original_project_files;
+    std::optional<std::vector<std::string>> source_format_original_fragments;
     std::optional<OrderRefinement> order_refinement;
     std::optional<ChoiceRevision> choice_revision;
     std::optional<CompilerRevision> compiler_revision;
@@ -247,6 +253,9 @@ struct StatePositionalReadingPage {
     std::vector<std::string> current_owners;
     Page original;
 };
+struct SourceFormatRevision {
+    std::string id, raw_json, sha256;
+};
 struct StateLayout {
     int version = 0;
     std::string locale;
@@ -259,6 +268,7 @@ struct StateLayout {
     std::vector<StateRetirement> retired;
     std::vector<StateRetirementHistory> retirement_history;
     std::vector<OrderRefinement> order_refinements;
+    std::vector<SourceFormatRevision> source_format_revisions;
     std::vector<ChoiceRevision> choice_revisions;
     std::vector<CompilerRevision> compiler_revisions;
     std::vector<StateEditorialReturn> editorial_returns;
