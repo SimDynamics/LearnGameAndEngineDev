@@ -83,6 +83,31 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
         with self.assertRaises(layout.LayoutError):
             layout.validate(different_type)
 
+    def test_published_fourteen_code_orders_activate_only_visual_separators(self):
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[2]
+        counts = [1,1,1,2,2,2,2,2,2,2,2,3,2,1]
+        self.assertEqual(len(counts), len(published.CASES))
+        for item, count in zip(published.CASES, counts):
+            path, page, index, identity, *_ = item
+            with self.subTest(path=path):
+                actual = layout.load(root / (published.PREFIX + path))
+                self.assertEqual(actual.get("orderVisualSeparators"),
+                                 [{"activity": identity, "count": count}])
+                baseline = copy.deepcopy(actual)
+                del baseline["orderVisualSeparators"]
+                self.assertEqual(layout.validate(baseline), layout.validate(actual))
+                layout.validate_transition(baseline, actual)
+                for field in ("id", "title", "pages", "stateLayout", "textSemantics",
+                              "referenceAfter", "activityAfter", "compilerPuzzlesRequired"):
+                    self.assertEqual(baseline.get(field), actual.get(field))
+                old_block = baseline["pages"][page]["blocks"][index]
+                new_block = actual["pages"][page]["blocks"][index]
+                self.assertEqual(old_block["fragments"], new_block["fragments"])
+                self.assertEqual(old_block["correctOrder"], new_block["correctOrder"])
+                self.assertEqual(layout.state_fingerprint(old_block),
+                                 layout.state_fingerprint(new_block))
+
     def test_original_drag_fill_template_and_holes_are_not_new_separators(self):
         # Real published 4-hole C++ drag editor, with a deliberate blank line.
         from pathlib import Path
