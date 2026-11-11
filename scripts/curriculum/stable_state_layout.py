@@ -955,9 +955,9 @@ def _describe_locale_origin_difference(own: list[dict], family: list[dict],
                     f"family.{locale}.origin={right['sha256']}"
                     + (f" (family identity={right['id']})"
                        if left["id"] != right["id"] else ""))
-            if len(differences) >= limit:
+            if len(differences) > limit:
                 return "; ".join(differences[:limit]) + "; further differences omitted"
-        if len(differences) >= limit:
+        if len(differences) > limit:
             return "; ".join(differences[:limit]) + "; further differences omitted"
     return "; ".join(differences) or "different map metadata"
 
