@@ -348,6 +348,8 @@ if ($fileCount -ne $expectedFiles) {
 # Inspect Git state if possible. A non-repository is explicitly reported,
 # never silently treated as clean; no Git commands change state.
 $gitState = 'git not found'
+$gitIgnoredScan = 'not applicable'
+$gitIgnoredPaths = @()
 $git = Get-Command git -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($git) {
     $insideGit = & $git.Source --no-optional-locks -C $project rev-parse --is-inside-work-tree 2>$null
@@ -362,11 +364,34 @@ if ($git) {
         else {
             $gitState = "dirty or untracked ($($status.Count) status lines); manual review required"
         }
+
+        # Git porcelain without --ignored can look clean even with generated
+        # binaries or caches under .gitignore. Use a read-only query.
+        $ignored = @(& $git.Source --no-optional-locks -C $project ls-files --others --ignored --exclude-standard --directory 2>$null)
+        if ($LASTEXITCODE -ne 0) {
+            $gitIgnoredScan = 'failed; manual review required'
+        }
+        else {
+            $gitIgnoredScan = 'complete'
+            $gitIgnoredPaths = @($ignored | Where-Object {
+                -not [string]::IsNullOrWhiteSpace($_)
+            })
+        }
     }
     else {
         $gitState = 'not a Git worktree; manual review required'
     }
 }
+
+# Check generated build/IDE state at the project root, independently of Git.
+# None of these paths is deleted, cleaned, or modified.
+$rootBuildEntries = @(
+    Get-ChildItem -LiteralPath $project -Force -ErrorAction Stop |
+        Where-Object {
+            $_.Name -match '^(?i:build(?:-.*)?|cmake-build(?:-.*)?|out|\.vs|CMakeFiles|CMakeCache\.txt|cmake_install\.cmake)$'
+        } |
+        ForEach-Object { $_.Name }
+)
 
 # A pristine release ZIP still needs its authoritative 31-file deployment
 # plan (from the pinned integration script) inspected before anything is
@@ -375,6 +400,9 @@ $installSelectionVerified = $false
 $manualReviewOnly = (
     $conflicts.Count -gt 0 -or $blocked.Count -gt 0 -or
     $gitState -ne 'clean' -or
+    $gitIgnoredScan -eq 'failed; manual review required' -or
+    $gitIgnoredPaths.Count -gt 0 -or
+    $rootBuildEntries.Count -gt 0 -or
     (-not $SyntheticFixture -and -not $installSelectionVerified)
 )
 $result = [ordered]@{
@@ -395,6 +423,11 @@ $result = [ordered]@{
     conflicts = $conflicts.Count
     unsafeExistingReparsePaths = $blocked.Count
     gitState = $gitState
+    gitIgnoredScan = $gitIgnoredScan
+    ignoredGitPathsCount = $gitIgnoredPaths.Count
+    ignoredGitPathsSample = @($gitIgnoredPaths | Select-Object -First 25)
+    rootBuildOrIdeStateCount = $rootBuildEntries.Count
+    rootBuildOrIdeStatePaths = @($rootBuildEntries)
     requiresManualReview = $manualReviewOnly
     noFilesWereWritten = $true
     installationPerformed = $false
