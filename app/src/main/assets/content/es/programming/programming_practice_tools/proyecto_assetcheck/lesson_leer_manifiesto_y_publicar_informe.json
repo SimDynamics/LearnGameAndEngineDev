@@ -190,7 +190,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para limitar memoria, podemos conservar como máximo los primeros 81 bytes y seguir consumiendo el resto de la línea. Hay que conservar además un indicador linea_truncada, inicialmente false, que se vuelve true si llega cualquier byte que ya no cabe; se reinicia al cerrar la línea. Al recibir LF, sólo se retira el CR final almacenado si linea_truncada sigue en false: entonces conocemos el byte inmediatamente anterior al LF. Así, 80 bytes de contenido seguidos de CRLF ocupan 81 antes de LF, no hay truncamiento y quedan 80 válidos. En cambio, 80 bytes de contenido seguidos de CR CR LF, o de CR X LF, superan el búfer; son FORMATO aunque el último byte guardado parezca un CR terminador. No se debe recortar o retirar un byte almacenado cuando sabemos que hubo bytes descartados."
+          "text": "Para limitar la memoria, conserva como máximo los primeros 81 bytes de cada línea y sigue consumiendo los demás, aunque ya no quepan. Usa el indicador linea_truncada para recordar si se descartó algún byte:\n\n1. Al comenzar cada línea, establece linea_truncada en false.\n2. Guarda los bytes que caben en el búfer. Si llega uno más allá del límite de 81, cambia linea_truncada a true y sigue leyendo hasta LF.\n3. Al recibir LF, retira un único CR final almacenado sólo si linea_truncada sigue siendo false: así sabes que ese CR estaba inmediatamente antes del LF. Cierra la línea y reinicia el búfer y el indicador.\n\nComprueba el límite: 80 bytes de contenido seguidos de CRLF ocupan 81 antes de LF. No hay truncamiento y quedan 80 bytes válidos. En cambio, 80 bytes de contenido seguidos de CR CR LF o CR X LF exceden el búfer y producen FORMATO, aunque el último byte retenido parezca un CR terminador. Si hubo bytes descartados, no retires ninguno de los bytes conservados."
         },
         {
           "type": "multiple_choice",
@@ -582,7 +582,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las pruebas del archivo físico no deben limitarse al ejemplo de ocho líneas. Incluye archivo vacío, una línea con y sin terminador, LF y CRLF mezclados, dos terminadores consecutivos, CR aislado, TAB, bytes no permitidos, y el límite de 80/81 bytes. En particular, verifica tres fronteras: 80 bytes + CRLF debe conservar 80 y ser válido en longitud; 80 bytes + CR CR LF y 80 bytes + CR X LF deben producir FORMATO, también cuando después llega una segunda línea válida. Comprueba además cien líneas inválidas permitidas, la línea 101 que cancela toda publicación y el funcionamiento de ambos ejecutables."
+          "text": "Las pruebas del archivo físico no deben limitarse al ejemplo de ocho líneas. Organiza los casos en cuatro grupos:\n\n1. Archivos y terminadores. Comprueba un archivo vacío; una línea con y sin terminador; LF y CRLF mezclados; dos terminadores consecutivos; un CR aislado y un TAB.\n\n2. Contenido y longitud. Comprueba los bytes no permitidos y el límite de 80/81 bytes. Contrasta estas tres fronteras:\n   a) 80 bytes + CRLF: conserva 80 bytes de contenido y la longitud es válida.\n   b) 80 bytes + CR CR LF: debe producir FORMATO.\n   c) 80 bytes + CR X LF: también debe producir FORMATO.\n   En b) y c), comprueba que el lector continúa y procesa una segunda línea válida.\n\n3. Límite de líneas. Comprueba cien líneas con registros inválidos pero dentro del máximo de líneas físicas. La línea 101 cancela toda publicación.\n\n4. Clientes. Comprueba el funcionamiento de ambos ejecutables con estos casos."
         },
         {
           "type": "paragraph",
@@ -971,8 +971,44 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "60a62adb3e933f96eebecd9f86029686fc2e39078df2192f95940e2fe0c5cf30",
-        "spans": []
+        "sourceSha256": "d14e472731e77bb5f6bf0abf936180a3ed668337b383d1d23aedf505b16c9043",
+        "spans": [
+          {
+            "start": 59,
+            "end": 67,
+            "text": "81 bytes",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 165,
+            "text": "linea_truncada",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 268,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 377,
+            "end": 381,
+            "text": "true",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 837,
+            "end": 844,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0005",
@@ -1577,8 +1613,65 @@
       {
         "block": "block_0012_0001",
         "path": "/text",
-        "sourceSha256": "a6f98095c92ce43a7014d1556f10230f7b60ef77e1950513239c93f807d70b73",
-        "spans": []
+        "sourceSha256": "668fd4a775ec1050aaf3bd6df2b9e3c458809c748d666374f5c0982048480cf0",
+        "spans": [
+          {
+            "start": 156,
+            "end": 169,
+            "text": "archivo vacío",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 365,
+            "text": "80/81 bytes",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 420,
+            "text": "80 bytes + CRLF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 484,
+            "end": 503,
+            "text": "80 bytes + CR CR LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 526,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 534,
+            "end": 552,
+            "text": "80 bytes + CR X LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 583,
+            "text": "FORMATO",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 782,
+            "end": 791,
+            "text": "línea 101",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0012_0002",
@@ -2757,6 +2850,16 @@
         "id": "block_0012_0001",
         "beforeSha256": "9ad541571bdba4cb74f11a221c329fec03eb1073849de165d938f21be04d0a3b",
         "afterSha256": "9379c633cf3095a4eb9e4552aa2a3e0857f59325790ee11317a1ba0d157cbbae"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "1fa83658b8ce40c42576c325e3902dc11d7bbdb9bcf95cbd3acca2e28b57f38c",
+        "afterSha256": "66ff7536a4aa512362d44c8b4d0fd02a5dbcea743adacace8ed44e7cd3803d99"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "9379c633cf3095a4eb9e4552aa2a3e0857f59325790ee11317a1ba0d157cbbae",
+        "afterSha256": "bb7fa2bafff551f3433a878b81070b42fe3a465bbf85beaf320d05e60f76b010"
       }
     ]
   }
