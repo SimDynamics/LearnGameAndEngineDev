@@ -1726,6 +1726,37 @@ def _validate_compiler_runtime_checks(document: dict) -> None:
         return
     records = document["compilerRuntimeChecks"]
     if document.get("id") == (
+            "programming_practice_tools__comprobaciones_repetibles__automatizar_la_revision_sin_borrar_evidencia"):
+        layout = document.get("stateLayout")
+        require(type(layout) is dict and layout.get("version") == 2 and layout.get("locale") == "es",
+                "The U3L8 report objectives require the original Spanish v2 state map")
+        expected = (("block_0003_0003", "observationCompleteV1", 3,
+                     "A 0 0\nA 2 1\nB -1 -1\nA 2 1\nA 1-1\nC;=lote 0 1\nC;=lote 0 1\nA 1 -1\n",
+                     "if (hay_anterior && caso == caso_anterior)"),
+                    ("block_0006_0003", "observationDifferencesV1", 6,
+                     "N 0 0\nR -1 -1\nR 0 -1\nP 3\nR 0 -1\nZ 9 9\n",
+                     "if (coincide) {\n            continue;"))
+        require(type(records) is list and len(records) == len(expected) and
+                type(document.get("pages")) is list and len(document["pages"]) == 9,
+                "U3L8 requires both ordered report objectives")
+        for record, (identity, kind, page, initial_input, marker) in zip(records, expected):
+            require(type(record) is dict and record == {"activity": identity, "kind": kind},
+                    "Unknown or unordered U3L8 report declaration")
+            blocks = document["pages"][page]["blocks"]
+            require(len(blocks) > 3 and layout["current"][page]["blocks"][3] == identity,
+                    "The U3L8 report editor moved from its immutable slot")
+            owner = blocks[3]
+            require(owner.get("type") == "cpp_compiler" and
+                    type(owner.get("initialCode")) is str and
+                    "bool leer_entero(" in owner["initialCode"] and
+                    "bool leer_registro(" in owner["initialCode"] and
+                    marker in owner["initialCode"] and
+                    owner.get("initialStandardInput") == initial_input and
+                    not any(field in owner for field in
+                        ("outputCheck", "compileCheck", "projectFiles", "sourceFiles", "cmake")),
+                    "The original U3L8 parser, initial source or prepared data changed")
+        return
+    if document.get("id") == (
             "programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion"):
         layout = document.get("stateLayout")
         require(type(layout) is dict and layout.get("version") == 2 and layout.get("locale") == "es",
