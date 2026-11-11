@@ -171,6 +171,10 @@ struct Block {
     std::vector<std::vector<std::string>> answer_alternatives;
     std::optional<std::size_t> correct_index;
     std::vector<std::size_t> correct_order;
+    // Presentation-only root declaration. The optional visual separator cards
+    // never enter fragments, correct_order, order_representation_frame,
+    // exercise_key, persisted answer, or the historical stateLayout.
+    std::size_t optional_order_separators = 0;
     // Reviewed, source-bound independent fragments may exchange only their
     // canonical positions. This is supplied by the native loader, not JSON,
     // and does not change the stored representation or historical answer key.
