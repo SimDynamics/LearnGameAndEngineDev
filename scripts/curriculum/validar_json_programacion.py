@@ -1560,6 +1560,7 @@ def main(argv=None):
                   "No certifica semántica C++ ni ejecución de programas.")
             return
     lessons = {}
+    lesson_sources = {}
     blocks = 0
     # Check the complete visible document first, including v2 additions. The
     # later historical projection only compares existing state; it must never
@@ -1571,6 +1572,7 @@ def main(argv=None):
         require(doc["id"] == expected, path, "ID distinto de la ruta del loader")
         require(doc["id"] not in lessons, path, "ID de lección duplicado")
         lessons[doc["id"]] = doc
+        lesson_sources[doc["id"]] = path
         require(bool(doc["pages"]), path, "lección sin páginas")
         for pn, page in enumerate(doc["pages"], 1):
             require(bool(page["blocks"]), path, f"página {pn} vacía")
@@ -1634,6 +1636,27 @@ def main(argv=None):
         require(item["id"] in units, "curso", "referencia a unidad inexistente")
         if item["id"] in units:
             require(item["title"] == units[item["id"]]["title"], "curso", "título de unidad no coincide")
+
+    # Do not lose an active lesson merely because its index omits it.
+    # Auxiliary and historical units intentionally outside the course index
+    # remain untouched; only published active units require full coverage.
+    active_lessons = set()
+    for item in course["units"]:
+        unit_id = item["id"]
+        if unit_id not in units:
+            continue
+        folder = unit_id.removeprefix("cpp_fundamentals__")
+        unit_path = CONTENT / folder / f"unit_{folder}.json"
+        indexed = {entry["id"] for entry in units[unit_id]["lessons"]}
+        actual = {lesson_id for lesson_id, source in lesson_sources.items()
+                  if source.parent == unit_path.parent}
+        for missing in sorted(actual - indexed):
+            require(False, unit_path, f"cpp_fundamentals: lección publicada sin índice en unidad activa: {missing}")
+        for stray in sorted(indexed - actual):
+            require(False, unit_path, f"cpp_fundamentals: lección de otra carpeta o ausente en unidad activa: {stray}")
+        for duplicate in sorted(indexed & active_lessons):
+            require(False, unit_path, f"cpp_fundamentals: lección indexada en dos unidades activas: {duplicate}")
+        active_lessons.update(indexed)
 
     # Un mapa contrastado permite proyectar bloques a sus posiciones publicadas.
     git = ROOT / ".git"
