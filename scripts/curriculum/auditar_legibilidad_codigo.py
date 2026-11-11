@@ -159,7 +159,7 @@ def manual_review_reasons(source: str, language: str) -> list[str]:
         if "/*" in source:
             reasons.append("multiline_comment")
     elif language == "cmake":
-        if re.search(r"#?\\[[=]*\\[", source):
+        if re.search(r"#?\[[=]*\[", source):
             reasons.append("bracket_argument_or_comment")
     if language.startswith("other:"):
         reasons.append("unsupported_language")
