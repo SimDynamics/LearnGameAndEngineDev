@@ -270,7 +270,10 @@ New-Item -ItemType Directory -Path $gitProject | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Could not initialize synthetic Git fixture.' }
 $tracked = Join-Path $gitProject 'tracked.txt'
 [IO.File]::WriteAllText($tracked, 'reference', $utf8)
-& $gitCommand.Source -C $gitProject add -- tracked.txt
+$ignoreFile = Join-Path $gitProject '.gitignore'
+$ignoreText = (@('build/', '.vs/', 'out/') -join [Environment]::NewLine) + [Environment]::NewLine
+[IO.File]::WriteAllText($ignoreFile, $ignoreText, $utf8)
+& $gitCommand.Source -C $gitProject add -- tracked.txt .gitignore
 if ($LASTEXITCODE -ne 0) { throw 'Git could not add the synthetic fixture.' }
 & $gitCommand.Source -C $gitProject -c user.name=Fixture -c user.email=fixture@example.invalid commit --quiet -m 'Synthetic CI fixture'
 if ($LASTEXITCODE -ne 0) { throw 'Git could not commit the synthetic fixture.' }
@@ -286,6 +289,39 @@ if ($cleanReport.gitState -cne 'clean' -or $cleanReport.requiresManualReview -or
     $cleanReport.existingIdentical -ne 1 -or $indexBefore -cne $indexAfter) {
     throw 'Clean synthetic Git tree was misreported or index changed.'
 }
+
+# .gitignore hides generated binaries from normal git status. They still
+# belong to the student and must require manual review without being altered.
+$buildFixture = Join-Path $gitProject 'build'
+$vsFixture = Join-Path $gitProject '.vs'
+New-Item -ItemType Directory -Path $buildFixture, $vsFixture | Out-Null
+$cacheFixture = Join-Path $buildFixture 'CMakeCache.txt'
+$ideFixture = Join-Path $vsFixture 'launch.vs.json'
+[IO.File]::WriteAllText($cacheFixture, 'preserve ignored CMake cache', $utf8)
+[IO.File]::WriteAllText($ideFixture, 'preserve ignored IDE state', $utf8)
+$cacheBefore = (Get-FileHash -LiteralPath $cacheFixture -Algorithm SHA256).Hash
+$ideBefore = (Get-FileHash -LiteralPath $ideFixture -Algorithm SHA256).Hash
+$ignoreIndexBefore = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
+$ignoredReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
+$ignoreIndexAfter = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
+$cacheAfter = (Get-FileHash -LiteralPath $cacheFixture -Algorithm SHA256).Hash
+$ideAfter = (Get-FileHash -LiteralPath $ideFixture -Algorithm SHA256).Hash
+if ($ignoredReport.gitState -cne 'clean' -or
+    $ignoredReport.gitIgnoredScan -cne 'complete' -or
+    $ignoredReport.ignoredGitPathsCount -lt 2 -or
+    $ignoredReport.rootBuildOrIdeStateCount -lt 2 -or
+    $ignoredReport.rootBuildOrIdeStatePaths -cnotcontains 'build' -or
+    $ignoredReport.rootBuildOrIdeStatePaths -cnotcontains '.vs' -or
+    -not $ignoredReport.requiresManualReview -or
+    $ignoredReport.conflicts -ne 0 -or
+    $ignoredReport.installationPerformed -or
+    $cacheBefore -cne $cacheAfter -or
+    $ideBefore -cne $ideAfter -or
+    $ignoreIndexBefore -cne $ignoreIndexAfter) {
+    throw "Ignored build artifacts were not protected: $($ignoredReport | ConvertTo-Json -Depth 5 -Compress)"
+}
+Write-Host 'PASS: ignored build and IDE caches trigger review while Git reports clean; bytes and index unchanged.'
+
 [IO.File]::WriteAllText((Join-Path $gitProject 'untracked.txt'), 'local data', $utf8)
 $untrackedReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
 if ($untrackedReport.gitState -notlike 'dirty or untracked*' -or
@@ -392,6 +428,8 @@ $summary = [ordered]@{
     explicitDirectoryConflictsDetected = 1
     junctionTypesBlocked = 2
     gitStatesVerified = 3
+    ignoredBuildAndIdeFoldersDetected = 2
+    ignoredCacheBytesPreserved = $true
     ancestorJunctionsRejected = 1
     syntheticInventoryNeverAuthorizesDeployment = $true
     candidateListMatches = 31
@@ -404,7 +442,7 @@ $summary = [ordered]@{
 $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
-Write-Host 'PASS: 10 non-destructive inspections, 16 malformed ZIPs rejected, and no deployment assumed from the inventory.'
+Write-Host 'PASS: 11 non-destructive inspections, 16 malformed ZIPs rejected, ignored caches preserved, and no deployment assumed.'
 # Git's expected non-worktree exit status remains in LASTEXITCODE even after
 # all PowerShell assertions pass. Finish the synthetic CI job explicitly.
 exit 0
