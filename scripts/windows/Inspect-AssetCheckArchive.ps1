@@ -15,6 +15,9 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $releaseSha256 = 'b8e6c9abc2d611bfad391facf36f3da0e71993322c18087991ad9f314c51a589'
 $releaseFileCount = 35
+$releaseInstallableFileCount = 31
+# The four noninstallable members cannot be identified from counts alone.
+# Do not infer an installation allowlist or copy the reported newPaths.
 
 if ($SyntheticFixture) {
     if ($env:GITHUB_ACTIONS -ne 'true' -or
@@ -52,9 +55,21 @@ if (-not (Test-Path -LiteralPath $ProjectPath -PathType Container)) {
 $archive = [IO.Path]::GetFullPath($ArchivePath)
 $project = [IO.Path]::GetFullPath($ProjectPath).TrimEnd('\', '/')
 $projectRoot = $project + [IO.Path]::DirectorySeparatorChar
-if (((Get-Item -LiteralPath $project).Attributes -band
-        [IO.FileAttributes]::ReparsePoint) -ne 0) {
-    throw 'The project root is a reparse point and must be inspected manually.'
+# Check the project root AND every lexical ancestor, not just the root
+# itself. A junction in E:\Projects may redirect the project elsewhere.
+$ancestorPath = $project
+while ($ancestorPath) {
+    $ancestorItem = Get-Item -LiteralPath $ancestorPath -Force -ErrorAction Stop
+    if (($ancestorItem.Attributes -band
+            [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "The project path traverses a reparse point: $ancestorPath"
+    }
+    $parentPath = Split-Path -Path $ancestorPath -Parent
+    if (-not $parentPath -or
+        $parentPath -eq $ancestorPath) {
+        break
+    }
+    $ancestorPath = $parentPath
 }
 
 $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -353,14 +368,23 @@ if ($git) {
     }
 }
 
+# A pristine release ZIP still needs its authoritative 31-file deployment
+# plan (from the pinned integration script) inspected before anything is
+# installed. This tool intentionally does not decide which four to exclude.
+$installSelectionVerified = $false
 $manualReviewOnly = (
-    $conflicts.Count -gt 0 -or $blocked.Count -gt 0 -or $gitState -ne 'clean'
+    $conflicts.Count -gt 0 -or $blocked.Count -gt 0 -or
+    $gitState -ne 'clean' -or
+    (-not $SyntheticFixture -and -not $installSelectionVerified)
 )
 $result = [ordered]@{
     scope = 'Read-only AssetCheck package preflight, NOT installation or Windows build'
     archiveSha256 = $actualHash
     authenticatedReference = (-not $SyntheticFixture)
     archiveFiles = $fileCount
+    expectedDeployableFiles = $(if ($SyntheticFixture) { $null } else { $releaseInstallableFileCount })
+    installableSelectionVerified = $installSelectionVerified
+    inventoryPathsAreNotInstallInstructions = $true
     archiveDirectories = $directories
     expandedBytes = $uncompressed
     fullyDecodedAndCrcVerified = $memberDigests.Count
