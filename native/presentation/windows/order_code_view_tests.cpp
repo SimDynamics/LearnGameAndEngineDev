@@ -260,8 +260,7 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
         if(whitespace_only){
             preserve_code_spacing_in_rows_and_editor(host);
             DestroyWindow(host);
-            std::cout<<"PASS native C++/CMake code/drag display retains indentation and vertical line spacing
-";
+            std::cout<<"PASS native C++/CMake code/drag display retains indentation and vertical line spacing\n";
             return 0;
         }
         drag_commits_after_releasing_capture(host);
