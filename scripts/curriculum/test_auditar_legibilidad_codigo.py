@@ -76,14 +76,45 @@ class AuditCodeReadabilityTest(unittest.TestCase):
                "correctOrder":[1,2,3,0]}
         original=json.dumps(order,sort_keys=True)
         data=list(audit.source_blocks(order))
-        self.assertEqual(1,len(data))
-        self.assertEqual("composition",data[0][2])
+        self.assertEqual(5,len(data))
+        self.assertEqual(["fragments/0", "fragments/1", "fragments/2",
+                          "fragments/3", "fragments/correctOrder"], [v[0] for v in data])
+        self.assertEqual("composition",data[-1][2])
         self.assertEqual(original,json.dumps(order,sort_keys=True))
 
     def test_do_not_recommend_blank_card_between_else_if_and_else(self):
         code='int main() {\n    if (a) {\n        return 1;\n    } else if (b) {\n        return 2;\n    } else {\n        return 3;\n    }\n    return 0;\n}'
         found=audit.suggestions(code,"cpp")
         self.assertNotIn('else', ' '.join(x['after'] for x in found))
+
+
+    def test_individual_drag_choices_and_order_fragments_are_inventoried(self):
+        drag = {"type": "drag_fill_code", "template": "int main(){\\n[]\\nreturn 0;\\n}",
+                "choices": ["int n=2;", "std::cout << n;"], "correctOrder": [0, 1]}
+        actual = list(audit.source_blocks(drag))
+        self.assertEqual(["template", "choices/0", "choices/1"], [item[0] for item in actual])
+        self.assertTrue(all(item[2] == "source" for item in actual))
+        self.assertEqual(0, len(audit.suggestions(actual[1][1], "cpp")))
+
+    def test_safety_report_marks_line_splices_raw_strings_and_cmake_brackets(self):
+        cpp = 'const char* text=R"(line\\nreturn 0;)";\\n'
+        self.assertIn("raw_string_literal", audit.manual_review_reasons(cpp, "cpp"))
+        self.assertIn("physical_line_splice",
+                      audit.manual_review_reasons("#define X " + chr(92) + "\\n 1", "cpp"))
+        self.assertIn("multiline_comment", audit.manual_review_reasons("/* comment */", "cpp"))
+        self.assertIn("bracket_argument_or_comment",
+                      audit.manual_review_reasons("message([=[value]=])", "cmake"))
+        self.assertIn("unsupported_language", audit.manual_review_reasons("print('x')", "other:python"))
+
+    def test_unknown_language_is_counted_without_misclassifying_cpp_or_cmake(self):
+        python_code = {"type": "code", "language": "python",
+                       "code": "def f():\\n    if x:\\n        return 0\\n"}
+        self.assertEqual("other:python", audit.code_language("code", python_code))
+        self.assertEqual([], audit.suggestions(python_code["code"], "other:python"))
+        self.assertEqual("cmake", audit.code_language(
+            "projectFiles/0:CMakeLists.txt/initialCode", {"type": "cpp_compiler"}))
+        self.assertEqual("cpp", audit.code_language(
+            "projectFiles/1:source.cpp/initialCode", {"type": "cpp_compiler"}))
 
 
 if __name__ == '__main__':
