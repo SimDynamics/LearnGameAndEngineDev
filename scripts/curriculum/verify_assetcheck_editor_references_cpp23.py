@@ -17,6 +17,12 @@ import sys
 import tempfile
 from pathlib import Path
 
+from assetcheck_differential_cases import (
+    SEED,
+    differential_cases,
+    physical_byte_cases,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT = (
     ROOT
@@ -124,6 +130,41 @@ def lesson_reference(filename: str, function: str, end_marker: str):
     return source, initial, check["cases"]
 
 
+def physical_byte_driver(reference_source: str) -> str:
+    """Compile the U4L6 function against raw bytes unreachable through UI names."""
+    main_signature = "int main()"
+    if reference_source.count(main_signature) != 1:
+        raise ValueError("U4L6 expected exactly one original main function")
+    source = reference_source.replace(
+        main_signature, "int assetcheck_original_example_main()", 1
+    )
+    lines = [source, "", "int main() {"]
+    for index, (data, expected) in enumerate(physical_byte_cases(), start=1):
+        values = ", ".join(
+            f"static_cast<char>({ord(char)})" for char in data
+        )
+        lines.append(f"    const std::string bytes_{index} = {{{values}}};")
+        lines.append(
+            f"    const Conteo actual_{index} = contar_lineas(bytes_{index});"
+        )
+        line_count, empty, loose_cr, exceeded = expected
+        checks = " || ".join((
+            f"actual_{index}.lineas != {line_count}",
+            f"actual_{index}.vacias != {empty}",
+            f"actual_{index}.cr_sueltos != {loose_cr}",
+            f"actual_{index}.excedido != {'true' if exceeded else 'false'}",
+        ))
+        lines.append(
+            f"    if ({checks}) {{"
+            f' std::cerr << "FAIL raw byte case {index}\\n"; return 2; }}'
+        )
+    lines.append(
+        f'    std::cout << "PHYSICAL_CASES={len(physical_byte_cases())}\\n";'
+    )
+    lines.extend(("    return 0;", "}", ""))
+    return "\n".join(lines)
+
+
 def run_all(generator: str, report: Path | None) -> None:
     with tempfile.TemporaryDirectory(prefix="assetcheck-editor-cpp23-") as temp:
         source_dir = Path(temp) / "source"
@@ -147,6 +188,13 @@ def run_all(generator: str, report: Path | None) -> None:
             (source_dir / f"{target}_initial.cpp").write_text(initial, encoding="utf-8")
             cmake.append(f"add_executable({target} {target}.cpp)")
             cmake.append(f"add_executable({target}_initial {target}_initial.cpp)")
+            if function == "contar_lineas":
+                (source_dir / "assetcheck_u4l6_bytes.cpp").write_text(
+                    physical_byte_driver(code), encoding="utf-8"
+                )
+                cmake.append(
+                    "add_executable(assetcheck_u4l6_bytes assetcheck_u4l6_bytes.cpp)"
+                )
             targets.append((target, filename, cases))
         (source_dir / "CMakeLists.txt").write_text(
             "\n".join(cmake) + "\n", encoding="utf-8"
@@ -219,6 +267,54 @@ def run_all(generator: str, report: Path | None) -> None:
                     "program; the exercise is not demonstrably assessed"
                 )
             initial_exercises_detected += 1
+
+        # Differential inputs cover whole streams, not merely the published
+        # four cases per editor. The expected text comes from Python oracles.
+        differential_checked = 0
+        for target, filename, _ in targets:
+            exe = build_dir / ("Release" if multi_config else "") / (
+                target + (".exe" if platform.system() == "Windows" else "")
+            )
+            for number, (stdin, expected) in enumerate(
+                differential_cases(filename), start=1
+            ):
+                result = subprocess.run(
+                    [str(exe)], input=stdin, capture_output=True, text=True,
+                    encoding="utf-8", errors="replace", timeout=10, check=False,
+                )
+                if result.returncode != 0 or result.stderr or result.stdout != expected:
+                    raise AssertionError(
+                        f"{filename}, differential case {number}, seed {SEED}\n"
+                        f"stdin: {stdin!r}\n"
+                        f"exit: {result.returncode}\n"
+                        f"stderr: {result.stderr!r}\n"
+                        f"expected: {expected!r}\n"
+                        f"actual: {result.stdout!r}"
+                    )
+                differential_checked += 1
+            print(
+                f"PASS differential {target}: {len(differential_cases(filename))}",
+                flush=True,
+            )
+
+        byte_exe = build_dir / ("Release" if multi_config else "") / (
+            "assetcheck_u4l6_bytes" + (
+                ".exe" if platform.system() == "Windows" else ""
+            )
+        )
+        byte_result = subprocess.run(
+            [str(byte_exe)], capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=10, check=False,
+        )
+        expected_bytes = f"PHYSICAL_CASES={len(physical_byte_cases())}\n"
+        if (byte_result.returncode != 0 or byte_result.stderr or
+                byte_result.stdout != expected_bytes):
+            raise AssertionError(
+                f"U4L6 byte driver: exit={byte_result.returncode}, "
+                f"stderr={byte_result.stderr!r}, stdout={byte_result.stdout!r}"
+            )
+        print(f"PASS U4L6 physical bytes: {len(physical_byte_cases())}", flush=True)
+
         summary = {
             "scope": "Curricular after-attempt C++ references only; NOT standalone AssetCheck",
             "system": platform.platform(),
@@ -230,6 +326,9 @@ def run_all(generator: str, report: Path | None) -> None:
             "initial_cases_checked": checked,
             "initial_cases_rejected": initial_mismatches,
             "initial_exercises_detected": initial_exercises_detected,
+            "differential_seed": SEED,
+            "differential_streams_passed": differential_checked,
+            "raw_byte_cases_passed": len(physical_byte_cases()),
         }
         print("SUMMARY " + json.dumps(summary, ensure_ascii=False), flush=True)
         if report is not None:
