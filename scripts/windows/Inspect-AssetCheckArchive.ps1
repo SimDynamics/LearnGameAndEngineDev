@@ -345,6 +345,15 @@ if ($fileCount -ne $expectedFiles) {
     throw "Expected $expectedFiles files in the ZIP, found $fileCount. No installation performed."
 }
 
+# The ZIP was closed above. Rehash it after inspecting all members, so a
+# replacement between the initial digest and final enumeration cannot pass
+# unnoticed. Even a stable digest is only a snapshot, never permission to
+# overwrite a path or apply the integration plan.
+$finalHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($finalHash -cne $actualHash) {
+    throw "Archive changed during read-only inspection. Expected $actualHash, found $finalHash. No installation performed."
+}
+
 # Inspect Git state if possible. A non-repository is explicitly reported,
 # never silently treated as clean; no Git commands change state.
 $gitState = 'git not found'
@@ -408,6 +417,8 @@ $manualReviewOnly = (
 $result = [ordered]@{
     scope = 'Read-only AssetCheck package preflight, NOT installation or Windows build'
     archiveSha256 = $actualHash
+    archiveStableDuringInspection = ($finalHash -ceq $actualHash)
+    reportIsSnapshotNotInstallAuthorization = $true
     authenticatedReference = (-not $SyntheticFixture)
     archiveFiles = $fileCount
     expectedDeployableFiles = $(if ($SyntheticFixture) { $null } else { $releaseInstallableFileCount })
