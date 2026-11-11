@@ -10,6 +10,17 @@ Sin pendientes.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
 
+**Regla vigente de avance curricular:** en cada editor, la primera ejecución
+comprobada basta para desbloquear el siguiente contenido. Las entradas y salidas
+de los demás casos se explican en el texto como ensayos optativos, sin bloquear
+el progreso, las referencias o el lector. Las sondas de regresión que comprueban
+internamente otros datos en el mismo intento no son obligaciones manuales del
+estudiante. Codex debe separar los recibos exigidos de los casos voluntarios:
+actualmente el motor todavía exige todos los recibos de `outputCheck` y las
+rúbricas derivadas de U3L6/U3L8 incorporan varios casos. No activar esas
+rúbricas multicaso hasta que se respete el desbloqueo por la primera
+comprobación, conservando sus oráculos y sus criterios semánticos.
+
 ### P2_U1_ACREDITACION_PRACTICAS_ABIERTAS
 
 - **ESTADO:** PENDIENTE.
