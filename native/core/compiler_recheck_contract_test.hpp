@@ -13,17 +13,20 @@ void compiler_recheck_contract() {
     CppRunRequest first;first.revision=7;first.source_utf8="synthetic original program";first.stdin_utf8="1";
     FreshExecution first_result{7,true,true,0,"1","2"};
     check(!compiler_puzzle_current_feedback(data,lesson,block,first),"An unattempted compiler acquired feedback without an actual verdict");
-    check(!record_compiler_puzzle_case(data,lesson,block,first,first_result,"Correcto\nFirst case.")
-        &&compiler_puzzle_case_count(data,lesson,block)==1,
-        "Initial completion no longer requires all authored inputs of one captured program");
-    check(!compiler_puzzle_current_feedback(data,lesson,block,first),
-        "A first partial successful input falsely restored a whole-objective success message");
+    constexpr auto earned_text="Correcto\nFirst case.";
+    check(record_compiler_puzzle_case(data,lesson,block,first,first_result,earned_text)
+        &&compiler_puzzle_case_count(data,lesson,block)==1
+        &&compiler_puzzle_completed(data,lesson,block),
+        "The first authored case must immediately unlock the compiler; no second case may be required");
+    const auto first_feedback=compiler_puzzle_current_feedback(data,lesson,block,first);
+    check(first_feedback&&first_feedback->correct&&first_feedback->text==earned_text,
+        "A first-case achievement was not restored as the only required success");
     auto second=first;second.revision=8;second.stdin_utf8="2";
     FreshExecution second_result{8,true,true,0,"2","4"};
-    constexpr auto earned_text="Correcto\nBoth original cases checked.";
-    check(record_compiler_puzzle_case(data,lesson,block,second,second_result,earned_text)
-        &&compiler_puzzle_completed(data,lesson,block)&&compiler_puzzle_case_count(data,lesson,block)==2,
-        "The two fresh inputs did not produce the original complete achievement");
+    check(record_compiler_puzzle_case(data,lesson,block,second,second_result,"Correcto\nOptional case.")
+        &&compiler_puzzle_completed(data,lesson,block)&&compiler_puzzle_case_count(data,lesson,block)==2
+        &&compiler_puzzle_feedback(data,lesson,block)==earned_text,
+        "A later optional input must preserve the previously earned first-case achievement");
     const auto achievement=data;
     auto selected=compiler_puzzle_current_feedback(data,lesson,block,second);
     check(selected&&selected->correct&&selected->text==earned_text,
