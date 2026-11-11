@@ -1,6 +1,13 @@
-# Validación estructural multicurso de Programación: alcance y bloqueo
+# Validación multicurso de Programación: auditoría y cierre histórico
 
 Estado verificado: **11 de noviembre de 2026**. Rama de integración técnica: `Codex`.
+
+**Estado vigente:** el bloqueo por diez huellas de AssetCheck se corrigió
+mediante una migración excepcional autenticada y el validador curricular
+habitual de ambos cursos **aprobó en GitHub Actions 43022274204**.
+Los apartados de fallos anteriores documentan el diagnóstico histórico y no
+representan el estado actual de la publicación.
+
 
 ## Qué implementó Codex
 
@@ -218,3 +225,63 @@ discordantes de U4L3 y U4L7. Nada de este trabajo modifica los JSON
 curriculares, los mapas, las traducciones ni los archivos personales.
 El pendiente multicurso permanece abierto hasta verificar una corrección
 histórica auténtica.
+
+## Cierre histórico: fuentes Git auténticas y validación completa
+
+La reparación técnica quedó publicada en los commits
+[`521c06e4`](https://github.com/SimDynamics/LearnGameAndEngineDev/commit/521c06e412f8545a0526b635d6e89f4ed22c498c)
+y [`4b5dae91`](https://github.com/SimDynamics/LearnGameAndEngineDev/commit/4b5dae91b3eb1773c3d09c1c9bff107a8852a9b5)
+de la rama `Codex`.
+
+Las dos primeras entregas auténticas contienen el origen correcto de sus
+actividades en `stateLayout.origin`, confirmado desde los bloques reales con
+el algoritmo de huella curricular. El manifiesto `family.es.origin` tenía
+exclusivamente diez SHA-256 incorrectos: ocho de opción múltiple en U4L3
+(commit de incorporación `45f61239`, blob `6ba7f1a8`) y dos de código
+C++/CMake en U4L7 (commit `8c3cde9c`, blob `525dd1aa`). El SHA-256
+completo de la fuente que identifica cada `family.es` coincide con la
+primera entrega. No había revisiones editoriales posteriores de esos archivos.
+
+Se sustituyeron **solo esos diez valores** dentro de `family.es.origin`.
+Páginas, bloques, códigos, preguntas, respuestas, índices, traducciones,
+`stateLayout.origin`, `current`, `editorial`, `additions` y fuentes
+originales permanecen idénticos. No se regeneraron ni reutilizaron las
+coordenadas de almacenamiento del progreso del estudiante.
+
+Para poder comprobar la transición desde el commit defectuoso sin desactivar
+la protección general, `stable_state_layout.py` reconoce únicamente las dos
+**primeras publicaciones exactas**, identificadas por su huella completa.
+Exige la coincidencia de los contratos originales calculados desde sus
+bloques, el SHA-256 de la fuente de idioma y que la entrega nueva sea idéntica
+salvo por esa reconciliación de la familia española. Cualquier modificación
+adicional, otro documento, otra base histórica o un segundo cambio de familia
+continúa prohibido. El verificador de procedencia de familia y el de
+transiciones se ejercitan por separado; la validación habitual sigue obligatoria.
+
+La ejecución [`43022274204`](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43022274204)
+confirmó, desde los JSON publicados y su historia Git:
+
+| Comprobación | Resultado |
+|---|---|
+| Regresiones multicurso | 11/11 correctas |
+| Conservación histórica previa | 89/89 correctas |
+| Pruebas del origen, incluidas las primeras entregas Git | 5/5 correctas |
+| Regresiones del diagnóstico de mapas | 4/4 correctas |
+| Regresiones de auditoría estructural | 9/9 correctas |
+| Programación 1 | 162 lecciones, 7.438 bloques, 178 archivos JSON |
+| Programación 2 | 28 lecciones, 1.561 bloques, 35 archivos JSON |
+| Total | 190 lecciones, 8.999 bloques, 213 archivos JSON |
+| Incidencias estructurales y de mapas en los cursos reales | 0 |
+| CLI habitual por curso y CLI conjunto con `--base-ref HEAD` | Correctos |
+
+Las cinco tareas del workflow de oráculos C++23, CMake y capturas de
+AssetCheck también aprobaron en
+[`43022020472`](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43022020472),
+con alcance de runners y fuentes curriculares, no de la instalación completa
+ni de la evaluación personal del estudiante.
+
+Se retiró del registro único el encargo `CURRICULO_VALIDACION_MULTICURSO`
+solo después de constatar estas pruebas. Los demás pendientes de acreditación
+real de programas, compilación, capturas y proyecto externo de AssetCheck
+permanecen abiertos. Esta corrección no certifica la semántica de todas las
+soluciones C++ ni la experiencia visual o auditiva en la aplicación Windows.

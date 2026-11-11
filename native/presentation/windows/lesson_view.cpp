@@ -12,6 +12,7 @@
 #include "presentation/windows/settings_view.hpp"
 #include "presentation/windows/cpp_fill_view.hpp"
 #include "presentation/windows/cpp_project_view.hpp"
+#include "platform/windows/cpp_history_training.hpp"
 #include "presentation/windows/math_puzzle_view.hpp"
 #include "presentation/windows/math_expression_editor.hpp"
 #include "presentation/windows/native_math_text.hpp"
@@ -54,6 +55,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <cstdio>
 #include <exception>
 #include <memory>
 #include <map>
@@ -132,6 +134,8 @@ struct BlockControls {
     std::unique_ptr<CodeEditor> answer_editor, source_editor, input_editor;
     // Destroy the project controls before their shared source editor.
     std::unique_ptr<CppProjectView> project;
+    // Ephemeral, source-bound observation. It never rewrites saved grades.
+    std::unique_ptr<windows::CmakeSelectiveRecoveryTrace> selective_recovery;
     std::unique_ptr<windows::CodeGutter> simulated_gutter;
     std::unique_ptr<CppFillView> fill;
     std::unique_ptr<MathPuzzleView> math;
@@ -2142,11 +2146,14 @@ struct LessonView {
         try{const auto state=windows::inspect_cpp_project(program_snapshot(index));configured=state.configured;built=state.built;}
         catch(...){valid=false;}
         vm.project->set_availability(busy,configured,built);
-        EnableWindow(vm.compile,!busy&&valid&&(!block(index).cmake||block(index).output_check||built));
+        EnableWindow(vm.compile,!busy&&valid&&(!block(index).cmake||
+            (block(index).output_check&&block(index).compiler_workflow_check!=
+                curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1)||built));
     }
     void project_changed(std::size_t index,bool source_changed) {
         if(updating)return;auto& vm=controls.at(index);
-        if(source_changed){++vm.revision;clear_reference_completion(index);if(running_block==index)worker.request_stop();
+        if(source_changed){if(vm.selective_recovery&&vm.selective_recovery->complete())vm.selective_recovery->invalidate();
+            ++vm.revision;clear_reference_completion(index);if(running_block==index)worker.request_stop();
             const auto current=program_snapshot(index);
             windows::invalidate_compiler_puzzle_attempt(data,lesson,block(index),current);
             // An earned objective does not keep a rejection for an old draft
@@ -2959,6 +2966,8 @@ struct LessonView {
                 const auto saved_cmake=state::string_value(data,"cpp_lesson_drafts",draft_key(index)+"/cmake");
                 const auto active=store.root()/"active";
                 const auto history_root=(std::filesystem::exists(active/"android")?active/"android":active)/"files"/"cpp_project_history";
+                if(windows::compiler_selective_history_required(lesson,current))
+                    vm.selective_recovery=std::make_unique<windows::CmakeSelectiveRecoveryTrace>(current);
                 vm.project=std::make_unique<CppProjectView>(pane,current,vm.source,*vm.source_editor,saved_project,saved_cmake,
                     history_root,draft_key(index),interface_language(data),CppProjectCallbacks{
                         [this,index](std::string project,std::string cmake){auto& preferences=data.preferences["cpp_lesson_drafts"];
@@ -2967,7 +2976,13 @@ struct LessonView {
                             if(!cmake.empty()&&state::string_value(data,"cpp_lesson_drafts",base+"/cmake")!=cmake){preferences[base+"/cmake"]=std::move(cmake);changed=true;}
                             if(changed)mark_dirty();},
                         [this,index](bool changed){project_changed(index,changed);},
-                        [this,index](windows::CppRunRequest::Action action){run(index,action);}});
+                        [this,index](windows::CppRunRequest::Action action){run(index,action);},
+                        [this,index](const windows::CppHistoryRecoveryEvidence& proof){
+                            if(auto* trace=controls.at(index).selective_recovery.get())trace->restore(proof);},
+                        [this,index](const windows::CppHistoryComparisonEvidence& proof){
+                            if(auto* trace=controls.at(index).selective_recovery.get())trace->compare(proof);},
+                        [this,index](const windows::CppHistoryRecordEvidence& proof){
+                            if(auto* trace=controls.at(index).selective_recovery.get())trace->record(proof);}});
                 SetWindowLongPtrW(vm.project->window(),GWLP_ID,control_id(index,5));
                 rows.push_back({{vm.project->window()},{0},48,false});rows.back().padding_after=0;
             }
@@ -3001,7 +3016,9 @@ struct LessonView {
                 rows.push_back({{vm.input}, {0}, 74, false});
             }
             vm.compile = button(current.compile_check ? ui("Compilar y comprobar diagnóstico","Compile and check diagnostic","Compiler et vérifier le diagnostic")
-                : current.output_check ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
+                : current.output_check&&current.compiler_workflow_check!=
+                    curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1
+                    ? ui("Compilar, ejecutar y comprobar","Compile, run and check","Compiler, exécuter et vérifier")
                 : current.cmake?ui("Ejecutar objetivo construido","Run built target","Exécuter la cible construite")
                 : ui("Compilar y ejecutar","Compile and run","Compiler et exécuter"), control_id(index, 11), {0, ActionType::run, index});
             rows.push_back({{vm.compile}, {0}, 48, false});
@@ -3785,7 +3802,10 @@ struct LessonView {
         auto& vm = controls.at(index);
         vm.console_channels = {};
         request.request_id = ++request_id; request.revision = vm.revision;
-        if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&!block(index).output_check)action=windows::CppRunRequest::Action::execute;
+        if(block(index).cmake&&action==windows::CppRunRequest::Action::compile_run&&
+            (!block(index).output_check||block(index).compiler_workflow_check==
+                curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1))
+            action=windows::CppRunRequest::Action::execute;
         request.action=action;running_action=action;
         // Disabling the focused run button leaves the active app without a
         // keyboard target. Hand focus back synchronously; completion must not
@@ -3832,6 +3852,7 @@ struct LessonView {
         if (worker.joinable()) worker.join();
         auto& vm = controls.at(index); EnableWindow(vm.compile, TRUE);refresh_project_actions(index);
         if (result->revision != vm.revision) return;
+        if(vm.selective_recovery)vm.selective_recovery->run(running_program,*result);
         if(block(index).compile_check){
             vm.console_channels={};
             auto diagnostics=diagnostic_text(result->compilation.stdout_bytes+result->compilation.stderr_bytes);
@@ -3956,8 +3977,14 @@ struct LessonView {
         console_present(index,preferred_channel);
         if (block(index).output_check&&executed) {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
-                const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct;
+                const bool preserved_source=windows::compiler_runtime_request_allowed(
+                    block(index),running_program);
+                const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct&&preserved_source;
                 auto text = verdict_text(correct);
+                if(!preserved_source)text+='\n'+ui(
+                    "Este objetivo exige conservar todos los archivos originales, la entrada y las opciones CMake.",
+                    "This objective requires the exact original project files, input and CMake options.",
+                    "Cet objectif exige de conserver les fichiers, l'entrée et les options CMake d'origine.");
                 if(evaluation.stdout_correct&&!evaluation.exit_code_correct)text+='\n'+ui(
                     "La salida estándar es correcta; el código de salida no coincide con el requerido.",
                     "Standard output is correct; the process exit code does not match the required code.",
@@ -3967,12 +3994,76 @@ struct LessonView {
                     "Standard output is correct; the requested runtime diagnostic is missing from stderr.",
                     "La sortie standard est correcte ; le diagnostic d’exécution demandé manque dans stderr.");
                 else if (!evaluation.feedback.empty()) text += "\n" + evaluation.feedback;
-                const bool objective_completed=correct&&windows::record_compiler_puzzle_case(data,lesson,block(index),running_program,fresh,text);
+                // A prior stdout-only receipt stays stored, but is not a new
+                // history achievement. A previously authenticated sequence
+                // remains earned across reopening or unrelated edits.
+                const bool history_earned=windows::compiler_puzzle_completed(data,lesson,block(index));
+                const bool history_ready=!vm.selective_recovery||vm.selective_recovery->complete()||history_earned;
+                const bool output_recorded=correct&&history_ready&&
+                    windows::record_compiler_puzzle_case(data,lesson,block(index),running_program,fresh,text);
+                const bool objective_completed=output_recorded&&
+                    (!vm.selective_recovery||history_earned||
+                     windows::record_compiler_selective_history_completion(
+                         data,lesson,block(index),running_program,fresh,*vm.selective_recovery));
                 if(!correct&&windows::record_compiler_puzzle_review(data,lesson,block(index),running_program,fresh,text)){
                     mark_dirty();flush();
                 }
                 if(!correct||objective_completed){feedback(index,text,objective_completed,true,false,evaluation.feedback_path);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
-                else if(vm.status)set_rich_text(vm.status,compiler_progress_text(index,true));
+                else if(correct&&vm.selective_recovery&&!objective_completed){
+                    // This guidance is EXCLUSIVE to the U3 historical CMake
+                    // editor. Other C++ activities keep their normal case
+                    // progress, even when several inputs must be checked.
+                    using Stage=windows::CmakeSelectiveRecoveryTrace::Stage;
+                    auto text=ui("Salida correcta, pero falta acreditar la secuencia.",
+                        "Output matches, but the history sequence is not yet verified.",
+                        "La sortie correspond, mais la séquence historique reste à vérifier.");
+                    switch(vm.selective_recovery->stage()){
+                    case Stage::unrecorded:
+                        text+="\n"+ui("Registra primero la versión inicial de los seis archivos desde Historial.",
+                            "First record the original six-file revision in History.",
+                            "Enregistrez d'abord la révision initiale des six fichiers dans l'historique.");
+                        break;
+                    case Stage::recorded:
+                        text+="\n"+ui("Modifica la fórmula de cajas.cpp y añade un comentario a CMakeLists.txt; construye el proyecto defectuoso.",
+                            "Change the formula in cajas.cpp, add a comment to CMakeLists.txt, then build the defective project.",
+                            "Modifiez la formule dans cajas.cpp, ajoutez un commentaire à CMakeLists.txt, puis construisez le projet défectueux.");
+                        break;
+                    case Stage::failed_built:
+                        text+="\n"+ui("Ejecuta el objetivo defectuoso para comprobar los tres fallos y el código de salida 1.",
+                            "Run the defective target to observe three failures and exit code 1.",
+                            "Exécutez la cible défectueuse pour observer les trois échecs et le code de sortie 1.");
+                        break;
+                    case Stage::failed_executed:
+                    case Stage::compared_one:
+                        text+="\n"+ui("Compara las dos rutas modificadas con la misma revisión guardada en Historial.",
+                            "Compare both changed files with the same recorded revision in History.",
+                            "Comparez les deux fichiers modifiés avec la même révision enregistrée dans l'historique.");
+                        break;
+                    case Stage::compared_both:
+                        text+="\n"+ui("Recupera únicamente componente/src/cajas.cpp desde esa revisión, conservando el comentario de la raíz.",
+                            "Restore only componente/src/cajas.cpp from that revision, retaining the root comment.",
+                            "Restaurez seulement componente/src/cajas.cpp depuis cette révision, en conservant le commentaire de la racine.");
+                        break;
+                    case Stage::source_restored:
+                        text+="\n"+ui("Construye de nuevo el objetivo con la fuente recuperada.",
+                            "Build the target again with the restored source.",
+                            "Reconstruisez la cible avec le fichier source restauré.");
+                        break;
+                    case Stage::restored_built:
+                        text+="\n"+ui("Ejecuta de nuevo el objetivo reconstruido y comprueba las siete coincidencias.",
+                            "Run the rebuilt target and verify all seven matches.",
+                            "Exécutez la cible reconstruite et vérifiez les sept correspondances.");
+                        break;
+                    case Stage::verified:
+                        text+="\n"+ui("Revisa que la ejecución final pertenezca a este mismo proyecto y objetivo.",
+                            "Check that the final execution belongs to this project and target.",
+                            "Vérifiez que l'exécution finale correspond à ce projet et à cette cible.");
+                        break;
+                    }
+                    feedback(index,text,false,true);
+                    if(hooks.feedback_changed)hooks.feedback_changed(window,index,false);
+                }
+                else if(correct&&vm.status)set_rich_text(vm.status,compiler_progress_text(index,true));
                 if (objective_completed && has_references(block(index))) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
                 }
@@ -4234,6 +4325,7 @@ struct LessonView {
         case ActionType::reset:
             if (running_block == action.block) cancel_run();
             windows::reset_compiler_puzzle(data,lesson,block(action.block));
+            if(vm.selective_recovery)vm.selective_recovery->invalidate();
             refresh_compiler_history(action.block);
             clear_reference_completion(action.block);feedback(action.block,"",false);mark_dirty();
             if(vm.project){vm.project->reset();capture_draft(action.block);mark_dirty();refresh_references();break;}

@@ -1,0 +1,46 @@
+name: P2 U3 CMake selective recovery evidence
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/p2-u3-cmake-history.yml
+      - scripts/curriculum/verify_p2_u3_history_cmake_windows.py
+      - scripts/curriculum/test_p2_u3_history_cmake_windows.py
+      - scripts/curriculum/verify_assetcheck_cmake_preparation_windows.py
+      - app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p2-u3-cmake-history-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  reproduce:
+    name: Compare CMake failing state and restored source using MSVC x64
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 18
+    steps:
+      - name: Fetch exact published lesson and executable recipes
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Select Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12'
+      - name: Check published history exercise and independent oracles
+        run: python -m unittest discover -s scripts/curriculum -p test_p2_u3_history_cmake_windows.py -v
+      - name: Configure compile execute defect then selectively restore and rebuild
+        run: python scripts/curriculum/verify_p2_u3_history_cmake_windows.py --report out/qa/p2-u3-history-cmake/msvc-x64.json
+      - name: Preserve exact scope and run observations
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p2-u3-history-msvc-x64-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: out/qa/p2-u3-history-cmake/msvc-x64.json

@@ -36,9 +36,11 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests')
+            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests')
             Results = 'state-import'
             Tests = @(
+                'native.cpp_project_history',
+                'native.cpp_history_training',
                 'native.remainder_published26_state_import',
                 'native.remainder_published30_state_import',
                 'native.u11_assignment_state_import',
@@ -67,7 +69,8 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @(
                 'lgaed_lesson_reader_tests',
                 'lgaed_u11_declarations_reader_tests',
-                'lgaed_u6_diagnostic_flow_tests'
+                'lgaed_u6_diagnostic_flow_tests',
+                'lgaed_cpp_project_view_tests'
             )
             Results = 'reader-build'
         }
@@ -326,8 +329,9 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite target did not configure or compile." }
 
 if ($Suite -eq 'ReaderBuild') {
-    # Building original executables is evidence of compilation/linkage only.
-    # Do not invoke CTest, create fixtures or claim a reader/audio result here.
+    # The original reader/U6 executables are only compiled. The separate
+    # project-view executable exercises the real Win32 history dialog in
+    # an isolated QA directory; it does NOT grade any lesson or play audio.
     $qaBuiltTargets = foreach ($qaTarget in $qaSuiteConfig.Targets) {
         $qaExecutable = Join-Path $qaBuild "$qaTarget.exe"
         if (-not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
@@ -344,7 +348,19 @@ if ($Suite -eq 'ReaderBuild') {
     $qaBuiltTargets | ConvertTo-Json |
         Set-Content -LiteralPath (Join-Path $qaBuild 'reader-build-results.json') -Encoding utf8
     $qaBuiltTargets | Format-Table -AutoSize | Out-String | Write-Host
-    Write-Host 'PASS original reader/U6 executables compiled and linked; no reader tests, synthesis or playback executed.'
+    # A focused registration cannot silently omit the UI regression.
+    $qaUiListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the project history UI test registration.' }
+    $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
+    $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase')
+    if ($qaUiNames.Count -ne $qaUiExpected.Count -or
+        (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
+        throw 'ReaderBuild must register all twelve Win32 QA cases: original History, declared workflow, entry gates and unrelated C++ multicase.'
+    }
+    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 300
+    if ($LASTEXITCODE -ne 0) { throw 'The native Win32 History or focused U3 lesson regression failed.' }
+    Write-Host 'PASS original reader/U6 executables compiled and linked; actual Win32 History dialogs and focused published U3 lesson execution/reopen/reset tested. No reader/audio playback executed.'
     return
 }
 

@@ -2313,6 +2313,68 @@ std::optional<std::string> narration_language_tag(std::string_view authored) {
     return narration_tag(winrt::to_hstring(authored));
 }
 
+void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerWorkflowChecks"))return;
+    // Bind the new evidence requirement only after the immutable addresses
+    // have been checked. Original editor JSON and stdout receipts stay intact.
+    const auto checks=array(root,"compilerWorkflowChecks");
+    require(checks.Size()==1,"The U3 History workflow requires a unique owner");
+    const auto item=checks.GetObjectAt(0);
+    allowed_keys(item,{"activity","kind"},true);
+    require(text(item,"activity")=="block_0010_0003"&&
+            text(item,"kind")=="cmakeSelectiveRecoveryV1",
+            "Unknown compiler workflow owner or kind");
+    require(lesson.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"&&
+            lesson.locale=="es"&&lesson.state_layout.version==2&&
+            lesson.pages.size()==13&&lesson.pages[10].blocks.size()>3,
+            "Selective History belongs to the original Spanish U3 lesson");
+    auto& owner=lesson.pages[10].blocks[3];
+    require(owner.stable_id=="block_0010_0003"&&owner.type==BlockType::cpp_compiler&&
+            owner.output_check&&owner.output_check->cases.size()==1&&
+            owner.cmake&&owner.cmake->target=="comprobar_cajas"&&
+            owner.cmake->build_type=="Debug"&&owner.project_files.size()==6,
+            "Declared U3 History owner has an incompatible CMake objective");
+    owner.compiler_workflow_check=CompilerWorkflowCheck::cmake_selective_recovery_v1;
+}
+
+void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerRuntimeChecks"))return;
+    const auto records=array(root,"compilerRuntimeChecks");
+    require(records.Size()==1,"A reviewed original-project runtime check requires exactly one owner");
+    const auto record=records.GetObjectAt(0);
+    allowed_keys(record,{"activity","kind"},true);
+    require(text(record,"activity")=="block_0009_0008"&&
+            text(record,"kind")=="exactOriginalProjectRuntimeV1",
+        "Unknown compiler runtime activity or contract");
+    require(lesson.id=="programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"&&
+            lesson.locale=="es"&&lesson.state_layout.version==2&&
+            lesson.pages.size()==14&&lesson.pages[9].blocks.size()>8,
+        "The original-project runtime goal belongs to the Spanish U2L3 lesson");
+    auto& owner=lesson.pages[9].blocks[8];
+    require(owner.stable_id=="block_0009_0008"&&owner.type==BlockType::cpp_compiler&&
+            !owner.output_check&&!owner.compile_check&&owner.project_files.size()==5&&
+            owner.cmake&&owner.cmake->target=="revisar"&&owner.cmake->build_type=="Debug"&&
+            owner.cmake->options==std::map<std::string,std::string>{{"ACEPTAR_IGUAL","OFF"}}&&
+            owner.standard_input==std::optional<std::string>{"6"}&&owner.source_files.empty(),
+        "The U2L3 client no longer has its original, unevaluated CMake contract");
+    const auto source=std::ranges::find(owner.project_files,std::string("main.cpp"),&CppProjectFiles::value_type::first);
+    require(source!=owner.project_files.end()&&
+            source->second.find("std::cerr << \"Entrada invalida\";")!=std::string::npos&&
+            source->second.find("return 2;")!=std::string::npos,
+        "The reviewed original-project goal needs its unchanged reading-rejection client");
+    OutputCase check;
+    check.standard_input="6";
+    check.outputs={""};
+    check.executable="revisar";
+    check.exit_code=2;
+    check.standard_error_exact="Entrada invalida";
+    check.explanation="La segunda extracción llega a EOF. El cliente conserva stdout vacío, informa en stderr y termina normalmente con código 2.";
+    OutputCheck objective;objective.input_comparison=TextComparison::exact;
+    objective.cases.push_back(std::move(check));
+    owner.output_check=std::move(objective);
+    owner.compiler_workflow_check=CompilerWorkflowCheck::exact_original_project_runtime_v1;
+}
+
 curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view expected_locale) {
     require(known_locale(expected_locale), "Unsupported asset language");
     ensure_winrt_apartment();
@@ -2348,6 +2410,8 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_compiler_workflow_checks(root,lesson);
+        read_compiler_runtime_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
@@ -2398,7 +2462,10 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                 const auto block = blocks.GetAt(b).GetObject();
                 const auto raw = original.text(original_blocks[b]);
                 if (text(block,"type") == "cpp_compiler") {
-                    if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")) {
+                    const bool declared_runtime=root.HasKey(L"compilerRuntimeChecks")&&
+                        lesson.id=="programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"&&
+                        p==9&&b==8;
+                    if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||declared_runtime) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
                         page.blocks.push_back(read_block(block,raw));
@@ -2424,6 +2491,8 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
+        read_compiler_workflow_checks(root,lesson);
+        read_compiler_runtime_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);

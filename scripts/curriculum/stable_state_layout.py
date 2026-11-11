@@ -38,7 +38,7 @@ V2_FIELDS = {"version", "locale", "origin", "current", "family", "additions", "e
 V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"})
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -1681,11 +1681,96 @@ def _validate_crt_output_variants(document: dict) -> None:
                             "A historical reviewed CRT spelling must retain its current archived or active contract")
 
 
+def _validate_compiler_workflow_checks(document: dict) -> None:
+    """Bind U3 History to its existing editor without changing any saved response."""
+    if "compilerWorkflowChecks" not in document:
+        return
+    checks = document["compilerWorkflowChecks"]
+    require(type(checks) is list and len(checks) == 1,
+            "The U3 History workflow needs exactly one owner")
+    item = checks[0]
+    require(type(item) is dict and set(item) == {"activity", "kind"}
+            and item["activity"] == "block_0010_0003"
+            and item["kind"] == "cmakeSelectiveRecoveryV1",
+            "Unknown or duplicated U3 History workflow")
+    meta = document.get("stateLayout")
+    require(document.get("id") ==
+            "programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
+            and type(meta) is dict and meta.get("version") == 2
+            and meta.get("locale") == "es",
+            "U3 History requires the original Spanish v2 lesson")
+    pages = document["pages"]
+    require(len(pages) == 13 and len(pages[10]["blocks"]) > 3
+            and meta["current"][10]["blocks"][3] == item["activity"],
+            "U3 History moved away from its immutable editor")
+    owner = pages[10]["blocks"][3]
+    cmake = owner.get("cmake")
+    require(owner.get("type") == "cpp_compiler"
+            and type(owner.get("projectFiles")) is list
+            and len(owner["projectFiles"]) == 6
+            and type(cmake) is dict
+            and cmake.get("target") == "comprobar_cajas"
+            and cmake.get("buildType") == "Debug"
+            and type(owner.get("outputCheck")) is dict
+            and len(owner["outputCheck"].get("cases", [])) == 1,
+            "U3 History owner no longer has its reviewed CMake objective")
+
+
+
+def _validate_compiler_runtime_checks(document: dict) -> None:
+    """One reviewed closed runtime rejection without rewriting its CMake editor.
+
+    This is deliberately separate from open semantic stderr objectives: a
+    nonempty diagnostic alone cannot accredit their factual content.
+    """
+    if "compilerRuntimeChecks" not in document:
+        return
+    records = document["compilerRuntimeChecks"]
+    require(type(records) is list and len(records) == 1,
+            "The source-pinned U2 runtime objective requires exactly one owner")
+    item = records[0]
+    require(type(item) is dict and set(item) == {"activity", "kind"} and
+            item["activity"] == "block_0009_0008" and
+            item["kind"] == "exactOriginalProjectRuntimeV1",
+            "Unknown compiler runtime owner or kind")
+    layout = document.get("stateLayout")
+    require(document.get("id") ==
+            "programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"
+            and type(layout) is dict and layout.get("version") == 2
+            and layout.get("locale") == "es",
+            "This runtime declaration requires its original Spanish v2 lesson")
+    pages = document.get("pages")
+    require(type(pages) is list and len(pages) == 14 and
+            len(pages[9]["blocks"]) > 8 and
+            layout["current"][9]["blocks"][8] == item["activity"],
+            "The declared runtime goal moved away from its historical editor")
+    block = pages[9]["blocks"][8]
+    cmake = block.get("cmake")
+    files = block.get("projectFiles")
+    require(block.get("type") == "cpp_compiler" and
+            "outputCheck" not in block and "compileCheck" not in block and
+            block.get("initialStandardInput") == "6" and
+            type(cmake) is dict and cmake.get("target") == "revisar" and
+            cmake.get("buildType") == "Debug" and
+            cmake.get("options") == {"ACEPTAR_IGUAL": "OFF"} and
+            type(files) is list and len(files) == 5 and
+            "sourceFiles" not in block,
+            "The U2 runtime owner changed its source, input or CMake conditions")
+    names = {entry.get("path"): entry.get("initialCode") for entry in files
+             if type(entry) is dict}
+    require(len(names) == 5 and "main.cpp" in names and
+            'std::cerr << "Entrada invalida";' in names["main.cpp"] and
+            "return 2;" in names["main.cpp"],
+            "The published client cannot be evaluated as the reviewed EOF case")
+
+
 def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     """Return immutable storage coordinates after validating state and links."""
     if "compilerPuzzlesRequired" in document:
         require(type(document["compilerPuzzlesRequired"]) is bool, "compilerPuzzlesRequired must be boolean")
     mapping = _validate_state_layout(document)
+    _validate_compiler_workflow_checks(document)
+    _validate_compiler_runtime_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
     _validate_compile_checks(document)
@@ -1944,6 +2029,12 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             "A reorder cannot modify lesson metadata")
     require(not baseline.get("compilerPuzzlesRequired", False) or current.get("compilerPuzzlesRequired", False),
             "Published mandatory compiler puzzles cannot be silently disabled")
+    require(not baseline.get("compilerWorkflowChecks") or
+            baseline.get("compilerWorkflowChecks") == current.get("compilerWorkflowChecks"),
+            "Published compiler workflow cannot be removed or changed")
+    require(not baseline.get("compilerRuntimeChecks") or
+            baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
+            "Published compiler runtime objective cannot be removed or rewritten")
     def shells(document):
         return {record["id"]: {k: v for k, v in page.items() if k != "blocks"}
                 for page, record in zip(document["pages"], document["stateLayout"]["current"])}
@@ -2060,10 +2151,69 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
                 "Published content was assigned to another identity without a verified move")
 
 
+# These two AssetCheck lessons were first published with ten incorrect SHA
+# values in family.es.origin. Their own origin and literal source were correct.
+# Authenticate the exact malformed first deliveries, never a later revision.
+_ASSETCHECK_FIRST_DELIVERY_ORIGIN_REPAIRS = {
+    "programming_practice_tools__proyecto_assetcheck__preparar_y_comprobar_cmake_en_windows":
+        "8a51e32a9094c27e4cd6f3ae685c851774edec54b480808081795359269865cd",
+    "programming_practice_tools__proyecto_assetcheck__disenar_probar_y_presentar_variante_propia":
+        "35fb6217e01e487d0ec5a976e362b1c86e8bbb560b360ceeeeae3ca7012dfce1",
+}
+
+
+def _literal_first_published_origin(document: dict) -> list[dict]:
+    """Recalculate first-delivery slots without discarding required v2 links.
+
+    Calling prepare() on a layout-free copy would invalidate textSemantics and
+    referenceAfter, which themselves require stable page/block identities.
+    The caller must authenticate the exact original document first.
+    """
+    return [
+        {"id": f"page_{page_index:04d}",
+         "blocks": [
+             {"id": f"block_{page_index:04d}_{block_index:04d}",
+              "sha256": state_fingerprint(block)}
+             for block_index, block in enumerate(page["blocks"])
+         ]}
+        for page_index, page in enumerate(_pages(document))
+    ]
+
+
+def _is_exact_assetcheck_initial_origin_repair(previous: dict, current: dict) -> bool:
+    """Accept only the single, source-authenticated correction of two bad manifests.
+
+    The existing original block identities, all source content, answers and
+    layout data must remain untouched. A later family rewrite cannot use this.
+    """
+    published = _ASSETCHECK_FIRST_DELIVERY_ORIGIN_REPAIRS.get(previous.get("id"))
+    if published is None or fingerprint(previous) != published:
+        return False
+    prior = previous.get("stateLayout")
+    if (type(prior) is not dict or prior.get("version") != 2 or
+            prior.get("locale") != "es" or
+            type(prior.get("family")) is not dict or set(prior["family"]) != {"es"}):
+        return False
+    original_source = _without_layout(previous)
+    literal_origin = _literal_first_published_origin(previous)
+    require(prior["origin"] == literal_origin,
+            "The original AssetCheck owners differ from the first published lesson")
+    require(prior["family"]["es"]["sha256"] == fingerprint(original_source),
+            "The AssetCheck family does not belong to the first published source")
+    repaired = deepcopy(previous)
+    repaired["stateLayout"]["family"]["es"]["origin"] = deepcopy(literal_origin)
+    if repaired == previous or current != repaired:
+        return False
+    validate(current)
+    return True
+
+
 def validate_transition(previous: dict, current: dict) -> None:
     """Never authorize a renamed origin or changed answer while allowing a reorder."""
     require("stateLayout" in current, "A reordered lesson needs an identity manifest")
     if type(current["stateLayout"]) is dict and current["stateLayout"].get("version") == 2:
+        if _is_exact_assetcheck_initial_origin_repair(previous, current):
+            return
         _validate_transition_v2(previous, current)
         return
     require(not (type(previous.get("stateLayout")) is dict and previous["stateLayout"].get("version") == 2),
@@ -2078,6 +2228,12 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(previous_other == current_other, "A reorder cannot modify lesson metadata")
     require(not baseline.get("compilerPuzzlesRequired", False) or current.get("compilerPuzzlesRequired", False),
             "Published mandatory compiler puzzles cannot be silently disabled")
+    require(not baseline.get("compilerWorkflowChecks") or
+            baseline.get("compilerWorkflowChecks") == current.get("compilerWorkflowChecks"),
+            "Published compiler workflow cannot be removed or changed")
+    require(not baseline.get("compilerRuntimeChecks") or
+            baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
+            "Published compiler runtime objective cannot be removed or rewritten")
     before_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
                      for page, item in zip(baseline["pages"], baseline["stateLayout"]["current"])}
     after_shells = {item["id"]: {k: v for k, v in page.items() if k != "blocks"}
@@ -2337,7 +2493,11 @@ def _validate_family_baseline(repository: Path, commit: str, family: str, member
         previous = prior_documents[relative]
         old_meta = previous.get("stateLayout")
         if type(old_meta) is dict and old_meta.get("version") == 2:
-            require(source == old_meta["family"][locale], "The published language provenance was replaced")
+            if source != old_meta["family"][locale]:
+                corrected = next((document for path, document in members if path == relative), None)
+                require(corrected is not None
+                        and _is_exact_assetcheck_initial_origin_repair(previous, corrected),
+                        "The published language provenance was replaced")
         else:
             require(source["sha256"] == fingerprint(_without_layout(previous))
                     and source["origin"] == prepare(previous)["stateLayout"]["origin"],

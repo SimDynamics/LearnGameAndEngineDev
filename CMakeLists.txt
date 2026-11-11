@@ -231,12 +231,107 @@ if(LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
 endif()
 
 if(LGAED_READER_BUILD_QA_ONLY)
-    option(BUILD_TESTING "Build the testing tree." ON)
+    include(CTest)
     if(NOT BUILD_TESTING)
         message(FATAL_ERROR "LGAED_READER_BUILD_QA_ONLY requires BUILD_TESTING=ON.")
     endif()
     lgaed_add_curricular_reader_test_targets()
-    message(STATUS "Focused native reader build: three original test executables; no CTest registration/execution, fixtures, synthesis runtime or application build.")
+    # The original reader tests are still only compiled. The history UI test
+    # exercises the actual Win32 record/compare/restore dialogs, without
+    # creating an app profile or evaluating learner completion.
+    add_executable(lgaed_cpp_project_view_tests native/presentation/windows/cpp_project_view_tests.cpp)
+    target_link_libraries(lgaed_cpp_project_view_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.cpp_project_internal_dialogs
+        COMMAND lgaed_cpp_project_view_tests "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history" --internal-dialogs)
+    set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
+    # Load the published U3 editor through the production Win32 lesson view.
+    # This focused QA uses its own profile; unrelated prerequisite pages are
+    # not artificially marked complete or silently granted to the student.
+    add_test(NAME native.cpp_project_u3_selective_lesson
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-selective
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_selective_lesson PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    # The original full thirteen-page lesson must still block a fresh user
+    # from jumping over prior multiple-choice and compiler requirements.
+    add_test(NAME native.cpp_project_u3_original_gates
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-gates
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_original_gates PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    # U2L3 has a closed runtime diagnostic: exact stderr and normal exit 2.
+    # Inject only a root declaration into an isolated in-memory original.
+    add_test(NAME native.cpp_project_u2_exact_eof
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u2-exact-eof
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/construccion_reproducible/lesson_opciones_y_revision_de_la_configuracion.json")
+    set_tests_properties(native.cpp_project_u2_exact_eof PROPERTIES TIMEOUT 240 RUN_SERIAL TRUE)
+    # The curricular declaration must preserve the original owner's stored keys.
+    # The root field is injected only into memory until Work publishes it.
+    add_test(NAME native.cpp_project_u3_declaration
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-declaration
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_declaration PROPERTIES TIMEOUT 60 RUN_SERIAL TRUE)
+    # Exercise the full native History interaction with the root declaration
+    # active in an in-memory curriculum, preserving the original JSON.
+    add_test(NAME native.cpp_project_u3_declared_selective
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-selective-declared
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_declared_selective PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    # An isolated student must solve actual early U3 questions before
+    # reaching the first CMake editor; later U3 pages remain gated.
+    add_test(NAME native.cpp_project_u3_original_prerequisites
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-prerequisites
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_original_prerequisites PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    # Original pages 1-5: genuine checked questions and an edited CMake
+    # project with two targets executed before any later page is permitted.
+    add_test(NAME native.cpp_project_u3_first_cmake
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-first-cmake
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_first_cmake PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    # Continue without synthetic progress: the original next ordering, question,
+    # failing source and repaired CMake test are all exercised in one reader.
+    add_test(NAME native.cpp_project_u3_first_cmake_repair
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-first-cmake-repair
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_first_cmake_repair PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    # Verify the real page-seven failure/repair and page-nine nested lotes
+    # CMake projects before permitting the published History editor.
+    add_test(NAME native.cpp_project_u3_real_history_gate
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-real-history-gate
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_real_history_gate PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    # Full original thirteen-page student path, no synthetic completions:
+    # the same editor records/compares/restores History, then checks final pages.
+    add_test(NAME native.cpp_project_u3_entire_original
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history"
+            --u3-entire-original
+            "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_reorganizar_la_descripcion_conservando_el_comprobador.json")
+    set_tests_properties(native.cpp_project_u3_entire_original PROPERTIES TIMEOUT 300 RUN_SERIAL TRUE)
+    # Regression for other C++ activities with multiple independent inputs:
+    # correct-but-partial answers must not display U3 History instructions.
+    add_test(NAME native.cpp_project_other_cpp_multicase
+        COMMAND lgaed_cpp_project_view_tests
+            "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history" --other-cases)
+    set_tests_properties(native.cpp_project_other_cpp_multicase PROPERTIES TIMEOUT 120 RUN_SERIAL TRUE)
+    message(STATUS "Focused reader build plus one real Win32 history dialog regression; no reader/audio test, fixture, synthesis runtime or application build.")
     return()
 endif()
 

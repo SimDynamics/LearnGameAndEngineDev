@@ -1,4 +1,4 @@
-name: Windows curricular reader build
+name: Windows curricular reader build and project history UI
 
 on:
   push:
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build:
-    name: Compile and link the original reader and U6 tests
+    name: Compile original readers and verify project history dialogs
     runs-on: windows-2025-vs2026
     timeout-minutes: 30
     defaults:
@@ -39,7 +39,7 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.15.2'
-      - name: Verify tools and compile the three original executables
+      - name: Compile readers and execute actual Win32 history dialog test
         run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
       - name: Preserve configure and compilation results
         if: always()
@@ -52,3 +52,5 @@ jobs:
             out/qa/reader-build-ci/CMakeFiles/CMakeConfigureLog.yaml
             out/qa/reader-build-ci/native-build.log
             out/qa/reader-build-ci/reader-build-results.json
+            out/qa/reader-build-ci/CTestTestfile.cmake
+            out/qa/reader-build-ci/Testing/Temporary/*.log

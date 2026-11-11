@@ -7,6 +7,14 @@
 #include <optional>
 
 namespace lgaed::windows {
+class CmakeSelectiveRecoveryTrace;
+// An execution objective that requires the published project, not merely
+// coincidentally matching stdout/stderr from a changed source.
+[[nodiscard]] bool compiler_runtime_request_allowed(const curriculum::Block&,
+    const CppRunRequest&);
+// The native evaluator and Win32 reader share the same curricular gate.
+[[nodiscard]] bool compiler_selective_history_required(const curriculum::Lesson&,
+    const curriculum::Block&);
 // A completed curricular objective belongs to the successful captured program,
 // never to the editable draft. Only the explicit exercise reset revokes it.
 [[nodiscard]] std::string compiler_program_frame(const CppRunRequest&);
@@ -49,6 +57,13 @@ void validate_compiler_puzzle_state(const state::StateData&, const curriculum::L
 // every authored input/target to pass with the same captured program.
 [[nodiscard]] bool record_compiler_puzzle_case(state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest&, const curriculum::FreshExecution&, std::string_view feedback);
+/* For the exact U3 recovery owner, a saved stdout proof remains historical;
+   a new independent sequence receipt requires authentic record, comparisons,
+   selective restore, both builds and both runs. Never infer it from stdout. */
+[[nodiscard]] bool record_compiler_selective_history_completion(state::StateData&, const curriculum::Lesson&,
+    const curriculum::Block&, const CppRunRequest&, const curriculum::FreshExecution&,
+    const CmakeSelectiveRecoveryTrace&);
+
 [[nodiscard]] bool record_compiler_diagnostic_case(state::StateData&, const curriculum::Lesson&,
     const curriculum::Block&, const CppRunRequest&, const CppRunResult&, std::string_view feedback);
 void invalidate_compiler_puzzle_attempt(state::StateData&, const curriculum::Lesson&, const curriculum::Block&,

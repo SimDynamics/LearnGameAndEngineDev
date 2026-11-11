@@ -14,6 +14,15 @@ struct CppProjectCallbacks {
     // Selecting another file/cursor does not change the compiled snapshot.
     std::function<void(bool source_changed)> changed;
     std::function<void(windows::CppRunRequest::Action)> run;
+    // Fired only after the existing UI actually applies a verified recovery.
+    // This is one observation, never a complete curricular achievement.
+    std::function<void(const windows::CppHistoryRecoveryEvidence&)> restored_file;
+    // Emitted when the app actually displays a comparison from the selected
+    // persisted revision to the captured draft. Viewing it is not grading.
+    std::function<void(const windows::CppHistoryComparisonEvidence&)> compared_file;
+    // Emitted only after the revision has been written atomically and
+    // reread from disk. It never marks a curriculum objective completed.
+    std::function<void(const windows::CppHistoryRecordEvidence&)> recorded_revision;
 };
 class CppProjectView {
 public:
