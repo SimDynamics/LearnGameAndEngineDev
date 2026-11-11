@@ -320,6 +320,53 @@ declaraciones compatibles y se comprueben los cinco editores reales sin
 dar crédito por ejecuciones anteriores. La revisión visual y auditiva
 personal continúa a cargo del estudiante.
 
+### Aserciones U3L9: aborto real, `NDEBUG` y corrección
+
+La capacidad de Windows para los tres editores originales de
+`programming_practice_tools__comprobaciones_repetibles__comprobar_acuerdos_internos_con_aserciones`
+se activa únicamente mediante estas declaraciones de raíz en la lección española v2:
+
+```json
+"compilerRuntimeChecks": [
+  {"activity": "block_0002_0003", "kind": "wasiAssertionAbortV1"},
+  {"activity": "block_0003_0007", "kind": "wasiAssertionSuppressedV1"},
+  {"activity": "block_0004_0007", "kind": "wasiAssertionRepairV1"}
+]
+```
+
+Cada editor utiliza su identidad histórica y **un solo caso visible obligatorio**.
+Su código inicial y la entrada `-1 5\n` se conservan. El lector selecciona
+específicamente WASI, con la versión de SDK y runtime fijadas para el proyecto;
+no sustituye la terminación por un código de MSVC ni acepta un número distinto
+de cero como demostración suficiente de una aserción.
+
+**Aserción activa:** se ejecuta la fuente original sin edición. La prueba
+comprueba una captura de ejecución real con fuente y artefacto WebAssembly,
+el rechazo público anterior, la expresión que falló, el archivo y función
+`cajas_para`, la ruta por `__assert_fail` y la trampa de Wasmtime. No se
+establece universalmente el código de aborto: se verifica la causa observable
+de esta compilación concreta. Una salida inventada, timeout o fallo genérico
+del runtime no acredita la actividad.
+
+**`NDEBUG`:** se mantiene la directiva antes de `<cassert>` y se usa la fuente
+original. La entrada preparada produce stdout `Cajas=1\n`, el rechazo público
+exacto en stderr y terminación normal con código `1`. Es un rechazo de
+solicitud manejado, no un aborto. El hecho de que el cálculo defectuoso llegue
+a imprimirse también evidencia que la condición de `assert` no detuvo el programa.
+
+**Reparación:** sólo se admite modificar la expresión inicializadora de
+`cajas` dentro de `cajas_para`; se conservan `assert`, las funciones públicas,
+las firmas y las demás instrucciones. El caso preparado debe producir
+`Cajas=2\n`, su diagnóstico público y retorno normal `1`. Además se
+ejecuta exactamente la fuente editada con dos entradas automáticas que
+cubren cero, múltiplos, sobrantes, la frontera superior y rechazos exteriores.
+El comprobador deriva independientemente los valores correctos y no admite
+una expresión literal que sólo acierte el primer caso.
+
+La activación por Work debe verificar la compatibilidad curricular antes de
+publicar estas declaraciones. Hasta entonces, los editores sin declaración
+conservan su estado original, sin crédito nuevo ni cambios de borradores.
+
 ## Entrada del laboratorio
 
 En un `cpp_compiler` curricular, el campo «Entrada» sólo aparece si el bloque declara `initialStandardInput` —también una cadena vacía, para permitir una actividad con EOF— o si algún caso de `outputCheck` declara una entrada no vacía. No se inspecciona el código del alumno para decidirlo. Sin esas declaraciones, la ejecución recibe entrada vacía y termina en EOF si intenta leer. Cualquier borrador de entrada anterior se conserva en almacenamiento, pero no se envía al programa mientras el campo no corresponda a esa actividad. El compilador libre del menú principal conserva su campo de entrada.
