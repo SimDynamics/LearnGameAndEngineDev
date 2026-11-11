@@ -19,8 +19,14 @@ DECLARATION = {"activity": "block_0009_0008", "kind": "exactOriginalProjectRunti
 class OriginalClientEofContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original = json.loads(ASSET.read_text(encoding="utf-8"))
-        assert "compilerRuntimeChecks" not in cls.original
+        cls.published = json.loads(ASSET.read_text(encoding="utf-8"))
+        assert cls.published.get("compilerRuntimeChecks") == [DECLARATION]
+        cls.original = deepcopy(cls.published)
+        del cls.original["compilerRuntimeChecks"]
+
+    def test_published_lesson_matches_the_reviewed_single_case(self):
+        self.assertEqual(self.published, self.proposed())
+        self.assertEqual(len(self.published["compilerRuntimeChecks"]), 1)
 
     def proposed(self):
         revised = deepcopy(self.original)

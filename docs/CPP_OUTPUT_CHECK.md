@@ -34,6 +34,22 @@ identificadas como Android conservan únicamente su alcance histórico.
 
 El ejemplo comprueba únicamente la construcción final de esa etapa. Las ejecuciones del original y de la primera variación siguen disponibles, sin exigir otro historial ni otra comprobación. No se añaden identificadores al bloque ni se modifica el progreso existente.
 
+## Criterio curricular posterior: primera comprobación suficiente
+
+La regla de avance indicada el 11 de noviembre de 2026 es acreditar **únicamente
+el primer caso** de un editor para continuar. Las demás entradas y salidas deben
+aparecer en el texto curricular y quedar disponibles para pruebas **opcionales**,
+sin exigir otra pulsación ni bloquear el lector, las referencias o las páginas.
+Las sondas internas que se ejecutan automáticamente durante la primera
+comprobación pueden seguir protegiendo los criterios semánticos: no son nuevas
+pruebas manuales que deba realizar el estudiante.
+
+**Estado de implementación:** el mecanismo Windows que guarda recibos de varios
+casos todavía exige acreditarlos todos. Por eso Work no activará declaraciones
+multicaso de U3L6 o U3L8 hasta que Codex separe el caso obligatorio de los
+ensayos optativos, sin debilitar las comprobaciones automáticas. La declaración
+de U2L3 anterior contiene un solo caso y sí respeta esta regla.
+
 ## Contrato
 
 - `cases` es un array no vacío. Cada caso declara `standardInput` de tipo texto (puede ser vacío) y `outputs`, una lista no vacía de salidas completas y distintas. Una salida vacía también es válida.
@@ -209,9 +225,10 @@ declaración a la lección española v2 correspondiente. No autoriza reemplazar
 las fuentes ni cambiar el objetivo para imitar el diagnóstico. Una vez
 publicado, el registro no puede retirarse o reescribirse en una transición.
 
-Esta extensión está preparada para su **integración curricular por Work**.
-Hasta entonces, la lección publicada no la activa. Las dos funciones abiertas
-de U3L6 necesitan todavía una evaluación semántica de los hechos del mensaje
+La declaración de U2L3 ya está integrada en el currículo español de `main`.
+Activa una única ejecución obligatoria: el rechazo de la segunda extracción al
+llegar a EOF. Las dos funciones abiertas de U3L6 necesitan una evaluación
+semántica de los hechos del mensaje
 y del flujo `std::ostream&` recibido. `standardErrorExact` o `nonBlank` no
 son sustitutos de esa capacidad. Los informes U3L8 requieren, además,
 conservar filas, índices y contadores, no solamente imprimir una cadena fija.
