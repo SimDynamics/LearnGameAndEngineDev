@@ -1151,6 +1151,62 @@ void standard_error_objective_tests(const Lesson& real_lesson) {
     auto restored = after; restored.output_check->cases.front().standard_error = StandardErrorExpectation::ignored;
     check(reference_objective_frame(real_lesson,before) == reference_objective_frame(upgraded,restored),
         "Stdout-only objective framing changed despite the absent stderr requirement");
+    // A newly authored diagnostic is exact UTF-8 including trailing LF.
+    // A nonzero *normal* completion may be an authored result, never an abort.
+    const auto exact_model = parse_lesson_json(R"json({"id":"exact_stderr","title":"Exact runtime diagnostic","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main(){}","outputCheck":{"cases":[{"standardInput":"bad\n","outputs":["Validos=0\n"],"exitCode":1,"standardErrorExact":"Linea=1:FORMATO\n","explanation":"Diagnostico verificado."}]}}]}]})json");
+    const auto& exact_block = exact_model.pages.front().blocks.front();
+    const auto& exact_goal = *exact_block.output_check;
+    check(exact_goal.cases.front().standard_error_exact == std::optional<std::string>{"Linea=1:FORMATO\n"},
+        "The exact runtime stderr objective was not loaded verbatim");
+    FreshExecution exact_exec{23,true,false,1,"bad\n","Validos=0\n",{}};
+    exact_exec.execution_completed = true;
+    exact_exec.standard_error = "Linea=1:FORMATO\n";
+    auto exact_result = evaluate_output_check(exact_goal,exact_exec,23);
+    check(exact_result.verdict==OutputVerdict::correct && exact_result.stderr_correct &&
+        exact_result.stdout_correct && exact_result.exit_code_correct,
+        "A byte-exact stderr diagnostic with an authored normal nonzero exit was rejected");
+    for (const auto& wrong : {"Linea=1:FORMATO", "Linea=2:FORMATO\n",
+                              "Linea=1:FORMATO\r\n", "Linea=1:FORMATO\nextra"}) {
+        exact_exec.standard_error = wrong;
+        exact_result = evaluate_output_check(exact_goal,exact_exec,23);
+        check(exact_result.verdict==OutputVerdict::incorrect && exact_result.stdout_correct &&
+            !exact_result.stderr_correct && exact_result.exit_code_correct &&
+            exact_result.feedback.find("exactamente")!=std::string::npos,
+            "A different stderr value satisfied an exact diagnostic goal");
+    }
+    exact_exec.standard_error = "Linea=1:FORMATO\n";
+    exact_exec.exit_code = 0;
+    check(evaluate_output_check(exact_goal,exact_exec,23).verdict!=OutputVerdict::correct,
+        "The wrong normal process exit code satisfied an exact diagnostic");
+    exact_exec.exit_code = 1;
+    exact_exec.execution_completed = false;
+    check(evaluate_output_check(exact_goal,exact_exec,23).verdict==OutputVerdict::unavailable,
+        "An abnormal termination with diagnostic text was credited as normal");
+    exact_exec.execution_completed = true;
+    check(evaluate_output_check(exact_goal,exact_exec,22).verdict==OutputVerdict::unavailable,
+        "An exact stderr diagnostic from an obsolete program revision was reused");
+
+    auto old_exact_block=exact_block;
+    old_exact_block.output_check->cases.front().standard_error_exact.reset();
+    check(reference_objective_frame(exact_model,exact_block)!=
+          reference_objective_frame(exact_model,old_exact_block),
+        "An older stdout/exit proof could satisfy a newly authored exact stderr objective");
+    for(const auto& malformed : {R"(null)",R"(true)",R"(42)",R"([])",R"({})"}) {
+        auto corrupt=std::string(R"json({"id":"bad_exact","title":"Bad type","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main(){}","outputCheck":{"cases":[{"standardInput":"","outputs":[""],"standardErrorExact":"SENTINEL"}]}}]}]})json");
+        replace_once(corrupt,R"("SENTINEL")",malformed);
+        rejects([&]{ (void)parse_lesson_json(corrupt); },
+            "Non-text exact stderr objective was accepted");
+    }
+    rejects([&] {
+        (void)parse_lesson_json(R"json({"id":"conflict","title":"Bad stderr goals","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main(){}","outputCheck":{"cases":[{"standardInput":"","outputs":[""],"standardError":"nonBlank","standardErrorExact":"diagnostic"}]}}]}]})json");
+    }, "Both exact and nonblank stderr objectives were accepted simultaneously");
+    const auto empty_exact = parse_lesson_json(R"json({"id":"empty_stderr","title":"Silence check","pages":[{"blocks":[{"type":"cpp_compiler","initialCode":"int main(){}","outputCheck":{"cases":[{"standardInput":"","outputs":["OK"],"standardErrorExact":""}]}}]}]})json");
+    FreshExecution empty_exec{27,true,true,0,"","OK",{}};
+    check(evaluate_output_check(*empty_exact.pages.front().blocks.front().output_check,empty_exec,27).verdict==OutputVerdict::correct,
+        "An explicitly empty stderr requirement was rejected");
+    empty_exec.standard_error="unexpected stderr";
+    check(evaluate_output_check(*empty_exact.pages.front().blocks.front().output_check,empty_exec,27).verdict==OutputVerdict::incorrect,
+        "Unexpected stderr was accepted by an explicitly empty stderr objective");
     std::cout << "Runtime stderr objectives, partial stdout, exact output, target/revision ownership and stable slots: PASS\n";
 }
 }
