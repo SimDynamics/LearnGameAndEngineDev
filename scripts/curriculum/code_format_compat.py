@@ -196,7 +196,10 @@ def source_projection(current: dict, original: dict) -> dict:
         target = projected
         for part in parts[:-1]:
             target = target[int(part)] if part.isdecimal() else target[part]
-        target[parts[-1]] = source
+        if isinstance(target, list):
+            target[int(parts[-1])] = source
+        else:
+            target[parts[-1]] = source
     return projected
 
 def require_source_lexical(original: dict, current: dict) -> bool:
