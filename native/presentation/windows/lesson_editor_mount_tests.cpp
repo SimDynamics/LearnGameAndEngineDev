@@ -4,6 +4,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
 #include "platform/windows/state_store.hpp"
+#include "presentation/windows/code_editor.hpp"
 #include "presentation/windows/code_gutter.hpp"
 #include "presentation/windows/lesson_view.hpp"
 #include "presentation/windows/reader_theme.hpp"
@@ -360,6 +361,63 @@ void authored_caption_first(){
     check(failures==0,"The reported first-frame caption differs from its identical peer or changes after unrelated input; inspect the recorded native metrics and pixel bounds");
     std::cout<<"PASS current U1L3 first captions: identical native glyphs before/after answer EN_CHANGE, raw metrics and offscreen paint; no desktop acceptance\n";
 }
+void authored_prediction_newline(){
+    const auto path=std::filesystem::path(build::source_root)/
+        "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_representar_procesar_y_recuperar.json";
+    const auto source_hash=state::sha256(state::read_bytes(path));
+    const auto lesson=windows::load_lesson(path);
+    check(lesson.pages.size()==11 && lesson.pages[1].blocks.size()>=2,
+        "The reported U2L10 page 2/11 no longer exists");
+    const auto& prediction=lesson.pages[1].blocks[1];
+    check(prediction.type==curriculum::BlockType::output_prediction &&
+        prediction.code.find("al_inicio")!=std::string::npos,
+        "The reported multiline output prediction changed identity");
+    state::StateData data;state::prepare_lesson_state(data,lesson);
+    state::save_current_page(data,lesson,1);
+    data.preferences["native_windows"]["ui_language"]=std::string("es");
+    data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};
+    View fixture(lesson,data,true);
+    check(lesson_page_state(fixture.view).index==1,"The multiline output prediction was not mounted on page 2");
+    const auto answer=fixture.control(1,2);
+    check(edit_text(answer).empty(),"The regression must begin with an empty answer");
+    fixture.reveal(answer);
+    SetFocus(answer);
+    const auto type=[&](const wchar_t* value){
+        SendMessageW(answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(value));pump();
+    };
+    const auto visible_lines=[&](const char* stage){
+        RECT format{},client{};GetClientRect(answer,&client);
+        SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+        POINT scroll{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+        POINTL first{},second{};
+        SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+        const auto second_index=SendMessageW(answer,EM_LINEINDEX,1,0);
+        check(second_index>=0,"Enter did not create a second RichEdit line");
+        SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second),second_index);
+        const auto line_height=second.y-first.y;
+        std::cout<<"PREDICTION "<<stage<<" client="<<client.bottom<<" format="<<format.top<<','<<format.bottom
+            <<" first="<<first.y<<" second="<<second.y<<" line_height="<<line_height
+            <<" scroll="<<scroll.y<<'\n';
+        check(scroll.y==0 && first.y>=format.top-2 && first.y<format.bottom,
+            "Pressing Enter hid the first written answer line");
+        check(line_height>0 && second.y+line_height<=format.bottom+3,
+            "The multiline output field did not grow to show its second line");
+    };
+    type(L"Inicio: 8");
+    MSG enter{};enter.hwnd=answer;enter.message=WM_KEYDOWN;enter.wParam=VK_RETURN;enter.lParam=1;
+    check(windows::CodeEditor::handle_key_message(enter),
+        "The original editor did not handle physical Enter");
+    enter.message=WM_KEYUP;(void)windows::CodeEditor::handle_key_message(enter);
+    pump();visible_lines("after-enter");
+    type(L"Ahora: 5");visible_lines("after-second-line");
+    const auto saved=fixture.saved();
+    const auto response=state::get_response(saved,lesson,prediction);
+    check(response && response->answer=="Inicio: 8\nAhora: 5" && !response->correct,
+        "Enter changed or silently completed the saved multiline answer");
+    check(state::sha256(state::read_bytes(path))==source_hash,
+        "The viewport regression changed curricular source data");
+    std::cout<<"PASS U2L10 page 2 native multiline prediction: first and second lines visible after Enter, exact answer saved\n";
+}
 void authored_editor_mount(){
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_un_lector_con_buffer_de_un_token.json";
     const auto original_hash=state::sha256(state::read_bytes(path));const auto lesson=windows::load_lesson(path);
@@ -436,13 +494,14 @@ void authored_editor_mount(){
 int main(int argc,char** argv){
     std::cout<<std::unitbuf;
     const bool caption_first=argc==2&&std::string_view(argv[1])=="--caption-first";
-    if(argc!=1&&!caption_first){
+    const bool prediction_newline=argc==2&&std::string_view(argv[1])=="--prediction-newline";
+    if(argc!=1&&!caption_first&&!prediction_newline){
         const bool shape=argc==4&&std::string_view(argv[1])=="--prepare-visual"
             &&(std::string_view(argv[2])=="u1"||std::string_view(argv[2])=="u11");
         const auto raw=shape?std::string_view(argv[3]):std::string_view{};
         const std::wstring token(raw.begin(),raw.end());
         if(!shape||!is_valid_qa_instance(token)){
-            std::cerr<<"Usage: lesson_editor_mount_tests [--caption-first | --prepare-visual <u1|u11> <safe-new-QA-token>]\n";return 2;
+            std::cerr<<"Usage: lesson_editor_mount_tests [--caption-first | --prediction-newline | --prepare-visual <u1|u11> <safe-new-QA-token>]\n";return 2;
         }
         // This branch performs JSON/state/file operations only. The original
         // no-argument regression owns every HWND/DPI/control initialization.
@@ -452,7 +511,7 @@ int main(int argc,char** argv){
     const auto previous_dpi=SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     const auto apartment=OleInitialize(nullptr);if(FAILED(apartment))return 2;
     INITCOMMONCONTROLSEX common{sizeof(common),ICC_STANDARD_CLASSES};InitCommonControlsEx(&common);int result=0;
-    try{if(caption_first)authored_caption_first();else authored_editor_mount();}
+    try{if(caption_first)authored_caption_first();else if(prediction_newline)authored_prediction_newline();else authored_editor_mount();}
     catch(const std::exception& error){std::cerr<<error.what()<<'\n';result=1;}
     OleUninitialize();if(previous_dpi)SetThreadDpiAwarenessContext(previous_dpi);return result;
 }
