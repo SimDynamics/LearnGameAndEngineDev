@@ -1572,6 +1572,13 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     }
     require(current_pages == origin_pages && current_blocks.size() + result.retired.size() == result.signatures.size(),
             "State map loses historical identities");
+    // Historical reading / bibliography checks compare against the immutable
+    // pre-format source, never an unreviewed hash of freshly spaced code.
+    const auto protected_source=[&](const std::string& owner,const JsonObject& current) {
+        if(const auto it=source_format_originals.find(owner);it!=source_format_originals.end())
+            return source_format_projection(current,it->second);
+        return current;
+    };
     std::map<std::string, std::string> editorial;
     std::map<std::string,std::set<std::pair<std::string,std::string>>> editorial_edges;
     std::map<std::string, std::set<std::string>> seen;
@@ -1612,7 +1619,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(fingerprint(previous)==before&&fingerprint(current)==after,"Bibliographic archive hashes do not match its exact block pair");
                 require(bibliography_pair(previous,current),"Bibliographic archive changed more than optional citation locators");
                 collect_actual();const auto actual=return_actual_blocks.find(id);
-                require(actual!=return_actual_blocks.end()&&state_fingerprint(previous)==state_fingerprint(actual->second),
+                require(actual!=return_actual_blocks.end()&&state_fingerprint(previous)==state_fingerprint(protected_source(id,actual->second)),
                     "Bibliographic archive changed the protected owner contract");
                 (void)read_block(previous,utf8(previous.Stringify()));(void)read_block(current,utf8(current.Stringify()));
                 bibliography_edges.push_back({prefix.Size(),id,before,after,previous,current,
@@ -1636,7 +1643,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 collect_actual();
                 const auto active=return_actual_blocks.find(id);
                 require(active!=return_actual_blocks.end()&&text(previous,"type")==text(active->second,"type")
-                    &&state_fingerprint(previous)==state_fingerprint(active->second),
+                    &&state_fingerprint(previous)==state_fingerprint(protected_source(id,active->second)),
                     "Editorial return archive changed the current owner's protected contract");
                 if(reviewed_intentional_exit_goal(previous))require(reviewed_intentional_exit_goal(active->second),
                     "A published intentional-exit objective cannot be removed by an editorial return");
