@@ -1,6 +1,8 @@
 #include "presentation/windows/order_code_view.hpp"
 #include "presentation/windows/rich_text.hpp"
 #include "presentation/windows/reader_theme.hpp"
+#include "platform/windows/content_loader.hpp"
+#include "native_build_config.hpp"
 #include <commctrl.h>
 #include <richedit.h>
 #include <windowsx.h>
@@ -182,6 +184,50 @@ struct ReentrantPaint {
     }
 };
 }
+void optional_root_metadata_preserves_published_history(){
+    using namespace lgaed;
+    constexpr auto relative="app/src/main/assets/content/es/programming/cpp_fundamentals/"
+        "programas_y_ejecucion/lesson_primer_programa_y_salida.json";
+    const auto original=windows::load_lesson(std::filesystem::path(build::source_root)/relative,"es");
+    check(original.pages.size()>3&&original.pages[3].blocks.size()>2,
+        "Original U1 code-order reader was not found");
+    const auto& block=original.pages[3].blocks[2];
+    check(block.stable_id=="block_0003_0002"&&block.type==curriculum::BlockType::order_code,
+        "Historical code-order identity no longer points to the same block");
+    auto bytes=original.raw_json;
+    constexpr std::string_view field="\"orderVisualSeparators\"";
+    const bool authored=bytes.find(field)!=bytes.npos;
+    if(!authored){
+        const auto location=bytes.find("  \"stateLayout\": {");
+        check(location!=bytes.npos,"Historical v2 state map lacks its single root");
+        bytes.insert(location,
+            "  \"orderVisualSeparators\": [{\"activity\":\"block_0003_0002\",\"count\":2}],\n");
+    }
+    const auto projected=windows::parse_lesson_json(bytes,"es");
+    const auto metadata=windows::parse_lesson_progress_metadata(bytes,"es");
+    const auto& owner=projected.pages[3].blocks[2];
+    const auto& progress=metadata.pages[3].blocks[2];
+    check(owner.optional_order_separators>0&&
+        progress.optional_order_separators==owner.optional_order_separators&&
+        owner.fragments==block.fragments&&owner.correct_order==block.correct_order&&
+        owner.raw_json==block.raw_json&&owner.address.page==block.address.page&&
+        owner.address.block==block.address.block&&
+        curriculum::order_representation_frame(owner)==curriculum::order_representation_frame(block)&&
+        curriculum::exercise_key(projected,owner)==curriculum::exercise_key(original,block)&&
+        curriculum::draft_key("programming",projected,owner)==curriculum::draft_key("programming",original,block),
+        "Root-only optional cards changed original answers, progress, source or reference keys");
+    if(!authored){
+        auto invalid=bytes;
+        const auto location=invalid.find("\"count\":2");
+        check(location!=std::string::npos,"Invalid count negative fixture missing");
+        invalid.replace(location,std::string_view("\"count\":2").size(),"\"count\":5");
+        bool rejected=false;
+        try{(void)windows::parse_lesson_json(invalid,"es");}
+        catch(const std::exception&){rejected=true;}
+        check(rejected,"An invalid root-only visual count bypassed loader validation");
+    }
+}
+
 void optional_visual_chips_do_not_publish_answers(HWND host){
     using namespace lgaed::presentation;
     const auto dpi=static_cast<int>(GetDpiForWindow(host));
@@ -298,6 +344,7 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
     const auto host=CreateWindowExW(0,L"STATIC",L"Code order QA",WS_OVERLAPPEDWINDOW|(drag_commit_only?0:WS_VISIBLE),40,40,800,640,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
     try{
         if(whitespace_only){
+            optional_root_metadata_preserves_published_history();
             optional_visual_chips_do_not_publish_answers(host);
             preserve_code_spacing_in_rows_and_editor(host);
             DestroyWindow(host);
