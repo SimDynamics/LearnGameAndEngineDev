@@ -117,7 +117,19 @@ $malicious = @(
     @{File='symlink.zip'; Members=@(@{
         Name='external';Text='../../elsewhere';
         ExternalAttributes=[int](0xA1FF -shl 16)
-    }); Error='symbolic link or special file'}
+    }); Error='symbolic link or special file'},
+    @{File='file-before-child.zip'; Members=@(
+        @{Name='nest';Text='file'},
+        @{Name='nest/child.txt';Text='must not fit'}
+    ); Error='ZIP file is also an ancestor directory'},
+    @{File='child-before-file.zip'; Members=@(
+        @{Name='nest/child.txt';Text='child'},
+        @{Name='nest';Text='cannot become a file'}
+    ); Error='ZIP file collides with a directory'},
+    @{File='explicit-dir-collision.zip'; Members=@(
+        @{Name='nest/';Text=''},
+        @{Name='nest';Text='cannot become a file'}
+    ); Error='duplicate ZIP entry|ZIP file collides with a directory'}
 )
 foreach ($bad in $malicious) {
     $zip = New-TestArchive $bad.File $bad.Members
@@ -129,20 +141,39 @@ if (@($unexpected).Count -ne 1) {
     throw 'The inspector wrote extra content to the pre-existing project.'
 }
 
+# A regular file at a parent directory position must never be mistaken for
+# a missing destination. Inspecting it must not alter its existing bytes.
+$occupied = Join-Path $project 'occupied'
+[IO.File]::WriteAllText($occupied, 'preserve local parent file', $utf8)
+$parentBefore = (Get-FileHash -LiteralPath $occupied -Algorithm SHA256).Hash
+$parentZip = New-TestArchive 'existing-parent-file.zip' @(
+    @{Name='occupied/child.txt';Text='not installable'}
+)
+$parentSha = (Get-FileHash -LiteralPath $parentZip -Algorithm SHA256).Hash.ToLowerInvariant()
+$parentResult = Invoke-TestInspector $parentZip 1 $parentSha
+$parentAfter = (Get-FileHash -LiteralPath $occupied -Algorithm SHA256).Hash
+if ($parentResult.conflicts -ne 1 -or $parentResult.newFiles -ne 0 -or
+    -not $parentResult.requiresManualReview -or
+    $parentResult.installationPerformed -or $parentBefore -cne $parentAfter) {
+    throw 'Existing parent file was not preserved or not flagged as a conflict.'
+}
+Write-Host 'PASS: existing parent file prevents a child path without overwriting.'
+
 $summary = [ordered]@{
     scope = 'synthetic fixture tests only; never the authenticated AssetCheck ZIP'
     runner = $env:RUNNER_OS
     expectedReleaseSha256Unchanged = 'b8e6c9abc2d611bfad391facf36f3da0e71993322c18087991ad9f314c51a589'
     positiveMatches = 1
     localConflictsDetected = 1
-    malformedArchivesRejected = 12
+    malformedArchivesRejected = 15
+    parentFileConflictsDetected = 1
     originalStudentFilesTouched = $false
     realArchiveInstalled = $false
 }
 $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
-Write-Host 'PASS: 2 non-destructive inspections and 12 malicious/mismatched archives rejected.'
+Write-Host 'PASS: 3 non-destructive inspections and 15 malicious/mismatched archives rejected.'
 # Git's expected non-worktree exit status remains in LASTEXITCODE even after
 # all PowerShell assertions pass. Finish the synthetic CI job explicitly.
 exit 0
