@@ -1860,7 +1860,9 @@ struct LessonView {
             laboratory_text_style(vm.console,18,RGB(121,226,157));updating=before;reflow();return;
         }
         int selected = preferred;
-        if (selected < 0 || selected > 2 || vm.console_channels[static_cast<std::size_t>(selected)].empty()) {
+        // An explicit channel selection must remain visible even when it has
+        // zero bytes. Only automatic selection falls back to a nonempty stream.
+        if (selected < 0 || selected > 2) {
             selected = 0;
             if (vm.console_channels[0].empty()) selected = vm.console_channels[1].empty() ? 2 : 1;
             if (vm.console_channels[static_cast<std::size_t>(selected)].empty()) selected = 0;
