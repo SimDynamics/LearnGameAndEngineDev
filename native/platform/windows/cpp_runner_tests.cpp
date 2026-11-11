@@ -1,5 +1,6 @@
 #include "platform/windows/cpp_runner.hpp"
 #include "core/lesson.hpp"
+#include "core/rejection_diagnostic_facts.hpp"
 #include "platform/windows/environment.hpp"
 #include "native_build_config.hpp"
 
@@ -148,6 +149,49 @@ int main() {
         require(rejected.error_utf8.empty() && !rejected.compilation.succeeded() &&
             rejected.execution.status==CppPhaseStatus::not_started,
             "WASI compilation errors must remain compiler diagnostics, never execution credit");
+    });
+
+    test("WASI semantic diagnostics exercise the student's supplied ostream", [&] {
+        using namespace lgaed::curriculum;
+        const auto test_stream = [&](RejectionOperation kind,std::string_view student,bool expected) {
+            auto run=request(rejection_stream_probe_source(kind,student));
+            run.backend=CppRunRequest::Backend::wasi;
+            const auto actual=run_cpp(run);
+            require(actual.error_utf8.empty(),"WASI probe launch: "+actual.error_utf8);
+            require(actual.compilation.succeeded(),
+                "Independent rejection probe failed to compile: "+actual.compilation.stderr_bytes);
+            require(actual.execution.succeeded(),"Independent rejection probe did not execute normally");
+            const auto verdict=evaluate_rejection_stream_probe(actual.execution.stdout_bytes,
+                actual.execution.stderr_bytes,kind);
+            require(verdict.correct==expected,
+                "Wrong semantic or ostream verdict: "+verdict.reason);
+        };
+        constexpr auto boxes=R"cpp(#include <iostream>
+void informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {
+    destino << "Cajas: petición " << peticion << ", piezas=" << piezas
+            << ". Se admite un entero de 0 a 20. Revise la cantidad.\n";
+}
+int main(){return 0;}
+)cpp";
+        constexpr auto wrong_stream=R"cpp(#include <iostream>
+void informar_rechazo_cajas(std::ostream& destino, int peticion, int piezas) {
+    std::cerr << "Cajas: petición " << peticion << ", piezas=" << piezas
+              << ". Se admite un entero de 0 a 20. Revise la cantidad.\n";
+}
+int main(){return 0;}
+)cpp";
+        constexpr auto balances=R"cpp(#include <iostream>
+void informar_rechazo_saldo(std::ostream& destino, int peticion,
+                            int cobros, int devoluciones) {
+    destino << "Saldo: petición " << peticion << ", cobros=" << cobros
+            << ", devoluciones=" << devoluciones
+            << ". Se admiten enteros de 0 a 9 por separado. Revise los datos.\n";
+}
+int main(){return 0;}
+)cpp";
+        test_stream(RejectionOperation::boxes,boxes,true);
+        test_stream(RejectionOperation::boxes,wrong_stream,false);
+        test_stream(RejectionOperation::balance,balances,true);
     });
 
     test("Windows policy-blocked executables are diagnosed without inventing C++ output", [&] {
