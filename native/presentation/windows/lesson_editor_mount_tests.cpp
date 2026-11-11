@@ -366,57 +366,92 @@ void authored_prediction_newline(){
         "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_representar_procesar_y_recuperar.json";
     const auto source_hash=state::sha256(state::read_bytes(path));
     const auto lesson=windows::load_lesson(path);
-    check(lesson.pages.size()==11 && lesson.pages[1].blocks.size()>=2,
-        "The reported U2L10 page 2/11 no longer exists");
-    const auto& prediction=lesson.pages[1].blocks[1];
-    check(prediction.type==curriculum::BlockType::output_prediction &&
-        prediction.code.find("al_inicio")!=std::string::npos,
-        "The reported multiline output prediction changed identity");
-    state::StateData data;state::prepare_lesson_state(data,lesson);
-    state::save_current_page(data,lesson,1);
-    data.preferences["native_windows"]["ui_language"]=std::string("es");
-    data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};
-    View fixture(lesson,data,true);
-    check(lesson_page_state(fixture.view).index==1,"The multiline output prediction was not mounted on page 2");
-    const auto answer=fixture.control(1,2);
-    check(edit_text(answer).empty(),"The regression must begin with an empty answer");
-    fixture.reveal(answer);
-    SetFocus(answer);
-    const auto type=[&](const wchar_t* value){
-        SendMessageW(answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(value));pump();
-    };
-    const auto visible_lines=[&](const char* stage){
-        RECT format{},client{};GetClientRect(answer,&client);
-        SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
-        POINT scroll{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
-        POINTL first{},second{};
-        SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
-        const auto second_index=SendMessageW(answer,EM_LINEINDEX,1,0);
-        check(second_index>=0,"Enter did not create a second RichEdit line");
-        SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second),second_index);
-        const auto line_height=second.y-first.y;
-        std::cout<<"PREDICTION "<<stage<<" client="<<client.bottom<<" format="<<format.top<<','<<format.bottom
-            <<" first="<<first.y<<" second="<<second.y<<" line_height="<<line_height
-            <<" scroll="<<scroll.y<<'\n';
-        check(scroll.y==0 && first.y>=format.top-2 && first.y<format.bottom,
-            "Pressing Enter hid the first written answer line");
-        check(line_height>0 && second.y+line_height<=format.bottom+3,
-            "The multiline output field did not grow to show its second line");
-    };
-    type(L"Inicio: 8");
-    MSG enter{};enter.hwnd=answer;enter.message=WM_KEYDOWN;enter.wParam=VK_RETURN;enter.lParam=1;
-    check(windows::CodeEditor::handle_key_message(enter),
-        "The original editor did not handle physical Enter");
-    enter.message=WM_KEYUP;(void)windows::CodeEditor::handle_key_message(enter);
-    pump();visible_lines("after-enter");
-    type(L"Ahora: 5");visible_lines("after-second-line");
-    const auto saved=fixture.saved();
-    const auto response=state::get_response(saved,lesson,prediction);
-    check(response && response->answer=="Inicio: 8\nAhora: 5" && !response->correct,
-        "Enter changed or silently completed the saved multiline answer");
+    check(lesson.pages.size()==11,"The reported U2L10 lesson no longer has 11 pages");
+    struct Scenario {std::size_t page;const wchar_t* first;const wchar_t* second;const char* result;};
+    // Test the earlier report as well as the user's later U2L10 page 7
+    // screenshot. Both use the same real mounted, autoheight answer field.
+    for(const auto& scenario:std::vector<Scenario>{
+            {1,L"Inicio: 8",L"Ahora: 5","Inicio: 8\nAhora: 5"},
+            {6,L"Puesto 03",L"sdf","Puesto 03\nsdf"}}){
+        check(lesson.pages[scenario.page].blocks.size()>1,"The reported output block is missing");
+        const auto& prediction=lesson.pages[scenario.page].blocks[1];
+        check(prediction.type==curriculum::BlockType::output_prediction &&
+            prediction.code.find(scenario.page==1?"al_inicio":"Puesto")!=std::string::npos,
+            "The original multiline prediction is no longer at the reported page");
+        state::StateData data;state::prepare_lesson_state(data,lesson);
+        // This temporary Codex QA profile has no student records. Mark only
+        // earlier page prerequisites complete so the real page can be mounted;
+        // never credit the target response or touch a personal profile.
+        seed_other_objectives(data,lesson,prediction.stable_id);
+        for(std::size_t page=0;page<scenario.page;++page){
+            for(const auto& preceding:lesson.pages[page].blocks){
+                using curriculum::BlockType;
+                if(preceding.type!=BlockType::multiple_choice&&preceding.type!=BlockType::output_prediction
+                    &&preceding.type!=BlockType::order_code&&preceding.type!=BlockType::fill_code
+                    &&preceding.type!=BlockType::inline_fill_code&&preceding.type!=BlockType::drag_fill_code)continue;
+                state::Response proof;proof.correct=true;
+                if(preceding.type==BlockType::multiple_choice&&preceding.correct_index)
+                    proof.selected=static_cast<std::int64_t>(*preceding.correct_index);
+                if((preceding.type==BlockType::output_prediction||preceding.type==BlockType::fill_code)
+                    &&!preceding.answers.empty())proof.answer=preceding.answers.front();
+                if(preceding.type==BlockType::order_code)
+                    for(std::size_t part=0;part<preceding.fragments.size();++part)
+                        proof.order.push_back(static_cast<std::int64_t>(part));
+                state::put_response(data,lesson,preceding,proof);
+            }
+            (void)state::mark_page_reached(data,lesson,page);
+        }
+        state::save_current_page(data,lesson,scenario.page);
+        data.preferences["native_windows"]["ui_language"]=std::string("es");
+        data.preferences["lesson_text_size_settings"]["global_scale"]=std::int64_t{150};
+        View fixture(lesson,data,true);
+        check(lesson_page_state(fixture.view).index==scenario.page,
+            "QA prerequisites did not open the requested original prediction page");
+        const auto answer=fixture.control(1,2);
+        check(edit_text(answer).empty(),"The regression must begin with an empty answer");
+        fixture.reveal(answer);SetFocus(answer);
+        const auto type=[&](const wchar_t* value){
+            SendMessageW(answer,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(value));pump();
+        };
+        const auto first_visible=[&]{
+            RECT format{};SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+            POINTL first{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+            check(first.y>=format.top-2&&first.y<format.bottom,
+                "Native Enter immediately scrolled the first response line out of view");
+        };
+        const auto visible_lines=[&](const char* stage){
+            RECT format{},client{};GetClientRect(answer,&client);
+            SendMessageW(answer,EM_GETRECT,0,reinterpret_cast<LPARAM>(&format));
+            POINT scroll{};SendMessageW(answer,EM_GETSCROLLPOS,0,reinterpret_cast<LPARAM>(&scroll));
+            POINTL first{},second{};SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&first),0);
+            const auto second_index=SendMessageW(answer,EM_LINEINDEX,1,0);
+            check(second_index>=0,"Enter did not create a second RichEdit line");
+            SendMessageW(answer,EM_POSFROMCHAR,reinterpret_cast<WPARAM>(&second),second_index);
+            const auto line_height=second.y-first.y;
+            std::cout<<"PREDICTION page="<<scenario.page+1<<" "<<stage
+                <<" client="<<client.bottom<<" format="<<format.top<<','<<format.bottom
+                <<" first="<<first.y<<" second="<<second.y<<" line_height="<<line_height
+                <<" scroll="<<scroll.y<<'\n';
+            check(scroll.y==0&&first.y>=format.top-2&&first.y<format.bottom,
+                "Enter hid the first line despite sufficient multiline answer height");
+            check(line_height>0&&second.y+line_height<=format.bottom+3,
+                "The output field failed to display the second line after resizing");
+        };
+        type(scenario.first);
+        MSG enter{};enter.hwnd=answer;enter.message=WM_KEYDOWN;enter.wParam=VK_RETURN;enter.lParam=1;
+        check(windows::CodeEditor::handle_key_message(enter),
+            "Physical Enter was not handled by the real mounted CodeEditor");
+        first_visible();
+        enter.message=WM_KEYUP;(void)windows::CodeEditor::handle_key_message(enter);
+        pump();visible_lines("after-enter");
+        type(scenario.second);visible_lines("after-second-line");
+        const auto saved=fixture.saved();const auto response=state::get_response(saved,lesson,prediction);
+        check(response&&response->answer==scenario.result&&!response->correct,
+            "Enter changed, submitted or corrupted the draft's two-line answer");
+    }
     check(state::sha256(state::read_bytes(path))==source_hash,
         "The viewport regression changed curricular source data");
-    std::cout<<"PASS U2L10 page 2 native multiline prediction: first and second lines visible after Enter, exact answer saved\n";
+    std::cout<<"PASS U2L10 pages 2 and 7: two visible lines after Enter with exact draft content\n";
 }
 void authored_editor_mount(){
     const auto path=std::filesystem::path(build::source_root)/"app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_un_lector_con_buffer_de_un_token.json";
