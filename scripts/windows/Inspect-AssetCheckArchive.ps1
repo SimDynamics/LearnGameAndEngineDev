@@ -161,16 +161,16 @@ try {
             }
             if ($directory) {
                 ++$directories
-                continue
             }
-
-            ++$fileCount
-            if ($entry.Length -gt 134217728) {
-                throw "An archive member is larger than 128 MiB: $name"
-            }
-            $uncompressed += $entry.Length
-            if ($uncompressed -gt 268435456) {
-                throw 'The ZIP would expand beyond 256 MiB.'
+            else {
+                ++$fileCount
+                if ($entry.Length -gt 134217728) {
+                    throw "An archive member is larger than 128 MiB: $name"
+                }
+                $uncompressed += $entry.Length
+                if ($uncompressed -gt 268435456) {
+                    throw 'The ZIP would expand beyond 256 MiB.'
+                }
             }
 
             $relative = [IO.Path]::Combine([string[]] $segments)
@@ -183,6 +183,7 @@ try {
             $cursor = $project
             $reparse = $false
             $parentIsFile = $false
+            $directoryIsFile = $false
             for ($index = 0; $index -lt $segments.Length; ++$index) {
                 $cursor = Join-Path $cursor $segments[$index]
                 # Get-Item is needed even for dangling links. Test-Path may
@@ -194,10 +195,16 @@ try {
                         $reparse = $true
                         break
                     }
-                    if ($index -lt $segments.Length - 1 -and
-                        -not $item.PSIsContainer) {
-                        $parentIsFile = $true
-                        break
+                    if (-not $item.PSIsContainer) {
+                        if ($index -lt $segments.Length - 1) {
+                            $parentIsFile = $true
+                        }
+                        elseif ($directory) {
+                            $directoryIsFile = $true
+                        }
+                        if ($parentIsFile -or $directoryIsFile) {
+                            break
+                        }
                     }
                 }
             }
@@ -209,6 +216,16 @@ try {
                 [void] $conflicts.Add(
                     $trimmed + ' (an existing parent path is a file)'
                 )
+                continue
+            }
+            if ($directory) {
+                if ($directoryIsFile) {
+                    [void] $conflicts.Add(
+                        $trimmed + ' (an existing file occupies this ZIP directory)'
+                    )
+                }
+                # Directory entries have no file content, but their complete
+                # local path still must be audited for reparse points.
                 continue
             }
             if (Test-Path -LiteralPath $target -PathType Container) {
