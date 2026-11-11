@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <optional>
 #include <span>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -200,6 +201,95 @@ inline RejectionReview evaluate_rejection_stream_probe(std::string_view stdout_t
     auto result=evaluate_rejection_diagnostics(stdout_text.substr(0,divider),kind,first);
     if(!result.correct)return result;
     return evaluate_rejection_diagnostics(stdout_text.substr(divider+1),kind,second);
+}
+
+
+// One observable input has an independently calculated result and rejection
+// facts. The student implementation is never consulted to obtain either.
+struct RejectionExpected {
+    std::string standard_output;
+    std::vector<RejectionFacts> rejected;
+    int exit_code = 0;
+};
+inline std::optional<RejectionExpected> rejection_expected_for_input(
+        RejectionOperation operation,std::string_view input) {
+    std::istringstream source{std::string(input)};
+    std::vector<int> numbers;
+    int number=0;
+    while(source>>number) {
+        if(numbers.size()==16)return {};
+        numbers.push_back(number);
+    }
+    if(!source.eof()||(operation==RejectionOperation::balance&&numbers.size()%2))return {};
+    RejectionExpected expected;
+    if(operation==RejectionOperation::boxes) {
+        for(std::size_t i=0;i<numbers.size();++i) {
+            const auto pieces=numbers[i];
+            if(pieces<0||pieces>20) {
+                expected.rejected.push_back({static_cast<int>(i+1),pieces});
+            }else {
+                expected.standard_output+="Cajas="+std::to_string((pieces+3)/4)+"\n";
+            }
+        }
+    }else {
+        for(std::size_t i=0;i<numbers.size();i+=2) {
+            const auto charges=numbers[i],returns=numbers[i+1];
+            if(charges<0||charges>9||returns<0||returns>9) {
+                expected.rejected.push_back({static_cast<int>(i/2+1),charges,returns});
+            }else {
+                expected.standard_output+="Saldo="+std::to_string(charges-returns)+"\n";
+            }
+        }
+    }
+    expected.exit_code=expected.rejected.empty()?0:1;
+    return expected;
+}
+// The balance task also requests three student-chosen pairs: a low rejection,
+// a valid result and a high rejection, all distinct from the prepared sample.
+// This case is selected by its domain, not by one hard-coded answer string.
+inline std::optional<RejectionExpected> balance_three_pair_variation(std::string_view input) {
+    std::istringstream source{std::string(input)};
+    int numbers[6]{};
+    for(int& number:numbers)if(!(source>>number))return {};
+    std::string extra;
+    if(source>>extra)return {};
+    const auto allowed=[](int value){return value>=0&&value<=9;};
+    const bool low=(numbers[0]<0&&allowed(numbers[1]))||(allowed(numbers[0])&&numbers[1]<0);
+    const bool valid=allowed(numbers[2])&&allowed(numbers[3]);
+    const bool high=(numbers[4]>9&&allowed(numbers[5]))||(allowed(numbers[4])&&numbers[5]>9);
+    if(!low||!valid||!high)return {};
+    for(std::size_t i=0;i<6;i+=2) {
+        const auto a=numbers[i],b=numbers[i+1];
+        if((a==2&&b==3)||(a==10&&b==0)||(a==0&&b==-1)||(a==5&&b==5))return {};
+    }
+    RejectionExpected value;
+    value.standard_output="Saldo="+std::to_string(numbers[2]-numbers[3])+"\n";
+    value.rejected={{1,numbers[0],numbers[1]},{3,numbers[4],numbers[5]}};
+    value.exit_code=1;
+    return value;
+}
+// The two original U3L6 programs must remain byte-identical except for the
+// body of their one assigned diagnostic function. No other edit can borrow a
+// normal-output or stream-probe receipt. This also rejects preprocessing
+// directives injected into the otherwise editable function body.
+inline bool rejection_function_only_edit(std::string_view original,
+        std::string_view candidate,RejectionOperation operation) {
+    constexpr std::string_view boxes="void informar_rechazo_cajas(";
+    constexpr std::string_view balances="void informar_rechazo_saldo(";
+    const auto marker=operation==RejectionOperation::boxes?boxes:balances;
+    const auto position=original.find(marker);
+    if(position==original.npos||original.find(marker,position+marker.size())!=original.npos)return false;
+    const auto open=original.find('{',position+marker.size());
+    if(open==original.npos)return false;
+    constexpr std::string_view after="\n}\n\nint main()";
+    const auto closing=original.find(after,open);
+    if(closing==original.npos)return false;
+    const auto prefix=original.substr(0,open+1),suffix=original.substr(closing+1);
+    if(candidate.size()<prefix.size()+suffix.size()||!candidate.starts_with(prefix)||
+        !candidate.ends_with(suffix))return false;
+    const auto body=candidate.substr(prefix.size(),candidate.size()-prefix.size()-suffix.size());
+    if(body.find("\n#")!=body.npos||body.find("\r#")!=body.npos)return false;
+    return true;
 }
 
 } // namespace lgaed::curriculum

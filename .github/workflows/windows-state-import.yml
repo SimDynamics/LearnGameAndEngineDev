@@ -42,6 +42,8 @@ jobs:
           python-version: '3.15.2'
       - name: Test exact stderr authoring without changing published lessons
         run: python -B -m unittest discover -s scripts/curriculum -p test_cpp_stderr_exact_contract.py -v
+      - name: Check semantic U3L6 runtime contract without modifying lesson assets
+        run: python -B -m unittest discover -s scripts/curriculum -p test_u3_rejection_runtime_contract.py -v
       - name: Verify MSVC and execute four historical suites plus exact stderr contract
         run: .\scripts\windows\Test-StateImportCI.ps1
       - name: Preserve configure and test results

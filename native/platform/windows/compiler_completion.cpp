@@ -137,8 +137,12 @@ std::string review_rules(const curriculum::Block& block,bool legacy=false) {
     const auto& check=*block.output_check;std::string frame=legacy?"compiler-review-rules-v1/":"compiler-review-rules-v2/";
     frame+=token(check.input_comparison==curriculum::TextComparison::tokens?"tokens":"exact")
         +token(std::to_string(check.cases.size()));
+    if(check.rejection_operation)
+        frame+=token(*check.rejection_operation==curriculum::RejectionOperation::boxes
+            ? "semantic-rejection-boxes-v1" : "semantic-rejection-balances-v1");
     for(const auto& item:check.cases){
         frame+=token(item.standard_input)+token(item.executable.value_or(""));
+        if(item.balance_three_pairs)frame+=token("semantic-balance-three-pairs-v1");
         if(legacy)frame+=token(item.explanation);
         frame+=token(item.standard_error==curriculum::StandardErrorExpectation::non_blank?"nonBlank":"ignored")
             +token(std::to_string(item.outputs.size()));
@@ -249,8 +253,17 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
-    if(block.compiler_workflow_check!=curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1)
-        return true;
+    const auto goal=block.compiler_workflow_check;
+    if(goal==curriculum::CompilerWorkflowCheck::semantic_rejection_boxes_v1||
+       goal==curriculum::CompilerWorkflowCheck::semantic_rejection_balance_v1){
+        const auto operation=goal==curriculum::CompilerWorkflowCheck::semantic_rejection_boxes_v1
+            ?curriculum::RejectionOperation::boxes:curriculum::RejectionOperation::balance;
+        return !request.cmake&&!request.diagnostic&&request.project_files.empty()&&
+            request.source_files.empty()&&request.action==CppRunRequest::Action::compile_run&&
+            request.rejection_probe==operation&&
+            curriculum::rejection_function_only_edit(block.initial_code,request.source_utf8,operation);
+    }
+    if(goal!=curriculum::CompilerWorkflowCheck::exact_original_project_runtime_v1)return true;
     return request.backend==CppRunRequest::Backend::native_msvc&&
         request.project_files==block.project_files&&request.source_files==block.source_files&&
         request.cmake==block.cmake&&request.stdin_utf8==block.standard_input.value_or("");
@@ -457,8 +470,11 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     proofs.resize(block.output_check->cases.size());
     for(std::size_t index=0;index<block.output_check->cases.size();++index) {
         const auto& item=block.output_check->cases[index];
-        const bool input=block.output_check->input_comparison==curriculum::TextComparison::tokens
-            ?tokens(item.standard_input)==tokens(execution.standard_input):item.standard_input==execution.standard_input;
+        const bool input=item.balance_three_pairs
+            ?curriculum::balance_three_pair_variation(execution.standard_input).has_value()
+            :block.output_check->input_comparison==curriculum::TextComparison::tokens
+                ?tokens(item.standard_input)==tokens(execution.standard_input)
+                :item.standard_input==execution.standard_input;
         if(input&&(!item.executable||item.executable==execution.executable))proofs[index]=proof(key,program,index,item);
     }
     auto& values=data.preferences["native_windows"];values[key+"program"]=program;values[key+"cases"]=proofs;

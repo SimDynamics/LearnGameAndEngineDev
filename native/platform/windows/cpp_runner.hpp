@@ -14,6 +14,7 @@
 namespace lgaed::curriculum {
 struct OutputCheck;
 struct FreshExecution;
+enum class RejectionOperation;
 struct OutputEvaluation;
 struct Block;
 }
@@ -91,6 +92,13 @@ struct CppRunRequest {
     std::chrono::milliseconds execution_timeout{5000};
     std::size_t output_limit_bytes = 1024 * 1024;
     std::optional<CppDiagnosticRequest> diagnostic;
+    // Opt-in, source-pinned diagnostic function review; never enabled by a
+    // free laboratory or by a project without this reviewed C++ objective.
+    std::optional<curriculum::RejectionOperation> rejection_probe;
+};
+struct CppRejectionProbe {
+    std::string source_sha256;
+    CppPhaseResult compilation, execution;
 };
 
 struct CppRunResult {
@@ -105,6 +113,7 @@ struct CppRunResult {
     std::filesystem::path artifact;
     std::string error_utf8;
     std::optional<CppDiagnosticEvidence> diagnostic;
+    std::optional<CppRejectionProbe> rejection_probe;
 };
 struct CppProjectAvailability {
     bool configured=false,built=false;

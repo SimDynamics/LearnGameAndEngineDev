@@ -2,6 +2,8 @@
 #include "core/lesson.hpp"
 #include "core/rejection_diagnostic_facts.hpp"
 #include "platform/windows/environment.hpp"
+#include "platform/windows/content_loader.hpp"
+#include "platform/windows/compiler_completion.hpp"
 #include "native_build_config.hpp"
 
 #include <windows.h>
@@ -149,6 +151,117 @@ int main() {
         require(rejected.error_utf8.empty() && !rejected.compilation.succeeded() &&
             rejected.execution.status==CppPhaseStatus::not_started,
             "WASI compilation errors must remain compiler diagnostics, never execution credit");
+    });
+
+    test("WASI real U3L6 original editors require factual stderr and independent stream evidence", [&] {
+        using namespace lgaed::curriculum;
+        constexpr auto relative =
+            "app/src/main/assets/content/es/programming/programming_practice_tools/"
+            "comprobaciones_repetibles/lesson_diagnosticos_para_corregir_una_peticion.json";
+        const auto authored=lgaed::windows::load_lesson(
+            std::filesystem::path(lgaed::build::source_root)/relative);
+        require(authored.pages.size()==9,"The original U3L6 lesson moved");
+        require(!authored.pages[3].blocks[3].output_check&&
+                !authored.pages[6].blocks[3].output_check,
+            "Work already integrated these historical U3L6 owners: update the QA baseline");
+        // The opt-in declaration is synthesized only inside this isolated QA
+        // model. It does not edit the published curriculum, drafts or state.
+        auto json=authored.raw_json;
+        constexpr std::string_view anchor="  \"stateLayout\": {";
+        const auto pos=json.find(anchor);
+        require(pos!=json.npos&&json.find(anchor,pos+1)==json.npos,
+            "The U3L6 state map does not expose one stable root");
+        json.insert(pos,R"json("compilerRuntimeChecks": [
+          {"activity":"block_0003_0003","kind":"semanticRejectionBoxesV1"},
+          {"activity":"block_0006_0003","kind":"semanticRejectionBalanceV1"}
+        ],
+        )json");
+        const auto parsed=lgaed::windows::parse_lesson_json(json,"es");
+        const auto summary=lgaed::windows::parse_lesson_progress_metadata(json,"es");
+        const auto compile_cases=[&](std::size_t page,RejectionOperation operation,
+                std::string_view target,std::string_view replacement,
+                const std::vector<std::string>& inputs) {
+            const auto& owner=parsed.pages[page].blocks[3];
+            const auto& lean=summary.pages[page].blocks[3];
+            require(owner.output_check&&owner.output_check->rejection_operation==operation&&
+                    lean.output_check&&lean.output_check->cases.size()==inputs.size()&&
+                    owner.output_check->cases.size()==inputs.size()&&
+                    owner.initial_code==authored.pages[page].blocks[3].initial_code,
+                "The runtime declaration rewrote or failed to install a historical U3L6 editor");
+            auto candidate=owner.initial_code;
+            const auto at=candidate.find(target);
+            require(at!=candidate.npos&&candidate.find(target,at+target.size())==candidate.npos,
+                "The target diagnostic body was not unique");
+            candidate.replace(at,target.size(),replacement);
+            require(rejection_function_only_edit(owner.initial_code,candidate,operation),
+                "The reviewed solution changed code outside the assigned diagnostic body");
+            for(std::size_t index=0;index<inputs.size();++index) {
+                auto current=request(candidate,inputs[index]);
+                current.backend=CppRunRequest::Backend::wasi;
+                current.rejection_probe=operation;
+                require(lgaed::windows::compiler_runtime_request_allowed(owner,current),
+                    "The legitimate diagnostic-only edit was not permitted");
+                const auto result=run_cpp(current);
+                require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                        result.execution.status==CppPhaseStatus::completed&&
+                        result.rejection_probe.has_value(),
+                    "A real WASI execution/probe did not complete for an U3L6 editor: "+result.error_utf8);
+                const auto execution=capture_cpp_execution(current,result);
+                require(execution.rejection_probe_correct,
+                    "The real stream probe failed to validate the supplied ostream");
+                const auto evaluation=evaluate_cpp_output_check(
+                    *owner.output_check,execution,current.revision);
+                require(evaluation.verdict==OutputVerdict::correct,
+                    "An original U3L6 diagnostic implementation failed its semantic case "+std::to_string(index)+
+                    ": "+evaluation.feedback);
+            }
+            auto edited_program=request(candidate+"\n// unrelated QA change\n",inputs.front());
+            edited_program.rejection_probe=operation;
+            require(!lgaed::windows::compiler_runtime_request_allowed(owner,edited_program),
+                "A modification to the original main or other code received semantic credit");
+            return owner;
+        };
+        constexpr auto boxes_old="    destino << \"Error\\n\";";
+        constexpr auto boxes_replacement=R"cpp(    destino << "Cajas: petición " << peticion << ", piezas=" << piezas
+            << ". Se admite un entero de 0 a 20. Revise la cantidad.\n";)cpp";
+        const auto boxes=compile_cases(3,RejectionOperation::boxes,boxes_old,boxes_replacement,
+            {"-1 0 21 5\n","0 1 20 4",""});
+        constexpr auto balance_old="    destino << \"Error de saldo\\n\";";
+        constexpr auto balance_replacement=R"cpp(    destino << "Saldo: petición " << peticion << ", cobros=" << cobros
+            << ", devoluciones=" << devoluciones
+            << ". Se admiten enteros de 0 a 9 por separado. Revise los datos.\n";)cpp";
+        const auto balances=compile_cases(6,RejectionOperation::balance,balance_old,balance_replacement,
+            {"2 3 10 0 0 -1 5 5\n","2 3 0 0 9 0 0 9","","-2 4 3 1 12 5"});
+        require(!balance_three_pair_variation("10 0 3 1 12 5")&&
+                !balance_three_pair_variation("-2 4 3 1 5 5")&&
+                !balance_three_pair_variation("-2 4 3 1 12 5 0")&&
+                balance_three_pair_variation("-2 4 3 1 12 5"),
+            "The free three-pair balance variation accepts prepared, extra or invalid fields");
+        // The client can appear correct while its function hard-codes std::cerr.
+        auto wrong=boxes.initial_code;
+        const auto at=wrong.find(boxes_old);
+        require(at!=wrong.npos,"The negative source is no longer present");
+        wrong.replace(at,std::string_view(boxes_old).size(),
+            R"cpp(    std::cerr << "Cajas: petición " << peticion << ", piezas=" << piezas
+            << ". Se admite un entero de 0 a 20. Revise la cantidad.\n";)cpp");
+        auto current=request(wrong,"-1 0 21 5\n");
+        current.backend=CppRunRequest::Backend::wasi;
+        current.rejection_probe=RejectionOperation::boxes;
+        const auto false_result=run_cpp(current);
+        require(false_result.error_utf8.empty()&&false_result.compilation.succeeded()&&
+                false_result.execution.status==CppPhaseStatus::completed,
+            "The negative stderr-only solution did not execute");
+        const auto rejected=capture_cpp_execution(current,false_result);
+        require(!rejected.rejection_probe_correct&&
+                rejected.standard_error.find("Cajas: petición 1")!=std::string::npos&&
+                evaluate_cpp_output_check(*boxes.output_check,rejected,current.revision).verdict!=OutputVerdict::correct,
+            "A hard-coded std::cerr passed a seemingly correct original-client diagnostic");
+        // The unopened original still has no objective and cannot inherit a
+        // successful receipt merely by visiting the compiler or predicting output.
+        require(!authored.pages[3].blocks[3].output_check&&
+                !authored.pages[6].blocks[3].output_check&&
+                balances.output_check->rejection_operation==RejectionOperation::balance,
+            "The in-memory test changed the real lesson or its open diagnostic contract");
     });
 
     test("WASI semantic diagnostics exercise the student's supplied ostream", [&] {

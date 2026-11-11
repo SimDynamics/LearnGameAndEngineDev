@@ -22,6 +22,7 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <tuple>
 
 namespace lgaed::windows {
 namespace {
@@ -2340,6 +2341,71 @@ void read_compiler_workflow_checks(const JsonObject& root,Lesson& lesson) {
 void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerRuntimeChecks"))return;
     const auto records=array(root,"compilerRuntimeChecks");
+    if(lesson.id=="programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion") {
+        require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            lesson.pages.size()==9&&records.Size()==2,
+            "The two semantic rejection editors require the original Spanish U3L6 v2 lesson");
+        const std::array targets{
+            std::tuple{3u,3u,"block_0003_0003","semanticRejectionBoxesV1",
+                RejectionOperation::boxes,CompilerWorkflowCheck::semantic_rejection_boxes_v1},
+            std::tuple{6u,3u,"block_0006_0003","semanticRejectionBalanceV1",
+                RejectionOperation::balance,CompilerWorkflowCheck::semantic_rejection_balance_v1}
+        };
+        for(std::size_t index=0;index<targets.size();++index){
+            const auto& [page,position,identity,kind,operation,workflow]=targets[index];
+            const auto record=records.GetObjectAt(static_cast<unsigned>(index));
+            allowed_keys(record,{"activity","kind"},true);
+            require(text(record,"activity")==identity&&text(record,"kind")==kind&&
+                lesson.pages[page].blocks.size()>position,
+                "Unknown, unordered or misplaced U3L6 semantic runtime declaration");
+            auto& owner=lesson.pages[page].blocks[position];
+            require(owner.stable_id==identity&&owner.type==BlockType::cpp_compiler&&
+                !owner.output_check&&!owner.compile_check&&owner.project_files.empty()&&
+                owner.source_files.empty()&&!owner.cmake&&
+                owner.standard_input==std::optional<std::string>{
+                    operation==RejectionOperation::boxes?"-1 0 21 5\n":"2 3 10 0 0 -1 5 5\n"}&&
+                rejection_function_only_edit(owner.initial_code,owner.initial_code,operation)&&
+                owner.initial_code.find(operation==RejectionOperation::boxes
+                    ? "destino << \"Error\\n\";" : "destino << \"Error de saldo\\n\";")!=std::string::npos,
+                "The U3L6 source, input or historical diagnostic function changed");
+            OutputCheck objective;
+            objective.input_comparison=TextComparison::exact;
+            objective.rejection_operation=operation;
+            const auto add=[&](std::string input,std::string output,int exit,std::string explanation){
+                const auto expected=rejection_expected_for_input(operation,input);
+                require(expected&&expected->standard_output==output&&expected->exit_code==exit,
+                    "Internal U3L6 diagnostic case is not independently derived");
+                OutputCase case_goal;
+                case_goal.standard_input=std::move(input);
+                case_goal.outputs={std::move(output)};
+                case_goal.exit_code=exit;
+                case_goal.explanation=std::move(explanation);
+                objective.cases.push_back(std::move(case_goal));
+            };
+            if(operation==RejectionOperation::boxes){
+                add("-1 0 21 5\n","Cajas=0\nCajas=2\n",1,
+                    "La función informa las peticiones 1 y 3, conserva cada cantidad y escribe en el flujo recibido.");
+                add("0 1 20 4","Cajas=0\nCajas=1\nCajas=5\nCajas=1\n",0,
+                    "Los cuatro valores permitidos no producen diagnósticos.");
+                add("","",0,"Sin peticiones no hay resultados ni rechazos.");
+            }else{
+                add("2 3 10 0 0 -1 5 5\n","Saldo=-1\nSaldo=0\n",1,
+                    "Cada rechazo distingue cobros y devoluciones y solicita revisar sus dominios.");
+                add("2 3 0 0 9 0 0 9","Saldo=-1\nSaldo=0\nSaldo=9\nSaldo=-9\n",0,
+                    "Los cuatro pares permitidos producen saldos, no rechazos.");
+                add("","",0,"Sin pares no hay resultados ni rechazos.");
+                OutputCase own;
+                own.balance_three_pairs=true;
+                own.outputs={""}; // Dynamic stdout is computed independently.
+                own.exit_code=1;
+                own.explanation="Tres pares propios: rechazo inferior, aceptación y rechazo superior, sin perder campos ni peticiones.";
+                objective.cases.push_back(std::move(own));
+            }
+            owner.output_check=std::move(objective);
+            owner.compiler_workflow_check=workflow;
+        }
+        return;
+    }
     require(records.Size()==1,"A reviewed original-project runtime check requires exactly one owner");
     const auto record=records.GetObjectAt(0);
     allowed_keys(record,{"activity","kind"},true);
@@ -2462,9 +2528,10 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                 const auto block = blocks.GetAt(b).GetObject();
                 const auto raw = original.text(original_blocks[b]);
                 if (text(block,"type") == "cpp_compiler") {
-                    const bool declared_runtime=root.HasKey(L"compilerRuntimeChecks")&&
-                        lesson.id=="programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"&&
-                        p==9&&b==8;
+                    const bool declared_runtime=root.HasKey(L"compilerRuntimeChecks")&&(
+                        (lesson.id=="programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion"&&p==9&&b==8)||
+                        (lesson.id=="programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion"&&
+                            ((p==3&&b==3)||(p==6&&b==3))));
                     if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||declared_runtime) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
