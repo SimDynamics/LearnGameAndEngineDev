@@ -605,6 +605,10 @@ def _compiler_payload(block: dict) -> dict:
                 if "standardError" in case:
                     require(case["standardError"] == "nonBlank", "Unsupported compiler stderr requirement")
                     case.pop("standardError")
+                if "standardErrorExact" in case:
+                    require(type(case["standardErrorExact"]) is str,
+                            "Unsupported exact runtime stderr requirement")
+                    case.pop("standardErrorExact")
     return payload
 
 
@@ -848,6 +852,9 @@ def _preserve_compiler_channel_requirements(before: dict, after: dict) -> None:
             if type(old_case) is dict and "standardError" in old_case:
                 require(type(case) is dict and case.get("standardError") == old_case["standardError"],
                         "A published compiler stderr objective cannot be removed or weakened")
+            if type(old_case) is dict and "standardErrorExact" in old_case:
+                require(type(case) is dict and case.get("standardErrorExact") == old_case["standardErrorExact"],
+                        "A published exact stderr objective cannot be removed or replaced")
 
 
 def _pages(document: dict) -> list[dict]:
