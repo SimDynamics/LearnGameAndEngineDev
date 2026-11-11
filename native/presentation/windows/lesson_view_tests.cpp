@@ -2620,8 +2620,8 @@ void multiple_input_compiler_first_case_unlocks_thirteen_optional_cases() {
         {"type":"paragraph","text":"Los doce casos restantes son optativos."}
       ]},{"blocks":[{"type":"paragraph","text":"Página final."}]}]})json");});
     f.run(0);
-    require(f.text(0,4)=="✓ Correcto"&&f.text(0,34).find("1 de 13")!=std::string::npos
-        &&f.text(0,34).find("Basta con comprobar correctamente el primer caso")!=std::string::npos
+    require(f.text(0,4)=="✓ Correcto"&&f.text(0,34).find("Comprobación obligatoria: 1 de 1.")!=std::string::npos
+        &&f.text(0,34).find("Pruebas opcionales comprobadas: 0 de 12.")!=std::string::npos
         &&lesson_page_state(f.view).can_next&&descendant(f.view,id(1,0)),
         "The sole first passing input failed to unlock the next page with 12 optional cases");
     require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){
