@@ -31,6 +31,7 @@ namespace rejection_detail {
 struct Word {
     std::string text;
     std::optional<int> number;
+    std::size_t start = 0, end = 0; // offsets in the folded diagnostic
 };
 inline bool letter(char value) { return value >= 'a' && value <= 'z'; }
 inline bool digit(char value) { return value >= '0' && value <= '9'; }
@@ -67,7 +68,7 @@ inline std::vector<Word> words(std::string_view source) {
         const auto beginning=i;
         if(letter(folded[i])) {
             while(i<folded.size()&&letter(folded[i]))++i;
-            result.push_back({folded.substr(beginning,i-beginning),{}});
+            result.push_back({folded.substr(beginning,i-beginning),{},beginning,i});
         } else if(digit(folded[i])||
                   ((folded[i]=='-'||folded[i]=='+')&&i+1<folded.size()&&digit(folded[i+1]))) {
             if(folded[i]=='+'||folded[i]=='-')++i;
@@ -76,8 +77,8 @@ inline std::vector<Word> words(std::string_view source) {
             if(number.starts_with('+'))number.remove_prefix(1);
             const auto parsed=std::from_chars(number.data(),number.data()+number.size(),value);
             if(parsed.ec==std::errc{}&&parsed.ptr==number.data()+number.size())
-                result.push_back({{},value});
-            else result.push_back({"invalid-number",{}});
+                result.push_back({{},value,beginning,i});
+            else result.push_back({"invalid-number",{},beginning,i});
         } else ++i;
     }
     return result;
@@ -100,11 +101,34 @@ inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::s
     }
     return false;
 }
-inline bool range(const std::vector<Word>& words,int upper) {
-    for(std::size_t i=0;i<words.size();++i)if(words[i].number==0) {
-        std::size_t j=i+1;
-        if(j<words.size()&&one_of(words[j].text,{"a","al","y","hasta"}))++j;
-        if(j<words.size()&&words[j].number==upper)return true;
+inline bool range(std::string_view original,const std::vector<Word>& words,int upper) {
+    // The interval is a relationship, not two unrelated numeric fields.
+    // In particular, "cobros=10 devoluciones=0 9" is NOT a statement
+    // that the valid domain is 0..9. Require interval language and syntax.
+    const auto source=fold_spanish(original);
+    const auto describes_range=[&](std::size_t at) {
+        const auto first=at>5?at-5:0;
+        for(std::size_t i=first;i<at;++i) {
+            if(one_of(words[i].text,{"rango","intervalo","dominio","limite","limites",
+                    "entero","enteros","entre","desde","permitido","permitidos",
+                    "permitida","permitidas","admite","admiten","acepta","aceptan",
+                    "valido","validos","valida","validas","debe","deben"}))return true;
+        }
+        return false;
+    };
+    for(std::size_t i=0;i<words.size();++i)if(words[i].number==0&&describes_range(i)) {
+        // Example spellings: "0 a 9", "0 hasta 9", "0..9", "0-9".
+        if(i+2<words.size()&&one_of(words[i+1].text,{"a","al","y","hasta"})
+                &&words[i+2].number==upper)return true;
+        if(i+1>=words.size())continue;
+        const auto& next=words[i+1];
+        if(next.number==upper&&next.start>=words[i].end) {
+            const auto connector=std::string_view(source).substr(words[i].end,
+                next.start-words[i].end);
+            if(connector.find("..")!=connector.npos)return true;
+        }
+        if(next.number==-upper&&next.start==words[i].end&&
+                next.start<source.size()&&source[next.start]=='-')return true;
     }
     return false;
 }
@@ -138,7 +162,7 @@ inline RejectionReview examine(std::string_view line,RejectionOperation kind,con
            mentions(tokens,{"invalidos","invalidas","incorrectos","incorrectas"}))
             return {false,"El diagnóstico dice que ambos operandos fallaron."};
     }
-    if(!range(tokens,kind==RejectionOperation::boxes?20:9))
+    if(!range(line,tokens,kind==RejectionOperation::boxes?20:9))
         return {false,"No se comunica el intervalo entero permitido."};
     if(!actionable(tokens))
         return {false,"Falta pedir una revisión o corrección de los datos."};
