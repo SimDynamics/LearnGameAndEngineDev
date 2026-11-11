@@ -301,6 +301,84 @@ if ($modifiedReport.gitState -notlike 'dirty or untracked*' -or
 }
 Write-Host 'PASS: clean, untracked and modified Git states detected without Git index changes.'
 
+# The 31/35 selection is a second READ-ONLY audit. Its candidate file is
+# never trusted as authorization to install anything.
+$compare = Join-Path $PSScriptRoot 'Compare-AssetCheckSelection.ps1'
+$selectedPath = Join-Path $root '31-candidate-paths.txt'
+$expectedSelected = @($files | Select-Object -First 31 | ForEach-Object { $_.Name })
+$separator = [Environment]::NewLine
+[IO.File]::WriteAllText($selectedPath, ($expectedSelected -join $separator) + $separator, $utf8)
+$compareArgs = @{
+    ArchivePath = $goodZip
+    ProjectPath = $project
+    SelectionPath = $selectedPath
+    SyntheticFixture = $true
+    SyntheticExpectedSha256 = $goodSha
+    SyntheticExpectedFiles = 35
+}
+$selection = (& $compare @compareArgs | Out-String) | ConvertFrom-Json
+if ($selection.candidatesMatchedExactly -ne 31 -or
+    $selection.auxiliaryExclusionsCount -ne 4 -or
+    @($selection.auxiliaryExclusionsToReview).Count -ne 4 -or
+    $selection.approvedByAuthor -or $selection.installerApplyAuthorized -or
+    $selection.referenceProjectInstalled -or
+    $selection.bytesWrittenToProject -ne 0) {
+    throw 'Selection checker failed to separate 31 candidate files from 4 exclusions.'
+}
+$excludedExpected = @($files | Select-Object -Skip 31 | ForEach-Object { $_.Name })
+foreach ($name in $excludedExpected) {
+    if ($selection.auxiliaryExclusionsToReview -cnotcontains $name) {
+        throw "Missing excluded archive member in inventory: $name"
+    }
+}
+Write-Host 'PASS: 31 candidate members match exactly; four excluded members stay unauthorised.'
+
+function Assert-BadSelection([string] $label, [string[]] $items,
+    [string] $pattern) {
+    [IO.File]::WriteAllText($selectedPath, ($items -join $separator) + $separator, $utf8)
+    $rejected = $false
+    try {
+        $null = & $compare @compareArgs
+    }
+    catch {
+        if ($_.Exception.Message -notmatch $pattern) {
+            throw "Wrong selection rejection for $label : $_"
+        }
+        $rejected = $true
+    }
+    if (-not $rejected) { throw "Bad selection was accepted: $label" }
+    Write-Host "REJECTED SELECTION: $label"
+}
+Assert-BadSelection '30 paths' $expectedSelected[0..29] 'exactly 31'
+Assert-BadSelection '32 paths' ($expectedSelected + $excludedExpected[0]) 'exactly 31'
+$dup = @($expectedSelected)
+$dup[30] = $dup[0]
+Assert-BadSelection 'duplicate path' $dup 'Repeated candidate'
+$missing = @($expectedSelected)
+$missing[30] = 'fictional/nonexistent.cpp'
+Assert-BadSelection 'unknown path' $missing 'does not exist'
+$caseMismatch = @($expectedSelected)
+$caseMismatch[0] = $caseMismatch[0].ToUpperInvariant()
+Assert-BadSelection 'case-altered path' $caseMismatch 'spelling differs'
+$spaceMismatch = @($expectedSelected)
+$spaceMismatch[0] += ' '
+Assert-BadSelection 'trailing space' $spaceMismatch 'Noncanonical candidate'
+[IO.File]::WriteAllText($selectedPath, ($expectedSelected -join $separator) + $separator, $utf8)
+$productionRejected = $false
+try {
+    $null = & $compare -ArchivePath $goodZip -ProjectPath $project -SelectionPath $selectedPath
+}
+catch {
+    if ($_.Exception.Message -notmatch 'SHA-256 mismatch') {
+        throw "Unexpected real-mode rejection: $_"
+    }
+    $productionRejected = $true
+}
+if (-not $productionRejected) {
+    throw 'A synthetic ZIP was accepted as the pinned production release.'
+}
+Write-Host 'PASS: production mode rejects synthetic ZIP and unauthenticated selections.'
+
 $summary = [ordered]@{
     scope = 'synthetic fixture tests only; never the authenticated AssetCheck ZIP'
     runner = $env:RUNNER_OS
@@ -316,6 +394,10 @@ $summary = [ordered]@{
     gitStatesVerified = 3
     ancestorJunctionsRejected = 1
     syntheticInventoryNeverAuthorizesDeployment = $true
+    candidateListMatches = 31
+    fourExcludedMembersListed = $true
+    incorrectCandidateListsRejected = 6
+    syntheticArchiveRejectedInProductionMode = $true
     originalStudentFilesTouched = $false
     realArchiveInstalled = $false
 }
