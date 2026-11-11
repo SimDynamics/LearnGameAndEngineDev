@@ -94,7 +94,11 @@ try {
             $ast = [Management.Automation.Language.Parser]::ParseInput(
                 $text, [ref]$tokens, [ref]$parseErrors
             )
-            $parseErrorCount = @($parseErrors).Count
+            $parseErrorCount = $(if ($null -eq $parseErrors) {
+                0
+            } else {
+                @($parseErrors).Count
+            })
             if ($parseErrorCount -gt 0) {
                 throw "Embedded integration script has $parseErrorCount syntax errors; review manually."
             }
