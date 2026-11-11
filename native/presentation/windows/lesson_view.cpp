@@ -3135,7 +3135,9 @@ struct LessonView {
                 for (std::size_t i = 0; i < candidate.size(); ++i) valid = valid && candidate[i] == static_cast<std::int64_t>(i);
                 if (valid) for (std::size_t i = 0; i < vm.order.size(); ++i) vm.order[i] = static_cast<std::size_t>(vm.response.order[i]);
             }
-            vm.order_view=std::make_unique<OrderCodeView>(pane,current.fragments,vm.order,[this,index]{selected_puzzle=index;composition_changed(index);});
+            vm.order_view=std::make_unique<OrderCodeView>(pane,current.fragments,vm.order,
+                [this,index]{selected_puzzle=index;composition_changed(index);},
+                current.optional_order_separators);
             vm.order_started=!std::ranges::is_sorted(vm.order);
             SetWindowLongPtrW(vm.order_view->window(),GWLP_ID,control_id(index,5));
             vm.order_view->set_text_scale(content_text_scale());

@@ -10,7 +10,8 @@ namespace lgaed::presentation {
 // Alt+Up/Down. Row identity and source bytes survive all presentation changes.
 class OrderCodeView {
 public:
-    OrderCodeView(HWND parent,std::vector<std::string> fragments,std::vector<std::size_t> order,std::function<void()> changed);
+    OrderCodeView(HWND parent,std::vector<std::string> fragments,std::vector<std::size_t> order,
+        std::function<void()> changed,std::size_t optional_separators=0);
     ~OrderCodeView();
     [[nodiscard]] HWND window()const;
     [[nodiscard]] int height_for_width(int width);
