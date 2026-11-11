@@ -133,7 +133,7 @@ void integrated_lesson(HWND host){
 
 
 void verify_unrelated_cpp_multicase_feedback(HWND host){
-    // A normal C++ objective with two input cases must NEVER receive the
+    // A normal C++ objective with thirteen input cases must NEVER receive the
     // U3 History instructions after its first correct-but-partial execution.
     const auto environment=resolve_windows_environment({ProfileId::Codex,
         L"cpp-other-cases-"+std::to_wstring(GetCurrentProcessId())+L"-"+std::to_wstring(GetTickCount64()),false});
@@ -142,18 +142,30 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
     auto data=store.load();data.preferences["native_windows"]["ui_language"]=std::string("es");
     store.save(data);
     const auto lesson=windows::parse_lesson_json(R"json({
-      "id":"qa_cpp_two_independent_inputs","title":"QA C++ sin historial","compilerPuzzlesRequired":true,
+      "id":"qa_cpp_thirteen_independent_inputs","title":"QA C++ sin historial","compilerPuzzlesRequired":true,
       "pages":[{"blocks":[{"id":"program","type":"cpp_compiler",
         "initialCode":"#include <iostream>\nint main(){ int numero{}; if(!(std::cin>>numero))return 2; std::cout << numero*2; return 0; }\n",
         "initialStandardInput":"2",
         "outputCheck":{"cases":[
           {"standardInput":"2","outputs":["4"],"explanation":"Primer dato comprobado."},
-          {"standardInput":"3","outputs":["6"],"explanation":"Segundo dato comprobado."}
+          {"standardInput":"3","outputs":["6"],"explanation":"Segundo dato comprobado."},
+          {"standardInput":"4","outputs":["8"],"explanation":"Prueba optativa."},
+          {"standardInput":"5","outputs":["10"],"explanation":"Prueba optativa."},
+          {"standardInput":"6","outputs":["12"],"explanation":"Prueba optativa."},
+          {"standardInput":"7","outputs":["14"],"explanation":"Prueba optativa."},
+          {"standardInput":"8","outputs":["16"],"explanation":"Prueba optativa."},
+          {"standardInput":"9","outputs":["18"],"explanation":"Prueba optativa."},
+          {"standardInput":"10","outputs":["20"],"explanation":"Prueba optativa."},
+          {"standardInput":"11","outputs":["22"],"explanation":"Prueba optativa."},
+          {"standardInput":"12","outputs":["24"],"explanation":"Prueba optativa."},
+          {"standardInput":"13","outputs":["26"],"explanation":"Prueba optativa."},
+          {"standardInput":"14","outputs":["28"],"explanation":"Prueba optativa."}
         ]}
       }]},{"blocks":[{"id":"continuacion","type":"paragraph","text":"El primer caso comprobado permite continuar."}]}]})json");
     require(lesson.pages.size()==2&&lesson.pages[0].blocks.size()==1&&
-        lesson.pages[1].blocks.size()==1,
-        "The independent two-case C++ QA fixture changed shape");
+        lesson.pages[1].blocks.size()==1&&lesson.pages[0].blocks[0].output_check&&
+         lesson.pages[0].blocks[0].output_check->cases.size()==13,
+        "The independent thirteen-case C++ QA fixture changed shape");
     const auto& block=lesson.pages[0].blocks[0];
     HWND view=create_lesson_view(host,environment,lesson);
     require(view!=nullptr,"Could not open the independent multicase C++ lesson");
@@ -172,7 +184,11 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
         require(windows::compiler_puzzle_case_count(saved,lesson,block)==1&&
             windows::compiler_puzzle_completed(saved,lesson,block)&&
             edit_text(child(view,1014))=="4",
-            "The first verified C++ input failed to unlock progress with 1/2 cases");
+            "The first verified C++ input failed to unlock progress with 1/13 cases");
+        const auto status=edit_text(child(view,1034));
+        require(status.find("Comprobación obligatoria: 1 de 1.")!=std::string::npos
+            &&status.find("Pruebas opcionales comprobadas: 0 de 12.")!=std::string::npos,
+            "The global first-case UI still falsely claims thirteen required cases");
         const auto first_feedback=edit_text(feedback);
         require(first_feedback.find("Historial")==std::string::npos &&
             first_feedback.find("historial")==std::string::npos &&
@@ -192,10 +208,13 @@ void verify_unrelated_cpp_multicase_feedback(HWND host){
             windows::compiler_puzzle_completed(saved,lesson,block)&&
             edit_text(child(view,1014))=="6",
             "An optional second C++ input failed to preserve both execution receipts");
-        require(flush_lesson_view(view),"The independent two-case objective was not saved");
+        require(edit_text(child(view,1034)).find("Pruebas opcionales comprobadas: 1 de 12.")
+            !=std::string::npos,
+            "An optional second case rewrote the one-required-case progress message");
+        require(flush_lesson_view(view),"The independent thirteen-case objective was not saved");
         cleanup();
         view=create_lesson_view(host,environment,lesson);
-        require(view!=nullptr,"The independent two-case C++ lesson did not reopen");
+        require(view!=nullptr,"The independent thirteen-case C++ lesson did not reopen");
         MoveWindow(view,0,0,920,720,TRUE);pump();
         require(windows::compiler_puzzle_completed(read_lesson_state(view),lesson,block)&&
             navigate_lesson_view(view,1)&&lesson_page_state(view).index==1,
