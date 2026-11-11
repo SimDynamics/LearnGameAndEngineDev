@@ -182,6 +182,46 @@ struct ReentrantPaint {
     }
 };
 }
+void optional_visual_chips_do_not_publish_answers(HWND host){
+    using namespace lgaed::presentation;
+    const auto dpi=static_cast<int>(GetDpiForWindow(host));
+    const auto px=[&](int v){return MulDiv(v,dpi,96);};
+    int changes=0;
+    OrderCodeView view(host,{"    inicializar();", "    calcular();", "    devolver();"},
+        {0,1,2},[&]{++changes;},2);
+    MoveWindow(view.window(),0,0,px(650),view.height_for_width(px(650)),TRUE);pump();
+    const auto original=std::vector<std::size_t>{0,1,2};
+    auto first=GetDlgItem(view.window(),100);
+    auto first_blank=GetDlgItem(view.window(),103);
+    auto second_blank=GetDlgItem(view.window(),104);
+    check(first&&first_blank&&second_blank&&IsWindowVisible(first_blank)&&IsWindowVisible(second_blank),
+        "Declared optional blank visual cards were not shown");
+    check(view.order()==original&&view.reading_regions().size()==3,
+        "Optional visual cards polluted scored order or narration");
+    SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);pump();
+    check(view.order()==original&&changes==0,
+        "Moving one optional blank card changed scored order or published a response");
+    SendMessageW(second_blank,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(10,8));pump();
+    check(!IsWindowVisible(second_blank)&&view.order()==original&&changes==0,
+        "Omitting an optional blank published or invalidated a real response");
+    SendMessageW(first_blank,WM_KEYDOWN,VK_DELETE,0);pump();
+    check(!IsWindowVisible(first_blank)&&view.order()==original&&changes==0,
+        "Deleting a second optional card altered the source-only permutation");
+    SendMessageW(first,WM_KEYDOWN,VK_INSERT,0);pump();
+    check(IsWindowVisible(first_blank)&&view.order()==original&&changes==0,
+        "Restoring an omitted card changed the stored source order");
+    SendMessageW(first,WM_SYSKEYDOWN,VK_DOWN,0);pump();
+    check(view.order()==std::vector<std::size_t>({1,0,2})&&changes==1,
+        "A real instruction move failed to update the scored answer");
+    const auto scored=view.order();
+    SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);pump();
+    check(view.order()==scored&&changes==1,
+        "An optional blank invalidated an already edited authentic response");
+    view.reset();pump();
+    check(view.order()==original&&IsWindowVisible(first_blank)&&IsWindowVisible(second_blank),
+        "Reset lost original source indices or omitted blank presentation");
+}
+
 void preserve_code_spacing_in_rows_and_editor(HWND host){
     using namespace lgaed::presentation;
     const std::vector<std::string> fragments{
@@ -258,6 +298,7 @@ int main(int argc,char** argv){using namespace lgaed::presentation;
     const auto host=CreateWindowExW(0,L"STATIC",L"Code order QA",WS_OVERLAPPEDWINDOW|(drag_commit_only?0:WS_VISIBLE),40,40,800,640,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
     try{
         if(whitespace_only){
+            optional_visual_chips_do_not_publish_answers(host);
             preserve_code_spacing_in_rows_and_editor(host);
             DestroyWindow(host);
             std::cout<<"PASS native C++/CMake code/drag display retains indentation and vertical line spacing\n";
