@@ -102,7 +102,7 @@ def count_physical_bytes(data: str) -> tuple[int, int, int, int]:
         if has_lf and line.endswith("\r"):
             line = line[:-1]  # CRLF is a terminator, not a loose CR.
         empty += line == ""
-        loose_cr += line.count("\r")
+        loose_cr += "\r" in line  # Count affected lines, not CR bytes.
     return len(lines), empty, loose_cr, 0
 
 
@@ -231,6 +231,8 @@ class AssetCheckCurricularOraclesTest(unittest.TestCase):
             "A malla 1\r\n": (1, 0, 0, 0),
             "A malla 1\r\r\n": (1, 0, 1, 0),
             "A malla 1\rX\n": (1, 0, 1, 0),
+            "A\r\rB\n": (1, 0, 1, 0),
+            "A\r\r": (1, 0, 1, 0),
             "A malla 1\r": (1, 0, 1, 0),
             "A malla 1\n\nB sonido 2": (3, 1, 0, 0),
             "A malla 1\n" * 100: (100, 0, 0, 0),
