@@ -113,6 +113,25 @@ class SourceFormatTest(unittest.TestCase):
                                                 original["pages"][0]["blocks"][4]),
                          original["pages"][0]["blocks"][4])
 
+    def test_retirement_reading_history_preserves_formatting_compatibility(self):
+        # A retired, unrelated paragraph must not prevent the physical
+        # formatting of code still visible in the earlier reading snapshot.
+        before = fixture()
+        before["pages"][0]["blocks"].append(
+            {"type": "paragraph", "text": "Presentación anterior."})
+        family = {"es": deepcopy(before)}
+        initial = layout.prepare_v2(before, "es", family)
+        obsolete = initial["stateLayout"]["current"][0]["blocks"][-1]
+        retired = layout.retire(initial, [obsolete])
+        self.assertEqual(len(retired["stateLayout"]["retirementHistory"]), 1)
+        formatted = layout.prepare_v2(edited(retired), "es", family, retired)
+        self.assertEqual(len(formatted["stateLayout"]["sourceFormatRevisions"]), 5)
+        self.assertEqual(retired["stateLayout"]["retirementHistory"],
+                         formatted["stateLayout"]["retirementHistory"])
+        layout.validate(formatted)
+        layout.validate_transition(retired, formatted)
+        layout.validate_transition(initial, formatted)
+
     def test_archive_is_append_only_and_original_is_immutable(self):
         before = fixture(); family = {"es": deepcopy(before)}
         old = layout.prepare_v2(before, "es", family)
