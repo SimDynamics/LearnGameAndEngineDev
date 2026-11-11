@@ -149,3 +149,40 @@ si se supera el límite.
 Work debe comprobar la cadena editorial original antes de rectificar
 cualquier metadato. Esta auditoría no autoriza regenerar los orígenes,
 cambiar las respuestas ni aprobar la validación global.
+
+## Auditoría estructural real separada de la validación histórica
+
+Se comprobó la estructura de los dos cursos con una nueva vía **solo de
+lectura y solo de estructura** que reutiliza el contrato original de cada
+bloque y de los índices: `scripts/curriculum/auditar_estructura_multicurso.py`.
+Su función de validación estructural emplea el mismo código que la puerta de
+Programación 2, pero omite explícitamente la comprobación de `stateLayout`
+y la comparación histórica contra Git, que siguen siendo obligatorias en la
+validación principal. La salida contiene `STRUCTURE_ONLY_NOT_APPROVED`.
+
+La ejecución [42975438082](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/42975438082)
+confirmó las seis pruebas unitarias del auditor y recorrió los archivos
+reales de `Codex` con este resultado:
+
+| Curso | Lecciones | Unidades | Bloques | Archivos JSON | Incidencias estructurales |
+|---|---:|---:|---:|---:|---:|
+| `cpp_fundamentals` | 162 | 15 | 7.438 | 178 | 0 |
+| `programming_practice_tools` | 28 | 6 | 1.561 | 35 | 0 |
+| **Total** | **190** | **21** | **8.999** | **213** | **0** |
+
+Se comprobaron los contratos admitidos de tipos y campos, el formato
+de ejercicios, las respuestas, casos C++/CMake, títulos, índices y
+referencias entre lecciones, unidades y cursos. El informe legible por
+máquina queda como artefacto temporal `estructura-multicurso-...`.
+
+Esta es una **evidencia positiva independiente** del recorrido real de
+estructura, NO una declaración de terminación del encargo. La misma
+ejecución sigue fallando en `validate-programming-courses`, porque
+las incoherencias de origen de U4L3 y U4L7 persisten. El diagnóstico
+de mapas continúa localizando dos lecciones afectadas. No se modificaron
+los JSON ni se atribuyó al estudiante trabajo ejecutado.
+
+La puerta de producción sigue siendo
+`python3 scripts/curriculum/validar_json_programacion.py --base-ref HEAD`;
+no se añadió ninguna opción para desactivar silenciosamente la
+comprobación de historia editorial y de familia.
