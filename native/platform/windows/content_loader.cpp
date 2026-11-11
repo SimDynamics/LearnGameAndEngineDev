@@ -1395,7 +1395,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     require(result.version == 1 || result.version == 2, "Unsupported state layout version");
     if (result.version == 1) allowed_keys(metadata, {"version", "origin", "current"}, true);
     else {
-        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions"});
+        allowed_keys(metadata, {"version", "locale", "origin", "current", "family", "additions", "editorial", "retired", "retirementHistory", "orderRefinements", "choiceRevisions", "compilerRevisions", "sourceFormatRevisions"});
         for (const auto field : {L"version",L"locale",L"origin",L"current",L"family",L"additions",L"editorial"})
             require(metadata.HasKey(field),"Incomplete state-layout contract");
     }
@@ -1514,6 +1514,27 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             result.order_refinements.push_back(std::move(expanded.record));
         }
     }
+    // Full pre-format snapshots are authored once, under existing active
+    // identities. They are not extra answers, storage slots or drafts.
+    std::map<std::string,JsonObject> source_format_originals;
+    if(metadata.HasKey(L"sourceFormatRevisions")) {
+        require(result.version==2,"Source format archives require stateLayout v2");
+        const auto revisions=array(metadata,"sourceFormatRevisions");
+        require(revisions.Size()<=100000,"Too many source-format archives");
+        for(const auto& item_value:revisions){
+            const auto item=item_value.GetObject();allowed_keys(item,{"id","block"},true);
+            const auto id=text(item,"id");
+            require(valid_id(id)&&current_blocks.contains(id)&&!source_format_originals.contains(id),
+                "Unknown, inactive or duplicated source-format owner");
+            const auto previous=item.GetNamedObject(L"block");
+            const auto before=state_fingerprint(previous);
+            const auto expected=refined_order_signatures.contains(id)?
+                refined_order_signatures.at(id):result.signatures.at(id);
+            require(before==expected,"Source format archive does not match its historical contract");
+            source_format_originals.emplace(id,previous);
+            result.source_format_revisions.push_back({id,utf8(previous.Stringify()),fingerprint(previous)});
+        }
+    }
     std::map<std::string, std::string> successors;
     if (metadata.HasKey(L"retired")) {
         require(result.version == 2, "Retirement requires state layout v2");
@@ -1629,6 +1650,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             editorial_edges[id].emplace(before,after);
         }
     }
+    for(const auto& revision:result.source_format_revisions)
+        require(editorial.contains(revision.id)&&seen.at(revision.id).contains(revision.sha256),
+            "A source format archive needs its original exact editorial predecessor");
     for (const auto& refinement : result.order_refinements)
         require(editorial.contains(refinement.id) && seen.at(refinement.id).contains(refinement.sha256),
             "An ordering refinement needs its complete original published editorial provenance");
@@ -1652,10 +1676,12 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 require(editorial.contains(id) && editorial.at(id) == reviewed->after && seen.at(id).size() == 2 && seen.at(id).contains(std::string(reviewed->before)),
                     "The reviewed mathematical label needs its exact published editorial proof");
             }
-            const auto digest=state_fingerprint(block);
-            validate_choice_pair(block,reviewed_choice_owner(lesson_id,id));
-            if(block.HasKey(L"compileCheck")) {
-                const auto spec=reviewed_compile_check(text(block.GetNamedObject(L"compileCheck"),"diagnostic"));
+            const auto projected=source_format_originals.contains(id)?
+                source_format_projection(block,source_format_originals.at(id)):block;
+            const auto digest=state_fingerprint(projected);
+            validate_choice_pair(projected,reviewed_choice_owner(lesson_id,id));
+            if(projected.HasKey(L"compileCheck")) {
+                const auto spec=reviewed_compile_check(text(projected.GetNamedObject(L"compileCheck"),"diagnostic"));
                 require(spec&&result.version==2&&locale=="es"&&lesson_id==spec->lesson&&id==spec->identity,
                     "A reviewed compilation diagnostic belongs to its original Spanish v2 editor");
                 require(editorial.contains(id)&&seen.at(id).contains(std::string(spec->payload_sha256)),
