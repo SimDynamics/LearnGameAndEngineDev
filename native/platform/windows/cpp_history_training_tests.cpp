@@ -164,6 +164,39 @@ void comments_between_unchanged_commands_are_allowed(){
     check(trace.run(b,result(b,false))&&trace.run(y,result(y,false))&&trace.complete(),
         "A valid comment between CMake commands was mistaken for a source edit");
 }
+void inline_cmake_comment_is_valid_but_new_commands_are_not(){
+    const auto p=published();
+    auto bad=broken(p.project_files);
+    for(auto& [path,code]:bad)if(path==root_path){
+        const std::string tail="# Se conserva el comentario de la raíz.\n";
+        check(code.ends_with(tail),"Original QA standalone comment was lost");
+        code.resize(code.size()-tail.size());
+        const auto newline=code.find('\n');
+        check(newline!=code.npos,"No root CMake command available for inline comment");
+        code.insert(newline," # Nota libre junto al comando");
+    }
+    const auto good=restored(bad,p.project_files);
+    CmakeSelectiveRecoveryTrace trace(p);
+    check(trace.record(registered(p.project_files)),"Cannot record U3 baseline");
+    const auto broken_run=request(bad,CppRunRequest::Action::compile_run,31,7);
+    const auto corrected_run=request(good,CppRunRequest::Action::compile_run,32,8);
+    auto altered=bad;
+    for(auto& [path,code]:altered)if(path==root_path)
+        code+="message(STATUS \"Unexpected extra CMake statement\")\n";
+    auto changed=request(altered,CppRunRequest::Action::compile_run,33,7);
+    check(!trace.run(changed,result(changed,true)),
+        "An extra CMake command was treated as a harmless inline comment");
+    check(trace.run(broken_run,result(broken_run,true)),
+        "A valid inline CMake comment was rejected before the failing run");
+    check(trace.compare(compared(p.project_files,bad,std::string(root_path)))&&
+          trace.compare(compared(p.project_files,bad,std::string(source_path)))&&
+          trace.restore(recovery(p.project_files,bad)),
+          "Two real per-file comparisons must still precede inline-comment recovery");
+    check(trace.run(corrected_run,result(corrected_run,false))&&trace.complete(),
+        "The restored CMake execution rejected an otherwise valid inline comment");
+    check(value(good,root_path)==value(bad,root_path),
+        "Selective restoration must not erase the valid inline CMake comment");
+}
 void history_receipt_preserves_old_stdout_and_requires_new_actions(){
     auto block=published();
     block.stable_id="block_0010_0003";
@@ -328,6 +361,7 @@ int main(){
     try{
         full_sequence();combined_cmake_check_follows_the_real_lesson_button();
         comments_between_unchanged_commands_are_allowed();
+        inline_cmake_comment_is_valid_but_new_commands_are_not();
         history_receipt_preserves_old_stdout_and_requires_new_actions();counterexamples();
         std::cout<<"PASS CMake selective-history action chain: baseline, failed build/run, both diffs, one-file restore, rebuilt fresh success and negative cases; no credit stored\n";
         return 0;

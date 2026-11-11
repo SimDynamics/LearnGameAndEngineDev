@@ -227,9 +227,9 @@ private:
         return result;
     }
     static bool only_added_cmake_comments(std::string_view baseline,std::string_view revised) {
-        // Student comments may be inserted before, between or after unchanged
-        // CMake commands. Reject replacement/reordering of every old line,
-        // new CMake commands and a draft with no actual added comment.
+        // Accept free-standing or trailing inline CMake comments. Every
+        // original command remains byte-identical and in the same order;
+        // adding executable commands or omitting a baseline line is invalid.
         std::size_t old=0,current=0;
         bool has_comment=false;
         while(current<revised.size()){
@@ -238,13 +238,32 @@ private:
             const auto row=revised.substr(current,end-current);
             const auto oldline=baseline.find('\n',old);
             const auto oldend=oldline==std::string_view::npos?baseline.size():oldline+1;
-            if(old<baseline.size()&&row==baseline.substr(old,oldend-old)){
+            const auto original=old<baseline.size()?baseline.substr(old,oldend-old):std::string_view{};
+            if(old<baseline.size()&&row==original){
                 old=oldend;
             }else{
-                auto extra=row;
-                while(!extra.empty()&&(extra.front()==' '||extra.front()=='\t'))extra.remove_prefix(1);
-                if(!extra.empty()&&extra.front()=='#')has_comment=true;
-                else if(extra.find_first_not_of(" \t\r\n")!=std::string_view::npos)return false;
+                bool inline_comment=false;
+                if(old<baseline.size()){
+                    auto command=original;
+                    if(command.ends_with('\n'))command.remove_suffix(1);
+                    if(command.ends_with('\r'))command.remove_suffix(1);
+                    if(row.starts_with(command)){
+                        auto tail=row.substr(command.size());
+                        while(!tail.empty()&&(tail.front()==' '||tail.front()=='\t'))
+                            tail.remove_prefix(1);
+                        if(tail.starts_with('#')){
+                            old=oldend;has_comment=true;inline_comment=true;
+                        }
+                    }
+                }
+                if(!inline_comment){
+                    auto extra=row;
+                    while(!extra.empty()&&(extra.front()==' '||extra.front()=='\t'))
+                        extra.remove_prefix(1);
+                    if(!extra.empty()&&extra.front()=='#')has_comment=true;
+                    else if(extra.find_first_not_of(" \t\r\n")!=std::string_view::npos)
+                        return false;
+                }
             }
             current=end;
         }
