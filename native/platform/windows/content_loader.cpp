@@ -2378,7 +2378,7 @@ void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
             objective.observation_report=mode;
             const auto add=[&](std::string input,std::string explanation) {
                 const auto expected=expected_observation_report(mode,input);
-                require(expected,"The U3L8 report oracle refused a reviewed fixture");
+                require(expected.has_value(),"The U3L8 report oracle refused a reviewed fixture");
                 OutputCase case_goal;
                 case_goal.standard_input=std::move(input);
                 case_goal.outputs={expected->standard_output};
