@@ -121,7 +121,7 @@ def lesson_reference(filename: str, function: str, end_marker: str):
         raise ValueError(f"{filename}: expected at least four exact-output cases")
     if any(len(case.get("outputs", [])) != 1 for case in check["cases"]):
         raise ValueError(f"{filename}: only independently checked output is allowed")
-    return source, check["cases"]
+    return source, initial, check["cases"]
 
 
 def run_all(generator: str, report: Path | None) -> None:
@@ -142,9 +142,11 @@ def run_all(generator: str, report: Path | None) -> None:
         targets = []
         for index, (filename, function, end_marker) in enumerate(LESSONS, start=4):
             target = f"assetcheck_u4l{index}"
-            code, cases = lesson_reference(filename, function, end_marker)
+            code, initial, cases = lesson_reference(filename, function, end_marker)
             (source_dir / f"{target}.cpp").write_text(code, encoding="utf-8")
+            (source_dir / f"{target}_initial.cpp").write_text(initial, encoding="utf-8")
             cmake.append(f"add_executable({target} {target}.cpp)")
+            cmake.append(f"add_executable({target}_initial {target}_initial.cpp)")
             targets.append((target, filename, cases))
         (source_dir / "CMakeLists.txt").write_text(
             "\n".join(cmake) + "\n", encoding="utf-8"
@@ -163,35 +165,71 @@ def run_all(generator: str, report: Path | None) -> None:
         run_command(["cmake", "--build", str(build_dir), "--config", "Release", "--parallel", "2"])
 
         checked = 0
+        initial_mismatches = 0
+        initial_exercises_detected = 0
         for target, filename, cases in targets:
-            exe = (build_dir / ("Release" if multi_config else "") /
-                   (target + (".exe" if platform.system() == "Windows" else "")))
-            if not exe.is_file():
-                raise FileNotFoundError(f"{filename}: no executable at {exe}")
+            executable = target + (".exe" if platform.system() == "Windows" else "")
+            exe = build_dir / ("Release" if multi_config else "") / executable
+            initial_exe = build_dir / ("Release" if multi_config else "") / (
+                target + "_initial" + (".exe" if platform.system() == "Windows" else "")
+            )
+            for binary in (exe, initial_exe):
+                if not binary.is_file():
+                    raise FileNotFoundError(f"{filename}: no executable at {binary}")
+            exercise_mismatches = 0
             for number, case in enumerate(cases, start=1):
-                result = subprocess.run(
-                    [str(exe)], input=case["standardInput"],
-                    capture_output=True, text=True, encoding="utf-8",
-                    errors="replace", timeout=10, check=False,
-                )
                 expected = case["outputs"][0]
-                if result.returncode != 0 or result.stderr or result.stdout != expected:
-                    raise AssertionError(
-                        f"{filename}, case {number}\n"
-                        f"return code: {result.returncode}\n"
-                        f"stderr: {result.stderr!r}\n"
-                        f"expected stdout: {expected!r}\n"
-                        f"actual stdout: {result.stdout!r}"
+                for label, binary in (("reference", exe), ("initial", initial_exe)):
+                    result = subprocess.run(
+                        [str(binary)], input=case["standardInput"],
+                        capture_output=True, text=True, encoding="utf-8",
+                        errors="replace", timeout=10, check=False,
                     )
-                print(f"PASS {target}, curricular case {number}", flush=True)
-                checked += 1
+                    matches = (
+                        result.returncode == 0
+                        and result.stderr == ""
+                        and result.stdout == expected
+                    )
+                    if label == "reference":
+                        if not matches:
+                            raise AssertionError(
+                                f"{filename}, case {number}\n"
+                                f"return code: {result.returncode}\n"
+                                f"stderr: {result.stderr!r}\n"
+                                f"expected stdout: {expected!r}\n"
+                                f"actual stdout: {result.stdout!r}"
+                            )
+                        print(f"PASS {target}, curricular case {number}", flush=True)
+                        checked += 1
+                    elif not matches:
+                        exercise_mismatches += 1
+                        initial_mismatches += 1
+                        print(
+                            f"REJECT INITIAL {target}, curricular case {number}",
+                            flush=True,
+                        )
+                    else:
+                        print(
+                            f"INITIAL COINCIDES {target}, curricular case {number}",
+                            flush=True,
+                        )
+            if exercise_mismatches == 0:
+                raise AssertionError(
+                    f"{filename}: all {len(cases)} cases accept the unchanged starter "
+                    "program; the exercise is not demonstrably assessed"
+                )
+            initial_exercises_detected += 1
         summary = {
             "scope": "Curricular after-attempt C++ references only; NOT standalone AssetCheck",
             "system": platform.platform(),
             "generator": generator,
             "standard": "C++23; extensions disabled; CMake required",
             "reference_executables": len(targets),
+            "initial_executables": len(targets),
             "output_cases_passed": checked,
+            "initial_cases_checked": checked,
+            "initial_cases_rejected": initial_mismatches,
+            "initial_exercises_detected": initial_exercises_detected,
         }
         print("SUMMARY " + json.dumps(summary, ensure_ascii=False), flush=True)
         if report is not None:
