@@ -34,6 +34,7 @@ def validate(contract, root: Path, base_commit: str | None, *,
     lesson_paths = sorted(content.glob("*/lesson_*.json"))
     unit_paths = sorted(content.glob("*/unit_*.json"))
     lessons = {}
+    lesson_sources = {}
     blocks = 0
     for path in lesson_paths:
         document = load(path)
@@ -43,6 +44,7 @@ def validate(contract, root: Path, base_commit: str | None, *,
         require(document["id"] == expected, path, f"[{course_id}] ID de lección distinto de la ruta")
         require(document["id"] not in lessons, path, f"[{course_id}] ID de lección duplicado")
         lessons[document["id"]] = document
+        lesson_sources[document["id"]] = path
         require(bool(document["pages"]), path, f"[{course_id}] lección sin páginas")
         for pn, page in enumerate(document["pages"], 1):
             require(bool(page["blocks"]), path, f"[{course_id}] página {pn} vacía")
@@ -127,6 +129,30 @@ def validate(contract, root: Path, base_commit: str | None, *,
         if item["id"] in units:
             require(item["title"] == units[item["id"]]["title"], course_path,
                     f"[{course_id}] título de unidad no coincide")
+
+    # In indexed units, every physical lesson must be indexed once and
+    # only there. Historical/fixture units outside the course index are
+    # deliberately not renamed, deleted or treated as missing publication.
+    indexed_lessons = set()
+    for unit_id in indexed:
+        if unit_id not in units:
+            continue  # The missing-unit diagnostic was already recorded.
+        folder = unit_id.removeprefix(course_id + "__")
+        unit_path = content / folder / f"unit_{folder}.json"
+        unit = units[unit_id]
+        referenced = {entry["id"] for entry in unit["lessons"]}
+        actual = {lesson_id for lesson_id, source in lesson_sources.items()
+                  if source.parent == unit_path.parent}
+        for missing in sorted(actual - referenced):
+            require(False, unit_path,
+                    f"[{course_id}] lección publicada sin índice en unidad activa: {missing}")
+        for stray in sorted(referenced - actual):
+            require(False, unit_path,
+                    f"[{course_id}] lección de otra carpeta o ausente en unidad activa: {stray}")
+        for duplicate in sorted(referenced & indexed_lessons):
+            require(False, unit_path,
+                    f"[{course_id}] lección indexada en dos unidades activas: {duplicate}")
+        indexed_lessons.update(referenced)
 
     previous_examined = 0
     # The global check_repository already authenticates the complete
