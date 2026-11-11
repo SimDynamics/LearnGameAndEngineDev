@@ -95,11 +95,23 @@ def msvc_x64_environment() -> tuple[dict[str, str], str]:
     vcvars = install / "VC" / "Auxiliary" / "Build" / "vcvarsall.bat"
     if not vcvars.is_file():
         raise FileNotFoundError(f"Missing vcvarsall.bat: {vcvars}")
-    proc = subprocess.run(
-        ["cmd.exe", "/d", "/s", "/c", f'call "{vcvars}" x64 >nul && set'],
-        capture_output=True, text=True, errors="replace",
-        timeout=90, check=False,
-    )
+    # Avoid cmd.exe /S /C's quote stripping on nested, spaced VS paths.
+    # A disposable .cmd file preserves the exact vcvarsall.bat path and does
+    # not modify the runner's installed tools or the student's environment.
+    with tempfile.TemporaryDirectory(prefix="assetcheck-msvc-env-") as scratch:
+        activate = Path(scratch) / "activate.cmd"
+        activate.write_text(
+            '@echo off\n'
+            + f'call "{vcvars}" x64 >nul\n'
+            + 'if errorlevel 1 exit /b 1\n'
+            + 'set\n',
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            ["cmd.exe", "/d", "/c", str(activate)],
+            capture_output=True, text=True, errors="replace",
+            timeout=90, check=False,
+        )
     if proc.returncode != 0:
         raise RuntimeError(
             f"Could not initialize x64 MSVC: {proc.stdout}\n{proc.stderr}"
