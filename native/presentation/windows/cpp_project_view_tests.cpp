@@ -61,6 +61,12 @@ struct ModalScenario {
                  (expected_after.empty()||difference.find(expected_after)!=std::string::npos),
                  "History did not display both actual versions of the selected file");
              stage=3;SendMessageW(window,WM_COMMAND,kind==Kind::compare?IDCANCEL:IDOK,0);return;}
+        if(kind==Kind::compare) {
+            // Read-only comparisons leave both the selected-file list and the
+            // revision list open. Dismiss the complete owned modal stack so
+            // the next comparison can use the same immutable revision.
+            done=true;close_all();return;
+        }
         const auto window=dialog(505);if(!window||!IsWindowEnabled(GetDlgItem(window,505)))return;done=true;SendMessageW(window,WM_COMMAND,IDCANCEL,0);
     }
     void verified()const{require(error.empty(),error.c_str());require(done,"Actual modal UI was not exercised");}
