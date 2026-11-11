@@ -502,9 +502,15 @@ struct LessonView {
         return ui("Revisa tu respuesta e inténtalo de nuevo.","Review your answer and try again.","Vérifie ta réponse et réessaie.");
     }
     std::string laboratory_title()const{return ui("Prototipo del motor C++","C++ Engine Prototype","Prototype du moteur C++");}
-    std::string secondary_instruction(BlockType type)const{
-        if(type==BlockType::order_code)return ui("Mantén pulsado un bloque y arrástralo hasta la posición correcta.",
+    std::string secondary_instruction(BlockType type,bool optional_separators=false)const{
+        if(type==BlockType::order_code){
+            if(optional_separators)return ui(
+                "Ordena las instrucciones. Los bloques vacíos son opcionales: puedes arrastrarlos, ocultarlos con doble clic o Supr y recuperarlos con Insert.",
+                "Order the instructions. Blank cards are optional: drag them, hide with double-click or Delete, restore with Insert.",
+                "Ordonnez les instructions. Les cartes vides sont facultatives : déplacez-les, masquez-les par double-clic ou Suppr, restaurez-les avec Inser.");
+            return ui("Mantén pulsado un bloque y arrástralo hasta la posición correcta.",
             "Press and hold a block, then drag it to the correct position.","Maintenez le doigt sur un bloc, puis faites-le glisser jusqu’à la bonne position.");
+        }
         if(type==BlockType::drag_fill_code)return ui("Mantén pulsado un bloque y arrástralo hacia un espacio vacío.",
             "Press and hold a block, then drag it to an empty space.","Maintenez le doigt sur un bloc, puis faites-le glisser vers un emplacement vide.");
         return {};
@@ -843,7 +849,7 @@ struct LessonView {
             for (std::size_t option = 0; option < current.options.size(); ++option)
                 add(index,find_item(control_id(index,21 + static_cast<int>(option) * 2)),current.options[option]);
             if(legacy_programming){if(vm.order_view)for(const auto& [target,text]:vm.order_view->reading_regions())add(index,target,text);}
-            else add(index,find_item(control_id(index,37)),secondary_instruction(current.type));
+            else add(index,find_item(control_id(index,37)),secondary_instruction(current.type,current.optional_order_separators>0));
             if(script_version==0&&current.type!=BlockType::multiple_choice&&
                 (current.type==BlockType::code||current.type==BlockType::cpp_compiler||exercise(current.type))
                 &&current.type!=BlockType::math_puzzle){
@@ -1165,7 +1171,7 @@ struct LessonView {
                 emit(index,current,0,current.type==BlockType::heading||current.type==BlockType::paragraph||current.type==BlockType::note?current.text:current.question);
                 if(response)emit(index,current,40,choice_history_text(current,*response));
                 for(std::size_t option=0;option<current.options.size();++option)emit(index,current,21+static_cast<int>(option)*2,current.options[option]);
-                emit(index,current,37,secondary_instruction(current.type));
+                emit(index,current,37,secondary_instruction(current.type,current.optional_order_separators>0));
                 if(current.type!=BlockType::multiple_choice&&(current.type==BlockType::code||current.type==BlockType::cpp_compiler||exercise(current.type))&&current.type!=BlockType::math_puzzle){
                     auto code_language=current.language;if(code_language.empty()||code_language=="cpp"||code_language=="c++")code_language=ui("C más más","C plus plus","C plus plus");else if(code_language=="cmake")code_language="CMake";
                     emit(index,current,16,current.type==BlockType::cpp_compiler?ui("Editor de código C más más.","C plus plus code editor.","Éditeur de code C plus plus.")
@@ -2062,7 +2068,7 @@ struct LessonView {
                 const auto note = find_item(control_id(index,19));
                 set_rich_text(note,ui("Nota","Note","Note"),{},false,RichTextRole::heading);
             }
-            if(const auto instruction=find_item(control_id(index,37)))set_rich_text(instruction,secondary_instruction(current.type));
+            if(const auto instruction=find_item(control_id(index,37)))set_rich_text(instruction,secondary_instruction(current.type,current.optional_order_separators>0));
             if(vm.simulated_code||current.type==BlockType::multiple_choice||vm.fill||!vm.order.empty()||vm.answer){
                 const auto copy=find_item(control_id(index,18));
                 const bool response=exercise(current.type);
@@ -2953,7 +2959,7 @@ struct LessonView {
             rows.back().padding_after=0;reader_theme::primary_button(check);create_feedback(index);return;
         }
         if (!current.question.empty()) text_row(current.question, control_id(index, 0), false, current.emphasis, RichTextRole::heading);
-        if(const auto instruction=secondary_instruction(current.type);!instruction.empty()){
+        if(const auto instruction=secondary_instruction(current.type,current.optional_order_separators>0);!instruction.empty()){
             text_row(instruction,control_id(index,37));
             reader_theme::set_text_color(find_item(control_id(index,37)),reader_theme::palette(window).high_contrast?reader_theme::foreground(window):RGB(180,185,195));
         }
