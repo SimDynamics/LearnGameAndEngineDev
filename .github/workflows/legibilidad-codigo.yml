@@ -1,0 +1,34 @@
+name: Auditoria global de legibilidad del codigo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/src/main/assets/content/**/lesson_*.json'
+      - 'scripts/curriculum/auditar_legibilidad_codigo.py'
+      - 'scripts/curriculum/test_auditar_legibilidad_codigo.py'
+      - '.github/workflows/legibilidad-codigo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auditar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Probar auditor sin modificar fuentes
+        run: python -m unittest discover -s scripts/curriculum -p test_auditar_legibilidad_codigo.py -v
+      - name: Revisar todas las lecciones y fuentes
+        run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
+      - name: Conservar reporte de ubicaciones para Work
+        uses: actions/upload-artifact@v4
+        with:
+          name: legibilidad-codigo
+          path: legibilidad-codigo.json
+          retention-days: 14
