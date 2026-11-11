@@ -341,7 +341,13 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
             "Source formatting modified tokens, literals, comments or preprocessor lines");
         target.Insert(name,old.GetNamedValue(name));
     };
-    preserve(snapshot,active,projected,L"code",curriculum::code_format::Language::cpp);
+    // Examples and ordering puzzles can be authored explicitly as CMake.
+    // Do not reinterpret their exact CMake syntax as C++ for source revisions.
+    const auto authored_language=optional_text(active,"language");
+    const auto language=authored_language=="cmake"?curriculum::code_format::Language::cmake:
+        authored_language.empty()||authored_language=="cpp"||authored_language=="c++"?
+            curriculum::code_format::Language::cpp:curriculum::code_format::Language::immutable;
+    preserve(snapshot,active,projected,L"code",language);
     if(text(active,"type")=="cpp_compiler") {
         preserve(snapshot,active,projected,L"initialCode",curriculum::code_format::Language::cpp);
         require(snapshot.HasKey(L"projectFiles")==active.HasKey(L"projectFiles"),
@@ -368,7 +374,7 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
         }
     }
     if(text(active,"type")=="inline_fill_code"||text(active,"type")=="drag_fill_code")
-        preserve(snapshot,active,projected,L"template",curriculum::code_format::Language::cpp);
+        preserve(snapshot,active,projected,L"template",language);
     for(const auto field:{L"fragments",L"choices"})if(
             (std::wstring_view(field)==L"fragments"&&text(active,"type")=="order_code")||
             (std::wstring_view(field)==L"choices"&&text(active,"type")=="drag_fill_code")) {
@@ -380,8 +386,8 @@ JsonObject source_format_projection(const JsonObject& active,const JsonObject& s
         for(unsigned i=0;i<old.Size();++i) {
             require(old.GetAt(i).ValueType()==JsonValueType::String&&now.GetAt(i).ValueType()==JsonValueType::String&&
                 curriculum::code_format::equivalent(utf8(old.GetStringAt(i)),utf8(now.GetStringAt(i)),
-                    curriculum::code_format::Language::cpp),
-                "A formatted fragment changed its original C++ tokens or answer slot");
+                    language),
+                "A formatted fragment changed its original code tokens or answer slot");
         }
         projected.Insert(field,snapshot.GetNamedValue(field));
     }
