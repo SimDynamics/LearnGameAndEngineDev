@@ -6,6 +6,7 @@
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/state_store.hpp"
 #include "platform/windows/compiler_completion.hpp"
+#include "core/lesson_page_reach.hpp"
 #include <commctrl.h>
 #include <richedit.h>
 #include <winrt/base.h>
@@ -552,7 +553,126 @@ void verify_real_u3_pages_six_to_history_gate(HWND view,const curriculum::Lesson
         "Entering U3 History without recovery incorrectly earned completion");
 }
 
-void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path& authored_lesson,bool include_repair=false,bool reach_history=false) {
+
+void verify_real_u3_history_completion(HWND host,HWND view,const curriculum::Lesson& lesson){
+    require(lesson_page_state(view).index==10&&lesson.pages.size()==13,
+        "U3 full History QA did not arrive through the earlier ten actual pages");
+    const auto& owner=lesson.pages[10].blocks[3];
+    require(owner.stable_id=="block_0010_0003"&&
+        owner.compiler_workflow_check==curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1&&
+        owner.output_check&&owner.output_check->cases.size()==1&&
+        !windows::compiler_puzzle_completed(read_lesson_state(view),lesson,owner),
+        "The published U3 History workflow is absent or was credited too early");
+    auto* project=child(view,1305);
+    auto* source=child(view,1310);
+    auto* run=child(view,1311);
+    auto* config=child(view,1306);
+    auto* feedback=source?GetDlgItem(GetParent(source),1304):nullptr;
+    require(project&&source&&run&&config&&feedback&&
+        GetParent(feedback)==GetParent(source)&&feedback!=child(project,1004),
+        "The full original History editor or its true feedback control is missing");
+    const auto edit=[&](const std::string& text){
+        const auto w=wide(text);SendMessageW(source,EM_SETSEL,0,-1);
+        SendMessageW(source,EM_REPLACESEL,TRUE,reinterpret_cast<LPARAM>(w.c_str()));
+        pump();require(edit_text(source)==text,"The real History editor did not adopt the source edit");
+    };
+    const auto run_checked=[&](const char* issue){
+        require(IsWindowEnabled(run),"The full U3 History checker is disabled");
+        click(view,1311);await([&]{return IsWindowEnabled(run);},issue);
+    };
+    auto* configure=child(config,405);
+    auto* build=child(config,406);
+    require(configure&&build,"CMake controls missing in the complete U3 History editor");
+    // An initial seven-case success is insufficient; no History action was
+    // recorded yet, and there must not be an earlier completion receipt.
+    run_checked("The original U3 History starter did not finish its first run");
+    require(!windows::compiler_puzzle_completed(read_lesson_state(view),lesson,owner)&&
+        edit_text(feedback).find("falta acreditar la secuencia")!=std::string::npos,
+        "The original reader treated an unrecorded stdout match as a History achievement");
+    {ModalScenario dialog(host,ModalScenario::Kind::record);click(project,302);dialog.verified();}
+    click(project,1000);
+    const std::string comment="# QA: comentario independiente conservado\n";
+    edit(owner.project_files[0].second+comment);
+    click(project,1003);
+    const std::string right="return (piezas + 3) / 4;";
+    const std::string wrong="return piezas / 4;";
+    auto defective=owner.project_files[3].second;
+    const auto at=defective.find(right);
+    require(at!=std::string::npos&&defective.find(right,at+1)==std::string::npos,
+        "The authentic History source does not contain one original capacity formula");
+    defective.replace(at,right.size(),wrong);
+    edit(defective);
+    if(!IsWindowEnabled(build)){
+        click(config,405);
+        await([&]{return IsWindowEnabled(configure);},
+            "U3 could not configure the intentionally altered History project");
+    }
+    require(IsWindowEnabled(build),"The broken U3 History project did not enable its CMake build");
+    click(config,406);await([&]{return IsWindowEnabled(configure);},
+        "The broken U3 History checker build did not finish");
+    run_checked("The broken U3 History checker did not run");
+    require(!windows::compiler_puzzle_completed(read_lesson_state(view),lesson,owner),
+        "The intentionally faulty result earned U3 History completion");
+    {ModalScenario dialog(host,ModalScenario::Kind::compare,"CMakeLists.txt",
+        "target_link_libraries(comprobar_cajas PRIVATE envios)",comment);
+        click(project,302);dialog.verified();}
+    {ModalScenario dialog(host,ModalScenario::Kind::compare,"componente/src/cajas.cpp",
+        right,wrong);click(project,302);dialog.verified();}
+    {ModalScenario dialog(host,ModalScenario::Kind::restore,"componente/src/cajas.cpp",
+        right,wrong);click(project,302);dialog.verified();}
+    require(edit_text(source)==owner.project_files[3].second,
+        "Selective History restoration did not recover the exact original C++ source");
+    click(project,1000);
+    require(edit_text(source)==owner.project_files[0].second+comment,
+        "Restoring the C++ source incorrectly removed the independent CMake comment");
+    if(!IsWindowEnabled(build)){
+        click(config,405);
+        await([&]{return IsWindowEnabled(configure);},
+            "The restored U3 project did not configure");
+    }
+    require(IsWindowEnabled(build),"The restored project cannot rebuild its checker");
+    click(config,406);await([&]{return IsWindowEnabled(configure);},
+        "The authentic U3 checker could not rebuild after selective restoration");
+    run_checked("The restored U3 History checker did not complete its final run");
+    const auto achieved=read_lesson_state(view);
+    require(windows::compiler_puzzle_completed(achieved,lesson,owner)&&
+        windows::compiler_puzzle_case_count(achieved,lesson,owner)==1&&
+        edit_text(child(view,1314))==owner.output_check->cases[0].outputs.front(),
+        "The original complete lesson failed to earn its own sealed History achievement");
+    require(navigate_lesson_view(view,11)&&lesson_page_state(view).index==11,
+        "A legitimate U3 History achievement did not unlock the following page");
+    for(const auto [page,index]:{std::pair<std::size_t,std::size_t>{11,5},
+                                 std::pair<std::size_t,std::size_t>{12,3}}){
+        const auto& item=lesson.pages[page].blocks[index];
+        require(lesson_page_state(view).index==page&&
+            item.type==curriculum::BlockType::multiple_choice&&item.correct_index&&
+            *item.correct_index<item.options.size(),
+            "A published final U3 exercise is missing");
+        const auto start=1000+static_cast<int>(index)*100;
+        click(view,start+20+static_cast<int>(*item.correct_index)*2);
+        click(view,start+3);
+        require(caption(child(view,start+3)).find("Correcto")!=std::string::npos,
+            "The existing evaluator did not accept an authentic final U3 answer");
+        if(page==11)require(navigate_lesson_view(view,12),
+            "The original U3 page-twelve answer did not unlock the final page");
+    }
+    const auto final=read_lesson_state(view);
+    require(lesson_page_state(view).index==12&&state::all_pages_reached(final,lesson),
+        "The original thirteen-page U3 lesson did not reach every page naturally");
+    for(const auto& page:lesson.pages)for(const auto& block:page.blocks) {
+        if(block.type==curriculum::BlockType::cpp_compiler)
+            require(windows::compiler_puzzle_completed(final,lesson,block),
+                "The complete U3 lesson contains an uncredited mandatory CMake editor");
+        if(block.type==curriculum::BlockType::multiple_choice||
+           block.type==curriculum::BlockType::order_code){
+            const auto answer=state::get_response(final,lesson,block);
+            require(answer&&answer->correct,
+                "The complete original U3 lesson contains an unverified required puzzle");
+        }
+    }
+}
+
+void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path& authored_lesson,bool include_repair=false,bool reach_history=false,bool finish_original=false) {
     // A real student path from page one: five checked questions followed by
     // edits in BOTH original CMakeLists and two fresh compiled target runs.
     // The page-four project must not be substituted by a detached QA fixture.
@@ -770,6 +890,10 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
                 "Later U3 gates require the two original checked CMake projects");
             verify_real_u3_pages_six_to_history_gate(view,published);
             last_page=10;
+            if(finish_original){
+                verify_real_u3_history_completion(host,view,published);
+                last_page=12;
+            }
         }
         require(flush_lesson_view(view),"The CMake QA profile could not save its real progress");
         cleanup();
@@ -783,9 +907,12 @@ void verify_genuine_u3_first_cmake_project(HWND host,const std::filesystem::path
             (!reach_history||
                 (windows::compiler_puzzle_completed(read_lesson_state(view),published,published.pages[6].blocks[3])&&
                  windows::compiler_puzzle_completed(read_lesson_state(view),published,published.pages[8].blocks[3])&&
-                 !windows::compiler_puzzle_completed(read_lesson_state(view),published,published.pages[10].blocks[3])))&&
-            (reach_history?!navigate_lesson_view(view,11):!navigate_lesson_view(view,10)),
-            "Reopening lost an authentic CMake achievement or bypassed a later page");
+                 (finish_original||!windows::compiler_puzzle_completed(read_lesson_state(view),published,published.pages[10].blocks[3]))))&&
+            (finish_original?
+                (windows::compiler_puzzle_completed(read_lesson_state(view),published,published.pages[10].blocks[3])&&
+                 state::all_pages_reached(read_lesson_state(view),published)):
+                (reach_history?!navigate_lesson_view(view,11):!navigate_lesson_view(view,10))),
+            "Reopening lost an authentic CMake or History achievement, or bypassed a later page");
         cleanup();
         require(environment.paths.root.parent_path().filename()==L"qa"&&
                 environment.paths.root.parent_path().parent_path().filename()==L"Codex",
@@ -978,9 +1105,10 @@ int main(int argc,char** argv){
     const bool u3_first_cmake=argc==4&&std::string_view(argv[2])=="--u3-first-cmake";
     const bool u3_first_cmake_repair=argc==4&&std::string_view(argv[2])=="--u3-first-cmake-repair";
     const bool u3_real_history_gate=argc==4&&std::string_view(argv[2])=="--u3-real-history-gate";
+    const bool u3_entire_original=argc==4&&std::string_view(argv[2])=="--u3-entire-original";
     const bool other_cases=argc==3&&std::string_view(argv[2])=="--other-cases";
     HWND host=nullptr;HMODULE rich=nullptr;
-    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||other_cases,
+    try{require(argc==2||internal_only||u3_selective||u3_selective_declared||u3_gates||u3_declaration||u3_prerequisites||u3_first_cmake||u3_first_cmake_repair||u3_real_history_gate||u3_entire_original||other_cases,
         "Provide isolated QA output, optionally --internal-dialogs, --other-cases, --u3-selective or --u3-gates <lesson-json>");winrt::init_apartment(winrt::apartment_type::single_threaded);reader_theme::prepare_fonts();
         INITCOMMONCONTROLSEX controls{sizeof(controls),ICC_STANDARD_CLASSES};InitCommonControlsEx(&controls);rich=LoadLibraryW(L"Msftedit.dll");require(rich!=nullptr,"RichEdit is missing");
         host=CreateWindowExW(WS_EX_CONTROLPARENT,L"STATIC",L"Project controls QA",WS_OVERLAPPEDWINDOW|WS_VISIBLE,0,0,1100,850,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);require(host!=nullptr,"Cannot create app-owned QA host");
@@ -1106,6 +1234,7 @@ int main(int argc,char** argv){
         else if(u3_first_cmake)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]));
         else if(u3_first_cmake_repair)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true);
         else if(u3_real_history_gate)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true,true);
+        else if(u3_entire_original)verify_genuine_u3_first_cmake_project(host,std::filesystem::path(argv[3]),true,true,true);
         else if(u3_selective)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]));
         else if(u3_selective_declared)integrated_selective_history_lesson(host,std::filesystem::path(argv[3]),true);
         else if(!internal_only)integrated_lesson(host);
@@ -1114,6 +1243,7 @@ int main(int argc,char** argv){
         if(internal_only)std::cout<<"PASS internal project create/history/record/diff/restore pages, one enabled root/client bounds, preserved source/cursor/tab/Undo and CMake controls; no compilation\n";
         else if(u3_selective_declared)std::cout<<"PASS declared Win32 U3 History: original editor, record, failure, compare, recover, success and reopen\n";
         else if(u3_selective)std::cout<<"PASS actual Win32 U3 owner focused lesson: no stdout shortcut; record, build, failed checked run, two UI diffs, selective file restore, rebuild, completed checked run, persistent reopen and reset\n";
+        else if(u3_entire_original)std::cout<<"PASS all original U3 thirteen pages: authentic CMake phases, History actions, fresh execution seals, final quizzes and persisted reopening\n";
         else if(u3_real_history_gate)std::cout<<"PASS original U3 pages 1 through 11: repaired source/include CMake, two lotes targets and History still gated\n";
         else if(u3_first_cmake_repair)std::cout<<"PASS original U3 pages one through six: two real CMake exercises, checked order and answers, rejected faulty run, repaired source and reopening\n";
         else if(u3_first_cmake)std::cout<<"PASS original U3 first CMake project: five true questions, distributed CMake, two target runs, page-five access and reopening\n";
