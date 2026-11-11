@@ -130,6 +130,36 @@ class SourceFormatTest(unittest.TestCase):
         bad["stateLayout"]["sourceFormatRevisions"][0]["id"] = "nonexistent"
         with self.assertRaises(layout.LayoutError): layout.validate(bad)
 
+    def test_published_course_gate_accepts_only_own_archived_format(self):
+        import validar_json_programacion as contract
+        source = fixture()
+        family = {"es": deepcopy(source)}
+        previous = layout.prepare_v2(source, "es", family)
+        published = layout.prepare_v2(edited(previous), "es", family, previous)
+        path = ("app/src/main/assets/content/es/programming/cpp_fundamentals/"
+                "source_format_qa/lesson_source_format_qa.json")
+        original = previous["pages"][0]["blocks"][1]
+        changed = published["pages"][0]["blocks"][1]
+        self.assertTrue(contract.preserves_source_format_revision(
+            path, 0, 1, original, changed, previous_document=previous,
+            current_document=published))
+        self.assertFalse(contract.preserves_source_format_revision(
+            path, 0, 1, original, changed, previous_document=previous,
+            current_document=published, course_id="programming_practice_tools"))
+        self.assertTrue(contract.preserves_previous_exercise(
+            path, 0, 1, original, changed, previous_document=previous,
+            current_document=published))
+        forged = deepcopy(published)
+        forged["pages"][0]["blocks"][1]["answers"] = ["different"]
+        self.assertFalse(contract.preserves_source_format_revision(
+            path, 0, 1, original, forged["pages"][0]["blocks"][1],
+            previous_document=previous, current_document=forged))
+        forgery = deepcopy(published)
+        forgery["stateLayout"]["sourceFormatRevisions"][1]["block"]["code"] = "int other=1;"
+        self.assertFalse(contract.preserves_source_format_revision(
+            path, 0, 1, original, changed, previous_document=previous,
+            current_document=forgery))
+
     def test_further_formatting_can_reuse_the_same_snapshot(self):
         before = fixture(); family = {"es": deepcopy(before)}
         original = layout.prepare_v2(before, "es", family)
