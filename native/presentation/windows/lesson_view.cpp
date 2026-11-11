@@ -2819,13 +2819,25 @@ struct LessonView {
         const auto& current=block(index);
         const auto checked=windows::compiler_puzzle_case_count(data,lesson,current);
         const auto total=current.output_check?current.output_check->cases.size():0;
-        auto message=just_passed?ui("Caso correcto. ","Case passed. ","Cas correct. "):std::string{};
-        message+=ui("Casos comprobados: ","Checked cases: ","Cas vérifiés : ")+std::to_string(checked)
-            +ui(" de "," of "," sur ")+std::to_string(total)+".";
-        if(checked<total)message+=ui(
-            " Basta con comprobar correctamente el primer caso para avanzar; los demás son ensayos optativos.",
-            "Passing the first authored case unlocks progress; the remaining cases are optional experiments.",
-            "La réussite du premier cas suffit pour avancer ; les autres sont des essais facultatifs.");
+        // The curriculum requires ONE authored output case. Keep subsequent
+        // cases as optional evidence; do not display total cases as a gate.
+        if(windows::compiler_puzzle_completed(data,lesson,current)){
+            auto message=ui("Comprobación obligatoria: 1 de 1. Puedes continuar.",
+                "Required check: 1 of 1. You may continue.",
+                "Vérification obligatoire : 1 sur 1. Vous pouvez continuer.");
+            if(total>1){
+                message+=ui(" Pruebas opcionales comprobadas: ",
+                    " Optional cases checked: ",
+                    " Cas facultatifs vérifiés : ");
+                message+=std::to_string(checked>0?checked-1:0)
+                    +ui(" de "," of "," sur ")+std::to_string(total-1)+".";
+            }
+            return message;
+        }
+        auto message=just_passed?ui("Caso ejecutado. ","Case executed. ","Cas exécuté. "):std::string{};
+        message+=ui("Aún falta acreditar el primer caso obligatorio de este editor.",
+            "The editor's first required case has not yet been credited.",
+            "Le premier cas obligatoire de cet éditeur n'est pas encore validé.");
         return message;
     }
     std::string compiler_history_text(const curriculum::Lesson& model,const curriculum::Block& current) const {
