@@ -89,11 +89,11 @@
         },
         {
           "type": "paragraph",
-          "text": "LF es el byte de valor 10. CRLF es la pareja de valores 13 y 10. Cuando llega LF, cerramos una línea y quitamos un único CR si está inmediatamente antes. CR seguido de otra cosa, incluso otro CR, queda como contenido y será FORMATO al validar la línea."
+          "text": "LF es el byte de valor 10. CRLF es la pareja de valores 13 y 10. Cuando llega LF, cerramos una línea y retiramos un único CR únicamente si conocemos que estaba inmediatamente antes de ese LF. En el fragmento siguiente, linea conserva todos los bytes recibidos, sin recorte. Un CR interior, incluso cuando le sigue otro CR, queda como contenido y produce FORMATO al validar la línea. Cuando se use un búfer limitado, primero habrá que saber si se descartó algún byte."
         },
         {
           "type": "paragraph",
-          "text": "El terminador no participa en el límite de 80 bytes. Una declaración que contiene exactamente 80 bytes más CRLF sigue dentro del límite. Si el contenido alcanza 81 bytes, es FORMATO. Un tabulador cuenta como un solo byte aunque su ancho visual sea mayor."
+          "text": "El terminador no participa en el límite de 80 bytes. Una declaración con exactamente 80 bytes de contenido seguida de CRLF es válida en longitud; 81 bytes de contenido deben producir FORMATO. El fragmento siguiente todavía no limita el tamaño de linea: sirve para estudiar los terminadores, no para implementar por sí solo el búfer acotado del proyecto. Un tabulador cuenta como un byte, aunque ocupe varias columnas en pantalla."
         },
         {
           "type": "code",
@@ -190,7 +190,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Es posible conservar sólo los primeros 81 bytes de una línea mientras se consume el resto del flujo: 81 ya bastan para acreditar el exceso. La excepción es CRLF: si se almacenaron 81 bytes y el último era CR justo antes de LF, se retira y quedan 80 bytes válidos. No se debe recortar el último byte de una línea larga sin ese terminador."
+          "text": "Para limitar memoria, podemos conservar como máximo los primeros 81 bytes y seguir consumiendo el resto de la línea. Hay que conservar además un indicador linea_truncada, inicialmente false, que se vuelve true si llega cualquier byte que ya no cabe; se reinicia al cerrar la línea. Al recibir LF, sólo se retira el CR final almacenado si linea_truncada sigue en false: entonces conocemos el byte inmediatamente anterior al LF. Así, 80 bytes de contenido seguidos de CRLF ocupan 81 antes de LF, no hay truncamiento y quedan 80 válidos. En cambio, 80 bytes de contenido seguidos de CR CR LF, o de CR X LF, superan el búfer; son FORMATO aunque el último byte guardado parezca un CR terminador. No se debe recortar o retirar un byte almacenado cuando sabemos que hubo bytes descartados."
         },
         {
           "type": "multiple_choice",
@@ -404,7 +404,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En src/manifiesto.cpp el bucle lee byte por byte, mantiene como máximo 81 bytes de cada línea y usa procesar_linea con la numeración original. Una lectura completa de un archivo vacío produce un lote vacío y el resumen de cero líneas; en cambio, una apertura fallida no produce resumen."
+          "text": "En src/manifiesto.cpp el lector procesa cada byte y conserva hasta 81 bytes por línea, junto con linea_truncada para indicar que hubo bytes descartados. Sólo elimina el CR previo a LF si no hubo truncamiento; después entrega la línea y su número original a procesar_linea, reiniciando búfer e indicador. Este detalle evita aceptar líneas de 82 o más bytes cuyo prefijo retenido termine en CR. Una lectura completa de un archivo vacío entrega el resumen de cero líneas; una apertura fallida no produce resumen."
         },
         {
           "type": "code",
@@ -582,7 +582,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las pruebas del archivo físico no deben limitarse al ejemplo con ocho líneas. Incluye archivo vacío, una línea con y sin terminador, LF y CRLF mezclados, dos terminadores consecutivos, CR aislado, TAB, bytes no permitidos, longitud 80/81 antes del terminador, cien líneas inválidas permitidas y 101 líneas que cancelan toda publicación."
+          "text": "Las pruebas del archivo físico no deben limitarse al ejemplo de ocho líneas. Incluye archivo vacío, una línea con y sin terminador, LF y CRLF mezclados, dos terminadores consecutivos, CR aislado, TAB, bytes no permitidos, y el límite de 80/81 bytes. En particular, verifica tres fronteras: 80 bytes + CRLF debe conservar 80 y ser válido en longitud; 80 bytes + CR CR LF y 80 bytes + CR X LF deben producir FORMATO, también cuando después llega una segunda línea válida. Comprueba además cien líneas inválidas permitidas, la línea 101 que cancela toda publicación y el funcionamiento de ambos ejecutables."
         },
         {
           "type": "paragraph",
@@ -869,13 +869,13 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "d683c844a49af2ca534b9aee3a86d1a4901e655241535f4d1c8e6bab73f1b861",
+        "sourceSha256": "8bf7ceebb8ba2ee0e746c485677f9cbe6762abd237118a298ccf25f94e9fad55",
         "spans": []
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "ac09b0772f0edb6fb3f849ea3949f46f7197da7054bdc354c6a17eeb838e9930",
+        "sourceSha256": "632d3fdad1f8ab2bce28663f3e9e385b74f784ddcdc289717007982cdb6d8a06",
         "spans": []
       },
       {
@@ -971,7 +971,7 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "ad019171efec7771b8329cea440ca7bd67d464180f86de112d91e2147f2a4044",
+        "sourceSha256": "60a62adb3e933f96eebecd9f86029686fc2e39078df2192f95940e2fe0c5cf30",
         "spans": []
       },
       {
@@ -1289,7 +1289,7 @@
       {
         "block": "block_0008_0003",
         "path": "/text",
-        "sourceSha256": "4ab31a7d9ebc8b906e4be8f044d8fa1280e4bbf41f2522502f5d1ceb4b2e6d46",
+        "sourceSha256": "20887bda9c374a76e8eada38167ab5bcc1040241d04fb42076bff6ec4d547b35",
         "spans": []
       },
       {
@@ -1577,7 +1577,7 @@
       {
         "block": "block_0012_0001",
         "path": "/text",
-        "sourceSha256": "bec18a37f0987b8c802f2b76421fe18c66c2bc60b4960c6979e9995e3ab323cf",
+        "sourceSha256": "a6f98095c92ce43a7014d1556f10230f7b60ef77e1950513239c93f807d70b73",
         "spans": []
       },
       {
@@ -2732,6 +2732,32 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "cb59639ebff8ed248f64bdbfe3c1a5bb42ffb564ce0df10bc97a311667ed9f3e",
+        "afterSha256": "3a5820fc32584fd28bd2ed61290fb0700f98f55f2aad78b5a7607fbd0f9b46ee"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "9e8106a76a66bda64d6a6683902bc0d271e2ca9032d2e530d8e72a19bd619bfd",
+        "afterSha256": "6b772c4a2c1215ccc25952328e0f8d9228008fd162713ecd84c8d669419e3ab6"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "2825036e32f1ad1ab13348b8f6cd97d061f33323c77524d8e4be2979232eed88",
+        "afterSha256": "1fa83658b8ce40c42576c325e3902dc11d7bbdb9bcf95cbd3acca2e28b57f38c"
+      },
+      {
+        "id": "block_0008_0003",
+        "beforeSha256": "f85d83d1bc61380b61189fea504fa0b93509fca006b58d71ef2b9fa70ffdfb3e",
+        "afterSha256": "94ba39b05bee3bc90e033da95a25cfecb6d2f73fe874fcac67cc142e265de14a"
+      },
+      {
+        "id": "block_0012_0001",
+        "beforeSha256": "9ad541571bdba4cb74f11a221c329fec03eb1073849de165d938f21be04d0a3b",
+        "afterSha256": "9379c633cf3095a4eb9e4552aa2a3e0857f59325790ee11317a1ba0d157cbbae"
+      }
+    ]
   }
 }
