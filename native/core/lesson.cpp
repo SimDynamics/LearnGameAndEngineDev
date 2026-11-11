@@ -613,6 +613,8 @@ OutputEvaluation evaluate_output_check(const OutputCheck& check, const FreshExec
             ? semantic_feedback : selected->standard_error_exact
                 ? "La salida estándar coincide; stderr no coincide exactamente con el diagnóstico solicitado."
                 : "La salida estándar es correcta; falta el diagnóstico solicitado en stderr.", true, false};
+    if(!semantic_feedback.empty())
+        return {OutputVerdict::incorrect, semantic_feedback, false, false};
     for (std::size_t n=0;n<selected->review_feedback.size();++n) {
         const auto& rule=selected->review_feedback[n];
         if(std::ranges::find(rule.outputs,execution.standard_output)!=rule.outputs.end()) {

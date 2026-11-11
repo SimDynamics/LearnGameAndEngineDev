@@ -216,6 +216,50 @@ y del flujo `std::ostream&` recibido. `standardErrorExact` o `nonBlank` no
 son sustitutos de esa capacidad. Los informes U3L8 requieren, además,
 conservar filas, índices y contadores, no solamente imprimir una cadena fija.
 
+### Diagnósticos abiertos U3L6: hechos y flujo recibido
+
+La capacidad de Windows para los dos editores históricos de
+`programming_practice_tools__comprobaciones_repetibles__diagnosticos_para_corregir_una_peticion`
+se activa **únicamente** mediante esta declaración en la raíz de la lección
+española v2, después de la integración y revisión curricular por Work:
+
+```json
+"compilerRuntimeChecks": [
+  {"activity": "block_0003_0003", "kind": "semanticRejectionBoxesV1"},
+  {"activity": "block_0006_0003", "kind": "semanticRejectionBalanceV1"}
+]
+```
+
+La declaración no modifica `cpp_compiler`, su programa inicial, sus borradores
+ni el `stateLayout`. La incorporación genera objetivos protegidos de
+**tres casos para cajas** (rechazos, cuatro valores permitidos y entrada vacía)
+y **cuatro para saldos** (rechazos, cuatro pares permitidos, entrada vacía y
+tres pares propios). Los casos calculan los resultados y valores esperados a
+partir de la entrada y exigen el código de salida normal correspondiente.
+
+Los mensajes abiertos se comprueban por operación, número de petición,
+cantidad o par de campos con sus valores, intervalo 0..20 o 0..9 y acción
+de revisión, sin imponer una frase literal. Se comprueba el número y el orden
+de ocurrencias, sin confundir un saldo negativo válido con una entrada rechazada.
+La variante de saldos requiere, por orden, un rechazo inferior, una aceptación y
+un rechazo superior, con los otros operandos válidos y sin reutilizar los pares
+preparados.
+
+Para acreditar el editor también debe compilarse y ejecutarse **otra fuente
+aislada** que llama a la misma función del estudiante con dos objetos
+`std::ostringstream` distintos. La prueba rechaza una función que escribe
+directamente en `std::cerr`, incluso si la ejecución original muestra el mismo
+texto. Sólo se permiten modificaciones dentro del cuerpo de la función de
+diagnóstico asignada; cambiar `main`, el componente, la firma o los datos del
+programa no acredita el objetivo. La ejecución, la prueba independiente y los
+casos se sellan con la revisión y la fuente vigente.
+
+**Estado editorial:** la capacidad técnica es optativa hasta que Work publique
+ambas declaraciones y compruebe la experiencia con sus casos. Los editores
+históricos publicados no se acreditan automáticamente ni se convierten en
+opcionales. Esta capacidad tampoco sustituye la comprobación de conservación
+de filas y contadores de U3L8.
+
 ## Entrada del laboratorio
 
 En un `cpp_compiler` curricular, el campo «Entrada» sólo aparece si el bloque declara `initialStandardInput` —también una cadena vacía, para permitir una actividad con EOF— o si algún caso de `outputCheck` declara una entrada no vacía. No se inspecciona el código del alumno para decidirlo. Sin esas declaraciones, la ejecución recibe entrada vacía y termina en EOF si intenta leer. Cualquier borrador de entrada anterior se conserva en almacenamiento, pero no se envía al programa mientras el campo no corresponda a esa actividad. El compilador libre del menú principal conserva su campo de entrada.

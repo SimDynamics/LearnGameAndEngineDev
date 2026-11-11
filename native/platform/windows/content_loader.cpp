@@ -22,6 +22,7 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <tuple>
 
 namespace lgaed::windows {
 namespace {
