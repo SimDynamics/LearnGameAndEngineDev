@@ -96,10 +96,18 @@ def lesson_reference(filename: str, function: str, end_marker: str):
         ) + initial[end:]
     else:
         # The other three references contain complete function definitions.
-        starts = list(re.finditer(r"\b" + re.escape(function) + r"\s*\(", initial))
+        return_type = {
+            "tamano_valido": "bool",
+            "contar_lineas": "Conteo",
+            "contar_tipos": "Totales",
+        }[function]
+        starts = list(re.finditer(
+            r"(?m)^" + return_type + r"\s+" + re.escape(function) + r"\s*\(",
+            initial,
+        ))
         if len(starts) != 1:
-            raise ValueError(f"{filename}: ambiguous original function")
-        line_start = initial.rfind("\n", 0, starts[0].start()) + 1
+            raise ValueError(f"{filename}: expected one function declaration")
+        line_start = starts[0].start()
         end = initial.index(end_marker, starts[0].end())
         if not solution.startswith(
             {"tamano_valido": "bool ", "contar_lineas": "Conteo ",
