@@ -231,12 +231,20 @@ if(LGAED_U12_READER_QA_ONLY OR LGAED_U11_EDITORIAL_READER_QA_ONLY
 endif()
 
 if(LGAED_READER_BUILD_QA_ONLY)
-    option(BUILD_TESTING "Build the testing tree." ON)
+    include(CTest)
     if(NOT BUILD_TESTING)
         message(FATAL_ERROR "LGAED_READER_BUILD_QA_ONLY requires BUILD_TESTING=ON.")
     endif()
     lgaed_add_curricular_reader_test_targets()
-    message(STATUS "Focused native reader build: three original test executables; no CTest registration/execution, fixtures, synthesis runtime or application build.")
+    # The original reader tests are still only compiled. The history UI test
+    # exercises the actual Win32 record/compare/restore dialogs, without
+    # creating an app profile or evaluating learner completion.
+    add_executable(lgaed_cpp_project_view_tests native/presentation/windows/cpp_project_view_tests.cpp)
+    target_link_libraries(lgaed_cpp_project_view_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.cpp_project_internal_dialogs
+        COMMAND lgaed_cpp_project_view_tests "${CMAKE_CURRENT_BINARY_DIR}/qa/cpp-project-history" --internal-dialogs)
+    set_tests_properties(native.cpp_project_internal_dialogs PROPERTIES TIMEOUT 90)
+    message(STATUS "Focused reader build plus one real Win32 history dialog regression; no reader/audio test, fixture, synthesis runtime or application build.")
     return()
 endif()
 

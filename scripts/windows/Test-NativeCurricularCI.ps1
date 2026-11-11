@@ -68,7 +68,8 @@ $qaSuiteConfig = switch ($Suite) {
             Targets = @(
                 'lgaed_lesson_reader_tests',
                 'lgaed_u11_declarations_reader_tests',
-                'lgaed_u6_diagnostic_flow_tests'
+                'lgaed_u6_diagnostic_flow_tests',
+                'lgaed_cpp_project_view_tests'
             )
             Results = 'reader-build'
         }
@@ -327,8 +328,9 @@ New-Item -ItemType Directory -Path $qaBuild -Force | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "The verified Windows $Suite target did not configure or compile." }
 
 if ($Suite -eq 'ReaderBuild') {
-    # Building original executables is evidence of compilation/linkage only.
-    # Do not invoke CTest, create fixtures or claim a reader/audio result here.
+    # The original reader/U6 executables are only compiled. The separate
+    # project-view executable exercises the real Win32 history dialog in
+    # an isolated QA directory; it does NOT grade any lesson or play audio.
     $qaBuiltTargets = foreach ($qaTarget in $qaSuiteConfig.Targets) {
         $qaExecutable = Join-Path $qaBuild "$qaTarget.exe"
         if (-not (Test-Path -LiteralPath $qaExecutable -PathType Leaf)) {
@@ -345,7 +347,17 @@ if ($Suite -eq 'ReaderBuild') {
     $qaBuiltTargets | ConvertTo-Json |
         Set-Content -LiteralPath (Join-Path $qaBuild 'reader-build-results.json') -Encoding utf8
     $qaBuiltTargets | Format-Table -AutoSize | Out-String | Write-Host
-    Write-Host 'PASS original reader/U6 executables compiled and linked; no reader tests, synthesis or playback executed.'
+    # A focused registration cannot silently omit the UI regression.
+    $qaUiListingText = & $qaCTest --test-dir $qaBuild --show-only=json-v1
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the project history UI test registration.' }
+    $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
+    $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
+    if ($qaUiNames.Count -ne 1 -or $qaUiNames[0] -ne 'native.cpp_project_internal_dialogs') {
+        throw 'ReaderBuild must register exactly the real project history dialog test.'
+    }
+    & $qaCTest --test-dir $qaBuild --output-on-failure --no-tests=error --timeout 90
+    if ($LASTEXITCODE -ne 0) { throw 'The real Win32 project history dialog regression failed.' }
+    Write-Host 'PASS original reader/U6 executables compiled and linked; actual Win32 history record/compare/recovery tested. No reader tests, synthesis or playback executed.'
     return
 }
 

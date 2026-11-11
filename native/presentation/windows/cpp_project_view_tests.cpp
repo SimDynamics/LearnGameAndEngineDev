@@ -166,7 +166,7 @@ int main(int argc,char** argv){
                 "Recording a revision claimed an unperformed comparison or recovery");
             editor.reset({"    return 9;\n",{},4,4});project.capture();
             {ModalScenario scenario(host,ModalScenario::Kind::restore);click(project.window(),302);scenario.verified();}
-            require(comparison_events.size()==1&&comparison_events[0].changed
+            require(comparison_events.size()==1&&recovery_events.size()==1&&comparison_events[0].changed
                 &&comparison_events[0].revision_id==recovery_events[0].revision_id
                 &&comparison_events[0].path=="main.cpp"
                 &&comparison_events[0].added_lines==1
