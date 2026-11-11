@@ -267,8 +267,17 @@ struct OrderCodeView::Impl {
             if(self.dragging)for(std::size_t to=0;to<self.ordered.size();++to){RECT bounds{};GetWindowRect(self.rows[self.ordered[to]],&bounds);
                 if(PtInRect(&bounds,point)){self.move(self.position(item),to);break;}}
             return 0;}
-        if(message==WM_LBUTTONUP&&self.pressed==item){const bool drag=self.dragging;self.release();
-            if(!drag&&self.next_tap<self.ordered.size())self.move(self.position(item),self.next_tap++,true);return 0;}
+        if(message==WM_LBUTTONUP&&self.pressed==item){
+            const bool drag=self.dragging;self.release();
+            const auto id=static_cast<std::size_t>(GetDlgCtrlID(item)-100);
+            if(!drag&&id<self.required_count&&self.next_tap<self.ordered.size()){
+                while(self.next_tap<self.ordered.size()&&self.ordered[self.next_tap]>=self.required_count)
+                    ++self.next_tap;
+                if(self.next_tap<self.ordered.size())
+                    self.move(self.position(item),self.next_tap++,true);
+            }
+            return 0;
+        }
         if(message==WM_CAPTURECHANGED||message==WM_CANCELMODE){self.release();return 0;}
         if(message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL){const auto owner=self.host;self.release();
             return IsWindow(owner)?SendMessageW(owner,message,wp,lp):0;}
@@ -293,13 +302,20 @@ struct OrderCodeView::Impl {
         return DefWindowProcW(item,message,wp,lp);
     }
 };
-OrderCodeView::OrderCodeView(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,std::function<void()> changed)
-    :impl_(std::make_unique<Impl>(parent,std::move(source),std::move(order),std::move(changed))){}
+OrderCodeView::OrderCodeView(HWND parent,std::vector<std::string> source,std::vector<std::size_t> order,
+        std::function<void()> changed,std::size_t optional_separators)
+    :impl_(std::make_unique<Impl>(parent,std::move(source),std::move(order),
+        std::move(changed),optional_separators)){}
 OrderCodeView::~OrderCodeView()=default;
 HWND OrderCodeView::window()const{return impl_->host;}
 int OrderCodeView::height_for_width(int width){impl_->layout(width);return impl_->height;}
-std::vector<std::size_t> OrderCodeView::order()const{return impl_->ordered;}
-std::vector<std::pair<HWND,std::string>> OrderCodeView::reading_regions()const{std::vector<std::pair<HWND,std::string>> result;for(const auto i:impl_->ordered)result.emplace_back(impl_->rows[i],impl_->fragments[i]);return result;}
+std::vector<std::size_t> OrderCodeView::order()const{return impl_->scored_order();}
+std::vector<std::pair<HWND,std::string>> OrderCodeView::reading_regions()const{
+    std::vector<std::pair<HWND,std::string>> result;
+    for(const auto id:impl_->ordered)if(id<impl_->required_count)
+        result.emplace_back(impl_->rows[id],impl_->fragments[id]);
+    return result;
+}
 void OrderCodeView::set_completed(bool value){
     for(const auto row:impl_->rows)reader_theme::completed_control(row,value);
     InvalidateRect(impl_->host,nullptr,FALSE);
@@ -308,5 +324,10 @@ void OrderCodeView::set_enabled(bool value){impl_->enabled=value;if(!value)impl_
 void OrderCodeView::set_text_scale(int value){impl_->percentage=std::clamp(value,25,400);for(const auto row:impl_->rows)SendMessageW(row,EM_SETZOOM,impl_->percentage,100);impl_->layout(impl_->width);}
 void OrderCodeView::set_wrap(bool value){impl_->wrap=value;for(const auto row:impl_->rows)SendMessageW(row,EM_SETTARGETDEVICE,0,value?0:1);impl_->layout(impl_->width);}
 void OrderCodeView::restart_tap_sequence(){impl_->next_tap=0;}
-void OrderCodeView::reset(){impl_->release(false);set_completed(false);impl_->ordered=impl_->original;impl_->next_tap=0;impl_->layout(impl_->width);if(impl_->changed)impl_->changed();}
+void OrderCodeView::reset(){
+    impl_->release(false);set_completed(false);impl_->ordered=impl_->original;
+    for(std::size_t id=impl_->required_count;id<impl_->rows.size();++id)ShowWindow(impl_->rows[id],SW_SHOW);
+    impl_->next_tap=0;impl_->layout(impl_->width);
+    if(impl_->changed)impl_->changed();
+}
 }
