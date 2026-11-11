@@ -166,6 +166,10 @@ class AssetCheckCurricularOraclesTest(unittest.TestCase):
                 for case_number, case in enumerate(check["cases"], start=1):
                     with self.subTest(lesson=filename, case=case_number):
                         self.assertEqual(
+                            len(case["outputs"]), 1,
+                            "The exact-output editor must not accept unchecked alternatives",
+                        )
+                        self.assertEqual(
                             oracle(case["standardInput"]),
                             case["outputs"][0],
                             "Expected output contradicts the independent contract",
@@ -188,6 +192,74 @@ class AssetCheckCurricularOraclesTest(unittest.TestCase):
         self.assertEqual(statistics_oracle("2\n0\n2\nmalla 30000\nsonido 1\n"),
                          "textura=0 malla=0 sonido=0 bytes=0\n"
                          "textura=0 malla=1 sonido=1 bytes=30001\n")
+
+
+    def test_boundary_and_precedence_contracts(self) -> None:
+        # An 80-byte ASCII line is valid; the 81st byte invalidates it
+        # even when the remaining fields would otherwise be acceptable.
+        eighty_bytes = "A malla 1" + " " * 71
+        self.assertEqual(len(eighty_bytes.encode("ascii")), 80)
+        self.assertEqual(parse_record(eighty_bytes),
+                         ("ACEPTADO", ("A", "malla", 1)))
+        self.assertEqual(parse_record(eighty_bytes + " "), ("FORMATO", None))
+        self.assertEqual(parse_record("A_B malla 30000"),
+                         ("ACEPTADO", ("A_B", "malla", 30000)))
+        self.assertEqual(parse_record("A_B malla 30001"), ("TAMANO", None))
+        self.assertEqual(parse_record("1A malo 0"), ("ID", None))
+        self.assertEqual(parse_record("A malo 0"), ("TIPO", None))
+        self.assertEqual(parse_record("A malla 0"), ("TAMANO", None))
+        self.assertEqual(parse_record("A malla 1\r"), ("FORMATO", None))
+        self.assertEqual(parse_record("A malla 1\x00"), ("FORMATO", None))
+
+        # A locally rejected ID is not reserved; a duplicate refers
+        # to its first successful admission, not to the first sighting.
+        self.assertEqual(
+            batch_oracle("A malla 0\nA malla 2\nA sonido 3\n"),
+            "R 1 TAMANO\nA 2 A malla 2\nR 3 DUPLICADO 2\n",
+        )
+        self.assertEqual(
+            batch_oracle("A_B malla 30000\na_b malla 30000\n"),
+            "A 1 A_B malla 30000\nA 2 a_b malla 30000\n",
+        )
+
+        # One CR of CRLF is syntax, but an earlier CR or an EOF CR
+        # remains content. The 101st line invalidates all counters.
+        expected_counts = {
+            "": (0, 0, 0, 0),
+            "\n": (1, 1, 0, 0),
+            "\r\n": (1, 1, 0, 0),
+            "A malla 1\r\n": (1, 0, 0, 0),
+            "A malla 1\r\r\n": (1, 0, 1, 0),
+            "A malla 1\rX\n": (1, 0, 1, 0),
+            "A malla 1\r": (1, 0, 1, 0),
+            "A malla 1\n\nB sonido 2": (3, 1, 0, 0),
+            "A malla 1\n" * 100: (100, 0, 0, 0),
+            "A malla 1\n" * 101: (0, 0, 0, 1),
+        }
+        for data, expected in expected_counts.items():
+            with self.subTest(bytes=repr(data[:20]), length=len(data)):
+                self.assertEqual(count_physical_bytes(data), expected)
+
+    def test_wrong_output_mutations_fail(self) -> None:
+        # These intentionally wrong outputs represent real regressions:
+        # locale-dependent formatting, a missed duplicate, an EOF CR
+        # silently trimmed, and a stale total across independent groups.
+        mutants = (
+            (size_oracle, "30000\n", "30000:1:30,000\n"),
+            (batch_oracle, "A malla 1\nA sonido 4\n",
+             "A 1 A malla 1\nA 2 A sonido 4\n"),
+            (file_lines_oracle, "FINALCR\n", "FINALCR:1:0:0:0\n"),
+            (statistics_oracle, "2\n1\nmalla 7\n0\n",
+             "textura=0 malla=1 sonido=0 bytes=7\n"
+             "textura=0 malla=1 sonido=0 bytes=7\n"),
+        )
+        for oracle, stdin, incorrect in mutants:
+            with self.subTest(oracle=oracle.__name__):
+                with self.assertRaises(AssertionError):
+                    self.assertEqual(
+                        oracle(stdin), incorrect,
+                        "Mutated incorrect expected output must not be accepted",
+                    )
 
 
 if __name__ == "__main__":
