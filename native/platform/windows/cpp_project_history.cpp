@@ -79,6 +79,16 @@ void CppProjectHistory::authenticate_revision(const CppHistoryRevision& revision
         &&published.indentation==revision.indentation,
         "The selected revision differs from its immutable on-disk content");
 }
+CppHistoryRecordEvidence CppProjectHistory::recorded_evidence(const CppHistoryRevision& revision)const {
+    authenticate_revision(revision);
+    CppHistoryRecordEvidence evidence;
+    evidence.revision_id=revision.id;
+    evidence.recorded_file_count=revision.files.size();
+    for(const auto& [path,source]:revision.files)
+        require(evidence.file_sha256.emplace(path,state::sha256(source)).second,
+                "Recorded revision contains duplicate project paths");
+    return evidence;
+}
 std::vector<CppHistorySummary> CppProjectHistory::summaries(std::stop_token stop)const{const auto directory=root_/key_;state::require_safe_path(directory);std::vector<CppHistorySummary> result;
     if(!std::filesystem::exists(state::native_io_path(directory)))return result;
     for(const auto& entry:std::filesystem::directory_iterator(state::native_io_path(directory)))if(entry.path().extension()==L".revision"){

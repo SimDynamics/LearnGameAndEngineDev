@@ -18,6 +18,12 @@ struct CppHistoryRevision {
     std::map<std::string,std::string> indentation;
 };
 struct CppHistorySummary {std::string id,label;std::int64_t created_at=0;};
+struct CppHistoryRecordEvidence {
+    std::string revision_id;
+    std::map<std::string,std::string> file_sha256;
+    std::size_t recorded_file_count=0;
+};
+
 enum class CppHistoryChange {unchanged,added,modified,removed};
 struct CppHistoryStatus {std::string path;CppHistoryChange change;};
 enum class CppHistoryLineType {context,added,removed};
@@ -52,6 +58,8 @@ public:
     CppProjectHistory(std::filesystem::path root,std::string_view project_identity);
     [[nodiscard]] std::vector<CppHistorySummary> summaries(std::stop_token stop={})const;
     [[nodiscard]] CppHistoryRevision load(std::string_view id)const;
+    // Authenticate an actually saved revision, not a provisional UI label.
+    [[nodiscard]] CppHistoryRecordEvidence recorded_evidence(const CppHistoryRevision&)const;
     [[nodiscard]] CppHistoryRevision record(const curriculum::CppProjectFiles&,
         const std::vector<std::string>&,std::string_view label,
         const std::map<std::string,std::string>& indentation={})const;

@@ -126,11 +126,13 @@ int main(int argc,char** argv){
         std::string project_json,cmake_json;int source_changes=0,view_changes=0;std::vector<windows::CppRunRequest::Action> actions;
         std::vector<windows::CppHistoryRecoveryEvidence> recovery_events;
         std::vector<windows::CppHistoryComparisonEvidence> comparison_events;
+        std::vector<windows::CppHistoryRecordEvidence> recorded_events;
         const CppProjectCallbacks events{[&](std::string value,std::string configuration){project_json=std::move(value);cmake_json=std::move(configuration);},
             [&](bool changed){changed?++source_changes:++view_changes;},
             [&](auto action){actions.push_back(action);},
             [&](const windows::CppHistoryRecoveryEvidence& event){recovery_events.push_back(event);},
-            [&](const windows::CppHistoryComparisonEvidence& event){comparison_events.push_back(event);}};
+            [&](const windows::CppHistoryComparisonEvidence& event){comparison_events.push_back(event);},
+            [&](const windows::CppHistoryRecordEvidence& event){recorded_events.push_back(event);}};
         {
             CppProjectView project(host,block,editor_window,editor,"","",history_root,"qa/project","es",events);MoveWindow(project.window(),0,0,800,project.height_for_width(800),TRUE);
             require(editor.document().text==block.project_files[0].second&&editor.document().indentation_starts==std::vector<std::int64_t>{0},"Initial main.cpp lost its original text or predefined tab origin");
@@ -162,10 +164,18 @@ int main(int argc,char** argv){
             SendMessageW(editor_window,EM_SETSEL,4,4);SendMessageW(editor_window,WM_KEYDOWN,VK_BACK,1);SendMessageW(editor_window,WM_CHAR,L'\b',1);SendMessageW(editor_window,WM_KEYUP,VK_BACK,LPARAM{1}<<31);editor.capture_change();project.capture();require(editor.document().text=="return 0;\n","Backspace did not remove the predefined tab as one unit");
             editor.undo();project.capture();require(editor.document().text==block.project_files[0].second&&editor.document().indentation_starts==std::vector<std::int64_t>{0},"Undo lost per-file indentation identity");
             {ModalScenario scenario(host,ModalScenario::Kind::record);click(project.window(),302);scenario.verified();}
+            require(recorded_events.size()==1
+                &&recorded_events[0].revision_id.size()==64
+                &&recorded_events[0].recorded_file_count==2
+                &&recorded_events[0].file_sha256.at("main.cpp")==state::sha256("    return 0;\n")
+                &&recorded_events[0].file_sha256.at("include/value.hpp")==state::sha256("// manual header\t \n"),
+                "The record UI did not authenticate the persisted two-file snapshot");
             require(recovery_events.empty()&&comparison_events.empty(),
                 "Recording a revision claimed an unperformed comparison or recovery");
             editor.reset({"    return 9;\n",{},4,4});project.capture();
             {ModalScenario scenario(host,ModalScenario::Kind::restore);click(project.window(),302);scenario.verified();}
+            require(recorded_events.size()==1&&recorded_events[0].revision_id==recovery_events[0].revision_id,
+                "History comparison/recovery did not use the revision actually recorded through the same UI");
             require(comparison_events.size()==1&&recovery_events.size()==1&&comparison_events[0].changed
                 &&comparison_events[0].revision_id==recovery_events[0].revision_id
                 &&comparison_events[0].path=="main.cpp"

@@ -271,8 +271,13 @@ void CppProjectView::Impl::open_history(){
             if(label.empty()||label.size()>160){SetWindowTextW(prompt.error,wide(ui("Escribe una descripción de 1 a 160 caracteres.",
                 "Enter a description of 1 to 160 characters.","Saisissez une description de 1 à 160 caractères.")).c_str());return false;}
             capture();prompt.async([&,history_copy=history,current=files,selected_sources=sources,units=indentation,name=utf8(label)](std::stop_token)->std::function<void()>{
-                (void)history_copy.record(current,selected_sources,name,units);
-                return [&,life]{if(*life&&prompt.window)DestroyWindow(prompt.window);};
+                const auto saved=history_copy.record(current,selected_sources,name,units);
+                const auto evidence=history_copy.recorded_evidence(saved);
+                return [&,life,evidence]{
+                    if(!*life)return;
+                    if(callbacks.recorded_revision)callbacks.recorded_revision(evidence);
+                    if(prompt.window)DestroyWindow(prompt.window);
+                };
             });return false;
         };
         prompt.run();if(*life)refresh();return false;

@@ -20,6 +20,9 @@ struct CppProjectCallbacks {
     // Emitted when the app actually displays a comparison from the selected
     // persisted revision to the captured draft. Viewing it is not grading.
     std::function<void(const windows::CppHistoryComparisonEvidence&)> compared_file;
+    // Emitted only after the revision has been written atomically and
+    // reread from disk. It never marks a curriculum objective completed.
+    std::function<void(const windows::CppHistoryRecordEvidence&)> recorded_revision;
 };
 class CppProjectView {
 public:

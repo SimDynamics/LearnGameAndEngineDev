@@ -32,6 +32,16 @@ int main(int argc,char** argv){try{
     const curriculum::CppProjectFiles current{{"main.cpp","    return 7;\n"},{"include/nota.h","// personal\t \r\n"},{"nuevo.cpp","// nuevo\n"}};
     const auto recorded=history.record(current,{"main.cpp","nuevo.cpp"},"Prueba actual",{{"main.cpp",state::make_indentation_metadata(current[0].second,{0})}});
     require(recorded.files==current&&history.load(recorded.id).files==current&&history.summaries().size()==2,"Recording/reopening changed another revision or source bytes");
+    const auto record_evidence=history.recorded_evidence(recorded);
+    require(record_evidence.revision_id==recorded.id&&record_evidence.recorded_file_count==3
+        &&record_evidence.file_sha256.size()==3
+        &&record_evidence.file_sha256.at("main.cpp")==state::sha256("    return 7;\n")
+        &&record_evidence.file_sha256.at("include/nota.h")==state::sha256("// personal\t \r\n")
+        &&record_evidence.file_sha256.at("nuevo.cpp")==state::sha256("// nuevo\n"),
+        "A recorded revision did not preserve its three exact source digests");
+    auto forgery=recorded;forgery.files[0].second="    return 5;\n";
+    rejects([&]{(void)history.recorded_evidence(forgery);});
+
     require(state::read_bytes(root/key/(id+".revision"))==bytes,"Registering a new revision rewrote the imported record");
     const auto statuses=history.statuses(current,original);require(statuses.size()==3&&statuses[0].path=="include/nota.h"&&statuses[0].change==CppHistoryChange::modified&&statuses[2].change==CppHistoryChange::added,"History file statuses do not compare the current draft against the chosen revision");
     const auto compared=history.diff_verified("main.cpp",current,original);
@@ -103,6 +113,12 @@ int main(int argc,char** argv){try{
         {"componente/src/cajas.cpp","int cajas_para(int piezas) { return (piezas + 3) / 4; }\n"},
         {"pruebas/casos.cpp","int main() { return 0; }\n"}};
     const auto cmake_revision=history.record(cmake_base,{"componente/src/cajas.cpp","pruebas/casos.cpp"},"Base completa");
+    const auto cmake_record=history.recorded_evidence(cmake_revision);
+    require(cmake_record.recorded_file_count==cmake_base.size()
+        &&cmake_record.file_sha256.at("CMakeLists.txt")==state::sha256(cmake_base[0].second)
+        &&cmake_record.file_sha256.at("componente/src/cajas.cpp")==state::sha256(cmake_base[1].second),
+        "CMake baseline registration is not tied to the actual recorded source");
+
     auto failed_project=cmake_base;
     failed_project[0].second+="// Comentario independiente del estudiante\n";
     failed_project[1].second="int cajas_para(int piezas) { return piezas / 4; }\n";
