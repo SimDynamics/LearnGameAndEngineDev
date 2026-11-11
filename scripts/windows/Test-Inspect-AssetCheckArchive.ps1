@@ -288,6 +288,9 @@ $indexBefore = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
 $cleanReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
 $indexAfter = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
 if ($cleanReport.gitState -cne 'clean' -or $cleanReport.requiresManualReview -or
+    -not $cleanReport.gitRootMatchesProject -or
+    -not [string]::Equals($cleanReport.gitTopLevel, $gitProject,
+        [StringComparison]::OrdinalIgnoreCase) -or
     -not $cleanReport.archiveStableDuringInspection -or
     -not $cleanReport.reportIsSnapshotNotInstallAuthorization -or
     $cleanReport.existingIdentical -ne 1 -or $indexBefore -cne $indexAfter) {
@@ -325,6 +328,32 @@ if ($ignoredReport.gitState -cne 'clean' -or
     throw "Ignored build artifacts were not protected: $($ignoredReport | ConvertTo-Json -Depth 5 -Compress)"
 }
 Write-Host 'PASS: ignored build and IDE caches trigger review while Git reports clean; bytes and index unchanged.'
+
+# A folder nested in a parent worktree is NOT an independent AssetCheck
+# repository, even if it contains a file identical to the ZIP and the
+# parent's Git status is clean because build/ is ignored.
+$nestedProject = Join-Path $buildFixture 'nested-educational-project'
+New-Item -ItemType Directory -Path $nestedProject -Force | Out-Null
+$nestedSource = Join-Path $nestedProject 'tracked.txt'
+[IO.File]::WriteAllText($nestedSource, 'reference', $utf8)
+$nestedBefore = (Get-FileHash -LiteralPath $nestedSource -Algorithm SHA256).Hash
+$gitIndexBeforeNested = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
+$nestedReport = Invoke-TestInspector $gitZip 1 $gitSha $nestedProject
+$nestedAfter = (Get-FileHash -LiteralPath $nestedSource -Algorithm SHA256).Hash
+$gitIndexAfterNested = (Get-FileHash -LiteralPath $gitIndex -Algorithm SHA256).Hash
+if ($nestedReport.gitRootMatchesProject -or
+    $nestedReport.gitState -cne 'nested inside another Git worktree; manual review required' -or
+    -not [string]::Equals($nestedReport.gitTopLevel, $gitProject,
+        [StringComparison]::OrdinalIgnoreCase) -or
+    -not $nestedReport.requiresManualReview -or
+    $nestedReport.existingIdentical -ne 1 -or
+    $nestedReport.installationPerformed -or
+    $gitIndexBeforeNested -cne $gitIndexAfterNested -or
+    $nestedBefore -cne $nestedAfter) {
+    throw ('Nested Git worktree root was not protected: ' +
+           ($nestedReport | ConvertTo-Json -Depth 6 -Compress))
+}
+Write-Host 'PASS: nested folder inside ignored Git parent is not mistaken for a clean independent repository.'
 
 [IO.File]::WriteAllText((Join-Path $gitProject 'untracked.txt'), 'local data', $utf8)
 $untrackedReport = Invoke-TestInspector $gitZip 1 $gitSha $gitProject
@@ -432,6 +461,7 @@ $summary = [ordered]@{
     explicitDirectoryConflictsDetected = 1
     junctionTypesBlocked = 2
     gitStatesVerified = 3
+    nestedProjectRootMismatchRejected = 1
     ignoredBuildAndIdeFoldersDetected = 2
     ignoredCacheBytesPreserved = $true
     archiveStabilityCheckedAfterEnumeration = $true
@@ -448,7 +478,7 @@ $summary = [ordered]@{
 $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
-Write-Host 'PASS: 11 non-destructive inspections, 16 malformed ZIPs rejected, ignored caches preserved, and no deployment assumed.'
+Write-Host 'PASS: 12 non-destructive inspections, 16 malformed ZIPs rejected, nested Git worktree protected, and no deployment assumed.'
 # Git's expected non-worktree exit status remains in LASTEXITCODE even after
 # all PowerShell assertions pass. Finish the synthetic CI job explicitly.
 exit 0
