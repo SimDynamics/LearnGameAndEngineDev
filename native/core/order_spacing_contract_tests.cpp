@@ -100,6 +100,31 @@ void preserve_copied_source_with_empty_cards(){
     check(rejected,"Copy accepted an invented source-card identity");
 }
 
+void preserve_drag_fill_template_and_historical_answers(){
+    Block drag;drag.type=BlockType::drag_fill_code;
+    drag.stable_id="block_0005_0006";drag.address.page=5;drag.address.block=6;
+    drag.code_template="int main() {\n\n    const int group=4;\n    []\n\n    []\n}\n";
+    drag.choices={"std::cout << group;", "return 0;", "return 1;"};
+    drag.correct_order={0,1};
+    Lesson lesson;lesson.id="drag_spacing_contract";lesson.locale="es";
+    const auto key=exercise_key(lesson,drag);
+    const auto stored=drag;
+    const std::vector<std::size_t> correct{0,1},wrong{1,0},missing{0},duplicate{0,0};
+    check(evaluate_drag_answers(drag,correct).correct,
+        "A legitimate drag-fill result was rejected by template-only blank lines");
+    check(!evaluate_drag_answers(drag,wrong).correct&&
+          !evaluate_drag_answers(drag,missing).correct&&
+          !evaluate_drag_answers(drag,duplicate).correct,
+        "A missing, reused or reordered code fragment passed after adding visual separation");
+    check(drag.code_template==stored.code_template&&
+          drag.choices==stored.choices&&drag.correct_order==stored.correct_order&&
+          exercise_key(lesson,drag)==key,
+        "Drag-fill source, answer index, reference or saved response identity changed");
+    check(drag.code_template.find("\n\n")!=std::string::npos&&
+          drag.code_template.find("    []")!=std::string::npos,
+        "The drag-fill source lost its meaningful indentation or vertical whitespace");
+}
+
 void preserve_equivalence_and_meaningful_newlines(){
     auto grouped=example({"", "    abrir();", "\n", "    cerrar();", "    registrar();", " \t"},{1,2,3,4,0,5});
     grouped.order_equivalence_groups={{1,3}};
@@ -132,6 +157,7 @@ int main(){
     try {
         preserve_original_contract();
         preserve_equivalence_and_meaningful_newlines();
+        preserve_drag_fill_template_and_historical_answers();
         preserve_copied_source_with_empty_cards();
         std::cout<<"PASS exact historical order/source, explicit optional presentation only, state and references\n";
         return 0;
