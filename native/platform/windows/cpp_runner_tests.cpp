@@ -583,6 +583,140 @@ int main() {
             "Assert evidence was not produced by the expected WASI artifacts");
     });
 
+    test("WASI U3L9 original assertion contracts require an actual trap, NDEBUG and repaired probes", [&] {
+        using namespace lgaed::curriculum;
+        constexpr auto path=
+            "app/src/main/assets/content/es/programming/programming_practice_tools/"
+            "comprobaciones_repetibles/lesson_comprobar_acuerdos_internos_con_aserciones.json";
+        const auto original=lgaed::windows::load_lesson(
+            std::filesystem::path(lgaed::build::source_root)/path);
+        require(!original.pages[2].blocks[3].output_check&&
+                !original.pages[3].blocks[7].output_check&&
+                !original.pages[4].blocks[3].output_check,
+            "U3L9 has already been integrated by Work: inspect the published runtime before changing QA");
+        auto bytes=original.raw_json;
+        constexpr std::string_view root="  \"stateLayout\": {";
+        const auto at=bytes.find(root);
+        require(at!=bytes.npos&&bytes.find(root,at+1)==bytes.npos,
+            "The authentic U3L9 state map was not found exactly once");
+        bytes.insert(at,R"json("compilerRuntimeChecks": [
+          {"activity":"block_0002_0003","kind":"wasiAssertionAbortV1"},
+          {"activity":"block_0003_0007","kind":"wasiAssertionSuppressedV1"},
+          {"activity":"block_0004_0007","kind":"wasiAssertionRepairV1"}
+        ],
+        )json");
+        const auto lesson=lgaed::windows::parse_lesson_json(bytes,"es");
+        const auto progress=lgaed::windows::parse_lesson_progress_metadata(bytes,"es");
+        const auto& enabled=lesson.pages[2].blocks[3],
+                  &disabled=lesson.pages[3].blocks[7],
+                  &repaired=lesson.pages[4].blocks[3];
+        for(const auto& [page,index,mode] : {
+            std::tuple{2u,3u,AssertionMode::enabled_abort},
+            std::tuple{3u,7u,AssertionMode::disabled},
+            std::tuple{4u,3u,AssertionMode::repaired}}) {
+            const auto& block=lesson.pages[page].blocks[index];
+            const auto& lean=progress.pages[page].blocks[index];
+            const auto& historical=original.pages[page].blocks[index];
+            require(block.output_check&&block.output_check->assertion_check==mode&&
+                    block.output_check->cases.size()==1&&
+                    lean.output_check&&lean.output_check->assertion_check==mode&&
+                    block.initial_code==historical.initial_code&&
+                    block.address.page==historical.address.page&&
+                    block.address.block==historical.address.block,
+                "U3L9 declaration changed an original editor, state address or runtime goal");
+        }
+        const auto run_case=[&](const Block& block,AssertionMode mode,std::string source) {
+            auto req=request(std::move(source),block.standard_input.value_or(""));
+            req.backend=CppRunRequest::Backend::wasi;
+            req.assertion_mode=mode;
+            require(lgaed::windows::compiler_runtime_request_allowed(block,req),
+                "An authentic U3L9 assertion editor was not allowed for a fresh WASI run");
+            const auto result=run_cpp(req);
+            require(result.error_utf8.empty()&&result.compilation.succeeded()&&
+                    result.execution.status==CppPhaseStatus::completed,
+                "The original assertion editor could not execute: "+
+                result.error_utf8+result.compilation.stderr_bytes);
+            const auto captured=capture_cpp_execution(req,result);
+            const auto verdict=evaluate_cpp_output_check(
+                *block.output_check,captured,req.revision);
+            require(verdict.verdict==OutputVerdict::correct,
+                "The fresh assertion evidence did not pass the authored contract: "+
+                verdict.feedback+" / "+result.execution.stderr_bytes);
+            return std::pair{req,result};
+        };
+        const auto [enabled_request,enabled_result]=run_case(
+            enabled,AssertionMode::enabled_abort,enabled.initial_code);
+        const auto abort_capture=capture_cpp_execution(enabled_request,enabled_result);
+        require(abort_capture.assertion_abort_verified&&
+                enabled_result.execution.exit_code&&
+                *enabled_result.execution.exit_code>0&&
+                enabled_result.execution.stdout_bytes.empty()&&
+                assertion_runtime_trap(enabled_result.execution.stdout_bytes,
+                    enabled_result.execution.stderr_bytes),
+            "The original assertion was credited only because of an arbitrary nonzero exit");
+        const auto assert_altered=[](CppRunResult value,std::string stderr_text) {
+            value.execution.stderr_bytes=std::move(stderr_text);
+            return value;
+        };
+        const auto wrong=assert_altered(enabled_result,"An unrelated runtime failure\n");
+        const auto fake=capture_cpp_execution(enabled_request,wrong);
+        require(!fake.assertion_abort_verified&&
+                evaluate_cpp_output_check(*enabled.output_check,fake,enabled_request.revision).verdict!=
+                    OutputVerdict::correct,
+            "Any failed WASI process or a fixed exit code forged an assertion receipt");
+        auto wrong_backend=enabled_request;
+        wrong_backend.backend=CppRunRequest::Backend::native_msvc;
+        require(!lgaed::windows::compiler_runtime_request_allowed(enabled,wrong_backend),
+            "An MSVC execution was substituted for the specified WASI assertion");
+
+        const auto [disabled_request,disabled_result]=run_case(
+            disabled,AssertionMode::disabled,disabled.initial_code);
+        const auto silent=assert_altered(disabled_result,"");
+        require(evaluate_cpp_output_check(*disabled.output_check,
+                capture_cpp_execution(disabled_request,silent),disabled_request.revision).verdict!=
+                    OutputVerdict::correct,
+            "A silent NDEBUG run borrowed the public rejection credit");
+        const auto [original_source,scope]=std::pair{repaired.initial_code,std::string("const int cajas = piezas / piezas_por_caja;")};
+        auto corrected=original_source;
+        const auto pos=corrected.find(scope);
+        require(pos!=corrected.npos&&corrected.find(scope,pos+1)==corrected.npos,
+            "The U3L9 formula was not found in the immutable editor");
+        corrected.replace(pos,scope.size(),
+            "const int cajas = (piezas + piezas_por_caja - 1) / piezas_por_caja;");
+        const auto [repaired_request,repaired_result]=run_case(
+            repaired,AssertionMode::repaired,corrected);
+        const auto repaired_capture=capture_cpp_execution(repaired_request,repaired_result);
+        require(repaired_capture.assertion_repair_probes_correct&&
+                repaired_result.assertion_probes.size()==repaired_assertion_inputs.size(),
+            "A one-input repair was credited without independent valid and rejected cases");
+        // The prepared case alone can be forged by a literal. Such a source
+        // preserves main and assert, but must fail the two automatic contrasts.
+        auto hardcoded=original_source;
+        hardcoded.replace(pos,scope.size(),"const int cajas = 2;");
+        auto copied=request(hardcoded,"-1 5\n");
+        copied.backend=CppRunRequest::Backend::wasi;
+        copied.assertion_mode=AssertionMode::repaired;
+        require(lgaed::windows::compiler_runtime_request_allowed(repaired,copied),
+            "The QA counterexample must pass the source boundary before hidden execution");
+        const auto candidate=run_cpp(copied);
+        require(candidate.error_utf8.empty()&&candidate.compilation.succeeded()&&
+                candidate.execution.status==CppPhaseStatus::completed&&
+                candidate.execution.stdout_bytes=="Cajas=2\n",
+            "The intentionally overfitted original U3L9 formula did not run");
+        const auto candidate_capture=capture_cpp_execution(copied,candidate);
+        require(!candidate_capture.assertion_repair_probes_correct&&
+                evaluate_cpp_output_check(*repaired.output_check,candidate_capture,
+                    copied.revision).verdict!=OutputVerdict::correct,
+            "A hardcoded repair passed without correct independent measurements");
+        auto removed=corrected;
+        const auto find_assert=removed.find("assert(cajas * piezas_por_caja >= piezas);");
+        require(find_assert!=removed.npos,"No original assertion to protect");
+        removed.erase(find_assert,std::string_view("assert(cajas * piezas_por_caja >= piezas);").size());
+        copied.source_utf8=removed;
+        require(!lgaed::windows::compiler_runtime_request_allowed(repaired,copied),
+            "Removing assert was accepted as equivalent to repairing the calculation");
+    });
+
     test("WASI semantic diagnostics exercise the student's supplied ostream", [&] {
         using namespace lgaed::curriculum;
         const auto test_stream = [&](RejectionOperation kind,std::string_view student,bool expected) {
