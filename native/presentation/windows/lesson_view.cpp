@@ -1650,7 +1650,13 @@ struct LessonView {
         }
         const auto dpi=GetDpiForWindow(answer);
         const int bar_width=GetSystemMetricsForDpi(SM_CXVSCROLL,dpi),bar_height=GetSystemMetricsForDpi(SM_CYHSCROLL,dpi);
-        const auto bottom=std::max<LONG>(px(top_padding)+fallback_height,document_bottom)+px(bottom_padding);
+        // A trailing Enter creates a native row even while TOM reports a
+        // stale/offscreen insertion-point rectangle during the edit freeze.
+        // Include all visual rows when autosizing: otherwise RichEdit scrolls
+        // the first answer line away before the new row receives its height.
+        const auto line_floor=std::min<std::int64_t>(std::numeric_limits<LONG>::max(),
+            static_cast<std::int64_t>(px(top_padding))+static_cast<std::int64_t>(lines)*fallback_height);
+        const auto bottom=std::max<std::int64_t>(line_floor,document_bottom)+px(bottom_padding);
         const auto right=document_right+px(right_padding);
         bool horizontal=has_text&&(style&ES_AUTOHSCROLL)&&right>client.right;
         const bool vertical=!fit_height&&has_text&&bottom>client.bottom-(horizontal?bar_height:0)+px(1);
