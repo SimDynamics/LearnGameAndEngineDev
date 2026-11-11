@@ -108,6 +108,41 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
                 self.assertEqual(layout.state_fingerprint(old_block),
                                  layout.state_fingerprint(new_block))
 
+    def test_two_additional_span_separators_preserve_historical_source(self):
+        # Only optional presentation metadata is new. Both lessons retain the
+        # exact original response, fragments, identity and source text.
+        from pathlib import Path
+        root = (Path(__file__).resolve().parents[2] /
+                "app/src/main/assets/content/es/programming/cpp_fundamentals")
+        cases = (
+            ("repeticion_y_terminacion/lesson_for_y_limites_del_recorrido.json",
+             5, 7, "orden_while_puestos_2_3_4", 5),
+            ("texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json",
+             2, 3, "block_0002_0003", 4),
+        )
+        for name, page, index, identity, fragment_count in cases:
+            with self.subTest(lesson=name):
+                actual = layout.load(root / name)
+                self.assertEqual(actual.get("orderVisualSeparators"),
+                                 [{"activity": identity, "count": 1}])
+                self.assertEqual(
+                    actual["stateLayout"]["current"][page]["blocks"][index],
+                    identity)
+                order = actual["pages"][page]["blocks"][index]
+                self.assertEqual(order["type"], "order_code")
+                self.assertEqual(len(order["fragments"]), fragment_count)
+                self.assertEqual(sorted(order["correctOrder"]),
+                                 list(range(fragment_count)))
+                original = copy.deepcopy(actual)
+                del original["orderVisualSeparators"]
+                self.assertEqual(layout.validate(original), layout.validate(actual))
+                layout.validate_transition(original, actual)
+                self.assertEqual(original["pages"], actual["pages"])
+                self.assertEqual(original["stateLayout"], actual["stateLayout"])
+                self.assertEqual(layout.state_fingerprint(
+                    original["pages"][page]["blocks"][index]),
+                    layout.state_fingerprint(order))
+
     def test_original_drag_fill_template_and_holes_are_not_new_separators(self):
         # Real published 4-hole C++ drag editor, with a deliberate blank line.
         from pathlib import Path
