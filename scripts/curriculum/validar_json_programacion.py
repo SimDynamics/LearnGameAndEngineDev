@@ -967,7 +967,7 @@ def validate_cpp_output_check_contract(block, where):
         require(isinstance(case, dict), case_where, "caso debe ser un objeto")
         if not isinstance(case, dict):
             continue
-        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError", "exitCode"}, case_where,
+        require(set(case) <= {"standardInput", "outputs", "explanation", "reviewFeedback", "target", "standardError", "standardErrorExact", "exitCode"}, case_where,
                 "campo de caso outputCheck no admitido")
         if "exitCode" in case:
             require(type(case["exitCode"]) is int and 0 <= case["exitCode"] <= 255, case_where,
@@ -975,6 +975,11 @@ def validate_cpp_output_check_contract(block, where):
         if "standardError" in case:
             require(case["standardError"] == "nonBlank", case_where,
                     "standardError de caso sólo admite nonBlank; omitirlo conserva stdout solamente")
+        if "standardErrorExact" in case:
+            require(type(case["standardErrorExact"]) is str, case_where,
+                    "standardErrorExact requiere texto exacto, incluida cadena vacía")
+            require("standardError" not in case, case_where,
+                    "standardErrorExact no puede coexistir con standardError nonBlank")
         target = case.get("target")
         if "target" in case:
             require(isinstance(block.get("cmake"), dict), case_where,
@@ -1266,6 +1271,10 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
                 if isinstance(before, dict) and isinstance(after, dict) and 'standardError' not in before \
                         and after.get('standardError') == 'nonBlank':
                     del after['standardError']
+                if isinstance(before, dict) and isinstance(after, dict) \
+                        and 'standardErrorExact' not in before and 'standardError' not in before \
+                        and 'standardError' not in after and type(after.get('standardErrorExact')) is str:
+                    del after['standardErrorExact']
             base = dict(base, outputCheck=projected)
     if ((relative, pn, bn) == U11_COMPILER_EXPLANATION_REVISION[:3]
             and old.get('type') == current.get('type') == 'cpp_compiler'
