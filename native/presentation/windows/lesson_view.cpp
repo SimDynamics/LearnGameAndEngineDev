@@ -3904,15 +3904,15 @@ struct LessonView {
         const auto fresh=windows::capture_cpp_execution(running_program,*result);
         const auto evaluation=block(index).output_check&&executed
             ?windows::evaluate_cpp_output_check(*block(index).output_check,fresh,vm.revision):curriculum::OutputEvaluation{};
-        if(environment.options.qa_instance&&vm.selective_recovery&&executed&&
-            evaluation.verdict==curriculum::OutputVerdict::unavailable){
+        if(environment.options.qa_instance&&vm.selective_recovery&&executed){
             // Diagnostic for isolated Win32 QA ONLY. Never log student source,
             // input/output data, identifiers or personal state to app builds.
             std::fprintf(stderr,
-                "U3 QA capture: action=%u request-id-match=%d revision-match=%d error-len=%zu"
+                "U3 QA capture: verdict=%d action=%u request-id-match=%d revision-match=%d error-len=%zu"
                 " config=%d/%u compilation=%d/%u execution=%d/%u"
                 " fresh=%d/%d/%d exit=%d exe-match=%d"
                 " input-len=%zu stdout-len=%zu objective-cases=%zu\\n",
+                static_cast<int>(evaluation.verdict),
                 static_cast<unsigned>(running_action),
                 running_program.request_id==result->request_id,
                 running_program.revision==result->revision,
@@ -4034,6 +4034,15 @@ struct LessonView {
                     if(hooks.feedback_changed)hooks.feedback_changed(window,index,false);
                 }
                 else if(vm.status)set_rich_text(vm.status,compiler_progress_text(index,true));
+                if(environment.options.qa_instance&&vm.selective_recovery){
+                    std::fprintf(stderr,"U3 QA feedback branch: correct=%d trace=%d old=%d"
+                        " ready=%d output=%d completed=%d source-size=%zu"
+                        " control-size=%d\\n",
+                        correct,vm.selective_recovery->complete(),
+                        history_earned,history_ready,output_recorded,
+                        objective_completed,vm.feedback_source.size(),
+                        vm.feedback?GetWindowTextLengthW(vm.feedback):0);
+                }
                 if (objective_completed && has_references(block(index))) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
                 }
@@ -4042,6 +4051,9 @@ struct LessonView {
         }
         if(!laboratory()&&!curriculum::has_compiler_objective(block(index))&&vm.status)
             set_rich_text(vm.status,unavailable_compiler_status());
+        if(environment.options.qa_instance&&vm.selective_recovery&&executed)
+            std::fprintf(stderr,"U3 QA before reflow: feedback-source-size=%zu control-size=%d\\n",
+                vm.feedback_source.size(),vm.feedback?GetWindowTextLengthW(vm.feedback):0);
         reflow();
     }
     HWND import_text(int id, std::string_view text, bool scrollable = true) {
