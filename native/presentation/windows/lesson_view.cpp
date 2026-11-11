@@ -3904,31 +3904,6 @@ struct LessonView {
         const auto fresh=windows::capture_cpp_execution(running_program,*result);
         const auto evaluation=block(index).output_check&&executed
             ?windows::evaluate_cpp_output_check(*block(index).output_check,fresh,vm.revision):curriculum::OutputEvaluation{};
-        if(environment.options.qa_instance&&vm.selective_recovery&&executed){
-            // Diagnostic for isolated Win32 QA ONLY. Never log student source,
-            // input/output data, identifiers or personal state to app builds.
-            std::fprintf(stderr,
-                "U3 QA capture: verdict=%d action=%u request-id-match=%d revision-match=%d error-len=%zu"
-                " config=%d/%u compilation=%d/%u execution=%d/%u"
-                " fresh=%d/%d/%d exit=%d exe-match=%d"
-                " input-len=%zu stdout-len=%zu objective-cases=%zu\\n",
-                static_cast<int>(evaluation.verdict),
-                static_cast<unsigned>(running_action),
-                running_program.request_id==result->request_id,
-                running_program.revision==result->revision,
-                result->error_utf8.size(),
-                static_cast<int>(result->configuration.status),
-                result->configuration.exit_code.value_or(999),
-                static_cast<int>(result->compilation.status),
-                result->compilation.exit_code.value_or(999),
-                static_cast<int>(result->execution.status),
-                result->execution.exit_code.value_or(999),
-                fresh.compilation_succeeded,fresh.execution_succeeded,
-                fresh.execution_completed,fresh.exit_code,
-                fresh.executable==std::optional<std::string>{running_program.cmake->target},
-                fresh.standard_input.size(),fresh.standard_output.size(),
-                block(index).output_check->cases.size());
-        }
         const bool completed_for_objective=fresh.execution_completed&&evaluation.verdict!=curriculum::OutputVerdict::unavailable;
         if(configuration_failed){output=diagnostic_text(result->configuration.stdout_bytes+result->configuration.stderr_bytes);if(!result->error_utf8.empty())output+='\n'+result->error_utf8;}
         else if(cmake&&!executed){const auto& phase=running_action==windows::CppRunRequest::Action::configure?result->configuration:result->compilation;
@@ -4023,26 +3998,61 @@ struct LessonView {
                     mark_dirty();flush();
                 }
                 if(!correct||objective_completed){feedback(index,text,objective_completed,true,false,evaluation.feedback_path);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
-                else if(correct&&!objective_completed){
-                    // stdout alone, or an unsealed action trace, cannot
-                    // credit U3's mandatory history workflow.
-                    feedback(index,ui(
-                        "Salida correcta, pero falta acreditar la secuencia: registrar la base, construir y ejecutar el fallo, comparar los dos archivos, recuperar sólo cajas.cpp, reconstruir y ejecutar nuevamente.",
-                        "Output matches, but the required history sequence has not been verified: record the base, build and run the defect, compare both files, restore only cajas.cpp, rebuild and run again.",
-                        "La sortie correspond, mais la séquence de l'historique reste à vérifier : enregistrer la base, construire et exécuter le défaut, comparer les deux fichiers, restaurer uniquement cajas.cpp, reconstruire et relancer."),
-                        false,true);
+                else if(correct&&vm.selective_recovery&&!objective_completed){
+                    // This guidance is EXCLUSIVE to the U3 historical CMake
+                    // editor. Other C++ activities keep their normal case
+                    // progress, even when several inputs must be checked.
+                    using Stage=windows::CmakeSelectiveRecoveryTrace::Stage;
+                    auto text=ui("Salida correcta, pero falta acreditar la secuencia.",
+                        "Output matches, but the history sequence is not yet verified.",
+                        "La sortie correspond, mais la séquence historique reste à vérifier.");
+                    switch(vm.selective_recovery->stage()){
+                    case Stage::unrecorded:
+                        text+="\n"+ui("Registra primero la versión inicial de los seis archivos desde Historial.",
+                            "First record the original six-file revision in History.",
+                            "Enregistrez d'abord la révision initiale des six fichiers dans l'historique.");
+                        break;
+                    case Stage::recorded:
+                        text+="\n"+ui("Modifica la fórmula de cajas.cpp y añade un comentario a CMakeLists.txt; construye el proyecto defectuoso.",
+                            "Change the formula in cajas.cpp, add a comment to CMakeLists.txt, then build the defective project.",
+                            "Modifiez la formule dans cajas.cpp, ajoutez un commentaire à CMakeLists.txt, puis construisez le projet défectueux.");
+                        break;
+                    case Stage::failed_built:
+                        text+="\n"+ui("Ejecuta el objetivo defectuoso para comprobar los tres fallos y el código de salida 1.",
+                            "Run the defective target to observe three failures and exit code 1.",
+                            "Exécutez la cible défectueuse pour observer les trois échecs et le code de sortie 1.");
+                        break;
+                    case Stage::failed_executed:
+                    case Stage::compared_one:
+                        text+="\n"+ui("Compara las dos rutas modificadas con la misma revisión guardada en Historial.",
+                            "Compare both changed files with the same recorded revision in History.",
+                            "Comparez les deux fichiers modifiés avec la même révision enregistrée dans l'historique.");
+                        break;
+                    case Stage::compared_both:
+                        text+="\n"+ui("Recupera únicamente componente/src/cajas.cpp desde esa revisión, conservando el comentario de la raíz.",
+                            "Restore only componente/src/cajas.cpp from that revision, retaining the root comment.",
+                            "Restaurez seulement componente/src/cajas.cpp depuis cette révision, en conservant le commentaire de la racine.");
+                        break;
+                    case Stage::source_restored:
+                        text+="\n"+ui("Construye de nuevo el objetivo con la fuente recuperada.",
+                            "Build the target again with the restored source.",
+                            "Reconstruisez la cible avec le fichier source restauré.");
+                        break;
+                    case Stage::restored_built:
+                        text+="\n"+ui("Ejecuta de nuevo el objetivo reconstruido y comprueba las siete coincidencias.",
+                            "Run the rebuilt target and verify all seven matches.",
+                            "Exécutez la cible reconstruite et vérifiez les sept correspondances.");
+                        break;
+                    case Stage::verified:
+                        text+="\n"+ui("Revisa que la ejecución final pertenezca a este mismo proyecto y objetivo.",
+                            "Check that the final execution belongs to this project and target.",
+                            "Vérifiez que l'exécution finale correspond à ce projet et à cette cible.");
+                        break;
+                    }
+                    feedback(index,text,false,true);
                     if(hooks.feedback_changed)hooks.feedback_changed(window,index,false);
                 }
-                else if(vm.status)set_rich_text(vm.status,compiler_progress_text(index,true));
-                if(environment.options.qa_instance&&vm.selective_recovery){
-                    std::fprintf(stderr,"U3 QA feedback branch: correct=%d trace=%d old=%d"
-                        " ready=%d output=%d completed=%d source-size=%zu"
-                        " control-size=%d\\n",
-                        correct,vm.selective_recovery->complete(),
-                        history_earned,history_ready,output_recorded,
-                        objective_completed,vm.feedback_source.size(),
-                        vm.feedback?GetWindowTextLengthW(vm.feedback):0);
-                }
+                else if(correct&&vm.status)set_rich_text(vm.status,compiler_progress_text(index,true));
                 if (objective_completed && has_references(block(index))) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
                 }
@@ -4051,9 +4061,6 @@ struct LessonView {
         }
         if(!laboratory()&&!curriculum::has_compiler_objective(block(index))&&vm.status)
             set_rich_text(vm.status,unavailable_compiler_status());
-        if(environment.options.qa_instance&&vm.selective_recovery&&executed)
-            std::fprintf(stderr,"U3 QA before reflow: feedback-source-size=%zu control-size=%d\\n",
-                vm.feedback_source.size(),vm.feedback?GetWindowTextLengthW(vm.feedback):0);
         reflow();
     }
     HWND import_text(int id, std::string_view text, bool scrollable = true) {
