@@ -252,10 +252,14 @@ void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_
             curriculum::reference_objective_frame(declared,owner)==
                 curriculum::reference_objective_frame(published,previous),
         "The U3 root declaration changed the original response or stored completion identity");
+    const auto declared_at=declared_json.find("\"compilerWorkflowChecks\"");
+    require(declared_at!=std::string::npos,"The published U3 source lost its workflow root");
+    // Match meaningful tokens only inside the root declaration. The actual
+    // curriculum may contain spaces, line breaks or Git-normalized CRLF.
     auto rejects=[&](std::string_view from,std::string_view replacement) {
         auto invalid=declared_json;
-        const auto at=invalid.find(from);
-        require(at!=std::string::npos,"Missing source token for negative curriculum test");
+        const auto at=invalid.find(from,declared_at);
+        require(at!=std::string::npos,"Missing workflow token for negative curriculum test");
         invalid.replace(at,from.size(),replacement);
         bool rejected=false;
         try {(void)windows::parse_lesson_json(invalid,"es");}
@@ -263,15 +267,17 @@ void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_
         require(rejected,"The runtime parser accepted a forged curricular workflow");
     };
     rejects("cmakeSelectiveRecoveryV1","unrecognizedWorkflow");
-    rejects("block_0010_0003\",\"kind","block_0003_0004\",\"kind");
-    rejects("\"kind\":\"cmakeSelectiveRecoveryV1\"",
-            "\"kind\":\"cmakeSelectiveRecoveryV1\",\"extra\":true");
+    rejects("block_0010_0003","block_0003_0004");
+    rejects("cmakeSelectiveRecoveryV1\"}",
+            "cmakeSelectiveRecoveryV1\", \"extra\": true}");
     {
         auto duplicated=declared_json;
-        const std::string item="{\"activity\":\"block_0010_0003\",\"kind\":\"cmakeSelectiveRecoveryV1\"}";
-        const auto at=duplicated.find(item);
-        require(at!=std::string::npos,"Cannot locate the curricular declaration to duplicate");
-        duplicated.insert(at+item.size(),","+item);
+        const auto open=duplicated.find('[',declared_at);
+        const auto close=open==std::string::npos?std::string::npos:duplicated.find(']',open);
+        require(open!=std::string::npos&&close!=std::string::npos&&close>open+1,
+            "Cannot locate the exact curricular declaration array");
+        const auto item=duplicated.substr(open+1,close-open-1);
+        duplicated.insert(close,","+item);
         bool rejected=false;
         try {(void)windows::parse_lesson_json(duplicated,"es");}
         catch(const std::exception&){rejected=true;}
