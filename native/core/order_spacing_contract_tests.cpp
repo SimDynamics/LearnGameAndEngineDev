@@ -82,6 +82,22 @@ void preserve_copied_source_with_empty_cards(){
     check(ordered_source_text(authored_blanks,std::vector<std::size_t>{1,3,2})==
         "\n\nint b;",
         "Two leading authored empty cards were merged");
+    const std::vector<std::string> newline_boundaries={
+        "#include <iostream>\n", "", "int main() {", "", "return 0;", "}", ""};
+    check(ordered_source_text(newline_boundaries,
+            std::vector<std::size_t>{0,1,2,3,4,5,6})==
+        "#include <iostream>\n\nint main() {\n\nreturn 0;\n}\n",
+        "An authored blank row was lost beside an existing physical LF");
+    check(ordered_source_text(newline_boundaries,
+            std::vector<std::size_t>{0,1,2,3,4,5})==
+        "#include <iostream>\n\nint main() {\n\nreturn 0;\n}",
+        "Copy invented a terminal newline without the trailing source card");
+    const std::vector<std::string> trailing_lf={
+        "int item=0;\n", "", "", "return item;"};
+    check(ordered_source_text(trailing_lf,
+            std::vector<std::size_t>{0,1,2,3})==
+        "int item=0;\n\n\nreturn item;",
+        "Adjacent original empty cards collapsed after an already-terminated line");
 
     const std::vector<std::string> continued={
         "#define SUM(x) \\\n", "    ((x) + 1)", "std::cout << \"\\n\";",
