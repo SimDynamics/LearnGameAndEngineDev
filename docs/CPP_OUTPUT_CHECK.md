@@ -44,11 +44,14 @@ Las sondas internas que se ejecutan automáticamente durante la primera
 comprobación pueden seguir protegiendo los criterios semánticos: no son nuevas
 pruebas manuales que deba realizar el estudiante.
 
-**Estado de implementación:** el mecanismo Windows que guarda recibos de varios
-casos todavía exige acreditarlos todos. Por eso Work no activará declaraciones
-multicaso de U3L6 o U3L8 hasta que Codex separe el caso obligatorio de los
-ensayos optativos, sin debilitar las comprobaciones automáticas. La declaración
-de U2L3 anterior contiene un solo caso y sí respeta esta regla.
+**Implementación Windows:** el primer elemento de `outputCheck.cases` es el
+caso obligatorio. Su ejecución correcta y verificada concede un recibo de avance
+sin exigir las entradas posteriores. Éstas siguen disponibles para ejecutarse
+y observarse voluntariamente; un caso posterior nunca sustituye al primero.
+Los recibos antiguos que acreditaron todos los casos se reconocen sin cambios.
+Los requisitos semánticos del primer caso, incluidas sondas internas, se siguen
+comprobando antes de conceder el logro. La incorporación de declaraciones
+curriculares U3L6/U3L8 requiere las verificaciones específicas de Work.
 
 ## Contrato
 
@@ -132,7 +135,7 @@ Work puede declarar un caso por consumidor, conservando su entrada y salida lite
 }
 ```
 
-La salida del cliente nunca acredita la batería. Un objetivo o entrada sin caso mantiene la ejecución disponible, sin veredicto ni aceptación implícita de otro consumidor. El veredicto visible corresponde a la ejecución capturada de su objetivo. Los casos ya acreditados se conservan al seleccionar otro ejecutable del mismo proyecto sin editar sus archivos o configuración; completar el objetivo curricular exige las pruebas de todos sus casos. La reapertura conserva esos datos y sus pruebas auténticas, sin inventar una ejecución nueva. Configuración, generación, construcción y ejecución conservan sus diagnósticos y no consumen corazones. Las explicaciones y orientaciones opcionales pertenecen a su caso, sin revelar el resultado de otro ejecutable.
+La salida del cliente no acredita que se haya ejecutado la batería: cada objetivo y entrada conserva su veredicto independiente. Un objetivo o entrada sin caso mantiene la ejecución disponible, sin veredicto ni aceptación implícita de otro consumidor. Para avanzar basta la primera ejecución declarada en `cases`; las restantes son ensayos opcionales, no pruebas fabricadas ni acreditaciones de una actividad de construcción distinta. Los casos ejecutados se conservan al seleccionar otro objetivo del mismo proyecto sin alterar fuentes o configuración. La reapertura conserva esos datos y sus pruebas auténticas, sin inventar una ejecución nueva. Configuración, generación, construcción y ejecución conservan sus diagnósticos y no consumen corazones. Las explicaciones y orientaciones opcionales pertenecen a su caso, sin revelar el resultado de otro ejecutable.
 
 Las siete prácticas de `datos_y_listas_de_objetivos` y `reorganizar_la_descripcion_conservando_el_comprobador` que solicitan ambos consumidores declaran dos casos por editor, con entrada vacía, objetivo explícito, stdout literal y retorno cero. Las lecciones requieren completar sus objetivos de compilación. Estas comprobaciones verifican las ejecuciones; los criterios de las actividades también piden inspeccionar las propiedades y la organización de CMake. Obtener la salida correcta no demuestra por sí solo que se haya realizado esa reorganización.
 
@@ -390,7 +393,7 @@ guía, separados del logro histórico. La reapertura conserva borrador, recibo y
 transitoria. Un intento interrumpido antes de evaluarse no borra la revisión
 anterior. Una nueva comprobación correcta sustituye la revisión de error.
 
-La acreditación conserva el objetivo y una instantánea del programa que lo resolvió, con una prueba por cada entrada/objetivo declarado. Un antiguo `correct=true`, una predicción, un marcador de página o una salida sin ejecución satisfactoria no equivalen a esa prueba. Si hay varios casos, deben comprobarse todos con el mismo programa. Cambiar sólo Entrada o elegir otro ejecutable del mismo proyecto conserva los casos ya comprobados; editar las fuentes o la configuración antes de completar el conjunto los invalida y Undo no los recupera. Los errores técnicos siguen siendo diagnósticos y no consumen corazones.
+La acreditación conserva el objetivo y una instantánea del programa que lo resolvió, con una prueba autenticada de su primera entrada y objetivo. Un antiguo `correct=true`, una predicción, un marcador de página o una salida sin ejecución satisfactoria no equivalen a esa prueba. En `outputCheck` el primer caso correctamente comprobado basta para avanzar; los casos posteriores son pruebas voluntarias, que pueden tener sus propios recibos sin modificar el logro ganado. Los antiguos sellos que exigían todos los casos siguen siendo válidos. Cambiar sólo Entrada o elegir otro ejecutable del mismo proyecto permite conservar los casos comprobados; editar fuentes o configuración antes del primer acierto invalida el intento incompleto y Undo no lo recupera. Una vez ganado el logro, sólo el reinicio expreso lo revoca. Los errores técnicos siguen siendo diagnósticos y no consumen corazones.
 
 La propiedad raíz histórica sigue admitiéndose para conservar los assets:
 
