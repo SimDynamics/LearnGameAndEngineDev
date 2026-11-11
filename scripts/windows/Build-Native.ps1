@@ -26,10 +26,7 @@ foreach ($name in @('JAVA_HOME','LGAED_JAVA_HOME','LGAED_PYTHON_EXECUTABLE','LGA
     $originalToolEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 try {
-# The first Codex build provisions the immutable, hash-verified WASI/Wasmtime
-# tools used by educational single-file execution. Subsequent builds reuse
-# those tools. This never changes Windows Security or AV preferences.
-& (Join-Path $PSScriptRoot 'Install-WasiTools.ps1')
+# The native build uses pinned MSVC and does not install optional WASI/Wasmtime tools.
 $tools = & (Join-Path $PSScriptRoot 'Resolve-NativeTools.ps1')
 $vcvars = $tools.VcVars
 $cmake = $tools.CMake
