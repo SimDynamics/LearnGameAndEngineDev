@@ -86,6 +86,9 @@ if ($report.archiveFiles -ne 35 -or $report.existingIdentical -ne 1 -or
     $report.newFiles -ne 34 -or $report.conflicts -ne 0 -or
     $report.fullyDecodedAndCrcVerified -ne 35 -or
     @($report.memberDigests).Count -ne 35 -or
+    $report.installableSelectionVerified -or
+    -not $report.inventoryPathsAreNotInstallInstructions -or
+    $null -ne $report.expectedDeployableFiles -or
     -not $report.noFilesWereWritten -or $report.installationPerformed) {
     throw "Unexpected valid-ZIP inspection: $($report | ConvertTo-Json -Compress)"
 }
@@ -231,6 +234,32 @@ if (@(Get-ChildItem -LiteralPath $outside -Force).Count -ne 0) {
 }
 Write-Host 'PASS: junction descendants and explicit ZIP directories are blocked.'
 
+# This project root is an ordinary directory; its PARENT is a junction.
+# Blocking only the final project directory is insufficient.
+$realParent = Join-Path $root 'actual-parent-directory'
+$ordinaryProject = Join-Path $realParent 'nested'
+New-Item -ItemType Directory -Path $ordinaryProject -Force | Out-Null
+$linkedParent = Join-Path $root 'linked-parent-directory'
+New-Item -ItemType Junction -Path $linkedParent -Target $realParent | Out-Null
+$projectViaJunction = Join-Path $linkedParent 'nested'
+$ancestorRejected = $false
+try {
+    $null = Invoke-TestInspector $goodZip 35 $goodSha $projectViaJunction
+}
+catch {
+    if ($_.Exception.Message -notmatch 'project path traverses a reparse point') {
+        throw "Unexpected ancestral junction diagnostic: $_"
+    }
+    $ancestorRejected = $true
+}
+if (-not $ancestorRejected) {
+    throw 'The project with a junction ancestor was not blocked.'
+}
+if (@(Get-ChildItem -LiteralPath $ordinaryProject -Force).Count -ne 0) {
+    throw 'The inspector unexpectedly modified the project behind an ancestor junction.'
+}
+Write-Host 'PASS: project behind a junction parent is rejected before file inventory.'
+
 # Test clean and dirty Git states against a second disposable project. Only
 # this throwaway fixture gets an initial Git commit, never the user's repo.
 $gitCommand = Get-Command git -CommandType Application | Select-Object -First 1
@@ -285,13 +314,15 @@ $summary = [ordered]@{
     explicitDirectoryConflictsDetected = 1
     junctionTypesBlocked = 2
     gitStatesVerified = 3
+    ancestorJunctionsRejected = 1
+    syntheticInventoryNeverAuthorizesDeployment = $true
     originalStudentFilesTouched = $false
     realArchiveInstalled = $false
 }
 $qa = Join-Path $repo 'out\qa\assetcheck-package-preflight'
 New-Item -ItemType Directory -Path $qa -Force | Out-Null
 $summary | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $qa 'synthetic-results.json') -Encoding utf8
-Write-Host 'PASS: 9 non-destructive inspections, 16 malformed ZIPs rejected, all 35 members decoded and CRC-verified.'
+Write-Host 'PASS: 10 non-destructive inspections, 16 malformed ZIPs rejected, and no deployment assumed from the inventory.'
 # Git's expected non-worktree exit status remains in LASTEXITCODE even after
 # all PowerShell assertions pass. Finish the synthetic CI job explicitly.
 exit 0
