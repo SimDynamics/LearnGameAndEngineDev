@@ -163,7 +163,8 @@ void comments_between_unchanged_commands_are_allowed(){
         "A valid comment between CMake commands was mistaken for a source edit");
 }
 void counterexamples(){
-    const auto p=published(),base=registered(p.project_files);
+    const auto p=published();
+    const auto base=registered(p.project_files);
     const auto bad=broken(p.project_files),good=restored(bad,p.project_files);
     CmakeSelectiveRecoveryTrace trace(p);
     auto forged=base;forged.file_sha256["CMakeLists.txt"]=std::string(64,'0');
@@ -177,8 +178,8 @@ void counterexamples(){
     check(!trace.run(altered,result(altered,true)),"Extra CMake commands were accepted as comments");
     check(trace.run(badbuild,result(badbuild,true)),"Legitimate build was rejected");
     auto badrun=request(bad,CppRunRequest::Action::execute,2,1);
-    auto stderr=result(badrun,true);stderr.execution.stderr_bytes="Error\n";
-    check(!trace.run(badrun,stderr),"Nonempty diagnostic passed the exact failed run");
+    auto stderr_case=result(badrun,true);stderr_case.execution.stderr_bytes="Error\n";
+    check(!trace.run(badrun,stderr_case),"Nonempty diagnostic passed the exact failed run");
     auto aborted=result(badrun,true);aborted.execution.status=CppPhaseStatus::timed_out;
     check(!trace.run(badrun,aborted),"A timeout passed as a normal failure");
     check(trace.run(badrun,result(badrun,true)),"Legitimate failed run was rejected");
