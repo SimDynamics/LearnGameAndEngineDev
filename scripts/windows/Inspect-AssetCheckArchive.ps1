@@ -62,6 +62,63 @@ if ($actualHash -cne $expectedHash) {
     throw "Archive SHA-256 mismatch. Expected $expectedHash, found $actualHash. No files inspected or installed."
 }
 Add-Type -AssemblyName System.IO.Compression
+# Earlier .NET runtimes do not necessarily verify a ZIP member's CRC-32.
+# Stream every member, including files absent from the local project, and
+# verify its declared size, standard ZIP CRC-32 and SHA-256 without writing.
+if (-not ('AssetCheckZipEntryDigest' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
+
+public static class AssetCheckZipEntryDigest {
+    private static readonly uint[] CrcTable = BuildCrcTable();
+
+    private static uint[] BuildCrcTable() {
+        uint[] table = new uint[256];
+        for (uint i = 0; i < 256; ++i) {
+            uint v = i;
+            for (int k = 0; k < 8; ++k)
+                v = (v & 1U) != 0 ? (v >> 1) ^ 0xEDB88320U : v >> 1;
+            table[i] = v;
+        }
+        return table;
+    }
+
+    public static string VerifiedSha256(ZipArchiveEntry entry) {
+        using (Stream source = entry.Open())
+        using (SHA256 sha = SHA256.Create()) {
+            byte[] buffer = new byte[65536];
+            long count = 0;
+            uint crc = 0xFFFFFFFFU;
+            int read;
+            while ((read = source.Read(buffer, 0, buffer.Length)) != 0) {
+                count = checked(count + read);
+                if (count > entry.Length || count > 134217728L)
+                    throw new InvalidDataException(
+                        "ZIP entry expands beyond its declared length: " + entry.FullName
+                    );
+                sha.TransformBlock(buffer, 0, read, buffer, 0);
+                for (int i = 0; i < read; ++i)
+                    crc = CrcTable[(int)((crc ^ buffer[i]) & 0xFFU)] ^ (crc >> 8);
+            }
+            sha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            if (count != entry.Length)
+                throw new InvalidDataException(
+                    "ZIP uncompressed length mismatch: " + entry.FullName
+                );
+            crc ^= 0xFFFFFFFFU;
+            if (crc != entry.Crc32)
+                throw new InvalidDataException(
+                    "ZIP CRC-32 mismatch: " + entry.FullName
+                );
+            return Convert.ToHexString(sha.Hash).ToLowerInvariant();
+        }
+    }
+}
+'@
+}
 $seen = [Collections.Generic.HashSet[string]]::new(
     [StringComparer]::OrdinalIgnoreCase
 )
@@ -77,6 +134,7 @@ $conflicts = [Collections.Generic.List[string]]::new()
 $identical = [Collections.Generic.List[string]]::new()
 $new = [Collections.Generic.List[string]]::new()
 $blocked = [Collections.Generic.List[string]]::new()
+$memberDigests = [Collections.Generic.List[object]]::new()
 $directories = 0
 $fileCount = 0
 $uncompressed = [long]0
@@ -173,6 +231,18 @@ try {
                 }
             }
 
+            # Validate every file even when its destination is absent,
+            # blocked by a reparse point, or already contains different work.
+            if (-not $directory) {
+                $memberHash = [AssetCheckZipEntryDigest]::VerifiedSha256($entry)
+                [void] $memberDigests.Add([ordered]@{
+                    path = $trimmed
+                    sha256 = $memberHash
+                    bytes = $entry.Length
+                    crc32 = ('{0:x8}' -f $entry.Crc32)
+                })
+            }
+
             $relative = [IO.Path]::Combine([string[]] $segments)
             $target = [IO.Path]::GetFullPath((Join-Path $project $relative))
             if (-not $target.StartsWith($projectRoot,
@@ -237,18 +307,8 @@ try {
                 continue
             }
 
-            # Compare bytes of a ZIP member with a local file without writing.
-            $memberStream = $entry.Open()
-            $sha = [Security.Cryptography.SHA256]::Create()
-            try {
-                $memberHash = [Convert]::ToHexString(
-                    $sha.ComputeHash($memberStream)
-                ).ToLowerInvariant()
-            }
-            finally {
-                $sha.Dispose()
-                $memberStream.Dispose()
-            }
+            # The archive member was fully verified before destination
+            # checks; only the existing local file needs hashing here.
             $localHash = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
             if ($memberHash -ceq $localHash) {
                 [void] $identical.Add($trimmed)
@@ -303,6 +363,8 @@ $result = [ordered]@{
     archiveFiles = $fileCount
     archiveDirectories = $directories
     expandedBytes = $uncompressed
+    fullyDecodedAndCrcVerified = $memberDigests.Count
+    memberDigests = $memberDigests.ToArray()
     projectPath = $project
     existingIdentical = $identical.Count
     newFiles = $new.Count
