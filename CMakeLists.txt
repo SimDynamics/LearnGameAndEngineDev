@@ -159,13 +159,10 @@ if(LGAED_STATE_IMPORT_QA_ONLY OR LGAED_NARRATION_PLAYER_QA_ONLY)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         include(cmake/StateImportTests.cmake)
         lgaed_add_state_import_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/state-import")
-        # Protect first-case completion, optional follow-ups and unchanged
-        # historical guidance in the focused Windows state pipeline.
-        add_executable(lgaed_compiler_guidance_state_tests native/platform/windows/compiler_guidance_state_tests.cpp)
-        target_link_libraries(lgaed_compiler_guidance_state_tests PRIVATE lgaed_platform_windows lgaed_host_options)
-        add_test(NAME native.compiler_guidance_state COMMAND lgaed_compiler_guidance_state_tests)
-        set_tests_properties(native.compiler_guidance_state PROPERTIES TIMEOUT 45)
-        message(STATUS "Focused native import QA: historical suites, exact stderr and first-case guidance; no application, reader or audio verification.")
+        # Keep the historical import suite focused on its seven self-contained
+        # tests. Compiler guidance is exercised by the full native configuration;
+        # this isolated profile lacks all resources those fixtures reference.
+        message(STATUS "Focused native import QA: historical suites and exact runtime stderr; no application, reader or audio verification.")
     else()
         include(cmake/NarrationPlayerTests.cmake)
         lgaed_add_narration_player_tests("${CMAKE_CURRENT_BINARY_DIR}/qa/narration-player")
