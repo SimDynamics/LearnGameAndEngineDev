@@ -73,6 +73,23 @@ std::string complete_seal(const std::string& key,std::string_view program,const 
     for(const auto& item:proofs)frame+=token(item);
     return state::sha256(frame);
 }
+// The first authenticated authored case is sufficient for curricular progress.
+// Keep the historical all-case seal unchanged. Additional cases are optional
+// observations, and never silently inherit another case's program or input.
+std::string first_case_complete_seal(const std::string& key,std::string_view program,
+        const std::vector<std::string>& proofs) {
+    if(proofs.empty()||proofs.front().empty())return {};
+    return state::sha256("compiler-first-case-complete-v1/"+
+        token(key)+token(program)+token(proofs.front()));
+}
+bool valid_completion_seal(const curriculum::Block& block,const std::string& key,
+        std::string_view program,const std::vector<std::string>& proofs,std::string_view stored) {
+    if(stored.empty()||proofs.empty())return false;
+    const bool all=std::ranges::all_of(proofs,[](const auto& value){return !value.empty();});
+    if(all&&stored==complete_seal(key,program,proofs))return true;
+    return block.output_check&&block.output_check->cases.size()>1&&
+        !proofs.front().empty()&&stored==first_case_complete_seal(key,program,proofs);
+}
 // Presentation-only provenance. Neither this sidecar nor its seal participates
 // in grade, execution proof, objective identity or historical completion.
 constexpr auto feedback_origin_suffix="feedback-origin/v1";
@@ -251,8 +268,7 @@ void validate_receipts(const state::StateData& data,const curriculum::Lesson& le
     for(std::size_t index=0;index<proofs.size();++index)if(!proofs[index].empty()&&proofs[index]!=(block.compile_check?diagnostic_proof(key,program,block):proof(key,program,index,block.output_check->cases[index])))
         throw std::runtime_error("A compiler case proof belongs to another program or objective; data was preserved.");
     if(const auto value=state::find(data,"native_windows",key+"completed")) {
-        if(proofs.empty()||std::ranges::any_of(proofs,[](const auto& value){return value.empty();})||
-            std::get<std::string>(*value)!=complete_seal(key,program,proofs))
+        if(!valid_completion_seal(block,key,program,proofs,std::get<std::string>(*value)))
             throw std::runtime_error("Invalid compiler completion proof; data was preserved.");
     }
 }
@@ -318,8 +334,10 @@ static bool stdout_or_diagnostic_completed(const state::StateData& data,const cu
     const auto proofs=case_proofs(data,key);
     if(captured.empty()||proofs.size()!=(block.compile_check?1:block.output_check->cases.size())||proofs.empty())return false;
     for(std::size_t index=0;index<proofs.size();++index)
-        if(proofs[index]!=(block.compile_check?diagnostic_proof(key,captured,block):proof(key,captured,index,block.output_check->cases[index])))return false;
-    return state::string_value(data,"native_windows",key+"completed")==complete_seal(key,captured,proofs);
+        if(!proofs[index].empty()&&
+            proofs[index]!=(block.compile_check?diagnostic_proof(key,captured,block):proof(key,captured,index,block.output_check->cases[index])))return false;
+    return valid_completion_seal(block,key,captured,proofs,
+        state::string_value(data,"native_windows",key+"completed"));
 }
 bool compiler_puzzle_completed(const state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block) {
     return stdout_or_diagnostic_completed(data,lesson,block)
@@ -496,12 +514,21 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);
     const auto key=base(lesson,block),program=compiler_program_frame(captured);
-    if(stdout_or_diagnostic_completed(data,lesson,block)){
+    const bool previously_completed=stdout_or_diagnostic_completed(data,lesson,block);
+    auto proofs=case_proofs(data,key);
+    const auto stored_program=state::string_value(data,"native_windows",key+"program");
+    // All-case V1 achievements and achievements for another program are
+    // immutable. Only a new first-case achievement of this same program may
+    // collect optional extra case receipts afterwards.
+    const bool first_only=previously_completed&&stored_program==program&&
+        block.output_check->cases.size()>1&&
+        state::string_value(data,"native_windows",key+"completed")==
+            first_case_complete_seal(key,program,proofs);
+    if(previously_completed&&!first_only){
         record_feedback_origin(data,key,block,evaluation.feedback_path,state::string_value(data,"native_windows",key+"feedback"),state::string_value(data,"native_windows",key+"completed"));
         return true;
     }
-    auto proofs=case_proofs(data,key);
-    if(state::string_value(data,"native_windows",key+"program")!=program)proofs.clear();
+    if(stored_program!=program)proofs.clear();
     proofs.resize(block.output_check->cases.size());
     for(std::size_t index=0;index<block.output_check->cases.size();++index) {
         const auto& item=block.output_check->cases[index];
@@ -513,10 +540,17 @@ bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson
         if(input&&(!item.executable||item.executable==execution.executable))proofs[index]=proof(key,program,index,item);
     }
     auto& values=data.preferences["native_windows"];values[key+"program"]=program;values[key+"cases"]=proofs;
-    const bool complete=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();});
-    if(complete){values[key+"completed"]=complete_seal(key,program,proofs);values[key+"feedback"]=std::string(feedback);
-        record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,std::get<std::string>(values.at(key+"completed")));}
-    return complete;
+    const bool all=std::ranges::all_of(proofs,[](const auto& item){return !item.empty();});
+    const bool first=!proofs.empty()&&!proofs.front().empty();
+    if(first_only)return true; // Optional cases do not rewrite an earned seal or its feedback.
+    if(all||first){
+        values[key+"completed"]=all?complete_seal(key,program,proofs):
+            first_case_complete_seal(key,program,proofs);
+        values[key+"feedback"]=std::string(feedback);
+        record_feedback_origin(data,key,block,evaluation.feedback_path,feedback,
+            std::get<std::string>(values.at(key+"completed")));
+    }
+    return all||first;
 }
 bool record_compiler_selective_history_completion(state::StateData& data,
         const curriculum::Lesson& lesson,const curriculum::Block& block,
