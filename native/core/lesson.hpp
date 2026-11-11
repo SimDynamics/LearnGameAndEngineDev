@@ -2,6 +2,7 @@
 #include "core/text_semantics.hpp"
 #include "core/rejection_diagnostic_facts.hpp"
 #include "core/report_observation_check.hpp"
+#include "core/assertion_runtime_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
 
@@ -29,7 +30,10 @@ enum class CompilerWorkflowCheck {
     semantic_rejection_boxes_v1,
     semantic_rejection_balance_v1,
     observation_complete_v1,
-    observation_differences_v1
+    observation_differences_v1,
+    assertion_abort_wasi_v1,
+    assertion_suppressed_wasi_v1,
+    assertion_repaired_wasi_v1
 };
 enum class TextComparison { trimmed, exact, tokens };
 enum class AnswerComparison { code, cpp_decimal_literal_value };
@@ -103,6 +107,7 @@ struct OutputCheck {
     // a separate genuine compile/run of the supplied std::ostream& function.
     std::optional<RejectionOperation> rejection_operation;
     std::optional<ReportMode> observation_report;
+    std::optional<AssertionMode> assertion_check;
 };
 // A closed compile-time rejection is a different objective from runtime stdout.
 // The loader binds each diagnostic to its reviewed Spanish editor and source.
@@ -334,6 +339,8 @@ struct FreshExecution {
     bool execution_completed = false;
     bool rejection_probe_correct = false;
     bool report_probe_correct = false;
+    bool assertion_abort_verified = false;
+    bool assertion_repair_probes_correct = false;
 };
 enum class OutputVerdict { unavailable, correct, incorrect };
 struct OutputEvaluation {
