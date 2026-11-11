@@ -103,13 +103,6 @@ Sin pendientes.
 - **CONSERVACIÓN E INTEGRACIÓN:** mantener iniciales, propietarios, borradores, preguntas, respuestas, familias y traducciones. Los aciertos históricos de salida conservan su alcance y no conceden automáticamente los criterios nuevos. Codex implementa y verifica el mecanismo general; Work integra el contrato compatible y contrasta iniciales, soluciones equivalentes y contraejemplos antes de retirar esta ficha.
 - **RECURSO ACTUAL:** `native/core/lesson.cpp`, `native/platform/windows/compiler_completion.cpp`, `docs/CPP_OUTPUT_CHECK.md` y `scripts/curriculum/stable_state_layout.py`. El comportamiento numérico se comprueba con los casos existentes; falta la acreditación de la revisión expresiva exigida.
 
-### P2_U3_ACREDITACION_RECUPERACION_SELECTIVA
-
-- **ESTADO:** PENDIENTE DE ACEPTACIÓN DEL RECORRIDO ORIGINAL.
-- **UBICACIÓN:** curso `programming_practice_tools`, lección `programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador`, propietario `block_0010_0003` (página 11, bloque 4) y consigna `block_0010_0002`.
-- **ACEPTACIÓN RESTANTE:** recorrer desde la página 1 la lección publicada completa, cumpliendo realmente sus ejercicios anteriores y las barreras de acceso; comprobar después el bloque de Historial, la conservación de los otros archivos, la reapertura del recibo, la retroalimentación según la acción pendiente y la disponibilidad de las páginas posteriores. No precompletar artificialmente ejercicios de otras páginas. Mantener aceptadas etiquetas de revisión libres y distintas ubicaciones de comentarios CMake válidos, sin alterar las órdenes de construcción. Work comprueba la integración curricular; el usuario realiza la revisión visual y auditiva cotidiana y comunica incidencias.
-- **PROTECCIÓN:** preservar archivos de usuario, importaciones, progreso, familias, IDs, traducciones y botones Git. Las comprobaciones nuevas se realizan sólo en QA aislada y nunca reutilizan stdout antiguo como evidencia del Historial.
-
 ### P2_U3_ACREDITACION_ASERCIONES
 
 - **ESTADO:** PENDIENTE.
