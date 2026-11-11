@@ -212,11 +212,14 @@ struct OrderCodeView::Impl {
     void move(std::size_t from,std::size_t to,bool tap=false){
         if(!enabled||from>=ordered.size()||to>=ordered.size())return;
         if(from==to&&!tap)return;
-        if(from!=to){const auto value=ordered[from];ordered.erase(ordered.begin()+from);ordered.insert(ordered.begin()+to,value);layout(width);}
-        // Publishing clears reviewed feedback and can clamp the lesson's
-        // bottom scroll. Keep those screen destinations stable while the
-        // pointer is captured; the final arrangement is published on release.
-        // A deliberate tap still starts a sequence even at its current index.
+        const auto before=scored_order(),item=ordered[from];
+        if(from!=to){
+            ordered.erase(ordered.begin()+static_cast<std::ptrdiff_t>(from));
+            ordered.insert(ordered.begin()+static_cast<std::ptrdiff_t>(to),item);
+            layout(width);
+        }
+        // Visual-only changes never publish responses or clear prior credit.
+        if(before==scored_order()&&!(tap&&item<required_count))return;
         if(dragging)drag_changed=true;else if(changed)changed();
     }
     void release(bool publish=true){const auto item=pressed;const bool notify=publish&&drag_changed;
@@ -237,9 +240,20 @@ struct OrderCodeView::Impl {
             self.paint_row_outline(item,dc);if(message==WM_PAINT&&dc)ReleaseDC(item,dc);return result;
         }
         if(message==WM_GETDLGCODE)return DLGC_WANTARROWS|DLGC_WANTCHARS;
-        if(message==WM_LBUTTONDBLCLK)return 0;
+        if(message==WM_LBUTTONDBLCLK){
+            if(static_cast<std::size_t>(GetDlgCtrlID(item)-100)>=self.required_count)
+                self.omit_separator(item);
+            return 0;
+        }
+        if(message==WM_KEYDOWN&&(wp==VK_DELETE||wp==VK_BACK)){self.omit_separator(item);return 0;}
+        if(message==WM_KEYDOWN&&wp==VK_INSERT){self.restore_separator();return 0;}
         if(message==WM_SYSKEYDOWN&&(wp==VK_UP||wp==VK_DOWN)){
-            const auto at=self.position(item);if(wp==VK_UP&&at)self.move(at,at-1);else if(wp==VK_DOWN&&at+1<self.ordered.size())self.move(at,at+1);return 0;}
+            const auto at=self.position(item);
+            if(at>=self.ordered.size())return 0;
+            if(wp==VK_UP&&at)self.move(at,at-1);
+            else if(wp==VK_DOWN&&at+1<self.ordered.size())self.move(at,at+1);
+            return 0;
+        }
         if(message==WM_LBUTTONDOWN){if(!self.enabled)return 0;self.pressed=item;self.dragging=false;
             self.down={GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};ClientToScreen(item,&self.down);SetFocus(item);SetCapture(item);return 0;}
         if(message==WM_MOUSEMOVE&&self.pressed==item&&(wp&MK_LBUTTON)){
