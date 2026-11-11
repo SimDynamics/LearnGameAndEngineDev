@@ -314,6 +314,97 @@ void combined_cmake_check_follows_the_real_lesson_button(){
         check(!trace.completed_by(wrong_revision),"The sealed sequence accepted the prior build revision");
     }
 }
+void first_output_case_unlocks_without_discarding_optional_evidence(){
+    // Synthetic two-input objective: no account profile, CMake build or audio.
+    // Its first authored input grants progression. A different second input
+    // may be explored freely, but it cannot substitute for the first.
+    curriculum::Lesson lesson;lesson.locale="es";lesson.id="qa_first_authored_case";
+    curriculum::Block block;block.type=curriculum::BlockType::cpp_compiler;
+    block.stable_id="block_0002_0003";block.address.page=2;block.address.block=3;
+    block.initial_code="int main() { return 0; }";
+    curriculum::OutputCase first;first.standard_input="4\\n";first.outputs={"4\\n"};
+    curriculum::OutputCase second;second.standard_input="8\\n";second.outputs={"8\\n"};
+    block.output_check=curriculum::OutputCheck{};
+    block.output_check->cases={first,second};
+    CppRunRequest run;run.action=CppRunRequest::Action::compile_run;
+    run.revision=19;run.request_id=101;run.source_utf8=block.initial_code;
+    const auto observed=[&](std::string input,std::string output){
+        curriculum::FreshExecution result;result.source_revision=run.revision;
+        result.compilation_succeeded=true;result.execution_succeeded=true;
+        result.execution_completed=true;result.exit_code=0;
+        result.standard_input=std::move(input);result.standard_output=std::move(output);
+        return result;
+    };
+    state::StateData data;
+    check(!compiler_puzzle_completed(data,lesson,block),"A missing run unlocked an editor");
+    run.stdin_utf8=second.standard_input;
+    auto other=observed(second.standard_input,second.outputs.front());
+    check(!record_compiler_puzzle_case(data,lesson,block,run,other,"Correcto\\nSegundo caso")&&
+        compiler_puzzle_case_count(data,lesson,block)==1&&
+        !compiler_puzzle_completed(data,lesson,block),
+        "The optional second case unlocked progress before the first");
+    auto edited=run;edited.source_utf8+="\\n// new unverified draft";
+    auto incomplete=data;invalidate_compiler_puzzle_attempt(incomplete,lesson,block,edited);
+    check(!compiler_puzzle_completed(incomplete,lesson,block)&&
+        compiler_puzzle_case_count(incomplete,lesson,block)==0,
+        "An incomplete second-case receipt survived a different program");
+
+    run.stdin_utf8=first.standard_input;
+    const auto one=observed(first.standard_input,first.outputs.front());
+    auto wrong=one;wrong.standard_output="wrong\\n";
+    const auto unchanged=data;
+    check(!record_compiler_puzzle_case(data,lesson,block,run,wrong,"Incorrecto")&&
+        data==unchanged,"A wrong first output modified an authentic optional receipt");
+    check(record_compiler_puzzle_case(data,lesson,block,run,one,"Correcto\\nPrimer caso")&&
+        compiler_puzzle_completed(data,lesson,block)&&
+        compiler_puzzle_case_count(data,lesson,block)==2,
+        "A verified first case failed to complete after an earlier optional case");
+    check(state::decode(state::encode(data))==data,
+        "First-case receipt changed after state round trip");
+    const auto earned=data;
+    auto reopened=state::decode(state::encode(data));
+    check(compiler_puzzle_completed(reopened,lesson,block),
+        "Reopening lost a first-case achievement");
+
+    // A first-only attempt must also unlock with exactly one receipt.
+    state::StateData first_only;
+    check(record_compiler_puzzle_case(first_only,lesson,block,run,one,"Correcto\\nPrimer caso")&&
+        compiler_puzzle_case_count(first_only,lesson,block)==1&&
+        compiler_puzzle_completed(first_only,lesson,block),
+        "The first case still requires the remaining authored inputs");
+    const auto original_feedback=compiler_puzzle_feedback(first_only,lesson,block);
+    const auto sealed_first=first_only.preferences.at("native_windows");
+    run.stdin_utf8=second.standard_input;
+    check(record_compiler_puzzle_case(first_only,lesson,block,run,other,"Correcto\\nEnsayo optativo")&&
+        compiler_puzzle_case_count(first_only,lesson,block)==2&&
+        compiler_puzzle_completed(first_only,lesson,block)&&
+        compiler_puzzle_feedback(first_only,lesson,block)==original_feedback,
+        "An optional run erased or replaced the first verified achievement");
+    auto state_key=[](const state::StateData& state,std::string_view suffix){
+        for(const auto& [name,value]:state.preferences.at("native_windows"))
+            if(name.ends_with(suffix))return std::get<std::string>(value);
+        throw std::runtime_error("Missing first-case receipt suffix");
+    };
+    check(state_key(first_only,"completed")==state_key(state::StateData{
+            .preferences={{"native_windows",sealed_first}}},"completed"),
+        "Optional second case rewrote the first-case completion seal");
+    auto altered=first_only;
+    for(auto& [name,value]:altered.preferences["native_windows"])
+        if(name.ends_with("/cases")){
+            auto& cases=std::get<std::vector<std::string>>(value);
+            check(cases.size()==2,"Case count changed after optional run");
+            cases[0]="tampered";break;
+        }
+    check(!compiler_puzzle_completed(altered,lesson,block),
+        "A forged first-case receipt passed the progress gate");
+    const auto saved=first_only;reset_compiler_puzzle(first_only,lesson,block);
+    check(!compiler_puzzle_completed(first_only,lesson,block)&&
+        compiler_puzzle_case_count(first_only,lesson,block)==0,
+        "Reset retained a first-only achievement");
+    check(compiler_puzzle_completed(saved,lesson,block)&&
+        compiler_puzzle_completed(earned,lesson,block),
+        "Another state mutation revoked independent first-case achievements");
+}
 void counterexamples(){
     const auto p=published();
     const auto base=registered(p.project_files);
@@ -362,7 +453,8 @@ int main(){
         full_sequence();combined_cmake_check_follows_the_real_lesson_button();
         comments_between_unchanged_commands_are_allowed();
         inline_cmake_comment_is_valid_but_new_commands_are_not();
-        history_receipt_preserves_old_stdout_and_requires_new_actions();counterexamples();
+        history_receipt_preserves_old_stdout_and_requires_new_actions();
+        first_output_case_unlocks_without_discarding_optional_evidence();counterexamples();
         std::cout<<"PASS CMake selective-history action chain: baseline, failed build/run, both diffs, one-file restore, rebuilt fresh success and negative cases; no credit stored\n";
         return 0;
     }catch(const std::exception& exc){
