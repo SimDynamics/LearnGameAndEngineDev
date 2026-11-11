@@ -548,7 +548,6 @@ int main() {
         require(enabled.stable_id=="block_0002_0003"&&
                 disabled.stable_id=="block_0003_0007"&&
                 repair.stable_id=="block_0004_0007"&&
-                !enabled.output_check&&!disabled.output_check&&!repair.output_check&&
                 enabled.initial_code==repair.initial_code&&
                 enabled.standard_input==std::optional<std::string>{"-1 5\n"}&&
                 disabled.standard_input==enabled.standard_input&&
@@ -623,21 +622,31 @@ int main() {
             "comprobaciones_repetibles/lesson_comprobar_acuerdos_internos_con_aserciones.json";
         const auto original=lgaed::windows::load_lesson(
             std::filesystem::path(lgaed::build::source_root)/path);
-        require(!original.pages[2].blocks[3].output_check&&
-                !original.pages[3].blocks[7].output_check&&
-                !original.pages[4].blocks[3].output_check,
-            "U3L9 has already been integrated by Work: inspect the published runtime before changing QA");
         auto bytes=original.raw_json;
-        constexpr std::string_view root="  \"stateLayout\": {";
-        const auto at=bytes.find(root);
-        require(at!=bytes.npos&&bytes.find(root,at+1)==bytes.npos,
-            "The authentic U3L9 state map was not found exactly once");
-        bytes.insert(at,R"json("compilerRuntimeChecks": [
-          {"activity":"block_0002_0003","kind":"wasiAssertionAbortV1"},
-          {"activity":"block_0003_0007","kind":"wasiAssertionSuppressedV1"},
-          {"activity":"block_0004_0007","kind":"wasiAssertionRepairV1"}
-        ],
-        )json");
+        // Work may publish the reviewed root declaration independently of QA.
+        // Use its real declaration as-is, or synthesize the same opt-in
+        // within this isolated test before the first curricular integration.
+        if(bytes.find("\"compilerRuntimeChecks\"")==bytes.npos) {
+            require(!original.pages[2].blocks[3].output_check&&
+                    !original.pages[3].blocks[7].output_check&&
+                    !original.pages[4].blocks[3].output_check,
+                "An undeclared U3L9 editor already has a runtime objective");
+            constexpr std::string_view root="  \"stateLayout\": {";
+            const auto at=bytes.find(root);
+            require(at!=bytes.npos&&bytes.find(root,at+1)==bytes.npos,
+                "The authentic U3L9 state map was not found exactly once");
+            bytes.insert(at,R"json("compilerRuntimeChecks": [
+              {"activity":"block_0002_0003","kind":"wasiAssertionAbortV1"},
+              {"activity":"block_0003_0007","kind":"wasiAssertionSuppressedV1"},
+              {"activity":"block_0004_0007","kind":"wasiAssertionRepairV1"}
+            ],
+            )json");
+        }else {
+            require(original.pages[2].blocks[3].output_check&&
+                    original.pages[3].blocks[7].output_check&&
+                    original.pages[4].blocks[3].output_check,
+                "The published U3L9 root declaration is missing one runtime owner");
+        }
         const auto lesson=lgaed::windows::parse_lesson_json(bytes,"es");
         const auto progress=lgaed::windows::parse_lesson_progress_metadata(bytes,"es");
         const auto& enabled=lesson.pages[2].blocks[3],
