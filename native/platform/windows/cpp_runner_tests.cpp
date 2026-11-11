@@ -641,6 +641,10 @@ int main(){return 0;}
             RejectionOperation::boxes,one_box,true);
         check_message("Cajas: petición 1 piezas=-1. Enteros entre 0 y 20. Verifique.\n",
             RejectionOperation::boxes,one_box,true);
+        check_message("Cajas: petición 1 piezas=-1. Enteros entre 0 y 20. Verifica.\n",
+            RejectionOperation::boxes,one_box,true);
+        check_message("Cajas: petición 1 piezas=-1. Enteros entre 0 y 20. Verificación necesaria.\n",
+            RejectionOperation::boxes,one_box,true);
         check_message("Cajas: petición 1 piezas=-1. Números 0 20. Revise.\n",
             RejectionOperation::boxes,one_box,false);
         check_message("Cajas: petición 1 piezas=-1, obtenido 0, resultado 20. Revise.\n",

@@ -134,7 +134,7 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
 }
 inline bool actionable(const std::vector<Word>& words) {
     for(const auto& word:words)for(const auto stem:
-        {"revis","verific","comprueb","comprob","correg","corrij","rectific","modific","ajust"}) {
+        {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"}) {
         if(word.text.starts_with(stem))return true;
     }
     return false;
