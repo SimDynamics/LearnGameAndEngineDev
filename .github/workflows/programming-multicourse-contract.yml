@@ -1,0 +1,43 @@
+name: Contrato curricular de Programación 1 y 2
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/programming-multicourse-contract.yml
+      - scripts/curriculum/validar_json_programacion.py
+      - scripts/curriculum/validate_programming_practice_tools.py
+      - scripts/curriculum/test_programming_multicourse_validation.py
+      - scripts/curriculum/test_stable_state_layout.py
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/**
+      - app/src/main/assets/content/es/programming/programming_practice_tools/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-programming-courses:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Obtener publicación y mapas históricos auténticos
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Comprobar reglas estructurales y revisiones editoriales de ambos cursos
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_programming_multicourse_validation
+      - name: Conservar regresiones previas del mapa de estado
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_stable_state_layout
+      - name: Validar específicamente Programación 2 desde su publicación Git
+        run: |
+          python3 scripts/curriculum/validar_json_programacion.py --course programming_practice_tools --base-ref HEAD --list-files
+      - name: Validar específicamente Programación 1 sin relajar contratos anteriores
+        run: |
+          python3 scripts/curriculum/validar_json_programacion.py --course cpp_fundamentals --base-ref HEAD
+      - name: Comprobar que el uso habitual visita ambos cursos
+        run: |
+          python3 scripts/curriculum/validar_json_programacion.py --base-ref HEAD
