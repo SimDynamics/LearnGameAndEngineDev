@@ -13,14 +13,22 @@ from pathlib import Path
 COURSE_ID = "programming_practice_tools"
 
 
-def validate(contract, root: Path, base_commit: str | None) -> dict:
-    content = contract.CONTENT.parent / COURSE_ID
+def validate(contract, root: Path, base_commit: str | None, *,
+             course_id: str = COURSE_ID, structure_only: bool = False) -> dict:
+    """Reuse exact block/index validators for full validation or a bounded audit.
+
+    structure_only deliberately does NOT authenticate stateLayout, editorial
+    history or translations; its result must never be reported as accepted.
+    """
+    if course_id not in ("cpp_fundamentals", "programming_practice_tools"):
+        raise ValueError("Curso no reconocido en auditoría estructural")
+    content = contract.CONTENT.parent / course_id
     state = contract._state_layout
     require = contract.require
     load = contract.load
     if not content.is_dir():
-        require(False, content, f"[{COURSE_ID}] no existe el directorio del curso")
-        return {"course": COURSE_ID, "lessons": 0, "units": 0, "blocks": 0,
+        require(False, content, f"[{course_id}] no existe el directorio del curso")
+        return {"course": course_id, "lessons": 0, "units": 0, "blocks": 0,
                 "files": [], "historical": 0}
 
     lesson_paths = sorted(content.glob("*/lesson_*.json"))
@@ -29,17 +37,18 @@ def validate(contract, root: Path, base_commit: str | None) -> dict:
     blocks = 0
     for path in lesson_paths:
         document = load(path)
-        contract.validate_lesson_state_contract(document, path)
-        expected = "__".join((COURSE_ID, path.parent.name, path.stem[7:]))
-        require(document["id"] == expected, path, f"[{COURSE_ID}] ID de lección distinto de la ruta")
-        require(document["id"] not in lessons, path, f"[{COURSE_ID}] ID de lección duplicado")
+        if not structure_only:
+            contract.validate_lesson_state_contract(document, path)
+        expected = "__".join((course_id, path.parent.name, path.stem[7:]))
+        require(document["id"] == expected, path, f"[{course_id}] ID de lección distinto de la ruta")
+        require(document["id"] not in lessons, path, f"[{course_id}] ID de lección duplicado")
         lessons[document["id"]] = document
-        require(bool(document["pages"]), path, f"[{COURSE_ID}] lección sin páginas")
+        require(bool(document["pages"]), path, f"[{course_id}] lección sin páginas")
         for pn, page in enumerate(document["pages"], 1):
-            require(bool(page["blocks"]), path, f"[{COURSE_ID}] página {pn} vacía")
+            require(bool(page["blocks"]), path, f"[{course_id}] página {pn} vacía")
             for bn, block in enumerate(page["blocks"], 1):
                 blocks += 1
-                where = f"{COURSE_ID}:{path.name} p{pn} b{bn}"
+                where = f"{course_id}:{path.name} p{pn} b{bn}"
                 kind = block["type"]
                 require(kind in contract.FIELDS, where, "tipo de bloque no soportado")
                 if kind not in contract.FIELDS:
@@ -84,46 +93,46 @@ def validate(contract, root: Path, base_commit: str | None) -> dict:
     units = {}
     for path in unit_paths:
         unit = load(path)
-        expected = COURSE_ID + "__" + path.parent.name
-        require(unit["courseId"] == COURSE_ID and unit["unitId"] == expected,
-                path, f"[{COURSE_ID}] ID de unidad no corresponde al loader")
-        require(unit["unitId"] not in units, path, f"[{COURSE_ID}] ID de unidad duplicado")
-        require(bool(unit["lessons"]), path, f"[{COURSE_ID}] unidad sin lecciones")
+        expected = course_id + "__" + path.parent.name
+        require(unit["courseId"] == course_id and unit["unitId"] == expected,
+                path, f"[{course_id}] ID de unidad no corresponde al loader")
+        require(unit["unitId"] not in units, path, f"[{course_id}] ID de unidad duplicado")
+        require(bool(unit["lessons"]), path, f"[{course_id}] unidad sin lecciones")
         units[unit["unitId"]] = unit
         numbers = [lesson["number"] for lesson in unit["lessons"]]
         require(numbers == list(range(1, len(numbers) + 1)),
-                path, f"[{COURSE_ID}] numeración de lecciones discontinua")
+                path, f"[{course_id}] numeración de lecciones discontinua")
         seen = set()
         for lesson in unit["lessons"]:
-            require(lesson["id"] not in seen, path, f"[{COURSE_ID}] lección repetida en índice")
+            require(lesson["id"] not in seen, path, f"[{course_id}] lección repetida en índice")
             seen.add(lesson["id"])
-            require(lesson["id"] in lessons, path, f"[{COURSE_ID}] referencia a lección inexistente")
+            require(lesson["id"] in lessons, path, f"[{course_id}] referencia a lección inexistente")
             if lesson["id"] in lessons:
                 require(lesson["title"] == lessons[lesson["id"]]["title"], path,
-                        f"[{COURSE_ID}] título no coincide con la lección")
+                        f"[{course_id}] título no coincide con la lección")
 
-    course_path = content / f"course_{COURSE_ID}.json"
+    course_path = content / f"course_{course_id}.json"
     course = load(course_path)
-    require(course["id"] == COURSE_ID, course_path, f"[{COURSE_ID}] ID de curso distinto del loader")
+    require(course["id"] == course_id, course_path, f"[{course_id}] ID de curso distinto del loader")
     require([unit["number"] for unit in course["units"]]
             == list(range(1, len(course["units"]) + 1)),
-            course_path, f"[{COURSE_ID}] numeración de unidades discontinua")
+            course_path, f"[{course_id}] numeración de unidades discontinua")
     indexed = set()
     for item in course["units"]:
         require(item["id"] not in indexed, course_path,
-                f"[{COURSE_ID}] unidad repetida en índice del curso")
+                f"[{course_id}] unidad repetida en índice del curso")
         indexed.add(item["id"])
         require(item["id"] in units, course_path,
-                f"[{COURSE_ID}] referencia a unidad inexistente")
+                f"[{course_id}] referencia a unidad inexistente")
         if item["id"] in units:
             require(item["title"] == units[item["id"]]["title"], course_path,
-                    f"[{COURSE_ID}] título de unidad no coincide")
+                    f"[{course_id}] título de unidad no coincide")
 
     previous_examined = 0
     # The global check_repository already authenticates the complete
     # multilingual state family; these individual historical documents come
     # only from a pinned Git commit. Do not accept baselines from draft files.
-    if (root / ".git").exists():
+    if not structure_only and (root / ".git").exists():
         prefix = content.relative_to(root).as_posix() + "/"
         publication = sorted(state._lesson_paths_at(root, base_commit))
         for relative in publication:
@@ -136,16 +145,16 @@ def validate(contract, root: Path, base_commit: str | None) -> dict:
             ))
             current_path = root / relative
             if not current_path.is_file():
-                require(False, relative, f"[{COURSE_ID}] lección previa perdida")
+                require(False, relative, f"[{course_id}] lección previa perdida")
                 continue
             delivered = load(current_path)
             try:
                 positions = state.validate(previous)
                 aligned = state.align_for_previous_validation(previous, delivered)
             except (ValueError, KeyError, TypeError) as error:
-                require(False, relative, f"[{COURSE_ID}] transición de estado no verificada: {error}")
+                require(False, relative, f"[{course_id}] transición de estado no verificada: {error}")
                 continue
-            require(aligned["id"] == previous["id"], relative, f"[{COURSE_ID}] ID previo modificado")
+            require(aligned["id"] == previous["id"], relative, f"[{course_id}] ID previo modificado")
             for pn, page in enumerate(previous["pages"]):
                 for bn, old in enumerate(page["blocks"]):
                     kind = old["type"]
@@ -154,10 +163,10 @@ def validate(contract, root: Path, base_commit: str | None) -> dict:
                     try:
                         new = aligned["pages"][pn]["blocks"][bn]
                     except IndexError:
-                        require(False, relative, f"[{COURSE_ID}] bloque previo perdido p{pn+1} b{bn+1}")
+                        require(False, relative, f"[{course_id}] bloque previo perdido p{pn+1} b{bn+1}")
                         continue
                     require(new["type"] == kind and new.get("id") == old.get("id"),
-                            relative, f"[{COURSE_ID}] posición/ID previo modificado p{pn+1} b{bn+1}")
+                            relative, f"[{course_id}] posición/ID previo modificado p{pn+1} b{bn+1}")
                     origin_p, origin_b = positions[pn, bn]
                     if kind in {"code", "cpp_compiler"}:
                         valid = new == old
@@ -169,13 +178,13 @@ def validate(contract, root: Path, base_commit: str | None) -> dict:
                         valid = (new == old
                                  or contract.preserves_ordinary_explanation_revision(
                                      relative, origin_p, origin_b, old, new,
-                                     previous, delivered, course_id=COURSE_ID))
+                                     previous, delivered, course_id=course_id))
                     require(valid, relative,
-                            f"[{COURSE_ID}] campos previos modificados sin autorización: "
+                            f"[{course_id}] campos previos modificados sin autorización: "
                             f"{contract.previous_exercise_difference(old, new)} p{pn+1} b{bn+1}")
 
     return {
-        "course": COURSE_ID,
+        "course": course_id,
         "lessons": len(lesson_paths),
         "units": len(unit_paths),
         "blocks": blocks,
@@ -183,4 +192,9 @@ def validate(contract, root: Path, base_commit: str | None) -> dict:
                   *(path.relative_to(root).as_posix() for path in unit_paths),
                   course_path.relative_to(root).as_posix()],
         "historical": previous_examined,
+        "scope": ("STRUCTURE_ONLY_NOT_APPROVED" if structure_only else
+                  "FULL_CURRICULAR_CONTRACT_WITH_GIT_HISTORY"),
+        "stateLayoutValidated": not structure_only,
+        "historicalProtectionChecked": (not structure_only and
+                                         (root / ".git").exists()),
     }
