@@ -207,18 +207,21 @@ void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_
     require(published.pages.size()==13&&published.pages[10].blocks.size()>3,
         "The authentic U3 recovery owner is missing");
     const auto& previous=published.pages[10].blocks[3];
-    require(windows::compiler_selective_history_required(published,previous),
-        "Existing U3 History protection disappeared before curricular adoption");
+    require(previous.compiler_workflow_check==curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1&&
+            windows::compiler_selective_history_required(published,previous),
+        "The published U3 editor has no valid explicit History contract");
     std::string declared_json=published.raw_json;
-    const std::string marker="  \"compilerPuzzlesRequired\": true,";
-    const std::string declaration=
-        "  \"compilerWorkflowChecks\": [{\"activity\":\"block_0010_0003\",\"kind\":\"cmakeSelectiveRecoveryV1\"}],\n";
-    if(declared_json.find("\"compilerWorkflowChecks\"")==std::string::npos) {
-        const auto at=declared_json.find(marker);
-        require(at!=std::string::npos&&declared_json.find(marker,at+1)==std::string::npos,
-            "The U3 root flow flag differs from its published identity");
-        declared_json.insert(at,declaration);
-    }
+    // Removing the root declaration in memory reproduces an older published
+    // asset. That older original keeps its legacy History gate and state keys.
+    const std::string root_field="  \"compilerWorkflowChecks\": [{\"activity\": \"block_0010_0003\", \"kind\": \"cmakeSelectiveRecoveryV1\"}],\n";
+    auto legacy_json=declared_json;
+    const auto root_field_at=legacy_json.find(root_field);
+    require(root_field_at!=std::string::npos,"The published curriculum omitted its root workflow declaration");
+    legacy_json.erase(root_field_at,root_field.size());
+    const auto legacy=windows::parse_lesson_json(legacy_json,"es");
+    require(!legacy.pages[10].blocks[3].compiler_workflow_check&&
+        windows::compiler_selective_history_required(legacy,legacy.pages[10].blocks[3]),
+        "Previous published U3 lessons no longer protect selective recovery");
     const auto declared=windows::parse_lesson_json(declared_json,"es");
     const auto progress=windows::parse_lesson_progress_metadata(declared_json,"es");
     const auto& owner=declared.pages[10].blocks[3];
@@ -228,7 +231,8 @@ void verify_declared_u3_compiler_workflow(const std::filesystem::path& authored_
             windows::compiler_selective_history_required(declared,owner)&&
             windows::compiler_selective_history_required(progress,summary),
         "The full and progress readers did not honor the same authored U3 workflow");
-    require(owner.raw_json==previous.raw_json&&owner.project_files==previous.project_files&&
+    require(owner.raw_json==legacy.pages[10].blocks[3].raw_json&&
+            owner.raw_json==previous.raw_json&&owner.project_files==previous.project_files&&
             owner.address.page==previous.address.page&&owner.address.block==previous.address.block&&
             owner.address.addition_namespace==previous.address.addition_namespace&&
             curriculum::exercise_key(declared,owner)==curriculum::exercise_key(published,previous)&&
@@ -396,23 +400,22 @@ void verify_genuine_u3_first_prerequisites(HWND host,const std::filesystem::path
 
 void integrated_selective_history_lesson(HWND host,const std::filesystem::path& authored_lesson,
         bool declared_workflow=false){
-    // Both variants load the genuine 13-page lesson, with one editor isolated
-    // only for exercising History. The declared variant adds its root field
-    // in memory until Work publishes it, never to a student file.
+    // Both variants load the genuine 13-page lesson and exercise History
+    // through its published editor. The historical variant removes only the
+    // new root declaration in memory, never the actual student lesson.
     auto published=windows::load_lesson(authored_lesson);
-    if(declared_workflow&&!published.pages.at(10).blocks.at(3).compiler_workflow_check){
-        const std::string marker="  \"compilerPuzzlesRequired\": true,";
-        auto amended=published.raw_json;
-        const auto at=amended.find(marker);
-        require(at!=std::string::npos,"U3 declaration QA could not find its original flow flag");
-        amended.insert(at,
-            "  \"compilerWorkflowChecks\": [{\"activity\":\"block_0010_0003\",\"kind\":\"cmakeSelectiveRecoveryV1\"}],\n");
-        published=windows::parse_lesson_json(amended,"es");
-    }
-    if(declared_workflow)
-        require(published.pages.at(10).blocks.at(3).compiler_workflow_check==
-                    curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1,
-            "The integrated U3 lesson did not adopt its declarative workflow");
+    if(!declared_workflow){
+        // Reuse the exact historical grading route without rewriting the
+        // published asset, so the two CI cases cover both compatibility eras.
+        const std::string field="  \"compilerWorkflowChecks\": [{\"activity\": \"block_0010_0003\", \"kind\": \"cmakeSelectiveRecoveryV1\"}],\n";
+        auto legacy_json=published.raw_json;
+        const auto offset=legacy_json.find(field);
+        require(offset!=std::string::npos,"No root declaration available for the historical variant");
+        legacy_json.erase(offset,field.size());
+        published=windows::parse_lesson_json(legacy_json,"es");
+    }else require(published.pages.at(10).blocks.at(3).compiler_workflow_check==
+                        curriculum::CompilerWorkflowCheck::cmake_selective_recovery_v1,
+            "The integrated U3 lesson did not load the published History contract");
     require(published.id=="programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador"
         &&published.pages.size()==13&&published.pages[10].blocks.size()>=4,
         "The published U3L2 lesson structure differs from the reviewed owner");

@@ -105,9 +105,8 @@ Sin pendientes.
 
 ### P2_U3_ACREDITACION_RECUPERACION_SELECTIVA
 
-- **ESTADO:** PENDIENTE DE INTEGRACIÓN CURRICULAR COMPATIBLE Y ACEPTACIÓN DEL RECORRIDO ORIGINAL.
+- **ESTADO:** PENDIENTE DE ACEPTACIÓN DEL RECORRIDO ORIGINAL.
 - **UBICACIÓN:** curso `programming_practice_tools`, lección `programming_practice_tools__comprobaciones_repetibles__reorganizar_la_descripcion_conservando_el_comprobador`, propietario `block_0010_0003` (página 11, bloque 4) y consigna `block_0010_0002`.
-- **INTEGRACIÓN RESTANTE:** Work debe publicar en la raíz de la lección el único registro `"compilerWorkflowChecks": [{"activity": "block_0010_0003", "kind": "cmakeSelectiveRecoveryV1"}]` y validar la transición sobre su JSON original sin modificar `pages`, `stateLayout`, los aciertos históricos de stdout, los borradores ni las referencias. Hasta esa publicación, conservar la protección anterior del bloque mediante su identidad fija. No duplicar el editor, sustituirlo por un cuestionario ni conceder el logro de Historial a una ejecución inicial que ya produce la salida correcta.
 - **ACEPTACIÓN RESTANTE:** recorrer desde la página 1 la lección publicada completa, cumpliendo realmente sus ejercicios anteriores y las barreras de acceso; comprobar después el bloque de Historial, la conservación de los otros archivos, la reapertura del recibo, la retroalimentación según la acción pendiente y la disponibilidad de las páginas posteriores. No precompletar artificialmente ejercicios de otras páginas. Mantener aceptadas etiquetas de revisión libres y distintas ubicaciones de comentarios CMake válidos, sin alterar las órdenes de construcción. Work comprueba la integración curricular; el usuario realiza la revisión visual y auditiva cotidiana y comunica incidencias.
 - **PROTECCIÓN:** preservar archivos de usuario, importaciones, progreso, familias, IDs, traducciones y botones Git. Las comprobaciones nuevas se realizan sólo en QA aislada y nunca reutilizan stdout antiguo como evidencia del Historial.
 

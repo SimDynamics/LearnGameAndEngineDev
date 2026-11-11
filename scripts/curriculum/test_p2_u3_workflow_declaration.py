@@ -18,23 +18,34 @@ declaration = {"activity": "block_0010_0003", "kind": "cmakeSelectiveRecoveryV1"
 class CompilerWorkflowDeclarationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.original = json.loads(asset.read_text(encoding="utf-8"))
+        cls.published = json.loads(asset.read_text(encoding="utf-8"))
 
-    def revised(self):
-        result = deepcopy(self.original)
-        result["compilerWorkflowChecks"] = [declaration.copy()]
+    def original_without_declaration(self):
+        result = deepcopy(self.published)
+        result.pop("compilerWorkflowChecks", None)
         return result
 
-    def test_addition_preserves_layout_and_complete_original_editor(self):
-        before, after = self.original, self.revised()
+    def revised(self):
+        return deepcopy(self.published)
+
+    def test_published_declaration_preserves_original_state_and_is_append_only(self):
+        before, after = self.original_without_declaration(), self.revised()
+        self.assertEqual(after.get("compilerWorkflowChecks"), [declaration])
         self.assertEqual(layout.validate(before), layout.validate(after))
         layout.validate_transition(before, after)
         self.assertEqual(before["pages"], after["pages"])
         self.assertEqual(before["stateLayout"], after["stateLayout"])
+        self.assertEqual(before["compilerPuzzlesRequired"], after["compilerPuzzlesRequired"])
 
-    def test_declaration_cannot_be_removed(self):
+    def test_declaration_cannot_be_removed_or_replaced(self):
+        after = self.revised()
+        without = self.original_without_declaration()
         with self.assertRaises(layout.LayoutError):
-            layout.validate_transition(self.revised(), self.original)
+            layout.validate_transition(after, without)
+        renamed = deepcopy(after)
+        renamed["compilerWorkflowChecks"][0]["kind"] = "anotherWorkflow"
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(after, renamed)
 
     def test_wrong_owner_kind_duplicates_and_types_are_rejected(self):
         for candidate in (
