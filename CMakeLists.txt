@@ -248,6 +248,13 @@ if(LGAED_READER_BUILD_QA_ONLY)
     add_test(NAME native.order_code_whitespace_view
         COMMAND lgaed_order_code_whitespace_view_tests --whitespace)
     set_tests_properties(native.order_code_whitespace_view PROPERTIES TIMEOUT 60)
+    # Compile the full RichEdit test translation unit in Windows CI as well.
+    # This catches obsolete presentation APIs before a local Release install,
+    # without running desktop-color assertions on a noninteractive runner.
+    add_executable(lgaed_rich_text_tests native/presentation/windows/rich_text_tests.cpp
+        native/presentation/windows/rich_text.cpp native/presentation/windows/reader_theme.cpp)
+    target_link_libraries(lgaed_rich_text_tests PRIVATE lgaed_platform_windows lgaed_host_options
+        user32 gdi32 uxtheme ole32 oleaut32 comctl32 uuid)
     # The original reader tests are still only compiled. The history UI test
     # exercises the actual Win32 record/compare/restore dialogs, without
     # creating an app profile or evaluating learner completion.
