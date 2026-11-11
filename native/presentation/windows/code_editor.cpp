@@ -524,7 +524,7 @@ struct CodeEditor::Impl {
     void replace(std::size_t start, std::size_t end, std::wstring_view replacement,
         std::size_t cursor_start, std::size_t cursor_end,
         std::optional<std::int64_t> completed_unit = {},
-        const std::vector<std::int64_t>& inherited_units = {}) {
+        const std::vector<std::int64_t>& inherited_units = {}, bool reveal_cursor = true) {
         cursor_snapshot();
         Snapshot next = now();
         next.original.reset();
@@ -543,7 +543,7 @@ struct CodeEditor::Impl {
         std::sort(next.units.begin(), next.units.end());
         next.cursor = {static_cast<LONG>(cursor_start), static_cast<LONG>(cursor_end)};
         commit(std::move(next));
-        apply(now(),true,false,true);
+        apply(now(),true,false,reveal_cursor);
     }
 
     void insert_tab() {
@@ -600,7 +600,11 @@ struct CodeEditor::Impl {
         // Output predictions and plain input still own Enter when programming
         // indentation is disabled. Use the same complete undo transaction.
         if (!code_assistance || !auto_indent) {
-            replace(start,end,L"\n",start+1,start+1);
+            // This answer grows with its text. Forcing EM_SCROLLCARET before
+            // the parent sizes the new empty row scrolls away line one even
+            // when both rows fit after layout. Preserve the old viewport and
+            // let the parent reveal genuinely clipped lines after resizing.
+            replace(start,end,L"\n",start+1,start+1,{}, {}, false);
             return true;
         }
         const auto context = code_context(now().text, start);
