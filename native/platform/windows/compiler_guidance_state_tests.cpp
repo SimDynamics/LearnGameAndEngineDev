@@ -228,15 +228,19 @@ void multicase_isolation(const Lesson& actual){
     auto extra=block.output_check->cases.front();extra.standard_input+="QA other input";extra.explanation="QA second authored guide";
     block.output_check->cases.front().explanation="QA first authored guide";block.output_check->cases.push_back(extra);
     state::StateData data;auto captured=request(block);auto result=execution(block,captured);
-    require(!record_compiler_puzzle_case(data,lesson,block,captured,result,"Correcto\nQA first authored guide")&&
-        compiler_puzzle_case_count(data,lesson,block)==1&&!compiler_puzzle_completed(data,lesson,block),
-        "The first admitted multicase input either lost its partial proof or completed two cases at once");
+    require(record_compiler_puzzle_case(data,lesson,block,captured,result,"Correcto\nQA first authored guide")&&
+        compiler_puzzle_case_count(data,lesson,block)==1&&compiler_puzzle_completed(data,lesson,block),
+        "The first verified case did not unlock the editor on its own");
+    const auto earned=compiler_puzzle_feedback(data,lesson,block);
     captured.stdin_utf8=extra.standard_input;result.standard_input=extra.standard_input;result.standard_output=extra.outputs.front();
-    require(record_compiler_puzzle_case(data,lesson,block,captured,result,"Correcto\nQA second authored guide"),"Second multicase model was rejected");
+    require(record_compiler_puzzle_case(data,lesson,block,captured,result,"Correcto\nQA second authored guide")&&
+        compiler_puzzle_case_count(data,lesson,block)==2&&compiler_puzzle_completed(data,lesson,block)&&
+        compiler_puzzle_feedback(data,lesson,block)==earned,
+        "A voluntary second case was rejected or rewrote the first achievement");
     auto revised=lesson;editor(revised,id).output_check->cases.front().explanation="QA arbitrary new first guide";
     const auto before=data;const auto feedback=compiler_puzzle_current_feedback(data,revised,editor(revised,id),captured);
-    require(feedback&&feedback->text=="Correcto\nQA second authored guide"&&feedback->source_path.empty()&&data==before,
-        "A multicase goal arbitrarily selected the first current explanation");
+    require(feedback&&feedback->text=="Correcto\nQA first authored guide"&&feedback->source_path.empty()&&data==before,
+        "A multicase goal rewrote the earned first-case guidance after an optional run");
 }
 std::string legacy_review_token(std::string_view text){return std::to_string(text.size())+':'+std::string(text);}
 state::StateData legacy_review_fixture(state::StateData data,const Block& block,const CppRunRequest& request){
