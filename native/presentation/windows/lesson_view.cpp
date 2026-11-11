@@ -2095,8 +2095,12 @@ struct LessonView {
         if(vm.input){const auto visible=edit_text(vm.input);request.stdin_utf8=visible==vm.input_visual?vm.input_original:visible;}
         request.projects_directory=environment.paths.projects;request.project_key=draft_key(index);
         if(vm.project)vm.project->snapshot(request);
-        // All C++ exercises use the native MSVC backend while the optional WASI
-        // alternative is not confirmed compatible with Windows app protection.
+        // Ordinary single-file C++ lessons run portable WASI modules instead
+        // of a fresh unsigned Windows executable for every compilation.
+        // MSVC remains the explicit backend for real native diagnostics and
+        // project/CMake objectives, whose contracts are not interchangeable.
+        if(!laboratory()&&!vm.project&&!block(index).compile_check)
+            request.backend=windows::CppRunRequest::Backend::wasi;
         if(block(index).compile_check){
             request.diagnostic=windows::prepare_cpp_diagnostic_request(block(index),request);
         }
