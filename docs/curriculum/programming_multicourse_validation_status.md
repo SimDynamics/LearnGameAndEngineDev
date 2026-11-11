@@ -186,3 +186,35 @@ La puerta de producción sigue siendo
 `python3 scripts/curriculum/validar_json_programacion.py --base-ref HEAD`;
 no se añadió ninguna opción para desactivar silenciosamente la
 comprobación de historia editorial y de familia.
+
+## Índices activos: comprobación bidireccional
+
+La ampliación técnica del 11 de noviembre de 2026 comprueba también la
+**dirección inversa** de los índices de unidades activas. No basta con que
+los nombres publicados en `unit_*.json` apunten a lecciones existentes:
+cada archivo `lesson_*.json` en una unidad que figura en el curso debe
+aparecer **una sola vez** en su índice, con el mismo propietario.
+
+Se rechazan las lecciones omitidas, referencias cruzadas hacia otra unidad
+y duplicaciones entre unidades activas. Las unidades auxiliares e históricas
+fuera del índice del curso se conservan. Programación 1 declara 12 de 15
+unidades; `intro_programming`, `language_fundamentals` y `control_flow`
+permanecen fuera del recorrido activo. Programación 2 declara 5 de 6:
+`practice_tools_test` se conserva como unidad de pruebas.
+
+La regresión comprueba lecciones omitidas en ambos cursos, referencias
+cruzadas, unidades auxiliares válidas y el rechazo de omisiones tanto por
+el auditor estructural como por el CLI habitual con `--course`.
+
+La ejecución [42976292710](https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/42976292710)
+confirmó **9/9 pruebas del auditor**, **11/11 pruebas multicurso**,
+**89/89 de conservación histórica** y **4/4 del diagnóstico de origen**.
+La auditoría de los JSON reales conservó los mismos resultados: 162
+lecciones, 7.438 bloques y 178 JSON de Programación 1, y 28 lecciones,
+1.561 bloques y 35 JSON de Programación 2; cero incidencias estructurales.
+
+**La validación histórica completa sigue fallando** por las diez huellas
+discordantes de U4L3 y U4L7. Nada de este trabajo modifica los JSON
+curriculares, los mapas, las traducciones ni los archivos personales.
+El pendiente multicurso permanece abierto hasta verificar una corrección
+histórica auténtica.
