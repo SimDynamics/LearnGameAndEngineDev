@@ -355,7 +355,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Desde la raíz de AssetCheck y en la consola de desarrollo x64 de Visual Studio, «cmake -S . -B build -G Ninja» configura y genera; «cmake --build build --target comprobar_lote» construye ese objetivo; «ctest --test-dir build --output-on-failure» ejecuta las pruebas. Si build pertenece a otra raíz, no reutilices una caché ajena: elige un directorio de construcción exclusivo y comprueba su ruta antes de configurar. No borres cachés de otros proyectos (Scott, 2025, capítulos 2, 4 y 5)."
+          "text": "Desde la raíz de AssetCheck, abre la consola de desarrollo x64 de Visual Studio. Ejecuta estos comandos en orden:\n\n1. Configurar y generar: cmake -S . -B build -G Ninja. La opción -S . selecciona la raíz de fuentes, -B build separa los archivos generados y -G Ninja escoge el generador.\n\n2. Construir el objetivo: cmake --build build --target comprobar_lote. Así se construye la batería del lote.\n\n3. Ejecutar las pruebas: ctest --test-dir build --output-on-failure. Revisa el resultado de CTest y el código de retorno.\n\nAntes del primer comando, comprueba que build pertenezca a esta raíz. Si pertenece a otra, elige un directorio de construcción exclusivo y sustituye build por ese nombre en los tres comandos. No reutilices ni borres cachés de otros proyectos (Scott, 2025, capítulos 2, 4 y 5)."
         },
         {
           "type": "multiple_choice",
@@ -920,8 +920,44 @@
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "060da53c200d9828802d876a365a2f5f77837b95feb520c1f3606291a16effc2",
-        "spans": []
+        "sourceSha256": "8cad537eb60f6e69b960f93b079d0484fd554ce14a23bb6684e70763ce953f85",
+        "spans": [
+          {
+            "start": 17,
+            "end": 27,
+            "text": "AssetCheck",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 168,
+            "text": "cmake -S . -B build -G Ninja",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 357,
+            "text": "cmake --build build --target comprobar_lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 423,
+            "end": 465,
+            "text": "ctest --test-dir build --output-on-failure",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 490,
+            "end": 495,
+            "text": "CTest",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0006",
@@ -1640,6 +1676,12 @@
       }
     },
     "additions": [],
-    "editorial": []
+    "editorial": [
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "2e751c03de2caf5355210e51502005813d7213cba290c9a760c5b3f546459a8c",
+        "afterSha256": "8cce916e459a0f1f618c1cc9aa4d5f246cd7be4c632f765fa0507282593e85be"
+      }
+    ]
   }
 }
