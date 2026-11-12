@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/code_format_compat.hpp"
+
 #include <array>
 #include <charconv>
 #include <cstddef>
