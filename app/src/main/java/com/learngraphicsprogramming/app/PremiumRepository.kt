@@ -71,7 +71,9 @@ object PremiumRepository {
         context: Context
     ): Boolean {
 
-        return getState(
+        // Premium temporal para las compilaciones de desarrollo (sin compra).
+        // En Release solo Google Play verifica el acceso Premium real.
+        return BuildConfig.DEBUG || getState(
             context
         ) == PremiumState.PREMIUM
     }
