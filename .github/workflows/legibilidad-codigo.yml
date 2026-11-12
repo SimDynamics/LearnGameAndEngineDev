@@ -26,6 +26,8 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_auditar_legibilidad_codigo.py -v
       - name: Verificar formato físico con archivo original y progreso histórico
         run: python -m unittest discover -s scripts/curriculum -p test_real_code_format_pilot.py -v
+      - name: Validar alternativas originales y reformateadas C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_decision_format_batch.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
