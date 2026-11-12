@@ -11,7 +11,7 @@ from code_format_compat import require_source_format
 
 ROOT = Path(__file__).resolve().parents[2]
 PATH = ROOT / "app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_declaraciones_y_firmas.json"
-POSITIONS = ((0,2),(1,2),(2,2),(3,2),(3,4),(4,2),(4,7),(5,3),(6,9),(7,5),(8,2),(8,8),(9,1),(9,7),(9,10),(10,4),(11,2),(11,5),(11,9),(11,12),(12,2),(13,2),(14,2),(15,2),(16,2),(17,2))
+POSITIONS = ((0,2),(1,2),(2,2),(3,2),(3,4),(4,2),(4,7),(5,3),(6,9),(7,5),(8,2),(8,8),(9,1),(9,7),(9,10),(10,4),(11,2),(11,5),(11,9),(11,12),(12,2),(13,2),(16,2))
 FILL_BLANKS = {(1,2)}
 UNSOLVED_STARTERS = {(7,5), (9,7), (10,4), (11,9), (13,2)}
 EXPECTED_COMPILE_FAILURES = {
@@ -32,7 +32,7 @@ class DeclarationsFormatBatch(unittest.TestCase):
 
     def test_preserve_originals_answers_and_progress(self):
         state.validate(self.lesson)
-        self.assertEqual(26, len(POSITIONS))
+        self.assertEqual(23, len(POSITIONS))
         self.assertEqual(len(POSITIONS), len(self.originals))
         self.assertEqual([self.meta["current"][p]["blocks"][b] for p,b in POSITIONS],
                          [edge["id"] for edge in self.meta["editorial"][-len(POSITIONS):]])
@@ -127,6 +127,30 @@ class DeclarationsFormatBatch(unittest.TestCase):
                             self.assertNotIn(result[1],case["outputs"],identity)
                         else:
                             self.assertIn(result[1],case["outputs"],identity)
+
+    def test_unchanged_diagnostic_programs_still_fail_for_the_expected_reason(self):
+        """Diagnostics are historically byte-exact; format is never a reason to rewrite them."""
+        with tempfile.TemporaryDirectory(prefix="u6l2-protected-diagnostics-") as directory:
+            for index,((p,b),(diagnostic,marker)) in enumerate(EXPECTED_COMPILE_FAILURES.items()):
+                identity = self.meta["current"][p]["blocks"][b]
+                self.assertNotIn(identity,self.originals)
+                block = self.lesson["pages"][p]["blocks"][b]
+                self.assertEqual(diagnostic,block["compileCheck"]["diagnostic"])
+                self.assertEqual(block["initialCode"],
+                                 next(item["initialCode"] for item in block["projectFiles"]
+                                      if item["path"]=="main.cpp"))
+                folder = Path(directory)/str(index)
+                folder.mkdir()
+                for item in block["projectFiles"]:
+                    (folder/item["path"]).write_text(item["initialCode"],encoding="utf-8")
+                exe=folder/"program"
+                command=["c++","-std=c++23","-O0","-I",str(folder),
+                         *(str(folder/name) for name in block["sourceFiles"]),
+                         "-o",str(exe)]
+                result=subprocess.run(command,capture_output=True,text=True,timeout=90)
+                self.assertNotEqual(0,result.returncode,identity)
+                self.assertIn(marker,result.stderr,identity)
+                self.assertFalse(exe.exists(),identity)
 
 if __name__ == "__main__":
     unittest.main()
