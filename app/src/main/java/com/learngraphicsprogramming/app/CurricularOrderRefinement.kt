@@ -78,10 +78,9 @@ internal data class CurricularOrderRefinement(
                 groups.add((expanded.size until expanded.size + lines.size).toList())
                 expanded.addAll(lines)
             }
-            require(expanded.size <= 100_000 &&
-                (expanded != originalFragments || originalOrder !=
-                    (0 until originalFragments.size).toList()))
             val canonical = originalOrder.flatMap { groups[it] }
+            require(expanded.size <= 100_000 &&
+                (expanded != originalFragments || canonical != originalOrder))
             require(values(active.getJSONArray("fragments")) == expanded)
             require(permutation(active.getJSONArray("correctOrder"), expanded.size) == canonical)
             val restored = JSONObject(active.toString())
