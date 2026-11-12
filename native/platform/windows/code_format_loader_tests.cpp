@@ -4,7 +4,10 @@
 
 #include <array>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <iostream>
+#include <winrt/Windows.Data.Json.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -255,6 +258,67 @@ void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) 
         "The Windows read-only curriculum inventory rejected a legitimate formatted U6L2 diagnostic");
 }
 
+void verify_visual_separators_keep_order_and_history(const std::filesystem::path& fixtures) {
+    using namespace winrt::Windows::Data::Json;
+    const auto file=fixtures/"es.after.json";
+    const auto original=windows::load_lesson(file,"es");
+    check(original.pages.size()==1&&original.pages.front().blocks.size()==6&&
+        original.pages.front().blocks[2].type==curriculum::BlockType::order_code&&
+        !original.pages.front().blocks[2].stable_id.empty(),
+        "Visual separator QA lost its real historical order-code owner");
+    std::ifstream stream(file,std::ios::binary);
+    check(stream.good(),"Missing exact Spanish format fixture for separator verification");
+    const std::string bytes{std::istreambuf_iterator<char>(stream),
+                            std::istreambuf_iterator<char>()};
+    const auto owner=original.pages.front().blocks[2].stable_id;
+    const auto expanded=[&](int count,std::string_view identity) {
+        const auto root=JsonObject::Parse(winrt::to_hstring(bytes));
+        JsonObject record;
+        record.Insert(L"activity",JsonValue::CreateStringValue(winrt::to_hstring(identity)));
+        record.Insert(L"count",JsonValue::CreateNumberValue(count));
+        JsonArray declarations;declarations.Append(record);
+        root.Insert(L"orderVisualSeparators",declarations);
+        return winrt::to_string(root.Stringify());
+    };
+    for(const int count:{1,4}) {
+        const auto raw=expanded(count,owner);
+        const auto full=windows::parse_lesson_json(raw,"es");
+        const auto catalog=windows::parse_lesson_progress_metadata(raw,"es");
+        const auto& source=original.pages.front().blocks[2];
+        const auto& visual=full.pages.front().blocks[2];
+        const auto& projected=catalog.pages.front().blocks[2];
+        check(visual.optional_order_separators==count&&
+            projected.optional_order_separators==count&&
+            visual.stable_id==source.stable_id&&
+            visual.correct_order==source.correct_order&&
+            visual.fragments==source.fragments&&
+            full.state_layout.signatures==original.state_layout.signatures&&
+            full.state_layout.lineage==original.state_layout.lineage&&
+            curriculum::exercise_key(full,visual)==curriculum::exercise_key(original,source),
+            "A purely visual order separator altered grading or historic storage");
+    }
+    for(const int bad:{0,5,8,1000}) {
+        const auto raw=expanded(bad,owner);
+        for(const bool catalog:{false,true}) {
+            bool rejected=false;
+            try {
+                if(catalog)(void)windows::parse_lesson_progress_metadata(raw,"es");
+                else(void)windows::parse_lesson_json(raw,"es");
+            }catch(const std::exception&){rejected=true;}
+            check(rejected,"Windows accepted an out-of-range optional order-card count");
+        }
+    }
+    for(const bool catalog:{false,true}) {
+        bool rejected=false;
+        try {
+            const auto raw=expanded(1,"unknown_order_owner");
+            if(catalog)(void)windows::parse_lesson_progress_metadata(raw,"es");
+            else(void)windows::parse_lesson_json(raw,"es");
+        }catch(const std::exception&){rejected=true;}
+        check(rejected,"Visual order cards were assigned to another owner's stored answer");
+    }
+}
+
 void must_reject(const std::filesystem::path& file) {
     for(const bool catalog:{false,true}) {
         bool rejected=false;
@@ -272,6 +336,7 @@ int main(int argc,char** argv) {
         if(argc!=4)throw std::invalid_argument("Expected synthetic, real decision and U6L2 fixture directories");
         const std::filesystem::path dir(argv[1]);
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
+        verify_visual_separators_keep_order_and_history(dir);
         verify_real_curricular_pilot(std::filesystem::path(argv[2]));
         verify_real_u6_compiler_diagnostics(std::filesystem::path(argv[3]));
         for(const auto name:{"u6.forged-goal.json","u6.forged-archive.json",
