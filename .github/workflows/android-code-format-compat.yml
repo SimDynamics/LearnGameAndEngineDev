@@ -69,7 +69,24 @@ jobs:
             --tests com.learngraphicsprogramming.app.StableLessonRepositoryFixtureTest \
             --tests com.learngraphicsprogramming.app.PublishedStateLayoutInventoryAndroidTest \
             -Plgp.clang23=false -Plgp.wasmtime=false -Plgp.cppExceptions=false \
-            --no-daemon --stacktrace --info
+            --rerun-tasks --no-daemon --stacktrace --info
+      - name: Require zero historical errors in the complete Android inventory
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("app/build/reports/curricular-state-inventory.json")
+          report = json.loads(path.read_text(encoding="utf-8"))
+          assert report.get("inspectedLessonFiles", 0) > 0, "No lessons scanned"
+          assert report.get("historicallyMappedLessons", 0) > 0, "No v2 histories inspected"
+          assert report["historicalErrorCount"] == 0, report["historicalErrors"]
+          assert report["historicalErrors"] == [], "Historical contracts remain incompatible"
+          assert report["formattingFailures"] == [], "Physical format archives failed"
+          assert report["unresolvedOtherHistoricalContracts"] == [], "Non-format history failed"
+          print("PASS: zero historical errors across", report["inspectedLessonFiles"], "lessons")
+          PY
       - name: Retain JUnit XML and reports
         if: always()
         uses: actions/upload-artifact@v4
