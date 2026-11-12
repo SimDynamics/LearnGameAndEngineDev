@@ -46,14 +46,13 @@ desbloquea; tampoco una salida incorrecta. No borrar los demás oráculos del
 contrato histórico: retirar sus entradas sin una transición autenticada dañaría
 el historial, y no es necesario para volverlos opcionales.
 
-**VERIFICACIONES RESTANTES DE AVANCE Y PRESENTACIÓN:** ejecutar la
-comprobación de código nativo de trece casos en `native.compiler_puzzles`
-antes de cerrar el alcance global. Confirmar que las rúbricas de P2 U3L6/U3L8
-no exijan recibos multicaso y que sus criterios semánticos permanezcan
-independientes. Integrar en el texto curricular las entradas y salidas de
-cada ensayo optativo como lista **sin viñetas**; la primera comprobación correcta
-del caso inicial es suficiente para avanzar. Ante un binario instalado que aún
-exija completar todos los casos, recompilar e instalar la versión corregida.
+**VERIFICACIONES RESTANTES DE AVANCE Y PRESENTACIÓN:** confirmar que las
+rúbricas de P2 U3L6/U3L8 no exijan recibos multicaso y que sus criterios
+semánticos permanezcan independientes. Integrar en el texto curricular las
+entradas y salidas de cada ensayo optativo como lista **sin viñetas**; la primera
+comprobación correcta del caso inicial es suficiente para avanzar. Ante un
+binario instalado que aún exija completar todos los casos, recompilar e instalar
+la versión corregida.
 
 ### P2_U1_ACREDITACION_PRACTICAS_ABIERTAS
 
