@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app
 
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -48,6 +49,18 @@ class PublishedStateLayoutInventoryAndroidTest {
                 if (hasSourceFormatArchive) formattingFailures += report
                 else existingHistoryGaps += report
             }
+        }
+        // This is a diagnostic-only report. It never reassigns an old
+        // response identity or grants a new source-format exemption.
+        val report = JSONObject()
+            .put("inspectedLessonFiles", inspected)
+            .put("historicallyMappedLessons", mapped)
+            .put("publishedSourceFormatLessons", formatted)
+            .put("formattingFailures", JSONArray(formattingFailures))
+            .put("unresolvedOtherHistoricalContracts", JSONArray(existingHistoryGaps))
+        File("build/reports/curricular-state-inventory.json").apply {
+            parentFile?.mkdirs()
+            writeText(report.toString(2) + "\n", Charsets.UTF_8)
         }
         assertTrue("Published lesson search returned no curricular files", inspected > 0)
         assertTrue("No authenticated stateLayout was inspected", mapped > 0)
