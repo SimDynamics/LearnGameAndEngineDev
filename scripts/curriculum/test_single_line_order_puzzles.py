@@ -36,8 +36,34 @@ class RealFunctionOrderCards(unittest.TestCase):
         import hashlib
         for name, p, b, identity, old_count, new_count, stdin, expected, sep in CASES:
             with self.subTest(lesson=name):
-                after = json.loads((LESSONS / name).read_text(encoding="utf-8"))
-                state.validate(after)
+                published = json.loads((LESSONS / name).read_text(encoding="utf-8"))
+                state.validate(published)
+                # Rewind later, independent source-spacing revisions before
+                # reconstructing the two earlier order-card editorial proofs.
+                # These proofs are no longer necessarily the last two entries.
+                after = deepcopy(published)
+                revisions = after["stateLayout"].get("sourceFormatRevisions", [])
+                if revisions:
+                    from code_format_compat import require_source_format
+                    meta = after["stateLayout"]
+                    self.assertEqual(
+                        [item["id"] for item in revisions],
+                        [item["id"] for item in meta["editorial"][-len(revisions):]],
+                    )
+                    coordinates = {
+                        identity: (page_index, block_index)
+                        for page_index, page in enumerate(meta["current"])
+                        for block_index, identity in enumerate(page["blocks"])
+                    }
+                    for item in revisions:
+                        page_index, block_index = coordinates[item["id"]]
+                        formatted = after["pages"][page_index]["blocks"][block_index]
+                        self.assertTrue(require_source_format(item["block"], formatted))
+                        after["pages"][page_index]["blocks"][block_index] = deepcopy(item["block"])
+                    del meta["sourceFormatRevisions"]
+                    del meta["editorial"][-len(revisions):]
+                    state.validate(after)
+                    state.validate_transition(after, published)
                 meta = after["stateLayout"]
                 current = after["pages"][p]["blocks"][b]
                 history = meta["orderRefinements"]
