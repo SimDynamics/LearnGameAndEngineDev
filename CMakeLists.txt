@@ -245,6 +245,12 @@ if(LGAED_READER_BUILD_QA_ONLY)
     target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
     set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
+    # A personal Windows development build does not require Google Play
+    # or a saved entitlement to keep checking exercises with zero lives.
+    add_executable(lgaed_premium_windows_tests native/core/premium_windows_tests.cpp)
+    target_link_libraries(lgaed_premium_windows_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.premium_windows COMMAND lgaed_premium_windows_tests)
+    set_tests_properties(native.premium_windows PROPERTIES TIMEOUT 30)
     add_executable(lgaed_order_spacing_contract_tests native/core/order_spacing_contract_tests.cpp)
     target_link_libraries(lgaed_order_spacing_contract_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.order_spacing_contract COMMAND lgaed_order_spacing_contract_tests)
