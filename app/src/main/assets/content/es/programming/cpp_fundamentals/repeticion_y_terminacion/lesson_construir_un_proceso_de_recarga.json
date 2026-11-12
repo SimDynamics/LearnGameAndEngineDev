@@ -58,7 +58,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -87,7 +87,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int energia{1};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int energia{1};\n\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n\n        while (energia < 9) {\n            int aporte{3};\n\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n\n            energia += aporte;\n            ++rondas;\n\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -111,7 +111,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int energia{0};\n    std::cin >> energia;\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int energia{0};\n\n    std::cin >> energia;\n\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n\n        while (energia < 9) {\n            int aporte{3};\n\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n\n            energia += aporte;\n            ++rondas;\n\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -174,7 +174,7 @@
           "id": "recarga_desde_ocho",
           "question": "Predice la salida completa de la referencia con energía inicial 2. Conserva los saltos internos y no añadas comillas.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int energia{2};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{2};\n\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n\n        while (energia < 9) {\n            int aporte{3};\n\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n\n            energia += aporte;\n            ++rondas;\n\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Ronda 1: 5\nRonda 2: 8\nRonda 3: 9\nEstado=9;Rondas=3"
           ],
@@ -197,7 +197,7 @@
           "id": "misma_regla_otra_meta",
           "question": "Esta variante usa meta=10 y un dato conocido válido. Predice la salida; conserva el punto y coma que separa el resumen.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int meta{10};\n    int energia{8};\n    int rondas{0};\n    while (energia < meta) {\n        int aporte{3};\n        if (meta - energia < aporte) {\n            aporte = meta - energia;\n        }\n        energia += aporte;\n        ++rondas;\n        std::cout << energia << \";\";\n    }\n    std::cout << \"Rondas=\" << rondas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int meta{10};\n    int energia{8};\n    int rondas{0};\n\n    while (energia < meta) {\n        int aporte{3};\n        if (meta - energia < aporte) {\n            aporte = meta - energia;\n        }\n        energia += aporte;\n        ++rondas;\n        std::cout << energia << \";\";\n    }\n\n    std::cout << \"Rondas=\" << rondas;\n\n    return 0;\n}\n",
           "answers": [
             "10;Rondas=1"
           ],
@@ -293,7 +293,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -843,6 +843,167 @@
         "id": "block_0001_0004",
         "beforeSha256": "e36d96c0ce2efd7b6ff647134fbb4f37729769f7d7f37ce3b2773870a3bed68d",
         "afterSha256": "4d7288594b6439a7a972109e3efa6be4a15f3fb2af6de26cd5bc698f812f8173"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "76813c0fc3555bdb6f5ed17144f18263f89d53b6754b372dc885b5333dcfb646",
+        "afterSha256": "5a4e3ff7bcee91a88c386df9560aa85c83c4a7cb7009cc9cb837d9be1599dda3"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "20e964dd093d77db4cfad3f9991d82bdcab5afa842a25a7d8ef2f43e71acc4fe",
+        "afterSha256": "801ae30443bfdf907593b9c3329ae0f4055a4646619fb7075f7b60497504e139"
+      },
+      {
+        "id": "block_0002_0007",
+        "beforeSha256": "2ce7147bbb6948de6cad6ac03676a01850afb21b75ad5f35696e9e18539b23c2",
+        "afterSha256": "91ab04c8b418f392a667d86fcf74b67094789d09a8e2fb6c514081ba7dda6cbc"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "d38aff37f1223cefb6990a6dca95f4ab9a7aaf1c5cbafa426bf94afb0cbbb465",
+        "afterSha256": "f06ff4c7df0b3e77a07515fb624054006b9e34eb50a3820e4e419e625a1e5f50"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "292de120c0335a275fa8ff290398a2ca3e44e7acf67fd47c1981e805d4220bd4",
+        "afterSha256": "11f93375a3933c55184416c004263216a80db89631dcb7ecc5ddb4c442ea8e6c"
+      },
+      {
+        "id": "block_0003_0008",
+        "beforeSha256": "3c1a01275976747d0cf450bc23da9e87348782e7a41f3939e3df399aadd9e5cc",
+        "afterSha256": "0789ed054ab50102f0427fd300cca3586a1881f4df0794933d52aa39d1cb0d57"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3",
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{1};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int energia{0};\n    std::cin >> energia;\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Ronda 1: 3\nRonda 2: 6\nRonda 3: 9\nEstado=9;Rondas=3",
+                  "Ronda 1: 3\nRonda 2: 6\nRonda 3: 9\nEstado=9;Rondas=3\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3",
+                  "Ronda 1: 4\nRonda 2: 7\nRonda 3: 9\nEstado=9;Rondas=3\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Ronda 1: 9\nEstado=9;Rondas=1",
+                  "Ronda 1: 9\nEstado=9;Rondas=1\n"
+                ]
+              },
+              {
+                "standardInput": "9",
+                "outputs": [
+                  "Estado=9;Rondas=0",
+                  "Estado=9;Rondas=0\n"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Dato invalido",
+                  "Dato invalido\n"
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "Dato invalido",
+                  "Dato invalido\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "recarga_desde_ocho",
+          "question": "Predice la salida completa de la referencia con energía inicial 2. Conserva los saltos internos y no añadas comillas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{2};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Ronda 1: 5\nRonda 2: 8\nRonda 3: 9\nEstado=9;Rondas=3"
+          ],
+          "explanation": "Faltan siete unidades al comenzar. Los aportes son 3,3 y 1: los estados posteriores son 5,8 y 9, y se cuentan tres rondas."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "misma_regla_otra_meta",
+          "question": "Esta variante usa meta=10 y un dato conocido válido. Predice la salida; conserva el punto y coma que separa el resumen.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int meta{10};\n    int energia{8};\n    int rondas{0};\n    while (energia < meta) {\n        int aporte{3};\n        if (meta - energia < aporte) {\n            aporte = meta - energia;\n        }\n        energia += aporte;\n        ++rondas;\n        std::cout << energia << \";\";\n    }\n    std::cout << \"Rondas=\" << rondas;\n    return 0;\n}\n",
+          "answers": [
+            "10;Rondas=1"
+          ],
+          "explanation": "La diferencia meta-energia es 2 y limita el aporte a 2. La regla se conserva aunque cambie el objetivo."
+        }
+      },
+      {
+        "id": "block_0003_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Ronda 1: 9\nEstado=9;Rondas=1",
+                  "Ronda 1: 9\nEstado=9;Rondas=1\n"
+                ]
+              }
+            ]
+          }
+        }
       }
     ]
   },
