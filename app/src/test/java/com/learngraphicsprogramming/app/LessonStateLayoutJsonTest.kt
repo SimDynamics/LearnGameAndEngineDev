@@ -473,6 +473,63 @@ class LessonStateLayoutJsonTest {
         }
     }
 
+    @Test fun publishedBibliographyRevisionsRequireTenExactArchivesAndAuthenticTextRanges() {
+        val root = listOf(java.io.File("src/main/assets/content"),
+            java.io.File("app/src/main/assets/content")).firstOrNull { it.isDirectory }
+            ?: error("Cannot find published curricular assets")
+        val base = "es/programming/cpp_fundamentals/objetos_y_estado/"
+        val reviewed = listOf(
+            "lesson_caracteres_y_valores_logicos.json" to 8,
+            "lesson_enteros_y_aproximaciones.json" to 1,
+            "lesson_conversiones_y_deduccion.json" to 1
+        )
+        var total = 0
+        for ((file, count) in reviewed) {
+            val source = java.io.File(root, base + file).readText(Charsets.UTF_8)
+            val original = JSONObject(source)
+            val history = original.getJSONObject("stateLayout").getJSONArray("editorial")
+            val citations = (0 until history.length()).filter {
+                history.getJSONObject(it).has("bibliography")
+            }
+            assertEquals("Published bibliography owner count changed in $file", count, citations.size)
+            total += citations.size
+            val layout = LessonStateLayoutJson.read(original)!!
+            assertEquals(original.getJSONArray("pages").length(), layout.current.size)
+            for (index in citations) {
+                val changes: List<(JSONObject) -> Unit> = listOf(
+                    { edge -> edge.remove("bibliography") },
+                    { edge -> edge.getJSONObject("bibliography")
+                        .put("historySha256", "0".repeat(64)) },
+                    { edge -> edge.getJSONObject("bibliography").getJSONObject("previousBlock")
+                        .put("explanation", "Unrelated source changed") },
+                    { edge -> edge.getJSONObject("bibliography").getJSONObject("currentBlock")
+                        .put("explanation", "Altered source") },
+                    { edge -> edge.getJSONObject("bibliography")
+                        .getJSONObject("currentTextSemantics")
+                        .put("sourceSha256", "0".repeat(64)) },
+                    { edge -> edge.getJSONObject("bibliography")
+                        .getJSONObject("currentTextSemantics")
+                        .getJSONArray("spans").getJSONObject(0).put("start", -1) },
+                    { edge -> edge.getJSONObject("bibliography").put("unreviewed", true) }
+                )
+                for (change in changes) {
+                    val forged = JSONObject(source)
+                    val edge = forged.getJSONObject("stateLayout")
+                        .getJSONArray("editorial").getJSONObject(index)
+                    change(edge)
+                    assertTrue("A forged bibliography archive was accepted ($file, $index)",
+                        runCatching { LessonStateLayoutJson.read(forged) }.isFailure)
+                }
+            }
+            val removed = JSONObject(source)
+            val edges = removed.getJSONObject("stateLayout").getJSONArray("editorial")
+            for (idx in citations.asReversed()) edges.remove(idx)
+            assertTrue("Silently removing every reviewed bibliography archive was accepted",
+                runCatching { LessonStateLayoutJson.read(removed) }.isFailure)
+        }
+        assertEquals("The archived authoring corpus no longer contains ten revisions", 10, total)
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
