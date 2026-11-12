@@ -86,6 +86,33 @@ add_custom_command(OUTPUT "${LGAED_U11_NAMES_BEFORE_FILE}"
     VERBATIM)
 add_custom_target(lgaed_u11_names_fixture DEPENDS "${LGAED_U11_NAMES_BEFORE_FILE}")
 
+# Generate complete historical/authenticated source-format examples for all
+# three supported locales. These never overwrite published curricular assets.
+set(LGAED_CODE_FORMAT_FIXTURE_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/code-format")
+set(LGAED_CODE_FORMAT_FIXTURES)
+foreach(code_format_locale IN ITEMS es en fr)
+    foreach(code_format_side IN ITEMS before after)
+        list(APPEND LGAED_CODE_FORMAT_FIXTURES
+            "${LGAED_CODE_FORMAT_FIXTURE_DIR}/${code_format_locale}.${code_format_side}.json")
+    endforeach()
+endforeach()
+list(APPEND LGAED_CODE_FORMAT_FIXTURES
+    "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.changed-answer.json"
+    "${LGAED_CODE_FORMAT_FIXTURE_DIR}/es.forged-archive.json")
+add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
+    COMMAND ${_lgaed_state_fixture_python} "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_fixture_source.py"
+        --output-dir "${LGAED_CODE_FORMAT_FIXTURE_DIR}"
+    DEPENDS "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_fixture_source.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/text_semantics.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/bibliography_revision.py"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Verify source-only transformations with immutable historical origins in es/en/fr"
+    VERBATIM)
+add_custom_target(lgaed_code_format_fixtures DEPENDS ${LGAED_CODE_FORMAT_FIXTURES})
+
 function(lgaed_add_state_import_tests qa_root)
     # In the isolated Windows QA mode, test the actual immutable project
     # revision files and selective restoration, not only compiler state.
@@ -101,6 +128,16 @@ function(lgaed_add_state_import_tests qa_root)
         add_test(NAME native.cpp_history_training COMMAND lgaed_cpp_history_training_tests)
         set_tests_properties(native.cpp_history_training PROPERTIES TIMEOUT 40)
     endif()
+    # Real Windows parsing, persisted answers/drafts and three-locale state
+    # mapping must survive physically reformatted code while rejecting forgeries.
+    add_executable(lgaed_code_format_loader_tests
+        native/platform/windows/code_format_loader_tests.cpp)
+    target_link_libraries(lgaed_code_format_loader_tests PRIVATE
+        lgaed_platform_windows lgaed_host_options)
+    add_dependencies(lgaed_code_format_loader_tests lgaed_code_format_fixtures)
+    add_test(NAME native.code_format_loader COMMAND lgaed_code_format_loader_tests
+        "${LGAED_CODE_FORMAT_FIXTURE_DIR}")
+    set_tests_properties(native.code_format_loader PROPERTIES TIMEOUT 45)
     # The real Windows loader/evaluator must reject wrong stderr bytes while
     # retaining previous stdout-only and nonzero-exit completion identities.
     add_executable(lgaed_stderr_exact_tests native/core/stderr_exact_contract_tests.cpp)
