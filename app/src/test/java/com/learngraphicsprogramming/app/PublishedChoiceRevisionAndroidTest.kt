@@ -47,8 +47,10 @@ class PublishedChoiceRevisionAndroidTest {
             val (p, b) = position(lesson, id)
             assertEquals(LessonStatePosition(p, b), layout.storagePosition(p, b))
             assertEquals(historical.getInt("correctIndex"), active.getInt("correctIndex"))
-            assertEquals(LessonStateLayoutJson.fingerprint(historical),
-                LessonStateLayoutJson.fingerprint(CurricularChoiceRevision.project(active, historical)))
+            // Published question/feedback prose may have later editorial
+            // changes. Only the original evaluated answer contract is reused.
+            assertEquals(LessonStateLayoutJson.stateFingerprint(historical),
+                LessonStateLayoutJson.stateFingerprint(CurricularChoiceRevision.project(active, historical)))
             val originalOptions = historical.getJSONArray("options")
             val changedOptions = active.getJSONArray("options")
             assertEquals(1, (0 until originalOptions.length()).count {
