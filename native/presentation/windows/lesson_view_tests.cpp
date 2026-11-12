@@ -17,6 +17,7 @@
 #include "core/lesson_entry_policy.hpp"
 #include "core/lesson_page_reach.hpp"
 #include "core/view_preferences.hpp"
+#include "core/attempts.hpp"
 #include "platform/windows/android_import.hpp"
 #include "platform/windows/narration_worker.hpp"
 #include "native_build_config.hpp"
@@ -1795,11 +1796,21 @@ void simulated_code_and_choice_cards() {
     require(IsWindowEnabled(fixture.control(1,12)),"Selecting an option did not enable its header reset");
     fixture.click(1,3);require(fixture.text(1,4).starts_with("✗ Incorrecto"),"The real incorrect-choice path did not execute");
     const auto after_wrong=read_lesson_state(fixture.view);
-    require(state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming")&&std::get<double>(*state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming"))<8.,"An evaluated wrong puzzle did not consume a route attempt");
+    const auto previous_reserve=state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming");
+    if(attempts::personal_premium_enabled) {
+        require(!previous_reserve||(std::holds_alternative<double>(*previous_reserve)&&
+            std::get<double>(*previous_reserve)==8.),
+            "Personal Premium consumed a life for an incorrect exercise");
+    } else {
+        require(previous_reserve&&std::holds_alternative<double>(*previous_reserve)&&
+            std::get<double>(*previous_reserve)<8.,"A free incorrect puzzle did not consume a life");
+    }
     fixture.click(1,3);
     const auto repeated=read_lesson_state(fixture.view);
-    require(*state::find(repeated,"attempt_reserve_seconds_test","reserve_programming")==*state::find(after_wrong,"attempt_reserve_seconds_test","reserve_programming"),
-        "Repeating the same wrong answer consumed another attempt");
+    const auto repeated_reserve=state::find(repeated,"attempt_reserve_seconds_test","reserve_programming");
+    require((!previous_reserve&&!repeated_reserve)||
+        (previous_reserve&&repeated_reserve&&*repeated_reserve==*previous_reserve),
+        "Repeating the same wrong answer changed the life reserve");
     fixture.click(1,12);
     require(fixture.text(1,4).empty()&&!SendMessageW(first,BM_GETCHECK,0,0)&&!IsWindowEnabled(fixture.control(1,12))&&
             fixture.control(2,10)==editor&&fixture.text(2,10)==draft,"Header reset changed another editor or retained a stale wrong attempt");
