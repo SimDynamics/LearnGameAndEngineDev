@@ -1,0 +1,51 @@
+name: Android code-format state compatibility
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - .github/workflows/android-code-format-compat.yml
+      - app/src/main/java/com/learngraphicsprogramming/app/CurricularSourceFormatCompat.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/LessonStateLayoutJson.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/StableLessonStateLayout.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/LessonStateLayoutJsonTest.kt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  state-layout:
+    name: Android JUnit format and historical progress guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Check out the exact Codex publication
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Run isolated Android JVM state tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:testDebugUnitTest \
+            --tests com.learngraphicsprogramming.app.LessonStateLayoutJsonTest \
+            -Plgp.clang23=false -Plgp.wasmtime=false -Plgp.cppExceptions=false \
+            --no-daemon --stacktrace
+      - name: Retain JUnit XML and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-state-format-tests-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            app/build/test-results/testDebugUnitTest
+            app/build/reports/tests/testDebugUnitTest
