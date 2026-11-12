@@ -170,9 +170,9 @@ void actual_msvc_case(const Lesson& lesson,std::string_view identity,std::string
         request.observation_probe=block.output_check->observation_report;
     require(compiler_runtime_request_allowed(block,request),
         "The exact student edit failed the U3 source-isolation contract");
-    state::StateData state;
-    state::prepare_lesson_state(state,lesson);
-    require(!compiler_puzzle_completed(state,lesson,block),
+    state::StateData qaState;
+    state::prepare_lesson_state(qaState,lesson);
+    require(!compiler_puzzle_completed(qaState,lesson,block),
         "A fresh U3 objective inherited an old stdout-only achievement");
     const auto result=run_cpp(request);
     require(result.error_utf8.empty()&&result.compilation.succeeded(),
@@ -197,13 +197,13 @@ void actual_msvc_case(const Lesson& lesson,std::string_view identity,std::string
     require(evaluate_cpp_output_check(*block.output_check,forged,request.revision).verdict
             ==OutputVerdict::incorrect,
         "Successful stdout alone bypassed the required U3 independent runtime proof");
-    require(!record_compiler_puzzle_case(state,lesson,block,request,forged,"fake probe")&&
-        !compiler_puzzle_completed(state,lesson,block),
+    require(!record_compiler_puzzle_case(qaState,lesson,block,request,forged,"fake probe")&&
+        !compiler_puzzle_completed(qaState,lesson,block),
         "U3 accepted a fabricated independent probe receipt");
-    require(record_compiler_puzzle_case(state,lesson,block,request,captured,"correct")&&
-        compiler_puzzle_completed(state,lesson,block),
+    require(record_compiler_puzzle_case(qaState,lesson,block,request,captured,"correct")&&
+        compiler_puzzle_completed(qaState,lesson,block),
         "The first real authored U3 case did not unlock mandatory curricular progress");
-    const auto restored=state::decode(state::encode(state));
+    const auto restored=state::decode(state::encode(qaState));
     require(compiler_puzzle_completed(restored,lesson,block)&&
         compiler_puzzle_case_count(restored,lesson,block)==1,
         "U3 lost the sealed first-case completion or made optional cases mandatory");
