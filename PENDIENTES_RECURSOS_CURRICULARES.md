@@ -19,7 +19,6 @@ Sin pendientes.
   2. En los demás `order_code` que necesiten bloques vacíos arrastrables, declarar en la raíz `orderVisualSeparators` con `activity` estable y `count` entre 1 y 4, sólo después de examinar la complejidad real de cada programa. No insertar esas tarjetas en `fragments`, `correctOrder` o las respuestas almacenadas. No reabrir ni sustituir las catorce integraciones ya conservadas en Programación 1.
   3. Revisar `drag_fill_code` y los fragmentos con huecos: aprovechar los saltos físicos del `template`, sin añadir opciones vacías a `choices` ni cambiar la cantidad de huecos. Si un formato histórico no permite una presentación legible sin cambiar la evaluación, registrar únicamente la capacidad general que falte para Codex, sin introducir propiedades inventadas.
   4. Verificar el código visible de los editores y referencias posteriores: evitar concatenaciones aparentes al ajustar ancho, truncamientos o pérdida de indentación. La mejora visual no debe reescribir automáticamente el borrador, desplazar el cursor, invalidar deshacer/rehacer o cambiar el archivo compilado.
-- **CASO CONFIRMADO, NO LÍMITE DEL ALCANCE, Y CAPACIDAD GENERAL PENDIENTE:** en Programación 1, `app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json`, los bloques originales `code` `block_0003_0002` (página 4, bloque 3) y `block_0005_0002` (página 6, bloque 3) presentan seguidas las declaraciones de `fichas`, `capacidad` y `acepta_sobrantes`, la validación, los cálculos `grupos`/`sobrantes` y el retorno. Se requieren espacios verticales visibles entre declaraciones y validación, entre los cálculos y el `if (sobrantes == 0)`, y antes de `return 0;`, sin separar artificialmente las ramas vinculadas `if/else if/else`. Estos dos bloques son **código histórico protegido por `stateLayout`**, no `order_code`: `orderVisualSeparators` no actúa sobre ellos. Codex debe habilitar transiciones seguras de **formato físico del código fuente** para `code` y demás clases de bloques históricos protegidos, con conservación de progreso, respuestas, borradores y compatibilidad de identidad. Las fuentes corregidas se copiarán y recompilarán normalmente; no se deben inmovilizar ejecutables anteriores ni exigir que el texto fuente mantenga los mismos bytes. Work aplicará las separaciones curriculares cuando la compatibilidad esté verificada. No añadir una propiedad JSON no reconocida ni sustituir los bloques, los originales o sus respuestas. La prueba debe contrastar ambas variantes y preservación de espacios, comentarios, literales, macros continuadas, indentación, lectura y estado histórico. Las tarjetas visuales de `order_code` no sustituyen la corrección física del código fuente ni resuelven los demás formatos.
 - **AUDITORÍA GLOBAL:** ejecutar `python scripts/curriculum/auditar_legibilidad_codigo.py --output-json /tmp/legibilidad_codigo.json` desde la raíz del repositorio. Revisa todos los idiomas y cursos, incluidos los archivos `projectFiles`, sin escribir los JSON. Sus ubicaciones son propuestas para revisión **manual por Work**, no autorizaciones automáticas para insertar saltos. Confirmar cada transición histórica con pruebas del motor, conservación y compilación; no declarar terminada la ficha sólo por obtener un reporte.
 - **SEGURIDAD DEL FORMATO:** no suprimir ni introducir separadores que afecten el lenguaje, especialmente `#define` continuado, `//`, raw strings, literales con `\\n`, expresiones, `stdout`/`stderr` y expectativas `exact`. Una separación decorativa debe ser independiente de la sintaxis real de C++ y CMake.
 - **CONSERVACIÓN Y COMPROBACIONES RESTANTES:** respetar `stateLayout`, IDs, traducciones, respuestas, fragmentos originales, navegación, referencias, lectores y progreso previo. Comprobar cada integración curricular con la prueba de preservación y regresiones de orden correcto/incorrecto, cero/uno/varios separadores, reinicio y reapertura de un logro; verificar además las superficies de código y editores con casos significativos. La revisión visual y auditiva habitual corresponde al usuario durante el estudio y los defectos concretos que comunique se atienden directamente.
@@ -37,17 +36,14 @@ desbloquea; tampoco una salida incorrecta. No borrar los demás oráculos del
 contrato histórico: retirar sus entradas sin una transición autenticada dañaría
 el historial, y no es necesario para volverlos opcionales.
 
-**Comprobación técnica de alcance global:** conservar la prueba del lector Win32
-`native.cpp_project_other_cpp_multicase` con trece entradas, una sola obligatoria,
-avance, reapertura y segunda ejecución optativa; ejecutar además la comprobación
-de código nativo de 13 casos en `native.compiler_puzzles` antes de cerrar este
-reporte. Si el ejecutable instalado todavía muestra «comprueba los casos
-restantes para continuar», ese binario conserva el comportamiento antiguo
-y debe recompilarse e instalarse desde la versión corregida. Las rúbricas de
-P2 U3L6/U3L8 no deben imponer recibos multicaso al estudiante; conservar
-sus criterios semánticos independientes al integrarlas. La presentación de
-las entradas y salidas optativas como lista **sin viñetas** en el texto
-curricular es una segunda fase, posterior a quitar el bloqueo.
+**VERIFICACIONES RESTANTES DE AVANCE Y PRESENTACIÓN:** ejecutar la
+comprobación de código nativo de trece casos en `native.compiler_puzzles`
+antes de cerrar el alcance global. Confirmar que las rúbricas de P2 U3L6/U3L8
+no exijan recibos multicaso y que sus criterios semánticos permanezcan
+independientes. Integrar en el texto curricular las entradas y salidas de
+cada ensayo optativo como lista **sin viñetas**; la primera comprobación correcta
+del caso inicial es suficiente para avanzar. Ante un binario instalado que aún
+exija completar todos los casos, recompilar e instalar la versión corregida.
 
 ### P2_U1_ACREDITACION_PRACTICAS_ABIERTAS
 
