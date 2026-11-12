@@ -100,6 +100,91 @@ void verify_locale(const std::filesystem::path& path,std::string_view locale) {
         "Read-only course progress uses a different historical source mapping");
 }
 
+void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
+    // Genuine authored U4 lesson, copied only to CI's temporary fixture area.
+    // Work owns the production lesson, and its source bytes remain untouched.
+    const auto before=windows::load_lesson(fixtures/"real.before.json","es");
+    const auto after=windows::load_lesson(fixtures/"real.after.json","es");
+    check(before.id=="cpp_fundamentals__expresiones_y_decisiones__construir_decisiones_desde_un_problema"&&
+        before.id==after.id&&before.pages.size()==6&&after.pages.size()==6,
+        "The real U4 pilot did not load its published original lesson");
+    check(before.state_layout.signatures==after.state_layout.signatures&&
+        before.state_layout.lineage==after.state_layout.lineage&&
+        before.state_layout.legacy_lineage==after.state_layout.legacy_lineage&&
+        after.state_layout.source_format_revisions.size()==2,
+        "Real lesson formatting changed stable historical ownership");
+
+    const std::array<std::pair<std::size_t,std::size_t>,2> samples{{{3,2},{5,2}}};
+    for(const auto [page,index]:samples) {
+        const auto& old=before.pages[page].blocks[index];
+        const auto& changed=after.pages[page].blocks[index];
+        check(old.type==curriculum::BlockType::code&&changed.type==old.type&&
+            old.code!=changed.code&&changed.code.find("\n\n    if (")!=std::string::npos&&
+            changed.code.find("\n\n    return 0;")!=std::string::npos&&
+            old.stable_id==changed.stable_id&&
+            curriculum::exercise_key(before,old)==curriculum::exercise_key(after,changed),
+            "Actual protected U4 code block did not gain safe physical line breaks");
+    }
+    for(std::size_t page=0;page<before.pages.size();++page) {
+        const auto& old_page=before.pages[page],new_page=after.pages[page];
+        check(old_page.blocks.size()==new_page.blocks.size(),"Real formatting lost curricular blocks");
+        for(std::size_t index=0;index<old_page.blocks.size();++index) {
+            const auto& old=old_page.blocks[index],changed=new_page.blocks[index];
+            check(old.stable_id==changed.stable_id&&
+                curriculum::exercise_key(before,old)==curriculum::exercise_key(after,changed)&&
+                curriculum::draft_key("programming",before,old)==
+                    curriculum::draft_key("programming",after,changed),
+                "Real formatting changed the student's exercise or draft key");
+            if(curriculum::has_compiler_objective(old)) {
+                check(curriculum::has_compiler_objective(changed)&&
+                    curriculum::reference_objective_frame(before,old)==
+                        curriculum::reference_objective_frame(after,changed),
+                    "Real formatting changed a different editor's authenticated compiler goal");
+            }
+        }
+    }
+    const auto& prediction_before=before.pages[3].blocks[3];
+    const auto& prediction_after=after.pages[3].blocks[3];
+    check(prediction_before.type==curriculum::BlockType::output_prediction&&
+        prediction_before.answers==prediction_after.answers&&
+        prediction_before.code==prediction_after.code,
+        "Real format pilot altered an evaluated prediction or its original code");
+
+    state::StateData saved;
+    state::prepare_lesson_state(saved,before);
+    state::Response response;response.correct=true;response.answer=prediction_before.answers.front();
+    state::put_response(saved,before,prediction_before,response);
+    const auto& editor_before=before.pages[3].blocks[6];
+    const auto& editor_after=after.pages[3].blocks[6];
+    check(editor_before.type==curriculum::BlockType::cpp_compiler&&
+        editor_after.type==editor_before.type,
+        "The authentic U4 compiler editor moved during formatting");
+    state::Draft draft;
+    draft.source="int main() {\n // estudiante: original intacto\n return 0;\n}\n";
+    draft.input="18 5 1\n";draft.selection_start=15;draft.selection_end=15;draft.has_saved=true;
+    state::put_draft(saved,curriculum::draft_key("programming",before,editor_before),draft);
+    state::save_current_page(saved,before,3);
+    const auto archived=state::decode(state::encode(saved));
+    check(saved==archived,"Actual pilot rewrote the student's historical preferences");
+    state::validate_lesson_state(archived,after);
+    const auto answer=state::get_response(archived,after,prediction_after);
+    check(answer&&answer->correct&&answer->answer==response.answer,
+        "Correct historical prediction did not survive the real source edit");
+    const auto retrieved=state::get_draft(archived,
+        curriculum::draft_key("programming",after,editor_after),
+        editor_after.initial_code,editor_after.standard_input.value_or(""));
+    check(retrieved.has_saved&&retrieved.source==draft.source&&
+        retrieved.input==draft.input&&
+        retrieved.selection_start==draft.selection_start&&
+        retrieved.selection_end==draft.selection_end&&
+        state::current_page(archived,after)==3,
+        "The real U4 lesson reopened with a different draft, cursor or page");
+    const auto catalog=windows::load_lesson_progress_metadata(fixtures/"real.after.json","es");
+    check(catalog.state_layout.lineage==after.state_layout.lineage&&
+        catalog.pages.size()==after.pages.size(),
+        "The real U4 read-only curriculum catalog lost its historical identity");
+}
+
 void must_reject(const std::filesystem::path& file) {
     for(const bool catalog:{false,true}) {
         bool rejected=false;
@@ -114,12 +199,13 @@ void must_reject(const std::filesystem::path& file) {
 
 int main(int argc,char** argv) {
     try{
-        if(argc!=2)throw std::invalid_argument("Expected isolated fixture directory");
+        if(argc!=3)throw std::invalid_argument("Expected isolated synthetic and real lesson fixture directories");
         const std::filesystem::path dir(argv[1]);
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
+        verify_real_curricular_pilot(std::filesystem::path(argv[2]));
         must_reject(dir/"es.changed-answer.json");
         must_reject(dir/"es.forged-archive.json");
-        std::cout<<"PASS native C++/CMake physical-format loader in es/en/fr: unchanged state/answer/draft keys, exact pre-format receipts, optional source formatting, negative forgeries and progress-catalog reopens\n";
+        std::cout<<"PASS native physical-format loader in es/en/fr and genuine published U4 lesson: historical answers, drafts, cursor, page, compiler goals, original sources and progress-catalog reopens\n";
         return 0;
     }catch(const std::exception& error){
         std::cerr<<"FAIL native physical-format loader: "<<error.what()<<'\n';
