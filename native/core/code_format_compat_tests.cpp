@@ -293,6 +293,83 @@ void u3_observation_reports_contracts() {
     check(!expected_observation_report(ReportMode::complete,thirteen),
         "U3L8 accepted a thirteenth physical line outside the authored domain");
 }
+void u3_compiler_core_evaluation() {
+    // A model verdict is not an execution receipt: these synthetic captures
+    // check the evaluation boundary, while separate Windows tests must prove
+    // that MSVC actually compiled and ran the student's source and probes.
+    OutputCheck boxes;
+    boxes.rejection_operation=RejectionOperation::boxes;
+    OutputCase box_case;
+    box_case.standard_input="-1 0 21 5\n";
+    box_case.outputs={"Cajas=0\nCajas=2\n"};
+    box_case.exit_code=1;
+    boxes.cases.push_back(box_case);
+    FreshExecution run;
+    run.source_revision=47;
+    run.compilation_succeeded=true;
+    run.execution_completed=true;
+    run.exit_code=1;
+    run.standard_input=box_case.standard_input;
+    run.standard_output=box_case.outputs[0];
+    run.standard_error=
+        "Cajas, peticion 1, piezas -1: rango 0 a 20; revise los datos.\n"
+        "Cajas, peticion 3, piezas 21: rango 0 a 20; verifique la cantidad.\n";
+    run.rejection_probe_correct=true;
+    check(evaluate_output_check(boxes,run,47).verdict==OutputVerdict::correct,
+        "U3L6 core failed to accept a complete reviewed rejection with a verified probe");
+    run.rejection_probe_correct=false;
+    check(evaluate_output_check(boxes,run,47).verdict==OutputVerdict::incorrect,
+        "U3L6 core credited a diagnostic despite a failed independent stream probe");
+    run.rejection_probe_correct=true;
+    run.standard_error=
+        "Cajas, peticion 1, piezas 21: rango 0 a 20; revise los datos.\n"
+        "Cajas, peticion 3, piezas -1: rango 0 a 20; verifique la cantidad.\n";
+    check(evaluate_output_check(boxes,run,47).verdict==OutputVerdict::incorrect,
+        "U3L6 core accepted correct stdout with swapped rejected input facts");
+    run.standard_error=
+        "Cajas, peticion 1, piezas -1: rango 0 a 20; revise los datos.\n"
+        "Cajas, peticion 3, piezas 21: rango 0 a 20; verifique la cantidad.\n";
+    run.exit_code=0;run.execution_succeeded=true;
+    check(evaluate_output_check(boxes,run,47).verdict==OutputVerdict::incorrect,
+        "U3L6 core ignored the authored normal nonzero return status");
+    run.exit_code=1;run.execution_succeeded=false;
+    check(evaluate_output_check(boxes,run,48).verdict==OutputVerdict::unavailable,
+        "U3L6 core credited a capture from an older editor revision");
+
+    OutputCheck report;
+    report.observation_report=ReportMode::complete;
+    OutputCase case_report;
+    case_report.standard_input="A 0 0\nA 1-1\nB 2 2\n";
+    const auto expected=expected_observation_report(ReportMode::complete,case_report.standard_input);
+    check(expected&&expected->exit_code==1&&expected->standard_error=="Linea=2:FORMATO\n",
+        "U3L8 QA fixture lost its deliberate malformed line");
+    case_report.outputs={expected->standard_output};
+    case_report.standard_error_exact=expected->standard_error;
+    case_report.exit_code=expected->exit_code;
+    report.cases.push_back(case_report);
+    FreshExecution observed;
+    observed.source_revision=18;
+    observed.compilation_succeeded=true;
+    observed.execution_completed=true;
+    observed.exit_code=expected->exit_code;
+    observed.standard_input=case_report.standard_input;
+    observed.standard_output=expected->standard_output;
+    observed.standard_error=expected->standard_error;
+    observed.report_probe_correct=true;
+    check(evaluate_output_check(report,observed,18).verdict==OutputVerdict::correct,
+        "U3L8 core rejected a correct derived report with its independent probes");
+    observed.report_probe_correct=false;
+    check(evaluate_output_check(report,observed,18).verdict==OutputVerdict::incorrect,
+        "U3L8 core credited a hard-coded prepared report without probe evidence");
+    observed.report_probe_correct=true;
+    observed.standard_error="Linea=2:FORMATO_ERRONEO\n";
+    check(evaluate_output_check(report,observed,18).verdict==OutputVerdict::incorrect,
+        "U3L8 core accepted an incorrect stderr spelling despite valid stdout");
+    observed.standard_error=expected->standard_error;
+    observed.standard_output+="fabricated";
+    check(evaluate_output_check(report,observed,18).verdict==OutputVerdict::incorrect,
+        "U3L8 core accepted extraneous stdout after the summary");
+}
 void historical_frames(){
     Lesson lesson;lesson.locale="es";lesson.id="format-compat-native";
     Block compiler;compiler.type=BlockType::cpp_compiler;compiler.stable_id="block_0002_0004";
@@ -338,6 +415,7 @@ int main(){
     try{
         lexical_safety();historical_frames();guarded_open_compiler_edits();bounded_u3_rejection_inputs();
         u3_rejection_diagnostics_contracts();u3_observation_reports_contracts();
+        u3_compiler_core_evaluation();
         std::cout<<"PASS safe C++/CMake formatting; protected comments/literals/macros and historic compiler/order state frames\n";
         return 0;
     }catch(const std::exception& e){
