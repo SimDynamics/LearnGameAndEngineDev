@@ -2620,7 +2620,7 @@ void multiple_input_compiler_first_case_unlocks_thirteen_optional_cases() {
     // independently of how many optional inputs the curriculum preserves.
     Fixture f({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({
       "id":"qa_multiple_input_compiler","title":"Trece entradas","compilerPuzzlesRequired":true,"pages":[{"blocks":[
-        {"type":"cpp_compiler","question":"Comprueba la primera entrada; las otras son opcionales.","initialCode":"#include <iostream>\\nint main(){int n=0;std::cin >> n;std::cout << n*2;}\\n","initialStandardInput":"1","outputCheck":{"cases":[
+        {"type":"cpp_compiler","question":"Comprueba la primera entrada; las otras son opcionales.","initialCode":"#include <iostream>\nint main(){int n=0;std::cin >> n;std::cout << n*2;}\n","initialStandardInput":"1","outputCheck":{"cases":[
           {"standardInput":"1","outputs":["2"]},{"standardInput":"2","outputs":["4"]},
           {"standardInput":"3","outputs":["6"]},{"standardInput":"4","outputs":["8"]},
           {"standardInput":"5","outputs":["10"]},{"standardInput":"6","outputs":["12"]},
