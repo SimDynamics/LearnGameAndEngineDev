@@ -20,7 +20,8 @@ internal object LessonStateLayoutJson {
             require(version in 1..2 && expected.all { it in actualFields } &&
                 actualFields.all { it in expected ||
                     (version == 2 && it in setOf(
-                        "sourceFormatRevisions", "orderRefinements", "choiceRevisions")) })
+                        "sourceFormatRevisions", "orderRefinements",
+                        "choiceRevisions", "compilerRevisions")) })
             val (origin, signatures) = readOrigin(metadata.getJSONArray("origin"))
             val current = metadata.getJSONArray("current")
             val positions = (0 until current.length()).map { p ->
@@ -115,6 +116,37 @@ internal object LessonStateLayoutJson {
                     choiceOriginals[id] = historical
                 }
             }
+            val compilerOriginals = linkedMapOf<String, JSONObject>()
+            val compilerReferences = linkedMapOf<String, JSONObject>()
+            if (version == 2 && metadata.has("compilerRevisions")) {
+                require(locale == "es")
+                val revisions = metadata.getJSONArray("compilerRevisions")
+                require(revisions.length() <= 100_000)
+                for (index in 0 until revisions.length()) {
+                    val entry = revisions.getJSONObject(index)
+                    require(entry.keys().asSequence().toSet() == setOf("id", "block", "references"))
+                    val id = strictString(entry, "id")
+                    require(id in active && id !in compilerOriginals && id !in compilerReferences)
+                    val old = entry.getJSONObject("block")
+                    require(stateFingerprint(old) == expectedSignatures.getValue(id) &&
+                        editorialSeen[id]?.contains(fingerprint(old)) == true)
+                    compilerOriginals[id] = old
+                    val references = entry.getJSONArray("references")
+                    require(references.length() <= 100_000)
+                    for (referenceIndex in 0 until references.length()) {
+                        val reference = references.getJSONObject(referenceIndex)
+                        require(reference.keys().asSequence().toSet() == setOf("id", "block"))
+                        val referenceId = strictString(reference, "id")
+                        require(referenceId in active && referenceId != id &&
+                            referenceId !in compilerReferences && referenceId !in compilerOriginals)
+                        val historical = reference.getJSONObject("block")
+                        require(stateFingerprint(historical) ==
+                            expectedSignatures.getValue(referenceId) &&
+                            editorialSeen[referenceId]?.contains(fingerprint(historical)) == true)
+                        compilerReferences[referenceId] = historical
+                    }
+                }
+            }
             val originals = linkedMapOf<String, JSONObject>()
             if (version == 2 && metadata.has("sourceFormatRevisions")) {
                 val archives = metadata.getJSONArray("sourceFormatRevisions")
@@ -128,10 +160,15 @@ internal object LessonStateLayoutJson {
                     val ordered = if (id in orderOriginals)
                         CurricularOrderRefinement.project(historical, orderOriginals.getValue(id)).first
                     else historical
-                    val signed = if (id in choiceOriginals)
+                    val chosen = if (id in choiceOriginals)
                         CurricularChoiceRevision.project(ordered, choiceOriginals.getValue(id))
                     else ordered
-                    require(stateFingerprint(signed) == expectedSignatures.getValue(id))
+                    val expanded = if (id in compilerOriginals)
+                        CurricularCompilerRevision.projectCompiler(chosen, compilerOriginals.getValue(id))
+                    else if (id in compilerReferences)
+                        CurricularCompilerRevision.projectReference(chosen, compilerReferences.getValue(id))
+                    else chosen
+                    require(stateFingerprint(expanded) == expectedSignatures.getValue(id))
                     require(editorialSeen[id]?.contains(fingerprint(historical)) == true)
                     originals[id] = historical
                 }
@@ -148,9 +185,14 @@ internal object LessonStateLayoutJson {
                     orderRefinements[id] = revision
                     original
                 } ?: formatted
-                val protected = choiceOriginals[id]?.let { before ->
+                val chosen = choiceOriginals[id]?.let { before ->
                     CurricularChoiceRevision.project(ordered, before)
                 } ?: ordered
+                val protected = compilerOriginals[id]?.let { before ->
+                    CurricularCompilerRevision.projectCompiler(chosen, before)
+                } ?: compilerReferences[id]?.let { before ->
+                    CurricularCompilerRevision.projectReference(chosen, before)
+                } ?: chosen
                 require(stateFingerprint(protected) == expectedSignatures.getValue(id))
                 editorial[id]?.let { require(fingerprint(block) == it) }
             }
