@@ -191,6 +191,28 @@ El éxito de este piloto **no** acredita por sí solo todas las lecciones ni
 permite cerrar la auditoría transversal. La verificación visual/auditiva
 habitual sigue correspondiendo al usuario durante el estudio.
 
+## Auditoría ampliada del lector Android
+
+La prueba de inventario `PublishedStateLayoutInventoryAndroidTest` recorre
+todos los archivos `lesson_*.json` de los tres idiomas y usa el mismo
+validador de metadatos que la aplicación. **No modifica ningún archivo de
+lección ni preferencias del estudiante.** Cada ejecución produce un reporte
+diagnóstico en `app/build/reports/curricular-state-inventory.json`, conservado
+como artefacto de GitHub Actions.
+
+En la ejecución del commit `31b62170082d2181cfeee6a397b30ea599a64536`,
+se examinaron **763 lecciones**, de las cuales **187** contienen mapas
+históricos. Las **12 lecciones con `sourceFormatRevisions`** pasaron la
+validación Android. Se registraron por separado **28 lecciones con
+incompatibilidades de otros contratos históricos**. La ejecución aprobó
+únicamente la compatibilidad de formatos, **no** declaró corregidas esas
+28 incidencias. El informe contiene las rutas y causas para que Codex
+identifique y atienda cada contrato con procedencia y pruebas auténticas.
+No eliminar ni reemplazar huellas originales para silenciar el informe.
+
+Resultado y artefacto de la ejecución:
+https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43139232923
+
 ## Separación de responsabilidades
 
 Codex implementa la compatibilidad y verifica los contratos en `Codex`.
