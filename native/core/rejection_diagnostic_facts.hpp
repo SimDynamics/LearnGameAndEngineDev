@@ -149,9 +149,27 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
     return false;
 }
 inline bool actionable(const std::vector<Word>& words) {
-    for(const auto& word:words)for(const auto stem:
-        {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"}) {
-        if(word.text.starts_with(stem))return true;
+    for(std::size_t i=0;i<words.size();++i){
+        bool action=false;
+        for(const auto stem:
+            {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"})
+            if(words[i].text.starts_with(stem)){action=true;break;}
+        if(!action)continue;
+        // "No revise" and "sin revisar" describe the opposite of the
+        // required corrective instruction. A later positive instruction
+        // ("No modifique los hechos; revise los datos") is still accepted.
+        if(i&&one_of(words[i-1].text,{"no","sin"}))continue;
+        const auto start=i>4?i-4:0;
+        bool negated=false;
+        for(std::size_t j=start;j<i;++j)if(one_of(words[j].text,{"no","sin"})){
+            bool only_auxiliary=true;
+            for(std::size_t k=j+1;k<i;++k)
+                if(!one_of(words[k].text,{"es","son","hay","hace","falta",
+                    "necesario","necesaria","necesidad","preciso","precisa",
+                    "de","que"})){only_auxiliary=false;break;}
+            if(only_auxiliary){negated=true;break;}
+        }
+        if(!negated)return true;
     }
     return false;
 }
