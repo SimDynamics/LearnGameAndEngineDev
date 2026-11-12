@@ -13,6 +13,9 @@ on:
       - scripts/curriculum/stable_state_layout.py
       - scripts/curriculum/code_format_compat.py
       - scripts/curriculum/test_code_format_compat.py
+      - scripts/curriculum/test_real_code_format_pilot.py
+      - app/src/main/assets/content/en/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json
+      - app/src/main/assets/content/fr/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json
       - scripts/curriculum/test_p2_u3_workflow_declaration.py
       - scripts/curriculum/test_u3_rejection_runtime_contract.py
       - scripts/curriculum/test_u3_observation_runtime_contract.py
@@ -48,6 +51,9 @@ jobs:
       - name: Probar formato físico C++ y CMake sin alterar el progreso histórico
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_code_format_compat
+      - name: Compilar dos ejemplos de una lección real y conservar su origen publicado
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_real_code_format_pilot
       - name: Acreditar el esquema declarativo U3 sin modificar ejercicios ni progreso
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_p2_u3_workflow_declaration
