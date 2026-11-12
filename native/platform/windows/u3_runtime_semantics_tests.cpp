@@ -8,6 +8,7 @@
 #include "native_build_config.hpp"
 
 #include <windows.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Data.Json.h>
 
 #include <array>
