@@ -28,7 +28,8 @@ internal class StableLessonStateLayout(
     val version: Int = 1,
     val locale: String? = null,
     family: Map<String, LessonStateFamily> = emptyMap(),
-    additions: List<LessonStateAddition> = emptyList()
+    additions: List<LessonStateAddition> = emptyList(),
+    orderRefinements: Map<String, CurricularOrderRefinement> = emptyMap()
 ) {
     // Defensive copies: the JSON parser or author must not mutate a checked map.
     val origin: List<LessonStatePage> = origin.map { it.copy(blocks = it.blocks.toList()) }
@@ -37,6 +38,10 @@ internal class StableLessonStateLayout(
         origin = record.origin.map { it.copy(blocks = it.blocks.toList()) },
         signatures = record.signatures.toMap()) }.toMap()
     val additions = additions.toList()
+    // Presentation-only expansion of old physical order cards. No stored
+    // answer or state lineage is rewritten.
+    val orderRefinements = orderRefinements.mapValues { (_, revision) ->
+        revision.copy(groups = revision.groups.map { it.toList() }) }.toMap()
     private val originPages: Map<String, Int>
     private val originBlocks: Map<String, LessonStatePosition>
     private val currentPages: Map<String, Int>
@@ -101,6 +106,12 @@ internal class StableLessonStateLayout(
                 language + ":" + record.sha256 + ":" + framing(record.origin) + ":" +
                     record.signatures.toSortedMap().entries.joinToString(",") { it.key + "=" + it.value }
             })
+    }
+
+    fun savedOrderForDisplay(page: Int, block: Int, saved: List<Int>): List<Int> {
+        val identity = current.getOrNull(page)?.blocks?.getOrNull(block)
+            ?: throw LessonStateLayoutException("Unknown current order puzzle")
+        return orderRefinements[identity]?.present(saved) ?: saved
     }
 
     fun storagePosition(page: Int, block: Int): LessonStatePosition {
