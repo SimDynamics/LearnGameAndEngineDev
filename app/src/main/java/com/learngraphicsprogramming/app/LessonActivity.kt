@@ -5550,9 +5550,13 @@ class LessonActivity : AppCompatActivity(), PuzzleKeyboardSubmissionOwner {
             )
 
         val savedOrder =
-            savedState?.optJSONArray(
-                "order"
-            )
+            savedState?.optJSONArray("order")?.let { prior ->
+                // A historically graded grouped card may now display as
+                // multiple physical source lines. Keep its stored indices
+                // untouched and expand only the rows shown to the student.
+                LessonStateCoordinates.savedOrderForDisplay(
+                    this, currentLessonId, currentPage, blockIndex, prior)
+            }
 
         val savedCorrect =
             savedState?.optBoolean(
