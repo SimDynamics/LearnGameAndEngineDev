@@ -231,41 +231,132 @@ void optional_root_metadata_preserves_published_history(){
 void optional_visual_chips_do_not_publish_answers(HWND host){
     using namespace lgaed::presentation;
     const auto dpi=static_cast<int>(GetDpiForWindow(host));
-    const auto px=[&](int v){return MulDiv(v,dpi,96);};
+    const auto px=[&](int value){return MulDiv(value,dpi,96);};
+    const std::vector<std::string> fragments{
+        "    inicializar();", "    calcular();", "    devolver();"};
     int changes=0;
-    OrderCodeView view(host,{"    inicializar();", "    calcular();", "    devolver();"},
-        {0,1,2},[&]{++changes;},2);
+    OrderCodeView view(host,fragments,{0,1,2},[&]{++changes;},2);
     MoveWindow(view.window(),0,0,px(650),view.height_for_width(px(650)),TRUE);pump();
-    const auto original=std::vector<std::size_t>{0,1,2};
-    auto first=GetDlgItem(view.window(),100);
-    auto first_blank=GetDlgItem(view.window(),103);
-    auto second_blank=GetDlgItem(view.window(),104);
-    check(first&&first_blank&&second_blank&&IsWindowVisible(first_blank)&&IsWindowVisible(second_blank),
-        "Declared optional blank visual cards were not shown");
-    check(view.order()==original&&view.reading_regions().size()==3,
-        "Optional visual cards polluted scored order or narration");
+    const std::vector<std::size_t> original{0,1,2};
+
+    // Enumerate the actual child positions. order() intentionally excludes
+    // decorative cards so saved student answers never include their identities.
+    const auto visible=[&]{
+        std::vector<std::pair<LONG,std::size_t>> placements;
+        for(std::size_t id=0;id<5;++id){
+            const auto row=GetDlgItem(view.window(),100+static_cast<int>(id));
+            check(row&&IsWindowVisible(row),"An optional card was hidden or removed");
+            RECT bounds{};GetWindowRect(row,&bounds);
+            placements.emplace_back(bounds.top,id);
+        }
+        check(!GetDlgItem(view.window(),105),"An Insert or drag duplicated a card");
+        std::sort(placements.begin(),placements.end());
+        for(std::size_t i=1;i<placements.size();++i)
+            check(placements[i].first>placements[i-1].first,"Optional cards overlap or lose their independent positions");
+        std::vector<std::size_t> sequence;
+        for(const auto& [top,id]:placements){(void)top;sequence.push_back(id);}
+        return sequence;
+    };
+    const auto drag_to=[&](HWND source,POINT target){
+        RECT from{};GetWindowRect(source,&from);
+        const auto x=target.x-from.left,y=target.y-from.top;
+        SendMessageW(source,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(px(10),px(10)));
+        SendMessageW(source,WM_MOUSEMOVE,MK_LBUTTON,MAKELPARAM(x,y));
+        SendMessageW(source,WM_LBUTTONUP,0,MAKELPARAM(x,y));pump();
+        check(GetCapture()!=source,"Optional-card gesture retained mouse capture");
+    };
+    const auto outside=[&](HWND row,int dx,int dy){
+        RECT bounds{};GetWindowRect(row,&bounds);
+        return POINT{dx<0?bounds.left+dx:bounds.right+dx,
+            dy<0?bounds.top+dy:bounds.bottom+dy};
+    };
+    const auto first=GetDlgItem(view.window(),100);
+    const auto first_blank=GetDlgItem(view.window(),103);
+    const auto second_blank=GetDlgItem(view.window(),104);
+    check(visible()==std::vector<std::size_t>({0,1,2,3,4})&&
+        view.order()==original&&view.reading_regions().size()==3,
+        "Optional cards changed the authored source or narration");
+
+    // Keyboard, double-click and Delete/Backspace/Insert must never hide a
+    // separator, and purely visual moves never publish a new scored answer.
     SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);pump();
-    check(view.order()==original&&changes==0,
-        "Moving one optional blank card changed scored order or published a response");
-    SendMessageW(second_blank,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(10,8));pump();
-    check(!IsWindowVisible(second_blank)&&view.order()==original&&changes==0,
-        "Omitting an optional blank published or invalidated a real response");
-    SendMessageW(first_blank,WM_KEYDOWN,VK_DELETE,0);pump();
-    check(!IsWindowVisible(first_blank)&&view.order()==original&&changes==0,
-        "Deleting a second optional card altered the source-only permutation");
+    check(visible()==std::vector<std::size_t>({0,1,3,2,4})&&
+        view.order()==original&&changes==0,"Blank Alt+Up changed a scored answer");
+    SendMessageW(second_blank,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(10,8));
+    SendMessageW(first_blank,WM_KEYDOWN,VK_DELETE,0);
+    SendMessageW(second_blank,WM_KEYDOWN,VK_BACK,0);
     SendMessageW(first,WM_KEYDOWN,VK_INSERT,0);pump();
-    check(IsWindowVisible(first_blank)&&view.order()==original&&changes==0,
-        "Restoring an omitted card changed the stored source order");
+    check(visible()==std::vector<std::size_t>({0,1,3,2,4})&&
+        changes==0,"A legacy hide/restore shortcut modified optional cards");
+
     SendMessageW(first,WM_SYSKEYDOWN,VK_DOWN,0);pump();
     check(view.order()==std::vector<std::size_t>({1,0,2})&&changes==1,
-        "A real instruction move failed to update the scored answer");
-    const auto scored=view.order();
+        "Moving a real line did not publish its changed scored order");
+    const auto saved=view.order();
     SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);pump();
-    check(view.order()==scored&&changes==1,
-        "An optional blank invalidated an already edited authentic response");
-    view.reset();pump();
-    check(view.order()==original&&IsWindowVisible(first_blank)&&IsWindowVisible(second_blank),
-        "Reset lost original source indices or omitted blank presentation");
+    SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);pump();
+    check(visible().front()==3&&view.order()==saved&&changes==1,
+        "An optional blank cannot reach the first visible position");
+    for(int i=0;i<4;++i)SendMessageW(first_blank,WM_SYSKEYDOWN,VK_DOWN,0);
+    pump();
+    check(visible().back()==3&&view.order()==saved&&changes==1,
+        "An optional blank cannot reach the last visible position");
+    for(int i=0;i<3;++i)SendMessageW(second_blank,WM_SYSKEYDOWN,VK_UP,0);
+    pump();
+    check(visible().front()==4&&changes==1,
+        "The second optional blank cannot cross real lines");
+    for(int i=0;i<4;++i)SendMessageW(second_blank,WM_SYSKEYDOWN,VK_DOWN,0);
+    pump();
+    check(visible()==std::vector<std::size_t>({1,0,2,3,4})&&changes==1,
+        "Moving several optional blanks did not preserve every source line");
+
+    // Dragging outside a card's width or past either vertical endpoint still
+    // targets the nearest row. Narrow blank cards never block a real line.
+    drag_to(first_blank,outside(second_blank,px(120),px(40)));
+    check(visible().back()==3&&view.order()==saved&&changes==1,
+        "A blank drag past the bottom endpoint failed or changed student credit");
+    drag_to(second_blank,outside(GetDlgItem(view.window(),101),-px(120),-px(40)));
+    check(visible().front()==4&&view.order()==saved&&changes==1,
+        "A blank drag past the top endpoint failed or changed student credit");
+    drag_to(first,outside(second_blank,-px(120),-px(40)));
+    check(visible().front()==0&&view.order()==original&&changes==2,
+        "A real line cannot cross a blank separator to the top");
+    drag_to(first,outside(first_blank,px(120),px(40)));
+    check(visible().back()==0&&view.order()==std::vector<std::size_t>({1,2,0})&&changes==3,
+        "A real line cannot cross optional separators to the bottom");
+
+    // Consecutive separators at the leading edge must not trap code cards.
+    for(int i=0;i<2;++i)SendMessageW(first_blank,WM_SYSKEYDOWN,VK_UP,0);
+    pump();
+    check(visible()[0]==4&&visible()[1]==3&&changes==3,
+        "Optional separators could not sit next to one another");
+    drag_to(first,outside(second_blank,-px(120),-px(40)));
+    check(visible().front()==0&&view.order()==original&&changes==4,
+        "A real line was blocked by consecutive separators");
+    check(view.reading_regions().size()==3,"Blank cards became narration or answer rows");
+
+    view.set_completed(true);view.set_enabled(false);
+    const auto locked=visible();
+    SendMessageW(first_blank,WM_KEYDOWN,VK_DELETE,0);
+    SendMessageW(second_blank,WM_LBUTTONDBLCLK,MK_LBUTTON,MAKELPARAM(10,8));
+    SendMessageW(first,WM_SYSKEYDOWN,VK_DOWN,0);pump();
+    check(visible()==locked&&view.order()==original,
+        "Correctly completed cards were removed or reordered while locked");
+    view.set_enabled(true);view.reset();pump();
+    check(visible()==std::vector<std::size_t>({0,1,2,3,4})&&view.order()==original,
+        "Reset lost a visible card or an original source index");
+
+    // Reopening a previously correct or incorrect answer recreates only the
+    // disposable visual cards; it must not modify the scored saved permutation.
+    for(const auto& reopened_order:std::vector<std::vector<std::size_t>>{{0,1,2},{1,2,0}}){
+        OrderCodeView reopened(host,fragments,reopened_order,{},2);
+        MoveWindow(reopened.window(),0,0,px(650),reopened.height_for_width(px(650)),TRUE);
+        check(reopened.order()==reopened_order&&reopened.reading_regions().size()==3,
+            "Reopening an earned or incorrect order rewrote saved source identities");
+        for(int id=100;id<105;++id)
+            check(IsWindowVisible(GetDlgItem(reopened.window(),id)),
+                "Reopening an order hid an optional separator");
+    }
 }
 
 void preserve_code_spacing_in_rows_and_editor(HWND host){
