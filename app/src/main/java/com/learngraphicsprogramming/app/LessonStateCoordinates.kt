@@ -207,6 +207,25 @@ internal object LessonStateCoordinates {
             "${lessonId}__state_v2_$namespace", origin.page, origin.block)
     }
 
+    /**
+     * Display a previously saved grouped order in its verified refined cards.
+     * The original SharedPreferences JSON and earned correct flag remain
+     * untouched until the student explicitly changes the current arrangement.
+     */
+    @Synchronized
+    fun savedOrderForDisplay(context: Context, lessonId: String, page: Int,
+                             block: Int, saved: org.json.JSONArray): org.json.JSONArray {
+        val state = layout(context, lessonId) ?: return saved
+        val positions = mutableListOf<Int>()
+        for (index in 0 until saved.length()) {
+            val value = saved.get(index) as? Int ?: return saved
+            positions.add(value)
+        }
+        val displayed = state.savedOrderForDisplay(page, block, positions)
+        if (displayed == positions) return saved
+        return org.json.JSONArray().apply { displayed.forEach(::put) }
+    }
+
     @Synchronized
     fun block(context: Context, lessonId: String, page: Int, block: Int): LessonStatePosition =
         layout(context, lessonId)?.storagePosition(page, block) ?: LessonStatePosition(page, block)
