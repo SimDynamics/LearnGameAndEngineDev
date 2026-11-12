@@ -48,7 +48,12 @@ class PublishedCompilerRevisionAndroidTest {
     @Test fun reviewedCompilerAdditionsAndTheirReferenceProjectionsPreserveOldAddresses() {
         for (name in lessonNames) {
             val lesson = document(name)
-            val layout = requireNotNull(LessonStateLayoutJson.read(lesson))
+            val layout = try {
+                requireNotNull(LessonStateLayoutJson.read(lesson))
+            } catch (error: LessonStateLayoutException) {
+                throw AssertionError("Compiler history in $name: " +
+                    (error.cause?.message ?: error.message), error)
+            }
             val revisions = lesson.getJSONObject("stateLayout").getJSONArray("compilerRevisions")
             assertTrue(revisions.length() >= 1)
             for (i in 0 until revisions.length()) {
