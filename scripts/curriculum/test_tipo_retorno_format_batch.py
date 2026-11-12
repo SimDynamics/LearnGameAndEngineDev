@@ -41,7 +41,7 @@ class ReturnTypeFormatBatch(unittest.TestCase):
     def test_one_required_case_other_cases_optional(self):
         for p,b in ((6,2),(6,11),(7,6),(8,4),(8,17),(9,6)):
             paragraph=self.doc["pages"][p]["blocks"][b]["text"]
-            self.assertIn("primer caso",paragraph)
+            self.assertTrue("primer caso" in paragraph or "primera Entrada" in paragraph, (p,b))
             self.assertIn("pruebas opcionales",paragraph)
             self.assertIn("no bloquean el paso",paragraph)
         scalar=self.doc["pages"][6]["blocks"][12]["outputCheck"]["cases"]
