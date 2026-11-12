@@ -922,6 +922,28 @@ void attempts_and_owned_settings_tests(){
     {ScopedFixture free(SettingsScope::global,data);free.has(5138,true);
         check(!!IsWindowEnabled(free.control(5138))==!attempts::personal_premium_enabled,
             "Personal Premium settings still offer an unavailable purchase action");}
+    // Personal development access must work with the exhausted balance already
+    // stored on a real computer, in both courses, without rewriting that data.
+    if constexpr (attempts::personal_premium_enabled) {
+        for(const auto route:{"programming","math_physics"}) {
+            state::StateData exhausted;
+            const auto suffix=std::string(route);
+            exhausted.preferences["premium_state"]["state"]=std::string("FREE");
+            exhausted.preferences["attempt_reserve_seconds_test"]["reserve_"+suffix]=0.;
+            exhausted.preferences["attempt_reserve_seconds_test"]["updated_at_"+suffix]=now;
+            exhausted.preferences["attempt_reserve_seconds_test"]["recovery_interval_"+suffix]=attempts::recovery_millis;
+            exhausted.preferences["learning_progress"]["answer"]=std::string("unchanged");
+            const auto original=exhausted;
+            const auto ready=attempts::balance(exhausted,route,now);
+            check(ready.unlimited&&ready.can_evaluate()&&ready.available==0&&
+                ready.maximum==attempts::maximum(route),
+                "An exhausted Windows development profile cannot continue studying");
+            const auto after=attempts::consume_incorrect(exhausted,route,now);
+            check(after.unlimited&&after.can_evaluate()&&after.available==0&&
+                exhausted==original,
+                "Personal Premium rewrote a depleted reserve or student progress");
+        }
+    }
     const auto host=CreateWindowExW(0,L"STATIC",L"Owned settings QA",WS_OVERLAPPEDWINDOW,0,0,900,700,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create owned-settings test host");
     int closed=0;SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& mutation){mutation(data);};access.close=[&]{++closed;};
     const auto before=data;const auto frame=create_settings_window(host,std::move(access));
