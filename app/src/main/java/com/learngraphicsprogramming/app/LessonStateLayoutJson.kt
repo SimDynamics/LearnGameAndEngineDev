@@ -19,7 +19,7 @@ internal object LessonStateLayoutJson {
             // storage ownership. All other unknown metadata still fails closed.
             require(version in 1..2 && expected.all { it in actualFields } &&
                 actualFields.all { it in expected ||
-                    (version == 2 && it == "sourceFormatRevisions") })
+                    (version == 2 && it in setOf("sourceFormatRevisions", "orderRefinements")) })
             val (origin, signatures) = readOrigin(metadata.getJSONArray("origin"))
             val current = metadata.getJSONArray("current")
             val positions = (0 until current.length()).map { p ->
@@ -71,7 +71,6 @@ internal object LessonStateLayoutJson {
                     editorial[id] = after
                 }
             }
-            val layout = StableLessonStateLayout(origin, positions, version, locale, family, additions)
             val expectedSignatures = signatures + additions.associate { it.id to it.sha256 }
             val pages = lesson.getJSONArray("pages")
             require(pages.length() == positions.size)
@@ -81,6 +80,22 @@ internal object LessonStateLayoutJson {
                 require(blocks.length() == position.blocks.size)
                 position.blocks.forEachIndexed { b, id ->
                     require(active.put(id, blocks.getJSONObject(b)) == null)
+                }
+            }
+            val orderOriginals = linkedMapOf<String, JSONObject>()
+            if (version == 2 && metadata.has("orderRefinements")) {
+                require(locale == "es")
+                val archives = metadata.getJSONArray("orderRefinements")
+                require(archives.length() <= 100_000)
+                for (index in 0 until archives.length()) {
+                    val entry = archives.getJSONObject(index)
+                    require(entry.keys().asSequence().toSet() == setOf("id", "block"))
+                    val id = strictString(entry, "id")
+                    require(id in active && id !in orderOriginals)
+                    val historical = entry.getJSONObject("block")
+                    require(stateFingerprint(historical) == expectedSignatures.getValue(id) &&
+                        editorialSeen[id]?.contains(fingerprint(historical)) == true)
+                    orderOriginals[id] = historical
                 }
             }
             val originals = linkedMapOf<String, JSONObject>()
@@ -93,21 +108,31 @@ internal object LessonStateLayoutJson {
                     val id = strictString(entry, "id")
                     require(id in active && id !in originals)
                     val historical = entry.getJSONObject("block")
-                    require(stateFingerprint(historical) == expectedSignatures.getValue(id))
+                    val signed = if (id in orderOriginals)
+                        CurricularOrderRefinement.project(historical, orderOriginals.getValue(id)).first
+                    else historical
+                    require(stateFingerprint(signed) == expectedSignatures.getValue(id))
                     require(editorialSeen[id]?.contains(fingerprint(historical)) == true)
                     originals[id] = historical
                 }
             }
+            val orderRefinements = linkedMapOf<String, CurricularOrderRefinement>()
             for ((id, block) in active) {
-                // Visual/compiled sources are new. Only the immutable prior
-                // source is projected for the historic grade/draft fingerprint.
-                val protected = originals[id]?.let { before ->
+                // Restore only approved source formatting and original order
+                // card groups when calculating the immutable historical digest.
+                val formatted = originals[id]?.let { before ->
                     CurricularSourceFormatCompat.project(block, before)
                 } ?: block
+                val protected = orderOriginals[id]?.let { before ->
+                    val (original, revision) = CurricularOrderRefinement.project(formatted, before)
+                    orderRefinements[id] = revision
+                    original
+                } ?: formatted
                 require(stateFingerprint(protected) == expectedSignatures.getValue(id))
                 editorial[id]?.let { require(fingerprint(block) == it) }
             }
-            return layout
+            return StableLessonStateLayout(origin, positions, version, locale,
+                family, additions, orderRefinements)
         } catch (error: LessonStateLayoutException) {
             throw error
         } catch (_: Exception) {
