@@ -881,13 +881,27 @@ void attempts_and_owned_settings_tests(){
     data.preferences["cpp_lesson_drafts"]["stdin"]=std::string(" \t \n");
     const auto protected_progress=data.preferences["learning_progress"],protected_draft=data.preferences["cpp_lesson_drafts"];
     attempts::initialize(data,"programming",now);auto current=attempts::balance(data,"programming",now);
-    check(current.available==8&&current.maximum==8&&current.progress==1.&&!current.unlimited,"The Windows free balance differs from Android");
-    current=attempts::consume_incorrect(data,"programming",now);check(current.available==7&&current.reserve==7.,"An incorrect response did not consume one shared reserve unit");
-    check(attempts::balance(data,"programming",now+attempts::recovery_millis/2).reserve==7.5,"The existing hourly reserve did not recover fractionally");
+    check(current.available==8&&current.maximum==8&&current.progress==1.&&
+        current.unlimited==attempts::personal_premium_enabled,
+        "The Windows personal Premium policy or initial reserve changed");
+    const auto before_incorrect=data;
+    current=attempts::consume_incorrect(data,"programming",now);
+    if constexpr (attempts::personal_premium_enabled) {
+        check(current.available==8&&current.reserve==8.&&data==before_incorrect,
+            "Personal Premium consumed a heart or rewrote stored progress");
+    } else {
+        check(current.available==7&&current.reserve==7.,
+            "A free incorrect response did not consume one shared reserve unit");
+    }
+    check(attempts::balance(data,"programming",now+attempts::recovery_millis/2).reserve==
+        (attempts::personal_premium_enabled?8.:7.5),
+        "The hourly reserve deviated from the selected Premium policy");
     check(attempts::recovery_label(8,7.5,false)=="30m"&&attempts::recovery_label(8,6.25,false)=="1h 45m"&&attempts::recovery_label(8,8,false).empty()&&attempts::recovery_label(8,0,true).empty(),"The header recovery label does not match Android’s full-reserve countdown");
     check(attempts::balance(data,"programming",now+attempts::recovery_millis).available==8,"Hourly reserve recovery did not cap at its route maximum");
     check(attempts::balance(data,"math_physics",now).maximum==12&&attempts::balance(data,"math_physics",now).available==12,"Programming changed the Mathematics reserve");
-    check(attempts::balance(data,"programming",now-1000).available==7,"A backwards wall-clock jump consumed reserve");
+    check(attempts::balance(data,"programming",now-1000).available==
+        (attempts::personal_premium_enabled?8:7),
+        "A backwards wall-clock jump consumed reserve");
     auto legacy=data;legacy.preferences["attempt_reserve_seconds_test"]["reserve_programming"]=2.;legacy.preferences["attempt_reserve_seconds_test"].erase("recovery_interval_programming");
     legacy.preferences["attempt_reserve_seconds_test"]["updated_at_programming"]=now-30000;
     attempts::initialize(legacy,"programming",now);check(attempts::balance(legacy,"programming",now).reserve==2.5,"The old one-minute Android balance was not converted exactly once");
@@ -905,7 +919,9 @@ void attempts_and_owned_settings_tests(){
         SelectObject(dc,old);DeleteObject(bitmap);DeleteDC(dc);check(gradient,"Active Premium did not retain Android's real gold gradient");
     }
     data.preferences["premium_state"]["state"]=std::string("FREE");
-    {ScopedFixture free(SettingsScope::global,data);free.has(5138,true);check(IsWindowEnabled(free.control(5138)),"Free version lost the Android Premium entry");}
+    {ScopedFixture free(SettingsScope::global,data);free.has(5138,true);
+        check(!!IsWindowEnabled(free.control(5138))==!attempts::personal_premium_enabled,
+            "Personal Premium settings still offer an unavailable purchase action");}
     const auto host=CreateWindowExW(0,L"STATIC",L"Owned settings QA",WS_OVERLAPPEDWINDOW,0,0,900,700,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);check(host!=nullptr,"Cannot create owned-settings test host");
     int closed=0;SettingsAccess access;access.read=[&]{return data;};access.update=[&](const auto& mutation){mutation(data);};access.close=[&]{++closed;};
     const auto before=data;const auto frame=create_settings_window(host,std::move(access));
