@@ -70,7 +70,7 @@ class PublishedStateLayoutInventoryAndroidTest {
         // identities are counted and reported, never falsely declared passed.
         println("AUDIT Android inventory: $inspected lessons; $mapped mapped; $formatted with source-format archives")
         println("AUDIT pre-existing or non-format historical parser gaps: ${existingHistoryGaps.size}")
-        existingHistoryGaps.take(12).forEach { println("AUDIT prior gap: $it") }
+        existingHistoryGaps.forEach { println("AUDIT prior gap: $it") }
         assertTrue("Published source-format revisions rejected (${formattingFailures.size}):\n" +
             formattingFailures.joinToString("\n").take(24000), formattingFailures.isEmpty())
         println("PASS Android all $formatted published format-aware state maps")
