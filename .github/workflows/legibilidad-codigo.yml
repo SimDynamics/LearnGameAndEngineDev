@@ -78,6 +78,14 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_modificar_referencias_format_batch.py -v
       - name: Probar indices seguros U5L5 y dos editores sin resolver C++23
         run: python -m unittest discover -s scripts/curriculum -p test_recorrer_indices_seguridad_format_batch.py -v
+      - name: Comprobar acumulacion y seleccion U5L6 con orden historico C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_acumular_contar_seleccionar_format_batch.py -v
+      - name: Probar busqueda y ausencia U5L7 conservando historial C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_buscar_ausencia_format_batch.py -v
+      - name: Acreditar extremos y casos de ausencia U5L8 con C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_extremos_sin_inventar_format_batch.py -v
+      - name: Acreditar medias U5L9 y estado historico de C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_media_cantidad_format_batch.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
