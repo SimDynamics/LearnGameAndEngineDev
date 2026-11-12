@@ -431,16 +431,16 @@ internal object LessonStateLayoutJson {
                     // were authenticated by the active orderRefinements archive
                     // above; do not generalize this to changed order answers.
                     val archivedOrder = originalOrderCards[identity]
-                    val originalGrouped = !direct && archivedOrder != null &&
-                        block.optString("type") == "order_code" &&
-                        stateFingerprint(block) == stateFingerprint(archivedOrder) &&
-                        fingerprint(JSONObject(block.toString()).apply {
-                            remove("question"); remove("explanation"); remove("reviewFeedback")
-                        }) == fingerprint(JSONObject(archivedOrder.toString()).apply {
-                            remove("question"); remove("explanation"); remove("reviewFeedback")
-                        })
-                    require(direct || originalGrouped) {
-                        "Retirement history changed an old answer or code contract"
+                    val archivedRefinement = !direct && archivedOrder != null &&
+                        block.optString("type") == "order_code" && runCatching {
+                            if (stateFingerprint(block) == originalSignature) true
+                            else {
+                                val (restored, _) = CurricularOrderRefinement.project(block, archivedOrder)
+                                stateFingerprint(restored) == originalSignature
+                            }
+                        }.getOrDefault(false)
+                    require(direct || archivedRefinement) {
+                        "Retirement history changed an old answer or code contract: $identity"
                     }
                     shown[identity] = block
                 }
