@@ -52,6 +52,23 @@ void lexical_safety(){
     check(!code_format::equivalent("set(A [=[value\nwith line]=])",
             "set(A [=[value\n\nwith line]=])",Language::cmake),
         "CMake bracket value changed");
+    check(!code_format::equivalent("int main(){return __LINE__;}",
+            "int main(){\nreturn __LINE__;}",Language::cpp),
+        "Source __LINE__ changed value after a safe-looking newline");
+    check(!code_format::equivalent(
+            "auto line=std::source_location::current().line();",
+            "auto line=\nstd::source_location::current().line();",Language::cpp),
+        "std::source_location was affected by an introduced physical line");
+    check(!code_format::equivalent(R"qa(auto s="abc"_length;)qa",
+            R"qa(auto s="abc" _length;)qa",Language::cpp),
+        "Adjacent user-defined literal suffix was detached");
+    check(!code_format::equivalent(R"qa(auto s=R"tag(abc)tag"_length;)qa",
+            R"qa(auto s=R"tag(abc)tag" _length;)qa",Language::cpp),
+        "Adjacent raw-literal suffix was detached");
+    check(!code_format::equivalent(
+            R"qa(message("${CMAKE_CURRENT_LIST_LINE}"))qa",
+            "\nmessage(\"${CMAKE_CURRENT_LIST_LINE}\")",Language::cmake),
+        "CMake line introspection silently changed its value");
     check(!code_format::equivalent("a", "a\n",Language::immutable),
         "Unknown data source was modified");
 }
