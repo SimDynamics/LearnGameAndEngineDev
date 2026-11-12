@@ -62,10 +62,11 @@ class PublishedOrderFormatAndroidTest {
             val archival = state.getJSONArray("sourceFormatRevisions")
             val historic = (0 until archival.length()).map(archival::getJSONObject)
                 .single { it.getString("id") == identity }.getJSONObject("block")
-            val new = document.getJSONArray("pages").getJSONObject(found.first)
+            val current = document.getJSONArray("pages").getJSONObject(found.first)
                 .getJSONArray("blocks").getJSONObject(found.second)
-            assertNotEquals(historic.getString("code"), new.getString("code"))
-            assertEquals(historic.toString(), CurricularSourceFormatCompat.project(new, historic).toString())
+            assertNotEquals(historic.getString("code"), current.getString("code"))
+            assertEquals(LessonStateLayoutJson.fingerprint(historic),
+                LessonStateLayoutJson.fingerprint(CurricularSourceFormatCompat.project(current, historic)))
         }
     }
 
