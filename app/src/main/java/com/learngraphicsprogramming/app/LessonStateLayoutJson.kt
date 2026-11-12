@@ -417,7 +417,7 @@ internal object LessonStateLayoutJson {
                     fingerprint(shells.getValue(pageIdentity)))
                 val identities = record.getJSONArray("blocks")
                 val blocks = page.getJSONArray("blocks")
-                require(identities.length() == blocks.length)
+                require(identities.length() == blocks.length())
                 for (b in 0 until identities.length()) {
                     val identity = identities.get(b) as? String
                         ?: error("Non-string historical reading identity")
