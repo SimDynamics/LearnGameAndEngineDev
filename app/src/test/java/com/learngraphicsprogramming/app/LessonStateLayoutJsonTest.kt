@@ -383,6 +383,48 @@ class LessonStateLayoutJsonTest {
         }
     }
 
+    @Test fun publishedStderrGoalsRequireTheOriginalNonBlankChannelOnBothOwners() {
+        val root = listOf(java.io.File("src/main/assets/content"),
+            java.io.File("app/src/main/assets/content")).firstOrNull { it.isDirectory }
+            ?: error("Cannot find published curricular assets")
+        val files = listOf(
+            "es/programming/cpp_fundamentals/aleatoriedad_y_reproducibilidad/" +
+                "lesson_combinar_ensayos_generados_y_casos_elegidos.json" to "block_0004_0007",
+            "es/programming/cpp_fundamentals/excepciones_y_recuperacion/" +
+                "lesson_limites_comprobados_y_tipos_de_captura.json" to "block_0002_0008"
+        )
+        for ((path, ownerId) in files) {
+            val bytes = java.io.File(root, path).readText(Charsets.UTF_8)
+            val original = JSONObject(bytes)
+            assertNotNull("Published stderr owner is still incompatible with Android state",
+                LessonStateLayoutJson.read(original))
+            val positions = original.getJSONObject("stateLayout").getJSONArray("current")
+            var ownerPage = -1
+            var ownerBlock = -1
+            for (page in 0 until positions.length()) {
+                val blocks = positions.getJSONObject(page).getJSONArray("blocks")
+                for (index in 0 until blocks.length()) if (blocks.getString(index) == ownerId) {
+                    ownerPage = page
+                    ownerBlock = index
+                }
+            }
+            assertTrue(ownerPage >= 0 && ownerBlock >= 0)
+            val owner = original.getJSONArray("pages").getJSONObject(ownerPage)
+                .getJSONArray("blocks").getJSONObject(ownerBlock)
+            val previous = JSONObject(owner.toString())
+            val case = owner.getJSONObject("outputCheck").getJSONArray("cases").getJSONObject(0)
+            assertEquals("nonBlank", case.getString("standardError"))
+            case.remove("standardError")
+            assertEquals(LessonStateLayoutJson.stateFingerprint(previous),
+                LessonStateLayoutJson.stateFingerprint(owner))
+            assertTrue("A published stderr requirement disappeared unnoticed",
+                runCatching { LessonStateLayoutJson.read(original) }.isFailure)
+            case.put("standardError", "nonEmpty")
+            assertTrue("An unsupported stderr mode reused the historical slot",
+                runCatching { LessonStateLayoutJson.read(original) }.isFailure)
+        }
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
