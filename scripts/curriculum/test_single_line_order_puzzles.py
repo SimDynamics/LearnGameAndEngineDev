@@ -68,13 +68,13 @@ class RealFunctionOrderCards(unittest.TestCase):
                         formatted = after["pages"][page_index]["blocks"][block_index]
                         self.assertTrue(require_source_format(item["block"], formatted))
                         after["pages"][page_index]["blocks"][block_index] = deepcopy(item["block"])
-                    for identity, suffix in prose_suffixes.items():
-                        page_index, block_index = coordinates[identity]
+                    for prose_id, suffix in prose_suffixes.items():
+                        page_index, block_index = coordinates[prose_id]
                         block = after["pages"][page_index]["blocks"][block_index]
-                        self.assertTrue(block["text"].endswith(suffix), identity)
+                        self.assertTrue(block["text"].endswith(suffix), prose_id)
                         block["text"] = block["text"][:-len(suffix)]
                         descriptor = next(field for field in after["textSemantics"]["fields"]
-                                          if field["block"] == identity and field["path"] == "/text")
+                                          if field["block"] == prose_id and field["path"] == "/text")
                         descriptor["sourceSha256"] = hashlib.sha256(
                             block["text"].encode("utf-8")
                         ).hexdigest()
