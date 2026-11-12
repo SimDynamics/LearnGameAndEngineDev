@@ -237,6 +237,41 @@ class LessonStateLayoutJsonTest {
         assertTrue(runCatching { CurricularSourceFormatCompat.project(moved, line) }.isFailure)
     }
 
+    @Test fun imageDescriptionsCanChangeButImageResourcesRemainProtected() {
+        val original = JSONObject().put("type", "image")
+            .put("imageId", "example_image")
+            .put("src", "images/programming1/example.png")
+            .put("alt", "Original alternative text")
+            .put("caption", "Original caption")
+        val corrected = JSONObject(original.toString())
+            .put("alt", "Corrected accessible description")
+            .put("caption", "Corrected caption")
+        assertNotEquals(LessonStateLayoutJson.fingerprint(original),
+            LessonStateLayoutJson.fingerprint(corrected))
+        assertEquals(LessonStateLayoutJson.stateFingerprint(original),
+            LessonStateLayoutJson.stateFingerprint(corrected))
+        val document = JSONObject()
+            .put("pages", JSONArray().put(JSONObject()
+                .put("blocks", JSONArray().put(corrected))))
+            .put("stateLayout", JSONObject().put("version", 1)
+                .put("origin", manifest(listOf(listOf("visual" to original))))
+                .put("current", JSONArray().put(JSONObject()
+                    .put("id", "p0").put("blocks", JSONArray().put("visual")))))
+        val layout = requireNotNull(LessonStateLayoutJson.read(document))
+        assertEquals(LessonStatePosition(0, 0), layout.storagePosition(0, 0))
+        for ((field, replacement) in listOf(
+            "src" to "images/programming1/forged.png",
+            "imageId" to "other_image"
+        )) {
+            val altered = JSONObject(document.toString())
+            altered.getJSONArray("pages").getJSONObject(0)
+                .getJSONArray("blocks").getJSONObject(0).put(field, replacement)
+            assertTrue("Changed image resource was accepted: $field",
+                runCatching { LessonStateLayoutJson.read(altered) }.exceptionOrNull()
+                    is LessonStateLayoutException)
+        }
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
