@@ -1,4 +1,6 @@
 #include "core/code_format_compat.hpp"
+#include "core/rejection_diagnostic_facts.hpp"
+#include "core/report_observation_check.hpp"
 #include "core/lesson.hpp"
 #include "core/lesson_state.hpp"
 
@@ -72,6 +74,81 @@ void lexical_safety(){
     check(!code_format::equivalent("a", "a\n",Language::immutable),
         "Unknown data source was modified");
 }
+void guarded_open_compiler_edits() {
+    const auto replace_exact=[](std::string before,std::string_view target,
+                                std::string_view replacement) {
+        const auto at=before.find(target);
+        check(at!=before.npos&&before.find(target,at+target.size())==before.npos,
+            "Open compiler edit QA lost its unique source boundary");
+        before.replace(at,target.size(),replacement);
+        return before;
+    };
+    // A complete program is the immutable surrounding shell. Only the
+    // assigned diagnostic function's body may vary.
+    const std::string boxes=R"cpp(#include <iostream>
+void informar_rechazo_cajas(std::ostream& destino,int peticion,int piezas) {
+    destino << "Error\n";
+}
+
+int main(){return 0;}
+)cpp";
+    constexpr std::string_view body=R"cpp(    destino << "Error\n";)cpp";
+    const auto boxes_edit=[&](std::string_view change) {
+        return replace_exact(boxes,body,change);
+    };
+    check(rejection_function_only_edit(boxes,boxes,RejectionOperation::boxes),
+        "An unchanged diagnostic body was rejected");
+    check(rejection_function_only_edit(boxes,boxes_edit(R"cpp(    // #define is a harmless comment
+    destino << "Revisión #1";)cpp"),RejectionOperation::boxes),
+        "The diagnostic guard rejected a comment or quoted '#' character");
+    check(rejection_function_only_edit(boxes,boxes_edit(R"cpp(    destino << R"tag(Comentario
+    #define is not a directive in a raw string
+)tag";)cpp"),RejectionOperation::boxes),
+        "The diagnostic guard rejected a raw string's literal '#' line");
+    for(const auto modified:{
+        R"cpp(    #define ALLOW_BAD_RESULT 1
+    destino << "Error\n";)cpp",
+        R"cpp(    	#  define ALLOW_BAD_RESULT 1
+    destino << "Error\n";)cpp",
+        R"cpp(    /* leading comment */ #define ALLOW_BAD_RESULT 1
+    destino << "Error\n";)cpp",
+        R"cpp(    %:define ALLOW_BAD_RESULT 1
+    destino << "Error\n";)cpp"
+    })check(!rejection_function_only_edit(boxes,boxes_edit(modified),
+        RejectionOperation::boxes),
+        "A disguised preprocessor directive was accepted in a U3L6 function");
+
+    const std::string report="int main() {\n    return 0;\n}\n";
+    const auto report_edit=[&](std::string_view replacement) {
+        return replace_exact(report,"    return 0;",replacement);
+    };
+    check(report_main_only_edit(report,report),
+        "An unchanged reporting main was rejected");
+    check(report_main_only_edit(report,report_edit(R"cpp(    // #pragma is harmless commentary
+    std::cout << "# report";
+    return 0;)cpp")),
+        "The reporting guard rejected a harmless comment or string");
+    for(const auto modified:{
+        R"cpp(    #define CONCEAL_MALFORMED 1
+    return 0;)cpp",
+        R"cpp(      #pragma warning(disable: 4996)
+    return 0;)cpp",
+        R"cpp(    /* harmless explanation */ #include "other.h"
+    return 0;)cpp",
+        R"cpp(    %:define CONCEAL_MALFORMED 1
+    return 0;)cpp"
+    })check(!report_main_only_edit(report,report_edit(modified)),
+        "A disguised preprocessor directive was accepted in a U3L8 main");
+
+    check(!code_format::forbidden_preprocessor_in_edit(
+        R"cpp(std::cout << R"demo(
+    #include "not a real header"
+)demo";)cpp"),
+        "The common source guard misclassified a raw-string literal");
+    check(code_format::forbidden_preprocessor_in_edit(
+        " \t/* safe comment */ #undef VERIFIER\n"),
+        "The common source guard missed a directive after a comment");
+}
 void historical_frames(){
     Lesson lesson;lesson.locale="es";lesson.id="format-compat-native";
     Block compiler;compiler.type=BlockType::cpp_compiler;compiler.stable_id="block_0002_0004";
@@ -115,7 +192,7 @@ void historical_frames(){
 }
 int main(){
     try{
-        lexical_safety();historical_frames();
+        lexical_safety();historical_frames();guarded_open_compiler_edits();
         std::cout<<"PASS safe C++/CMake formatting; protected comments/literals/macros and historic compiler/order state frames\n";
         return 0;
     }catch(const std::exception& e){
