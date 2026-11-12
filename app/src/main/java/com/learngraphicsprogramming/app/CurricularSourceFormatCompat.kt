@@ -111,8 +111,8 @@ internal object CurricularSourceFormatCompat {
                 i = end
                 continue
             }
-            if (code[i] in '0'..'9' || code[i] == '.' &&
-                code.getOrNull(i + 1) in '0'..'9') {
+            if (code[i] in '0'..'9' || (code[i] == '.' &&
+                code.getOrNull(i + 1)?.let { it in '0'..'9' } == true)) {
                 var end = i + 1
                 while (end < code.length) {
                     val next = code[end]
@@ -254,7 +254,8 @@ internal object CurricularSourceFormatCompat {
             }
         }
         for (field in listOf("fragments", "choices")) {
-            if (type != if (field == "fragments") "order_code" else "drag_fill_code") continue
+            val expectedType = if (field == "fragments") "order_code" else "drag_fill_code"
+            if (type != expectedType) continue
             require(actual.has(field) == original.has(field))
             if (!original.has(field)) continue
             val before = original.getJSONArray(field)
