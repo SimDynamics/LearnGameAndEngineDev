@@ -108,7 +108,10 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
     // In particular, "cobros=10 devoluciones=0 9" is NOT a statement
     // that the valid domain is 0..9. Require interval language and syntax.
     const auto source=fold_spanish(original);
-    const auto describes_range=[&](std::size_t at) {
+    // Range words may precede or follow the numeric interval. For example,
+    // both "rango permitido de 0 a 20" and "0 a 20 es el rango permitido"
+    // communicate the same bound. A standalone pair of numbers is not enough.
+    const auto describes_range=[&](std::size_t at,std::size_t end) {
         const auto first=at>5?at-5:0;
         for(std::size_t i=first;i<at;++i) {
             if(one_of(words[i].text,{"rango","intervalo","dominio","limite","limites",
@@ -116,21 +119,32 @@ inline bool range(std::string_view original,const std::vector<Word>& words,int u
                     "permitida","permitidas","admite","admiten","acepta","aceptan",
                     "valido","validos","valida","validas","debe","deben"}))return true;
         }
+        for(std::size_t i=end+1;i<words.size()&&i<=end+5;++i) {
+            if(one_of(words[i].text,{"rango","intervalo","dominio","limite","limites",
+                    "entero","enteros","permitido","permitidos","permitida",
+                    "permitidas","valido","validos","valida","validas"}))return true;
+        }
         return false;
     };
-    for(std::size_t i=0;i<words.size();++i)if(words[i].number==0&&describes_range(i)) {
+    for(std::size_t i=0;i<words.size();++i)if(words[i].number==0) {
         // Example spellings: "0 a 9", "0 hasta 9", "0..9", "0-9".
+        std::size_t end=i;
+        bool interval=false;
         if(i+2<words.size()&&one_of(words[i+1].text,{"a","al","y","hasta"})
-                &&words[i+2].number==upper)return true;
-        if(i+1>=words.size())continue;
-        const auto& next=words[i+1];
-        if(next.number==upper&&next.start>=words[i].end) {
-            const auto connector=std::string_view(source).substr(words[i].end,
-                next.start-words[i].end);
-            if(connector.find("..")!=connector.npos)return true;
+                &&words[i+2].number==upper) {
+            end=i+2;interval=true;
+        }else if(i+1<words.size()) {
+            const auto& next=words[i+1];
+            if(next.number==upper&&next.start>=words[i].end) {
+                const auto connector=std::string_view(source).substr(words[i].end,
+                    next.start-words[i].end);
+                interval=connector.find("..")!=connector.npos;
+            }else if(next.number==-upper&&next.start==words[i].end&&
+                    next.start<source.size()&&source[next.start]=='-')
+                interval=true;
+            if(interval)end=i+1;
         }
-        if(next.number==-upper&&next.start==words[i].end&&
-                next.start<source.size()&&source[next.start]=='-')return true;
+        if(interval&&describes_range(i,end))return true;
     }
     return false;
 }
