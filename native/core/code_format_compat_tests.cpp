@@ -166,6 +166,118 @@ void bounded_u3_rejection_inputs() {
         balances_eight->rejected.empty()&&balances_eight->exit_code==0,
         "U3L6 balances did not keep their eight-pair domain");
 }
+void u3_rejection_diagnostics_contracts() {
+    const auto boxes=rejection_expected_for_input(
+        RejectionOperation::boxes,"-1 0 21 5\n");
+    check(boxes&&boxes->standard_output=="Cajas=0\nCajas=2\n"&&
+        boxes->exit_code==1&&boxes->rejected.size()==2&&
+        boxes->rejected[0].request==1&&boxes->rejected[0].first==-1&&
+        boxes->rejected[1].request==3&&boxes->rejected[1].first==21,
+        "U3L6 boxes lost a rejected request, its position or stdout");
+    const std::string messages=
+        "Cajas, peticion 1, piezas -1: rango permitido de 0 a 20; revise la cantidad.\n"
+        "Cajas, peticion 3, piezas 21: 0 a 20 es el intervalo entero permitido; verifique los datos.\n";
+    check(evaluate_rejection_diagnostics(messages,RejectionOperation::boxes,
+        boxes->rejected).correct,
+        "Equivalent U3L6 diagnostics were rejected when the interval follows the numbers");
+    check(!evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas 21: rango 0 a 20, revise.\n"
+        "Cajas, peticion 3, piezas -1: rango 0 a 20, revise.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 accepted swapped rejection facts");
+    check(!evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1: revise.\n"
+        "Cajas, peticion 3, piezas 21: revise.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 accepted diagnostics without the permitted interval");
+    check(!evaluate_rejection_stream_probe(messages+"unexpected", "",RejectionOperation::boxes).correct,
+        "U3L6 accepted missing independent stream separation");
+    const auto split=messages.find('\n');
+    const std::string probe=messages.substr(0,split+1)+'\x1e'+messages.substr(split+1);
+    check(evaluate_rejection_stream_probe(probe,"",RejectionOperation::boxes).correct&&
+        !evaluate_rejection_stream_probe(probe,"outside",RejectionOperation::boxes).correct,
+        "U3L6 stream probe accepted writing outside the supplied ostream");
+
+    const auto balances=rejection_expected_for_input(
+        RejectionOperation::balance,"2 3 10 0 0 -1 5 5\n");
+    check(balances&&balances->standard_output=="Saldo=-1\nSaldo=0\n"&&
+        balances->exit_code==1&&balances->rejected.size()==2&&
+        balances->rejected[0].request==2&&balances->rejected[0].first==10&&
+        balances->rejected[0].second==0&&balances->rejected[1].request==3&&
+        balances->rejected[1].first==0&&balances->rejected[1].second==-1,
+        "U3L6 balance misidentified the rejected operand or accepted negative saldo");
+    check(evaluate_rejection_diagnostics(
+        "Saldo, peticion 2, cobros 10, devoluciones 0: intervalo 0 a 9; compruebe ambos datos.\n"
+        "Saldo, peticion 3, cobros 0, devoluciones -1: de 0 a 9 es el rango valido; verifique.\n",
+        RejectionOperation::balance,balances->rejected).correct,
+        "U3L6 rejected an equivalent balance diagnostic");
+    check(!evaluate_rejection_diagnostics(
+        "Saldo, peticion 2, cobros 0, devoluciones 10: intervalo 0 a 9; revise.\n"
+        "Saldo, peticion 3, cobros 0, devoluciones -1: intervalo 0 a 9; revise.\n",
+        RejectionOperation::balance,balances->rejected).correct,
+        "U3L6 accepted transposed cobros/devoluciones");
+    const auto valid_balance=rejection_expected_for_input(
+        RejectionOperation::balance,"2 3 0 0 9 0 0 9");
+    check(valid_balance&&valid_balance->rejected.empty()&&valid_balance->exit_code==0&&
+        valid_balance->standard_output=="Saldo=-1\nSaldo=0\nSaldo=9\nSaldo=-9\n",
+        "U3L6 rejected a valid negative result or lost the final unterminated pair");
+    const auto empty_balance=rejection_expected_for_input(RejectionOperation::balance,"");
+    check(empty_balance&&empty_balance->standard_output.empty()&&
+        empty_balance->rejected.empty()&&empty_balance->exit_code==0,
+        "U3L6 incorrectly diagnosed empty standard input");
+    const auto variation=balance_three_pair_variation("-2 3 2 2 12 5");
+    check(variation&&variation->standard_output=="Saldo=0\n"&&
+        variation->rejected.size()==2&&variation->exit_code==1,
+        "U3L6 rejected the required independent student variation");
+}
+void u3_observation_reports_contracts() {
+    constexpr std::string_view complete_input=
+        "A 0 0\nA 2 1\nB -1 -1\nA 2 1\nA 1-1\n"
+        "C;=lote 0 1\nC;=lote 0 1\nA 1 -1\n";
+    constexpr std::string_view complete_stdout=
+        "Linea=1 Caso=A Esperado=0 Obtenido=0 COINCIDE\n"
+        "Linea=2 Caso=A Esperado=2 Obtenido=1 DIFIERE\n"
+        "Linea=3 Caso=B Esperado=-1 Obtenido=-1 COINCIDE\n"
+        "Linea=4 Caso=A Esperado=2 Obtenido=1 DIFIERE\n"
+        "Linea=6 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE\n"
+        "Linea=7 Caso=C;=lote Esperado=0 Obtenido=1 DIFIERE\n"
+        "Linea=8 Caso=A Esperado=1 Obtenido=-1 DIFIERE\n"
+        "Resumen: validos=7;coinciden=2;difieren=5;formato=1\n";
+    const auto complete=expected_observation_report(ReportMode::complete,complete_input);
+    check(complete&&complete->standard_output==complete_stdout&&
+        complete->standard_error=="Linea=5:FORMATO\n"&&complete->exit_code==1,
+        "U3L8 complete report lost occurrences, columns, labels or format line");
+    constexpr std::string_view differences_input="N 0 0\nR -1 -1\nR 0 -1\nP 3\nR 0 -1\nZ 9 9\n";
+    constexpr std::string_view differences_stdout=
+        "Linea=3 Caso=R Esperado=0 Obtenido=-1 DIFIERE\n"
+        "Linea=5 Caso=R Esperado=0 Obtenido=-1 DIFIERE\n"
+        "Resumen: validos=5;coinciden=3;difieren=2;formato=1\n";
+    const auto differences=expected_observation_report(ReportMode::differences,differences_input);
+    check(differences&&differences->standard_output==differences_stdout&&
+        differences->standard_error=="Linea=4:FORMATO\n"&&differences->exit_code==1,
+        "U3L8 filtered report incorrectly counted or omitted repeated observations");
+    check(matches_observation_report(ReportMode::differences,differences_input,
+        differences_stdout,"Linea=4:FORMATO\n",1)&&
+        !matches_observation_report(ReportMode::differences,differences_input,
+        differences_stdout,"Linea=4:FORMATO_ERRONEO\n",1),
+        "U3L8 silently accepted an incorrect diagnostic on stderr");
+    constexpr std::string_view no_lf="0 0 0\nN -2 -2";
+    const auto pair=expected_observation_report(ReportMode::complete,no_lf);
+    check(pair&&pair->standard_error.empty()&&pair->exit_code==0&&
+        pair->standard_output==
+            "Linea=1 Caso=0 Esperado=0 Obtenido=0 COINCIDE\n"
+            "Linea=2 Caso=N Esperado=-2 Obtenido=-2 COINCIDE\n"
+            "Resumen: validos=2;coinciden=2;difieren=0;formato=0\n",
+        "U3L8 lost a final valid line without LF");
+    const auto empty=expected_observation_report(ReportMode::differences,"");
+    check(empty&&empty->standard_error.empty()&&empty->exit_code==0&&
+        empty->standard_output=="Resumen: validos=0;coinciden=0;difieren=0;formato=0\n",
+        "U3L8 rejected an empty input instead of reporting zero observations");
+    std::string thirteen;
+    for(int i=0;i<13;++i)thirteen+="N 0 0\n";
+    check(!expected_observation_report(ReportMode::complete,thirteen),
+        "U3L8 accepted a thirteenth physical line outside the authored domain");
+}
 void historical_frames(){
     Lesson lesson;lesson.locale="es";lesson.id="format-compat-native";
     Block compiler;compiler.type=BlockType::cpp_compiler;compiler.stable_id="block_0002_0004";
@@ -210,6 +322,7 @@ void historical_frames(){
 int main(){
     try{
         lexical_safety();historical_frames();guarded_open_compiler_edits();bounded_u3_rejection_inputs();
+        u3_rejection_diagnostics_contracts();u3_observation_reports_contracts();
         std::cout<<"PASS safe C++/CMake formatting; protected comments/literals/macros and historic compiler/order state frames\n";
         return 0;
     }catch(const std::exception& e){
