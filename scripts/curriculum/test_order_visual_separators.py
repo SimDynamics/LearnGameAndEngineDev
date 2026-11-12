@@ -116,7 +116,7 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
                 "app/src/main/assets/content/es/programming/cpp_fundamentals")
         cases = (
             ("repeticion_y_terminacion/lesson_for_y_limites_del_recorrido.json",
-             5, 7, "orden_while_puestos_2_3_4", 5),
+             5, 7, "orden_while_puestos_2_3_4", 9),
             ("texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json",
              2, 3, "block_0002_0003", 4),
         )
@@ -133,6 +133,13 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
                 self.assertEqual(len(order["fragments"]), fragment_count)
                 self.assertEqual(sorted(order["correctOrder"]),
                                  list(range(fragment_count)))
+                if identity == "orden_while_puestos_2_3_4":
+                    self.assertTrue(all("\n" not in part and "\r" not in part
+                                        for part in order["fragments"]))
+                    history = actual["stateLayout"]["orderRefinements"]
+                    self.assertEqual(1, len(history))
+                    self.assertEqual(identity, history[0]["id"])
+                    self.assertEqual(5, len(history[0]["block"]["fragments"]))
                 original = copy.deepcopy(actual)
                 del original["orderVisualSeparators"]
                 self.assertEqual(layout.validate(original), layout.validate(actual))

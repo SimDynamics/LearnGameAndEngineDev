@@ -255,16 +255,28 @@
           "type": "order_code",
           "id": "dias_completos_definicion_anterior_orden",
           "language": "cpp",
-          "question": "Ordena los tres fragmentos para que dias_completos esté definida antes de su llamada en main y no haya declaración aislada. Coloca la inclusión al comienzo. El compilador anterior comprueba la salida 6; aquí se comprueba la organización de las definiciones.",
+          "question": "Ordena estas líneas de código para que dias_completos esté definida antes de su llamada en main y no haya declaración aislada. Coloca la inclusión al comienzo. El compilador anterior comprueba la salida 6; aquí se comprueba la organización de las definiciones.",
           "fragments": [
-            "int main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}",
-            "int dias_completos(int horas) {\n    return horas / 8;\n}",
+            "int main() {",
+            "    const int horas = 53;",
+            "    std::cout << dias_completos(horas);",
+            "    return 0;",
+            "}",
+            "int dias_completos(int horas) {",
+            "    return horas / 8;",
+            "}",
             "#include <iostream>"
           ],
           "correctOrder": [
-            2,
+            8,
+            5,
+            6,
+            7,
+            0,
             1,
-            0
+            2,
+            3,
+            4
           ],
           "explanation": "La definición completa de dias_completos también declara la función antes de la llamada de main y aporta el cuerpo. Esta organización no necesita una declaración aislada. El argumento 53 produce 6 jornadas completas de 8 horas; ese resultado también lo puede producir la organización anterior, por lo que la salida no demuestra por sí sola dónde está la definición.",
           "reviewFeedback": "Comprueba dónde aparece la llamada: el compilador debe conocer la función antes de ese punto. Aquí la definición completa de dias_completos ya aporta la declaración y el cuerpo. Mantén la inclusión al comienzo y la llamada dentro de main."
@@ -3216,6 +3228,39 @@
         "id": "block_0017_0001",
         "beforeSha256": "264f4524bbb518bbfc2fecd3f6844673586a2769155a789235b5b4f4440775d9",
         "afterSha256": "62313ff1b07ecd20a94149febe2301e9a14c48756b7485ee12aa6e942c600346"
+      },
+      {
+        "id": "dias_completos_definicion_anterior_orden",
+        "beforeSha256": "80abddaf404a566dd26ceca107a0d240d7fa40e4c821ec2949015a7595755adb",
+        "afterSha256": "f7d0cbbf520512cec3f7375b7ef60b69a08bc7bc2a89fcc34629a41235956fa3"
+      },
+      {
+        "id": "dias_completos_definicion_anterior_orden",
+        "beforeSha256": "f7d0cbbf520512cec3f7375b7ef60b69a08bc7bc2a89fcc34629a41235956fa3",
+        "afterSha256": "13bfd16da20afb0b4421ba0d0f92a2b360a9187b2203784a24b521b4c8bf78c6"
+      }
+    ],
+    "orderRefinements": [
+      {
+        "id": "dias_completos_definicion_anterior_orden",
+        "block": {
+          "type": "order_code",
+          "id": "dias_completos_definicion_anterior_orden",
+          "language": "cpp",
+          "question": "Ordena los tres fragmentos para que dias_completos esté definida antes de su llamada en main y no haya declaración aislada. Coloca la inclusión al comienzo. El compilador anterior comprueba la salida 6; aquí se comprueba la organización de las definiciones.",
+          "fragments": [
+            "int main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}",
+            "int dias_completos(int horas) {\n    return horas / 8;\n}",
+            "#include <iostream>"
+          ],
+          "correctOrder": [
+            2,
+            1,
+            0
+          ],
+          "explanation": "La definición completa de dias_completos también declara la función antes de la llamada de main y aporta el cuerpo. Esta organización no necesita una declaración aislada. El argumento 53 produce 6 jornadas completas de 8 horas; ese resultado también lo puede producir la organización anterior, por lo que la salida no demuestra por sí sola dónde está la definición.",
+          "reviewFeedback": "Comprueba dónde aparece la llamada: el compilador debe conocer la función antes de ese punto. Aquí la definición completa de dias_completos ya aporta la declaración y el cuerpo. Mantén la inclusión al comienzo y la llamada dentro de main."
+        }
       }
     ]
   },
@@ -6808,32 +6853,25 @@
       {
         "block": "dias_completos_definicion_anterior_orden",
         "path": "/question",
-        "sourceSha256": "3c537aee4357d1296ba9682a569ee01714952625dba2424bec0d143621372efd",
+        "sourceSha256": "6b6de2e8c36e437d9240889b119c7ef2a84d8902465b1908970cb7dc6f7fa98f",
         "spans": [
           {
-            "start": 11,
-            "end": 15,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 36,
-            "end": 50,
+            "start": 39,
+            "end": 53,
             "text": "dias_completos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 88,
-            "end": 92,
+            "start": 91,
+            "end": 95,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 200,
-            "end": 201,
+            "start": 203,
+            "end": 204,
             "text": "6",
             "role": "output",
             "reading": "natural"

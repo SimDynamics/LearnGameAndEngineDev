@@ -339,18 +339,48 @@
         {
           "type": "order_code",
           "language": "cpp",
-          "question": "La salida permite contrastar los valores. Ahora ordena estos cuatro fragmentos de una implementación posible para expresar la secuencia solicitada en el código: leer, registrar el primer dato, registrar el segundo y combinar los valores ya obtenidos. La suma por sí sola no fija ese orden.",
+          "question": "La salida permite contrastar los valores. Ahora ordena las líneas de una implementación posible para expresar la secuencia solicitada en el código: leer, registrar el primer dato, registrar el segundo y combinar los valores ya obtenidos. La suma por sí sola no fija ese orden.",
           "fragments": [
             "    const int segundo = registrar(marca, digito_dos);",
-            "    const int resultado = sumar(primero, segundo);\n    std::cout << resultado << ':' << marca;\n    return 0;\n}",
-            "#include <iostream>\n\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint sumar(int primero, int segundo) {\n    return primero + segundo;\n}\n\nint main() {\n    int marca{0};\n    int digito_uno{0};\n    int digito_dos{0};\n    std::cin >> digito_uno >> digito_dos;",
+            "    const int resultado = sumar(primero, segundo);",
+            "    std::cout << resultado << ':' << marca;",
+            "    return 0;",
+            "}",
+            "#include <iostream>",
+            "int registrar(int& marca, int digito) {",
+            "    marca = marca * 10 + digito;",
+            "    return digito;",
+            "}",
+            "int sumar(int primero, int segundo) {",
+            "    return primero + segundo;",
+            "}",
+            "int main() {",
+            "    int marca{0};",
+            "    int digito_uno{0};",
+            "    int digito_dos{0};",
+            "    std::cin >> digito_uno >> digito_dos;",
             "    const int primero = registrar(marca, digito_uno);"
           ],
           "correctOrder": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            0,
+            1,
             2,
             3,
-            0,
-            1
+            4
           ],
           "explanation": "Cada declaración completa su llamada de registrar antes de comenzar la siguiente. Así el primer dígito leído entra antes en marca. sumar recibe los dos retornos ya guardados y no vuelve a registrar nada. Con 2 7 se obtiene 9:27; intercambiar las instrucciones produciría 9:72."
         },
@@ -1284,6 +1314,39 @@
         "id": "block_0003_0004",
         "beforeSha256": "61d6e2e0b515b83cc51ef94ffd7bd68c3a7e7ae824fd1d4886ade506900f309a",
         "afterSha256": "7531ef6db5656b41949ae0616af4e00ca4bb77b0b423ace7db0b4cad98828cd6"
+      },
+      {
+        "id": "registro_orden_propio_orden",
+        "beforeSha256": "20efd9fad034c1f2650e1792ae8e29793ead03bb8ee1e1f3a575f2adff702abe",
+        "afterSha256": "3c67913625b503a3274f499fb2e30758348e45ee5ade1b80bca48c6e0a093100"
+      },
+      {
+        "id": "registro_orden_propio_orden",
+        "beforeSha256": "3c67913625b503a3274f499fb2e30758348e45ee5ade1b80bca48c6e0a093100",
+        "afterSha256": "16ab4cfebda377af2aacbb2d7af5b43578ef079532f6d356be073a4c3232aff7"
+      }
+    ],
+    "orderRefinements": [
+      {
+        "id": "registro_orden_propio_orden",
+        "block": {
+          "type": "order_code",
+          "language": "cpp",
+          "question": "La salida permite contrastar los valores. Ahora ordena estos cuatro fragmentos de una implementación posible para expresar la secuencia solicitada en el código: leer, registrar el primer dato, registrar el segundo y combinar los valores ya obtenidos. La suma por sí sola no fija ese orden.",
+          "fragments": [
+            "    const int segundo = registrar(marca, digito_dos);",
+            "    const int resultado = sumar(primero, segundo);\n    std::cout << resultado << ':' << marca;\n    return 0;\n}",
+            "#include <iostream>\n\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint sumar(int primero, int segundo) {\n    return primero + segundo;\n}\n\nint main() {\n    int marca{0};\n    int digito_uno{0};\n    int digito_dos{0};\n    std::cin >> digito_uno >> digito_dos;",
+            "    const int primero = registrar(marca, digito_uno);"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            0,
+            1
+          ],
+          "explanation": "Cada declaración completa su llamada de registrar antes de comenzar la siguiente. Así el primer dígito leído entra antes en marca. sumar recibe los dos retornos ya guardados y no vuelve a registrar nada. Con 2 7 se obtiene 9:27; intercambiar las instrucciones produciría 9:72."
+        }
       }
     ]
   },
@@ -3174,16 +3237,8 @@
       {
         "block": "registro_orden_propio_orden",
         "path": "/question",
-        "sourceSha256": "b0db4a842d0e2c894527782afb6fb87dba4ebf9ab0f89e2fb197ae2b41dfb642",
-        "spans": [
-          {
-            "start": 61,
-            "end": 67,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
+        "sourceSha256": "4b5c19fff1c264fc0ef3bcb542f355c1346957005ad28fda543492df2ec434b7",
+        "spans": []
       },
       {
         "block": "registro_orden_propio_orden",
@@ -3325,5 +3380,11 @@
         "spans": []
       }
     ]
-  }
+  },
+  "orderVisualSeparators": [
+    {
+      "activity": "registro_orden_propio_orden",
+      "count": 3
+    }
+  ]
 }

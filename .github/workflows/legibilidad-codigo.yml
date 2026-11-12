@@ -7,6 +7,10 @@ on:
       - 'app/src/main/assets/content/**/lesson_*.json'
       - 'scripts/curriculum/auditar_legibilidad_codigo.py'
       - 'scripts/curriculum/test_auditar_legibilidad_codigo.py'
+      - 'scripts/curriculum/test_order_visual_separators.py'
+      - 'scripts/curriculum/test_for_limites_format_batch.py'
+      - 'scripts/curriculum/test_one_line_order_cards.py'
+      - 'scripts/curriculum/auditar_tarjetas_orden_codigo.py'
       - '.github/workflows/legibilidad-codigo.yml'
   workflow_dispatch:
 
@@ -58,11 +62,29 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_acumuladores_trazas_format_batch.py -v
       - name: Revisar recarga U4L10 y sus proyectos iniciales C++23
         run: python -m unittest discover -s scripts/curriculum -p test_proceso_recarga_format_batch.py -v
+      - name: Verificar tarjetas de una linea con origen y respuesta historicos
+        run: python -m unittest discover -s scripts/curriculum -p test_one_line_order_cards.py -v
+      - name: Inventariar todas las tarjetas order_code sin cambiar su contenido
+        run: python scripts/curriculum/auditar_tarjetas_orden_codigo.py --output-json tarjetas-orden.json
+      - name: Garantizar una linea por tarjeta de orden en todo el curriculo espanol
+        run: python -m unittest discover -s scripts/curriculum -p test_single_line_order_puzzles.py -v
+      - name: Acreditar vectores U5L1 y su progreso historico con C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_vector_coleccion_format_batch.py -v
+      - name: Acreditar indices U5L2 y proteccion de acceso C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_indices_limites_format_batch.py -v
+      - name: Acreditar recorrido por valor U5L3 con C++23 e historial
+        run: python -m unittest discover -s scripts/curriculum -p test_recorrer_valores_rango_format_batch.py -v
+      - name: Acreditar referencias y copias U5L4 con C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_modificar_referencias_format_batch.py -v
+      - name: Probar indices seguros U5L5 y dos editores sin resolver C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_recorrer_indices_seguridad_format_batch.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
         uses: actions/upload-artifact@v4
         with:
           name: legibilidad-codigo
-          path: legibilidad-codigo.json
+          path: |
+            legibilidad-codigo.json
+            tarjetas-orden.json
           retention-days: 14
