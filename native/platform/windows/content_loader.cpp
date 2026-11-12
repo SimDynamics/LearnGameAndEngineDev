@@ -2483,8 +2483,10 @@ void read_order_visual_separators(const JsonObject& root,Lesson& lesson) {
         allowed_keys(record,{"activity","count"},true);
         const auto identity=text(record,"activity");
         const auto count=integer(record.GetNamedValue(L"count"),4);
-        require(valid_id(identity)&&count>0&&owners.insert(identity).second,
-            "Invalid, duplicate or empty optional code separator declaration");
+        // Every optional blank card is visual only. Do not let an authored
+        // count inflate the Win32 drag surface or allocate arbitrary cards.
+        require(valid_id(identity)&&count>=1&&count<=4&&owners.insert(identity).second,
+            "Invalid, duplicate or out-of-range optional code separator declaration");
         Block* target=nullptr;
         for(auto& page:lesson.pages)for(auto& block:page.blocks)
             if(block.stable_id==identity) {
