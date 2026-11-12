@@ -142,6 +142,44 @@ en un teléfono. Una nueva clase de revisión histórica o una estructura
 curricular no reconocida **no** queda autorizada implícitamente por este
 piloto y requiere su validación específica.
 
+## Revisiones históricas adicionales comprobadas en Android
+
+Algunas lecciones antiguas tienen fuentes C++ protegidas **junto con**
+`stateLayout.choiceRevisions` y `stateLayout.compilerRevisions`.
+El validador Android ahora reconoce las instantáneas anteriores únicamente
+cuando corresponden a la identidad, firma y cadena editorial publicadas.
+
+Las revisiones de opciones conservan `correctIndex` y aceptan únicamente
+una sustitución documentada de opción; no se normalizan respuestas distintas.
+Las ampliaciones de compilador sólo admiten nuevos casos o extensiones de
+salida esperada, y referencias C++ asociadas que conservan íntegramente el
+código anterior. No se atribuye una ejecución ni una evaluación nueva a un
+logro antiguo. Las correcciones de saltos físicos siguen requiriendo
+`sourceFormatRevisions` con su bloque exacto anterior.
+
+La suite usa lecciones publicadas de
+`texto_interpretacion_y_flujos`, entre ellas
+`lesson_construir_un_lector_de_entrada_preparada.json`,
+`lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json` y
+`lesson_construir_un_interprete_con_historial_y_pruebas.json`.
+Incluye una corrección física real sobre el código inicial de un editor
+con una ampliación histórica de `outputCheck`, sin alterar los casos
+anteriores ni su clave de progreso.
+
+La última de esas lecciones contiene además una aclaración matemática
+histórica. Únicamente se reconocen dos pares exactos de etiquetas
+matemáticas ya acreditados, con identidad y huellas completas cerradas.
+No existe una nueva autorización general para alterar las respuestas
+de `math_puzzle`.
+
+Compilación y pruebas unitarias Android acreditadas en:
+https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43137621191.
+
+Estos contratos son **específicos y conservadores**. No habilitan otras
+revisiones históricas, cambios de lógica o edición de la evaluación.
+Cada lección reformateada por Work debe superar de nuevo sus pruebas
+curriculares y de estado antes de publicarse.
+
 **Autorización operativa para Work:** una vez integrados los avances
 técnicos de `Codex` mediante la sincronización administrada por el usuario,
 Work puede comenzar en `main` la revisión y corrección de saltos físicos,
@@ -152,6 +190,28 @@ demostrada deben quedar intactas y señalarse para revisión específica.
 El éxito de este piloto **no** acredita por sí solo todas las lecciones ni
 permite cerrar la auditoría transversal. La verificación visual/auditiva
 habitual sigue correspondiendo al usuario durante el estudio.
+
+## Auditoría ampliada del lector Android
+
+La prueba de inventario `PublishedStateLayoutInventoryAndroidTest` recorre
+todos los archivos `lesson_*.json` de los tres idiomas y usa el mismo
+validador de metadatos que la aplicación. **No modifica ningún archivo de
+lección ni preferencias del estudiante.** Cada ejecución produce un reporte
+diagnóstico en `app/build/reports/curricular-state-inventory.json`, conservado
+como artefacto de GitHub Actions.
+
+En la ejecución del commit `31b62170082d2181cfeee6a397b30ea599a64536`,
+se examinaron **763 lecciones**, de las cuales **187** contienen mapas
+históricos. Las **12 lecciones con `sourceFormatRevisions`** pasaron la
+validación Android. Se registraron por separado **28 lecciones con
+incompatibilidades de otros contratos históricos**. La ejecución aprobó
+únicamente la compatibilidad de formatos, **no** declaró corregidas esas
+28 incidencias. El informe contiene las rutas y causas para que Codex
+identifique y atienda cada contrato con procedencia y pruebas auténticas.
+No eliminar ni reemplazar huellas originales para silenciar el informe.
+
+Resultado y artefacto de la ejecución:
+https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43139232923
 
 ## Separación de responsabilidades
 
