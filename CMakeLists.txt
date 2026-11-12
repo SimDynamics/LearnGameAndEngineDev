@@ -239,6 +239,14 @@ if(LGAED_READER_BUILD_QA_ONLY)
         message(FATAL_ERROR "LGAED_READER_BUILD_QA_ONLY requires BUILD_TESTING=ON.")
     endif()
     lgaed_add_curricular_reader_test_targets()
+    # Run the real Win32 compiler view against thirteen authored inputs.
+    # Exactly the first must unlock navigation; all others remain optional.
+    add_executable(lgaed_compiler_first_case_view_tests
+        native/presentation/windows/compiler_first_case_view_tests.cpp)
+    target_link_libraries(lgaed_compiler_first_case_view_tests PRIVATE
+        lgaed_curricular_windows)
+    add_test(NAME native.compiler_puzzles COMMAND lgaed_compiler_first_case_view_tests)
+    set_tests_properties(native.compiler_puzzles PROPERTIES TIMEOUT 210 RUN_SERIAL TRUE)
     # Preserve authored code indentation and optional decorative cards without
     # modifying any historical JSON, reference or saved response.
     add_executable(lgaed_code_format_compat_tests native/core/code_format_compat_tests.cpp)
