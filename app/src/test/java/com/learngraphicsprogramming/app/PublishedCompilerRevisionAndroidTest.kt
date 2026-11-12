@@ -33,6 +33,17 @@ class PublishedCompilerRevisionAndroidTest {
         val (p,b) = find(lesson, identity)
         return lesson.getJSONArray("pages").getJSONObject(p).getJSONArray("blocks").getJSONObject(b)
     }
+    private fun originalPosition(lesson: JSONObject, identity: String): LessonStatePosition {
+        val origin = lesson.getJSONObject("stateLayout").getJSONArray("origin")
+        for (page in 0 until origin.length()) {
+            val blocks = origin.getJSONObject(page).getJSONArray("blocks")
+            for (index in 0 until blocks.length()) {
+                if (blocks.getJSONObject(index).getString("id") == identity)
+                    return LessonStatePosition(page, index)
+            }
+        }
+        error("Missing historical storage position: $identity")
+    }
 
     @Test fun reviewedCompilerAdditionsAndTheirReferenceProjectionsPreserveOldAddresses() {
         for (name in lessonNames) {
@@ -49,7 +60,7 @@ class PublishedCompilerRevisionAndroidTest {
                     LessonStateLayoutJson.stateFingerprint(
                         CurricularCompilerRevision.projectCompiler(expanded, historical)))
                 val (p,b) = find(lesson, id)
-                assertEquals(LessonStatePosition(p,b), layout.storagePosition(p,b))
+                assertEquals(originalPosition(lesson, id), layout.storagePosition(p,b))
                 val references = entry.optJSONArray("references") ?: JSONArray()
                 for (index in 0 until references.length()) {
                     val reference = references.getJSONObject(index)
@@ -60,7 +71,7 @@ class PublishedCompilerRevisionAndroidTest {
                         LessonStateLayoutJson.stateFingerprint(
                             CurricularCompilerRevision.projectReference(actual, previous)))
                     val (rp, rb) = find(lesson, refId)
-                    assertEquals(LessonStatePosition(rp, rb), layout.storagePosition(rp, rb))
+                    assertEquals(originalPosition(lesson, refId), layout.storagePosition(rp, rb))
                 }
             }
         }
@@ -101,14 +112,41 @@ class PublishedCompilerRevisionAndroidTest {
         val oldLayout = requireNotNull(LessonStateLayoutJson.read(published))
         val revised = JSONObject(published.toString())
         val metadata = revised.getJSONObject("stateLayout")
-        val formattedId = "block_0000_0002"
-        val previous = JSONObject(block(revised, formattedId).toString())
-        val current = block(revised, formattedId)
+        // Select an actual code block, not a positional guess or a reference
+        // already owned by a reviewed compiler expansion.
+        val knownReferences = mutableSetOf<String>()
+        val compilerRevisions = metadata.getJSONArray("compilerRevisions")
+        for (index in 0 until compilerRevisions.length()) {
+            val references = compilerRevisions.getJSONObject(index)
+                .optJSONArray("references") ?: JSONArray()
+            for (n in 0 until references.length())
+                knownReferences.add(references.getJSONObject(n).getString("id"))
+        }
+        val pages = revised.getJSONArray("pages")
+        var formattedId: String? = null
+        for (p in 0 until pages.length()) {
+            if (formattedId != null) break
+            val blocks = pages.getJSONObject(p).getJSONArray("blocks")
+            val ids = metadata.getJSONArray("current").getJSONObject(p).getJSONArray("blocks")
+            for (b in 0 until blocks.length()) {
+                val item = blocks.getJSONObject(b)
+                val id = ids.getString(b)
+                if (item.optString("type") == "code" && id !in knownReferences &&
+                    !item.optString("code").contains("__LINE__") &&
+                    !item.optString("code").contains("source_location")) {
+                    formattedId = id
+                    break
+                }
+            }
+        }
+        val selected = requireNotNull(formattedId) { "No independent C++ code example" }
+        val previous = JSONObject(block(revised, selected).toString())
+        val current = block(revised, selected)
         current.put("code", previous.getString("code") + "\n")
         metadata.put("sourceFormatRevisions", JSONArray().put(
-            JSONObject().put("id", formattedId).put("block", previous)))
+            JSONObject().put("id", selected).put("block", previous)))
         metadata.getJSONArray("editorial").put(JSONObject()
-            .put("id", formattedId)
+            .put("id", selected)
             .put("beforeSha256", LessonStateLayoutJson.fingerprint(previous))
             .put("afterSha256", LessonStateLayoutJson.fingerprint(current)))
         val newLayout = requireNotNull(LessonStateLayoutJson.read(revised))
