@@ -242,8 +242,13 @@ inline std::optional<RejectionExpected> rejection_expected_for_input(
     std::istringstream source{std::string(input)};
     std::vector<int> numbers;
     int number=0;
+    // Each task accepts up to eight complete requests. Boxes receive one
+    // integer per request; balances receive two. Never grade additional
+    // unrequested observations as though they were in the authored domain.
+    const std::size_t maximum_numbers =
+        operation==RejectionOperation::boxes ? 8 : 16;
     while(source>>number) {
-        if(numbers.size()==16)return {};
+        if(numbers.size()==maximum_numbers)return {};
         numbers.push_back(number);
     }
     if(!source.eof()||(operation==RejectionOperation::balance&&numbers.size()%2))return {};
