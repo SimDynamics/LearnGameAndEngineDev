@@ -237,6 +237,64 @@ class LessonStateLayoutJsonTest {
         assertTrue(runCatching { CurricularSourceFormatCompat.project(moved, line) }.isFailure)
     }
 
+    @Test fun imageDescriptionsDoNotRewriteTheHistoricalResourceIdentity() {
+        val original = JSONObject().put("type", "image").put("imageId", "lesson_diagram_001")
+            .put("alt", "Descripción anterior").put("caption", "Pie anterior")
+        val revised = JSONObject(original.toString())
+            .put("alt", "Descripción más precisa").put("caption", "Pie actualizado")
+        assertEquals(LessonStateLayoutJson.stateFingerprint(original),
+            LessonStateLayoutJson.stateFingerprint(revised))
+        val replacedResource = JSONObject(revised.toString()).put("imageId", "another_resource")
+        assertNotEquals(LessonStateLayoutJson.stateFingerprint(original),
+            LessonStateLayoutJson.stateFingerprint(replacedResource))
+    }
+
+    @Test fun publishedCompilerDiagnosticsPreserveOnlyTheExactOriginalProgramAndProject() {
+        val root = listOf(java.io.File("src/main/assets/content"),
+            java.io.File("app/src/main/assets/content")).firstOrNull { it.isDirectory }
+            ?: error("Cannot find published curricular assets")
+        val lessons = listOf(
+            "es/programming/cpp_fundamentals/datos_propios_y_estado_valido/" +
+                "lesson_consultas_const_y_objetos_constantes.json",
+            "es/programming/cpp_fundamentals/funciones_y_contratos/" +
+                "lesson_declaraciones_y_firmas.json"
+        )
+        var checked = 0
+        for (path in lessons) {
+            val lesson = JSONObject(java.io.File(root, path).readText(Charsets.UTF_8))
+            val pages = lesson.getJSONArray("pages")
+            for (pageIndex in 0 until pages.length()) {
+                val blocks = pages.getJSONObject(pageIndex).getJSONArray("blocks")
+                for (index in 0 until blocks.length()) {
+                    val block = blocks.getJSONObject(index)
+                    if (!block.has("compileCheck")) continue
+                    ++checked
+                    val before = JSONObject(block.toString()).apply { remove("compileCheck") }
+                    assertEquals("Reviewed diagnostic changed the original historical receipt",
+                        LessonStateLayoutJson.stateFingerprint(before),
+                        LessonStateLayoutJson.stateFingerprint(block))
+                    val altered = JSONObject(block.toString())
+                        .put("initialCode", block.getString("initialCode") + "\n// forged source")
+                    assertTrue("Changed source was accepted for a reviewed diagnostic",
+                        runCatching { LessonStateLayoutJson.stateFingerprint(altered) }.isFailure)
+                    val unknown = JSONObject(block.toString())
+                    unknown.getJSONObject("compileCheck").put("diagnostic", "forged-compiler-diagnostic")
+                    assertTrue("Unknown diagnostic was treated as editorial-only",
+                        runCatching { LessonStateLayoutJson.stateFingerprint(unknown) }.isFailure)
+                    val removedSource = JSONObject(block.toString())
+                    if (block.has("projectFiles")) {
+                        removedSource.remove("sourceFiles")
+                    } else {
+                        removedSource.put("sourceFiles", JSONArray())
+                    }
+                    assertTrue("A changed compilation source selection was accepted",
+                        runCatching { LessonStateLayoutJson.stateFingerprint(removedSource) }.isFailure)
+                }
+            }
+        }
+        assertEquals("Expected one single-source and three published project diagnostics", 4, checked)
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
