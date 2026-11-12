@@ -23,7 +23,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"panel\";\n    std::cout << tiene_texto(etiqueta);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"panel\";\n\n    std::cout << tiene_texto(etiqueta);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -33,7 +33,7 @@
           "type": "output_prediction",
           "question": "La función compara dos cadenas sin modificarlas. Predice su respuesta.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nbool coincide(const std::string& observado, const std::string& esperado) {\n    return observado == esperado;\n}\n\nint main() {\n    const std::string observado = \"ruta\";\n    const std::string esperado = \"rutas\";\n    std::cout << coincide(observado, esperado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nbool coincide(const std::string& observado, const std::string& esperado) {\n    return observado == esperado;\n}\n\nint main() {\n    const std::string observado = \"ruta\";\n    const std::string esperado = \"rutas\";\n\n    std::cout << coincide(observado, esperado);\n\n    return 0;\n}\n",
           "answers": [
             "0"
           ],
@@ -62,7 +62,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {2, 4, 3};\n    std::cout << sumar(datos);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {2, 4, 3};\n\n    std::cout << sumar(datos);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -72,7 +72,7 @@
           "type": "output_prediction",
           "question": "Cuenta los elementos estrictamente mayores que el límite. Predice el resultado.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint contar_superiores(const std::vector<int>& datos, int limite) {\n    int cuenta = 0;\n    for (int valor : datos) {\n        if (valor > limite) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    const std::vector<int> datos = {1, 6, 3, 6};\n    std::cout << contar_superiores(datos, 3);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_superiores(const std::vector<int>& datos, int limite) {\n    int cuenta = 0;\n    for (int valor : datos) {\n        if (valor > limite) {\n            ++cuenta;\n        }\n    }\n\n    return cuenta;\n}\n\nint main() {\n    const std::vector<int> datos = {1, 6, 3, 6};\n\n    std::cout << contar_superiores(datos, 3);\n\n    return 0;\n}\n",
           "answers": [
             "2"
           ],
@@ -98,7 +98,7 @@
         {
           "type": "inline_fill_code",
           "question": "Completa el parámetro para leer el vector original sin copiarlo y sin permitir modificación a través de datos. Escribe const en el primer hueco y & en el segundo.",
-          "template": "#include <iostream>\n#include <vector>\n\nbool tiene_datos([] std::vector<int>[] datos) {\n    return !datos.empty();\n}\n\nint main() {\n    const std::vector<int> datos = {4, 7};\n    std::cout << tiene_datos(datos);\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <vector>\n\nbool tiene_datos([] std::vector<int>[] datos) {\n    return !datos.empty();\n}\n\nint main() {\n    const std::vector<int> datos = {4, 7};\n\n    std::cout << tiene_datos(datos);\n\n    return 0;\n}\n",
           "answers": [
             "const",
             "&"
@@ -133,7 +133,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {5, 0, 3};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {5, 0, 3};\n    const int total = sumar(datos);\n\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -185,7 +185,7 @@
           "type": "output_prediction",
           "question": "Recupera cadena vacía, llamada y elección de rama.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"\";\n    if (tiene_texto(etiqueta)) {\n        std::cout << etiqueta;\n    } else {\n        std::cout << \"Sin etiqueta\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"\";\n    if (tiene_texto(etiqueta)) {\n        std::cout << etiqueta;\n    } else {\n        std::cout << \"Sin etiqueta\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Sin etiqueta"
           ],
@@ -214,7 +214,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {20, 20, 20, 20, 20, 20, 20, 20};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {20, 20, 20, 20, 20, 20, 20, 20};\n    const int total = sumar(datos);\n\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -230,7 +230,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    const int total = sumar(datos);\n\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -1012,6 +1012,181 @@
         "id": "block_0000_0003",
         "beforeSha256": "8a038be73edd08d2f92f28b5e7ebac7983fa2c742f6b71787170981442936bec",
         "afterSha256": "6bb5f4581a19bdae6da9b963a121e17148c412edfd9ffdba6bdec3b930446b88"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "f3edcca885fc33437c994282bd4734e4667c4980e9d9e131404bcaa84f1aedc9",
+        "afterSha256": "f086da2f1eb4841d57a48157945760d3002d40bc2b643b6c69565e91ba318e32"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "b4eebf56176375d0bf8ce4baba7f57423b9695956e1ff1b0dd4f2a70621cbcc5",
+        "afterSha256": "f37020c7527fb1ae3e8ac0538896a67e5d3efa5f3f45c5aca1decdc78f08770b"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "bc36abcbbb64750581873f8dd309f5f1143e0d0c1c23c16897ea1782833b4cdd",
+        "afterSha256": "0ba953a1d834619159f3b593cd3132f66ad21929af78612783511f66eab17858"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "fccec9523894029058940278280309aa07017c2d9a9eec5739aa4c4dbb94f089",
+        "afterSha256": "86972977df549fbbbde0bedefafc333257c13b7c335fe64a26d21e6d6c50f91a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "aafdb4f54bf518c0cf7d647f81925a778ffea33997d7487cae0c17e3fb579238",
+        "afterSha256": "365e2526473d954698304807cc4e82ee861957c6e2405898c277599cc847beb1"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "47450072aa835197e45e013b468454abcc5b95c1e1bcfa3de184be9ce63f7579",
+        "afterSha256": "9c1cff9be68e0334cd4056d6b8fe0cc97e8e610ad109e0004da9546810186962"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "f5d377356cbda3271c4f3a825b0c9c212cd19560f45479163def1cdd483fdfb8",
+        "afterSha256": "6ea186601b24a1092e6f0101ac90ac75e3603472d986a714a45e22a41a872d9a"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "6a76a3c3f56bdccc9e9d6177b8ad0de4a2ca33467754fdf8f08e64499782c061",
+        "afterSha256": "45c260494ba16f09714b698a85ac2ac3f5a529224a1155d753254023500fa2b2"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "8f4fcb9dfaec91b86409c3be2926e2a77cdd7b9176ef22df9f205c9d2330f9a6",
+        "afterSha256": "ba8676b5d55bce565f029ac40a0db2ae2d616ff0b2b953aa4e7a67dfcc0140aa"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"panel\";\n    std::cout << tiene_texto(etiqueta);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "La función compara dos cadenas sin modificarlas. Predice su respuesta.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool coincide(const std::string& observado, const std::string& esperado) {\n    return observado == esperado;\n}\n\nint main() {\n    const std::string observado = \"ruta\";\n    const std::string esperado = \"rutas\";\n    std::cout << coincide(observado, esperado);\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Las cadenas no son iguales. Las referencias permiten leerlas y la comparación devuelve false."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {2, 4, 3};\n    std::cout << sumar(datos);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Cuenta los elementos estrictamente mayores que el límite. Predice el resultado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_superiores(const std::vector<int>& datos, int limite) {\n    int cuenta = 0;\n    for (int valor : datos) {\n        if (valor > limite) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    const std::vector<int> datos = {1, 6, 3, 6};\n    std::cout << contar_superiores(datos, 3);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Los dos valores 6 superan 3. El elemento igual al límite no cuenta."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "question": "Completa el parámetro para leer el vector original sin copiarlo y sin permitir modificación a través de datos. Escribe const en el primer hueco y & en el segundo.",
+          "template": "#include <iostream>\n#include <vector>\n\nbool tiene_datos([] std::vector<int>[] datos) {\n    return !datos.empty();\n}\n\nint main() {\n    const std::vector<int> datos = {4, 7};\n    std::cout << tiene_datos(datos);\n    return 0;\n}\n",
+          "answers": [
+            "const",
+            "&"
+          ]
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {5, 0, 3};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Total: 8\nElementos: 3",
+                  "Total: 8\nElementos: 3\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Recupera cadena vacía, llamada y elección de rama.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"\";\n    if (tiene_texto(etiqueta)) {\n        std::cout << etiqueta;\n    } else {\n        std::cout << \"Sin etiqueta\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Sin etiqueta"
+          ],
+          "explanation": "empty() es true, la negación devuelve false y main elige el aviso."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {20, 20, 20, 20, 20, 20, 20, 20};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Total: 0\nElementos: 0",
+                  "Total: 0\nElementos: 0\n"
+                ]
+              },
+              {
+                "standardInput": "4 2 4 6 8",
+                "outputs": [
+                  "Total: 20\nElementos: 4",
+                  "Total: 20\nElementos: 4\n"
+                ]
+              },
+              {
+                "standardInput": "8 20 20 20 20 20 20 20 20",
+                "outputs": [
+                  "Total: 160\nElementos: 8",
+                  "Total: 160\nElementos: 8\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
       }
     ]
   },
