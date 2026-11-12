@@ -50,7 +50,7 @@ class PublishedCompilerRevisionAndroidTest {
                         CurricularCompilerRevision.projectCompiler(expanded, historical)))
                 val (p,b) = find(lesson, id)
                 assertEquals(LessonStatePosition(p,b), layout.storagePosition(p,b))
-                val references = entry.getJSONArray("references")
+                val references = entry.optJSONArray("references") ?: JSONArray()
                 for (index in 0 until references.length()) {
                     val reference = references.getJSONObject(index)
                     val refId = reference.getString("id")
@@ -78,10 +78,12 @@ class PublishedCompilerRevisionAndroidTest {
                 { it.getJSONObject("stateLayout").getJSONArray("compilerRevisions")
                     .getJSONObject(0).getJSONObject("block").put("initialCode", "int main(){return 9;}") },
                 { val references = it.getJSONObject("stateLayout").getJSONArray("compilerRevisions")
-                    .getJSONObject(0).getJSONArray("references")
-                    if (references.length() > 0) {
+                    .getJSONObject(0).optJSONArray("references")
+                    if (references != null && references.length() > 0) {
                         val refId = references.getJSONObject(0).getString("id")
                         block(it, refId).put("code", "int main(){return 9;}")
+                    } else {
+                        block(it, id).put("initialCode", "int main(){return 9;}")
                     } }
             )
             for (attack in tampering) {
