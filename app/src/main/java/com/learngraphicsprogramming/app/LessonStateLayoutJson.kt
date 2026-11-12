@@ -244,6 +244,7 @@ internal object LessonStateLayoutJson {
         val type = block.optString("type")
         val ignored = when (type) {
             "heading", "paragraph", "note" -> setOf("text", "emphasis")
+            "image" -> setOf("alt", "caption")
             "multiple_choice", "fill_code", "output_prediction", "order_code",
             "drag_fill_code", "inline_fill_code" -> setOf("question", "explanation", "reviewFeedback")
             else -> emptySet()
