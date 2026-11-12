@@ -425,6 +425,54 @@ class LessonStateLayoutJsonTest {
         }
     }
 
+    @Test fun publishedRetirementHistoryKeepsOriginalSlotsButNotReadingObligations() {
+        val root = listOf(java.io.File("src/main/assets/content"),
+            java.io.File("app/src/main/assets/content")).firstOrNull { it.isDirectory }
+            ?: error("Cannot find published curricular assets")
+        val lessons = listOf(
+            "programas_y_ejecucion/lesson_texto_secuencia_y_formato.json",
+            "programas_y_ejecucion/lesson_primer_programa_y_salida.json",
+            "programas_y_ejecucion/lesson_fuente_compilacion_y_diagnostico.json",
+            "programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json",
+            "archivos_y_programa_completo/lesson_referencias_del_curso.json"
+        )
+        for (name in lessons) {
+            val path = "es/programming/cpp_fundamentals/" + name
+            val source = java.io.File(root, path).readText(Charsets.UTF_8)
+            val document = JSONObject(source)
+            val layout = LessonStateLayoutJson.read(document)!!
+            val metadata = document.getJSONObject("stateLayout")
+            val entries = metadata.getJSONArray("retired")
+            val retired = (0 until entries.length()).map {
+                entries.getJSONObject(it).getString("id")
+            }.toSet()
+            assertTrue("The published retirement must have archived owners", retired.isNotEmpty())
+            assertEquals(retired, layout.retiredIds)
+            val current = layout.current.flatMap { it.blocks }.toSet()
+            assertTrue("A retired owner remained reachable as a current puzzle",
+                retired.intersect(current).isEmpty())
+            assertEquals(current.size, layout.progressGroups.sumOf { it.size })
+            layout.validateReadState(emptySet(), retired)
+            for (alter in listOf<(JSONObject) -> Unit>(
+                { d -> val meta = d.getJSONObject("stateLayout")
+                    val item = meta.getJSONArray("retired").getJSONObject(0)
+                    item.put("next", item.getString("id")) },
+                { d -> d.getJSONObject("stateLayout").getJSONArray("retired")
+                    .getJSONObject(0).getJSONObject("block").put("type", "forged") },
+                { d -> val pages = d.getJSONObject("stateLayout")
+                    .getJSONArray("retirementHistory").getJSONObject(0)
+                    .getJSONArray("current")
+                    .getJSONObject(0).getJSONArray("blocks")
+                    pages.put(0, "foreign_owner") }
+            )) {
+                val tampered = JSONObject(source)
+                alter(tampered)
+                assertTrue("An altered historical retirement was accepted",
+                    runCatching { LessonStateLayoutJson.read(tampered) }.isFailure)
+            }
+        }
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
