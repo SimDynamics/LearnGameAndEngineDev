@@ -15,7 +15,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int temperatura = 18;\n    const bool alcanza_minimo = temperatura >= 15;\n    const bool no_supera_maximo = temperatura <= 25;\n    const bool en_intervalo = alcanza_minimo && no_supera_maximo;\n    std::cout << en_intervalo;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    const int temperatura = 18;\n    const bool alcanza_minimo = temperatura >= 15;\n    const bool no_supera_maximo = temperatura <= 25;\n\n    const bool en_intervalo = alcanza_minimo && no_supera_maximo;\n\n    std::cout << en_intervalo;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -25,7 +25,7 @@
           "type": "fill_code",
           "question": "El contador es válido de 2 a 9, incluidos ambos. Escribe sólo el operador lógico que exige las dos comparaciones.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int contador = 6;\n    const bool valido = (contador >= 2) ___ (contador <= 9);\n    std::cout << valido;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int contador = 6;\n    const bool valido = (contador >= 2) ___ (contador <= 9);\n\n    std::cout << valido;\n\n    return 0;\n}\n",
           "answers": [
             "&&",
             "and"
@@ -58,12 +58,12 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const bool trae_lapices = false;\n    const bool trae_rotuladores = true;\n    const bool tiene_material = trae_lapices || trae_rotuladores;\n    std::cout << tiene_material;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    const bool trae_lapices = false;\n    const bool trae_rotuladores = true;\n\n    const bool tiene_material = trae_lapices || trae_rotuladores;\n\n    std::cout << tiene_material;\n\n    return 0;\n}\n"
         },
         {
           "type": "inline_fill_code",
           "question": "Completa las condiciones según su finalidad: ambos sólo debe ser true si se cumplen los dos requisitos; alguno debe ser true si se cumple al menos uno. Escribe sólo un operador lógico por hueco.",
-          "template": "#include <iostream>\n\nint main() {\n    const bool conoce_clave = true;\n    const bool trae_tarjeta = false;\n    const bool ambos = conoce_clave [] trae_tarjeta;\n    const bool alguno = conoce_clave [] trae_tarjeta;\n    std::cout << ambos << \" \" << alguno;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n\nint main() {\n    const bool conoce_clave = true;\n    const bool trae_tarjeta = false;\n\n    const bool ambos = conoce_clave [] trae_tarjeta;\n    const bool alguno = conoce_clave [] trae_tarjeta;\n\n    std::cout << ambos << \" \" << alguno;\n\n    return 0;\n}\n",
           "answers": [
             "&&",
             "||"
@@ -114,7 +114,7 @@
           "type": "output_prediction",
           "question": "Este es un panel de práctica. Predice si el programa muestra 1 o 0.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const bool sensor_a = true;\n    const bool sensor_b = false;\n    const bool silenciado = true;\n    const bool senal = (sensor_a || sensor_b) && !silenciado;\n    std::cout << senal;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const bool sensor_a = true;\n    const bool sensor_b = false;\n    const bool silenciado = true;\n\n    const bool senal = (sensor_a || sensor_b) && !silenciado;\n\n    std::cout << senal;\n\n    return 0;\n}\n",
           "answers": [
             "0"
           ],
@@ -145,7 +145,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -183,7 +183,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int pase{0};\n    int invitacion{0};\n    int apertura{0};\n    std::cin >> pase >> invitacion >> apertura;\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int pase{0};\n    int invitacion{0};\n    int apertura{0};\n\n    std::cin >> pase >> invitacion >> apertura;\n\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "0 1 1",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -238,7 +238,7 @@
           "type": "output_prediction",
           "question": "Recupera aritmética, prioridad, comparación y salida. Predice la línea completa.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 7 + 3 * 2;\n    const bool en_rango = (cantidad >= 12) && (cantidad <= 14);\n    std::cout << cantidad << \" \" << en_rango;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 7 + 3 * 2;\n    const bool en_rango = (cantidad >= 12) && (cantidad <= 14);\n\n    std::cout << cantidad << \" \" << en_rango;\n\n    return 0;\n}\n",
           "answers": [
             "13 1"
           ],
@@ -278,7 +278,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -314,7 +314,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int pase{0};\n    int invitacion{0};\n    int apertura{0};\n    std::cin >> pase >> invitacion >> apertura;\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int pase{0};\n    int invitacion{0};\n    int apertura{0};\n\n    std::cin >> pase >> invitacion >> apertura;\n\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n\n    return 0;\n}\n",
           "initialStandardInput": "0 0 0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -1185,6 +1185,247 @@
         "id": "block_0005_0004",
         "beforeSha256": "a4b0dd57a104166179955fffdeda0d482ed36013f83bb4f0253528502fb4d8a3",
         "afterSha256": "7e427954c88ffec7a1a00d73f66a14ccecf0407f917b9d0d174ffb8ddd737261"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "a8b674569ee55e6413a6f1588e554331b163651872d960a6135fee8b1d589a76",
+        "afterSha256": "f35b95d405b1efcdbbce1c3b594d9f282eeee4e1037fd84a0321a9d4e45a7bd2"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "fe435f042a470939f4ea9644eef5628430d51a82bf425c787d4b47f421bb8854",
+        "afterSha256": "fafef47c7d0dee57f277b9d38e18fd74e56db285154b49cd4758e154efae0984"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "f3d4a5f4afa6792711e5f6823bf60f1bec345248c2e14075304899e37b88ced6",
+        "afterSha256": "e1609305711ab99c5c541473d28748c177eeef2675d518a42ea63fb52c95469d"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "00226c494756985dcb309c2ddc88d33457daa6ce7f416efddcf90589a80b5eb7",
+        "afterSha256": "fc3ff60962c8b346e70b497a4336487a11d7691a887263e14bc61fb2eda5012a"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "5f3fd74aaa61cbd3cb5d800e3111b248ae5cd8b198500b23f330adc54fe79ab3",
+        "afterSha256": "a6734a411295ae79cd55cf13d8b95af8fe854af16cbbe855e89d76ecad21feb9"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "72c23f3a743fef5a2d955bdfe2efbadada32934fd70bf8ceb740db67699e9699",
+        "afterSha256": "d85ab3e7dae8415c6b8fc94d394629462d7db88a338a4414f8ad2d88ada61e27"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "77dc4b02058d72685be93f1a94386cde909fa854eff1151f186176daf0282a47",
+        "afterSha256": "b2b0f35fe0d3025e9b6835e8ec28bc887d09f31ee0c07aa9b403d99a65d029c7"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "8dc28ea8dc17e9c2da63e5de2cf1c1ff1a64b958f6d9778deef6a246efe905dd",
+        "afterSha256": "0ff74dcce655151362d853b240993dc0fda63736f150ee9cf6a0977f44b98c58"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "88a233df48373e3a8925819da31fb5894ec4aefc312eb62d8cf463b33a73048f",
+        "afterSha256": "dac792bd5364b8fe1ce4eeea330970923c7e114a20b8596e4548a09e4567197b"
+      },
+      {
+        "id": "combinaciones_faltantes_editor",
+        "beforeSha256": "2bb3b2878a9f9056c3131948c71f55534367939151498d9df7a4eda9af5f4dcf",
+        "afterSha256": "3d47f9dbe448920e854803d46f4bf2ea2feb2d453c15c4c2e8797b2a8fdba214"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int temperatura = 18;\n    const bool alcanza_minimo = temperatura >= 15;\n    const bool no_supera_maximo = temperatura <= 25;\n    const bool en_intervalo = alcanza_minimo && no_supera_maximo;\n    std::cout << en_intervalo;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "fill_code",
+          "question": "El contador es válido de 2 a 9, incluidos ambos. Escribe sólo el operador lógico que exige las dos comparaciones.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int contador = 6;\n    const bool valido = (contador >= 2) ___ (contador <= 9);\n    std::cout << valido;\n    return 0;\n}\n",
+          "answers": [
+            "&&",
+            "and"
+          ],
+          "explanation": "Para pertenecer al intervalo se debe alcanzar el mínimo y no superar el máximo a la vez."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool trae_lapices = false;\n    const bool trae_rotuladores = true;\n    const bool tiene_material = trae_lapices || trae_rotuladores;\n    std::cout << tiene_material;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "question": "Completa las condiciones según su finalidad: ambos sólo debe ser true si se cumplen los dos requisitos; alguno debe ser true si se cumple al menos uno. Escribe sólo un operador lógico por hueco.",
+          "template": "#include <iostream>\n\nint main() {\n    const bool conoce_clave = true;\n    const bool trae_tarjeta = false;\n    const bool ambos = conoce_clave [] trae_tarjeta;\n    const bool alguno = conoce_clave [] trae_tarjeta;\n    std::cout << ambos << \" \" << alguno;\n    return 0;\n}\n",
+          "answers": [
+            "&&",
+            "||"
+          ],
+          "answerAlternatives": [
+            [
+              "&&",
+              "and"
+            ],
+            [
+              "||",
+              "or"
+            ]
+          ]
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Este es un panel de práctica. Predice si el programa muestra 1 o 0.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool sensor_a = true;\n    const bool sensor_b = false;\n    const bool silenciado = true;\n    const bool senal = (sensor_a || sensor_b) && !silenciado;\n    std::cout << senal;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Los sensores satisfacen la alternativa, pero !silenciado es false. La conjunción completa es false."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Entrada permitida",
+                  "Entrada permitida\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int pase{0};\n    int invitacion{0};\n    int apertura{0};\n    std::cin >> pase >> invitacion >> apertura;\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "0 1 1",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 1 1",
+                "outputs": [
+                  "Entrada permitida",
+                  "Entrada permitida\n"
+                ]
+              },
+              {
+                "standardInput": "1 1 1",
+                "outputs": [
+                  "Entrada permitida",
+                  "Entrada permitida\n"
+                ]
+              },
+              {
+                "standardInput": "0 1 0",
+                "outputs": [
+                  "Entrada denegada",
+                  "Entrada denegada\n"
+                ]
+              },
+              {
+                "standardInput": "0 0 1",
+                "outputs": [
+                  "Entrada denegada",
+                  "Entrada denegada\n"
+                ]
+              },
+              {
+                "standardInput": "1 1 0",
+                "outputs": [
+                  "Entrada denegada",
+                  "Entrada denegada\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Recupera aritmética, prioridad, comparación y salida. Predice la línea completa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 7 + 3 * 2;\n    const bool en_rango = (cantidad >= 12) && (cantidad <= 14);\n    std::cout << cantidad << \" \" << en_rango;\n    return 0;\n}\n",
+          "answers": [
+            "13 1"
+          ],
+          "explanation": "La cantidad es 13. Las dos comparaciones son true y su conjunción también."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "combinaciones_faltantes_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int pase{0};\n    int invitacion{0};\n    int apertura{0};\n    std::cin >> pase >> invitacion >> apertura;\n    const bool tiene_pase = pase != 0;\n    const bool tiene_invitacion = invitacion != 0;\n    const bool sala_abierta = apertura != 0;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n",
+          "initialStandardInput": "0 0 0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 0 0",
+                "outputs": [
+                  "Entrada denegada",
+                  "Entrada denegada\n"
+                ],
+                "explanation": "La sala está cerrada y no hay ninguna credencial. La conjunción no permite la entrada."
+              },
+              {
+                "standardInput": "1 0 0",
+                "outputs": [
+                  "Entrada denegada",
+                  "Entrada denegada\n"
+                ],
+                "explanation": "El pase satisface la alternativa entre credenciales, pero la sala cerrada hace falsa la conjunción completa."
+              },
+              {
+                "standardInput": "1 0 1",
+                "outputs": [
+                  "Entrada permitida",
+                  "Entrada permitida\n"
+                ],
+                "explanation": "El pase satisface la alternativa y la sala está abierta. No hace falta una invitación adicional."
+              }
+            ]
+          }
+        }
       }
     ]
   },
