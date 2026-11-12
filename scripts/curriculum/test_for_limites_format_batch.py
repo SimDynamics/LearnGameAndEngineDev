@@ -52,12 +52,15 @@ class ForLimitsFormatBatch(unittest.TestCase):
         self.assertEqual(ids, [e["id"] for e in self.meta["editorial"][-len(POSITIONS)-1:-1]])
         old = deepcopy(self.after)
         old["stateLayout"].pop("sourceFormatRevisions")
-        # Reconstruct the state before the physical-source edits, retaining
-        # the independently authenticated, later order-card refinement.
+        # Reconstruct the published prefix before both append-only revisions.
+        # Order-card and physical-source archives are authenticated independently.
+        order_record = self.meta["orderRefinements"][0]
+        self.assertEqual("orden_while_puestos_2_3_4", order_record["id"])
+        original_order = deepcopy(order_record["block"])
+        old["pages"][5]["blocks"][7] = deepcopy(original_order)
+        old["stateLayout"].pop("orderRefinements")
         old["stateLayout"]["editorial"] = (
-            old["stateLayout"]["editorial"][:-len(POSITIONS)-1] +
-            old["stateLayout"]["editorial"][-1:])
-        original_order = deepcopy(self.after["pages"][5]["blocks"][7])
+            old["stateLayout"]["editorial"][:-(len(POSITIONS) + 1)])
         for p,b in POSITIONS:
             ident = self.meta["current"][p]["blocks"][b]
             before, after = self.archives[ident], self.after["pages"][p]["blocks"][b]
