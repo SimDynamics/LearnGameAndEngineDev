@@ -36,8 +36,55 @@ class RealFunctionOrderCards(unittest.TestCase):
         import hashlib
         for name, p, b, identity, old_count, new_count, stdin, expected, sep in CASES:
             with self.subTest(lesson=name):
-                after = json.loads((LESSONS / name).read_text(encoding="utf-8"))
-                state.validate(after)
+                published = json.loads((LESSONS / name).read_text(encoding="utf-8"))
+                state.validate(published)
+                # Rewind later, independent source-spacing revisions before
+                # reconstructing the two earlier order-card editorial proofs.
+                # These proofs are no longer necessarily the last two entries.
+                after = deepcopy(published)
+                revisions = after["stateLayout"].get("sourceFormatRevisions", [])
+                prose_suffixes = {}
+                if name == "lesson_hacer_explicito_el_orden_de_las_operaciones.json":
+                    from test_orden_operaciones_format_batch import SUFFIXES
+                    prose_suffixes = SUFFIXES
+                # Reconstruct the published state before both independent prose
+                # and source-spacing edits. Neither may alter the order-card
+                # answer or its earlier two editorial proofs.
+                if revisions or prose_suffixes:
+                    from code_format_compat import require_source_format
+                    meta = after["stateLayout"]
+                    appended = [item["id"] for item in revisions] + list(prose_suffixes)
+                    self.assertEqual(
+                        appended,
+                        [item["id"] for item in meta["editorial"][-len(appended):]],
+                    )
+                    coordinates = {
+                        identity: (page_index, block_index)
+                        for page_index, page in enumerate(meta["current"])
+                        for block_index, identity in enumerate(page["blocks"])
+                    }
+                    for item in revisions:
+                        page_index, block_index = coordinates[item["id"]]
+                        formatted = after["pages"][page_index]["blocks"][block_index]
+                        self.assertTrue(require_source_format(item["block"], formatted))
+                        after["pages"][page_index]["blocks"][block_index] = deepcopy(item["block"])
+                    for prose_id, suffix in prose_suffixes.items():
+                        page_index, block_index = coordinates[prose_id]
+                        block = after["pages"][page_index]["blocks"][block_index]
+                        self.assertTrue(block["text"].endswith(suffix), prose_id)
+                        block["text"] = block["text"][:-len(suffix)]
+                        descriptor = next(field for field in after["textSemantics"]["fields"]
+                                          if field["block"] == prose_id and field["path"] == "/text")
+                        descriptor["sourceSha256"] = hashlib.sha256(
+                            block["text"].encode("utf-8")
+                        ).hexdigest()
+                        self.assertTrue(all(block["text"][span["start"]:span["end"]]
+                                            == span["text"] for span in descriptor["spans"]))
+                    if revisions:
+                        del meta["sourceFormatRevisions"]
+                    del meta["editorial"][-len(appended):]
+                    state.validate(after)
+                    state.validate_transition(after, published)
                 meta = after["stateLayout"]
                 current = after["pages"][p]["blocks"][b]
                 history = meta["orderRefinements"]

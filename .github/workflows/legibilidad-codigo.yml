@@ -10,6 +10,21 @@ on:
       - 'scripts/curriculum/test_order_visual_separators.py'
       - 'scripts/curriculum/test_for_limites_format_batch.py'
       - 'scripts/curriculum/test_one_line_order_cards.py'
+      - 'scripts/curriculum/test_single_line_order_puzzles.py'
+      - 'scripts/curriculum/test_declaraciones_firmas_format_batch.py'
+      - 'scripts/curriculum/test_funciones_nombrar_format_batch.py'
+      - 'scripts/curriculum/test_retorno_caminos_format_batch.py'
+      - 'scripts/curriculum/test_copia_ambito_format_batch.py'
+      - 'scripts/curriculum/test_referencias_lectura_format_batch.py'
+      - 'scripts/curriculum/test_referencias_modificar_format_batch.py'
+      - 'scripts/curriculum/test_contratos_casos_format_batch.py'
+      - 'scripts/curriculum/test_componer_funciones_format_batch.py'
+      - 'scripts/curriculum/test_raiz_dominio_format_batch.py'
+      - 'scripts/curriculum/test_conversion_comprobada_format_batch.py'
+      - 'scripts/curriculum/test_redondeo_deliberado_format_batch.py'
+      - 'scripts/curriculum/test_tipo_retorno_format_batch.py'
+      - 'scripts/curriculum/test_orden_operaciones_format_batch.py'
+      - 'scripts/curriculum/test_contrato_funciones_format_batch.py'
       - 'scripts/curriculum/auditar_tarjetas_orden_codigo.py'
       - '.github/workflows/legibilidad-codigo.yml'
   workflow_dispatch:
@@ -86,6 +101,42 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_extremos_sin_inventar_format_batch.py -v
       - name: Acreditar medias U5L9 y estado historico de C++23
         run: python -m unittest discover -s scripts/curriculum -p test_media_cantidad_format_batch.py -v
+      - name: Acreditar U5L10 ordenacion y copias con C++23 y estado historico
+        run: python -m unittest discover -s scripts/curriculum -p test_ordenar_conservar_original_format_batch.py -v
+      - name: Acreditar U5L11 mediana con historiales C++23 y casos opcionales
+        run: python -m unittest discover -s scripts/curriculum -p test_mediana_posiciones_format_batch.py -v
+      - name: Verificar U5L12 informes transferidos con historia C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_informes_transferencia_format_batch.py -v
+      - name: Acreditar U5L13 frecuencias y empates con historia C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_frecuencias_empates_format_batch.py -v
+      - name: Acreditar U6L1 funciones nombradas, historia y ejecucion C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_funciones_nombrar_format_batch.py -v
+      - name: Acreditar U6L2 firmas y archivos C++23, incluidos fallos previstos
+        run: python -m unittest discover -s scripts/curriculum -p test_declaraciones_firmas_format_batch.py -v
+      - name: Acreditar U6L3 retornos, rutas y editores C++23 con historial
+        run: python -m unittest discover -s scripts/curriculum -p test_retorno_caminos_format_batch.py -v
+      - name: Acreditar U6L4 copia, ambito y estado real con C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_copia_ambito_format_batch.py -v
+      - name: Acreditar U6L5 referencias const e historial completo C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_referencias_lectura_format_batch.py -v
+      - name: Acreditar U6L6 mutacion por referencia y alias con C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_referencias_modificar_format_batch.py -v
+      - name: Acreditar U6L7 contratos, precondiciones y casos C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_contratos_casos_format_batch.py -v
+      - name: Acreditar U6L8 composicion, 14 casos opcionales y texto C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_componer_funciones_format_batch.py -v
+      - name: Acreditar U6L9 raiz, dominio, aproximacion e historial C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_raiz_dominio_format_batch.py -v
+      - name: Acreditar U6L10 conversion, historial y entradas C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_conversion_comprobada_format_batch.py -v
+      - name: Acreditar U6L11 redondeo, colisiones y progreso C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_redondeo_deliberado_format_batch.py -v
+      - name: Acreditar U6L12 retorno, historial y casos opcionales C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_tipo_retorno_format_batch.py -v
+      - name: Acreditar U6L13 orden de evaluacion, tarjetas e historial C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_orden_operaciones_format_batch.py -v
+      - name: Acreditar U6L14 contratos, entradas, salida e historial C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_contrato_funciones_format_batch.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work

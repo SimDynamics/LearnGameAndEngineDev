@@ -72,7 +72,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{6.25};\n    const double redondeado = std::round(origen);\n    std::cout << \"Origen: \" << origen\n              << \"\\nRedondeado: \" << redondeado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{6.25};\n    const double redondeado = std::round(origen);\n\n    std::cout << \"Origen: \" << origen\n              << \"\\nRedondeado: \" << redondeado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -83,7 +83,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__truncar_frente_a_redondear_un_negativo",
           "question": "Predice ambas líneas para este dato nuevo. Los valores conocidos son finitos y pequeños; ambos casts a int son seguros.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{-2.75};\n    const int truncado = static_cast<int>(origen);\n    const double candidato = std::round(origen);\n    const int cercano = static_cast<int>(candidato);\n    std::cout << \"Truncado: \" << truncado\n              << \"\\nCercano: \" << cercano;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{-2.75};\n    const int truncado = static_cast<int>(origen);\n    const double candidato = std::round(origen);\n    const int cercano = static_cast<int>(candidato);\n\n    std::cout << \"Truncado: \" << truncado\n              << \"\\nCercano: \" << cercano;\n\n    return 0;\n}\n",
           "answers": [
             "Truncado: -2\nCercano: -3"
           ],
@@ -131,7 +131,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -164,7 +164,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int destino{28};\n    double origen{2.25};\n    bool aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cercano positivo: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = -2.75;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cercano negativo: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Mitad positiva: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = -4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Mitad negativa: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 100.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Frontera: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 100.25;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Fuera: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 0.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cero: \" << aceptado << \";Destino: \" << destino << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int destino{28};\n    double origen{2.25};\n    bool aceptado = redondear_entero(origen, destino);\n\n    std::cout << \"Cercano positivo: \" << aceptado << \";Destino: \" << destino << '\\n';\n\n    origen = -2.75;\n    aceptado = redondear_entero(origen, destino);\n\n    std::cout << \"Cercano negativo: \" << aceptado << \";Destino: \" << destino << '\\n';\n\n    origen = 4.5;\n    aceptado = redondear_entero(origen, destino);\n\n    std::cout << \"Mitad positiva: \" << aceptado << \";Destino: \" << destino << '\\n';\n\n    origen = -4.5;\n    aceptado = redondear_entero(origen, destino);\n\n    std::cout << \"Mitad negativa: \" << aceptado << \";Destino: \" << destino << '\\n';\n\n    origen = 100.0;\n    aceptado = redondear_entero(origen, destino);\n\n    std::cout << \"Frontera: \" << aceptado << \";Destino: \" << destino << '\\n';\n\n    origen = 100.25;\n    aceptado = redondear_entero(origen, destino);\n\n    std::cout << \"Fuera: \" << aceptado << \";Destino: \" << destino << '\\n';\n\n    origen = 0.0;\n    aceptado = redondear_entero(origen, destino);\n\n    std::cout << \"Cero: \" << aceptado << \";Destino: \" << destino << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -196,11 +196,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa lee origen finito y destino entero previo. Comprueba `0.5 37`, `-0.5 37`, `99.5 37`, `-99.5 37`, `100.0 37`, `100.25 37` y `-100.25 -8`. La salida muestra bool y destino, seguido de origen y conservación. Un rechazo debe mantener el destino que se entregó.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+          "text": "El programa lee origen finito y destino entero previo. Comprueba `0.5 37`, `-0.5 37`, `99.5 37`, `-99.5 37`, `100.0 37`, `100.25 37` y `-100.25 -8`. La salida muestra bool y destino, seguido de origen y conservación. Un rechazo debe mantener el destino que se entregó.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional.\n\nPara avanzar basta con comprobar el primer caso («0.5 37»). Los otros 6 casos son pruebas opcionales y no bloquean el paso. Entradas y salidas completas para ensayarlas sin obligación:\n\nEntrada «0.5 37». Salida:\n1:1;Origen: 0.5;Conservado: 1\n\nEntrada «-0.5 37». Salida:\n1:-1;Origen: -0.5;Conservado: 1\n\nEntrada «99.5 37». Salida:\n1:100;Origen: 99.5;Conservado: 1\n\nEntrada «-99.5 37». Salida:\n1:-100;Origen: -99.5;Conservado: 1\n\nEntrada «100.0 37». Salida:\n1:100;Origen: 100;Conservado: 1\n\nEntrada «100.25 37». Salida:\n0:37;Origen: 100.25;Conservado: 1\n\nEntrada «-100.25 -8». Salida:\n0:-8;Origen: -100.25;Conservado: 1"
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n    std::cin >> origen >> destino;\n    const double copia = origen;\n    const bool aceptado = redondear_entero(origen, destino);\n    std::cout << aceptado << ':' << destino << \";Origen: \" << origen\n              << \";Conservado: \" << (origen == copia);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n\n    std::cin >> origen >> destino;\n    const double copia = origen;\n    const bool aceptado = redondear_entero(origen, destino);\n\n    std::cout << aceptado << ':' << destino << \";Origen: \" << origen\n              << \";Conservado: \" << (origen == copia);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -274,7 +274,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__dos_contratos_mismos_argumentos",
           "question": "Predice las tres líneas. A la izquierda se publica sólo una cantidad exacta; a la derecha se admite la marca cercana.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    if (static_cast<double>(candidato) != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int piezas{9};\n    int marca{9};\n    bool exacto = convertir_entero(4.75, piezas);\n    bool cercano = redondear_entero(4.75, marca);\n    std::cout << \"Fraccion: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(0.0, piezas);\n    cercano = redondear_entero(0.0, marca);\n    std::cout << \"Cero: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(-100.25, piezas);\n    cercano = redondear_entero(-100.25, marca);\n    std::cout << \"Fuera: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const int candidato = static_cast<int>(origen);\n\n    if (static_cast<double>(candidato) != origen) {\n        return false;\n    }\n\n    destino = candidato;\n    return true;\n}\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int piezas{9};\n    int marca{9};\n    bool exacto = convertir_entero(4.75, piezas);\n    bool cercano = redondear_entero(4.75, marca);\n\n    std::cout << \"Fraccion: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n\n    exacto = convertir_entero(0.0, piezas);\n    cercano = redondear_entero(0.0, marca);\n\n    std::cout << \"Cero: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n\n    exacto = convertir_entero(-100.25, piezas);\n    cercano = redondear_entero(-100.25, marca);\n\n    std::cout << \"Fuera: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca;\n\n    return 0;\n}\n",
           "answers": [
             "Fraccion: 0:9|1:5\nCero: 1:0|1:0\nFuera: 0:0|0:0"
           ],
@@ -285,7 +285,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__la_receta_positiva_no_resuelve_negativos",
           "question": "Predice este contraste definido. El cast de la receta usa un valor conocido pequeño; no hay riesgo de rango en este ejemplo.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const double origen{-1.75};\n    const int receta = static_cast<int>(origen + 0.5);\n    int marca{6};\n    const bool aceptado = redondear_entero(origen, marca);\n    std::cout << \"Receta: \" << receta << \"\\nContrato: \" << aceptado << ':' << marca;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const double origen{-1.75};\n    const int receta = static_cast<int>(origen + 0.5);\n    int marca{6};\n    const bool aceptado = redondear_entero(origen, marca);\n\n    std::cout << \"Receta: \" << receta << \"\\nContrato: \" << aceptado << ':' << marca;\n\n    return 0;\n}\n",
           "answers": [
             "Receta: -1\nContrato: 1:-2"
           ],
@@ -333,7 +333,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -389,11 +389,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe también la lectura de Entrada, las llamadas y la presentación. Pulsa «Compilar, ejecutar y comprobar» y conserva las mismas funciones y el mismo recorrido al cambiar Entrada entre los seis casos. Si un caso difiere, comprueba primero qué observaciones se aceptan, qué marcas ya estaban presentes y qué elementos deben conservarse."
+          "text": "Escribe también la lectura de Entrada, las llamadas y la presentación. Pulsa «Compilar, ejecutar y comprobar» y conserva las mismas funciones y el mismo recorrido al cambiar Entrada entre los seis casos. Si un caso difiere, comprueba primero qué observaciones se aceptan, qué marcas ya estaban presentes y qué elementos deben conservarse.\n\nPara avanzar basta con comprobar el primer caso («0»). Los otros cinco casos son pruebas opcionales y no bloquean el paso. Sus entradas y salidas ya están descritas por separado en esta lección."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nint main() {\n    // Construye la lectura, la funcion y la clasificacion de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nint main() {\n    // Construye la lectura, la funcion y la clasificacion de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -511,7 +511,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.25, 1.75, 2.0, -1.75, 101.0, 0.0, -0.4, 1.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.25, 1.75, 2.0, -1.75, 101.0, 0.0, -0.4, 1.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n\n    std::cout << \"Marcas:\";\n\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -535,11 +535,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `1 0.0`; `2 101.0 -101.0`; `2 0.25 -0.25`; `3 3.0 3.0 3.0`; `4 -100.0 100.0 99.5 -99.5`. El dominio de preparación conserva hasta ocho valores finitos de menos ciento dos a ciento dos.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `0`; `1 0.0`; `2 101.0 -101.0`; `2 0.25 -0.25`; `3 3.0 3.0 3.0`; `4 -100.0 100.0 99.5 -99.5`. El dominio de preparación conserva hasta ocho valores finitos de menos ciento dos a ciento dos.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional.\n\nPara avanzar basta con comprobar el primer caso («0»). Los otros 5 casos son pruebas opcionales y no bloquean el paso. Entradas y salidas completas para ensayarlas sin obligación:\n\nEntrada «0». Salida:\nMarcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n\nEntrada «1 0.0». Salida:\nMarcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n\nEntrada «2 101.0 -101.0». Salida:\nMarcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1\n\nEntrada «2 0.25 -0.25». Salida:\nMarcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1\n\nEntrada «3 3.0 3.0 3.0». Salida:\nMarcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n\nEntrada «4 -100.0 100.0 99.5 -99.5». Salida:\nMarcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1"
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    std::vector<double> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    std::vector<double> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n\n    std::cout << \"Marcas:\";\n\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -602,7 +602,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__mitades_y_orden_de_primera_aparicion",
           "question": "Predice las cuatro líneas para esta colección nueva. Atiende a las mitades de ambos signos y conserva el orden de aparición, no el orden numérico.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.5, 2.4, 2.5, -1.5, -2.4, -2.5, 100.1, 0.0};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.5, 2.4, 2.5, -1.5, -2.4, -2.5, 100.1, 0.0};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n\n    std::cout << \"Marcas:\";\n\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Marcas: 2 3 -2 -3 0\nColisiones: 2\nRechazados: 1\nDatos conservados: 1"
           ],
@@ -629,7 +629,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__cero_aceptado_no_es_rechazo",
           "question": "Predice este recorrido nuevo. Los datos preparados son finitos y pertenecen al dominio de entrada de la colección.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{-0.25, 0.25, -0.5, -100.25, 100.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{-0.25, 0.25, -0.5, -100.25, 100.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n\n    std::cout << \"Marcas:\";\n\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Marcas: 0 -1\nColisiones: 1\nRechazados: 2\nDatos conservados: 1"
           ],
@@ -1978,6 +1978,445 @@
         "id": "block_0007_0005",
         "beforeSha256": "6c7217613739f7b78ce485434512fde22c4d132399b44f3b0eaf1c2cb3e1b150",
         "afterSha256": "8744d3e4774ba0eaa5d259240d08b063895303a8ea7625f22d824c183f5476e2"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "999fe7a9df69ced7db9b0a49710f5eecfc7251fdb8c80873888004af0aca96e5",
+        "afterSha256": "8b1288f640c2b5ff4533f17566dad66cc00665081ce4d23d4fa27fceb45cd931"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "da8b31821fea0ba430cc90c1c4296c440226d723ab423113dfafcf1626096ab2",
+        "afterSha256": "1dead4ef4d56adfa74a3b19f14362be87135673d285398f6ad604f0590d46b3e"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "d4052a1a0d8e0af89ff48e3db19b9fbf4e0c782027c68cfd26db4350bfecc2cb",
+        "afterSha256": "2233ebcaebb476fbbc712b213707743b99c54f0dd32f50dbc59c8e8bb99306cf"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2e54570f60b3ecb1c698cd44a9dbc21119e4e350c165e6b25386f5323f8f21b4",
+        "afterSha256": "98a52054461a8bf5858c05867e7a66d2ac808727acf8dbd34d6d35c959043ed9"
+      },
+      {
+        "id": "block_0003_0009",
+        "beforeSha256": "ecc6dbcc32019f01066fa7426e45aed83a6cafd69d000a13b101e5b15f168796",
+        "afterSha256": "f17383cdce93534b8fb303f8a853e9e7205fdeead096e712d77dd09d0ea96dbb"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "b28b5378a0f7fad28334c5b809cdd36cefedada92790b11494a3198e08b64581",
+        "afterSha256": "8dfdbb9ed33f47032f24c1dd6b2908df6e05f22741d5a2a423eefe4d3ac4ce24"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "44cb8042597f68c5836775ab56b2ea9e6441cdca89917a77817a8ab34bca0fb6",
+        "afterSha256": "69ea7306834dc0b1a147016cf1081753ab3c6c5cae91be56a00499529ce9bf60"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "1202ebd987240c528f8862984709014cfa881447a1332b1b259a85adbdf19eee",
+        "afterSha256": "3533e867750ad889cb5d23c52782c67233d1f03c32e1b51813e42c6309efae24"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_editor",
+        "beforeSha256": "017d5079eb3abc43e84d884adb91096eb07c102e4f6387ca32b54348624450ad",
+        "afterSha256": "d72c31ef0874fb0109ffbc83476d79076caeb510975def55d33db70b2c6288b2"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "faee21d741aab873fa2067e0423f67cad9580b0b09adb835357bb05a0f60585d",
+        "afterSha256": "3fdc884ababfa8fa6184188286b9cf163035e6952c59bf3187cdf56d11a7529e"
+      },
+      {
+        "id": "block_0006_0009",
+        "beforeSha256": "7428e3dc9c4746b041caed2ae875e57d47291cb7a972369aced6c36330ed4180",
+        "afterSha256": "7c2180b0de8464fc5b6db81e0fbc3b05f0f346192deb3fb5b10953f0091cb187"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "3e17d42c40b3a4027ec2307fb75accd17efd48f56cbf89de2e126808c1a86f44",
+        "afterSha256": "9c0bd84ca8af9851419d56d928ac156497581b2d1b8418a980034e334be5cb5e"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "2f4b8478667d387cc76645252e0e60d7fe0dda0e3a9b4d2b30e53277fcb81784",
+        "afterSha256": "9149d3cd870c004eb51fdd3615a105fcb71eb312acec0da033caaa3ee0622832"
+      },
+      {
+        "id": "block_0003_0008",
+        "beforeSha256": "f5033ad0ed289575fca5d4f22ad2a0948682213cafdbd67428d9dcef9d005b81",
+        "afterSha256": "f041b59c64fb08f3e212976470a36b7d3ff7a00fda4b11e6168311f01b4ae62f"
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_comprobacion",
+        "beforeSha256": "63ad4ad63c5aa14b91bf18e7dd5a5b31c6575acda6c6c9e6fe69c9cba2def0af",
+        "afterSha256": "6f00f147697dd77a9dc2b18f8c095b1dfbe12edc699c258fffdb4871b393c953"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "d7314e7e0afa331e759f6c0a4ba382428e098c91e347cbeff4bc1b2c1bbccd3f",
+        "afterSha256": "a90498903be19be939bc154e5348b06b380e7b81efad10ce422c876f44da6a88"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{6.25};\n    const double redondeado = std::round(origen);\n    std::cout << \"Origen: \" << origen\n              << \"\\nRedondeado: \" << redondeado;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__truncar_frente_a_redondear_un_negativo",
+          "question": "Predice ambas líneas para este dato nuevo. Los valores conocidos son finitos y pequeños; ambos casts a int son seguros.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{-2.75};\n    const int truncado = static_cast<int>(origen);\n    const double candidato = std::round(origen);\n    const int cercano = static_cast<int>(candidato);\n    std::cout << \"Truncado: \" << truncado\n              << \"\\nCercano: \" << cercano;\n    return 0;\n}\n",
+          "answers": [
+            "Truncado: -2\nCercano: -3"
+          ],
+          "explanation": "El cast descarta la fracción hacia cero y produce menos dos. Menos tres está más cerca de menos dos y tres cuartos; round devuelve ese valor integral antes del segundo cast."
+        }
+      },
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:2\n1:-1\n1:3\n1:-3\n1:-100\n0:-100\n1:0",
+                  "1:2\n1:-1\n1:3\n1:-3\n1:-100\n0:-100\n1:0\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int destino{28};\n    double origen{2.25};\n    bool aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cercano positivo: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = -2.75;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cercano negativo: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Mitad positiva: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = -4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Mitad negativa: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 100.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Frontera: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 100.25;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Fuera: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 0.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cero: \" << aceptado << \";Destino: \" << destino << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    double origen{0.0};\n    int destino{0};\n    std::cin >> origen >> destino;\n    const double copia = origen;\n    const bool aceptado = redondear_entero(origen, destino);\n    std::cout << aceptado << ':' << destino << \";Origen: \" << origen\n              << \";Conservado: \" << (origen == copia);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0.5 37",
+                "outputs": [
+                  "1:1;Origen: 0.5;Conservado: 1",
+                  "1:1;Origen: 0.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-0.5 37",
+                "outputs": [
+                  "1:-1;Origen: -0.5;Conservado: 1",
+                  "1:-1;Origen: -0.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "99.5 37",
+                "outputs": [
+                  "1:100;Origen: 99.5;Conservado: 1",
+                  "1:100;Origen: 99.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-99.5 37",
+                "outputs": [
+                  "1:-100;Origen: -99.5;Conservado: 1",
+                  "1:-100;Origen: -99.5;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "100.0 37",
+                "outputs": [
+                  "1:100;Origen: 100;Conservado: 1",
+                  "1:100;Origen: 100;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "100.25 37",
+                "outputs": [
+                  "0:37;Origen: 100.25;Conservado: 1",
+                  "0:37;Origen: 100.25;Conservado: 1\n"
+                ]
+              },
+              {
+                "standardInput": "-100.25 -8",
+                "outputs": [
+                  "0:-8;Origen: -100.25;Conservado: 1",
+                  "0:-8;Origen: -100.25;Conservado: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0.5 37"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__dos_contratos_mismos_argumentos",
+          "question": "Predice las tres líneas. A la izquierda se publica sólo una cantidad exacta; a la derecha se admite la marca cercana.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    if (static_cast<double>(candidato) != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int piezas{9};\n    int marca{9};\n    bool exacto = convertir_entero(4.75, piezas);\n    bool cercano = redondear_entero(4.75, marca);\n    std::cout << \"Fraccion: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(0.0, piezas);\n    cercano = redondear_entero(0.0, marca);\n    std::cout << \"Cero: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(-100.25, piezas);\n    cercano = redondear_entero(-100.25, marca);\n    std::cout << \"Fuera: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Fraccion: 0:9|1:5\nCero: 1:0|1:0\nFuera: 0:0|0:0"
+          ],
+          "explanation": "La fracción se rechaza para piezas y se redondea a cinco para la marca. Ambos admiten cero. Ambos rechazan menos cien y cuarto antes del cast y conservan sus ceros anteriores."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__la_receta_positiva_no_resuelve_negativos",
+          "question": "Predice este contraste definido. El cast de la receta usa un valor conocido pequeño; no hay riesgo de rango en este ejemplo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const double origen{-1.75};\n    const int receta = static_cast<int>(origen + 0.5);\n    int marca{6};\n    const bool aceptado = redondear_entero(origen, marca);\n    std::cout << \"Receta: \" << receta << \"\\nContrato: \" << aceptado << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Receta: -1\nContrato: 1:-2"
+          ],
+          "explanation": "Sumar media unidad y truncar produce menos uno aquí. Menos dos está más cerca de menos uno y tres cuartos. Esa receta no implementa nuestro contrato para negativos."
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Marcas: 0 3 -3\nColisiones: 4\nRechazados: 1\nDatos conservados: 1",
+                  "Marcas: 0 3 -3\nColisiones: 4\nRechazados: 1\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "marcas_redondeadas_construccion_multicaso_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nint main() {\n    // Construye la lectura, la funcion y la clasificacion de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "La cantidad cero no aporta valores al recorrido. No se construye ninguna marca; Colisiones: 0 y Rechazados: 0 reflejan que no se procesó ninguna observación. Datos conservados: 1 confirma que la colección vacía sigue intacta.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Esta entrada contiene sólo la cantidad cero: el recorrido no tiene observaciones, pero el programa debe imprimir los cuatro rótulos, ambos contadores en cero y la conservación de la colección."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 0.0",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "La observación 0.0 pertenece al dominio y genera la marca cero. Es la primera marca: Marcas: 0, Colisiones: 0 y Rechazados: 0. Datos conservados: 1 confirma que la observación original no se modificó. El bool devuelto permite aceptar cero.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. La observación 0.0 es válida: debe aparecer su marca cero, sin colisiones ni rechazos. Comprueba que usas el bool devuelto y que no interpretas el destino cero como un rechazo."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 101.0 -101.0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1\n"
+                ],
+                "explanation": "101.0 y -101.0 están fuera del intervalo admitido. Ambas llamadas rechazan antes del redondeo; sus destinos conservados no se convierten en marcas. Por eso Marcas: no lleva valores, Colisiones: 0, Rechazados: 2 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Ambos valores están fuera del dominio de redondear_entero. Deben contarse dos rechazos y ninguna marca ni colisión; comprueba que un rechazo no hace consumir el destino conservado."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 0.25 -0.25",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "0.25 y -0.25 se aceptan y ambas generan la marca cero. La primera la añade; la segunda encuentra esa misma marca y cuenta una colisión. El informe es Marcas: 0, Colisiones: 1, Rechazados: 0 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Estas fracciones tienen signos distintos, pero ambas redondean a cero. Comprueba la búsqueda de la marca ya obtenida: debe conservarse una sola marca y contarse la repetición."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 3.0 3.0 3.0",
+                "outputs": [
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "Las tres observaciones 3.0 son válidas y generan tres. La primera añade la marca; las otras dos cuentan colisiones por separado. Se obtienen Marcas: 3, Colisiones: 2, Rechazados: 0 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. La misma observación aparece tres veces: la primera genera la marca y cada repetición posterior suma una colisión. Comprueba que no cuentas sólo si existe alguna repetición, sino cada aparición repetida."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4 -100.0 100.0 99.5 -99.5",
+                "outputs": [
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ],
+                "explanation": "-100.0 y 100.0 se aceptan y añaden las marcas -100 y 100, en ese orden. 99.5 redondea a 100 y -99.5 a -100, por lo que ambas colisionan. El informe conserva Marcas: -100 100, Colisiones: 2, Rechazados: 0 y Datos conservados: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No se recibió el informe. Los extremos son válidos y aparecen antes que las mitades; las marcas de estas últimas ya existen. Comprueba que mantienes ese orden, aceptas los extremos y cuentas dos colisiones."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.25, 1.75, 2.0, -1.75, 101.0, 0.0, -0.4, 1.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    std::vector<double> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        double dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 0.0",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 0\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 101.0 -101.0",
+                "outputs": [
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1",
+                  "Marcas:\nColisiones: 0\nRechazados: 2\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 0.25 -0.25",
+                "outputs": [
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 0\nColisiones: 1\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "3 3.0 3.0 3.0",
+                "outputs": [
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: 3\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              },
+              {
+                "standardInput": "4 -100.0 100.0 99.5 -99.5",
+                "outputs": [
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1",
+                  "Marcas: -100 100\nColisiones: 2\nRechazados: 0\nDatos conservados: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__mitades_y_orden_de_primera_aparicion",
+          "question": "Predice las cuatro líneas para esta colección nueva. Atiende a las mitades de ambos signos y conserva el orden de aparición, no el orden numérico.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.5, 2.4, 2.5, -1.5, -2.4, -2.5, 100.1, 0.0};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Marcas: 2 3 -2 -3 0\nColisiones: 2\nRechazados: 1\nDatos conservados: 1"
+          ],
+          "explanation": "Las mitades producen dos, tres, menos dos y menos tres según su signo. 2.4 repite dos y -2.4 repite menos dos. 100.1 se rechaza por el origen; cero se añade al final como primera aparición aceptada."
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__cero_aceptado_no_es_rechazo",
+          "question": "Predice este recorrido nuevo. Los datos preparados son finitos y pertenecen al dominio de entrada de la colección.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{-0.25, 0.25, -0.5, -100.25, 100.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Marcas: 0 -1\nColisiones: 1\nRechazados: 2\nDatos conservados: 1"
+          ],
+          "explanation": "Las dos primeras fracciones comparten la marca cero: la segunda cuenta una colisión. Menos media unidad produce menos uno. Los dos argumentos justo fuera del intervalo se rechazan, sin consumir sus destinos locales ni crear colisiones."
+        }
       }
     ]
   },
@@ -3384,7 +3823,7 @@
       {
         "block": "block_0003_0008",
         "path": "/text",
-        "sourceSha256": "f1b11287fc04f1705c3ea33db19bb109a6781f01401fc0bec5095d21ada4c542",
+        "sourceSha256": "5858e18df0b283b1fa24f360256df83ab22839da81450a650b60e07bc6f16d2d",
         "spans": [
           {
             "start": 16,
@@ -4096,7 +4535,7 @@
       {
         "block": "block_0006_0008",
         "path": "/text",
-        "sourceSha256": "ab091497f0935bbb2cd5b7b6da5073ae0cd76b65024e30f1dd0bacd455e9cc14",
+        "sourceSha256": "3476b3ad52af5f42c605b7099eb09bd01b31f8239277d724f86ca8de102ba9b0",
         "spans": [
           {
             "start": 320,
@@ -4966,7 +5405,7 @@
       {
         "block": "marcas_redondeadas_construccion_multicaso_comprobacion",
         "path": "/text",
-        "sourceSha256": "ca052b3835de81d7a094088e95f290dae293127a948698c729e59f0acad0d9cc",
+        "sourceSha256": "42c245a7c058ff5292dba5aa411e85398bbcb90fa4399d4a431a5e929d27938f",
         "spans": [
           {
             "start": 192,

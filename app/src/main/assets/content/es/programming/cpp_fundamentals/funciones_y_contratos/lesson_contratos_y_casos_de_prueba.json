@@ -23,7 +23,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre: 0 <= cantidad <= 120; 1 <= capacidad <= 12.\n// Post: devuelve el numero de grupos completos.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    std::cout << grupos_completos(25, 6);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre: 0 <= cantidad <= 120; 1 <= capacidad <= 12.\n// Post: devuelve el numero de grupos completos.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    std::cout << grupos_completos(25, 6);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -69,7 +69,7 @@
           "type": "output_prediction",
           "question": "Predice la salida siguiendo la validación antes de la llamada.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n    if (reparto_valido(cantidad, capacidad)) {\n        std::cout << grupos_completos(cantidad, capacidad);\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n\n    if (reparto_valido(cantidad, capacidad)) {\n        std::cout << grupos_completos(cantidad, capacidad);\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Fuera del dominio"
           ],
@@ -110,7 +110,7 @@
           "type": "output_prediction",
           "question": "Predice cociente, resto y comprobación para estos datos válidos.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 23;\n    const int capacidad = 5;\n    const int q = grupos_completos(cantidad, capacidad);\n    const int r = cantidad % capacidad;\n    const bool cumple = (q * capacidad + r == cantidad)\n        && (r >= 0) && (r < capacidad);\n    std::cout << q << \" \" << r << \" \" << cumple;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 23;\n    const int capacidad = 5;\n    const int q = grupos_completos(cantidad, capacidad);\n    const int r = cantidad % capacidad;\n\n    const bool cumple = (q * capacidad + r == cantidad)\n        && (r >= 0) && (r < capacidad);\n\n    std::cout << q << \" \" << r << \" \" << cumple;\n\n    return 0;\n}\n",
           "answers": [
             "4 3 1"
           ],
@@ -145,7 +145,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -184,7 +184,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad{0};\n    int capacidad{0};\n    std::cin >> cantidad >> capacidad;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad{0};\n    int capacidad{0};\n\n    std::cin >> cantidad >> capacidad;\n\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -230,7 +230,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad + 1;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad + 1;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -309,7 +309,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad = 120;\n    int capacidad = 12;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad = 120;\n    int capacidad = 12;\n\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1090,6 +1090,164 @@
         "id": "block_0004_0001",
         "beforeSha256": "7c08b1b2fcc03f9874f044de58de6920117e6dbf1cafba1b51e7c849ff8d4a4b",
         "afterSha256": "b9b832ede0f59e36257ea9577a25e166d0c2ac4ec6936ef72c4a18a7dacba39f"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "9184d667e2a0a3c1069c89f865ca5b3d594613940b093cfe578408ebc417e67d",
+        "afterSha256": "26b71855c64192d46d0bbbcd1ec6c6362bac9ca89f1c19fe84868471f8179050"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "07d4a38949472244eaa9de55eb55b4cf7cf57112d76220aa3e111825403817d6",
+        "afterSha256": "473988ac3b6083a4f7c8fdaed3dcb45b482f0658a3e154825385ca394194ed3a"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "7cae3551e9ddeac4c0cbe8986cb30fdf2bf11c601b20af5838ae969f537c3af0",
+        "afterSha256": "ed7c19e341e36bc94eba8184889807c5bfc59e2c1a24fe6471b2684f225393c9"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "67b0588611ed9249a307ba2f9365cd72eee89b9cba8d53b2bad7e80b0ad5b586",
+        "afterSha256": "c78feb71fc7ab08f4da4df371d16124de7d61efb7d1fcaeea93fa9c14156ff22"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "5194d945ad86e6a1cba56575736f5fbbced14510248d6b3a4a62e619181e3d50",
+        "afterSha256": "a7dbdfed0853797cf64a727dd526c64626baf5bea6943e1347f2f59950108872"
+      },
+      {
+        "id": "block_0003_0010",
+        "beforeSha256": "30f60df27219fb9947f69536e88c91ea307feeffa7a40a0a327f675cd8ba05f0",
+        "afterSha256": "5f2a893d39af64dbc969a82a7159e250cab7c2aec5827819339bccaed0cf009e"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "e5bd48285cabe6972fe93f32fa59543ad326a56e1ddfb789fd0498c101a1b0e2",
+        "afterSha256": "e104941859c310e5a0a8ad24c718f6ba7ecf7428f2f60892120be75dba300434"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: 0 <= cantidad <= 120; 1 <= capacidad <= 12.\n// Post: devuelve el numero de grupos completos.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    std::cout << grupos_completos(25, 6);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la salida siguiendo la validación antes de la llamada.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n    if (reparto_valido(cantidad, capacidad)) {\n        std::cout << grupos_completos(cantidad, capacidad);\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fuera del dominio"
+          ],
+          "explanation": "La validación devuelve false y se omite la llamada que divide. El cálculo no recibe el divisor cero."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice cociente, resto y comprobación para estos datos válidos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 23;\n    const int capacidad = 5;\n    const int q = grupos_completos(cantidad, capacidad);\n    const int r = cantidad % capacidad;\n    const bool cumple = (q * capacidad + r == cantidad)\n        && (r >= 0) && (r < capacidad);\n    std::cout << q << \" \" << r << \" \" << cumple;\n    return 0;\n}\n",
+          "answers": [
+            "4 3 1"
+          ],
+          "explanation": "4 grupos contienen 20 elementos y quedan 3. La reconstrucción da 23 y el resto está entre 0 y 4."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "4 1 1",
+                  "4 1 1\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad{0};\n    int capacidad{0};\n    std::cin >> cantidad >> capacidad;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "0 0 1",
+                  "0 0 1\n"
+                ]
+              },
+              {
+                "standardInput": "120 12",
+                "outputs": [
+                  "10 0 1",
+                  "10 0 1\n"
+                ]
+              },
+              {
+                "standardInput": "25 0",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              },
+              {
+                "standardInput": "-1 6",
+                "outputs": [
+                  "Fuera del dominio",
+                  "Fuera del dominio\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 6"
+        }
+      },
+      {
+        "id": "block_0003_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad + 1;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5 1 0",
+                  "5 1 0\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad = 120;\n    int capacidad = 12;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },

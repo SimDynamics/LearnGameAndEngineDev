@@ -122,7 +122,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-5, 4, 10};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n\n    if (nivel > 6) {\n        return 6;\n    }\n\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-5, 4, 10};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -134,11 +134,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `4 -10 0 6 10`; `0`; `3 1 4 5`; `1 -11`; `1 11`; `9 0 0 0 0 0 0 0 0 0`; `1 6`. \n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+          "text": "El programa lee primero una cantidad no negativa y después ese número de valores escritos válidamente. Algunos casos incumplen deliberadamente el dominio de la función y deben rechazarse antes del cálculo. El bucle de preparación construye la colección; las funciones conservan sus contratos. Comprueba estas entradas: `4 -10 0 6 10`; `0`; `3 1 4 5`; `1 -11`; `1 11`; `9 0 0 0 0 0 0 0 0 0`; `1 6`. \n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional.\n\nEl primer caso de comprobación, Entrada «4 -10 0 6 10», debe mostrar estas dos líneas:\nNiveles: 0 0 6 6\nAl limite: 2\n\nSu comprobación correcta habilita «Continuar». Los siguientes casos son pruebas opcionales y no bloquean el paso; conserva el mismo programa y cambia únicamente Entrada.\n\nEntrada «0». Salida:\nNiveles:\nAl limite: 0\n\nEntrada «3 1 4 5». Salida:\nNiveles: 1 4 5\nAl limite: 0\n\nEntrada «1 -11». Salida:\nLecturas invalidas\n\nEntrada «1 11». Salida:\nLecturas invalidas\n\nEntrada «9 0 0 0 0 0 0 0 0 0». Salida:\nLecturas invalidas\n\nEntrada «1 6». Salida:\nNiveles: 6\nAl limite: 1"
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        niveles.push_back(dato);\n    }\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n\n    if (nivel > 6) {\n        return 6;\n    }\n\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        niveles.push_back(dato);\n    }\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -207,7 +207,7 @@
           "type": "output_prediction",
           "question": "Predice la salida completa para {-1, 6, 8, 3}, conservando las reglas del problema.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-1, 6, 8, 3};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n\n    if (nivel > 6) {\n        return 6;\n    }\n\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-1, 6, 8, 3};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Niveles: 0 6 6 3\nAl limite: 2"
           ],
@@ -250,7 +250,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye desde el esqueleto las funciones para la política nueva. Lee cantidad y niveles como en la actividad de comprobación anterior. Con `1 4`, muestra `Niveles: 4` y `Al limite: 1`; con `3 -2 3 6`, muestra `Niveles: 0 3 4` y `Al limite: 1`, en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+          "text": "Construye desde el esqueleto las funciones para la política nueva. Lee cantidad y niveles como en la actividad de comprobación anterior. Con `1 4`, muestra `Niveles: 4` y `Al limite: 1`; con `3 -2 3 6`, muestra `Niveles: 0 3 4` y `Al limite: 1`, en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional.\n\nPara avanzar sólo necesitas comprobar correctamente el primer caso, Entrada «1 4». El segundo, Entrada «3 -2 3 6», es una prueba opcional y no bloquea el paso; conserva las salidas indicadas sin modificar las funciones."
         },
         {
           "type": "cpp_compiler",
@@ -290,7 +290,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La salida válida tiene dos líneas. La primera empieza con Niveles: y añade, en el orden original, cada valor transformado precedido por un espacio. Si el vector está vacío, esa línea contiene sólo Niveles:, sin espacio final. La segunda empieza con Al limite:, un espacio y la cantidad contada. No añadas otros textos ni espacios finales. El salto después del último mensaje es opcional, tanto en el caso válido como en el rechazo. Pulsa «Compilar, ejecutar y comprobar» para verificar los nueve casos, conservando tu programa y cambiando sólo Entrada."
+          "text": "La salida válida tiene dos líneas. La primera empieza con Niveles: y añade, en el orden original, cada valor transformado precedido por un espacio. Si el vector está vacío, esa línea contiene sólo Niveles:, sin espacio final. La segunda empieza con Al limite:, un espacio y la cantidad contada. No añadas otros textos ni espacios finales. El salto después del último mensaje es opcional, tanto en el caso válido como en el rechazo. Pulsa «Compilar, ejecutar y comprobar» con el primer caso, Entrada «4 -10 0 6 10». Su comprobación correcta habilita inmediatamente «Continuar». Los nueve casos siguen disponibles, pero los otros ocho son pruebas opcionales y no bloquean el paso. Conserva tu programa y cambia sólo Entrada."
         },
         {
           "type": "paragraph",
@@ -564,7 +564,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 4) {\n        return 4;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 4) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        niveles.push_back(dato);\n    }\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n\n    if (nivel > 4) {\n        return 4;\n    }\n\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n\n    for (int nivel : niveles) {\n        if (nivel == 4) {\n            ++cuenta;\n        }\n    }\n\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        niveles.push_back(dato);\n    }\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1512,6 +1512,134 @@
         "id": "block_0006_0001",
         "beforeSha256": "bf5ffea81963cd4a4f3a405d19f6a71cc836bd5b4d6ee38e220505a8393aba19",
         "afterSha256": "b804d5f8b4cdeb78be7b5e1d00f80c2835b74aa7350072c3b1223622c20f257f"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "1b2a033dfc9f0d0fad90670ec24b5fc4747e693a6cecaee38dda48496c43e515",
+        "afterSha256": "6c45dcbab3aeec1921b54bd01c8ab4d176f4c0df020b9294997ee1744f65071b"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "cf9fec338c7dc02240dc92de956babddc2fe03800118811d572ba0fc1e6d948c",
+        "afterSha256": "dfba28a6634833feab8de7b479ebe518f89632da2964c7a7c05640c33fb35078"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "69abad2c074cdbbfa1c71323df64b64f2cb9c895a0e0bb61798821b603bb9251",
+        "afterSha256": "f2ea3ea117e4b7f12ba6baab0132df9d8b9f2034f4667e3d2bc05ab938c1ec53"
+      },
+      {
+        "id": "limite_cuatro_referencia_programa",
+        "beforeSha256": "35bded0e719d0da5cda380e38abb1199345d8ece36d7f53e0170085199e4d992",
+        "afterSha256": "8046e93b1032dcd6de4c689cdd3e0f8a81b2963f6c536225f909314a4e830017"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "4385531976cfa4f7fd756d2f1791d17cb17edb4b3e8453d30576279a09dff875",
+        "afterSha256": "ea52fd49a5ff591097c156c1d4565640719fba35d276943f5f30c2d8a0fc0247"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "8e2dbc92455e5f385709c60730465532cabb15f91e5a99bacad85a779c71b04b",
+        "afterSha256": "6660eda53077b844c75e92c60e1cd2c1830d75171754cce148bd835167a069e5"
+      },
+      {
+        "id": "limite_cuatro_construccion_multicaso_formato",
+        "beforeSha256": "95f3b1b7bd7dd1b9a900ec365cc51c3a988506d613c93add6ba93c1d4957fc91",
+        "afterSha256": "c6c24f7210fc7af87a14a1f764cd78159f1720bba5717022a1ef3e089bd97bd0"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-5, 4, 10};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        niveles.push_back(dato);\n    }\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 -10 0 6 10",
+                "outputs": [
+                  "Niveles: 0 0 6 6\nAl limite: 2",
+                  "Niveles: 0 0 6 6\nAl limite: 2\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Niveles:\nAl limite: 0",
+                  "Niveles:\nAl limite: 0\n"
+                ]
+              },
+              {
+                "standardInput": "3 1 4 5",
+                "outputs": [
+                  "Niveles: 1 4 5\nAl limite: 0",
+                  "Niveles: 1 4 5\nAl limite: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 -11",
+                "outputs": [
+                  "Lecturas invalidas",
+                  "Lecturas invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "1 11",
+                "outputs": [
+                  "Lecturas invalidas",
+                  "Lecturas invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "9 0 0 0 0 0 0 0 0 0",
+                "outputs": [
+                  "Lecturas invalidas",
+                  "Lecturas invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "1 6",
+                "outputs": [
+                  "Niveles: 6\nAl limite: 1",
+                  "Niveles: 6\nAl limite: 1\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 -10 0 6 10"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la salida completa para {-1, 6, 8, 3}, conservando las reglas del problema.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-1, 6, 8, 3};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Niveles: 0 6 6 3\nAl limite: 2"
+          ],
+          "explanation": "La transformación produce 0, 6, 6 y 3. El contador inspecciona ese estado y encuentra dos niveles iguales a 6."
+        }
+      },
+      {
+        "id": "limite_cuatro_referencia_programa",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 4) {\n        return 4;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 4) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        niveles.push_back(dato);\n    }\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2057,7 +2185,7 @@
       {
         "block": "block_0004_0005",
         "path": "/text",
-        "sourceSha256": "eca3ea28c1663f0ca234882c2351b35711e2c91b8d86f36c3f8b14f9d056ab76",
+        "sourceSha256": "e18fe82108efc0d4349da617ccfdb52e7ef3a024e06bcd5db928c0619381a7ed",
         "spans": [
           {
             "start": 320,
@@ -2324,7 +2452,7 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "9cbe947777bf87890c3d4a7e6578fccb8263c34c1d02cfd50f06c78872e238b0",
+        "sourceSha256": "05ceb293c212b8d56024ab1eafafa305fa8b75cb093ef2e6c14a7d361926ae34",
         "spans": [
           {
             "start": 142,
@@ -2695,7 +2823,7 @@
       {
         "block": "limite_cuatro_construccion_multicaso_formato",
         "path": "/text",
-        "sourceSha256": "3dd068fa57d2cb8adf17c25aa4c07cae7af5d11f4660389d65a7ba190267e3e1",
+        "sourceSha256": "4167c6e169a4b733a87ffa5d751d96c099ed7ab636f7ea21d89b0c5059c4e36f",
         "spans": [
           {
             "start": 23,
@@ -2754,8 +2882,8 @@
             "reading": "natural"
           },
           {
-            "start": 490,
-            "end": 495,
+            "start": 581,
+            "end": 586,
             "text": "nueve",
             "role": "data",
             "reading": "natural"
