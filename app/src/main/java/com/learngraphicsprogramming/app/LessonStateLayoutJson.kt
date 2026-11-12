@@ -249,7 +249,9 @@ internal object LessonStateLayoutJson {
             "drag_fill_code", "inline_fill_code" -> setOf("question", "explanation", "reviewFeedback")
             else -> emptySet()
         }
-        val copy = JSONObject(block.toString())
+        val copy = if (type == "cpp_compiler")
+            CurricularPublishedLegacyCompat.compilerState(block)
+        else JSONObject(block.toString())
         ignored.forEach(copy::remove)
         if (type == "cpp_compiler") {
             val cases = copy.optJSONObject("outputCheck")?.optJSONArray("cases")
