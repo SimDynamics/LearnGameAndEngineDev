@@ -35,6 +35,8 @@ internal object LessonStateLayoutJson {
             val additions = mutableListOf<LessonStateAddition>()
             val editorial = linkedMapOf<String, String>()
             val editorialSeen = mutableMapOf<String, MutableSet<String>>()
+            val editorialChains = mutableMapOf<String, MutableList<String>>()
+            val returnArchives = mutableMapOf<String, MutableList<JSONObject>>()
             val locale = if (version == 2) strictString(metadata, "locale") else null
             if (version == 2) {
                 val variants = metadata.getJSONObject("family")
@@ -61,15 +63,40 @@ internal object LessonStateLayoutJson {
                 require(changes.length() <= 100_000)
                 for (index in 0 until changes.length()) {
                     val change = changes.getJSONObject(index)
-                    require(change.keys().asSequence().toSet() == setOf("id", "beforeSha256", "afterSha256"))
+                    val fields = change.keys().asSequence().toSet()
+                    require(fields == setOf("id", "beforeSha256", "afterSha256") ||
+                        fields == setOf("id", "beforeSha256", "afterSha256", "returnTo"))
                     val id = strictString(change, "id")
                     val before = strictString(change, "beforeSha256")
                     val after = strictString(change, "afterSha256")
                     require((id in signatures || additions.any { it.id == id }) &&
                         HASH.matches(before) && HASH.matches(after) && before != after)
                     val seen = editorialSeen.getOrPut(id) { linkedSetOf(before) }
-                    require((editorial[id] == null || editorial[id] == before) && after !in seen)
+                    val chain = editorialChains.getOrPut(id) { mutableListOf(before) }
+                    require(chain.last() == before && (editorial[id] == null || editorial[id] == before))
+                    if (after in seen) {
+                        // A return is not a new editorial state. It must name a
+                        // prior version of this owner AND authenticate the whole
+                        // global editorial prefix, not only this owner's hashes.
+                        val returning = change.getJSONObject("returnTo")
+                        require(returning.keys().asSequence().toSet() ==
+                            setOf("revision", "historySha256", "previousBlock"))
+                        val revision = returning.get("revision") as? Int
+                            ?: error("An editorial return revision must be an integer")
+                        require(revision in 0 until chain.size - 1 && chain[revision] == after)
+                        val prefix = JSONArray()
+                        for (prior in 0 until index) prefix.put(changes.getJSONObject(prior))
+                        val history = JSONObject().put("lessonId", strictString(lesson, "id"))
+                            .put("locale", locale).put("editorial", prefix)
+                        require(strictString(returning, "historySha256") == fingerprint(history))
+                        val oldBlock = returning.getJSONObject("previousBlock")
+                        require(fingerprint(oldBlock) == before)
+                        returnArchives.getOrPut(id) { mutableListOf() }.add(oldBlock)
+                    } else {
+                        require(!change.has("returnTo"))
+                    }
                     seen += after
+                    chain += after
                     editorial[id] = after
                 }
             }
@@ -201,6 +228,21 @@ internal object LessonStateLayoutJson {
                     lesson.optString("id"), id, protected)
                 require(stateFingerprint(historical) == expectedSignatures.getValue(id)) {
                     "Protected response/code contract changed for $id"
+                }
+                // Restoring a previous wording must never restore another
+                // owner's answer, draft, output objective or diagnostic.
+                returnArchives[id]?.forEach { previous ->
+                    require(stateFingerprint(previous) == expectedSignatures.getValue(id)) {
+                        "An editorial return changed its protected historical owner"
+                    }
+                    if (previous.has("compileCheck")) {
+                        require(block.has("compileCheck"))
+                        val previousGoal = JSONObject(previous.getJSONObject("compileCheck").toString())
+                            .apply { remove("explanation") }
+                        val currentGoal = JSONObject(block.getJSONObject("compileCheck").toString())
+                            .apply { remove("explanation") }
+                        require(fingerprint(previousGoal) == fingerprint(currentGoal))
+                    }
                 }
                 editorial[id]?.let { require(fingerprint(block) == it) }
             }
