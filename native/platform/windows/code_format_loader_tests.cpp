@@ -308,15 +308,61 @@ void verify_visual_separators_keep_order_and_history(const std::filesystem::path
             check(rejected,"Windows accepted an out-of-range optional order-card count");
         }
     }
-    for(const bool catalog:{false,true}) {
-        bool rejected=false;
-        try {
-            const auto raw=expanded(1,"unknown_order_owner");
-            if(catalog)(void)windows::parse_lesson_progress_metadata(raw,"es");
-            else(void)windows::parse_lesson_json(raw,"es");
-        }catch(const std::exception&){rejected=true;}
-        check(rejected,"Visual order cards were assigned to another owner's stored answer");
+    // Root declarations are not an escape hatch around a stored answer:
+    // reject duplicate owners, a non-order owner, foreign fields and a
+    // missing/ill-typed count in both full and read-only catalog loaders.
+    const auto must_reject_declaration=[&](const JsonObject& payload,
+            std::string_view description){
+        const auto raw=winrt::to_string(payload.Stringify());
+        for(const bool catalog:{false,true}){
+            bool rejected=false;
+            try{
+                if(catalog)(void)windows::parse_lesson_progress_metadata(raw,"es");
+                else(void)windows::parse_lesson_json(raw,"es");
+            }catch(const std::exception&){rejected=true;}
+            check(rejected,description);
+        }
+    };
+    const auto prepare=[&]{
+        return JsonObject::Parse(winrt::to_hstring(expanded(2,owner)));
+    };
+    {
+        const auto root=prepare();
+        auto entries=root.GetNamedArray(L"orderVisualSeparators");
+        entries.Append(JsonObject::Parse(entries.GetObjectAt(0).Stringify()));
+        must_reject_declaration(root,"A duplicate visual card declaration reused the same order puzzle");
     }
+    {
+        const auto root=prepare();
+        const auto foreign=original.pages.front().blocks[0].stable_id;
+        check(foreign!=owner,"The invalid-owner test has no independent code block");
+        root.GetNamedArray(L"orderVisualSeparators").GetObjectAt(0).Insert(
+            L"activity",JsonValue::CreateStringValue(winrt::to_hstring(foreign)));
+        must_reject_declaration(root,"A non-order block received drag-order visual cards");
+    }
+    {
+        const auto root=prepare();
+        root.GetNamedArray(L"orderVisualSeparators").GetObjectAt(0).Insert(
+            L"extra",JsonValue::CreateBooleanValue(true));
+        must_reject_declaration(root,"Unknown visual-separator metadata was admitted");
+    }
+    {
+        const auto root=prepare();
+        root.GetNamedArray(L"orderVisualSeparators").GetObjectAt(0).Remove(L"count");
+        must_reject_declaration(root,"A missing visual-separator count was admitted");
+    }
+    for(const auto invalid:{JsonValue::CreateStringValue(L"2"),
+                            JsonValue::CreateBooleanValue(true),
+                            JsonValue::CreateNumberValue(1.5),
+                            JsonValue::CreateNullValue()}){
+        const auto root=prepare();
+        root.GetNamedArray(L"orderVisualSeparators").GetObjectAt(0).Insert(
+            L"count",invalid);
+        must_reject_declaration(root,"An invalid visual-separator count type was admitted");
+    }
+    must_reject_declaration(JsonObject::Parse(winrt::to_hstring(
+        expanded(1,"unknown_order_owner"))),
+        "Visual order cards were assigned to an unknown historical owner");
 }
 
 void must_reject(const std::filesystem::path& file) {
