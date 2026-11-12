@@ -33,6 +33,7 @@ class RealFunctionOrderCards(unittest.TestCase):
         self.assertEqual([], violations)
 
     def test_three_function_puzzles_preserve_original_answers_and_state(self):
+        import hashlib
         for name, p, b, identity, old_count, new_count, stdin, expected, sep in CASES:
             with self.subTest(lesson=name):
                 after = json.loads((LESSONS / name).read_text(encoding="utf-8"))
@@ -42,29 +43,58 @@ class RealFunctionOrderCards(unittest.TestCase):
                 history = meta["orderRefinements"]
                 self.assertEqual(1, len(history))
                 self.assertEqual(identity, history[0]["id"])
-                old = history[0]["block"]
-                self.assertEqual(old_count, len(old["fragments"]))
+                original = history[0]["block"]
+                self.assertEqual(old_count, len(original["fragments"]))
                 self.assertEqual(new_count, len(current["fragments"]))
                 self.assertTrue(all(item.strip() and "\n" not in item and "\r" not in item
                                     for item in current["fragments"]))
-                previous = deepcopy(after)
-                previous["pages"][p]["blocks"][b] = deepcopy(old)
-                previous["stateLayout"].pop("orderRefinements")
-                previous["stateLayout"]["editorial"].pop()
+                self.assertNotIn("fragmentos", current["question"])
+                self.assertEqual([identity,identity],[e["id"] for e in meta["editorial"][-2:]])
+                selectors = [f for f in after["textSemantics"]["fields"]
+                             if f["block"]==identity and f["path"]=="/question"]
+                self.assertEqual(1,len(selectors))
+                current_field=selectors[0]
+                self.assertEqual(hashlib.sha256(current["question"].encode("utf-8")).hexdigest(),
+                                 current_field["sourceSha256"])
+                # Rebuild the last authentic, published question and its semantic reading tags.
+                old_question=original["question"]
+                prior_question=deepcopy(after)
+                prior_question["pages"][p]["blocks"][b]["question"]=old_question
+                old_count_word="tres" if name=="lesson_declaraciones_y_firmas.json" else "cuatro"
+                marker={"start":old_question.index(old_count_word),
+                        "end":old_question.index(old_count_word)+len(old_count_word),
+                        "text":old_count_word,"role":"data","reading":"natural"}
+                old_spans=[marker]
+                for span in current_field["spans"]:
+                    index=old_question.index(span["text"])
+                    old_spans.append(dict(span,start=index,end=index+len(span["text"])))
+                old_spans.sort(key=lambda span:span["start"])
+                restored=next(f for f in prior_question["textSemantics"]["fields"]
+                              if f["block"]==identity and f["path"]=="/question")
+                restored["sourceSha256"]=hashlib.sha256(old_question.encode("utf-8")).hexdigest()
+                restored["spans"]=old_spans
+                prior_question["stateLayout"]["editorial"].pop()
+                state.validate(prior_question)
+                state.validate_transition(prior_question, after)
+                # Then reconstruct the original grouped cards. Both proofs remain append-only.
+                prior_order=deepcopy(prior_question)
+                prior_order["pages"][p]["blocks"][b]=deepcopy(original)
+                prior_order["stateLayout"].pop("orderRefinements")
+                prior_order["stateLayout"]["editorial"].pop()
                 if name == "lesson_hacer_explicito_el_orden_de_las_operaciones.json":
                     self.assertEqual([{"activity": identity, "count": 3}],
                                      after["orderVisualSeparators"])
-                    previous.pop("orderVisualSeparators")
+                    prior_order.pop("orderVisualSeparators")
                 else:
                     self.assertEqual([{"activity": identity, "count": sep}],
                                      after["orderVisualSeparators"])
-                state.validate(previous)
-                state.validate_transition(previous, after)
-                self.assertEqual(state.validate(previous), state.validate(after))
+                state.validate(prior_order)
+                state.validate_transition(prior_order,prior_question)
+                self.assertEqual(state.validate(prior_order),state.validate(after))
                 for field in ("origin", "family", "current", "additions"):
-                    self.assertEqual(previous["stateLayout"][field], meta[field])
-                forged = deepcopy(after)
-                forged["stateLayout"]["orderRefinements"][0]["block"]["fragments"][0] += " altered"
+                    self.assertEqual(prior_order["stateLayout"][field],meta[field])
+                forged=deepcopy(after)
+                forged["stateLayout"]["orderRefinements"][0]["block"]["fragments"][0]+=" altered"
                 with self.assertRaises(state.LayoutError):
                     state.validate(forged)
 
