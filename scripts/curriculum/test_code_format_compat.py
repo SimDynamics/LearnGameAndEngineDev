@@ -85,6 +85,27 @@ class SourceFormatTest(unittest.TestCase):
                 {"type": "cpp_compiler", "projectFiles": [
                     {"path": "CMakeLists.txt", "initialCode": "message(\"a\nb\")"}]})
 
+    def test_source_line_numbers_and_udl_token_boundaries_are_protected(self):
+        code_cases = [
+            ('int main(){return __LINE__;}',
+             'int main(){\nreturn __LINE__;\n}'),
+            ('auto line = std::source_location::current().line();',
+             'auto line =\nstd::source_location::current().line();'),
+            ('auto size = "abc"_length;',
+             'auto size = "abc" _length;'),
+            ('auto size = R"tag(abc)tag"_length;',
+             'auto size = R"tag(abc)tag" _length;'),
+        ]
+        for before, after in code_cases:
+            with self.subTest(before=before, after=after), self.assertRaises(fmt.SourceFormatError):
+                fmt.require_source_format({"type": "code", "code": before},
+                                          {"type": "code", "code": after})
+        cmake_before = 'message("${CMAKE_CURRENT_LIST_LINE}")\nmessage(STATUS "ok")'
+        cmake_after = '\n' + cmake_before
+        with self.assertRaises(fmt.SourceFormatError):
+            fmt.require_source_format({"type": "code", "language": "cmake", "code": cmake_before},
+                                      {"type": "code", "language": "cmake", "code": cmake_after})
+
     def test_answers_and_file_lists_are_not_formatting(self):
         before = fixture()
         after = edited(before)
