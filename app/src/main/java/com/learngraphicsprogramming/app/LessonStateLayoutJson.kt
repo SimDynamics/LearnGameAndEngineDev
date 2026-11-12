@@ -197,7 +197,9 @@ internal object LessonStateLayoutJson {
                 } ?: compilerReferences[id]?.let { before ->
                     CurricularCompilerRevision.projectReference(chosen, before)
                 } ?: chosen
-                require(stateFingerprint(protected) == expectedSignatures.getValue(id))
+                require(stateFingerprint(protected) == expectedSignatures.getValue(id)) {
+                    "Protected response/code contract changed for $id"
+                }
                 editorial[id]?.let { require(fingerprint(block) == it) }
             }
             return StableLessonStateLayout(origin, positions, version, locale,
