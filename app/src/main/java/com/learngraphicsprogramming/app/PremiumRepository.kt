@@ -71,11 +71,12 @@ object PremiumRepository {
         context: Context
     ): Boolean {
 
-        // Premium temporal para las compilaciones de desarrollo (sin compra).
-        // En Release solo Google Play verifica el acceso Premium real.
-        return BuildConfig.DEBUG || getState(
-            context
-        ) == PremiumState.PREMIUM
+        // ACTIVACION TEMPORAL DEL DESARROLLO ANDROID.
+        // La aplicación aún no se comercializa: el desarrollador necesita
+        // vidas ilimitadas para estudiar y comprobar todos los ejercicios.
+        // Antes de publicar una versión de venta, restaurar la verificación
+        // de propiedad mediante Google Play.
+        return true
     }
 
     fun setVerifiedPremium(
