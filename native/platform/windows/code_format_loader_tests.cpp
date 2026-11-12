@@ -185,6 +185,76 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
         "The real U4 read-only curriculum catalog lost its historical identity");
 }
 
+void verify_real_u6_compiler_diagnostics(const std::filesystem::path& fixtures) {
+    // Three already-published multi-file editors have exact, reviewed
+    // diagnostics. The archive must authenticate every old source byte while
+    // current text may acquire harmless physical blank lines.
+    const auto before=windows::load_lesson(fixtures/"u6.before.json","es");
+    const auto after=windows::load_lesson(fixtures/"u6.after.json","es");
+    check(before.id=="cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas"&&
+        after.id==before.id && after.state_layout.signatures==before.state_layout.signatures &&
+        after.state_layout.lineage==before.state_layout.lineage &&
+        after.state_layout.legacy_lineage==before.state_layout.legacy_lineage &&
+        after.state_layout.source_format_revisions.size()==
+            before.state_layout.source_format_revisions.size()+3,
+        "U6L2 diagnostic formatting changed published lesson lineage or omitted source archives");
+
+    const std::array<std::pair<std::size_t,std::size_t>,3> editors{{{14,2},{15,2},{17,2}}};
+    const std::array<std::string_view,3> diagnostic_names{{
+        "u6-difference-unselected-definition",
+        "u6-difference-conflicting-return",
+        "u6-difference-missing-header"}};
+    state::StateData saved;
+    state::prepare_lesson_state(saved,before);
+    for(std::size_t n=0;n<editors.size();++n) {
+        const auto [page,index]=editors[n];
+        const auto& historical=before.pages[page].blocks[index];
+        const auto& current=after.pages[page].blocks[index];
+        check(historical.type==curriculum::BlockType::cpp_compiler &&
+            current.type==historical.type && historical.compile_check &&
+            current.compile_check &&
+            current.compile_check->diagnostic==diagnostic_names[n] &&
+            current.compile_check->diagnostic==historical.compile_check->diagnostic &&
+            current.source_files==historical.source_files &&
+            current.stable_id==historical.stable_id &&
+            current.address.page==historical.address.page &&
+            current.address.block==historical.address.block,
+            "A U6L2 compiler diagnostic changed its source selection or historical owner");
+        check(historical.initial_code!=current.initial_code &&
+            historical.project_files!=current.project_files &&
+            current.source_format_original_initial_code==historical.initial_code &&
+            current.source_format_original_project_files==historical.project_files &&
+            curriculum::exercise_key(before,historical)==
+                curriculum::exercise_key(after,current) &&
+            curriculum::draft_key("programming",before,historical)==
+                curriculum::draft_key("programming",after,current),
+            "The U6L2 format archive did not retain the exact old initial project and draft keys");
+        state::Draft draft;
+        draft.source="int main() {\n    // saved student draft\n    return 0;\n}\n";
+        draft.input="unmodified\n";
+        draft.selection_start=3;draft.selection_end=13;draft.has_saved=true;
+        state::put_draft(saved,curriculum::draft_key("programming",before,historical),draft);
+    }
+    const auto reopened=state::decode(state::encode(saved));
+    check(reopened==saved,"U6L2 formatting mutated the saved state codec");
+    state::validate_lesson_state(reopened,after);
+    for(const auto [page,index]:editors) {
+        const auto& current=after.pages[page].blocks[index];
+        const auto restored=state::get_draft(reopened,
+            curriculum::draft_key("programming",after,current),
+            current.initial_code,current.standard_input.value_or(""));
+        check(restored.has_saved&&restored.source=="int main() {\n    // saved student draft\n    return 0;\n}\n"&&
+            restored.input=="unmodified\n" &&
+            restored.selection_start==3&&restored.selection_end==13,
+            "U6L2 formatting lost a student draft or cursor after reopening");
+    }
+    const auto index=windows::load_lesson_progress_metadata(fixtures/"u6.after.json","es");
+    check(index.state_layout.signatures==after.state_layout.signatures &&
+        index.state_layout.lineage==after.state_layout.lineage &&
+        index.pages.size()==after.pages.size(),
+        "The Windows read-only curriculum inventory rejected a legitimate formatted U6L2 diagnostic");
+}
+
 void must_reject(const std::filesystem::path& file) {
     for(const bool catalog:{false,true}) {
         bool rejected=false;
@@ -199,13 +269,17 @@ void must_reject(const std::filesystem::path& file) {
 
 int main(int argc,char** argv) {
     try{
-        if(argc!=3)throw std::invalid_argument("Expected isolated synthetic and real lesson fixture directories");
+        if(argc!=4)throw std::invalid_argument("Expected synthetic, real decision and U6L2 fixture directories");
         const std::filesystem::path dir(argv[1]);
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
         verify_real_curricular_pilot(std::filesystem::path(argv[2]));
+        verify_real_u6_compiler_diagnostics(std::filesystem::path(argv[3]));
+        for(const auto name:{"u6.forged-goal.json","u6.forged-archive.json",
+                             "u6.forged-source.json"})
+            must_reject(std::filesystem::path(argv[3])/name);
         must_reject(dir/"es.changed-answer.json");
         must_reject(dir/"es.forged-archive.json");
-        std::cout<<"PASS native physical-format loader in es/en/fr and genuine published U4 lesson: historical answers, drafts, cursor, page, compiler goals, original sources and progress-catalog reopens\n";
+        std::cout<<"PASS native format loader: es/en/fr, real U4 and three U6L2 compileCheck diagnoses, protected archives, drafts, saved keys and forged-source rejection\n";
         return 0;
     }catch(const std::exception& error){
         std::cerr<<"FAIL native physical-format loader: "<<error.what()<<'\n';
