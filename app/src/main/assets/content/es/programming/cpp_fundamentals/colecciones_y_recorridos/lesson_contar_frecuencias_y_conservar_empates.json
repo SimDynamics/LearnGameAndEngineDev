@@ -70,7 +70,7 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_3",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-8, 3, 3, 3, 3, 10};\n    std::size_t inicio = 1;\n    std::size_t fin = 5;\n    std::cout << \"Valor:\" << ordenados[inicio]\n              << \"\\nFrecuencia:\" << fin - inicio\n              << \"\\nHay siguiente:\" << (fin < ordenados.size());\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-8, 3, 3, 3, 3, 10};\n    std::size_t inicio = 1;\n    std::size_t fin = 5;\n\n    std::cout << \"Valor:\" << ordenados[inicio]\n              << \"\\nFrecuencia:\" << fin - inicio\n              << \"\\nHay siguiente:\" << (fin < ordenados.size());\n\n    return 0;\n}\n",
           "question": "Predice las tres líneas. fin es el límite excluido del grupo.",
           "answers": [
             "Valor:3\nFrecuencia:4\nHay siguiente:1"
@@ -123,7 +123,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -155,7 +155,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{6, -2, 6, 9, -2, 6};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{6, -2, 6, 9, -2, 6};\n    auto ordenados = original;\n\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -191,7 +191,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n\n        original.push_back(dato);\n    }\n    auto ordenados = original;\n\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -251,7 +251,7 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_tabla_nueva",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{4, -6, 4, 9, -6, -6, 9, 9};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{4, -6, 4, 9, -6, -6, 9, 9};\n    auto ordenados = original;\n\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n",
           "question": "Escribe todas las líneas exactas del informe.",
           "answers": [
             "Frecuencias:\n[-6]=3\n[4]=2\n[9]=3\nN:8\nDistintos:3\nSuma:8\nOriginal:4;-6;4;9;-6;-6;9;9;"
@@ -274,7 +274,7 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_vecinos",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-5, -5, 2, 2, 2, 8};\n    std::size_t coincidencias = 0;\n    for (std::size_t i = 1; i < ordenados.size(); ++i) {\n        if (ordenados[i] == ordenados[i - 1]) { ++coincidencias; }\n    }\n    std::cout << \"Iguales al anterior:\" << coincidencias\n              << \"\\nN:\" << ordenados.size() << \"\\n\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-5, -5, 2, 2, 2, 8};\n    std::size_t coincidencias = 0;\n\n    for (std::size_t i = 1; i < ordenados.size(); ++i) {\n        if (ordenados[i] == ordenados[i - 1]) { ++coincidencias; }\n    }\n\n    std::cout << \"Iguales al anterior:\" << coincidencias\n              << \"\\nN:\" << ordenados.size() << \"\\n\";\n\n    return 0;\n}\n",
           "question": "Predice las dos líneas. El contador sólo incrementa cuando una observación coincide con su vecina anterior.",
           "answers": [
             "Iguales al anterior:3\nN:6"
@@ -311,7 +311,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de etiquetas y todos los maximos.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de etiquetas y todos los maximos.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -366,7 +366,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -478,7 +478,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"torre\", \"rio\", \"rio\", \"torre\", \"valle\", \"valle\", \"sol\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"torre\", \"rio\", \"rio\", \"torre\", \"valle\", \"valle\", \"sol\"};\n    auto ordenadas = original;\n\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -549,7 +549,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n    auto ordenadas = original;\n\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n",
           "initialStandardInput": "6 patio sala patio faro sala patio",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -585,7 +585,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n    auto ordenadas = original;\n\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -645,7 +645,7 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_maximo_final",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"muro\", \"ala\", \"muro\", \"ala\", \"rio\", \"rio\", \"rio\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"muro\", \"ala\", \"muro\", \"ala\", \"rio\", \"rio\", \"rio\"};\n    auto ordenadas = original;\n\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n",
           "question": "Escribe el informe exacto. No conserves un candidato sólo porque apareció antes.",
           "answers": [
             "Frecuencias:\n[ala]=2\n[muro]=2\n[rio]=3\nMaxima:3\nMayores:[rio]\nN:7\nDistintas:3\nSuma:7\nOriginal:[muro][ala][muro][ala][rio][rio][rio]"
@@ -668,7 +668,7 @@
           "type": "output_prediction",
           "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_etiqueta_vacia",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"\", \"eco\", \"eco\", \"\", \"rio\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"\", \"eco\", \"eco\", \"\", \"rio\"};\n    auto ordenadas = original;\n\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n",
           "question": "Predice todas las líneas. Conserva los corchetes que distinguen la etiqueta vacía de la ausencia.",
           "answers": [
             "Frecuencias:\n[]=2\n[eco]=2\n[rio]=1\nMaxima:2\nMayores:[][eco]\nN:5\nDistintas:3\nSuma:5\nOriginal:[][eco][eco][][rio]"
@@ -799,7 +799,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -859,7 +859,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -960,7 +960,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio{0};\n    std::size_t distintos{0};\n    std::size_t suma{0};\n    std::size_t maxima{0};\n    std::vector<int> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<int>{};\n            mayores.push_back(ordenados[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenados[inicio]);\n        }\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (int valor : mayores) { std::cout << \"[\" << valor << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n\n        original.push_back(dato);\n    }\n\n    auto ordenados = original;\n\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio{0};\n    std::size_t distintos{0};\n    std::size_t suma{0};\n    std::size_t maxima{0};\n    std::vector<int> mayores;\n\n    std::cout << \"Frecuencias:\\n\";\n\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<int>{};\n            mayores.push_back(ordenados[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenados[inicio]);\n        }\n\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n\n    for (int valor : mayores) { std::cout << \"[\" << valor << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -2517,6 +2517,567 @@
         "id": "recuperacion_empate_prediccion",
         "beforeSha256": "e3101e6bd07e8db23fbf594360dba2bbabc9fa8cb4dadf62fe43b4d8e9971433",
         "afterSha256": "f7391d69735c8e2a033bafdf6d2eceee9c1f961e32a992e54ad9488ae16662c3"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "4e49e38bf10121f128f2078593a337b0fbf12c8871820cfdba3497aa6829d8d9",
+        "afterSha256": "28159f630b3bec77b774e2d2cf90008d04d0251a0dd0420925006cad45132602"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "0499488dec30d74513196d1fdcaf4493aaa6b693098fe0518698b53719c2b45f",
+        "afterSha256": "c3f53cce74eec1bb8b40850441d92ad308e9fd432b61760dd8c01fb27a3f3ccf"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "2048481a190c3c1f7efd39b4bd9b48e7058f0c6f19a05e18796b7231d0edc12f",
+        "afterSha256": "93fd52ebe4fbe237c57761388cc4569c17333cbb9b12b133734419765b2160b0"
+      },
+      {
+        "id": "block_0003_0009",
+        "beforeSha256": "282467c9192257584cf1f4daf28dd718cdfc4bc6753b41f902f5d47739c21765",
+        "afterSha256": "e780550e60fc120aa0ce6fd86e69bb9fa68eea9a584837a69dbb1b945510cfbd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "e139b526be64076c619dc24021a5ee9b8855a3cc670df35d4151bc8b5cf3a6c7",
+        "afterSha256": "cfd67b496ebc8accb4bfc0e48e2da1921c9042e4fdeb0bf01109819db615d571"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "b2e9e7876759fe248425347e3ea129c1f6584d7cdc47b8d6bc068355ef3c44d6",
+        "afterSha256": "1575a87797a9be922be72ec8368eefca2ffc4b6d6855593801fbfbf3be111068"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "f70d510ab9f2387c97200676c9f46d2647bde45d9cfbe66561658dc717cdd9d7",
+        "afterSha256": "b9db29e8c084e75f5aed58f21909f026270020bde10d4e23783d0931cd2b1a49"
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "beforeSha256": "1975f4588af7d0ebdaa792e810a1b8685d383a83684961c5ba981519f2d6bd51",
+        "afterSha256": "b7b9ae88dbb788455946dd2bcdf448a436692dae2c6dd5aaa5c63d082a9bda86"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "b0d931bf2e5c17eaea1350124e9ab48cfdcdf4fbccb0523b89f3c26a12edbd7a",
+        "afterSha256": "86418b9641389fd54fff827498a94a435fbcd0d02a51ca398b78fd6067caf8f2"
+      },
+      {
+        "id": "recuperacion_entrada_editor",
+        "beforeSha256": "d9376ec7ffcacab1cf9ea387980b9aee3bb96cefcc72c6f0696621b503da29c3",
+        "afterSha256": "95b24dd626b99b1495a4424eb0fa2b41c52420ca2d51983e4a2e67cbf69edcd4"
+      },
+      {
+        "id": "block_0006_0009",
+        "beforeSha256": "4cfa40afad1d5efb545058423796c403390ed51e038dbb1fe876cc53ebe5c375",
+        "afterSha256": "543ebf728960b425f8b547429456133b53dc2bed07e7919e11abf3d5f268aae8"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "2b6c48aa1c01f472391fa5c4ac26a65122924fb893fedb785375733c85261a3b",
+        "afterSha256": "544ba802623ac2030ca1b3c6b734a2b6eb750d634f383676bbd9852824d3b87b"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "0533181d78a228ca9bec081c1e0e193ef1bc377b98a8803a28623d4c394044cc",
+        "afterSha256": "73b9171a8dc5b600be8a3ee54aeb9dcd3472b7c4986757b55cd4a52a90c93ff1"
+      },
+      {
+        "id": "block_0007_0010",
+        "beforeSha256": "3858215fb1e2639c85b211df7e886310f54478dca3eb0c6c8f58b3f9636c7ebb",
+        "afterSha256": "d0547c50e610afa0e874da85b8eb9d149ae8f1551cc4ee22700a14a0a0c3f626"
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_editor",
+        "beforeSha256": "193b52cb89d6734f6cf6acbc5e71c68bba58d2e6ad13a2a1f52c1d3d0578d095",
+        "afterSha256": "37edce2ef351e6869e8785b6dc3a142a718d9217ef101d039b7d54fecdba5f19"
+      },
+      {
+        "id": "frecuencias_numericas_referencia_programa",
+        "beforeSha256": "57566d5d5c8203b6fe42c8ee1897eba0d6eb002a8024e35c82f90611d676467d",
+        "afterSha256": "74473837b52a1dca98aac00f53bf6c3f493eb9afc3d88615f077bd1dabe9575a"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_3",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-8, 3, 3, 3, 3, 10};\n    std::size_t inicio = 1;\n    std::size_t fin = 5;\n    std::cout << \"Valor:\" << ordenados[inicio]\n              << \"\\nFrecuencia:\" << fin - inicio\n              << \"\\nHay siguiente:\" << (fin < ordenados.size());\n    return 0;\n}\n",
+          "question": "Predice las tres líneas. fin es el límite excluido del grupo.",
+          "answers": [
+            "Valor:3\nFrecuencia:4\nHay siguiente:1"
+          ],
+          "explanation": "Las posiciones incluidas son 1, 2, 3 y 4. La posición 5 existe, pero su dato pertenece al grupo siguiente."
+        }
+      },
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Frecuencias:\n[-3]=3\n[0]=2\n[8]=2\nN:7\nDistintos:3\nSuma:7\nOriginal:-3;8;-3;0;8;-3;0;\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{6, -2, 6, 9, -2, 6};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nN:0\nDistintos:0\nSuma:0\nOriginal:\n"
+                ]
+              },
+              {
+                "standardInput": "1 7",
+                "outputs": [
+                  "Frecuencias:\n[7]=1\nN:1\nDistintos:1\nSuma:1\nOriginal:7;\n"
+                ]
+              },
+              {
+                "standardInput": "3 -1 -1 -1",
+                "outputs": [
+                  "Frecuencias:\n[-1]=3\nN:3\nDistintos:1\nSuma:3\nOriginal:-1;-1;-1;\n"
+                ]
+              },
+              {
+                "standardInput": "2 4 -1",
+                "outputs": [
+                  "Frecuencias:\n[-1]=1\n[4]=1\nN:2\nDistintos:2\nSuma:2\nOriginal:4;-1;\n"
+                ]
+              },
+              {
+                "standardInput": "5 2 2 5 5 5",
+                "outputs": [
+                  "Frecuencias:\n[2]=2\n[5]=3\nN:5\nDistintos:2\nSuma:5\nOriginal:2;2;5;5;5;\n"
+                ]
+              },
+              {
+                "standardInput": "7 -3 8 -3 0 8 -3 0",
+                "outputs": [
+                  "Frecuencias:\n[-3]=3\n[0]=2\n[8]=2\nN:7\nDistintos:3\nSuma:7\nOriginal:-3;8;-3;0;8;-3;0;\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_tabla_nueva",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{4, -6, 4, 9, -6, -6, 9, 9};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Escribe todas las líneas exactas del informe.",
+          "answers": [
+            "Frecuencias:\n[-6]=3\n[4]=2\n[9]=3\nN:8\nDistintos:3\nSuma:8\nOriginal:4;-6;4;9;-6;-6;9;9;"
+          ],
+          "explanation": "La copia tiene tres grupos de longitudes tres, dos y tres. El último también se publica al llegar fin a size(); el original conserva su secuencia."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_vecinos",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-5, -5, 2, 2, 2, 8};\n    std::size_t coincidencias = 0;\n    for (std::size_t i = 1; i < ordenados.size(); ++i) {\n        if (ordenados[i] == ordenados[i - 1]) { ++coincidencias; }\n    }\n    std::cout << \"Iguales al anterior:\" << coincidencias\n              << \"\\nN:\" << ordenados.size() << \"\\n\";\n    return 0;\n}\n",
+          "question": "Predice las dos líneas. El contador sólo incrementa cuando una observación coincide con su vecina anterior.",
+          "answers": [
+            "Iguales al anterior:3\nN:6"
+          ],
+          "explanation": "El grupo de dos elementos aporta una coincidencia; el de tres aporta dos y el grupo de una sola observación no aporta ninguna. Hay seis observaciones en total."
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de etiquetas y todos los maximos.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[patio]=3\n[sala]=2\nMaxima:3\nMayores:[patio]\nN:6\nDistintas:3\nSuma:6\nOriginal:[patio][sala][patio][faro][sala][patio]\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "frecuencias_etiquetas_construccion_multicaso_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintas:0\nSuma:0\nOriginal:\n"
+                ],
+                "explanation": "No hay grupos ni candidatos. Maxima vale cero; N, Distintas y Suma también valen cero. Original no contiene observaciones. El informe conserva sus encabezados y rótulos, aunque no publique filas de frecuencia.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 ~",
+                "outputs": [
+                  "Frecuencias:\n[]=1\nMaxima:1\nMayores:[]\nN:1\nDistintas:1\nSuma:1\nOriginal:[]\n"
+                ],
+                "explanation": "La etiqueta vacía es una observación real. Su fila es []=1 y Mayores:[] contiene un candidato. N, Distintas y Suma valen uno; Original:[] conserva esa observación. Este caso distingue una etiqueta vacía de una colección sin observaciones.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 roble",
+                "outputs": [
+                  "Frecuencias:\n[roble]=1\nMaxima:1\nMayores:[roble]\nN:1\nDistintas:1\nSuma:1\nOriginal:[roble]\n"
+                ],
+                "explanation": "roble aparece una vez y alcanza la frecuencia máxima uno. Mayores:[roble] conserva ese único candidato; N, Distintas y Suma valen uno. El caso comprueba que el grupo con una sola observación también se publica.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 valle ala rio",
+                "outputs": [
+                  "Frecuencias:\n[ala]=1\n[rio]=1\n[valle]=1\nMaxima:1\nMayores:[ala][rio][valle]\nN:3\nDistintas:3\nSuma:3\nOriginal:[valle][ala][rio]\n"
+                ],
+                "explanation": "Las tres etiquetas aparecen una vez cada una. Todas alcanzan la máxima uno y deben figurar en Mayores:[ala][rio][valle], en orden lexicográfico. Original:[valle][ala][rio] conserva otro orden. No tener repeticiones no elimina los candidatos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "5 rio faro torre rio torre",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[rio]=2\n[torre]=2\nMaxima:2\nMayores:[rio][torre]\nN:5\nDistintas:3\nSuma:5\nOriginal:[rio][faro][torre][rio][torre]\n"
+                ],
+                "explanation": "faro tiene frecuencia uno; rio y torre tienen frecuencia dos. El último grupo, torre, empata con rio y debe incorporarse sin borrar ese candidato: Mayores:[rio][torre]. Publicar el último grupo conserva también N:5 y Suma:5.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "7 faro faro patio patio valle valle valle",
+                "outputs": [
+                  "Frecuencias:\n[faro]=2\n[patio]=2\n[valle]=3\nMaxima:3\nMayores:[valle]\nN:7\nDistintas:3\nSuma:7\nOriginal:[faro][faro][patio][patio][valle][valle][valle]\n"
+                ],
+                "explanation": "faro y patio tienen frecuencia dos; valle tiene frecuencia tres. Los dos candidatos anteriores dejan de alcanzar la máxima actual y sólo debe quedar Mayores:[valle]. La tabla conserva los tres grupos y Original conserva todas las observaciones; reemplazar candidatos no borra datos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintas:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"torre\", \"rio\", \"rio\", \"torre\", \"valle\", \"valle\", \"sol\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "recuperacion_entrada_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "initialStandardInput": "6 patio sala patio faro sala patio",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 patio sala patio faro sala patio",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[patio]=3\n[sala]=2\nMaxima:3\nMayores:[patio]\nN:6\nDistintas:3\nSuma:6\nOriginal:[patio][sala][patio][faro][sala][patio]\n"
+                ]
+              },
+              {
+                "standardInput": "6 sala patio faro patio sala patio",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[patio]=3\n[sala]=2\nMaxima:3\nMayores:[patio]\nN:6\nDistintas:3\nSuma:6\nOriginal:[sala][patio][faro][patio][sala][patio]\n"
+                ]
+              },
+              {
+                "standardInput": "5 sala patio faro patio sala",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[patio]=2\n[sala]=2\nMaxima:2\nMayores:[patio][sala]\nN:5\nDistintas:3\nSuma:5\nOriginal:[sala][patio][faro][patio][sala]\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        std::string dato;\n        std::cin >> dato;\n        if (dato == \"~\") { dato = \"\"; }\n        original.push_back(dato);\n    }\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 rio torre torre rio",
+                "outputs": [
+                  "Frecuencias:\n[rio]=2\n[torre]=2\nMaxima:2\nMayores:[rio][torre]\nN:4\nDistintas:2\nSuma:4\nOriginal:[rio][torre][torre][rio]\n"
+                ]
+              },
+              {
+                "standardInput": "3 faro valle valle",
+                "outputs": [
+                  "Frecuencias:\n[faro]=1\n[valle]=2\nMaxima:2\nMayores:[valle]\nN:3\nDistintas:2\nSuma:3\nOriginal:[faro][valle][valle]\n"
+                ]
+              },
+              {
+                "standardInput": "2 roble ala",
+                "outputs": [
+                  "Frecuencias:\n[ala]=1\n[roble]=1\nMaxima:1\nMayores:[ala][roble]\nN:2\nDistintas:2\nSuma:2\nOriginal:[roble][ala]\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintas:0\nSuma:0\nOriginal:\n"
+                ]
+              },
+              {
+                "standardInput": "1 ~",
+                "outputs": [
+                  "Frecuencias:\n[]=1\nMaxima:1\nMayores:[]\nN:1\nDistintas:1\nSuma:1\nOriginal:[]\n"
+                ]
+              },
+              {
+                "standardInput": "3 ~ a ~",
+                "outputs": [
+                  "Frecuencias:\n[]=2\n[a]=1\nMaxima:2\nMayores:[]\nN:3\nDistintas:2\nSuma:3\nOriginal:[][a][]\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 rio torre torre rio"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_maximo_final",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"muro\", \"ala\", \"muro\", \"ala\", \"rio\", \"rio\", \"rio\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Escribe el informe exacto. No conserves un candidato sólo porque apareció antes.",
+          "answers": [
+            "Frecuencias:\n[ala]=2\n[muro]=2\n[rio]=3\nMaxima:3\nMayores:[rio]\nN:7\nDistintas:3\nSuma:7\nOriginal:[muro][ala][muro][ala][rio][rio][rio]"
+          ],
+          "explanation": "Los dos primeros grupos empatan con frecuencia dos. El grupo final tiene frecuencia tres y reemplaza esos candidatos; la suma sigue siendo siete."
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_etiqueta_vacia",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"\", \"eco\", \"eco\", \"\", \"rio\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Predice todas las líneas. Conserva los corchetes que distinguen la etiqueta vacía de la ausencia.",
+          "answers": [
+            "Frecuencias:\n[]=2\n[eco]=2\n[rio]=1\nMaxima:2\nMayores:[][eco]\nN:5\nDistintas:3\nSuma:5\nOriginal:[][eco][eco][][rio]"
+          ],
+          "explanation": "La etiqueta vacía y eco son dos valores presentes y distintos, ambos con frecuencia dos. rio no alcanza ese máximo; el original contiene cinco observaciones."
+        }
+      },
+      {
+        "id": "block_0007_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "6 4 1 4 2 1 2",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[2]=2\n[4]=2\nMaxima:2\nMayores:[1][2][4]\nN:6\nDistintos:3\nSuma:6\nOriginal:4;1;4;2;1;2;\n"
+                ]
+              },
+              {
+                "standardInput": "4 1 1 5 9",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[5]=1\n[9]=1\nMaxima:2\nMayores:[1]\nN:4\nDistintos:3\nSuma:4\nOriginal:1;1;5;9;\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintos:0\nSuma:0\nOriginal:\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "6 4 1 4 2 1 2"
+        }
+      },
+      {
+        "id": "maximos_numericos_construccion_multicaso_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n\n    // Escribe aqui tu agrupacion y el informe completo.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 1 1 2 2 4 4 4",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[2]=2\n[4]=3\nMaxima:3\nMayores:[4]\nN:7\nDistintos:3\nSuma:7\nOriginal:1;1;2;2;4;4;4;\n"
+                ],
+                "explanation": "Los grupos de uno y dos tienen frecuencia dos y empatan antes del grupo final. El valor cuatro aparece tres veces, establece una máxima mayor y deja como único candidato Mayores:[4]. Conservar [1][2] junto a [4] publicaría candidatos que ya no alcanzan esa máxima. N:7 y Suma:7 conservan todas las observaciones.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "6 4 1 4 2 1 2",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[2]=2\n[4]=2\nMaxima:2\nMayores:[1][2][4]\nN:6\nDistintos:3\nSuma:6\nOriginal:4;1;4;2;1;2;\n"
+                ],
+                "explanation": "Cada grupo tiene frecuencia dos: los tres valores alcanzan la misma máxima. Mayores:[1][2][4] conserva todos los empatados en orden numérico, mientras Original:4;1;4;2;1;2; conserva el orden de llegada. Una igualdad de frecuencias no elimina los candidatos anteriores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4 1 1 5 9",
+                "outputs": [
+                  "Frecuencias:\n[1]=2\n[5]=1\n[9]=1\nMaxima:2\nMayores:[1]\nN:4\nDistintos:3\nSuma:4\nOriginal:1;1;5;9;\n"
+                ],
+                "explanation": "El valor uno aparece dos veces; cinco y nueve aparecen una vez cada uno. La máxima sigue siendo dos y el informe conserva Mayores:[1]. Comparar las magnitudes en lugar de sus frecuencias elegiría otro resultado y no respondería la consigna.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Frecuencias:\nMaxima:0\nMayores:\nN:0\nDistintos:0\nSuma:0\nOriginal:\n"
+                ],
+                "explanation": "La colección vacía no produce grupos ni candidatos. Maxima, N, Distintos y Suma valen cero; Original queda vacío. El encabezado y los rótulos se presentan sin inventar un valor ni consultar un elemento inexistente.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -7",
+                "outputs": [
+                  "Frecuencias:\n[-7]=1\nMaxima:1\nMayores:[-7]\nN:1\nDistintos:1\nSuma:1\nOriginal:-7;\n"
+                ],
+                "explanation": "El único valor, -7, tiene frecuencia uno y es el candidato de Mayores:[-7]. Su signo no impide compararlo ni contar su aparición. N:1 y Suma:1 cuentan observaciones; no suman ni usan -7 como posición.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "No apareció el informe de esta entrada. Comprueba que tu programa presente Frecuencias:, Maxima:, Mayores:, N:, Distintos:, Suma: y Original:. Una colección vacía también requiere esos rótulos y sus resúmenes."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "frecuencias_numericas_referencia_programa",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        original.push_back(dato);\n    }\n\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio{0};\n    std::size_t distintos{0};\n    std::size_t suma{0};\n    std::size_t maxima{0};\n    std::vector<int> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<int>{};\n            mayores.push_back(ordenados[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenados[inicio]);\n        }\n        inicio = fin;\n    }\n\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (int valor : mayores) { std::cout << \"[\" << valor << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
