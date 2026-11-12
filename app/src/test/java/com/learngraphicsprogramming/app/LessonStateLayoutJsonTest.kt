@@ -295,6 +295,43 @@ class LessonStateLayoutJsonTest {
         assertEquals("Expected one single-source and three published project diagnostics", 4, checked)
     }
 
+    @Test fun publishedEditorialReturnsRequireSameOwnerAndCompleteHistoryPrefix() {
+        val root = listOf(java.io.File("src/main/assets/content"),
+            java.io.File("app/src/main/assets/content")).firstOrNull { it.isDirectory }
+            ?: error("Cannot find published curricular assets")
+        val path = "es/programming/cpp_fundamentals/objetos_y_estado/" +
+            "lesson_estado_asignacion_y_copia.json"
+        val bytes = java.io.File(root, path).readText(Charsets.UTF_8)
+        val original = JSONObject(bytes)
+        val layout = LessonStateLayoutJson.read(original)!!
+        assertEquals("es", layout.locale)
+        val edits = original.getJSONObject("stateLayout").getJSONArray("editorial")
+        val returned = (0 until edits.length()).filter { edits.getJSONObject(it).has("returnTo") }
+        assertEquals("Expected two authenticated returns in the published Spanish lesson", 2, returned.size)
+        for (index in returned) {
+            val pristine = edits.getJSONObject(index)
+            val proof = pristine.getJSONObject("returnTo")
+            assertEquals(0, proof.getInt("revision"))
+            val changes: List<(JSONObject) -> Unit> = listOf(
+                { it.remove("returnTo") },
+                { it.getJSONObject("returnTo").put("revision", true) },
+                { it.getJSONObject("returnTo").put("revision", 999) },
+                { it.getJSONObject("returnTo").put("historySha256", "0".repeat(64)) },
+                { it.getJSONObject("returnTo").put("previousBlock",
+                    JSONObject().put("type", "paragraph").put("text", "Other owner")) },
+                { it.getJSONObject("returnTo").put("unexpected", true) }
+            )
+            for (change in changes) {
+                val altered = JSONObject(bytes)
+                val changeRecord = altered.getJSONObject("stateLayout")
+                    .getJSONArray("editorial").getJSONObject(index)
+                change(changeRecord)
+                assertTrue("A forged or unsupported editorial return was admitted",
+                    runCatching { LessonStateLayoutJson.read(altered) }.isFailure)
+            }
+        }
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
