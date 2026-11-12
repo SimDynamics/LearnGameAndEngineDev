@@ -26,16 +26,28 @@ Sin pendientes.
 - **RESPONSABILIDADES:** Work revisa y publica el contenido español; Codex interviene si falta una capacidad común del motor o hay una falla técnica demostrada. Mantener la ficha hasta completar la revisión curricular restante y sus pruebas, sin guardar aquí relatos de cambios concluidos.
 
 
-**Regla vigente de avance curricular:** en cada editor, la primera ejecución
-comprobada basta para desbloquear el siguiente contenido. Las entradas y salidas
-de los demás casos se explican en el texto como ensayos optativos, sin bloquear
-el progreso, las referencias o el lector. Las sondas de regresión que comprueban
-internamente otros datos en el mismo intento no son obligaciones manuales del
-estudiante. Codex debe separar los recibos exigidos de los casos voluntarios:
-actualmente el motor todavía exige todos los recibos de `outputCheck` y las
-rúbricas derivadas de U3L6/U3L8 incorporan varios casos. No activar esas
-rúbricas multicaso hasta que se respete el desbloqueo por la primera
-comprobación, conservando sus oráculos y sus criterios semánticos.
+**Regla global obligatoria de avance curricular:** para **cada editor C++/CMake
+de todos los cursos**, se requiere **exactamente una comprobación correcta del
+primer caso declarado**, nunca dos ni todos los casos de `outputCheck`. Tras ese
+único acierto debe habilitarse inmediatamente «Continuar». Los casos restantes
+se mantienen disponibles como ensayos **optativos** con evidencias independientes,
+pero jamás como requisitos para navegar, conservar logros, consultar referencias
+o cerrar la lección. Una ejecución del segundo caso sin aprobar el primero no
+desbloquea; tampoco una salida incorrecta. No borrar los demás oráculos del
+contrato histórico: retirar sus entradas sin una transición autenticada dañaría
+el historial, y no es necesario para volverlos opcionales.
+
+**Comprobación técnica de alcance global:** conservar la prueba del lector Win32
+`native.cpp_project_other_cpp_multicase` con trece entradas, una sola obligatoria,
+avance, reapertura y segunda ejecución optativa; ejecutar además la comprobación
+de código nativo de 13 casos en `native.compiler_puzzles` antes de cerrar este
+reporte. Si el ejecutable instalado todavía muestra «comprueba los casos
+restantes para continuar», ese binario conserva el comportamiento antiguo
+y debe recompilarse e instalarse desde la versión corregida. Las rúbricas de
+P2 U3L6/U3L8 no deben imponer recibos multicaso al estudiante; conservar
+sus criterios semánticos independientes al integrarlas. La presentación de
+las entradas y salidas optativas como lista **sin viñetas** en el texto
+curricular es una segunda fase, posterior a quitar el bloqueo.
 
 ### P2_U1_ACREDITACION_PRACTICAS_ABIERTAS
 
