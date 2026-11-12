@@ -54,7 +54,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Pedido \" << pedido << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Pedido \" << pedido << \"\\n\";\n    }\n\n    std::cout << \"Fin\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -81,7 +81,7 @@
           "id": "despacho_otro_limite",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int ultimo{5};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << pedidos << \":\" << cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{5};\n    int pedidos{0};\n    int cajas{0};\n\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        ++pedidos;\n        cajas += aporte;\n    }\n\n    std::cout << pedidos << \":\" << cajas;\n\n    return 0;\n}\n",
           "answers": [
             "5:8"
           ],
@@ -92,7 +92,7 @@
           "id": "despacho_cero",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += 1;\n        }\n    }\n    std::cout << \"Cajas=\" << cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    int cajas{0};\n\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += 1;\n        }\n    }\n\n    std::cout << \"Cajas=\" << cajas;\n\n    return 0;\n}\n",
           "answers": [
             "Cajas=0"
           ],
@@ -103,7 +103,7 @@
           "id": "aporte_par",
           "question": "Completa sólo el aporte de cajas de un pedido par, según el requisito.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int cajas{0};\n    for (int pedido{1}; pedido <= 6; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += ___;\n        }\n    }\n    std::cout << cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{0};\n\n    for (int pedido{1}; pedido <= 6; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += ___;\n        }\n    }\n\n    std::cout << cajas;\n\n    return 0;\n}\n",
           "answers": [
             "1"
           ],
@@ -122,7 +122,7 @@
           "id": "reiniciar_acumulador_error_logico",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total = 0;\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total = 0;\n        total += aporte;\n    }\n\n    std::cout << total;\n\n    return 0;\n}\n",
           "answers": [
             "3"
           ],
@@ -133,7 +133,7 @@
           "id": "copiar_no_seguir_estado",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int copia{total};\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n    }\n    std::cout << total << \":\" << copia;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int copia{total};\n\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n    }\n\n    std::cout << total << \":\" << copia;\n\n    return 0;\n}\n",
           "answers": [
             "6:0"
           ],
@@ -144,7 +144,7 @@
           "id": "division_entera_en_recorrido",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        suma += n / 2;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n\n    for (int n{1}; n <= 4; ++n) {\n        suma += n / 2;\n    }\n\n    std::cout << suma;\n\n    return 0;\n}\n",
           "answers": [
             "4"
           ],
@@ -179,7 +179,7 @@
           "id": "tablero_seleccionado",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            if (fila != columna) {\n                ++cantidad;\n            }\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            if (fila != columna) {\n                ++cantidad;\n            }\n        }\n    }\n\n    std::cout << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "4"
           ],
@@ -190,7 +190,7 @@
           "id": "recuperar_corte_y_suma",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n == 4) {\n            break;\n        }\n        if (n == 2) {\n            continue;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n\n    for (int n{1}; n <= 7; ++n) {\n        if (n == 4) {\n            break;\n        }\n\n        if (n == 2) {\n            continue;\n        }\n        suma += n;\n    }\n\n    std::cout << suma;\n\n    return 0;\n}\n",
           "answers": [
             "4"
           ],
@@ -471,7 +471,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    int pedidos{0};\n    int cajas{0};\n\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n\n        ++pedidos;\n        cajas += aporte;\n    }\n\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -579,7 +579,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    std::cin >> ultimo;\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n\n    std::cin >> ultimo;\n\n    int pedidos{0};\n    int cajas{0};\n\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n\n        ++pedidos;\n        cajas += aporte;\n    }\n\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -1312,6 +1312,243 @@
         "id": "block_0001_0001",
         "beforeSha256": "0a75a24ab2f618ec370285fda0eaf2df78c43e7075bfa95198a4a8d57d040aef",
         "afterSha256": "e28ac7fe23572abb36077d2181794e348b99ebf6ae1e6a28246272552835e5b5"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "c7c8a25f840692db767a2ae0c17118a1a32cf2939ab9e57d8b830388f2d4b04a",
+        "afterSha256": "9105c47faf43d0cbac1ad189338b7f7004a7ba0098b9725515e2f4ea79e958a0"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "1fc7a48d12e7c8b5601372f39ba712bdac3bc26458081bab4347433e39d0e787",
+        "afterSha256": "a29f413bad211d0bbf4f72728bc8c53747cecffb2d987e223ae7550d8c625064"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "5710fb70980fbc37b2d0d9dd4d8d32815d0bfb692576b7b01d8a38d55e91fb22",
+        "afterSha256": "d383f8f14ef7992affca0e3de01201c14ffa9b3edcd78f3c9ca20bc9aa8949d2"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "ef553625370d06dbc3d8edef17c3445cb3e7b1e5f3f0be011e9cbe6baa4f43d6",
+        "afterSha256": "b8afb1d5195f355a1c90270b1306804e70c61dbe620b506fd8a93d367c17785d"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "1b811c7bb78d3e7c34b46e6a3e235a63ca53c713c82b61baaba0dcdffbff066c",
+        "afterSha256": "0d79edfefb70827bacbab0f813b10395821c18fa2b82fc2ea5d9d7326a68d606"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8d605f36ac38298264a1fa504569d0ac9dfaedd1c1f12c77bc16b7371fffaf83",
+        "afterSha256": "1ecc6773242e4a3b6f9af0e56cae5575eff82ee1c5888ba638988dc3202d9d71"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "9e1dd8163d27a3fd3e6540989e2504068708cfb8ffdf4b5295c53efa1acd1cc4",
+        "afterSha256": "f630d98fc9e801ae8f80f137f3ee4261e61470d4e2ba04cafd2c79095a89b9d3"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "24e59862d8dd50979aaf4e2f724e575649302baac38dddff16d93ed0bfebcdd2",
+        "afterSha256": "83d9ed586b1f30c0eeee92a7d013392244d3298f7a55072a4b4c482c157934bf"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "0bdf093e84d876296848aada41fb0a952279d7877f91f8e795c6d8fc56951d93",
+        "afterSha256": "907f5ebb0ee5264c1a51f8c82d390af0a6e3590bf6fd9d986a1d7b3c0939e027"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "a161245691e549b8a8ccacb4989249adac7d8538f781d6b1287155e62be5af5d",
+        "afterSha256": "4043a39cc29cd42abfddb13add198f789594ee3e399bfd93102a346a4555869f"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "7b0e30807ebc8e98d3922bdb1dbfbf5c3b70fab7dea657e02635b3cf6c802162",
+        "afterSha256": "c83b6ee5ecca808c0a34429042ed92a157c929aa0d62e1295318f2f67b6deab0"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Pedido \" << pedido << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6",
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "despacho_otro_limite",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{5};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << pedidos << \":\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "5:8"
+          ],
+          "explanation": "Los cinco aportes son 2,1,2,1,2. Hay cinco pedidos y ocho cajas."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "despacho_cero",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += 1;\n        }\n    }\n    std::cout << \"Cajas=\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Cajas=0"
+          ],
+          "explanation": "La condición inicial es falsa y el acumulador conserva su valor inicial cero."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "fill_code",
+          "id": "aporte_par",
+          "question": "Completa sólo el aporte de cajas de un pedido par, según el requisito.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{0};\n    for (int pedido{1}; pedido <= 6; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += ___;\n        }\n    }\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Cada pedido par aporta una caja. El número del pedido determina la categoría, no la cantidad que se suma."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "reiniciar_acumulador_error_logico",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total = 0;\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Reiniciar total en cada vuelta destruye las contribuciones anteriores. El programa compila, pero no suma todos los aportes."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "copiar_no_seguir_estado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int copia{total};\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n    }\n    std::cout << total << \":\" << copia;\n    return 0;\n}\n",
+          "answers": [
+            "6:0"
+          ],
+          "explanation": "copia recibió el valor inicial de total; no sigue sus cambios posteriores."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "division_entera_en_recorrido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        suma += n / 2;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Los cocientes enteros son 0,1,1,2. No se están sumando mitades en double."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "tablero_seleccionado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            if (fila != columna) {\n                ++cantidad;\n            }\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Las seis parejas incluyen dos diagonales iguales: (0,0) y (1,1). Las otras cuatro se aceptan."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "recuperar_corte_y_suma",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n == 4) {\n            break;\n        }\n        if (n == 2) {\n            continue;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Se incorpora 1, se omite 2, se incorpora 3 y se termina antes de 4."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    std::cin >> ultimo;\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Pedidos=0;Cajas=0",
+                  "Pedidos=0;Cajas=0\n"
+                ]
+              },
+              {
+                "standardInput": "1",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedidos=1;Cajas=2",
+                  "Pedido 1: 2 cajas\nPedidos=1;Cajas=2\n"
+                ]
+              },
+              {
+                "standardInput": "4",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6",
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedidos=4;Cajas=6\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedido 5: 2 cajas\nPedido 6: 1 cajas\nPedido 7: 2 cajas\nPedido 8: 1 cajas\nPedidos=8;Cajas=12",
+                  "Pedido 1: 2 cajas\nPedido 2: 1 cajas\nPedido 3: 2 cajas\nPedido 4: 1 cajas\nPedido 5: 2 cajas\nPedido 6: 1 cajas\nPedido 7: 2 cajas\nPedido 8: 1 cajas\nPedidos=8;Cajas=12\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
       }
     ]
   },
