@@ -254,8 +254,10 @@ La declaración no modifica `cpp_compiler`, su programa inicial, sus borradores
 ni el `stateLayout`. La incorporación genera objetivos protegidos de
 **tres casos para cajas** (rechazos, cuatro valores permitidos y entrada vacía)
 y **cuatro para saldos** (rechazos, cuatro pares permitidos, entrada vacía y
-tres pares propios). Los casos calculan los resultados y valores esperados a
-partir de la entrada y exigen el código de salida normal correspondiente.
+tres pares propios). **Sólo el primer caso correcto de cada editor es necesario
+para continuar.** Los otros se documentan con entrada y resultado esperado y
+pueden ejecutarse voluntariamente, sin bloquear la página. Cada caso ejecutado
+calcula los resultados y exige el código de salida normal correspondiente.
 
 Los mensajes abiertos se comprueban por operación, número de petición,
 cantidad o par de campos con sus valores, intervalo 0..20 o 0..9 y acción
@@ -274,8 +276,9 @@ diagnóstico asignada; cambiar `main`, el componente, la firma o los datos del
 programa no acredita el objetivo. La ejecución, la prueba independiente y los
 casos se sellan con la revisión y la fuente vigente.
 
-**Estado editorial:** la capacidad técnica es optativa hasta que Work publique
-ambas declaraciones y compruebe la experiencia con sus casos. Los editores
+**Estado editorial:** la activación de la capacidad técnica es optativa hasta
+que Work publique ambas declaraciones y compruebe el primer caso y sus sondas
+semánticas independientes. Los editores
 históricos publicados no se acreditan automáticamente ni se convierten en
 opcionales. Esta capacidad tampoco sustituye la comprobación de conservación
 de filas y contadores de U3L8.
@@ -295,9 +298,11 @@ de la lección española v2:
 
 No se modifican sus `cpp_compiler`, código inicial, funciones de lectura, respuestas,
 borradores, `stateLayout`, mapas de idiomas ni referencias. Cada editor recibe
-cuatro ejecuciones exigibles: entrada publicada, dos registros coincidentes con
+cuatro casos verificables: entrada publicada, dos registros coincidentes con
 última línea sin `LF`, entrada vacía y un lote con repeticiones, campos
-malformados y observaciones posteriores. Para cada entrada, un cálculo separado
+malformados y observaciones posteriores. **El primer caso correcto permite
+continuar**; los otros tres son pruebas opcionales cuyos datos y resultados
+esperados siguen disponibles. Para cada entrada, un cálculo separado
 deduce filas, diagnóstico `Linea=N:FORMATO`, contadores y código de salida
 normal. El informe completo muestra cada fila válida; la vista de diferencias
 cuenta todas las válidas, pero sólo muestra las discrepantes.
@@ -318,8 +323,8 @@ acredita las entradas independientes. Una ejecución que no termine normalmente
 o un error de construcción tampoco cuenta como resultado esperado.
 
 **Estado:** el motor y sus pruebas se integran en `Codex`, pero la ficha
-`P2_U2_DIAGNOSTICO_CLIENTE` permanece abierta hasta que Work publique las
-declaraciones compatibles y se comprueben los cinco editores reales sin
+`P2_U3_DIAGNOSTICOS_E_INFORMES` permanece abierta hasta que Work publique las
+declaraciones compatibles y se comprueben los cuatro editores reales sin
 dar crédito por ejecuciones anteriores. La revisión visual y auditiva
 personal continúa a cargo del estudiante.
 
