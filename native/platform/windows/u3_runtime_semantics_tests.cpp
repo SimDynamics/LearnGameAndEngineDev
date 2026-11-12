@@ -4,6 +4,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/cpp_runner.hpp"
+#include "platform/windows/state_store.hpp"
 #include "platform/windows/environment.hpp"
 #include "native_build_config.hpp"
 
