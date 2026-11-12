@@ -14,7 +14,12 @@ internal object LessonStateLayoutJson {
             val version = metadata.get("version") as? Int ?: error("Invalid version")
             val expected = if (version == 1) setOf("version", "origin", "current") else
                 setOf("version", "locale", "origin", "current", "family", "additions", "editorial")
-            require(version in 1..2 && metadata.keys().asSequence().toSet() == expected)
+            val actualFields = metadata.keys().asSequence().toSet()
+            // A single optional, complete pre-format archive is independent of
+            // storage ownership. All other unknown metadata still fails closed.
+            require(version in 1..2 && expected.all { it in actualFields } &&
+                actualFields.all { it in expected ||
+                    (version == 2 && it == "sourceFormatRevisions") })
             val (origin, signatures) = readOrigin(metadata.getJSONArray("origin"))
             val current = metadata.getJSONArray("current")
             val positions = (0 until current.length()).map { p ->
@@ -27,6 +32,7 @@ internal object LessonStateLayoutJson {
             val family = linkedMapOf<String, LessonStateFamily>()
             val additions = mutableListOf<LessonStateAddition>()
             val editorial = linkedMapOf<String, String>()
+            val editorialSeen = mutableMapOf<String, MutableSet<String>>()
             val locale = if (version == 2) strictString(metadata, "locale") else null
             if (version == 2) {
                 val variants = metadata.getJSONObject("family")
@@ -51,7 +57,6 @@ internal object LessonStateLayoutJson {
                 }
                 val changes = metadata.getJSONArray("editorial")
                 require(changes.length() <= 100_000)
-                val editorialSeen = mutableMapOf<String, MutableSet<String>>()
                 for (index in 0 until changes.length()) {
                     val change = changes.getJSONObject(index)
                     require(change.keys().asSequence().toSet() == setOf("id", "beforeSha256", "afterSha256"))
@@ -70,15 +75,37 @@ internal object LessonStateLayoutJson {
             val expectedSignatures = signatures + additions.associate { it.id to it.sha256 }
             val pages = lesson.getJSONArray("pages")
             require(pages.length() == positions.size)
+            val active = linkedMapOf<String, JSONObject>()
             positions.forEachIndexed { p, position ->
                 val blocks = pages.getJSONObject(p).optJSONArray("blocks") ?: JSONArray()
                 require(blocks.length() == position.blocks.size)
                 position.blocks.forEachIndexed { b, id ->
-                    val block = blocks.getJSONObject(b)
-                    // Editorial changes never replace an activity's state-bearing payload.
-                    require(stateFingerprint(block) == expectedSignatures.getValue(id))
-                    editorial[id]?.let { require(fingerprint(block) == it) }
+                    require(active.put(id, blocks.getJSONObject(b)) == null)
                 }
+            }
+            val originals = linkedMapOf<String, JSONObject>()
+            if (version == 2 && metadata.has("sourceFormatRevisions")) {
+                val archives = metadata.getJSONArray("sourceFormatRevisions")
+                require(archives.length() <= 100_000)
+                for (index in 0 until archives.length()) {
+                    val entry = archives.getJSONObject(index)
+                    require(entry.keys().asSequence().toSet() == setOf("id", "block"))
+                    val id = strictString(entry, "id")
+                    require(id in active && id !in originals)
+                    val historical = entry.getJSONObject("block")
+                    require(stateFingerprint(historical) == expectedSignatures.getValue(id))
+                    require(editorialSeen[id]?.contains(fingerprint(historical)) == true)
+                    originals[id] = historical
+                }
+            }
+            for ((id, block) in active) {
+                // Visual/compiled sources are new. Only the immutable prior
+                // source is projected for the historic grade/draft fingerprint.
+                val protected = originals[id]?.let { before ->
+                    CurricularSourceFormatCompat.project(block, before)
+                } ?: block
+                require(stateFingerprint(protected) == expectedSignatures.getValue(id))
+                editorial[id]?.let { require(fingerprint(block) == it) }
             }
             return layout
         } catch (error: LessonStateLayoutException) {
