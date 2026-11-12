@@ -771,7 +771,8 @@ private:
         return cursor;
     }
 };
-Block read_block(const JsonObject& value,std::string_view original);
+Block read_block(const JsonObject& value,std::string_view original,
+    const JsonObject* authenticated_source_before=nullptr);
 std::string bibliography_string(const winrt::hstring& value){
     for(decltype(value.size()) at=0;at<value.size();++at){const auto c=value[at];
         if(c>=0xd800&&c<=0xdbff){require(at+1<value.size()&&value[at+1]>=0xdc00&&value[at+1]<=0xdfff,
@@ -1904,7 +1905,8 @@ OutputCheck read_output_check(const JsonObject& value,std::string_view original,
     }
     return result;
 }
-Block read_block(const JsonObject& value,std::string_view original) {
+Block read_block(const JsonObject& value,std::string_view original,
+    const JsonObject* authenticated_source_before) {
     Block result; result.raw_json = original;
     const auto type = text(value, "type");
     const std::map<std::string, BlockType> types{{"heading", BlockType::heading}, {"paragraph", BlockType::paragraph}, {"note", BlockType::note}, {"code", BlockType::code},
@@ -1926,7 +1928,14 @@ Block read_block(const JsonObject& value,std::string_view original) {
         if(value.HasKey(L"caption"))require(!result.image->caption.empty(),"A present image caption must not be empty");
         validate_image_resource(*result.image);
     }
-    if(value.HasKey(L"compileCheck"))validate_compile_check_payload(value);
+    if(value.HasKey(L"compileCheck")) {
+        // The stateLayout parser authenticated the complete published source
+        // archive and its lexical-equivalent current formatting before this
+        // runtime block is constructed. Never authorize an unchecked source.
+        if(authenticated_source_before)
+            validate_compile_check_payload(source_format_projection(value,*authenticated_source_before));
+        else validate_compile_check_payload(value);
+    }
     result.id = optional_text(value, "id"); result.text = optional_text(value, "text"); result.question = optional_text(value, "question");
     result.code = optional_text(value, "code"); result.initial_code = optional_text(value, "initialCode"); result.language = optional_text(value, "language");
     result.explanation = optional_text(value, "explanation");
@@ -2707,6 +2716,15 @@ void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     owner.compiler_workflow_check=CompilerWorkflowCheck::exact_original_project_runtime_v1;
 }
 
+std::optional<JsonObject> authenticated_compiler_source(
+        const Lesson& lesson,std::size_t page,std::size_t index,const JsonObject& active) {
+    if(!active.HasKey(L"compileCheck")||lesson.state_layout.version!=2)return {};
+    const auto& identity=lesson.state_layout.current.at(page).blocks.at(index);
+    for(const auto& archive:lesson.state_layout.source_format_revisions)
+        if(archive.id==identity)
+            return JsonObject::Parse(key(archive.raw_json));
+    return {};
+}
 curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view expected_locale) {
     require(known_locale(expected_locale), "Unsupported asset language");
     ensure_winrt_apartment();
@@ -2738,7 +2756,12 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
             require(original_blocks.size() == blocks.Size(),"Original JSON block ownership mismatch");
             Page page; page.narration_language = explicit_narration_language(page_source);
             if (!page.narration_language) page.narration_language = lesson.narration_language;
-            for (unsigned b = 0; b < blocks.Size(); ++b) page.blocks.push_back(read_block(blocks.GetAt(b).GetObject(),original.text(original_blocks[b])));
+            for (unsigned b = 0; b < blocks.Size(); ++b) {
+                const auto active=blocks.GetAt(b).GetObject();
+                const auto historical=authenticated_compiler_source(lesson,p,b,active);
+                page.blocks.push_back(read_block(active,original.text(original_blocks[b]),
+                    historical?&*historical:nullptr));
+            }
             lesson.pages.push_back(std::move(page));
         }
         resolve_addresses(lesson);
@@ -2806,7 +2829,8 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
                     if(block.HasKey(L"compileCheck")||block.HasKey(L"outputCheck")||declared_runtime) {
                         // Required compiler progress needs the whole authored
                         // objective and build inputs to verify captured proofs.
-                        page.blocks.push_back(read_block(block,raw));
+                        const auto historical=authenticated_compiler_source(lesson,p,b,block);
+                        page.blocks.push_back(read_block(block,raw,historical?&*historical:nullptr));
                     } else {
                         // Keep the legacy read-only projection compatible with
                         // future/free compiler payloads; it never executes or
