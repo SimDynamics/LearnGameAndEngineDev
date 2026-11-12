@@ -20,7 +20,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint faltantes(int necesarias, int disponibles) {\n    if (necesarias <= disponibles) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n\nvoid mostrar_faltantes(int cantidad) {\n    std::cout << \"Faltan: \" << cantidad;\n}\n\nint main() {\n    const int resultado = faltantes(7, 3);\n    mostrar_faltantes(resultado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint faltantes(int necesarias, int disponibles) {\n    if (necesarias <= disponibles) {\n        return 0;\n    }\n\n    return necesarias - disponibles;\n}\n\nvoid mostrar_faltantes(int cantidad) {\n    std::cout << \"Faltan: \" << cantidad;\n}\n\nint main() {\n    const int resultado = faltantes(7, 3);\n    mostrar_faltantes(resultado);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -53,7 +53,7 @@
           "type": "output_prediction",
           "question": "Sigue la llamada interior antes de completar el resultado exterior.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 2;\n}\n\nint posiciones(int cantidad) {\n    const int preparadas = con_reserva(cantidad);\n    return preparadas * 3;\n}\n\nint main() {\n    std::cout << posiciones(4);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 2;\n}\n\nint posiciones(int cantidad) {\n    const int preparadas = con_reserva(cantidad);\n    return preparadas * 3;\n}\n\nint main() {\n    std::cout << posiciones(4);\n\n    return 0;\n}\n",
           "answers": [
             "18"
           ],
@@ -85,7 +85,7 @@
         {
           "type": "inline_fill_code",
           "question": "cumple_minimo debe usar la función de suma definida y responder true si el total alcanza el mínimo. Completa el nombre de la función y el operador de comparación; escribe sólo esos elementos.",
-          "template": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nbool cumple_minimo(const std::vector<int>& datos, int minimo) {\n    return [](datos) [] minimo;\n}\n\nint main() {\n    const std::vector<int> datos = {3, 2};\n    std::cout << cumple_minimo(datos, 5);\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n\n    for (int valor : datos) {\n        total = total + valor;\n    }\n\n    return total;\n}\n\nbool cumple_minimo(const std::vector<int>& datos, int minimo) {\n    return [](datos) [] minimo;\n}\n\nint main() {\n    const std::vector<int> datos = {3, 2};\n\n    std::cout << cumple_minimo(datos, 5);\n\n    return 0;\n}\n",
           "answers": [
             "sumar",
             ">="
@@ -124,7 +124,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {3, 4, 5};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {3, 4, 5};\n    const int capacidad = 5;\n\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -161,7 +161,7 @@
           "type": "output_prediction",
           "question": "Sólo se prueba el cálculo de contenedores, con datos que cumplen su contrato. Predice el resultado.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nint main() {\n    std::cout << contenedores_necesarios(25, 4);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n\n    return contenedores;\n}\n\nint main() {\n    std::cout << contenedores_necesarios(25, 4);\n\n    return 0;\n}\n",
           "answers": [
             "7"
           ],
@@ -233,7 +233,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {6};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {6};\n    const int capacidad = 5;\n\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -249,7 +249,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    std::vector<int> pedidos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        pedidos.push_back(dato);\n    }\n    int capacidad{0};\n    std::cin >> capacidad;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    std::vector<int> pedidos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        pedidos.push_back(dato);\n    }\n\n    int capacidad{0};\n\n    std::cin >> capacidad;\n\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -325,7 +325,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Completa el esqueleto con las cuatro funciones anteriores y main. La entrada contiene, en este orden, n, la cantidad de pedidos; exactamente n valores de pedido; capacidad; y reserva. Usa números enteros separados por espacios o saltos de línea. Los ensayos garantizan n entre 0 y 7, pedidos entre -1 y 21, capacidad entre 0 y 11 y reserva entre -1 y 4, con todos los datos presentes y escritos como enteros. Estos límites permiten leer y guardar el ensayo completo; no significan que el plan sea válido.\n\nEn main, lee los datos y construye el vector. Llama a plan_valido antes de calcular unidades o dividir. Si devuelve false, muestra únicamente Datos fuera del dominio y un salto de línea. Si devuelve true, compón los otros cálculos y pasa sus resultados a mostrar_plan. Conserva las funciones al variar sólo Entrada. Pulsa «Compilar, ejecutar y comprobar» para comprobar los catorce casos."
+          "text": "Completa el esqueleto con las cuatro funciones anteriores y main. La entrada contiene, en este orden, n, la cantidad de pedidos; exactamente n valores de pedido; capacidad; y reserva. Usa números enteros separados por espacios o saltos de línea. Los ensayos garantizan n entre 0 y 7, pedidos entre -1 y 21, capacidad entre 0 y 11 y reserva entre -1 y 4, con todos los datos presentes y escritos como enteros. Estos límites permiten leer y guardar el ensayo completo; no significan que el plan sea válido.\n\nEn main, lee los datos y construye el vector. Llama a plan_valido antes de calcular unidades o dividir. Si devuelve false, muestra únicamente Datos fuera del dominio y un salto de línea. Si devuelve true, compón los otros cálculos y pasa sus resultados a mostrar_plan. Conserva las funciones al variar sólo Entrada. Pulsa «Compilar, ejecutar y comprobar» para comprobar el primero de los catorce casos («0 5 0»). Los trece restantes son pruebas opcionales y no bloquean el avance."
         },
         {
           "type": "paragraph",
@@ -353,7 +353,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Estos cinco ensayos deben mostrar únicamente Datos fuera del dominio, con salto de línea final:\n- 1 3 0 1: la capacidad es 0.\n- 1 -1 5 0: un pedido es -1.\n- 7 1 1 1 1 1 1 1 5 0: hay 7 pedidos.\n- 0 5 4: la reserva es 4.\n- 0 11 0: la capacidad es 11.\nSe leen los datos de cada ensayo, pero no se calcula el total ni se divide cuando el plan no cumple el contrato."
+          "text": "Estos cinco ensayos deben mostrar únicamente Datos fuera del dominio, con salto de línea final:\n1 3 0 1: la capacidad es 0.\n1 -1 5 0: un pedido es -1.\n7 1 1 1 1 1 1 1 5 0: hay 7 pedidos.\n0 5 4: la reserva es 4.\n0 11 0: la capacidad es 11.\nSe leen los datos de cada ensayo, pero no se calcula el total ni se divide cuando el plan no cumple el contrato."
         },
         {
           "type": "paragraph",
@@ -598,7 +598,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nbool plan_valido(const std::vector<int>& pedidos, int capacidad, int reserva) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    if ((capacidad < 1) || (capacidad > 10)\n        || (reserva < 0) || (reserva > 3)) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint unidades_con_reserva(const std::vector<int>& pedidos, int reserva) {\n    int unidades = reserva;\n    for (int cantidad : pedidos) {\n        unidades = unidades + cantidad;\n    }\n    return unidades;\n}\n\nint contenedores_necesarios(int unidades, int capacidad) {\n    int contenedores = unidades / capacidad;\n    if (unidades % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int unidades, int contenedores) {\n    std::cout << \"Unidades: \" << unidades << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores << \"\\n\";\n}\n\nint main() {\n    int n{0};\n    std::cin >> n;\n    std::vector<int> pedidos;\n    for (int i{0}; i < n; ++i) {\n        int pedido{0};\n        std::cin >> pedido;\n        pedidos.push_back(pedido);\n    }\n    int capacidad{0};\n    int reserva{0};\n    std::cin >> capacidad >> reserva;\n    if (plan_valido(pedidos, capacidad, reserva)) {\n        const int unidades = unidades_con_reserva(pedidos, reserva);\n        const int contenedores = contenedores_necesarios(unidades, capacidad);\n        mostrar_plan(unidades, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nbool plan_valido(const std::vector<int>& pedidos, int capacidad, int reserva) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n\n    if ((capacidad < 1) || (capacidad > 10)\n        || (reserva < 0) || (reserva > 3)) {\n        return false;\n    }\n\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\nint unidades_con_reserva(const std::vector<int>& pedidos, int reserva) {\n    int unidades = reserva;\n\n    for (int cantidad : pedidos) {\n        unidades = unidades + cantidad;\n    }\n\n    return unidades;\n}\n\nint contenedores_necesarios(int unidades, int capacidad) {\n    int contenedores = unidades / capacidad;\n\n    if (unidades % capacidad != 0) {\n        ++contenedores;\n    }\n\n    return contenedores;\n}\n\nvoid mostrar_plan(int unidades, int contenedores) {\n    std::cout << \"Unidades: \" << unidades << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores << \"\\n\";\n}\n\nint main() {\n    int n{0};\n\n    std::cin >> n;\n    std::vector<int> pedidos;\n    for (int i{0}; i < n; ++i) {\n        int pedido{0};\n        std::cin >> pedido;\n        pedidos.push_back(pedido);\n    }\n\n    int capacidad{0};\n    int reserva{0};\n\n    std::cin >> capacidad >> reserva;\n\n    if (plan_valido(pedidos, capacidad, reserva)) {\n        const int unidades = unidades_con_reserva(pedidos, reserva);\n        const int contenedores = contenedores_necesarios(unidades, capacidad);\n\n        mostrar_plan(unidades, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\\n\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1624,6 +1624,194 @@
         "id": "block_0003_0002",
         "beforeSha256": "80bebc62eb5547aed024f3db6e1dc4a3fa3a56b3c146471fd67a0c1cbac9149f",
         "afterSha256": "1b42936a04cfbf9fb800d58f9199fa2e841c0c7e76e9301f1d5e82bf27341517"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "581d962e49cd02f80a97bdd228807422ea78a8896dfb9319e8f5356aad1deb45",
+        "afterSha256": "72f1dec77b4b4835750913640894e04f0f59bb3050470c363a89b78b64c5b26d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "74979be2ae116d7b461d75a32d3718ad9c87b2e884afe4a4473a977449ddc552",
+        "afterSha256": "af1b8a335760e28f162ce47dfc3836d39754657899c0e3aeddb7dc74f4a5b1bb"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "fb90ff7b71d61d4d07103ada9d2c4bf9908190fe420d1244e053fa63dd9f9c1b",
+        "afterSha256": "1669d7ccfa448877cbec7b98be69d79b360e523f84752ab11db677670bcf1534"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "a5a531b39bd433572fddb6c2a99b84e59213d5f883015c35a1c5f6653a20930b",
+        "afterSha256": "fa5920ae6fae3ae8d136f4ad4565dc9ebd726e7b263ca08bc788bc02d3863b5e"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "21e74f5e51dff3e7e35796d586acf167b382695eee7137e8f3d9d581121b1d9c",
+        "afterSha256": "054ce11ebcea42c5bf03b4569d1901dee33853888c4a37aaf429024051dcc8c5"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "a516c3bbd729d564b0c8d85d1fe54ca4590cad2d7b0ec45c98cdfde2c74e7671",
+        "afterSha256": "fd50824b7a43a1b27a2a5a50f29d008ad5313286de60b6605ff592e1ff8531e3"
+      },
+      {
+        "id": "block_0006_0007",
+        "beforeSha256": "7fa7b40f5d2bcad29202dc261408c3bc4c2f7494fe13eb0ebdc32acdcdbdd72c",
+        "afterSha256": "816b11ae546e3478c7ffa1125bff6f4bd90609e75537a11dc33b36efd13fc1d9"
+      },
+      {
+        "id": "plan_reserva_referencia_codigo",
+        "beforeSha256": "b4582dc33be14106ff8eefa1d28b0ea5ad4e6fedda8a3f1a2b9173e8e9d11f7a",
+        "afterSha256": "d7dee3739ca921c92f1f56c1ff4a2b65e02c8a547ba96e78aa3ac2c42c7ddbc6"
+      },
+      {
+        "id": "plan_reserva_construccion_entrada",
+        "beforeSha256": "2c464a8d0eb2313a3d80c36b2f16d273a0b3ad4a8d6e54ad169fad80bcc38a51",
+        "afterSha256": "4d9fae15ebc12ca513ef03ceb2c77df2a343657278086f19478d237a278bfcef"
+      },
+      {
+        "id": "plan_reserva_casos_de_rechazo",
+        "beforeSha256": "64f74cdf4acc2a9d7b6a2268e5826b76f0d9e7bbf53a863096b129ebdaf0f49e",
+        "afterSha256": "e3751750bde93cc97bc96fdaca043abf81337fac29644f2b3b7c678e4a73674c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint faltantes(int necesarias, int disponibles) {\n    if (necesarias <= disponibles) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n\nvoid mostrar_faltantes(int cantidad) {\n    std::cout << \"Faltan: \" << cantidad;\n}\n\nint main() {\n    const int resultado = faltantes(7, 3);\n    mostrar_faltantes(resultado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Sigue la llamada interior antes de completar el resultado exterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 2;\n}\n\nint posiciones(int cantidad) {\n    const int preparadas = con_reserva(cantidad);\n    return preparadas * 3;\n}\n\nint main() {\n    std::cout << posiciones(4);\n    return 0;\n}\n",
+          "answers": [
+            "18"
+          ],
+          "explanation": "con_reserva(4) entrega 6. posiciones multiplica ese resultado por 3."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "inline_fill_code",
+          "question": "cumple_minimo debe usar la función de suma definida y responder true si el total alcanza el mínimo. Completa el nombre de la función y el operador de comparación; escribe sólo esos elementos.",
+          "template": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nbool cumple_minimo(const std::vector<int>& datos, int minimo) {\n    return [](datos) [] minimo;\n}\n\nint main() {\n    const std::vector<int> datos = {3, 2};\n    std::cout << cumple_minimo(datos, 5);\n    return 0;\n}\n",
+          "answers": [
+            "sumar",
+            ">="
+          ]
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {3, 4, 5};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Unidades: 12\nContenedores: 3",
+                  "Unidades: 12\nContenedores: 3\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Sólo se prueba el cálculo de contenedores, con datos que cumplen su contrato. Predice el resultado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nint main() {\n    std::cout << contenedores_necesarios(25, 4);\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "explanation": "Seis contenedores completos guardan 24 unidades y hace falta uno adicional para la restante."
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {6};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    std::vector<int> pedidos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        pedidos.push_back(dato);\n    }\n    int capacidad{0};\n    std::cin >> capacidad;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 5",
+                "outputs": [
+                  "Unidades: 0\nContenedores: 0",
+                  "Unidades: 0\nContenedores: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 5 5",
+                "outputs": [
+                  "Unidades: 5\nContenedores: 1",
+                  "Unidades: 5\nContenedores: 1\n"
+                ]
+              },
+              {
+                "standardInput": "2 5 5 5",
+                "outputs": [
+                  "Unidades: 10\nContenedores: 2",
+                  "Unidades: 10\nContenedores: 2\n"
+                ]
+              },
+              {
+                "standardInput": "1 6 5",
+                "outputs": [
+                  "Unidades: 6\nContenedores: 2",
+                  "Unidades: 6\nContenedores: 2\n"
+                ]
+              },
+              {
+                "standardInput": "3 3 4 5 0",
+                "outputs": [
+                  "Datos fuera del dominio",
+                  "Datos fuera del dominio\n"
+                ]
+              },
+              {
+                "standardInput": "1 -1 5",
+                "outputs": [
+                  "Datos fuera del dominio",
+                  "Datos fuera del dominio\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 5"
+        }
+      },
+      {
+        "id": "plan_reserva_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool plan_valido(const std::vector<int>& pedidos, int capacidad, int reserva) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    if ((capacidad < 1) || (capacidad > 10)\n        || (reserva < 0) || (reserva > 3)) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint unidades_con_reserva(const std::vector<int>& pedidos, int reserva) {\n    int unidades = reserva;\n    for (int cantidad : pedidos) {\n        unidades = unidades + cantidad;\n    }\n    return unidades;\n}\n\nint contenedores_necesarios(int unidades, int capacidad) {\n    int contenedores = unidades / capacidad;\n    if (unidades % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int unidades, int contenedores) {\n    std::cout << \"Unidades: \" << unidades << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores << \"\\n\";\n}\n\nint main() {\n    int n{0};\n    std::cin >> n;\n    std::vector<int> pedidos;\n    for (int i{0}; i < n; ++i) {\n        int pedido{0};\n        std::cin >> pedido;\n        pedidos.push_back(pedido);\n    }\n    int capacidad{0};\n    int reserva{0};\n    std::cin >> capacidad >> reserva;\n    if (plan_valido(pedidos, capacidad, reserva)) {\n        const int unidades = unidades_con_reserva(pedidos, reserva);\n        const int contenedores = contenedores_necesarios(unidades, capacidad);\n        mostrar_plan(unidades, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\\n\";\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -3318,7 +3506,7 @@
       {
         "block": "plan_reserva_construccion_entrada",
         "path": "/text",
-        "sourceSha256": "01051efac7ed791fb60494e506ad073e24e24ff8ce62713a0a5366c75e9f8835",
+        "sourceSha256": "6d8428ac3b1171b5753867d9456461cf02843a684f04490a2d89e89666968253",
         "spans": [
           {
             "start": 30,
@@ -3482,9 +3670,16 @@
             "reading": "technical"
           },
           {
-            "start": 880,
-            "end": 887,
+            "start": 894,
+            "end": 901,
             "text": "catorce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 910,
+            "end": 915,
+            "text": "0 5 0",
             "role": "data",
             "reading": "natural"
           }
@@ -3836,7 +4031,7 @@
       {
         "block": "plan_reserva_casos_de_rechazo",
         "path": "/text",
-        "sourceSha256": "96a606b181ff5633a3afbd3c93452ca2aeecad43068f4492a0b5eb4c10423114",
+        "sourceSha256": "af2596e75604a7fb2d8762cd9425ba94decdc8705d85dfab635d44983038180d",
         "spans": [
           {
             "start": 6,
@@ -3853,71 +4048,71 @@
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 105,
+            "start": 96,
+            "end": 103,
             "text": "1 3 0 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 123,
-            "end": 124,
+            "start": 121,
+            "end": 122,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 128,
-            "end": 136,
+            "start": 124,
+            "end": 132,
             "text": "1 -1 5 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 153,
+            "start": 147,
+            "end": 149,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 176,
+            "start": 151,
+            "end": 170,
             "text": "7 1 1 1 1 1 1 1 5 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 182,
-            "end": 183,
+            "start": 176,
+            "end": 177,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 200,
+            "start": 187,
+            "end": 192,
             "text": "0 5 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 217,
+            "start": 208,
+            "end": 209,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 221,
-            "end": 227,
+            "start": 211,
+            "end": 217,
             "text": "0 11 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 245,
-            "end": 247,
+            "start": 235,
+            "end": 237,
             "text": "11",
             "role": "data",
             "reading": "natural"

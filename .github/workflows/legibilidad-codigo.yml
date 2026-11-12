@@ -18,6 +18,7 @@ on:
       - 'scripts/curriculum/test_referencias_lectura_format_batch.py'
       - 'scripts/curriculum/test_referencias_modificar_format_batch.py'
       - 'scripts/curriculum/test_contratos_casos_format_batch.py'
+      - 'scripts/curriculum/test_componer_funciones_format_batch.py'
       - 'scripts/curriculum/auditar_tarjetas_orden_codigo.py'
       - '.github/workflows/legibilidad-codigo.yml'
   workflow_dispatch:
@@ -116,6 +117,8 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_referencias_modificar_format_batch.py -v
       - name: Acreditar U6L7 contratos, precondiciones y casos C++23
         run: python -m unittest discover -s scripts/curriculum -p test_contratos_casos_format_batch.py -v
+      - name: Acreditar U6L8 composicion, 14 casos opcionales y texto C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_componer_funciones_format_batch.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
