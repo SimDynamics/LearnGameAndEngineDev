@@ -645,7 +645,8 @@ std::map<std::string,std::string> compile_check_contracts(const curriculum::Less
     const auto collect=[&](const curriculum::Block& block){if(block.compile_check){
         JsonArray row;row.Append(JsonValue::CreateStringValue(wide(block.stable_id)));
         row.Append(JsonValue::CreateStringValue(wide(block.compile_check->diagnostic)));
-        row.Append(JsonValue::CreateStringValue(wide(sha256(block.initial_code))));
+        row.Append(JsonValue::CreateStringValue(wide(sha256(
+            block.source_format_original_initial_code.value_or(block.initial_code)))));
         if(!contracts.emplace(block.stable_id,utf8(row.Stringify())).second)
             throw std::runtime_error("Una comprobación de diagnóstico tiene varios propietarios.");
     }};
