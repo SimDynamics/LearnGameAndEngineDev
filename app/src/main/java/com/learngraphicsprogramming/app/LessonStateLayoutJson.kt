@@ -197,7 +197,9 @@ internal object LessonStateLayoutJson {
                 } ?: compilerReferences[id]?.let { before ->
                     CurricularCompilerRevision.projectReference(chosen, before)
                 } ?: chosen
-                require(stateFingerprint(protected) == expectedSignatures.getValue(id)) {
+                val historical = CurricularMathLabelRevision.project(
+                    lesson.optString("id"), id, protected)
+                require(stateFingerprint(historical) == expectedSignatures.getValue(id)) {
                     "Protected response/code contract changed for $id"
                 }
                 editorial[id]?.let { require(fingerprint(block) == it) }
