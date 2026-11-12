@@ -116,7 +116,7 @@ inline bool report_main_only_edit(std::string_view original,std::string_view can
     if(!original.ends_with(suffix)||!candidate.starts_with(prefix)||
         !candidate.ends_with(suffix)||candidate.size()<prefix.size()+suffix.size())return false;
     const auto body=candidate.substr(prefix.size(),candidate.size()-prefix.size()-suffix.size());
-    return body.find("\n#")==body.npos&&body.find("\r#")==body.npos;
+    return !code_format::forbidden_preprocessor_in_edit(body);
 }
 
 // Discriminating fresh inputs, separate from the student's three public
