@@ -31,7 +31,8 @@ internal class StableLessonStateLayout(
     val locale: String? = null,
     family: Map<String, LessonStateFamily> = emptyMap(),
     additions: List<LessonStateAddition> = emptyList(),
-    orderRefinements: Map<String, CurricularOrderRefinement> = emptyMap()
+    orderRefinements: Map<String, CurricularOrderRefinement> = emptyMap(),
+    retiredIds: Set<String> = emptySet()
 ) {
     // Defensive copies: the JSON parser or author must not mutate a checked map.
     val origin: List<LessonStatePage> = origin.map { it.copy(blocks = it.blocks.toList()) }
@@ -40,6 +41,9 @@ internal class StableLessonStateLayout(
         origin = record.origin.map { it.copy(blocks = it.blocks.toList()) },
         signatures = record.signatures.toMap()) }.toMap()
     val additions = additions.toList()
+    // Retired addresses still exist in origin and remain valid stored data,
+    // but they are never a new reading/completion obligation.
+    val retiredIds = retiredIds.toSet()
     // Presentation-only expansion of old physical order cards. No stored
     // answer or state lineage is rewritten.
     val orderRefinements = orderRefinements.mapValues { (_, revision) ->
@@ -56,7 +60,8 @@ internal class StableLessonStateLayout(
     init {
         checkLayout(this.origin.isNotEmpty(), "A state layout needs at least one page")
         checkLayout(this.origin.size <= 2048, "Too many state pages")
-        checkLayout(version in 1..2, "Unsupported state layout version")
+        checkLayout(version in 1..2 && (version == 2 || this.retiredIds.isEmpty()),
+            "Unsupported state layout version or retirement")
         checkLayout(if (version == 1) locale == null && this.family.isEmpty() && this.additions.isEmpty()
             else locale != null && locale in LOCALES && this.family.keys.all { it in LOCALES } && locale in this.family,
             "Invalid state layout family")
@@ -81,8 +86,12 @@ internal class StableLessonStateLayout(
             "Invalid or colliding new storage slot")
         checkLayout(this.current.map { it.id }.toSet() == this.origin.map { it.id }.toSet(),
             "Reordering must preserve every page identity")
-        checkLayout(this.current.flatMap { it.blocks }.toSet() == originalIds + addedIds,
-            "Reordering must preserve every block identity")
+        val allIds = originalIds + addedIds
+        val visibleIds = this.current.flatMap { it.blocks }.toSet()
+        checkLayout(this.retiredIds.all { it in allIds } && this.retiredIds.intersect(visibleIds).isEmpty(),
+            "Retired blocks may not change their original storage or remain active")
+        checkLayout(visibleIds + this.retiredIds == allIds,
+            "Reordering must preserve every block identity, including retired owners")
         originPages = this.origin.mapIndexed { index, page -> page.id to index }.toMap()
         currentPages = this.current.mapIndexed { index, page -> page.id to index }.toMap()
         originBlocks = buildMap {
@@ -96,8 +105,9 @@ internal class StableLessonStateLayout(
                 page.blocks.forEachIndexed { b, id -> put(id, LessonStatePosition(p, b)) }
             }
         }
-        progressPages = this.origin.map { page -> page.copy(blocks = page.blocks +
-            this.additions.filter { it.progressPage == page.id }.map { it.id }) }
+        progressPages = this.origin.map { page -> page.copy(blocks = (page.blocks +
+            this.additions.filter { it.progressPage == page.id }.map { it.id })
+                .filterNot { it in this.retiredIds }) }
         progressGroups = progressPages.map { page -> page.blocks.map(displayedBlocks::getValue) }
         // New activities do not change the historical lineage or reuse old addresses.
         fun framing(pages: List<LessonStatePage>) = pages.joinToString("|") {
