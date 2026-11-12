@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iterator>
 #include <iostream>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Data.Json.h>
 #include <stdexcept>
 #include <string>
