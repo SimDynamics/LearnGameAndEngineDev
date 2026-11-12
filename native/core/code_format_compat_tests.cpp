@@ -186,6 +186,22 @@ void u3_rejection_diagnostics_contracts() {
         RejectionOperation::boxes,boxes->rejected).correct,
         "U3L6 accepted swapped rejection facts");
     check(!evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1, peticion 9: rango de 0 a 20; revise.\n"
+        "Cajas, peticion 3, piezas 21: rango de 0 a 20; revise.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 allowed a correct request followed by a contradictory request number");
+    check(!evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1, piezas 19: rango de 0 a 20; revise.\n"
+        "Cajas, peticion 3, piezas 21: rango de 0 a 20; revise.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 allowed conflicting quantities in a single rejected request");
+    check(evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1, piezas -1: rango de 0 a 20; revise.\n"
+        "Cajas, peticion 3, piezas 21: rango de 0 a 20; revise.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "A repeated consistent request field was incorrectly rejected");
+
+    check(!evaluate_rejection_diagnostics(
         "Cajas, peticion 1, piezas -1: revise.\n"
         "Cajas, peticion 3, piezas 21: revise.\n",
         RejectionOperation::boxes,boxes->rejected).correct,
@@ -231,6 +247,12 @@ void u3_rejection_diagnostics_contracts() {
         "Saldo, peticion 3, cobros 0, devoluciones -1: intervalo 0 a 9; revise.\n",
         RejectionOperation::balance,balances->rejected).correct,
         "U3L6 accepted transposed cobros/devoluciones");
+    check(!evaluate_rejection_diagnostics(
+        "Saldo, peticion 2, cobros 10, devoluciones 0, devoluciones 1: intervalo 0 a 9; revise.\n"
+        "Saldo, peticion 3, cobros 0, devoluciones -1: intervalo 0 a 9; revise.\n",
+        RejectionOperation::balance,balances->rejected).correct,
+        "U3L6 credited an originally correct balance with a later contradictory operand");
+
     const auto valid_balance=rejection_expected_for_input(
         RejectionOperation::balance,"2 3 0 0 9 0 0 9");
     check(valid_balance&&valid_balance->rejected.empty()&&valid_balance->exit_code==0&&
