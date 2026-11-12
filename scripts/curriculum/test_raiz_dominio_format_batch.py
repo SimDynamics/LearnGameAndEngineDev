@@ -113,7 +113,7 @@ class SquareRootContractFormatBatch(unittest.TestCase):
                          "// Define calcular_lado antes de main, o declara su firma y define despues.\n"
                          "int main() {\n"
                          "    // Construye la lectura, la clasificacion y la comprobacion de conservacion.\n"
-                         "    return 0;\n}\n",owned["initialCode"])
+                         "    return 0;\n}\n",self.originals["raiz_coleccion_propia_editor"]["initialCode"])
 
 if __name__=="__main__":
     unittest.main()
