@@ -124,14 +124,18 @@ internal object LessonStateLayoutJson {
                 require(revisions.length() <= 100_000)
                 for (index in 0 until revisions.length()) {
                     val entry = revisions.getJSONObject(index)
-                    require(entry.keys().asSequence().toSet() == setOf("id", "block", "references"))
+                    val fields = entry.keys().asSequence().toSet()
+                    require(setOf("id", "block").all { it in fields } &&
+                        fields.all { it in setOf("id", "block", "references") })
                     val id = strictString(entry, "id")
                     require(id in active && id !in compilerOriginals && id !in compilerReferences)
                     val old = entry.getJSONObject("block")
                     require(stateFingerprint(old) == expectedSignatures.getValue(id) &&
                         editorialSeen[id]?.contains(fingerprint(old)) == true)
                     compilerOriginals[id] = old
-                    val references = entry.getJSONArray("references")
+                    // Some reviewed compiler changes extend only stdout or
+                    // the case list and have no separately revised reference.
+                    val references = entry.optJSONArray("references") ?: JSONArray()
                     require(references.length() <= 100_000)
                     for (referenceIndex in 0 until references.length()) {
                         val reference = references.getJSONObject(referenceIndex)
