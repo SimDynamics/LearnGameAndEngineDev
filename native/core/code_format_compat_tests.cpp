@@ -149,6 +149,23 @@ int main(){return 0;}
         " \t/* safe comment */ #undef VERIFIER\n"),
         "The common source guard missed a directive after a comment");
 }
+void bounded_u3_rejection_inputs() {
+    using curriculum::RejectionOperation;
+    const auto boxes_eight=curriculum::rejection_expected_for_input(
+        RejectionOperation::boxes,"0 1 2 3 4 5 6 7");
+    const auto boxes_nine=curriculum::rejection_expected_for_input(
+        RejectionOperation::boxes,"0 1 2 3 4 5 6 7 8");
+    check(boxes_eight.has_value()&&!boxes_nine.has_value()&&
+        boxes_eight->rejected.empty()&&boxes_eight->exit_code==0,
+        "U3L6 boxes accepted more than the eight authored requests");
+    const auto balances_eight=curriculum::rejection_expected_for_input(
+        RejectionOperation::balance,"0 0 1 1 2 2 3 3 4 4 5 5 6 6 7 7");
+    const auto balances_nine=curriculum::rejection_expected_for_input(
+        RejectionOperation::balance,"0 0 1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8");
+    check(balances_eight.has_value()&&!balances_nine.has_value()&&
+        balances_eight->rejected.empty()&&balances_eight->exit_code==0,
+        "U3L6 balances did not keep their eight-pair domain");
+}
 void historical_frames(){
     Lesson lesson;lesson.locale="es";lesson.id="format-compat-native";
     Block compiler;compiler.type=BlockType::cpp_compiler;compiler.stable_id="block_0002_0004";
@@ -192,7 +209,7 @@ void historical_frames(){
 }
 int main(){
     try{
-        lexical_safety();historical_frames();guarded_open_compiler_edits();
+        lexical_safety();historical_frames();guarded_open_compiler_edits();bounded_u3_rejection_inputs();
         std::cout<<"PASS safe C++/CMake formatting; protected comments/literals/macros and historic compiler/order state frames\n";
         return 0;
     }catch(const std::exception& e){
