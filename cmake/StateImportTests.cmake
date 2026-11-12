@@ -162,6 +162,18 @@ function(lgaed_add_state_import_tests qa_root)
     # revision files and selective restoration, not only compiler state.
     # The normal full build registers this same test separately below.
     if(LGAED_STATE_IMPORT_QA_ONLY)
+        # Real MSVC compilation and linking in both physical source versions.
+        # A compiler error is not proof until the control project also builds.
+        add_executable(lgaed_u6_compilecheck_format_runner_tests
+            native/platform/windows/u6_compilecheck_format_runner_tests.cpp)
+        target_link_libraries(lgaed_u6_compilecheck_format_runner_tests PRIVATE
+            lgaed_platform_windows lgaed_host_options)
+        add_dependencies(lgaed_u6_compilecheck_format_runner_tests
+            lgaed_u6_compile_check_format_fixtures)
+        add_test(NAME native.u6_compilecheck_formatted_msvc
+            COMMAND lgaed_u6_compilecheck_format_runner_tests
+                "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}")
+        set_tests_properties(native.u6_compilecheck_formatted_msvc PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
         add_executable(lgaed_cpp_project_history_tests native/platform/windows/cpp_project_history_tests.cpp)
         target_link_libraries(lgaed_cpp_project_history_tests PRIVATE lgaed_platform_windows)
         add_test(NAME native.cpp_project_history COMMAND lgaed_cpp_project_history_tests
