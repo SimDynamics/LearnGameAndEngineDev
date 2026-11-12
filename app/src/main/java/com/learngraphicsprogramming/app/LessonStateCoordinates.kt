@@ -223,7 +223,7 @@ internal object LessonStateCoordinates {
         }
         val displayed = state.savedOrderForDisplay(page, block, positions)
         if (displayed == positions) return saved
-        return org.json.JSONArray().apply { displayed.forEach(::put) }
+        return org.json.JSONArray().apply { displayed.forEach { put(it) } }
     }
 
     @Synchronized
