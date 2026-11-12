@@ -253,6 +253,15 @@ if(LGAED_READER_BUILD_QA_ONLY)
     target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
     set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
+    # Compile and execute four real U3L6/U3L8 original student editors
+    # against native MSVC with independent stdout/stderr and semantic probes.
+    # The original JSON remains untouched: the reviewed root declaration is
+    # injected only into the isolated QA lesson in memory.
+    add_executable(lgaed_u3_runtime_semantics_tests
+        native/platform/windows/u3_runtime_semantics_tests.cpp)
+    target_link_libraries(lgaed_u3_runtime_semantics_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.u3_runtime_semantics COMMAND lgaed_u3_runtime_semantics_tests)
+    set_tests_properties(native.u3_runtime_semantics PROPERTIES TIMEOUT 360 RUN_SERIAL TRUE)
     # A personal Windows development build does not require Google Play
     # or a saved entitlement to keep checking exercises with zero lives.
     add_executable(lgaed_premium_windows_tests native/core/premium_windows_tests.cpp)
