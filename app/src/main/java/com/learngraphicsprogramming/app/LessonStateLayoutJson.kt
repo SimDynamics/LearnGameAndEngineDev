@@ -258,6 +258,72 @@ internal object LessonStateLayoutJson {
         }
     }
 
+    private val reviewedIntentionalExits = mapOf(
+        "d263ac4c841168cb7723bdc2daaeaf6ddc839c4830f17a26f6166ff919fb252c" to
+            "Entrada invalida|9:4",
+        "6f796c5c55683ac266ae3f83c54f935273c341c34da087161276c7e361524ae8" to
+            "Error al abrir salida"
+    )
+    private const val reviewedCrtBefore =
+        "b475e21c42a6b93cb635f5bfd5197b66b7c1107145a413f2fa9582ab142cda35"
+    private const val reviewedCrtAfter =
+        "53648380e15d1148a779de47c0f94dc08f63e2319f79bdc08e72d25a6992ed31"
+
+    private fun withoutCompilerGuidance(block: JSONObject): JSONObject {
+        val result = JSONObject(block.toString())
+        result.optJSONObject("compileCheck")?.remove("explanation")
+        val cases = result.optJSONObject("outputCheck")?.optJSONArray("cases")
+        if (cases != null) for (index in 0 until cases.length()) {
+            cases.getJSONObject(index).remove("explanation")
+            cases.getJSONObject(index).remove("reviewFeedback")
+        }
+        return result
+    }
+
+    /** Only two published normal exits and one exact CRT spelling may project
+     * back onto their historical compiler state fingerprints. Runtime goals
+     * remain intact in the returned lesson and still require fresh evidence.
+     */
+    private fun projectClosedCompilerRuntime(block: JSONObject): JSONObject {
+        val current = JSONObject(block.toString())
+        if (block.optString("type") != "cpp_compiler" || !current.has("outputCheck")) return current
+        val withoutGoal = JSONObject(current.toString()).apply { remove("outputCheck") }
+        val intentional = reviewedIntentionalExits[fingerprint(withoutGoal)]
+        if (intentional != null) {
+            val goal = current.getJSONObject("outputCheck")
+            require(goal.keys().asSequence().toSet() == setOf("cases"))
+            val cases = goal.getJSONArray("cases")
+            require(cases.length() == 1)
+            val case = cases.getJSONObject(0)
+            require(case.keys().asSequence().toSet() ==
+                setOf("standardInput", "outputs", "exitCode", "explanation"))
+            val outputs = case.getJSONArray("outputs")
+            require(case.getString("standardInput").isEmpty() &&
+                outputs.length() == 1 && outputs.getString(0) == intentional &&
+                case.get("exitCode") is Int && case.getInt("exitCode") == 1 &&
+                strictString(case, "explanation").isNotBlank())
+            current.remove("outputCheck")
+            return current
+        }
+        if (fingerprint(withoutCompilerGuidance(current)) != reviewedCrtAfter) return current
+        val goal = current.getJSONObject("outputCheck")
+        val cases = goal.getJSONArray("cases")
+        require(cases.length() == 1)
+        val case = cases.getJSONObject(0)
+        require(case.getString("standardInput").isEmpty())
+        val outputs = case.getJSONArray("outputs")
+        require(outputs.length() == 2)
+        val old = outputs.getString(0)
+        val spelling = outputs.getString(1)
+        require(old.toByteArray(Charsets.UTF_8).size == 802 &&
+            old.count { it == '\n' } == 42 && old.count { it == '\r' } == 3 &&
+            spelling == old.replace("\n", "\r\n") &&
+            spelling.toByteArray(Charsets.UTF_8).size == 844)
+        case.put("outputs", JSONArray().put(old))
+        require(fingerprint(withoutCompilerGuidance(current)) == reviewedCrtBefore)
+        return current
+    }
+
     private data class ReviewedDiagnostic(val beforeSha256: String, val project: Boolean)
 
     // Closed, source-pinned Android projections of the published diagnostics.
@@ -335,7 +401,9 @@ internal object LessonStateLayoutJson {
             "drag_fill_code", "inline_fill_code" -> setOf("question", "explanation", "reviewFeedback")
             else -> emptySet()
         }
-        val copy = JSONObject(block.toString())
+        val copy = if (type == "cpp_compiler")
+            projectClosedCompilerRuntime(block)
+        else JSONObject(block.toString())
         ignored.forEach(copy::remove)
         if (type == "cpp_compiler") {
             projectReviewedDiagnostic(block, copy)
