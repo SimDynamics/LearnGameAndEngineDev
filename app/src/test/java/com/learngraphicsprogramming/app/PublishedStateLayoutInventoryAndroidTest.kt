@@ -42,6 +42,32 @@ class PublishedStateLayoutInventoryAndroidTest {
                 assertEquals(version, layout.version)
                 assertEquals(lesson.getJSONArray("pages").length(), layout.current.size)
                 if (version == 2) assertEquals(language, layout.locale)
+                // A readable JSON map is not yet proof that a previously
+                // saved draft or answer resolves to its original address.
+                val originalSlots = layout.origin.flatMapIndexed { page, source ->
+                    source.blocks.mapIndexed { block, id ->
+                        id to LessonStatePosition(page, block)
+                    }
+                }.toMap()
+                val additionSlots = layout.additions.associate { it.id to it.storage }
+                val currentIds = mutableSetOf<String>()
+                layout.current.forEachIndexed { page, current ->
+                    current.blocks.forEachIndexed { block, id ->
+                        assertTrue("Duplicate active historical identity: $relative / $id",
+                            currentIds.add(id))
+                        val originalSlot = originalSlots[id] ?: additionSlots[id]
+                        assertTrue("No protected storage slot: $relative / $id",
+                            originalSlot != null)
+                        assertEquals("Historical draft/answer address moved: $relative / $id",
+                            originalSlot, layout.storagePosition(page, block))
+                    }
+                }
+                assertEquals("Missing original, newly added or retired identity: $relative",
+                    originalSlots.keys + additionSlots.keys,
+                    currentIds + layout.retiredIds)
+                assertTrue("A retired historical identity is still active: $relative",
+                    layout.retiredIds.intersect(currentIds).isEmpty())
+                layout.validateReadState(emptySet(), layout.retiredIds)
             } catch (error: Exception) {
                 val rootCause = generateSequence(error as Throwable?) { it.cause }.lastOrNull()
                 val report = "$relative: ${error.message ?: error::class.java.simpleName}" +
