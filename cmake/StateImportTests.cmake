@@ -113,6 +113,27 @@ add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
     VERBATIM)
 add_custom_target(lgaed_code_format_fixtures DEPENDS ${LGAED_CODE_FORMAT_FIXTURES})
 
+# Isolated, read-only pilot against the actual published U4 decision lesson.
+# The Python projection writes only temporary CI fixture copies; never content/.
+set(LGAED_REAL_CODE_FORMAT_PILOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/real-code-format")
+set(LGAED_REAL_CODE_FORMAT_PILOT_FILES
+    "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}/real.before.json"
+    "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}/real.after.json")
+add_custom_command(OUTPUT ${LGAED_REAL_CODE_FORMAT_PILOT_FILES}
+    COMMAND ${_lgaed_state_fixture_python} "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_real_code_format_pilot.py"
+        --output-dir "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_real_code_format_pilot.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/en/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/fr/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Verify real published decision-lesson source formatting without modifying curriculum"
+    VERBATIM)
+add_custom_target(lgaed_real_code_format_pilot_fixtures DEPENDS ${LGAED_REAL_CODE_FORMAT_PILOT_FILES})
+
 function(lgaed_add_state_import_tests qa_root)
     # In the isolated Windows QA mode, test the actual immutable project
     # revision files and selective restoration, not only compiler state.
@@ -134,9 +155,9 @@ function(lgaed_add_state_import_tests qa_root)
         native/platform/windows/code_format_loader_tests.cpp)
     target_link_libraries(lgaed_code_format_loader_tests PRIVATE
         lgaed_platform_windows lgaed_host_options)
-    add_dependencies(lgaed_code_format_loader_tests lgaed_code_format_fixtures)
+    add_dependencies(lgaed_code_format_loader_tests lgaed_code_format_fixtures lgaed_real_code_format_pilot_fixtures)
     add_test(NAME native.code_format_loader COMMAND lgaed_code_format_loader_tests
-        "${LGAED_CODE_FORMAT_FIXTURE_DIR}")
+        "${LGAED_CODE_FORMAT_FIXTURE_DIR}" "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}")
     set_tests_properties(native.code_format_loader PROPERTIES TIMEOUT 45)
     # The real Windows loader/evaluator must reject wrong stderr bytes while
     # retaining previous stdout-only and nonzero-exit completion identities.
