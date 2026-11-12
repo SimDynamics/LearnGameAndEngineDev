@@ -221,6 +221,28 @@ void u3_rejection_diagnostics_contracts() {
         "Cajas, peticion 3, piezas 21: rango 0 a 20; no modifique la evidencia; revise los datos.\n",
         RejectionOperation::boxes,boxes->rejected).correct,
         "U3L6 rejected a later positive review instruction after an unrelated prohibition");
+    for(const std::string_view prohibited:{
+        "no se recomienda revisar",
+        "no es necesario volver a verificar",
+        "sin necesidad de volver a comprobar",
+        "nunca corrija",
+        "jamas revise",
+        "no se debe ajustar",
+        "no conviene revisar",
+        "no hay que revisar"}) {
+        const auto first="Cajas, peticion 1, piezas -1: rango 0 a 20; "+
+            std::string(prohibited)+".\n";
+        const auto second="Cajas, peticion 3, piezas 21: rango 0 a 20; "+
+            std::string(prohibited)+".\n";
+        check(!evaluate_rejection_diagnostics(first+second,
+                RejectionOperation::boxes,boxes->rejected).correct,
+            "U3L6 treated an impersonal/negative recommendation as corrective advice");
+    }
+    check(evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1: rango 0 a 20; no se debe alterar el informe; revise los datos.\n"
+        "Cajas, peticion 3, piezas 21: rango 0 a 20; no se debe alterar el informe; revise los datos.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 overextended a prohibition to a subsequent affirmative corrective instruction");
     check(!evaluate_rejection_stream_probe(messages+"unexpected", "",RejectionOperation::boxes).correct,
         "U3L6 accepted missing independent stream separation");
     const auto split=messages.find('\n');
