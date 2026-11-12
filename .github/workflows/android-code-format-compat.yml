@@ -8,8 +8,13 @@ on:
       - app/src/main/java/com/learngraphicsprogramming/app/CurricularSourceFormatCompat.kt
       - app/src/main/java/com/learngraphicsprogramming/app/LessonStateLayoutJson.kt
       - app/src/main/java/com/learngraphicsprogramming/app/StableLessonStateLayout.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/CurricularOrderRefinement.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/LessonStateCoordinates.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/LessonActivity.kt
       - app/src/test/java/com/learngraphicsprogramming/app/LessonStateLayoutJsonTest.kt
       - app/src/test/java/com/learngraphicsprogramming/app/RealCodeFormatPilotAndroidTest.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/PublishedOrderFormatAndroidTest.kt
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_alternativas_y_fronteras.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json
   workflow_dispatch:
 
@@ -40,6 +45,7 @@ jobs:
           ./gradlew :app:testDebugUnitTest \
             --tests com.learngraphicsprogramming.app.LessonStateLayoutJsonTest \
             --tests com.learngraphicsprogramming.app.RealCodeFormatPilotAndroidTest \
+            --tests com.learngraphicsprogramming.app.PublishedOrderFormatAndroidTest \
             -Plgp.clang23=false -Plgp.wasmtime=false -Plgp.cppExceptions=false \
             --no-daemon --stacktrace
       - name: Retain JUnit XML and reports
