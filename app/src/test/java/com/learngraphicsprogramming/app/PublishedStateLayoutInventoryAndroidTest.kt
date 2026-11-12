@@ -38,8 +38,8 @@ class PublishedStateLayoutInventoryAndroidTest {
                 if (version == 2) assertEquals(language, layout.locale)
             } catch (error: Exception) {
                 val rootCause = generateSequence(error as Throwable?) { it.cause }.lastOrNull()
-                failures += "$relative: \${error.message ?: error::class.java.simpleName}" +
-                    (rootCause?.let { "; cause=\${it.message}" } ?: "")
+                failures += "$relative: ${error.message ?: error::class.java.simpleName}" +
+                    (rootCause?.let { "; cause=${it.message}" } ?: "")
             }
         }
         assertTrue("Published lesson search returned no curricular files", inspected > 0)
