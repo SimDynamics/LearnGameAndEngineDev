@@ -216,6 +216,50 @@ internal object LessonStateLayoutJson {
         }
     }
 
+    private data class ReviewedDiagnostic(val beforeSha256: String, val project: Boolean)
+
+    // Closed, source-pinned Android projections of the published diagnostics.
+    // These are the same reviewed before-hashes as the Windows curricular
+    // validator; a new diagnostic is NOT generally an editorial field.
+    private val reviewedDiagnostics = mapOf(
+        "const-member-call" to ReviewedDiagnostic("05cdb3e534649bd7e3efd1e080e5199443deace1e074d56d45490a8ff32c4c27", false),
+        "explicit-copy-initialization" to ReviewedDiagnostic("ac0365d7452a3a6ff52a0f6c306d01815a09196f9f49e2bc90cdd4ec5dbc9fe9", false),
+        "explicit-argument-conversion" to ReviewedDiagnostic("9f7db3f3a1004a235926bc12e06e9d0bf1a93b707f3ca92f6de2876677fd9c58", false),
+        "explicit-assignment" to ReviewedDiagnostic("3e8eb728eac0d493c864596ec2364fe6c69ff85ce01408dd0020cec36ad6b087", false),
+        "swapped-named-arguments" to ReviewedDiagnostic("b35436bcbac5b5e98731d953fb50499d5e7d3ad66ed1ad88771d56e481a8c9ed", false),
+        "u6-difference-unselected-definition" to ReviewedDiagnostic("d17f1d73d7217ea45e1468f6ed0d1a5ef3565ecce33410a8022660baff950eba", true),
+        "u6-difference-conflicting-return" to ReviewedDiagnostic("e5b83315920efce2c1a6092721096ef596e2c58d7c96089ba01075bceb3986df", true),
+        "u6-difference-missing-header" to ReviewedDiagnostic("3d0f8c6e8fc84ec145f1c9a6c79ec7d5fbe50d8a70294c9f6effc0b4d8eb755c", true),
+        "u6-envelopes-missing-header" to ReviewedDiagnostic("ae23ef7cc266649cbad08efc8736916121dc404e132520a0c386ea73b23d7782", true),
+        "u6-envelopes-missing-declaration" to ReviewedDiagnostic("1c69caf83414219854952076e951e9adb3f9b6168503f60113a2d858103ef650", true),
+        "u6-envelopes-unselected-definitions" to ReviewedDiagnostic("b263e83bb0b912281964eb60261d33713e9cb6d5df046b375f5f008544c4a405", true),
+        "u6-envelopes-duplicate-definition" to ReviewedDiagnostic("72ac435d8a7399bd39c91be5a72ae2034aeb9653a8a78ec45fa3f82e6ac9470e", true),
+        "u6-series-unknown-call" to ReviewedDiagnostic("b84a7b928030171e03178f3300a1fd3dbbd86388ff998fcd8ddea9d247f9effe", true),
+        "u6-series-unselected-definitions" to ReviewedDiagnostic("157dc0f18f12db33cc3a7787009c408bb067ea833544df42ebdc76e2e2c00e34", true),
+        "u6-series-duplicate-definition" to ReviewedDiagnostic("26416e82df9c1bd708b840b6d940c79db644f69bcd2acecc56f595f23cf48d20", true),
+        "u6-shelf-unselected-definition" to ReviewedDiagnostic("2c568ff3ab456b8111cb9a338fc9c0d6f9ccff45a1e1cd3f840cee872900f7e3", true),
+        "u6-shelf-conflicting-return" to ReviewedDiagnostic("5b1315f399da68b066291bf96a7f1ed8cfd1aadf3964b2d2ca55cd1f6bae50ec", true)
+    )
+
+    private fun projectReviewedDiagnostic(block: JSONObject, copy: JSONObject) {
+        if (!copy.has("compileCheck")) return
+        require(block.optString("type") == "cpp_compiler")
+        val check = copy.getJSONObject("compileCheck")
+        val keys = check.keys().asSequence().toSet()
+        require(keys == setOf("diagnostic") || keys == setOf("diagnostic", "explanation"))
+        val spec = reviewedDiagnostics[strictString(check, "diagnostic")]
+            ?: error("Unknown reviewed compiler diagnostic")
+        if (check.has("explanation"))
+            require(strictString(check, "explanation").isNotBlank())
+        require(!copy.has("outputCheck") && !copy.has("cmake") && !copy.has("initialStandardInput"))
+        if (spec.project) require(copy.has("projectFiles") && copy.has("sourceFiles"))
+        else require(!copy.has("projectFiles") && !copy.has("sourceFiles"))
+        copy.remove("compileCheck")
+        require(fingerprint(copy) == spec.beforeSha256) {
+            "Reviewed compiler diagnostic altered the original program or project"
+        }
+    }
+
     private val HASH = Regex("[0-9a-f]{64}")
 
     private fun readOrigin(original: JSONArray): Pair<List<LessonStatePage>, Map<String, String>> {
@@ -244,6 +288,7 @@ internal object LessonStateLayoutJson {
         val type = block.optString("type")
         val ignored = when (type) {
             "heading", "paragraph", "note" -> setOf("text", "emphasis")
+            "image" -> setOf("alt", "caption")
             "multiple_choice", "fill_code", "output_prediction", "order_code",
             "drag_fill_code", "inline_fill_code" -> setOf("question", "explanation", "reviewFeedback")
             else -> emptySet()
@@ -251,6 +296,7 @@ internal object LessonStateLayoutJson {
         val copy = JSONObject(block.toString())
         ignored.forEach(copy::remove)
         if (type == "cpp_compiler") {
+            projectReviewedDiagnostic(block, copy)
             val cases = copy.optJSONObject("outputCheck")?.optJSONArray("cases")
             if (cases != null) for (index in 0 until cases.length()) {
                 cases.optJSONObject(index)?.let { case ->
