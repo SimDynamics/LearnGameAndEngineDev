@@ -163,6 +163,22 @@ inline bool actionable(const std::vector<Word>& words) {
             {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"})
             if(words[i].text.starts_with(stem)){action=true;break;}
         if(!action)continue;
+        // A retrospective report or a noun does not instruct the reader to
+        // correct the rejected input. "La revision ya se hizo", "se reviso"
+        // and "se verificaron" must not receive the same credit as "revise".
+        // Keep genuine infinitives, imperatives and other affirmative advice.
+        if(one_of(words[i].text,{
+            "revision","revisiones","revisado","revisada","revisados","revisadas",
+            "revisando","reviso","revisaron","revisaba","revisabamos",
+            "verificacion","verificaciones","verificado","verificada",
+            "verificados","verificadas","verificando","verificaron","verificamos",
+            "comprobacion","comprobaciones","comprobado","comprobada",
+            "comprobados","comprobadas","comprobando","comprobamos","comprobaron",
+            "corregido","corregida","corregidos","corregidas","corregimos",
+            "rectificacion","rectificaciones","rectificado","rectificada",
+            "modificacion","modificaciones","modificado","modificada",
+            "ajustes","ajustado","ajustada","ajustados","ajustadas","ajustando"
+        }))continue;
         // "No revise" and "sin revisar" describe the opposite of the
         // required corrective instruction. A later positive instruction
         // ("No modifique los hechos; revise los datos") is still accepted.
