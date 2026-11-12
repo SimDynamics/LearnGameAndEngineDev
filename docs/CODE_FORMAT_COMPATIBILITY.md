@@ -3,7 +3,8 @@
 ## Propósito y alcance
 
 Este contrato permite editar espacios, sangrías y **saltos de línea reales** del
-código curricular español sin transformar la edición en una actividad nueva.
+código curricular de los tres idiomas (es/en/fr) sin transformar la edición
+en una actividad nueva.
 La fuente que recibe el estudiante, copia o compila será la versión corregida.
 No se trata de un espaciado visual superpuesto al editor.
 
@@ -15,8 +16,8 @@ Los archivos de proyecto de tipo desconocido son inmutables bajo este contrato.
 
 ## Autoría de Work: conservar el origen publicado
 
-Para una lección española con `stateLayout` v2, Work edita únicamente los
-campos de fuente reales cuyo formato necesita corregir. Luego ejecuta la
+Para cada lección con `stateLayout` v2, Work edita únicamente los campos
+de fuente reales cuyo formato necesita corregir. Luego ejecuta la
 transición curricular usando el **documento anterior publicado como base**,
 mediante el flujo habitual `prepare_v2` y validación de transición.
 
@@ -45,8 +46,11 @@ para toda modificación real del bloque.
 
 No modificar el `origin`, `family`, `additions`, direcciones históricas,
 `correctOrder`, respuestas, casos de `outputCheck`, fuentes iniciales de
-otros ejercicios, mapas de progreso ni archivos de traducción. No regenerar
-huellas históricas para hacerlas coincidir artificialmente con un texto nuevo.
+otros ejercicios ni mapas de progreso. Las traducciones se preparan por
+separado, cada una contra su **origen publicado de ese idioma**; una revisión
+española no debe reescribir implícitamente las fuentes inglesas o francesas.
+No regenerar huellas históricas para hacerlas coincidir artificialmente con
+un texto nuevo.
 
 ## Protección semántica
 
@@ -77,11 +81,19 @@ una revisión de formato autenticada. Se conservan las respuestas e intentos
 ganados. El editor no sobrescribe automáticamente borradores del estudiante.
 Los ejecutables anteriores pueden volver a construirse con el código nuevo.
 
+En Android, `LessonStateLayoutJson` reconoce el archivo
+`sourceFormatRevisions` y proyecta los códigos originales únicamente para
+validar las huellas y posiciones históricas. La ejecución y presentación
+continúan usando las fuentes curriculares visibles, y los borradores guardados
+no se reemplazan. El motor Android utiliza su propio comparador conservador,
+con pruebas JUnit de protección contra fuentes modificadas.
+
 **Verificación previa a usarlo de forma general:** pasar las pruebas de
 `test_code_format_compat.py`, los contratos existentes de ambos cursos,
-`native.code_format_compat`, las regresiones de lectura/estado Windows y
-probar al menos una lección real con edición, reapertura y recuperación de
-borrador y logro. La aceptación visual y auditiva permanece con el usuario.
+`native.code_format_compat`, `native.code_format_loader`, las regresiones
+de lectura/estado Windows y las pruebas JUnit Android
+`LessonStateLayoutJsonTest`. Probar también al menos una lección real con
+edición, reapertura y recuperación de borrador y logro. La aceptación visual y auditiva permanece con el usuario.
 
 ## Separación de responsabilidades
 
