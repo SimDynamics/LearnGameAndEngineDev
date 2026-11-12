@@ -50,14 +50,17 @@ class PublishedStateLayoutInventoryAndroidTest {
                 else existingHistoryGaps += report
             }
         }
-        // This is a diagnostic-only report. It never reassigns an old
-        // response identity or grants a new source-format exemption.
+        // No historical incompatibility is advisory-only: the entire asset
+        // inventory must load with preserved original slots and credentials.
+        val historicalErrors = formattingFailures + existingHistoryGaps
         val report = JSONObject()
             .put("inspectedLessonFiles", inspected)
             .put("historicallyMappedLessons", mapped)
             .put("publishedSourceFormatLessons", formatted)
             .put("formattingFailures", JSONArray(formattingFailures))
             .put("unresolvedOtherHistoricalContracts", JSONArray(existingHistoryGaps))
+            .put("historicalErrorCount", historicalErrors.size)
+            .put("historicalErrors", JSONArray(historicalErrors))
         File("build/reports/curricular-state-inventory.json").apply {
             parentFile?.mkdirs()
             writeText(report.toString(2) + "\n", Charsets.UTF_8)
@@ -65,14 +68,15 @@ class PublishedStateLayoutInventoryAndroidTest {
         assertTrue("Published lesson search returned no curricular files", inspected > 0)
         assertTrue("No authenticated stateLayout was inspected", mapped > 0)
         assertTrue("No published physical-code revisions were inspected", formatted > 0)
-        // This inventory deliberately does not promote *unrelated* historical
-        // contracts into a format-compatibility failure. Their unresolved
-        // identities are counted and reported, never falsely declared passed.
+        // A historical contract failure is a failure even when no formatting
+        // archive was involved. Do not present a partial inventory as passed.
         println("AUDIT Android inventory: $inspected lessons; $mapped mapped; $formatted with source-format archives")
         println("AUDIT pre-existing or non-format historical parser gaps: ${existingHistoryGaps.size}")
         existingHistoryGaps.forEach { println("AUDIT prior gap: $it") }
         assertTrue("Published source-format revisions rejected (${formattingFailures.size}):\n" +
             formattingFailures.joinToString("\n").take(24000), formattingFailures.isEmpty())
-        println("PASS Android all $formatted published format-aware state maps")
+        assertTrue("Unresolved Android historical contract errors (${historicalErrors.size}):\n" +
+            historicalErrors.joinToString("\n").take(24000), historicalErrors.isEmpty())
+        println("PASS Android all $mapped mapped histories among $inspected published lessons")
     }
 }
