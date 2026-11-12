@@ -3,7 +3,9 @@ package com.learngraphicsprogramming.app
 import java.security.MessageDigest
 
 /** A content error is never a reason to read another exercise's positional state. */
-internal class LessonStateLayoutException(message: String) : IllegalStateException(message)
+internal class LessonStateLayoutException(
+    message: String, cause: Throwable? = null
+) : IllegalStateException(message, cause)
 
 internal data class LessonStatePosition(val page: Int, val block: Int)
 internal data class LessonStatePage(val id: String, val blocks: List<String>)
