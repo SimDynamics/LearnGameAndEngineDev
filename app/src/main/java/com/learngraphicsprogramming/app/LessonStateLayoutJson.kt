@@ -244,14 +244,11 @@ internal object LessonStateLayoutJson {
         val type = block.optString("type")
         val ignored = when (type) {
             "heading", "paragraph", "note" -> setOf("text", "emphasis")
-            "image" -> setOf("alt", "caption")
             "multiple_choice", "fill_code", "output_prediction", "order_code",
             "drag_fill_code", "inline_fill_code" -> setOf("question", "explanation", "reviewFeedback")
             else -> emptySet()
         }
-        val copy = if (type == "cpp_compiler")
-            CurricularPublishedLegacyCompat.compilerState(block)
-        else JSONObject(block.toString())
+        val copy = JSONObject(block.toString())
         ignored.forEach(copy::remove)
         if (type == "cpp_compiler") {
             val cases = copy.optJSONObject("outputCheck")?.optJSONArray("cases")
