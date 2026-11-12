@@ -4087,7 +4087,15 @@ struct LessonView {
                 if(!correct&&windows::record_compiler_puzzle_review(data,lesson,block(index),running_program,fresh,text)){
                     mark_dirty();flush();
                 }
-                if(!correct||objective_completed){feedback(index,text,objective_completed,true,false,evaluation.feedback_path);if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);}
+                if(!correct||objective_completed){
+                    feedback(index,text,objective_completed,true,false,evaluation.feedback_path);
+                    if(hooks.feedback_changed)hooks.feedback_changed(window,index,objective_completed);
+                    // An earned first-case achievement already unlocks navigation.
+                    // Keep the visible status consistent with that completion:
+                    // other authored inputs are optional, never required.
+                    if(objective_completed&&vm.status)
+                        set_rich_text(vm.status,compiler_progress_text(index,true));
+                }
                 else if(correct&&vm.selective_recovery&&!objective_completed){
                     // This guidance is EXCLUSIVE to the U3 historical CMake
                     // editor. Other C++ activities keep their normal case
