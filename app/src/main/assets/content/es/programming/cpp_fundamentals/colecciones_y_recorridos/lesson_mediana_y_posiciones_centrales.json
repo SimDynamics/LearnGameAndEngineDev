@@ -42,7 +42,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{8, 1, 6, 3, 5};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    std::cout << centro << \":\" << datos.at(centro);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{8, 1, 6, 3, 5};\n\n    std::sort(datos.begin(), datos.end());\n\n    auto centro = datos.size() / 2;\n\n    std::cout << centro << \":\" << datos.at(centro);\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "2:5"
@@ -64,7 +64,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el dígito del divisor que localiza el índice central para cualquier tamaño impar positivo, no sólo para los tres datos de esta muestra.",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 9};\n    auto centro = datos.size() / ___;\n    std::cout << datos.at(centro);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 9};\n    auto centro = datos.size() / ___;\n\n    std::cout << datos.at(centro);\n\n    return 0;\n}\n",
           "answers": [
             "2"
           ],
@@ -85,7 +85,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{10, 2, 6, 4};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{10, 2, 6, 4};\n\n    std::sort(datos.begin(), datos.end());\n\n    auto centro = datos.size() / 2;\n\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n\n    std::cout << mediana;\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "5"
@@ -114,7 +114,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{7, 2};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{7, 2};\n\n    std::sort(datos.begin(), datos.end());\n\n    auto centro = datos.size() / 2;\n\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n\n    std::cout << mediana;\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "4.5"
@@ -128,7 +128,7 @@
         {
           "type": "inline_fill_code",
           "question": "Completa sólo el tipo convertido, que debe coincidir con el tipo de mediana, y el dígito del divisor decimal.",
-          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<[]>(datos.at(centro - 1)) + datos.at(centro)) / [].0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    auto centro = datos.size() / 2;\n\n    double mediana = (static_cast<[]>(datos.at(centro - 1)) + datos.at(centro)) / [].0;\n\n    std::cout << mediana;\n\n    return 0;\n}\n",
           "answers": [
             "double",
             "2"
@@ -149,7 +149,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{9, 2, 5};\n    if (datos.empty()) {\n        std::cout << \"Sin mediana\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << mediana;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{9, 2, 5};\n\n    if (datos.empty()) {\n        std::cout << \"Sin mediana\";\n    } else {\n        auto ordenados = datos;\n\n        std::sort(ordenados.begin(), ordenados.end());\n\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n\n        std::cout << mediana;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -173,7 +173,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"Sin mediana\";\n    } else {\n        std::sort(datos.begin(), datos.end());\n        std::cout << datos.at(datos.size() / 2);\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{0};\n\n    if (datos.empty()) {\n        std::cout << \"Sin mediana\";\n    } else {\n        std::sort(datos.begin(), datos.end());\n        std::cout << datos.at(datos.size() / 2);\n    }\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "0"
@@ -183,7 +183,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{3, 3, 3, 8, 9};\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.at(datos.size() / 2);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{3, 3, 3, 8, 9};\n\n    std::sort(datos.begin(), datos.end());\n\n    std::cout << datos.at(datos.size() / 2);\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "3"
@@ -212,7 +212,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{1, 2, 15};\n    double suma = 0.0;\n    for (int valor : datos) { suma += valor; }\n    double media = suma / static_cast<double>(datos.size());\n    auto ordenados = datos;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    std::cout << media << \" \" << mediana;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{1, 2, 15};\n    double suma = 0.0;\n\n    for (int valor : datos) { suma += valor; }\n    double media = suma / static_cast<double>(datos.size());\n    auto ordenados = datos;\n\n    std::sort(ordenados.begin(), ordenados.end());\n\n    double mediana = ordenados.at(ordenados.size() / 2);\n\n    std::cout << media << \" \" << mediana;\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "6 2"
@@ -244,7 +244,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -308,7 +308,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    // Completa aqui el procedimiento y el informe solicitados.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n\n        datos.push_back(dato);\n    }\n    // Completa aqui el procedimiento y el informe solicitados.\n\n    return 0;\n}\n",
           "initialStandardInput": "0",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -455,7 +455,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n\n        std::sort(ordenados.begin(), ordenados.end());\n\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n\n        std::cout << \"Mediana: \" << mediana;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -468,7 +468,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    std::cout << \"\\nOriginal:\";\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n\n        datos.push_back(dato);\n    }\n\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n\n        std::sort(ordenados.begin(), ordenados.end());\n\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n\n        std::cout << \"Mediana: \" << mediana;\n    }\n\n    std::cout << \"\\nOriginal:\";\n\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -491,7 +491,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n\n        datos.push_back(dato);\n    }\n\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n\n        std::sort(ordenados.begin(), ordenados.end());\n\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n\n        std::cout << \"Mediana: \" << mediana;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -559,7 +559,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> original{8, 1, 3};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    original.at(0) = 10;\n    std::cout << mediana << \" \" << ordenados.at(2) << \" \" << original.at(0);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> original{8, 1, 3};\n    auto ordenados = original;\n\n    std::sort(ordenados.begin(), ordenados.end());\n\n    double mediana = ordenados.at(ordenados.size() / 2);\n    original.at(0) = 10;\n\n    std::cout << mediana << \" \" << ordenados.at(2) << \" \" << original.at(0);\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "3 8 10"
@@ -1710,6 +1710,445 @@
         "id": "block_0003_0002",
         "beforeSha256": "9d229d7b7a86dc159eb07f8c2a752c47737f1bbc72ca17e26f8b2ca1c6a87786",
         "afterSha256": "ea6e04a16cdb638ed272576823c841664f7c600f8583482fd6e0990e802d5230"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "48a396c6d4bca6a8dd10e14e6594ce1dd9b4669012ab908609925e99d13be76e",
+        "afterSha256": "bcd66b1b1d8d958c53d91d1fea787ecc5ff881a4397a87b01417881224e928a5"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "4ab7feed20c0d4e6379e2cfd66008f68579d33475a9850479ac31c8bcc9cad5b",
+        "afterSha256": "3e9759027bafb670fb06bf590362855be11ce51c82616c44fe60c5c23e810cb1"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "d0f1bff69f7907e5df156beb9ca984918c84c5bf430ae7060fecb4ba8dbf78da",
+        "afterSha256": "c31ff1a598da5b98dbb3bb287ee2ec1fed8b85e770005932ac76bd97cb2c226e"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "fa60a3cc2cf67581c2d325fd13d88cf05d65acb51fe7d50976e3f5c581d65d63",
+        "afterSha256": "2b04d5728046acfafdc011c28f2a68c75512475c68e37a339fe60c6e0408cb37"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "79688e9af575c82ce2d8a57fe7c912f6bb580ddbe2b4f6bfef75fcc0953a0293",
+        "afterSha256": "733a39ade2898047a7a2aeb72ab10a71fe49d2c24e62ba6c81009c9c103d8138"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "926253f73cd15a680d76884151a6416399776887446e04d7b9ab0bbf6623b654",
+        "afterSha256": "f829f4e25a7cb916ce358ed72520bb8a7ca88dae2ffefbd6be4ff5a047aa7589"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "2be58650412e38ee688acb05b3a3464844554f31718d3b627ac451d06d5ae0ef",
+        "afterSha256": "396968488267226215b3658a65cd15f1cc0e74688ae98b66686be1761cfc66ed"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "375786415470c25700bf101129e3e474b7f32e2950023a8fdc950d5dd5825fba",
+        "afterSha256": "bf977739c4f226e96e2cfa2f4d9708d007ad1b28e77d00668c57f44a6b80d0c1"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "83441797207dc97d1e0e95306280ff560f11e9e10b2878b5809da138e964ce6f",
+        "afterSha256": "71cd3ad0d12b82f4040aeae6c2bef1c73cec0bc46122f5e1896c74fe69e8a3b4"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "29769e6f7705f4ffb1edbd2cddfc3c58d0c92f12a829884b3ea05b295aa7fce3",
+        "afterSha256": "ed496d8c01878ead4fe2904f5e816338462919fb2bf4740f1f5f053d0c1f78ba"
+      },
+      {
+        "id": "mediana_general_propia_editor",
+        "beforeSha256": "e954646a36eef583b3608daed651e82e8194551c37925b38a7c7485c1da97e13",
+        "afterSha256": "f7351bc9bb17f56c9bf3c171a783ca85c44dd6db1fc32aa9d3f6cdbebe438e88"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "7165842d60350395e3a60cd5e0ac329d4d16b890dd4a2e35a4f22870aaa37084",
+        "afterSha256": "193367ff4eefcdcdbd33b5ba085046ae2908bb4c8b929a8093b5563f903019c4"
+      },
+      {
+        "id": "mediana_general_propia_referencia_codigo",
+        "beforeSha256": "754ee2482dbdc3d44355d233464038b6ff2068408c28d1f2dc6bf80494c32812",
+        "afterSha256": "02222d72f02669f10365cd165a1fef40b3835702091553c93c87951798b42b90"
+      },
+      {
+        "id": "block_0008_0005",
+        "beforeSha256": "171bda16b9e41657c59a0bc64b742e6f2e445fb9fa23a08b90a9043aa1a9d650",
+        "afterSha256": "29d1acfd1d3572ce85a762063b07ccb897d97c9d7035de0478b785d6a7118a11"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "6a7bef7f17d6ba29d732dbdd1aae308b34c6c2360a6d5197a5efc266a4af1628",
+        "afterSha256": "c9b3a526eef22c826171aea1166531488d20e601e7eb1efc6d15cc5c53f94ef4"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{8, 1, 6, 3, 5};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    std::cout << centro << \":\" << datos.at(centro);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2:5"
+          ],
+          "explanation": "El orden es uno, tres, cinco, seis, ocho; el índice central dos contiene cinco."
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el dígito del divisor que localiza el índice central para cualquier tamaño impar positivo, no sólo para los tres datos de esta muestra.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 9};\n    auto centro = datos.size() / ___;\n    std::cout << datos.at(centro);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "El cociente entero del tamaño entre dos da el índice central impar."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{10, 2, 6, 4};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Los valores centrales ordenados son cuatro y seis; su media es cinco."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{7, 2};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "4.5"
+          ],
+          "explanation": "Con dos datos ambos son centrales; su media puede ser fraccionaria."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "question": "Completa sólo el tipo convertido, que debe coincidir con el tipo de mediana, y el dígito del divisor decimal.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<[]>(datos.at(centro - 1)) + datos.at(centro)) / [].0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "answers": [
+            "double",
+            "2"
+          ]
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{9, 2, 5};\n    if (datos.empty()) {\n        std::cout << \"Sin mediana\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << mediana;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"Sin mediana\";\n    } else {\n        std::sort(datos.begin(), datos.end());\n        std::cout << datos.at(datos.size() / 2);\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Un único cero tiene mediana cero, distinta de ausencia de datos."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{3, 3, 3, 8, 9};\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.at(datos.size() / 2);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "El centro por posiciones sigue siendo tres aunque no haya dos valores estrictamente menores."
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{1, 2, 15};\n    double suma = 0.0;\n    for (int valor : datos) { suma += valor; }\n    double media = suma / static_cast<double>(datos.size());\n    auto ordenados = datos;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    std::cout << media << \" \" << mediana;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "6 2"
+          ],
+          "explanation": "La magnitud quince influye en la suma; el centro ordenado de tres datos sigue siendo dos."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Mediana: 4",
+                  "Mediana: 4\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "mediana_general_propia_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    // Completa aqui el procedimiento y el informe solicitados.\n    return 0;\n}\n",
+          "initialStandardInput": "0",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin datos\nOriginal:",
+                  "Sin datos\nOriginal:\n"
+                ],
+                "explanation": "No hay posiciones centrales. La primera línea informa Sin datos y la segunda conserva el rótulo Original: sin inventar valores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Mediana: 0\nOriginal:0;",
+                  "Mediana: 0\nOriginal:0;\n"
+                ],
+                "explanation": "Ordenar una copia produce {0}. El valor central es 0; ésa es la mediana. La línea Original: conserva 0;, sin copiar el orden de la colección ordenada. La mediana cero corresponde a un dato presente; no es ausencia de datos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "1 -7",
+                "outputs": [
+                  "Mediana: -7\nOriginal:-7;",
+                  "Mediana: -7\nOriginal:-7;\n"
+                ],
+                "explanation": "Ordenar una copia produce {-7}. El valor central es -7; ésa es la mediana. La línea Original: conserva -7;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 2 7",
+                "outputs": [
+                  "Mediana: 4.5\nOriginal:2;7;",
+                  "Mediana: 4.5\nOriginal:2;7;\n"
+                ],
+                "explanation": "Ordenar una copia produce {2, 7}. Los dos valores centrales son 2 y 7; al promediarlos se obtiene 4.5. La línea Original: conserva 2;7;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "4 9 1 6 2",
+                "outputs": [
+                  "Mediana: 4\nOriginal:9;1;6;2;",
+                  "Mediana: 4\nOriginal:9;1;6;2;\n"
+                ],
+                "explanation": "Ordenar una copia produce {1, 2, 6, 9}. Los dos valores centrales son 2 y 6; al promediarlos se obtiene 4. La línea Original: conserva 9;1;6;2;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "3 12 1 2",
+                "outputs": [
+                  "Mediana: 2\nOriginal:12;1;2;",
+                  "Mediana: 2\nOriginal:12;1;2;\n"
+                ],
+                "explanation": "Ordenar una copia produce {1, 2, 12}. El valor central es 2; ésa es la mediana. La línea Original: conserva 12;1;2;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "5 9 3 3 8 3",
+                "outputs": [
+                  "Mediana: 3\nOriginal:9;3;3;8;3;",
+                  "Mediana: 3\nOriginal:9;3;3;8;3;\n"
+                ],
+                "explanation": "Ordenar una copia produce {3, 3, 3, 8, 9}. El valor central es 3; ésa es la mediana. La línea Original: conserva 9;3;3;8;3;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              },
+              {
+                "standardInput": "2 -5 -2",
+                "outputs": [
+                  "Mediana: -3.5\nOriginal:-5;-2;",
+                  "Mediana: -3.5\nOriginal:-5;-2;\n"
+                ],
+                "explanation": "Ordenar una copia produce {-5, -2}. Los dos valores centrales son -5 y -2; al promediarlos se obtiene -3.5. La línea Original: conserva -5;-2;, sin copiar el orden de la colección ordenada.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      ""
+                    ],
+                    "text": "La ejecución no presentó el informe. Conserva la lectura de Entrada y completa el procedimiento y los mensajes pedidos para este caso. Compara la consola completa con su salida especificada; incluso una colección vacía necesita su informe."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "mediana_general_propia_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    std::cout << \"\\nOriginal:\";\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Mediana: \" << mediana;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 1 6 2 9",
+                "outputs": [
+                  "Mediana: 4",
+                  "Mediana: 4\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin datos",
+                  "Sin datos\n"
+                ]
+              },
+              {
+                "standardInput": "1 5",
+                "outputs": [
+                  "Mediana: 5",
+                  "Mediana: 5\n"
+                ]
+              },
+              {
+                "standardInput": "2 2 7",
+                "outputs": [
+                  "Mediana: 4.5",
+                  "Mediana: 4.5\n"
+                ]
+              },
+              {
+                "standardInput": "2 -5 -1",
+                "outputs": [
+                  "Mediana: -3",
+                  "Mediana: -3\n"
+                ]
+              },
+              {
+                "standardInput": "3 3 3 8",
+                "outputs": [
+                  "Mediana: 3",
+                  "Mediana: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4 4 4 4 4",
+                "outputs": [
+                  "Mediana: 4",
+                  "Mediana: 4\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 1 6 2 9"
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> original{8, 1, 3};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    original.at(0) = 10;\n    std::cout << mediana << \" \" << ordenados.at(2) << \" \" << original.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3 8 10"
+          ],
+          "explanation": "La mediana guardada y la copia ordenada conservan su momento; cambiar el original no los recalcula."
+        }
       }
     ]
   },
