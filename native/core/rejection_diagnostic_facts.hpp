@@ -166,17 +166,26 @@ inline bool actionable(const std::vector<Word>& words) {
         // "No revise" and "sin revisar" describe the opposite of the
         // required corrective instruction. A later positive instruction
         // ("No modifique los hechos; revise los datos") is still accepted.
-        if(i&&one_of(words[i-1].text,{"no","sin"}))continue;
-        const auto start=i>4?i-4:0;
+        if(i&&one_of(words[i-1].text,{"no","sin","nunca","jamas"}))continue;
+        const auto start=i>7?i-7:0;
         bool negated=false;
-        for(std::size_t j=start;j<i;++j)if(one_of(words[j].text,{"no","sin"})){
-            bool only_auxiliary=true;
-            for(std::size_t k=j+1;k<i;++k)
-                if(!one_of(words[k].text,{"es","son","hay","hace","falta",
-                    "necesario","necesaria","necesidad","preciso","precisa",
-                    "de","que"})){only_auxiliary=false;break;}
-            if(only_auxiliary){negated=true;break;}
-        }
+        for(std::size_t j=start;j<i;++j)
+            if(one_of(words[j].text,{"no","sin","nunca","jamas"})){
+                // The negation may span impersonal advice or a modal clause:
+                // "no se recomienda revisar", "no hay que comprobar" and
+                // "sin necesidad de volver a verificar" are NOT instructions
+                // to correct anything. Do not consume a later affirmative
+                // "no modifique los hechos; revise los datos" as negated.
+                bool only_auxiliary=true;
+                for(std::size_t k=j+1;k<i;++k)
+                    if(!one_of(words[k].text,{"se","es","son","hay","hace","falta",
+                        "necesario","necesaria","necesidad","preciso","precisa",
+                        "de","que","a","volver","debe","deben","puede","pueden",
+                        "requiere","requieren","conviene","recomienda","recomiendan",
+                        "recomiendo","recomendamos","aconseja","aconsejan","aconsejo",
+                        "aconsejamos"})){only_auxiliary=false;break;}
+                if(only_auxiliary){negated=true;break;}
+            }
         if(!negated)return true;
     }
     return false;
