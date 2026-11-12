@@ -66,6 +66,8 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_one_line_order_cards.py -v
       - name: Inventariar todas las tarjetas order_code sin cambiar su contenido
         run: python scripts/curriculum/auditar_tarjetas_orden_codigo.py --output-json tarjetas-orden.json
+      - name: Garantizar una linea por tarjeta de orden en todo el curriculo espanol
+        run: python -m unittest discover -s scripts/curriculum -p test_single_line_order_puzzles.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
