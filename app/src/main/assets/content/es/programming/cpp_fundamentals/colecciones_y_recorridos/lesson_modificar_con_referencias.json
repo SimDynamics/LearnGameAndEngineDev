@@ -20,7 +20,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    for (int& valor : datos) {\n        valor += 1;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n\n    for (int& valor : datos) {\n        valor += 1;\n    }\n\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -37,7 +37,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n    for (int valor : datos) {\n        valor *= 2;\n    }\n    for (int& valor : datos) {\n        valor += 3;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n\n    for (int valor : datos) {\n        valor *= 2;\n    }\n\n    for (int& valor : datos) {\n        valor += 3;\n    }\n\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "7 10"
@@ -59,7 +59,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el signo que conserva acceso al elemento original.",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    for (int___ valor : datos) {\n        valor = 8;\n    }\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n\n    for (int___ valor : datos) {\n        valor = 8;\n    }\n\n    std::cout << datos.at(0);\n\n    return 0;\n}\n",
           "answers": [
             "&"
           ],
@@ -85,7 +85,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    for (auto& valor : datos) {\n        valor *= 2;\n    }\n    for (auto valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n\n    for (auto& valor : datos) {\n        valor *= 2;\n    }\n\n    for (auto valor : datos) {\n        std::cout << valor << \";\";\n    }\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "2;6;"
@@ -95,7 +95,7 @@
         {
           "type": "inline_fill_code",
           "question": "Completa sólo el signo para modificar las dos cadenas originales.",
-          "template": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"A\", \"B\"};\n    for (auto[] etiqueta : etiquetas) {\n        etiqueta += \"!\";\n    }\n    std::cout << etiquetas.at(0) << etiquetas.at(1);\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"A\", \"B\"};\n\n    for (auto[] etiqueta : etiquetas) {\n        etiqueta += \"!\";\n    }\n\n    std::cout << etiquetas.at(0) << etiquetas.at(1);\n\n    return 0;\n}\n",
           "answers": [
             "&"
           ]
@@ -115,7 +115,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> nombres{\"Luz\", \"Sol\"};\n    for (auto nombre : nombres) {\n        nombre += \"?\";\n        std::cout << nombre << \" \";\n    }\n    std::cout << nombres.at(0);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> nombres{\"Luz\", \"Sol\"};\n\n    for (auto nombre : nombres) {\n        nombre += \"?\";\n\n        std::cout << nombre << \" \";\n    }\n\n    std::cout << nombres.at(0);\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "Luz? Sol? Luz"
@@ -156,7 +156,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"Norte\", \"Sur\"};\n    for (const auto& texto : etiquetas) {\n        std::cout << texto << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"Norte\", \"Sur\"};\n\n    for (const auto& texto : etiquetas) {\n        std::cout << texto << \";\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -184,7 +184,7 @@
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0, 2, 5};\n    for (auto& valor : datos) {\n        if (valor < 3) {\n            valor += 4;\n        }\n    }\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0, 2, 5};\n\n    for (auto& valor : datos) {\n        if (valor < 3) {\n            valor += 4;\n        }\n    }\n\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "4;6;5;"
@@ -216,7 +216,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -245,12 +245,12 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    int copia = datos.at(0);\n    for (auto& valor : datos) {\n        ++valor;\n    }\n    std::cout << copia << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    int copia = datos.at(0);\n\n    for (auto& valor : datos) {\n        ++valor;\n    }\n\n    std::cout << copia << \" \" << datos.at(0);\n\n    return 0;\n}\n",
           "question": "Predice la salida exacta, sin añadir comillas.",
           "answers": [
             "3 4"
@@ -282,7 +282,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n\n        datos.push_back(dato);\n    }\n\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -328,7 +328,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n    for (auto valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n\n    for (auto valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -1220,6 +1220,265 @@
         "id": "block_0007_0004",
         "beforeSha256": "a9996d44c127e888ffdd8508e685bab0e491836ba85cfa564cc6a47d8bdfc913",
         "afterSha256": "94bceaec896b5bccfdeacffd4f37380451f9897096600ec58688ad759b9fa3ca"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "a47c7b4c46087a39b1652b7eed4b08bca02818ac1f9247063eda4606082abac8",
+        "afterSha256": "394ecd0d3a00858542b3566f31c646bc9e3379c3f2ad5a78089060c2cdc0f899"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "490a1ea715d7f05ed58761b8876ea204fc060739851fbb3630aa321f74261dab",
+        "afterSha256": "5fb2e00370dfc3edb8bb9869a0be5e1314fc38da5c773a1f8b0d35f4c24cf2be"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "8e64da0a723eccbcc20ee9cbc3c7d39716cc4649d20899b1fa989048d356d849",
+        "afterSha256": "a0f558f505c5d4cdc48f2b2df66cdf0eba7ffc083a47b295b9cf429c768a1a64"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "4351f5745e5ce32d0d0eb84a6886450c87c08e3a923de3752801a15a53d53877",
+        "afterSha256": "072821f392cbaf7dacc982f8ea44925baba9f281fc019982cc59d15cc1a3f40b"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "81ea8fa987fc1ad6350b90b0b623e9178829e3e132aeaebb8be20cc0fc79b56a",
+        "afterSha256": "f7ed78331526da3850102020417f4b5dd15cab58ff456fe47607b5833f65de42"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a40b3990eb30c51079ed79ef1f19a0e380ab87cf8bab28c214d385d001a784fe",
+        "afterSha256": "2b3dd4e2f2a241f87e7d16f656a6e1563cafecc373da1e662e5bab20e2844202"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "f93fd0e299910e7d296057f18653c24de010a58782d04a87c6523d41d4573062",
+        "afterSha256": "8d4b777a61f9fb1ac63559d46d281e1cbbae24e980e0fad409e77bbaf939cefe"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "3c562f9ca06daf70478bcb4e71798628471ad87384ac21af7bd15adaa61cb3c6",
+        "afterSha256": "4183e064e823ed74e4064d98b0156709b087d7fa3686ade6c7188d1cc80d9cf2"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "6ce87a8f36734313b89cc023a32bbcc58474fa40e0e588071c223b63179dd80f",
+        "afterSha256": "f893b040fa73185a08f1199b2015c892d6f5aaf2dc4c25a6afcc2419d7e10132"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "3deb2339c471543e9b1bc90aa4006dac6120e684e2d7fcb558f1998b4f5720af",
+        "afterSha256": "6d98c5d9475618d55ba658af666d01bb39915105dfb6b8d17ea056a40b2ffd4d"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "95882c71746ac00e3d7d5fe38ece7538bb449f00b5c5ecd374e42110fdb8a021",
+        "afterSha256": "4102d6de7280846d9cb7b1c818a2b18956dd66dd48ba4edafeb4597020109059"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "88fb0a7547f554fc56b422abfd9ac2ba563cdb1b7b9090cbf80c5481a8d3d6f2",
+        "afterSha256": "0e0750772ffcf915a2018985fbaaa2d8df43cc2a35de810cbe1fa7c59b800ec5"
+      },
+      {
+        "id": "block_0007_0010",
+        "beforeSha256": "c675e6796ba286c3ba679cd0c40767ca6c5de601f5673c87b02b6bcd40480724",
+        "afterSha256": "c7f09886da0ec957c3f4a54a3951998b3c974dd4a7d92f2ed6b1f0b32df15137"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    for (int& valor : datos) {\n        valor += 1;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n    for (int valor : datos) {\n        valor *= 2;\n    }\n    for (int& valor : datos) {\n        valor += 3;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "7 10"
+          ],
+          "explanation": "El primer recorrido sólo cambia copias; el segundo suma tres a los originales."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el signo que conserva acceso al elemento original.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    for (int___ valor : datos) {\n        valor = 8;\n    }\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "int& declara una referencia, no una copia."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    for (auto& valor : datos) {\n        valor *= 2;\n    }\n    for (auto valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2;6;"
+          ],
+          "explanation": "El primer recorrido modifica los elementos; el segundo lee copias para mostrarlos."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "question": "Completa sólo el signo para modificar las dos cadenas originales.",
+          "template": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"A\", \"B\"};\n    for (auto[] etiqueta : etiquetas) {\n        etiqueta += \"!\";\n    }\n    std::cout << etiquetas.at(0) << etiquetas.at(1);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ]
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> nombres{\"Luz\", \"Sol\"};\n    for (auto nombre : nombres) {\n        nombre += \"?\";\n        std::cout << nombre << \" \";\n    }\n    std::cout << nombres.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Luz? Sol? Luz"
+          ],
+          "explanation": "Las versiones con ? son copias de presentación; Luz sigue en el vector."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"Norte\", \"Sur\"};\n    for (const auto& texto : etiquetas) {\n        std::cout << texto << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0, 2, 5};\n    for (auto& valor : datos) {\n        if (valor < 3) {\n            valor += 4;\n        }\n    }\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "4;6;5;"
+          ],
+          "explanation": "Se decide con cada valor anterior y se cambia sólo ese elemento cuando cumple la condición."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "5;6;4;",
+                  "5;6;4;\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    int copia = datos.at(0);\n    for (auto& valor : datos) {\n        ++valor;\n    }\n    std::cout << copia << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3 4"
+          ],
+          "explanation": "La copia anterior sigue independiente, aunque el elemento se modifique mediante una referencia."
+        }
+      },
+      {
+        "id": "block_0007_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "",
+                  "\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "4;",
+                  "4;\n"
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "3;",
+                  "3;\n"
+                ]
+              },
+              {
+                "standardInput": "3 2 6 1",
+                "outputs": [
+                  "5;6;4;",
+                  "5;6;4;\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0007_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n    for (auto valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2;6;1;",
+                  "2;6;1;\n"
+                ]
+              }
+            ]
+          }
+        }
       }
     ]
   },
