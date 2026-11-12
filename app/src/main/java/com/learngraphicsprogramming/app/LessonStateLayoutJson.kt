@@ -21,7 +21,8 @@ internal object LessonStateLayoutJson {
                 actualFields.all { it in expected ||
                     (version == 2 && it in setOf(
                         "sourceFormatRevisions", "orderRefinements",
-                        "choiceRevisions", "compilerRevisions")) })
+                        "choiceRevisions", "compilerRevisions",
+                        "retired", "retirementHistory")) })
             val (origin, signatures) = readOrigin(metadata.getJSONArray("origin"))
             val current = metadata.getJSONArray("current")
             val positions = (0 until current.length()).map { p ->
@@ -111,6 +112,39 @@ internal object LessonStateLayoutJson {
                     require(active.put(id, blocks.getJSONObject(b)) == null)
                 }
             }
+            val retired = linkedMapOf<String, JSONObject>()
+            val retiredSuccessors = linkedMapOf<String, String>()
+            if (version == 2 && metadata.has("retired")) {
+                val entries = metadata.getJSONArray("retired")
+                require(entries.length() <= 100_000)
+                val pageIds = positions.map { it.id }.toSet()
+                for (index in 0 until entries.length()) {
+                    val record = entries.getJSONObject(index)
+                    require(record.keys().asSequence().toSet() == setOf("id", "page", "next", "block"))
+                    val identity = strictString(record, "id")
+                    val successor = strictString(record, "next")
+                    require(identity in expectedSignatures && identity !in active &&
+                        strictString(record, "page") in pageIds &&
+                        (successor.isEmpty() ||
+                            (successor != identity && successor in expectedSignatures)))
+                    val archived = record.getJSONObject("block")
+                    require(archived.optString("type") in
+                        setOf("heading", "paragraph", "note", "code", "cpp_compiler", "image"))
+                    require(stateFingerprint(archived) == expectedSignatures.getValue(identity))
+                    require(retired.put(identity, archived) == null)
+                    retiredSuccessors[identity] = successor
+                }
+                for (identity in retiredSuccessors.keys) {
+                    val visited = mutableSetOf<String>()
+                    var current: String? = identity
+                    while (current != null && current in retiredSuccessors) {
+                        require(visited.add(current))
+                        current = retiredSuccessors.getValue(current).takeIf { it.isNotEmpty() }
+                    }
+                }
+            }
+            require(active.keys.toSet() + retired.keys == expectedSignatures.keys)
+
             val orderOriginals = linkedMapOf<String, JSONObject>()
             if (version == 2 && metadata.has("orderRefinements")) {
                 require(locale == "es")
@@ -204,6 +238,10 @@ internal object LessonStateLayoutJson {
                     originals[id] = historical
                 }
             }
+            if (version == 2 && metadata.has("retirementHistory")) {
+                validateRetirementHistory(lesson, metadata, positions, active, retired,
+                    expectedSignatures, additions.map { it.id }.toSet())
+            }
             val orderRefinements = linkedMapOf<String, CurricularOrderRefinement>()
             for ((id, block) in active) {
                 // Restore only approved source formatting and original order
@@ -256,7 +294,7 @@ internal object LessonStateLayoutJson {
                 editorial[id]?.let { require(fingerprint(block) == it) }
             }
             return StableLessonStateLayout(origin, positions, version, locale,
-                family, additions, orderRefinements)
+                family, additions, orderRefinements, retired.keys)
         } catch (error: LessonStateLayoutException) {
             throw error
         } catch (error: Exception) {
