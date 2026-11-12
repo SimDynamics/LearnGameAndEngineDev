@@ -176,4 +176,18 @@ inline bool equivalent(std::string_view before,std::string_view after,Language l
     return a&&b&&*a==*b;
 }
 
+// A curricular exercise may allow edits within one function or main, but
+// not new preprocessing directives. Inspect lexical tokens rather than
+// searching for "\n#": C++ accepts leading spaces and comments before '#',
+// while '#' in a string or an ordinary comment is harmless.
+// Malformed lexical input is not an authenticated source edit.
+inline bool forbidden_preprocessor_in_edit(std::string_view body) {
+    const auto tokens=cpp_tokens(body);
+    if(!tokens)return true;
+    return std::ranges::any_of(*tokens,[](const auto& token) {
+        return token.starts_with("directive:") || token=="op:#" ||
+            token=="op:##" || token=="op:%:" || token=="op:%:%:";
+    });
+}
+
 } // namespace lgaed::curriculum::code_format
