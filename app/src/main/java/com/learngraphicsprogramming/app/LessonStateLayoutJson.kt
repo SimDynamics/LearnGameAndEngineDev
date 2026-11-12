@@ -204,8 +204,11 @@ internal object LessonStateLayoutJson {
                 family, additions, orderRefinements)
         } catch (error: LessonStateLayoutException) {
             throw error
-        } catch (_: Exception) {
-            throw LessonStateLayoutException("Invalid or stale lesson state layout; keep saved data")
+        } catch (error: Exception) {
+            // Preserve the internal cause for test diagnostics without exposing
+            // its details in the student-facing error message.
+            throw LessonStateLayoutException(
+                "Invalid or stale lesson state layout; keep saved data", error)
         }
     }
 
