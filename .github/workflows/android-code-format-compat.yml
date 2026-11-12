@@ -9,6 +9,8 @@ on:
       - app/src/main/java/com/learngraphicsprogramming/app/LessonStateLayoutJson.kt
       - app/src/main/java/com/learngraphicsprogramming/app/StableLessonStateLayout.kt
       - app/src/test/java/com/learngraphicsprogramming/app/LessonStateLayoutJsonTest.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/RealCodeFormatPilotAndroidTest.kt
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json
   workflow_dispatch:
 
 permissions:
@@ -37,6 +39,7 @@ jobs:
           chmod +x ./gradlew
           ./gradlew :app:testDebugUnitTest \
             --tests com.learngraphicsprogramming.app.LessonStateLayoutJsonTest \
+            --tests com.learngraphicsprogramming.app.RealCodeFormatPilotAndroidTest \
             -Plgp.clang23=false -Plgp.wasmtime=false -Plgp.cppExceptions=false \
             --no-daemon --stacktrace
       - name: Retain JUnit XML and reports
