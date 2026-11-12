@@ -88,12 +88,46 @@ continúan usando las fuentes curriculares visibles, y los borradores guardados
 no se reemplazan. El motor Android utiliza su propio comparador conservador,
 con pruebas JUnit de protección contra fuentes modificadas.
 
-**Verificación previa a usarlo de forma general:** pasar las pruebas de
-`test_code_format_compat.py`, los contratos existentes de ambos cursos,
-`native.code_format_compat`, `native.code_format_loader`, las regresiones
-de lectura/estado Windows y las pruebas JUnit Android
-`LessonStateLayoutJsonTest`. Probar también al menos una lección real con
-edición, reapertura y recuperación de borrador y logro. La aceptación visual y auditiva permanece con el usuario.
+## Piloto real acreditado y ejecución curricular
+
+**Piloto técnico completado en Codex, sin alterar los JSON curriculares.**
+Se tomaron copias aisladas de la lección publicada de Programación 1
+`expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json`
+y se insertaron saltos **físicos** entre declaraciones y validación, entre
+cálculos y decisiones y antes del retorno final, exclusivamente en los bloques
+`block_0003_0002` (p4 b3) y `block_0005_0002` (p6 b3).
+
+La comprobación `test_real_code_format_pilot.py` compiló realmente con C++23
+los dos programas antiguos y los dos reformateados, comparó sus salidas,
+comprobó las transiciones v2 y rechazó cambios de lógica, respuestas y
+archivos de procedencia falsificados. GitHub Actions: 43127749492
+(https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43127749492).
+
+`native.code_format_loader` cargó y reabrió la copia real desde Windows,
+recuperando una respuesta correcta, el borrador del estudiante, el cursor,
+la página, las claves de estado y la identidad de otros objetivos.
+La prueba de importación histórica obtuvo resultado correcto:
+https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43127931754.
+
+En Windows, la suite del lector superó **15/15 pruebas**, incluido el
+indicador del primer caso obligatorio y los posteriores opcionales:
+https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43128672107.
+
+En Android, `RealCodeFormatPilotAndroidTest` verificó **esa misma lección
+publicada** y las pruebas JUnit históricas conservaron las firmas y
+direcciones de estado. Compilación y pruebas JVM correctas:
+https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43129514814.
+
+**Autorización operativa para Work:** una vez integrados los avances
+técnicos de `Codex` mediante la sincronización administrada por el usuario,
+Work puede comenzar en `main` la revisión y corrección de saltos físicos,
+por lección y por idioma. Cada cambio debe pasar su transición histórica
+y la validación de código, respuestas, CMake y compilación que corresponda.
+Las fuentes con macro continuada, cadenas sensibles o sintaxis no
+demostrada deben quedar intactas y señalarse para revisión específica.
+El éxito de este piloto **no** acredita por sí solo todas las lecciones ni
+permite cerrar la auditoría transversal. La verificación visual/auditiva
+habitual sigue correspondiendo al usuario durante el estudio.
 
 ## Separación de responsabilidades
 
