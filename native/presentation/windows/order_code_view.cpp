@@ -82,23 +82,6 @@ struct OrderCodeView::Impl {
         for(const auto id:ordered)if(id<required_count)result.push_back(id);
         return result;
     }
-    void omit_separator(HWND item){
-        const auto id=static_cast<std::size_t>(GetDlgCtrlID(item)-100);
-        if(!enabled||id<required_count||id>=fragments.size())return;
-        const auto at=position(item);
-        if(at>=ordered.size())return;
-        release(false);
-        ordered.erase(ordered.begin()+static_cast<std::ptrdiff_t>(at));
-        ShowWindow(item,SW_HIDE);layout(width);
-    }
-    void restore_separator(){
-        if(!enabled)return;
-        for(std::size_t i=required_count;i<fragments.size();++i)
-            if(std::ranges::find(ordered,i)==ordered.end()){
-                ordered.push_back(i);ShowWindow(rows[i],SW_SHOW);
-                layout(width);return;
-            }
-    }
     int prepare_number_font(){
         const auto pixels=std::max(1,MulDiv(px(18),percentage,100));
         if(pixels!=number_pixels){const auto replacement=CreateFontW(-pixels,0,0,0,FW_NORMAL,FALSE,FALSE,FALSE,DEFAULT_CHARSET,
@@ -240,13 +223,10 @@ struct OrderCodeView::Impl {
             self.paint_row_outline(item,dc);if(message==WM_PAINT&&dc)ReleaseDC(item,dc);return result;
         }
         if(message==WM_GETDLGCODE)return DLGC_WANTARROWS|DLGC_WANTCHARS;
-        if(message==WM_LBUTTONDBLCLK){
-            if(static_cast<std::size_t>(GetDlgCtrlID(item)-100)>=self.required_count)
-                self.omit_separator(item);
-            return 0;
-        }
-        if(message==WM_KEYDOWN&&(wp==VK_DELETE||wp==VK_BACK)){self.omit_separator(item);return 0;}
-        if(message==WM_KEYDOWN&&wp==VK_INSERT){self.restore_separator();return 0;}
+        // Cards are read-only, including the decorative empty cards. These
+        // gestures cannot hide, delete, duplicate or restore any card.
+        if(message==WM_LBUTTONDBLCLK ||
+            (message==WM_KEYDOWN&&(wp==VK_DELETE||wp==VK_BACK||wp==VK_INSERT)))return 0;
         if(message==WM_SYSKEYDOWN&&(wp==VK_UP||wp==VK_DOWN)){
             const auto at=self.position(item);
             if(at>=self.ordered.size())return 0;
@@ -264,8 +244,21 @@ struct OrderCodeView::Impl {
             if(!self.dragging&&(std::abs(point.x-self.down.x)>self.px(4)||std::abs(point.y-self.down.y)>self.px(4))){
                 self.dragging=true;self.pressed_style=GetWindowLongPtrW(item,GWL_EXSTYLE);SetWindowLongPtrW(item,GWL_EXSTYLE,self.pressed_style|WS_EX_LAYERED);
                 self.translucent=SetLayeredWindowAttributes(item,0,140,LWA_ALPHA)!=FALSE;if(!self.translucent)SetWindowLongPtrW(item,GWL_EXSTYLE,self.pressed_style);}
-            if(self.dragging)for(std::size_t to=0;to<self.ordered.size();++to){RECT bounds{};GetWindowRect(self.rows[self.ordered[to]],&bounds);
-                if(PtInRect(&bounds,point)){self.move(self.position(item),to);break;}}
+            if(self.dragging){
+                // Choose the nearest row in vertical order, not the rectangle
+                // under the pointer. This includes both end zones, gaps and
+                // narrow/empty cards without giving separators drop veto power.
+                std::size_t destination=0;
+                std::int64_t closest=-1;
+                for(std::size_t to=0;to<self.ordered.size();++to){
+                    RECT bounds{};GetWindowRect(self.rows[self.ordered[to]],&bounds);
+                    const auto middle=std::int64_t(bounds.top)+(std::int64_t(bounds.bottom)-bounds.top)/2;
+                    const auto delta=std::int64_t(point.y)-middle;
+                    const auto distance=delta<0?-delta:delta;
+                    if(closest<0||distance<closest){closest=distance;destination=to;}
+                }
+                self.move(self.position(item),destination);
+            }
             return 0;}
         if(message==WM_LBUTTONUP&&self.pressed==item){
             const bool drag=self.dragging;self.release();
@@ -326,7 +319,6 @@ void OrderCodeView::set_wrap(bool value){impl_->wrap=value;for(const auto row:im
 void OrderCodeView::restart_tap_sequence(){impl_->next_tap=0;}
 void OrderCodeView::reset(){
     impl_->release(false);set_completed(false);impl_->ordered=impl_->original;
-    for(std::size_t id=impl_->required_count;id<impl_->rows.size();++id)ShowWindow(impl_->rows[id],SW_SHOW);
     impl_->next_tap=0;impl_->layout(impl_->width);
     if(impl_->changed)impl_->changed();
 }
