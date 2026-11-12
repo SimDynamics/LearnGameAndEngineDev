@@ -9,6 +9,7 @@
 #include <windowsx.h>
 #include <gdiplus.h>
 #include <algorithm>
+#include <cstdint>
 #include <numeric>
 #include <stdexcept>
 
