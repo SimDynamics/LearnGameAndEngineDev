@@ -156,6 +156,87 @@ class LessonStateLayoutJsonTest {
             is LessonStateLayoutException)
     }
 
+    private fun formattedEditor(): JSONObject {
+        val document = fixture()
+        val editorBlocks = document.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
+        val previous = JSONObject(editorBlocks.getJSONObject(0).toString())
+        val revised = JSONObject(previous.toString())
+            .put("initialCode", "int main() {\n\n    return 0;\n}\n")
+        editorBlocks.put(0, revised)
+        val layout = document.getJSONObject("stateLayout")
+        layout.getJSONArray("editorial").put(JSONObject().put("id", "editor")
+            .put("beforeSha256", LessonStateLayoutJson.fingerprint(previous))
+            .put("afterSha256", LessonStateLayoutJson.fingerprint(revised)))
+        layout.put("sourceFormatRevisions", JSONArray().put(JSONObject()
+            .put("id", "editor").put("block", previous)))
+        return document
+    }
+
+    @Test fun formattingPreservesTheOldAndroidStateLineageAndStorageKeys() {
+        val before = LessonStateLayoutJson.read(fixture())!!
+        val document = formattedEditor()
+        val after = LessonStateLayoutJson.read(document)!!
+        assertEquals(before.legacyLineage, after.legacyLineage)
+        assertEquals(before.lineage, after.lineage)
+        assertEquals(before.storagePosition(1, 0), after.storagePosition(1, 0))
+        assertEquals(before.additionNamespace(0, 2), after.additionNamespace(0, 2))
+        assertEquals("int main() {\n\n    return 0;\n}\n",
+            document.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
+                .getJSONObject(0).getString("initialCode"))
+    }
+
+    @Test fun formattingRejectsStaleSnapshotsAlteredResultsAndMissingProvenance() {
+        val changes: List<(JSONObject) -> Unit> = listOf(
+            { it.getJSONObject("stateLayout").getJSONArray("sourceFormatRevisions")
+                .getJSONObject(0).getJSONObject("block")
+                .put("initialCode", "int main() { return 2; }") },
+            { it.getJSONArray("pages").getJSONObject(1).getJSONArray("blocks")
+                .getJSONObject(0).put("initialCode", "int main() { return 9; }") },
+            { it.getJSONObject("stateLayout").getJSONArray("editorial").remove(1) },
+            { it.getJSONObject("stateLayout").getJSONArray("sourceFormatRevisions")
+                .getJSONObject(0).put("id", "prediction") },
+            { it.getJSONObject("stateLayout").getJSONArray("sourceFormatRevisions")
+                .getJSONObject(0).put("another", true) }
+        )
+        changes.forEach { change ->
+            val document = formattedEditor()
+            change(document)
+            assertTrue(runCatching { LessonStateLayoutJson.read(document) }.exceptionOrNull()
+                is LessonStateLayoutException)
+        }
+    }
+
+    @Test fun cppCmakeLiteralAndMacroSourceEditsRemainProtected() {
+        val before = JSONObject().put("type", "code")
+            .put("code", "int main(){int x=2;return x;}")
+        val after = JSONObject(before.toString())
+            .put("code", "int main() {\n  int x = 2;\n\n  return x;\n}")
+        assertEquals(before.getString("code"),
+            CurricularSourceFormatCompat.project(after, before).getString("code"))
+        for ((original, changed) in listOf(
+            "int x=2;" to "int x=3;",
+            "int line=__LINE__;" to "\nint line=__LINE__;",
+            "auto value=\"abc\"_tag;" to "auto value=\"abc\" _tag;",
+            "auto value=R\"x(a\nb)x\";" to "auto value=R\"x(a\n\nb)x\";",
+            "#define X(v) \\\n ((v)+1)\nint result=X(2);" to
+                "#define X(v) \\\n ((v)+1)\n\nint result=X(2);"
+        )) {
+            val a = JSONObject().put("type", "code").put("code", original)
+            val b = JSONObject(a.toString()).put("code", changed)
+            assertTrue(runCatching { CurricularSourceFormatCompat.project(b, a) }.isFailure)
+        }
+        val cmake = JSONObject().put("type", "code").put("language", "cmake")
+            .put("code", "add_executable(game main.cpp)\n")
+        val spaced = JSONObject(cmake.toString())
+            .put("code", "add_executable(\n  game main.cpp\n)\n")
+        assertEquals(cmake.getString("code"),
+            CurricularSourceFormatCompat.project(spaced, cmake).getString("code"))
+        val line = JSONObject().put("type", "code").put("language", "cmake")
+            .put("code", "message(\"\${CMAKE_CURRENT_LIST_LINE}\")")
+        val moved = JSONObject(line.toString()).put("code", "\n" + line.getString("code"))
+        assertTrue(runCatching { CurricularSourceFormatCompat.project(moved, line) }.isFailure)
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
