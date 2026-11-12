@@ -118,6 +118,30 @@ publicada** y las pruebas JUnit históricas conservaron las firmas y
 direcciones de estado. Compilación y pruebas JVM correctas:
 https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43129514814.
 
+## Compatibilidad combinada con puzles de orden históricos
+
+La lección real `expresiones_y_decisiones/lesson_alternativas_y_fronteras.json`
+incluye cinco fuentes reformateadas y un puzle `order_code` ya refinado
+mediante `stateLayout.orderRefinements`. Un lector debe comprobar los dos
+archivos de procedencia por separado antes de validar la huella original.
+
+Android ahora autentica la instantánea original del puzle de orden, verifica
+su expansión física exacta y conserva el estado guardado **sin reescribir
+preferencias**. En la representación actual de esta lección, una respuesta
+anterior de cuatro tarjetas se muestra como diez líneas, manteniendo el orden
+correcto o incorrecto correspondiente. Los intentos originales permanecen
+guardados hasta que el estudiante decida modificarlos.
+
+La prueba `PublishedOrderFormatAndroidTest` verifica el bloque real,
+las cinco revisiones de código y la detección de índices, fragmentos, respuestas
+y procedencias falsificados. La suite JUnit de Android se aprobó en:
+https://github.com/SimDynamics/LearnGameAndEngineDev/actions/runs/43131797969.
+
+La verificación es automatizada y no sustituye la prueba visual del usuario
+en un teléfono. Una nueva clase de revisión histórica o una estructura
+curricular no reconocida **no** queda autorizada implícitamente por este
+piloto y requiere su validación específica.
+
 **Autorización operativa para Work:** una vez integrados los avances
 técnicos de `Codex` mediante la sincronización administrada por el usuario,
 Work puede comenzar en `main` la revisión y corrección de saltos físicos,
