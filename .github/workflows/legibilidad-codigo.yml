@@ -10,6 +10,8 @@ on:
       - 'scripts/curriculum/test_order_visual_separators.py'
       - 'scripts/curriculum/test_for_limites_format_batch.py'
       - 'scripts/curriculum/test_one_line_order_cards.py'
+      - 'scripts/curriculum/test_single_line_order_puzzles.py'
+      - 'scripts/curriculum/test_declaraciones_firmas_format_batch.py'
       - 'scripts/curriculum/auditar_tarjetas_orden_codigo.py'
       - '.github/workflows/legibilidad-codigo.yml'
   workflow_dispatch:
@@ -96,6 +98,8 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_frecuencias_empates_format_batch.py -v
       - name: Acreditar U6L1 funciones nombradas, historia y ejecucion C++23
         run: python -m unittest discover -s scripts/curriculum -p test_funciones_nombrar_format_batch.py -v
+      - name: Acreditar U6L2 firmas y archivos C++23, incluidos fallos previstos
+        run: python -m unittest discover -s scripts/curriculum -p test_declaraciones_firmas_format_batch.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
