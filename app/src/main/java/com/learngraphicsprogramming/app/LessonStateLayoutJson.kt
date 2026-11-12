@@ -226,6 +226,15 @@ internal object LessonStateLayoutJson {
                 } ?: chosen
                 val historical = CurricularMathLabelRevision.project(
                     lesson.optString("id"), id, protected)
+                if (version == 2 && locale == "es" &&
+                    requiredNonBlankStderr[lesson.optString("id")] == id) {
+                    val check = block.optJSONObject("outputCheck")
+                    val cases = check?.optJSONArray("cases")
+                    require(cases?.length() == 1 &&
+                        cases.getJSONObject(0).optString("standardError") == "nonBlank") {
+                        "The published runtime stderr objective cannot be silently removed"
+                    }
+                }
                 require(stateFingerprint(historical) == expectedSignatures.getValue(id)) {
                     "Protected response/code contract changed for $id"
                 }
@@ -324,6 +333,13 @@ internal object LessonStateLayoutJson {
         return current
     }
 
+    private val requiredNonBlankStderr = mapOf(
+        "cpp_fundamentals__aleatoriedad_y_reproducibilidad__combinar_ensayos_generados_y_casos_elegidos"
+            to "block_0004_0007",
+        "cpp_fundamentals__excepciones_y_recuperacion__limites_comprobados_y_tipos_de_captura"
+            to "block_0002_0008"
+    )
+
     private data class ReviewedDiagnostic(val beforeSha256: String, val project: Boolean)
 
     // Closed, source-pinned Android projections of the published diagnostics.
@@ -412,6 +428,11 @@ internal object LessonStateLayoutJson {
                 cases.optJSONObject(index)?.let { case ->
                     case.remove("explanation")
                     case.remove("reviewFeedback")
+                    if (case.has("standardError")) {
+                        require(case.get("standardError") == "nonBlank" &&
+                            !case.has("standardErrorExact"))
+                        case.remove("standardError")
+                    }
                 }
             }
         }
