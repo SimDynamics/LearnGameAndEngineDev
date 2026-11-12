@@ -1,0 +1,56 @@
+name: Windows primer caso obligatorio por editor
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/windows-first-case-unlock.yml
+      - native/presentation/windows/lesson_view.cpp
+      - native/presentation/windows/lesson_view_tests.cpp
+      - native/presentation/windows/cpp_project_view_tests.cpp
+      - native/platform/windows/compiler_completion.cpp
+      - native/core/compiler_recheck_contract_test.hpp
+      - scripts/windows/Test-NativeCurricularCI.ps1
+      - CMakeLists.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-primer-caso-main-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  primer-caso:
+    name: Win32 autentico con 13 casos y solo uno obligatorio
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Leer el código de main
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Seleccionar el entorno Python de la compilación
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.15.2'
+      - name: Compilar lector y ejecutar pruebas nativas de navegación
+        run: .\scripts\windows\Test-NativeCurricularCI.ps1 -Suite ReaderBuild
+      - name: Conservar resultados Windows
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-primer-caso-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            out/qa/reader-build-ci/CMakeFiles/CMakeConfigureLog.yaml
+            out/qa/reader-build-ci/native-build.log
+            out/qa/reader-build-ci/reader-build-results.json
+            out/qa/reader-build-ci/CTestTestfile.cmake
+            out/qa/reader-build-ci/Testing/Temporary/*.log

@@ -2604,28 +2604,39 @@ void retired_reading_regions_are_empty_during_import_and_return_after_cancel() {
         "Canceling import failed to restore the archived-bookmark projection or changed lesson data");
     std::cout<<"PASS retired reading projection during actual import/cancel: heading is safe, no folder selected, no data imported\n";
 }
-void multiple_input_compiler_is_one_pending_objective_until_every_case_passes() {
+void multiple_input_compiler_first_case_unlocks_thirteen_optional_cases() {
+    // The reader must use the FIRST authored case as its ONLY required check,
+    // independently of how many optional inputs the curriculum preserves.
     Fixture f({},[](const curriculum::Lesson&){return windows::parse_lesson_json(R"json({
-      "id":"qa_multiple_input_compiler","title":"Dos entradas","compilerPuzzlesRequired":true,"pages":[{"blocks":[
-        {"type":"cpp_compiler","question":"Comprueba ambas entradas.","initialCode":"#include <iostream>\nint main(){int n=0;std::cin >> n;std::cout << n*2;}\n","initialStandardInput":"1","outputCheck":{"cases":[{"standardInput":"1","outputs":["2"]},{"standardInput":"2","outputs":["4"]}]}},
-        {"type":"paragraph","text":"Después de los dos casos."}
+      "id":"qa_multiple_input_compiler","title":"Trece entradas","compilerPuzzlesRequired":true,"pages":[{"blocks":[
+        {"type":"cpp_compiler","question":"Comprueba la primera entrada; las otras son opcionales.","initialCode":"#include <iostream>\\nint main(){int n=0;std::cin >> n;std::cout << n*2;}\\n","initialStandardInput":"1","outputCheck":{"cases":[
+          {"standardInput":"1","outputs":["2"]},{"standardInput":"2","outputs":["4"]},
+          {"standardInput":"3","outputs":["6"]},{"standardInput":"4","outputs":["8"]},
+          {"standardInput":"5","outputs":["10"]},{"standardInput":"6","outputs":["12"]},
+          {"standardInput":"7","outputs":["14"]},{"standardInput":"8","outputs":["16"]},
+          {"standardInput":"9","outputs":["18"]},{"standardInput":"10","outputs":["20"]},
+          {"standardInput":"11","outputs":["22"]},{"standardInput":"12","outputs":["24"]},
+          {"standardInput":"13","outputs":["26"]}]}},
+        {"type":"paragraph","text":"Los doce casos restantes son optativos."}
       ]},{"blocks":[{"type":"paragraph","text":"Página final."}]}]})json");});
     f.run(0);
-    require(f.text(0,4).empty()&&f.text(0,34).find("Caso correcto. Casos comprobados: 1 de 2.")!=std::string::npos
-        &&f.text(0,34).find("Para continuar, comprueba los casos restantes")!=std::string::npos
-        &&!lesson_page_state(f.view).can_next&&!descendant(f.view,id(1,0)),
-        "A single passing input displayed global Correcto, revealed later content or enabled advance");
-    require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){return region.block_index==0&&region.is_exercise&&!region.solved;}),
-        "A partial compiler case released its narration gate");
-    f.reopen();require(f.text(0,4).empty()&&f.text(0,34).find("1 de 2")!=std::string::npos,
-        "Reopening lost independent checked cases or invented a completed objective");
-    f.replace(0,15,"2");f.run(0);
-    require(f.text(0,4)=="✓ Correcto"&&lesson_page_state(f.view).can_next&&descendant(f.view,id(1,0)),
-        "Changing only input failed to combine both actual cases of the same program");
-    f.replace(0,15,"un caso no declarado");f.run(0);
+    require(f.text(0,4)=="✓ Correcto"&&f.text(0,34).find("Comprobación obligatoria: 1 de 1.")!=std::string::npos
+        &&f.text(0,34).find("Pruebas opcionales comprobadas: 0 de 12.")!=std::string::npos
+        &&lesson_page_state(f.view).can_next&&descendant(f.view,id(1,0)),
+        "The sole first passing input failed to unlock the next page with 12 optional cases");
+    require(std::ranges::any_of(lesson_reading_regions(f.view),[](const auto& region){
+        return region.block_index==0&&region.is_exercise&&region.solved;}),
+        "The first correct case did not release the narration gate");
+    f.reopen();
     require(f.text(0,4)=="✓ Correcto"&&lesson_page_state(f.view).can_next,
-        "Compiling an unlisted input after completion revoked the approved puzzle");
-    std::cout<<"PASS one compiler with two real inputs: partial status and reader gate, checked-case persistence, independent inputs and sticky full success\n";
+        "Reopening lost the first-case earned achievement and blocked progress");
+    f.replace(0,15,"2");f.run(0);
+    require(lesson_page_state(f.view).can_next&&descendant(f.view,id(1,0)),
+        "An optional second execution blocked an already earned first-case achievement");
+    f.replace(0,15,"un caso no declarado");f.run(0);
+    require(lesson_page_state(f.view).can_next,
+        "An unlisted optional input revoked the first-case earned achievement");
+    std::cout<<"PASS 13-case original compiler reader: first case alone unlocks next page, optional tests and reopen do not block\\n";
 }
 void prepare_stderr_visual_profile(std::string_view scenario, std::wstring_view token) {
     const bool u8 = scenario == "u8";
@@ -4317,7 +4328,7 @@ int main(int argc,char* argv[]) {
         if(stderr_objective_only){runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();return 0;}
         if(dependent_puzzles_only){dependent_puzzle_types_hide_payload_and_preserve_their_historical_responses();dependent_puzzle_bookmarks_resolve_transitive_pending_sources();authored_dependent_puzzle_locations_protect_historical_bookmarks();return 0;}
         if(current_dependent_puzzles_only){current_authored_dependent_puzzles(argc==4?std::stoul(argv[2]):0,argc==4?std::stoul(argv[3]):1);return 0;}
-        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_is_one_pending_objective_until_every_case_passes();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();compiler_puzzle_completion_and_navigation();return 0;}
+        if(compiler_puzzles_only){real_retirement_pages_preserve_all_eight_useful_editors();integrated_u1_compilers_require_all_eight_real_executions();retired_reading_regions_are_empty_during_import_and_return_after_cancel();multiple_input_compiler_first_case_unlocks_thirteen_optional_cases();runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();integrated_u8l3_stderr_objective_preserves_history_and_requires_real_runtime_diagnostics();integrated_u10l4_stderr_objective_requires_its_own_constructor_and_runtime_report();compiler_puzzle_completion_and_navigation();return 0;}
         if(caret_only){simulated_exercise_code_cards(true);native_answer_end_viewport();return 0;}
         if(text_sequence_only){text_sequence_lesson_all_pages();return 0;}
         runtime_stderr_objective_keeps_legacy_history_and_requires_both_current_channels();
