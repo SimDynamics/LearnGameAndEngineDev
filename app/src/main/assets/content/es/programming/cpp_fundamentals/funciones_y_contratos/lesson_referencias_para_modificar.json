@@ -23,7 +23,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid aumentar_nivel(int& nivel) {\n    nivel = nivel + 2;\n}\n\nint main() {\n    int nivel = 5;\n    aumentar_nivel(nivel);\n    std::cout << nivel;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nvoid aumentar_nivel(int& nivel) {\n    nivel = nivel + 2;\n}\n\nint main() {\n    int nivel = 5;\n\n    aumentar_nivel(nivel);\n    std::cout << nivel;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -33,7 +33,7 @@
           "type": "output_prediction",
           "question": "Compara una copia y una modificación por referencia. Predice ambas líneas.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint preparar_copia(int dato) {\n    dato = 0;\n    return dato;\n}\n\nvoid poner_cero(int& dato) {\n    dato = 0;\n}\n\nint main() {\n    int original = 7;\n    const int copia = preparar_copia(original);\n    std::cout << original << \" \" << copia << \"\\n\";\n    poner_cero(original);\n    std::cout << original;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint preparar_copia(int dato) {\n    dato = 0;\n    return dato;\n}\n\nvoid poner_cero(int& dato) {\n    dato = 0;\n}\n\nint main() {\n    int original = 7;\n    const int copia = preparar_copia(original);\n\n    std::cout << original << \" \" << copia << \"\\n\";\n\n    poner_cero(original);\n    std::cout << original;\n\n    return 0;\n}\n",
           "answers": [
             "7 0\n0"
           ],
@@ -71,7 +71,7 @@
           "type": "fill_code",
           "question": "Completa sólo el símbolo de referencia para que la función modifique el int aportado por el llamador.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid reiniciar(int___ contador) {\n    contador = 0;\n}\n\nint main() {\n    int contador = 9;\n    reiniciar(contador);\n    std::cout << contador;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid reiniciar(int___ contador) {\n    contador = 0;\n}\n\nint main() {\n    int contador = 9;\n    reiniciar(contador);\n\n    std::cout << contador;\n\n    return 0;\n}\n",
           "answers": [
             "&"
           ],
@@ -104,7 +104,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-3, 5, -1};\n    quitar_negativos(datos);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-3, 5, -1};\n\n    quitar_negativos(datos);\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -114,7 +114,7 @@
           "type": "output_prediction",
           "question": "Predice los elementos después de aplicar un límite superior de 6.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nvoid limitar_altos(std::vector<int>& datos, int limite) {\n    for (int& valor : datos) {\n        if (valor > limite) {\n            valor = limite;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {3, 9, 6};\n    limitar_altos(datos, 6);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid limitar_altos(std::vector<int>& datos, int limite) {\n    for (int& valor : datos) {\n        if (valor > limite) {\n            valor = limite;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {3, 9, 6};\n\n    limitar_altos(datos, 6);\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "3\n6\n6"
           ],
@@ -134,7 +134,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -186,7 +186,7 @@
           "type": "output_prediction",
           "question": "Recupera parámetros por valor y referencia en una misma llamada.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid fijar(int& destino, int nuevo) {\n    destino = nuevo;\n    nuevo = nuevo + 1;\n    std::cout << \"Local: \" << nuevo << \"\\n\";\n}\n\nint main() {\n    int destino = 2;\n    const int origen = 8;\n    fijar(destino, origen);\n    std::cout << destino << \" \" << origen;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid fijar(int& destino, int nuevo) {\n    destino = nuevo;\n    nuevo = nuevo + 1;\n\n    std::cout << \"Local: \" << nuevo << \"\\n\";\n}\n\nint main() {\n    int destino = 2;\n    const int origen = 8;\n\n    fijar(destino, origen);\n    std::cout << destino << \" \" << origen;\n\n    return 0;\n}\n",
           "answers": [
             "Local: 9\n8 8"
           ],
@@ -215,7 +215,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-12, 0, 12};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-12, 0, 12};\n\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -231,7 +231,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -270,7 +270,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -311,7 +311,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n    vista = otra;\n    otra = 6;\n    std::cout << zona << ' ' << vista << ' ' << otra;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n    vista = otra;\n    otra = 6;\n\n    std::cout << zona << ' ' << vista << ' ' << otra;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -347,7 +347,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -384,7 +384,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 2;\n    int derecha = -9;\n    std::cout << \"Antes: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Despues: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Dos llamadas: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, izquierda);\n    std::cout << \"Mismo: \" << izquierda;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 2;\n    int derecha = -9;\n\n    std::cout << \"Antes: \" << izquierda << ' ' << derecha << '\\n';\n\n    intercambiar(izquierda, derecha);\n    std::cout << \"Despues: \" << izquierda << ' ' << derecha << '\\n';\n\n    intercambiar(izquierda, derecha);\n    std::cout << \"Dos llamadas: \" << izquierda << ' ' << derecha << '\\n';\n\n    intercambiar(izquierda, izquierda);\n    std::cout << \"Mismo: \" << izquierda;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -408,7 +408,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    std::cin >> primero >> segundo;\n    intercambiar(primero, segundo);\n    std::cout << \"Una: \" << primero << ' ' << segundo << '\\n';\n    intercambiar(primero, primero);\n    std::cout << \"Compartido: \" << primero << ' ' << segundo << '\\n';\n    intercambiar(primero, segundo);\n    std::cout << \"Dos: \" << primero << ' ' << segundo;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero{0};\n    int segundo{0};\n\n    std::cin >> primero >> segundo;\n\n    intercambiar(primero, segundo);\n    std::cout << \"Una: \" << primero << ' ' << segundo << '\\n';\n\n    intercambiar(primero, primero);\n    std::cout << \"Compartido: \" << primero << ' ' << segundo << '\\n';\n\n    intercambiar(primero, segundo);\n    std::cout << \"Dos: \" << primero << ' ' << segundo;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -468,7 +468,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__perdida_del_valor_anterior",
           "question": "Predice las dos líneas. La primera llamada usa dos objetos distintos; la segunda aporta el mismo objeto dos veces.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intento_directo(int& primero, int& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int uno = -4;\n    int dos = 7;\n    intento_directo(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = -2;\n    intento_directo(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid intento_directo(int& primero, int& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int uno = -4;\n    int dos = 7;\n\n    intento_directo(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n\n    int unico = -2;\n\n    intento_directo(unico, unico);\n    std::cout << unico << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "7 7\n-2"
           ],
@@ -507,7 +507,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__intercambio_por_valor_y_por_referencia",
           "question": "Predice las tres líneas. Distingue qué objetos modifica cada llamada y qué aporta invertir los nombres de los argumentos en la última.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intercambiar_copias(int primero, int segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 3;\n    int derecha = -8;\n    intercambiar_copias(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(derecha, izquierda);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid intercambiar_copias(int primero, int segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 3;\n    int derecha = -8;\n\n    intercambiar_copias(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n\n    intercambiar(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n\n    intercambiar(derecha, izquierda);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "3 -8\n-8 3\n3 -8"
           ],
@@ -557,7 +557,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__dos_objetos_iguales_frente_a_alias",
           "question": "Ambos ensayos empiezan con el valor 4. Predice las dos líneas siguiendo las dos asignaciones separadas de cada llamada.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid escribir_dos(int& primero, int& segundo) {\n    primero = 7;\n    segundo = -2;\n}\n\nint main() {\n    int uno = 4;\n    int dos = 4;\n    escribir_dos(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = 4;\n    escribir_dos(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid escribir_dos(int& primero, int& segundo) {\n    primero = 7;\n    segundo = -2;\n}\n\nint main() {\n    int uno = 4;\n    int dos = 4;\n\n    escribir_dos(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n\n    int unico = 4;\n\n    escribir_dos(unico, unico);\n    std::cout << unico << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "7 -2\n-2"
           ],
@@ -584,7 +584,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_no_reenlaza_la_referencia",
           "question": "Predice la línea final. Sigue el objeto que vista designa desde su inicialización, incluso cuando sus valores cambian.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "10 10 -4"
           ],
@@ -612,7 +612,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Reconstruye intercambiar, los objetos, las referencias y las llamadas.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Reconstruye intercambiar, los objetos, las referencias y las llamadas.\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -645,7 +645,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva = -8;\n    int usado = 1;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva = -8;\n    int usado = 1;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -665,7 +665,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva{0};\n    int usado{0};\n    std::cin >> reserva >> usado;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva{0};\n    int usado{0};\n\n    std::cin >> reserva >> usado;\n\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -729,7 +729,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n\n    return 0;\n}\n",
           "initialStandardInput": "7 2",
           "outputCheck": {
             "inputComparison": "tokens",
@@ -793,7 +793,7 @@
           "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__copia_const_y_referencia_const_tras_intercambiar",
           "question": "Predice los cuatro valores. copia y vista se inicializan antes del intercambio: distingue objeto independiente de referencia de lectura.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primera = 9;\n    int segunda = 0;\n    const int copia = primera;\n    const int& vista = primera;\n    intercambiar(primera, segunda);\n    std::cout << copia << ' ' << vista << ' '\n              << primera << ' ' << segunda << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primera = 9;\n    int segunda = 0;\n    const int copia = primera;\n    const int& vista = primera;\n\n    intercambiar(primera, segunda);\n    std::cout << copia << ' ' << vista << ' '\n              << primera << ' ' << segunda << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "9 0 0 9"
           ],
@@ -2935,6 +2935,519 @@
         "id": "block_0006_0005",
         "beforeSha256": "65c87f8ca00c49ad2e4c3ec8230c469f4de2e39b9362bac9914a0a594fdd9085",
         "afterSha256": "74e0dbb5cf821ba2b4751f05acd80859c14d18d5f8ba0325479dd3d24b2cd291"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "3e9c8385f49b5638cfddfd1b2fdc1404607ef02cfbe876bb381d267687c85697",
+        "afterSha256": "963bbfcd0465adc5557f005732b9376bda0ac04a747aba388861d85830df64b1"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "33f3799e7c9bae92a88260615825b9fa1ecf3df48c0f70f0c203597223474135",
+        "afterSha256": "c63e65208bad074ca18ca6351b885e4c7f85e02aafaddba56990a016c34552fb"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "3b4316435e7c75c891246ca249b13927c14c92931965d56fe1968498e4fc3659",
+        "afterSha256": "547106f06a81ff7fea8761099637c058e5614b60d59daa8691b747fee28e3b3c"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "2945fac40dd0fa75339a49e1969c2eaa5ceacc95aeee28ea15d5bcff476b8c7d",
+        "afterSha256": "a135119221a8547b73682cab6d779a7222516dacca7020dce6e05cc95ae1f9de"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "a119f5f0db5bab454806a715ff71cbef870be9dde2f7c3d595be7fd2bf03965b",
+        "afterSha256": "c870ea9852777abe522be654a28c1da63313424e30139eabb479bded998a0b9c"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a6f1b910286946053156110258e693b854f4a6c63a892c00a52339e8c237a2a3",
+        "afterSha256": "aa4867d7001f3d08481293447ce55bd9e977e5695588d0d8672ce69c0bac19a3"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "06fdf52d1ce9e28fbe6c0f8e3ecf9c9b432b9ffe5111443f2c3053741f51c407",
+        "afterSha256": "9d2ee0a0a3080570364df8985d538c1414401424af2bed4270240e57915e3fcc"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "b64388866f2bfd8aebeab6cbe040be092221677f562c0d81da8d5511e9aa2ac0",
+        "afterSha256": "6eba5e86eb4e663a2543d5edc0aa28f68c780ded8e2c4bc8814551427db9ebde"
+      },
+      {
+        "id": "block_0005_0007",
+        "beforeSha256": "b7a2b25cab7d1eb08ea1e2c17a704f0e9500988b4b2dddd68178ad53ad7e52fa",
+        "afterSha256": "ad21d63b171bbc6501b25c58e478c29eb8850e7def970abdd51e2e14c95b4caa"
+      },
+      {
+        "id": "block_0005_0010",
+        "beforeSha256": "ed20eb36dad7523e2bc3cd30d5310bd787c4d6a169a5529d59a420c28031d8da",
+        "afterSha256": "efab1ac6db2c57e05ecbf669a98110f6c401c717daf3f4ade38d355dc77bbf5f"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "af13371db75815b9d98f3bdcf7df01f5835563887af0bcb901ef89d158d1689b",
+        "afterSha256": "492668e4c80ceecf1d7dc57b2e80d758294ecd3a9e78dfaacba7f4dcd4482833"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "5d17faf47459a5fcaa7e51d037fed639c494979243e9446c33e55daf88940775",
+        "afterSha256": "b3fab8257595b1a7a4c138bcbc490c223f90ebca44a0c6f7e20861f6a2404d73"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "3fc74f47200be3e8abb63fd76d408fd8f81a543e86cf5a79e7776bcd46447beb",
+        "afterSha256": "b13ee2251aa1724963b06b8a8dda3b819002940f19b26555756f1497c4867ac9"
+      },
+      {
+        "id": "block_0008_0008",
+        "beforeSha256": "7ab115329849ac628b23091fbd9ae42b16ce2e7e8ae8c543b9e846828668e957",
+        "afterSha256": "acc9debc6f79a0f163c7d19bc8bf2607c6ac28315e928d7edb5e80a5bf6aaefc"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "ee972dc31ede20954d0b4864a8cb5c0d6ab7cd707e6a20de3639069327eb0656",
+        "afterSha256": "fa7553cf4ccae2bf9fdbfe3b7aecb2a2b153789f8526c15dc8075729c31687e2"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "c1a467a599e05ab35218107bc3dcc1f791ce21bf47b8262a6389096e11827a9e",
+        "afterSha256": "635e8cd18fe63cff263eabad3889deda2f2fab6b0e528a9de3d0a9d28ed35258"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "35acb8a8844fa922a006c1a9da8c4d79c5e04c46fd7c5b5f718eb4efa7db1d0b",
+        "afterSha256": "d421755b1fe88044180ccca6155937428d2ef8025a770d9a42fb7c56f2b4a95d"
+      },
+      {
+        "id": "block_0011_0005",
+        "beforeSha256": "058d4a01856b27549d0212b74935e5b0f33e1f52d60e3770aecb55b22ab3fd85",
+        "afterSha256": "d60400040c0b025162c13c6124d9b9d19dc54fb52c32ee483d25d080d1882d0e"
+      },
+      {
+        "id": "block_0012_0003",
+        "beforeSha256": "d468cb38b8253d4ff6468f643fb39101a33848ff5d7b424620130bafec27d5f2",
+        "afterSha256": "b37a83fdab911b934f264eff132641a6131b04a43380693343e8370369480c68"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "3b42ca15b962586680efd155303af620fbea999f7293054055d0c9adcc7f2dd9",
+        "afterSha256": "ae9d4dc6e0c82d107d0eb73448755b520f73745d3b145a9ebbdd9a427cc734b0"
+      },
+      {
+        "id": "block_0013_0007",
+        "beforeSha256": "a73cc47d6b373d28a55f23606f6199bef2d1803980747f1a2560cd291883aa5e",
+        "afterSha256": "56e044d24880c86032c9d3380e8e1be380886e412c0132cc8e2f659772b25124"
+      },
+      {
+        "id": "block_0014_0007",
+        "beforeSha256": "c85befbb8ea59b1bfa637af27e4a36d6d82ea204f7507b1d4baff2a93a3fa3ab",
+        "afterSha256": "6bfbf74060f4de41936a26ae5b63957605a9c60a2e4688befcdd0090ea1ce197"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "44e3e6395917635736a46e1eb6e2b18a5184cb5d828be364b9e8536e7db9f32c",
+        "afterSha256": "47a57b47cf219208c8726c3c8cb04d07da2b862560a2776890d6fa01276ff2b3"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid aumentar_nivel(int& nivel) {\n    nivel = nivel + 2;\n}\n\nint main() {\n    int nivel = 5;\n    aumentar_nivel(nivel);\n    std::cout << nivel;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Compara una copia y una modificación por referencia. Predice ambas líneas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint preparar_copia(int dato) {\n    dato = 0;\n    return dato;\n}\n\nvoid poner_cero(int& dato) {\n    dato = 0;\n}\n\nint main() {\n    int original = 7;\n    const int copia = preparar_copia(original);\n    std::cout << original << \" \" << copia << \"\\n\";\n    poner_cero(original);\n    std::cout << original;\n    return 0;\n}\n",
+          "answers": [
+            "7 0\n0"
+          ],
+          "explanation": "La primera función cambia su copia y entrega 0. La segunda se refiere a original y lo modifica."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "fill_code",
+          "question": "Completa sólo el símbolo de referencia para que la función modifique el int aportado por el llamador.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid reiniciar(int___ contador) {\n    contador = 0;\n}\n\nint main() {\n    int contador = 9;\n    reiniciar(contador);\n    std::cout << contador;\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "int& refiere al contador de main. La asignación lo deja en 0."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-3, 5, -1};\n    quitar_negativos(datos);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice los elementos después de aplicar un límite superior de 6.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid limitar_altos(std::vector<int>& datos, int limite) {\n    for (int& valor : datos) {\n        if (valor > limite) {\n            valor = limite;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {3, 9, 6};\n    limitar_altos(datos, 6);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3\n6\n6"
+          ],
+          "explanation": "Sólo 9 supera el límite y se reemplaza por 6. El elemento igual al límite se conserva."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Elementos: 4\n0\n4\n0\n6",
+                  "Elementos: 4\n0\n4\n0\n6\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Recupera parámetros por valor y referencia en una misma llamada.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid fijar(int& destino, int nuevo) {\n    destino = nuevo;\n    nuevo = nuevo + 1;\n    std::cout << \"Local: \" << nuevo << \"\\n\";\n}\n\nint main() {\n    int destino = 2;\n    const int origen = 8;\n    fijar(destino, origen);\n    std::cout << destino << \" \" << origen;\n    return 0;\n}\n",
+          "answers": [
+            "Local: 9\n8 8"
+          ],
+          "explanation": "destino se modifica por referencia. nuevo es una copia de origen: su incremento local no cambia origen."
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-12, 0, 12};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        datos.push_back(dato);\n    }\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Elementos: 0",
+                  "Elementos: 0\n"
+                ]
+              },
+              {
+                "standardInput": "2 2 4",
+                "outputs": [
+                  "Elementos: 2\n2\n4",
+                  "Elementos: 2\n2\n4\n"
+                ]
+              },
+              {
+                "standardInput": "3 -12 0 12",
+                "outputs": [
+                  "Elementos: 3\n0\n0\n12",
+                  "Elementos: 3\n0\n0\n12\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0005_0010",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Elementos: 4\n-2\n4\n-1\n6",
+                  "Elementos: 4\n-2\n4\n-1\n6\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n    vista = otra;\n    otra = 6;\n    std::cout << zona << ' ' << vista << ' ' << otra;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Antes: 8 -3\nDespues: -3 8",
+                  "Antes: 8 -3\nDespues: -3 8\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 2;\n    int derecha = -9;\n    std::cout << \"Antes: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Despues: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Dos llamadas: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, izquierda);\n    std::cout << \"Mismo: \" << izquierda;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero{0};\n    int segundo{0};\n    std::cin >> primero >> segundo;\n    intercambiar(primero, segundo);\n    std::cout << \"Una: \" << primero << ' ' << segundo << '\\n';\n    intercambiar(primero, primero);\n    std::cout << \"Compartido: \" << primero << ' ' << segundo << '\\n';\n    intercambiar(primero, segundo);\n    std::cout << \"Dos: \" << primero << ' ' << segundo;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 2",
+                "outputs": [
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2",
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2\n"
+                ]
+              },
+              {
+                "standardInput": "4 4",
+                "outputs": [
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4",
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4\n"
+                ]
+              },
+              {
+                "standardInput": "-5 -1",
+                "outputs": [
+                  "Una: -1 -5\nCompartido: -1 -5\nDos: -5 -1",
+                  "Una: -1 -5\nCompartido: -1 -5\nDos: -5 -1\n"
+                ]
+              },
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6",
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6\n"
+                ]
+              },
+              {
+                "standardInput": "-12 12",
+                "outputs": [
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12",
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "7 2"
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__perdida_del_valor_anterior",
+          "question": "Predice las dos líneas. La primera llamada usa dos objetos distintos; la segunda aporta el mismo objeto dos veces.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intento_directo(int& primero, int& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int uno = -4;\n    int dos = 7;\n    intento_directo(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = -2;\n    intento_directo(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 7\n-2"
+          ],
+          "explanation": "La primera asignación copia 7 en uno. La segunda lee ese uno ya modificado y copia 7 en dos; el -4 inicial no quedó conservado. Con unico como ambos argumentos, las dos asignaciones copian su propio valor y el objeto permanece en -2. Un caso que no revela el defecto no hace correcta la función."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__intercambio_por_valor_y_por_referencia",
+          "question": "Predice las tres líneas. Distingue qué objetos modifica cada llamada y qué aporta invertir los nombres de los argumentos en la última.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar_copias(int primero, int segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 3;\n    int derecha = -8;\n    intercambiar_copias(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(derecha, izquierda);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "3 -8\n-8 3\n3 -8"
+          ],
+          "explanation": "La versión por valor intercambia sus copias y main conserva 3 y -8. La versión por referencia modifica los objetos de main y los deja en -8 y 3. La última llamada intercambia esos mismos dos objetos, escritos en orden inverso, y restaura 3 y -8."
+        }
+      },
+      {
+        "id": "block_0011_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__dos_objetos_iguales_frente_a_alias",
+          "question": "Ambos ensayos empiezan con el valor 4. Predice las dos líneas siguiendo las dos asignaciones separadas de cada llamada.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid escribir_dos(int& primero, int& segundo) {\n    primero = 7;\n    segundo = -2;\n}\n\nint main() {\n    int uno = 4;\n    int dos = 4;\n    escribir_dos(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = 4;\n    escribir_dos(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 -2\n-2"
+          ],
+          "explanation": "Con dos objetos distintos, la primera asignación deja uno en 7 y la segunda deja dos en -2. En la llamada con unico, ambos parámetros refieren al mismo objeto: primero se escribe 7 y después -2 en ese único objeto. Igualdad de valores iniciales no implica identidad de objetos."
+        }
+      },
+      {
+        "id": "block_0011_0005",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_no_reenlaza_la_referencia",
+          "question": "Predice la línea final. Sigue el objeto que vista designa desde su inicialización, incluso cuando sus valores cambian.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "10 10 -4"
+          ],
+          "explanation": "vista = segundo copia -4 al objeto primero. Luego segundo cambia a 10, sin cambiar la vinculación de vista. intercambiar(vista, segundo) intercambia los objetos primero y segundo: primero queda en 10 y segundo en -4. vista sigue nombrando primero y por eso también muestra 10."
+        }
+      },
+      {
+        "id": "block_0012_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Reconstruye intercambiar, los objetos, las referencias y las llamadas.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Distintos: -4 10\nCompartido: -4 10\nRestaurado: 10 -4",
+                  "Distintos: -4 10\nCompartido: -4 10\nRestaurado: 10 -4\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva = -8;\n    int usado = 1;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0013_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva{0};\n    int usado{0};\n    std::cin >> reserva >> usado;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "Distintos: 6 0\nCompartido: 6 0\nRestaurado: 0 6",
+                  "Distintos: 6 0\nCompartido: 6 0\nRestaurado: 0 6\n"
+                ]
+              },
+              {
+                "standardInput": "4 4",
+                "outputs": [
+                  "Distintos: 4 4\nCompartido: 4 4\nRestaurado: 4 4",
+                  "Distintos: 4 4\nCompartido: 4 4\nRestaurado: 4 4\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 6"
+        }
+      },
+      {
+        "id": "block_0014_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n",
+          "initialStandardInput": "7 2",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 2",
+                "outputs": [
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2",
+                  "Una: 2 7\nCompartido: 2 7\nDos: 7 2\n"
+                ]
+              },
+              {
+                "standardInput": "4 4",
+                "outputs": [
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4",
+                  "Una: 4 4\nCompartido: 4 4\nDos: 4 4\n"
+                ]
+              },
+              {
+                "standardInput": "0 6",
+                "outputs": [
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6",
+                  "Una: 6 0\nCompartido: 6 0\nDos: 0 6\n"
+                ]
+              },
+              {
+                "standardInput": "-12 12",
+                "outputs": [
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12",
+                  "Una: 12 -12\nCompartido: 12 -12\nDos: -12 12\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__copia_const_y_referencia_const_tras_intercambiar",
+          "question": "Predice los cuatro valores. copia y vista se inicializan antes del intercambio: distingue objeto independiente de referencia de lectura.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primera = 9;\n    int segunda = 0;\n    const int copia = primera;\n    const int& vista = primera;\n    intercambiar(primera, segunda);\n    std::cout << copia << ' ' << vista << ' '\n              << primera << ' ' << segunda << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "9 0 0 9"
+          ],
+          "explanation": "copia conserva el 9 recibido al inicializarse. vista sigue refiriéndose a primera, que el intercambio deja en 0. segunda recibe el 9 anterior de primera. No se asigna mediante vista: la modificación ocurre por el parámetro int& vinculado a primera."
+        }
       }
     ]
   },
