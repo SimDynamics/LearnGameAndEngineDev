@@ -332,6 +332,57 @@ class LessonStateLayoutJsonTest {
         }
     }
 
+    @Test fun publishedIntentionalExitsAndCrtVariantRetainOnlyTheirExactHistoricalContract() {
+        val root = listOf(java.io.File("src/main/assets/content"),
+            java.io.File("app/src/main/assets/content")).firstOrNull { it.isDirectory }
+            ?: error("Cannot find published curricular assets")
+        val prefix = "es/programming/cpp_fundamentals/archivos_y_programa_completo/"
+        val goals = listOf(
+            "lesson_compartir_flujos_sin_acoplar_el_calculo.json" to 1,
+            "lesson_construir_un_programa_de_carga_y_guardado.json" to 1,
+            "lesson_clasificar_caracteres_y_normalizar_una_copia.json" to 2
+        )
+        for ((name, outputCount) in goals) {
+            val document = JSONObject(java.io.File(root, prefix + name).readText(Charsets.UTF_8))
+            val pages = document.getJSONArray("pages")
+            val blocks = (0 until pages.length()).flatMap { page ->
+                val items = pages.getJSONObject(page).getJSONArray("blocks")
+                (0 until items.length()).map { items.getJSONObject(it) }
+            }
+            val owner = blocks.single { block ->
+                block.optJSONObject("outputCheck")?.optJSONArray("cases")?.let { cases ->
+                    cases.length() == 1 && (
+                        (outputCount == 1 && cases.getJSONObject(0).optInt("exitCode") == 1) ||
+                        (outputCount == 2 && cases.getJSONObject(0)
+                            .optJSONArray("outputs")?.length() == 2)
+                    )
+                } == true
+            }
+            val historical = JSONObject(owner.toString())
+            val outputs = historical.getJSONObject("outputCheck")
+                .getJSONArray("cases").getJSONObject(0).getJSONArray("outputs")
+            if (outputCount == 1) {
+                historical.remove("outputCheck")
+            } else {
+                outputs.remove(1)
+            }
+            assertEquals("The published Windows-only goal changed Android's historical state",
+                LessonStateLayoutJson.stateFingerprint(historical),
+                LessonStateLayoutJson.stateFingerprint(owner))
+            val changed = JSONObject(owner.toString())
+            changed.getJSONObject("outputCheck").getJSONArray("cases")
+                .getJSONObject(0).getJSONArray("outputs").put(0, "Forged result")
+            if (outputCount == 1) {
+                assertTrue("An altered intentional-exit goal gained a historical alias",
+                    runCatching { LessonStateLayoutJson.stateFingerprint(changed) }.isFailure)
+            } else {
+                assertNotEquals("An altered CRT output borrowed the original result",
+                    LessonStateLayoutJson.stateFingerprint(owner),
+                    LessonStateLayoutJson.stateFingerprint(changed))
+            }
+        }
+    }
+
     @Test fun unknownVersionsAndFieldsNeverDowngradeToLegacyBehavior() {
         assertNull(LessonStateLayoutJson.read(JSONObject().put("pages", JSONArray())))
         for (value in listOf<Any>(0, 3, "2", true, JSONObject.NULL)) {
