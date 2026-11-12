@@ -34,7 +34,7 @@ class PublishedStateLayoutInventoryAndroidTest {
                 val version = metadata.getInt("version")
                 val layout = requireNotNull(LessonStateLayoutJson.read(lesson))
                 assertEquals(version, layout.version)
-                assertEquals(lesson.getJSONArray("pages").length, layout.current.size)
+                assertEquals(lesson.getJSONArray("pages").length(), layout.current.size)
                 if (version == 2) assertEquals(language, layout.locale)
             } catch (error: Exception) {
                 val rootCause = generateSequence(error as Throwable?) { it.cause }.lastOrNull()
