@@ -71,12 +71,9 @@ object PremiumRepository {
         context: Context
     ): Boolean {
 
-        // ACTIVACION TEMPORAL DEL DESARROLLO ANDROID.
-        // La aplicación aún no se comercializa: el desarrollador necesita
-        // vidas ilimitadas para estudiar y comprobar todos los ejercicios.
-        // Antes de publicar una versión de venta, restaurar la verificación
-        // de propiedad mediante Google Play.
-        return true
+        return getState(
+            context
+        ) == PremiumState.PREMIUM
     }
 
     fun setVerifiedPremium(
