@@ -1137,7 +1137,9 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 require(meta["locale"] == "es" and identity in choices
                         and CHOICE_OPTION_REVISIONS.get((document.get("id"), identity)) == reviewed,
                         "A revised choice requires its exact lesson, identity and original archive")
-            compiler_reviewed = _reviewed_compiler(block)
+            source = (code_format.source_projection(block, formatted[identity])
+                      if identity in formatted else block)
+            compiler_reviewed = _reviewed_compiler(source)
             if compiler_reviewed is not None or identity in compilers:
                 require(meta["locale"] == "es" and identity in compilers
                         and COMPILER_CASE_REVISIONS.get((document.get("id"), identity)) == compiler_reviewed,
@@ -1147,8 +1149,6 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                 require(meta["locale"] == "es" and identity in compiler_references
                         and compiler_references[identity] == reference_reviewed,
                         "A revised compiler reference requires its matching expanded compiler and archive")
-            source = (code_format.source_projection(block, formatted[identity])
-                      if identity in formatted else block)
             projected = order_contract_projection(source, refined[identity]) if identity in refined else source
             require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
@@ -1665,8 +1665,14 @@ def _validate_compile_checks(document: dict) -> None:
     require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es",
             "Compiler diagnostic goals require their existing Spanish stateLayout v2 family")
     available = _all_blocks(document)
+    # Authoritative source bytes come from the closed, separately validated
+    # sourceFormatRevisions archive; new whitespace is never a new objective.
+    format_sources = {entry["id"]: entry["block"]
+                      for entry in meta.get("sourceFormatRevisions", [])}
     def owner(identity: str, block: dict, *, historical: bool = False) -> None:
-        spec = validate_compile_check_contract(block)
+        original = (code_format.source_projection(block, format_sources[identity])
+                    if not historical and identity in format_sources else block)
+        spec = validate_compile_check_contract(original)
         if spec is not None:
             require(COMPILE_DIAGNOSTICS.get((document.get("id"), identity)) == spec,
                     "A reviewed compiler diagnostic belongs to its exact lesson and stable editor identity")
