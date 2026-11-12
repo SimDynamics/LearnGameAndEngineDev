@@ -24,6 +24,8 @@ jobs:
           python-version: '3.13'
       - name: Probar auditor sin modificar fuentes
         run: python -m unittest discover -s scripts/curriculum -p test_auditar_legibilidad_codigo.py -v
+      - name: Verificar formato físico con archivo original y progreso histórico
+        run: python -m unittest discover -s scripts/curriculum -p test_real_code_format_pilot.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
