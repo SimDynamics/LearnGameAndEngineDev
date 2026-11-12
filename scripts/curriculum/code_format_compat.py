@@ -33,6 +33,16 @@ def _literal_end(src: str, at: int, quote_at: int) -> int:
         else: i += 1
     raise SourceFormatError("Unterminated C++ literal")
 
+def _cpp_literal_suffix_end(src: str, end: int) -> int:
+    # Adjacent user-defined string/character suffixes are part of the literal.
+    # Spacing "hello"_tag into "hello" _tag must not retain the same token frame.
+    if end < len(src) and src[end] == "_":
+        end += 1
+        while end < len(src) and (src[end].isalnum() or src[end] == "_"
+                                   or ord(src[end]) >= 128):
+            end += 1
+    return end
+
 def _cpp_tokens(src: str) -> tuple[str, ...]:
     tokens: list[str] = []
     i = 0
@@ -79,12 +89,12 @@ def _cpp_tokens(src: str) -> tuple[str, ...]:
                     raise SourceFormatError("Malformed raw delimiter")
                 close = src.find(")" + marker + '"', paren + 1)
                 if close < 0: raise SourceFormatError("Unterminated raw literal")
-                end = close + len(marker) + 2
+                end = _cpp_literal_suffix_end(src, close + len(marker) + 2)
                 tokens.append("literal:" + src[i:end]); i = end; matched = True; break
         if matched: continue
         for prefix in _STRING_PREFIX:
             if src.startswith(prefix, i):
-                end = _literal_end(src, i, i + len(prefix) - 1)
+                end = _cpp_literal_suffix_end(src, _literal_end(src, i, i + len(prefix) - 1))
                 tokens.append("literal:" + src[i:end]); i = end; matched = True; break
         if matched: continue
         ch = src[i]
@@ -231,6 +241,13 @@ def require_source_lexical(original: dict, current: dict) -> bool:
         if "\\\n" in source or "\\\n" in newer or "\\\r\n" in source or "\\\r\n" in newer:
             raise SourceFormatError(f"Physical line splices cannot be reformatted: {slot}")
         lexer = _cmake_tokens if language == "cmake" else _cpp_tokens
+        # A token-preserving newline edit can still alter the observable line
+        # number reported by built-in C++ or CMake location introspection.
+        if language == "cpp" and any(location in source or location in newer
+                for location in ("__LINE__", "source_location")):
+            raise SourceFormatError(f"Source location may depend on physical line numbers: {slot}")
+        if language == "cmake" and "CMAKE_CURRENT_LIST_LINE" in source + newer:
+            raise SourceFormatError(f"CMake location may depend on physical line numbers: {slot}")
         if lexer(source) != lexer(newer):
             raise SourceFormatError(f"Tokens, literals, comments or directives changed: {slot}")
         changed = True
