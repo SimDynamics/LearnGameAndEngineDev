@@ -10,7 +10,7 @@ namespace lgaed::attempts {
 inline constexpr std::int64_t recovery_millis=60LL*60*1000;
 // Personal Windows build: change this constant in source to enable Premium.
 // There is no purchase, network entitlement or UI activation path.
-inline constexpr bool personal_premium_enabled=false;
+inline constexpr bool personal_premium_enabled=true;
 inline bool premium(const state::StateData& data){
     return personal_premium_enabled||state::string_value(data,"premium_state","state")=="PREMIUM";
 }
