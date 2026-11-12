@@ -108,7 +108,7 @@ la versión corregida.
 - **CONSERVACIÓN E INTEGRACIÓN:** preservar propietarios, iniciales, archivos, borradores, respuestas, familias y traducciones. Incorporar los requisitos nuevos mediante una transición compatible: los aciertos anteriores de stdout conservan su alcance histórico y no conceden automáticamente los criterios añadidos. Verificar soluciones equivalentes y los contraejemplos concretos, sin sustituir las prácticas, hacerlas opcionales o pedir autoevaluación. No inventar propiedades JSON mientras falte el contrato.
 - **RECURSO ACTUAL:** `native/platform/windows/cpp_runner.cpp`, `native/core/lesson.hpp`, `native/core/lesson.cpp`, `native/platform/windows/compiler_completion.cpp`, `docs/CPP_OUTPUT_CHECK.md` y `scripts/curriculum/stable_state_layout.py`. Codex implementa y verifica la capacidad y la transición de los proyectos históricos; Work integra sus declaraciones y comprueba los diecinueve propietarios y sus referencias. Mantener separados los requisitos expresados por el proyecto y los valores que hereda del perfil de herramientas. Para los avisos, contrastar Scott (2025, § 16.2.5) y la documentación oficial vigente de MSVC sobre sintaxis de opciones y niveles de advertencia; la aceptación final requiere el perfil Windows real.
 
-### P2_U2_DIAGNOSTICO_CLIENTE
+### P2_U3_DIAGNOSTICOS_E_INFORMES
 
 - **ESTADO:** PENDIENTE.
 - **UBICACIONES:** curso `programming_practice_tools`, unidad `programming_practice_tools__comprobaciones_repetibles`; rutas relativas a `app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/`:
