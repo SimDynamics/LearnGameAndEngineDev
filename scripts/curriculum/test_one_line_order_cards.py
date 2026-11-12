@@ -15,7 +15,7 @@ IDENTITY = "orden_while_puestos_2_3_4"
 
 
 def ordered_program(block):
-    return "\\n".join(block["fragments"][i] for i in block["correctOrder"])
+    return "\n".join(block["fragments"][i] for i in block["correctOrder"])
 
 
 class EveryCardExactlyOneLine(unittest.TestCase):
@@ -31,7 +31,7 @@ class EveryCardExactlyOneLine(unittest.TestCase):
         old = self.revision["block"]
         self.assertEqual(5, len(old["fragments"]))
         self.assertEqual(9, len(self.card["fragments"]))
-        self.assertTrue(all(part and "\\n" not in part and "\\r" not in part
+        self.assertTrue(all(part and "\n" not in part and "\r" not in part
                             for part in self.card["fragments"]))
         self.assertEqual([5,6,7,2,8,0,1,3,4], self.card["correctOrder"])
         self.assertEqual([{"activity": IDENTITY, "count": 1}],
@@ -54,7 +54,7 @@ class EveryCardExactlyOneLine(unittest.TestCase):
             for label,block in (("original",self.revision["block"]),("refined",self.card)):
                 source=Path(folder)/f"{label}.cpp"
                 executable=Path(folder)/label
-                source.write_text(ordered_program(block)+"\\n",encoding="utf-8")
+                source.write_text(ordered_program(block)+"\n",encoding="utf-8")
                 built=subprocess.run(["c++","-std=c++23","-O0","-o",str(executable),str(source)],
                                       capture_output=True,text=True,timeout=90)
                 self.assertEqual(0,built.returncode,built.stderr)
@@ -63,7 +63,7 @@ class EveryCardExactlyOneLine(unittest.TestCase):
                 self.assertEqual("",executed.stderr)
                 observations.append(executed.stdout)
             self.assertEqual(observations[0],observations[1])
-            self.assertEqual("Puesto 2\\nPuesto 3\\nPuesto 4\\n",observations[1])
+            self.assertEqual("Puesto 2\nPuesto 3\nPuesto 4\n",observations[1])
 
     def test_false_saved_order_and_forged_archive_rejected(self):
         wrong=list(self.card["correctOrder"])

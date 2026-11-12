@@ -30,7 +30,7 @@ def audit(root: Path=CONTENT):
                 fragments=block.get("fragments",[])
                 cards+=len(fragments) if isinstance(fragments,list) else 0
                 for i,value in enumerate(fragments if isinstance(fragments,list) else []):
-                    if not isinstance(value,str) or ("\\n" not in value and "\\r" not in value):
+                    if not isinstance(value,str) or ("\n" not in value and "\r" not in value):
                         continue
                     locale=rel.parts[0]
                     course=rel.parts[2] if len(rel.parts)>2 else ""
@@ -59,7 +59,7 @@ def main():
         print(f"{issue['lesson']} p{issue['page']} b{issue['block']} "
               f"fragmento {issue['fragment']}: {issue['physicalLines']} lineas")
     if args.output_json:
-        args.output_json.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\\n",
+        args.output_json.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",
                                     encoding="utf-8")
     return 0
 

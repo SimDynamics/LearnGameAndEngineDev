@@ -134,7 +134,7 @@ class OptionalOrderSeparatorsTest(unittest.TestCase):
                 self.assertEqual(sorted(order["correctOrder"]),
                                  list(range(fragment_count)))
                 if identity == "orden_while_puestos_2_3_4":
-                    self.assertTrue(all("\\n" not in part and "\\r" not in part
+                    self.assertTrue(all("\n" not in part and "\r" not in part
                                         for part in order["fragments"]))
                     history = actual["stateLayout"]["orderRefinements"]
                     self.assertEqual(1, len(history))
