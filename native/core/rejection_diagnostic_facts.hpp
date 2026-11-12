@@ -94,14 +94,22 @@ inline bool mentions(const std::vector<Word>& words,std::initializer_list<std::s
     return false;
 }
 inline bool labelled(const std::vector<Word>& words,std::initializer_list<std::string_view> names,int expected) {
+    bool found=false;
     for(std::size_t i=0;i<words.size();++i)if(one_of(words[i].text,names)) {
         // Allow "petición número 2", "cobros: 10" and "piezas recibidas -1".
+        // Do not stop at the first correct occurrence: "peticion 1 ...
+        // peticion 9" contradicts the observed facts even though one label
+        // happens to match. An unnumbered prose reference is not a value.
         for(std::size_t j=i+1;j<words.size()&&j<=i+3;++j) {
-            if(words[j].number)return *words[j].number==expected;
+            if(words[j].number){
+                if(*words[j].number!=expected)return false;
+                found=true;
+                break;
+            }
             if(!one_of(words[j].text,{"numero","num","de","del","recibidas","recibidos","son","es"}))break;
         }
     }
-    return false;
+    return found;
 }
 inline bool range(std::string_view original,const std::vector<Word>& words,int upper) {
     // The interval is a relationship, not two unrelated numeric fields.
