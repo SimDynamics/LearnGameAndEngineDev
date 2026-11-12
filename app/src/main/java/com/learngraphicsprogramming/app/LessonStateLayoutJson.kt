@@ -240,7 +240,7 @@ internal object LessonStateLayoutJson {
             }
             if (version == 2 && metadata.has("retirementHistory")) {
                 validateRetirementHistory(lesson, metadata, positions, active, retired,
-                    expectedSignatures, additions.map { it.id }.toSet())
+                    expectedSignatures, additions.map { it.id }.toSet(), orderOriginals)
             }
             val orderRefinements = linkedMapOf<String, CurricularOrderRefinement>()
             for ((id, block) in active) {
@@ -378,7 +378,8 @@ internal object LessonStateLayoutJson {
         active: Map<String, JSONObject>,
         retired: Map<String, JSONObject>,
         signatures: Map<String, String>,
-        additions: Set<String>
+        additions: Set<String>,
+        originalOrderCards: Map<String, JSONObject>
     ) {
         val history = metadata.getJSONArray("retirementHistory")
         require(history.length() <= 100_000)
@@ -423,7 +424,22 @@ internal object LessonStateLayoutJson {
                         ?: error("Non-string historical reading identity")
                     require(identity in signatures && !shown.containsKey(identity))
                     val block = blocks.getJSONObject(b)
-                    require(stateFingerprint(block) == signatures.getValue(identity)) {
+                    val originalSignature = signatures.getValue(identity)
+                    val direct = stateFingerprint(block) == originalSignature
+                    // A pre-refinement reading snapshot can still contain the
+                    // original grouped drag cards. Those exact original cards
+                    // were authenticated by the active orderRefinements archive
+                    // above; do not generalize this to changed order answers.
+                    val archivedOrder = originalOrderCards[identity]
+                    val originalGrouped = !direct && archivedOrder != null &&
+                        block.optString("type") == "order_code" &&
+                        stateFingerprint(block) == stateFingerprint(archivedOrder) &&
+                        fingerprint(JSONObject(block.toString()).apply {
+                            remove("question"); remove("explanation"); remove("reviewFeedback")
+                        }) == fingerprint(JSONObject(archivedOrder.toString()).apply {
+                            remove("question"); remove("explanation"); remove("reviewFeedback")
+                        })
+                    require(direct || originalGrouped) {
                         "Retirement history changed an old answer or code contract"
                     }
                     shown[identity] = block
