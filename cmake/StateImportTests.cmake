@@ -113,6 +113,29 @@ add_custom_command(OUTPUT ${LGAED_CODE_FORMAT_FIXTURES}
     VERBATIM)
 add_custom_target(lgaed_code_format_fixtures DEPENDS ${LGAED_CODE_FORMAT_FIXTURES})
 
+# Real, published U6L2 editors: three source-format-only changes under
+# authenticated compileCheck objectives. Assets remain strictly read-only.
+set(LGAED_U6_COMPILE_CHECK_FORMAT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/u6-compile-check-format")
+set(LGAED_U6_COMPILE_CHECK_FORMAT_FILES)
+foreach(name IN ITEMS u6.before u6.after u6.forged-goal u6.forged-archive u6.forged-source)
+    list(APPEND LGAED_U6_COMPILE_CHECK_FORMAT_FILES
+        "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}/${name}.json")
+endforeach()
+add_custom_command(OUTPUT ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES}
+    COMMAND ${_lgaed_state_fixture_python}
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/compile_check_source_format_fixture.py"
+        --output-dir "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}"
+    DEPENDS
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/compile_check_source_format_fixture.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_compile_check_source_format.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        "${CMAKE_SOURCE_DIR}/scripts/curriculum/code_format_compat.py"
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/cpp_fundamentals/funciones_y_contratos/lesson_declaraciones_y_firmas.json"
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    COMMENT "Verify authentic U6L2 compiler diagnostic format archives without changing lessons"
+    VERBATIM)
+add_custom_target(lgaed_u6_compile_check_format_fixtures DEPENDS ${LGAED_U6_COMPILE_CHECK_FORMAT_FILES})
+
 # Isolated, read-only pilot against the actual published U4 decision lesson.
 # The Python projection writes only temporary CI fixture copies; never content/.
 set(LGAED_REAL_CODE_FORMAT_PILOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/real-code-format")
@@ -155,9 +178,11 @@ function(lgaed_add_state_import_tests qa_root)
         native/platform/windows/code_format_loader_tests.cpp)
     target_link_libraries(lgaed_code_format_loader_tests PRIVATE
         lgaed_platform_windows lgaed_host_options)
-    add_dependencies(lgaed_code_format_loader_tests lgaed_code_format_fixtures lgaed_real_code_format_pilot_fixtures)
+    add_dependencies(lgaed_code_format_loader_tests lgaed_code_format_fixtures
+        lgaed_real_code_format_pilot_fixtures lgaed_u6_compile_check_format_fixtures)
     add_test(NAME native.code_format_loader COMMAND lgaed_code_format_loader_tests
-        "${LGAED_CODE_FORMAT_FIXTURE_DIR}" "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}")
+        "${LGAED_CODE_FORMAT_FIXTURE_DIR}" "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}"
+        "${LGAED_U6_COMPILE_CHECK_FORMAT_DIR}")
     set_tests_properties(native.code_format_loader PROPERTIES TIMEOUT 45)
     # The real Windows loader/evaluator must reject wrong stderr bytes while
     # retaining previous stdout-only and nonzero-exit completion identities.
