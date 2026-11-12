@@ -8,8 +8,27 @@ on:
       - app/src/main/java/com/learngraphicsprogramming/app/CurricularSourceFormatCompat.kt
       - app/src/main/java/com/learngraphicsprogramming/app/LessonStateLayoutJson.kt
       - app/src/main/java/com/learngraphicsprogramming/app/StableLessonStateLayout.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/CurricularOrderRefinement.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/CurricularChoiceRevision.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/CurricularCompilerRevision.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/CurricularMathLabelRevision.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/LessonStateCoordinates.kt
+      - app/src/main/java/com/learngraphicsprogramming/app/LessonActivity.kt
       - app/src/test/java/com/learngraphicsprogramming/app/LessonStateLayoutJsonTest.kt
       - app/src/test/java/com/learngraphicsprogramming/app/RealCodeFormatPilotAndroidTest.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/PublishedOrderFormatAndroidTest.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/PublishedChoiceRevisionAndroidTest.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/PublishedCompilerRevisionAndroidTest.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/PublishedMathLabelRevisionAndroidTest.kt
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/datos_propios_y_estado_valido/lesson_construir_y_comprobar_un_modelo_de_pedidos.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_lector_de_entrada_preparada.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_diagnosticar_y_recuperar_hasta_fin_de_operacion.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_construir_un_interprete_con_historial_y_pruebas.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_estados_del_flujo_y_datos_validos.json
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/texto_interpretacion_y_flujos/lesson_validar_una_operacion_y_recuperar_la_siguiente.json
+      - app/src/test/java/com/learngraphicsprogramming/app/StableLessonStateLayoutTest.kt
+      - app/src/test/java/com/learngraphicsprogramming/app/StableLessonRepositoryFixtureTest.kt
+      - app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_alternativas_y_fronteras.json
       - app/src/main/assets/content/es/programming/cpp_fundamentals/expresiones_y_decisiones/lesson_construir_decisiones_desde_un_problema.json
   workflow_dispatch:
 
@@ -40,8 +59,14 @@ jobs:
           ./gradlew :app:testDebugUnitTest \
             --tests com.learngraphicsprogramming.app.LessonStateLayoutJsonTest \
             --tests com.learngraphicsprogramming.app.RealCodeFormatPilotAndroidTest \
+            --tests com.learngraphicsprogramming.app.PublishedOrderFormatAndroidTest \
+            --tests com.learngraphicsprogramming.app.PublishedChoiceRevisionAndroidTest \
+            --tests com.learngraphicsprogramming.app.PublishedCompilerRevisionAndroidTest \
+            --tests com.learngraphicsprogramming.app.PublishedMathLabelRevisionAndroidTest \
+            --tests com.learngraphicsprogramming.app.StableLessonStateLayoutTest \
+            --tests com.learngraphicsprogramming.app.StableLessonRepositoryFixtureTest \
             -Plgp.clang23=false -Plgp.wasmtime=false -Plgp.cppExceptions=false \
-            --no-daemon --stacktrace
+            --no-daemon --stacktrace --info
       - name: Retain JUnit XML and reports
         if: always()
         uses: actions/upload-artifact@v4
