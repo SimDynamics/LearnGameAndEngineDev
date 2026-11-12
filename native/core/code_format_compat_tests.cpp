@@ -190,6 +190,21 @@ void u3_rejection_diagnostics_contracts() {
         "Cajas, peticion 3, piezas 21: revise.\n",
         RejectionOperation::boxes,boxes->rejected).correct,
         "U3L6 accepted diagnostics without the permitted interval");
+    check(!evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1: rango 0 a 20; no revise los datos.\n"
+        "Cajas, peticion 3, piezas 21: rango 0 a 20; no revise los datos.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 accepted an explicitly negated instruction to review rejected input");
+    check(!evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1: rango 0 a 20; sin necesidad de revisar.\n"
+        "Cajas, peticion 3, piezas 21: rango 0 a 20; no hace falta verificar.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 accepted a denial of the required corrective action");
+    check(evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1: rango 0 a 20; no modifique la evidencia; revise los datos.\n"
+        "Cajas, peticion 3, piezas 21: rango 0 a 20; no modifique la evidencia; revise los datos.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 rejected a later positive review instruction after an unrelated prohibition");
     check(!evaluate_rejection_stream_probe(messages+"unexpected", "",RejectionOperation::boxes).correct,
         "U3L6 accepted missing independent stream separation");
     const auto split=messages.find('\n');
