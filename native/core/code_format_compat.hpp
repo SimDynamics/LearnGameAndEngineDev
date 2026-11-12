@@ -34,6 +34,15 @@ inline std::optional<std::size_t> quoted_end(std::string_view source,std::size_t
     }
     return {};
 }
+inline std::size_t literal_suffix_end(std::string_view source,std::size_t end) {
+    // A UDL suffix is lexically adjacent to its literal: spacing it away
+    // changes the program even when every separately scanned character remains.
+    if(end<source.size()&&source[end]=='_'){
+        ++end;
+        while(end<source.size()&&identifier_part(static_cast<unsigned char>(source[end])))++end;
+    }
+    return end;
+}
 inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view source) {
     std::vector<std::string> result;
     constexpr std::string_view raw_prefixes[]={"u8R\"","uR\"","UR\"","LR\"","R\""};
@@ -77,13 +86,14 @@ inline std::optional<std::vector<std::string>> cpp_tokens(std::string_view sourc
             const auto terminator=")"+std::string(marker)+"\"";
             const auto close=source.find(terminator,opening+1);
             if(close==source.npos)return {};
-            auto end=close+terminator.size();
+            auto end=literal_suffix_end(source,close+terminator.size());
             push(result,"literal:",source.substr(i,end-i));i=end;matched=true;break;
         }
         if(matched)continue;
         for(const auto prefix:string_prefixes)if(source.substr(i).starts_with(prefix)) {
             const auto end=quoted_end(source,i+prefix.size()-1);if(!end)return {};
-            push(result,"literal:",source.substr(i,*end-i));i=*end;matched=true;break;
+            const auto suffix=literal_suffix_end(source,*end);
+            push(result,"literal:",source.substr(i,suffix-i));i=suffix;matched=true;break;
         }
         if(matched)continue;
         const auto ch=static_cast<unsigned char>(source[i]);
@@ -153,6 +163,14 @@ inline std::optional<std::vector<std::string>> cmake_tokens(std::string_view sou
 inline bool equivalent(std::string_view before,std::string_view after,Language language) {
     if(before==after)return true;
     if(language==Language::immutable||physical_splice(before)||physical_splice(after))return false;
+    // Physical line positions can affect actual output, not just diagnostics.
+    // Until a compiler-aware source-map proof exists, reject all such edits.
+    if(language==Language::cpp&&(before.find("__LINE__")!=before.npos||
+        after.find("__LINE__")!=after.npos||
+        before.find("source_location")!=before.npos||
+        after.find("source_location")!=after.npos))return false;
+    if(language==Language::cmake&&(before.find("CMAKE_CURRENT_LIST_LINE")!=before.npos||
+        after.find("CMAKE_CURRENT_LIST_LINE")!=after.npos))return false;
     const auto a=language==Language::cmake?cmake_tokens(before):cpp_tokens(before);
     const auto b=language==Language::cmake?cmake_tokens(after):cpp_tokens(after);
     return a&&b&&*a==*b;
