@@ -3120,7 +3120,9 @@ struct LessonView {
                 const auto history=rich(compiler_history_text(index),control_id(index,40));
                 rows.push_back({{history},{0},0,true});
             }
-            if(current.output_check&&vm.status&&!windows::compiler_puzzle_completed(data,lesson,current)){
+            if(current.output_check&&vm.status){
+                // A previously earned first-case achievement must remain
+                // visible on reopen, even when optional cases are still unrun.
                 const auto count=windows::compiler_puzzle_case_count(data,lesson,current);
                 if(count)set_rich_text(vm.status,compiler_progress_text(index));
             }
@@ -4141,6 +4143,12 @@ struct LessonView {
                     if(hooks.feedback_changed)hooks.feedback_changed(window,index,false);
                 }
                 else if(correct&&vm.status)set_rich_text(vm.status,compiler_progress_text(index,true));
+                // Completed objectives normally enter the feedback branch
+                // above. The independent status row still needs to display
+                // one mandatory case and any optional cases actually tested.
+                if(correct&&vm.status&&block(index).output_check&&
+                    windows::compiler_puzzle_completed(data,lesson,block(index)))
+                    set_rich_text(vm.status,compiler_progress_text(index,true));
                 if (objective_completed && has_references(block(index))) {
                     data.preferences["native_windows"][reference_key(block(index))] = reference_seal(block(index));
                 }
