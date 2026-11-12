@@ -82,6 +82,35 @@ class PublishedCompilerRevisionAndroidTest {
         }
     }
 
+    @Test fun reviewedCompilerCanAlsoReceiveAuthenticatedPhysicalNewlines() {
+        val published = document(lessonNames.first())
+        val originalLayout = requireNotNull(LessonStateLayoutJson.read(published))
+        val formattedLesson = JSONObject(published.toString())
+        val metadata = formattedLesson.getJSONObject("stateLayout")
+        val owner = metadata.getJSONArray("compilerRevisions")
+            .getJSONObject(0).getString("id")
+        val previous = JSONObject(block(formattedLesson, owner).toString())
+        val active = block(formattedLesson, owner)
+        val priorSource = previous.getString("initialCode")
+        assertFalse(priorSource.contains("\\\n"))
+        active.put("initialCode", priorSource + "\n")
+        metadata.put("sourceFormatRevisions", JSONArray().put(
+            JSONObject().put("id", owner).put("block", previous)))
+        metadata.getJSONArray("editorial").put(JSONObject()
+            .put("id", owner)
+            .put("beforeSha256", LessonStateLayoutJson.fingerprint(previous))
+            .put("afterSha256", LessonStateLayoutJson.fingerprint(active)))
+        val reopened = requireNotNull(LessonStateLayoutJson.read(formattedLesson))
+        assertEquals(originalLayout.lineage, reopened.lineage)
+        assertEquals(originalLayout.legacyLineage, reopened.legacyLineage)
+        assertEquals(priorSource,
+            CurricularSourceFormatCompat.project(active, previous).getString("initialCode"))
+        val altered = JSONObject(formattedLesson.toString())
+        block(altered, owner).put("initialCode", "int main() { return 99; }")
+        assertTrue(runCatching { LessonStateLayoutJson.read(altered) }.exceptionOrNull()
+            is LessonStateLayoutException)
+    }
+
     @Test fun forgedRuntimeOutputAndHistoricalReferenceDoNotReceiveCredit() {
         for (name in lessonNames) {
             val original = document(name)
