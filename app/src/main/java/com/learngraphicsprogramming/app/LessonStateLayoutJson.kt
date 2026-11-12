@@ -371,6 +371,108 @@ internal object LessonStateLayoutJson {
         return current
     }
 
+    private fun validateRetirementHistory(
+        lesson: JSONObject,
+        metadata: JSONObject,
+        current: List<LessonStatePage>,
+        active: Map<String, JSONObject>,
+        retired: Map<String, JSONObject>,
+        signatures: Map<String, String>,
+        additions: Set<String>
+    ) {
+        val history = metadata.getJSONArray("retirementHistory")
+        require(history.length() <= 100_000)
+        val pages = lesson.getJSONArray("pages")
+        val shells = current.mapIndexed { index, page ->
+            page.id to JSONObject(pages.getJSONObject(index).toString()).apply { remove("blocks") }
+        }.toMap()
+        val covered = mutableListOf<String>()
+        val batches = mutableListOf<Pair<Set<String>, Set<String>>>()
+        for (index in 0 until history.length()) {
+            val snapshot = history.getJSONObject(index)
+            require(snapshot.keys().asSequence().toSet() ==
+                setOf("retired", "current", "pages", "compilerPuzzlesRequired",
+                    "referenceAfter", "activityAfter"))
+            require(snapshot.get("compilerPuzzlesRequired") is Boolean)
+            val batch = snapshot.getJSONArray("retired")
+            require(batch.length() > 0)
+            val retiring = (0 until batch.length()).map { batch.get(it) as? String
+                ?: error("Non-string historical retirement identity") }
+            require(retiring.distinct().size == retiring.size &&
+                retiring.all { it in retired } &&
+                retiring.none { it in covered })
+            val historicalPages = snapshot.getJSONArray("pages")
+            val historicalPositions = snapshot.getJSONArray("current")
+            require(historicalPages.length() == current.size &&
+                historicalPositions.length() == current.size)
+            val seenPages = mutableSetOf<String>()
+            val shown = linkedMapOf<String, JSONObject>()
+            for (p in 0 until historicalPages.length()) {
+                val record = historicalPositions.getJSONObject(p)
+                require(record.keys().asSequence().toSet() == setOf("id", "blocks"))
+                val page = historicalPages.getJSONObject(p)
+                val pageIdentity = strictString(record, "id")
+                require(pageIdentity in shells && seenPages.add(pageIdentity))
+                require(fingerprint(JSONObject(page.toString()).apply { remove("blocks") }) ==
+                    fingerprint(shells.getValue(pageIdentity)))
+                val identities = record.getJSONArray("blocks")
+                val blocks = page.getJSONArray("blocks")
+                require(identities.length() == blocks.length)
+                for (b in 0 until identities.length()) {
+                    val identity = identities.get(b) as? String
+                        ?: error("Non-string historical reading identity")
+                    require(identity in signatures && !shown.containsKey(identity))
+                    val block = blocks.getJSONObject(b)
+                    require(stateFingerprint(block) == signatures.getValue(identity)) {
+                        "Retirement history changed an old answer or code contract"
+                    }
+                    shown[identity] = block
+                }
+            }
+            require(seenPages.size == shells.size)
+            fun relationships(name: String, target: String) {
+                val array = snapshot.getJSONArray(name)
+                val owners = mutableSetOf<String>()
+                val references = mutableSetOf<String>()
+                for (i in 0 until array.length()) {
+                    val relation = array.getJSONObject(i)
+                    require(relation.keys().asSequence().toSet() == setOf("activity", target))
+                    val owner = strictString(relation, "activity")
+                    require(owner in shown && owners.add(owner))
+                    val items = relation.getJSONArray(target)
+                    require(items.length() > 0)
+                    val local = mutableSetOf<String>()
+                    for (j in 0 until items.length()) {
+                        val identity = items.get(j) as? String
+                            ?: error("Non-string historical relationship identity")
+                        require(identity != owner && identity in shown && local.add(identity))
+                        if (name == "referenceAfter") {
+                            require(references.add(identity) &&
+                                shown.getValue(identity).optString("type") in
+                                setOf("heading", "paragraph", "note", "code", "image"))
+                        } else {
+                            val block = shown.getValue(identity)
+                            require(block.optString("type") == "cpp_compiler" &&
+                                (block.has("outputCheck") || block.has("compileCheck")))
+                        }
+                    }
+                }
+            }
+            relationships("referenceAfter", "blocks")
+            relationships("activityAfter", "requires")
+            covered.addAll(retiring)
+            batches.add(retiring.toSet() to shown.keys.toSet())
+        }
+        require(covered == retired.keys.toList().takeLast(covered.size))
+        var visible = active.keys.toSet()
+        for ((batch, shown) in batches.asReversed()) {
+            val prior = visible + batch
+            require(batch.all { it in shown } && visible.intersect(batch).isEmpty() &&
+                shown.all { it in prior } && (prior - shown).all { it in additions })
+            visible = shown
+        }
+    }
+
     private val requiredNonBlankStderr = mapOf(
         "cpp_fundamentals__aleatoriedad_y_reproducibilidad__combinar_ensayos_generados_y_casos_elegidos"
             to "block_0004_0007",
