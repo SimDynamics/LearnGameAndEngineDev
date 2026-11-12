@@ -38,6 +38,7 @@ internal object LessonStateLayoutJson {
             val editorialSeen = mutableMapOf<String, MutableSet<String>>()
             val editorialChains = mutableMapOf<String, MutableList<String>>()
             val returnArchives = mutableMapOf<String, MutableList<JSONObject>>()
+            val approvedBibliographies = mutableSetOf<Pair<String, String>>()
             val locale = if (version == 2) strictString(metadata, "locale") else null
             if (version == 2) {
                 val variants = metadata.getJSONObject("family")
@@ -66,7 +67,8 @@ internal object LessonStateLayoutJson {
                     val change = changes.getJSONObject(index)
                     val fields = change.keys().asSequence().toSet()
                     require(fields == setOf("id", "beforeSha256", "afterSha256") ||
-                        fields == setOf("id", "beforeSha256", "afterSha256", "returnTo"))
+                        fields == setOf("id", "beforeSha256", "afterSha256", "returnTo") ||
+                        fields == setOf("id", "beforeSha256", "afterSha256", "bibliography"))
                     val id = strictString(change, "id")
                     val before = strictString(change, "beforeSha256")
                     val after = strictString(change, "afterSha256")
@@ -96,9 +98,22 @@ internal object LessonStateLayoutJson {
                     } else {
                         require(!change.has("returnTo"))
                     }
+                    if (change.has("bibliography")) {
+                        require(!change.has("returnTo"))
+                        val prefix = JSONArray()
+                        for (prior in 0 until index) prefix.put(changes.getJSONObject(prior))
+                        validateBibliographyArchive(lesson, locale, id, before, after, change, prefix)
+                        approvedBibliographies += lesson.getString("id") to id
+                    }
                     seen += after
                     chain += after
                     editorial[id] = after
+                }
+                val expectedBibliographies = reviewedBibliographies.keys.filterTo(mutableSetOf()) {
+                    it.first == lesson.getString("id") && locale == "es"
+                }
+                require(approvedBibliographies == expectedBibliographies) {
+                    "A reviewed bibliography archive is missing or duplicated"
                 }
             }
             val expectedSignatures = signatures + additions.associate { it.id to it.sha256 }
@@ -303,6 +318,99 @@ internal object LessonStateLayoutJson {
             throw LessonStateLayoutException(
                 "Invalid or stale lesson state layout; keep saved data", error)
         }
+    }
+
+    // Exact published authoring archives: only these ten reviewed citation
+    // locator removals may reuse an older Android exercise/answer identity.
+    // Hashes pin the WHOLE before and after blocks, never arbitrary explanation edits.
+    private val reviewedBibliographies = mapOf(
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0002_0002") to
+            ("2188f1d9c799457958fa9ac586865bf094cd349d96de47a0a55c78b7ee775cdc" to "a566fc0e7fdf358990ab3298cf4825e8141ecc58c078dd7e90d344c979ee33b5"),
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0002_0003") to
+            ("ebceb05bb0cb1be5a22ae50302ee7baa3590a70c462b3ad10c6ce983ec22a759" to "b9c47ced1cd0524788dfe9ddf3d98aece54b366811b28449f85974c37a0058bc"),
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0003_0002") to
+            ("7b40b144753725258c59ff449c1c1ad5b89edd7be7a6c4805705180b33e2bf6c" to "2e9043e255ee451d259bcc8ddf4beba6b2c1d8d99d7b1ed353ba5e89a537e915"),
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0005_0001") to
+            ("f25d17df7a397d7ea7caf3b9606aa79da875583ef74f0e1b11a1c6cd4047ec56" to "931b6d03c349adfbf451377dcd71950b6b725cbce615303d656b3d0b9e3a38c3"),
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0005_0002") to
+            ("703886d78b6cd8e492234ed277680fabff3455bd810bf112988845295d0ca88c" to "a9038a7670ee436094724c3ee618742775c0c5ee83b48f13998b8db503272e64"),
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0005_0003") to
+            ("3e94df3c9f5bca6286d123e6ab48b821e415185db867baff9a2823686fd6e302" to "39e931716898abf8e876b26620ebaabffbe27a45d535e0d688ab9d738a0729c1"),
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0005_0004") to
+            ("3775b51187b379f1a6afee5afa0f6994fb1e7a92f87bb1a2ec50ccd31b28ac72" to "00630ce34bdd8bf97ee6c48e4c1af63018090624b857fd2cd7b5ffdb1d8f25dd"),
+        ("cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos" to "block_0007_0004") to
+            ("db818fc4c16810168751612f7fa0dc061f6c9bfff9f8783222ea8ce4d3cb3259" to "bc5b53aa6abf91ea34c048a0ef4400ea57719c45cf73b738d0fb01ae879a9dbb"),
+        ("cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones" to "block_0003_0003") to
+            ("51f8dc229f7a6baa4eb56bc4d8bef334091fe26a27a08b970df7a1128bfc793d" to "18d5c7c4280b6355dcf7160be1ff156fbf6aab4120d2290cdc5602e831d3379d"),
+        ("cpp_fundamentals__objetos_y_estado__conversiones_y_deduccion" to "block_0003_0005") to
+            ("d76bb4c0cb2dec3b68b81b4a7ea2fdab2845aeadf476e67b01d67ef23111ec3a" to "1543a479cbbfc3c075ad9c2cd9b63fecaa986bd909885bea186cc49fd3655328")
+    )
+
+    private fun validateArchivedTextSemantics(value: Any?, identity: String, source: String) {
+        if (value == null || value === JSONObject.NULL) return
+        val field = value as? JSONObject ?: error("Malformed bibliography semantics")
+        require(field.keys().asSequence().toSet() ==
+            setOf("block", "path", "sourceSha256", "spans"))
+        require(strictString(field, "block") == identity &&
+            strictString(field, "path") == "/explanation")
+        val bytes = source.toByteArray(Charsets.UTF_8)
+        require(bytes.size <= 8 * 1024 * 1024)
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02x".format(it) }
+        require(strictString(field, "sourceSha256") == digest)
+        val spans = field.getJSONArray("spans")
+        require(spans.length() <= 100_000)
+        var previous = 0
+        for (index in 0 until spans.length()) {
+            val span = spans.getJSONObject(index)
+            val keys = span.keys().asSequence().toSet()
+            require(keys == setOf("start", "end", "text", "role") ||
+                keys == setOf("start", "end", "text", "role", "reading"))
+            val start = span.get("start") as? Int ?: error("Invalid semantic start")
+            val end = span.get("end") as? Int ?: error("Invalid semantic end")
+            require(previous <= start && start < end && end <= source.length &&
+                source.substring(start, end) == strictString(span, "text"))
+            require(strictString(span, "role") in
+                setOf("prose", "cpp", "string", "data", "math", "output", "citation"))
+            if (span.has("reading")) require(strictString(span, "reading") in
+                setOf("auto", "natural", "technical", "characters"))
+            previous = end
+        }
+    }
+
+    private fun validateBibliographyArchive(
+        lesson: JSONObject, locale: String?, identity: String, before: String, after: String,
+        edge: JSONObject, preceding: JSONArray
+    ) {
+        require(locale == "es")
+        val pair = reviewedBibliographies[lesson.getString("id") to identity]
+            ?: error("Unreviewed bibliography change")
+        require(pair.first == before && pair.second == after)
+        val archive = edge.getJSONObject("bibliography")
+        require(archive.keys().asSequence().toSet() ==
+            setOf("historySha256", "previousBlock", "currentBlock",
+                "previousTextSemantics", "currentTextSemantics"))
+        val history = JSONObject().put("lessonId", lesson.getString("id"))
+            .put("locale", locale).put("editorial", preceding)
+        require(strictString(archive, "historySha256") == fingerprint(history))
+        val old = archive.getJSONObject("previousBlock")
+        val now = archive.getJSONObject("currentBlock")
+        require(fingerprint(old) == before && fingerprint(now) == after)
+        require(old.optString("type") in
+            setOf("multiple_choice", "output_prediction", "fill_code",
+                "order_code", "drag_fill_code", "inline_fill_code"))
+        val oldWithoutText = JSONObject(old.toString()).apply { remove("explanation") }
+        val newWithoutText = JSONObject(now.toString()).apply { remove("explanation") }
+        require(fingerprint(oldWithoutText) == fingerprint(newWithoutText) &&
+            stateFingerprint(old) == stateFingerprint(now))
+        val oldText = strictString(old, "explanation")
+        val newText = strictString(now, "explanation")
+        require(oldText != newText && oldText.isNotBlank() && newText.isNotBlank())
+        // The pinned complete snapshots were already checked for locator-only
+        // removal by the cross-platform curriculum authoring validator.
+        // Android must not guess or remove any citation from student-visible text.
+        validateArchivedTextSemantics(archive.opt("previousTextSemantics"), identity, oldText)
+        validateArchivedTextSemantics(archive.opt("currentTextSemantics"), identity, newText)
     }
 
     private val reviewedIntentionalExits = mapOf(
