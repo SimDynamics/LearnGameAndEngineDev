@@ -21,6 +21,7 @@ on:
       - 'scripts/curriculum/test_componer_funciones_format_batch.py'
       - 'scripts/curriculum/test_raiz_dominio_format_batch.py'
       - 'scripts/curriculum/test_conversion_comprobada_format_batch.py'
+      - 'scripts/curriculum/test_redondeo_deliberado_format_batch.py'
       - 'scripts/curriculum/auditar_tarjetas_orden_codigo.py'
       - '.github/workflows/legibilidad-codigo.yml'
   workflow_dispatch:
@@ -125,6 +126,8 @@ jobs:
         run: python -m unittest discover -s scripts/curriculum -p test_raiz_dominio_format_batch.py -v
       - name: Acreditar U6L10 conversion, historial y entradas C++23
         run: python -m unittest discover -s scripts/curriculum -p test_conversion_comprobada_format_batch.py -v
+      - name: Acreditar U6L11 redondeo, colisiones y progreso C++23
+        run: python -m unittest discover -s scripts/curriculum -p test_redondeo_deliberado_format_batch.py -v
       - name: Revisar todas las lecciones y fuentes
         run: python scripts/curriculum/auditar_legibilidad_codigo.py --limit 30 --output-json legibilidad-codigo.json
       - name: Conservar reporte de ubicaciones para Work
