@@ -36,11 +36,12 @@ $qaSuiteConfig = switch ($Suite) {
         @{
             Directory = 'state-import-ci'
             CMakeOption = 'LGAED_STATE_IMPORT_QA_ONLY'
-            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests')
+            Targets = @('lgaed_state_tests', 'lgaed_stderr_exact_tests', 'lgaed_cpp_project_history_tests', 'lgaed_cpp_history_training_tests', 'lgaed_code_format_loader_tests')
             Results = 'state-import'
             Tests = @(
                 'native.cpp_project_history',
                 'native.cpp_history_training',
+                'native.code_format_loader',
                 'native.remainder_published26_state_import',
                 'native.remainder_published30_state_import',
                 'native.u11_assignment_state_import',
