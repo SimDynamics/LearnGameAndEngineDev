@@ -59,6 +59,27 @@ def pilot() -> tuple[dict, dict]:
     assert original["stateLayout"]["locale"] == "es"
     assert set(original["stateLayout"]["family"]) == {"es", "en", "fr"}
     state.validate(original)
+    # Once the real lesson has been published, restore only its authenticated
+    # source snapshots in memory so the same pilot still tests old versus new.
+    # Never reset the authored origin, student progress, or other editorial work.
+    archived = original["stateLayout"].get("sourceFormatRevisions", [])
+    if archived:
+        assert len(archived) == len(POSITIONS)
+        assert [item["id"] for item in archived] == list(POSITIONS.values())
+        historical = deepcopy(original)
+        suffix = historical["stateLayout"]["editorial"][-len(POSITIONS):]
+        assert [item["id"] for item in suffix] == list(POSITIONS.values())
+        historical["stateLayout"]["editorial"] = historical["stateLayout"]["editorial"][:-len(POSITIONS)]
+        historical["stateLayout"].pop("sourceFormatRevisions")
+        for (page, block), identity in POSITIONS.items():
+            saved = next(item for item in archived if item["id"] == identity)
+            historical["pages"][page]["blocks"][block] = deepcopy(saved["block"])
+            assert original["pages"][page]["blocks"][block]["code"] == format_real_code(
+                saved["block"]["code"])
+        state.validate(historical)
+        state.validate_transition(historical, original)
+        assert state.prepare_v2(original, "es", family, historical) == original
+        return historical, original
     changed = deepcopy(original)
     for (page, block), identity in POSITIONS.items():
         assert original["stateLayout"]["current"][page]["blocks"][block] == identity
