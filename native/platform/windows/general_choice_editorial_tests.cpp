@@ -72,6 +72,14 @@ int main(int argc,char** argv) {
             after.choice_revision->original_question==before.question&&
             evaluate_choice(after,0).correct&&!evaluate_choice(after,1).correct,
             "The reviewed option lost its original archived answer contract");
+        const auto before_marker=before.text_semantics.find("/options/0");
+        const auto after_marker=after.text_semantics.find("/options/0");
+        require(before_marker!=before.text_semantics.end()&&
+            after_marker!=after.text_semantics.end()&&
+            before_marker->second.source==before.options.front()&&
+            after_marker->second.source==after.options.front()&&
+            before_marker->second.spans==after_marker->second.spans,
+            "The editor lost its exact revised semantic source or inherited an old marker");
         // The same slot is retained. Historical data are not deleted or
         // overwritten by opening the new editorial representation.
         state::StateData saved;
@@ -117,6 +125,20 @@ int main(int argc,char** argv) {
             root.GetNamedObject(L"stateLayout")
                 .GetNamedArray(L"choiceRevisions").Clear();
         },"A reviewed option lost its previous history archive");
+        rejected_change(reviewed_file,[](JsonObject root) {
+            const auto descriptors=root.GetNamedObject(L"textSemantics")
+                .GetNamedArray(L"fields");
+            for(unsigned i=0;i<descriptors.Size();++i) {
+                const auto descriptor=descriptors.GetObjectAt(i);
+                if(descriptor.GetNamedString(L"block")==L"block_0007_0002"&&
+                   descriptor.GetNamedString(L"path")==L"/options/0") {
+                    descriptor.Insert(L"sourceSha256",
+                        JsonValue::CreateStringValue(
+                            L"3b045ec5f155cd6fbfb0fb089cbe0165ec05ad5cea96b07a6336ee4ccf23c8f0"));
+                    break;
+                }
+            }
+        },"A stale pre-review voice/text digest was accepted");
         std::cout<<"PASS general U9 choice review: unchanged addresses, answers, archive and rejected tampering\n";
         return 0;
     }catch(const std::exception& e) {
