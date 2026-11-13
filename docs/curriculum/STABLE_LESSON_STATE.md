@@ -198,11 +198,16 @@ actividad en la versión inicial. El índice correcto y su posición,
 el resto de las opciones, las preguntas y las guías se conservan
 literalmente. La cadena editorial comprueba el hash completo anterior
 y el posterior; el mapa de estado mantiene las mismas direcciones
-históricas. El lector conserva una representación anterior para
-su historial y la evaluación de respuestas sigue usando la misma
-respuesta correcta. Si cambia la solución, el significado evaluado
-o las guías, no corresponde a este mecanismo y requiere un contrato
-distinto. La decisión de que la nueva redacción conserva el significado
+históricas. A diferencia de las ocho revisiones cerradas, una precisión
+editorial general demostrablemente compatible conserva la **misma clave
+de respuesta y de intentos**. Una selección correcta, sus intentos y
+sus metadatos opacos siguen siendo válidos después de abrir o importar
+la lección revisada, sin exigir otra comprobación por el simple cambio
+de palabras. La evaluación usa el mismo índice correcto y la explicación
+vigente; el lector conserva la fuente anterior solamente para comprobar
+la procedencia de las pausas, y no atribuye escucha de la frase nueva.
+Si cambia la solución, el significado evaluado o las guías, no
+corresponde a este mecanismo y requiere un contrato distinto. La decisión de que la nueva redacción conserva el significado
 y la autoría del marcado semántico pertenecen a Work.
 
 Las ocho revisiones cerradas preexistentes conservan sus contratos,
