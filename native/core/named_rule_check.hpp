@@ -279,6 +279,26 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         while(last<bounds.close&&!op(t[last],";"))++last;
         return uses(keyword+1,last);
     };
+    // Only a full direct return or a brace-enclosed single return is
+    // understood. Other branches are conservatively left uncredited.
+    const auto direct_return=[&](std::size_t at)
+            ->std::optional<std::pair<std::size_t,std::size_t>> {
+        if(at>=bounds.close)return {};
+        if(id(t[at],"return")) {
+            auto last=at+1;
+            while(last<bounds.close&&!op(t[last],";"))++last;
+            if(last>=bounds.close)return {};
+            return std::pair{return_uses(at),last};
+        }
+        if(!op(t[at],"{")||at+1>=bounds.close||
+           !id(t[at+1],"return"))return {};
+        const auto end=closing(t,at,"{","}");
+        if(!end||*end>=bounds.close)return {};
+        auto semicolon=at+2;
+        while(semicolon<*end&&!op(t[semicolon],";"))++semicolon;
+        if(semicolon+1!=*end)return {};
+        return std::pair{return_uses(at+1),*end};
+    };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
         if(op(t[i],"{")){++nesting;continue;}
         if(op(t[i],"}")){if(nesting)--nesting;continue;}
