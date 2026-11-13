@@ -605,9 +605,10 @@ int main() {return 0;}
     // remaining comparisons; the authored source gate must reject the
     // termination even when all named constants are otherwise correct.
     for(const auto term:{"std::exit(0)","exit /*comment*/ (0)",
+            "auto premature = &std::exit; premature(0)",
             "std::_Exit(0)","std::quick_exit(0)",
             "ExitProcess(0)","TerminateProcess(0, 0)",
-            "std::_exit(0)"}) {
+            "ExitThread(0)","std::_exit(0)"}) {
         const auto premature=candidate+
             "\nvoid early_finish() { "+std::string(term)+"; }\n";
         if(named_rule_single_file_probe_source(single,premature)||
