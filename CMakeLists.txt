@@ -135,6 +135,16 @@ target_link_libraries(lgaed_platform_windows PUBLIC lgaed_core lgaed_host_option
 add_dependencies(lgaed_platform_windows lgaed_cpp_tool_host)
 target_link_libraries(lgaed_platform_windows PRIVATE shell32 shlwapi sapi ole32 oleaut32 advapi32 windowsapp runtimeobject bcrypt xmllite)
 
+function(lgaed_add_named_rule_source_tests)
+    if(TARGET lgaed_named_rule_check_tests)
+        return()
+    endif()
+    add_executable(lgaed_named_rule_check_tests native/core/named_rule_check_tests.cpp)
+    target_link_libraries(lgaed_named_rule_check_tests PRIVATE lgaed_core lgaed_host_options)
+    add_test(NAME native.named_rule_source COMMAND lgaed_named_rule_check_tests)
+    set_tests_properties(native.named_rule_source PROPERTIES TIMEOUT 30)
+endfunction()
+
 if(LGAED_WASI_RUNNER_QA_ONLY)
     include(CTest)
     if(NOT BUILD_TESTING)
@@ -253,6 +263,15 @@ if(LGAED_READER_BUILD_QA_ONLY)
     target_link_libraries(lgaed_code_format_compat_tests PRIVATE lgaed_core lgaed_host_options)
     add_test(NAME native.code_format_compat COMMAND lgaed_code_format_compat_tests)
     set_tests_properties(native.code_format_compat PROPERTIES TIMEOUT 30)
+    lgaed_add_named_rule_source_tests()
+    # Exercise the source-evidence prerequisite on four real, historically
+    # mapped U3 editors, without changing their authored JSON contracts.
+    add_executable(lgaed_named_rule_runtime_tests
+        native/platform/windows/named_rule_runtime_tests.cpp)
+    target_link_libraries(lgaed_named_rule_runtime_tests PRIVATE lgaed_curricular_windows)
+    add_test(NAME native.named_rule_runtime COMMAND lgaed_named_rule_runtime_tests
+        "${CMAKE_SOURCE_DIR}/app/src/main/assets/content/es/programming/programming_practice_tools/comprobaciones_repetibles/lesson_nombrar_reglas_y_separar_acuerdos.json")
+    set_tests_properties(native.named_rule_runtime PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
     # Compile and execute four real U3L6/U3L8 original student editors
     # against native MSVC with independent stdout/stderr and semantic probes.
     # The original JSON remains untouched: the reviewed root declaration is
@@ -492,6 +511,7 @@ include(CTest)
 option(LGAED_BUILD_SMO_RENDER_REFERENCE_TESTS
     "Build and register the optional cached/uncached SMO render benchmarks by default" OFF)
 if(BUILD_TESTING)
+    lgaed_add_named_rule_source_tests()
     include(cmake/StateImportTests.cmake)
     lgaed_add_curricular_reader_test_targets()
     add_executable(lgaed_text_semantics_tests native/core/text_semantics_tests.cpp)

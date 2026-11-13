@@ -351,6 +351,33 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             ? "wasm-assertion-abort-v1"
             : *activity.output_check->assertion_check==AssertionMode::disabled
                 ? "wasm-assertion-suppressed-v1" : "wasm-assertion-repair-v1");
+    // An authored source prerequisite changes the objective, not the stable
+    // student identity. Old stdout-only receipts must never grant it.
+    if(activity.named_rule_source_check) {
+        const auto& contract=*activity.named_rule_source_check;
+        token("named-rule-source-v1");token(contract.path);
+        token(std::to_string(contract.requirements.size()));
+        for(const auto& rule:contract.requirements) {
+            token(rule.function);token(std::to_string(rule.value));
+            token(std::to_string(rule.min_uses));
+            token(std::to_string(rule.purpose_words.size()));
+            for(const auto& word:rule.purpose_words)token(word);
+        }
+        token(std::to_string(contract.editable_paths.size()));
+        for(const auto& file:contract.editable_paths)token(file);
+        token(std::to_string(contract.comment_only_paths.size()));
+        for(const auto& path:contract.comment_only_paths)token(path);
+        if(contract.execution_probe) {
+            token("independent-cmake-probe-v1");
+            token(contract.execution_probe->harness_path);
+            token(contract.execution_probe->header);
+            token(std::to_string(contract.execution_probe->cases.size()));
+            for(const auto& item:contract.execution_probe->cases) {
+                token(item.function);token(std::to_string(item.input));
+                token(std::to_string(item.expected));
+            }
+        }
+    }
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {
         token(item.standard_input); token(item.executable.value_or(""));

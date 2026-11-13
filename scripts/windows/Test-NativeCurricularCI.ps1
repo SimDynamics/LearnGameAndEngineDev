@@ -77,6 +77,8 @@ $qaSuiteConfig = switch ($Suite) {
                 'lgaed_order_code_whitespace_view_tests',
                 'lgaed_rich_text_tests',
                 'lgaed_code_format_compat_tests',
+                'lgaed_named_rule_check_tests',
+                'lgaed_named_rule_runtime_tests',
                 'lgaed_u3_runtime_semantics_tests',
                 'lgaed_premium_windows_tests',
                 'lgaed_compiler_first_case_view_tests'
@@ -362,7 +364,7 @@ if ($Suite -eq 'ReaderBuild') {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the project history UI test registration.' }
     $qaUiListing = ($qaUiListingText -join "`n") | ConvertFrom-Json
     $qaUiNames = @($qaUiListing.tests | ForEach-Object { $_.name })
-    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_format_compat', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles')
+    $qaUiExpected = @('native.cpp_project_internal_dialogs', 'native.cpp_project_u3_selective_lesson', 'native.cpp_project_u3_original_gates', 'native.cpp_project_u2_exact_eof', 'native.cpp_project_u3_declaration', 'native.cpp_project_u3_declared_selective', 'native.cpp_project_u3_original_prerequisites', 'native.cpp_project_u3_first_cmake', 'native.cpp_project_u3_first_cmake_repair', 'native.cpp_project_u3_real_history_gate', 'native.cpp_project_u3_entire_original', 'native.cpp_project_other_cpp_multicase', 'native.order_spacing_contract', 'native.order_code_whitespace_view', 'native.code_format_compat', 'native.named_rule_source', 'native.named_rule_runtime', 'native.u3_runtime_semantics', 'native.premium_windows', 'native.compiler_puzzles')
     if ($qaUiNames.Count -ne $qaUiExpected.Count -or
         (Compare-Object -ReferenceObject $qaUiExpected -DifferenceObject $qaUiNames)) {
         throw 'ReaderBuild must register twelve Win32 History cases, two spacing regressions, U3 MSVC semantic probes, code-format preservation, personal Premium and the first-case compiler gate.'

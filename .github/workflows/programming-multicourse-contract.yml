@@ -20,6 +20,7 @@ on:
       - scripts/curriculum/test_u3_rejection_runtime_contract.py
       - scripts/curriculum/test_u3_observation_runtime_contract.py
       - scripts/curriculum/test_u3_assertion_runtime_contract.py
+      - scripts/curriculum/test_named_rule_checks.py
       - scripts/curriculum/test_locale_origin_diagnostic.py
       - scripts/curriculum/diagnosticar_estado_multicurso.py
       - scripts/curriculum/test_diagnosticar_estado_multicurso.py
@@ -66,6 +67,9 @@ jobs:
       - name: Verificar las tres declaraciones WASI U3L9 sin alterar sus fuentes
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_u3_assertion_runtime_contract
+      - name: Verificar las cuatro declaraciones de constantes nombradas conservando los contratos históricos
+        run: |
+          PYTHONPATH=scripts/curriculum python3 -m unittest -v test_named_rule_checks
       - name: Probar separadores visuales opcionales sin modificar 14 puzles históricos
         run: |
           PYTHONPATH=scripts/curriculum python3 -m unittest -v test_order_visual_separators

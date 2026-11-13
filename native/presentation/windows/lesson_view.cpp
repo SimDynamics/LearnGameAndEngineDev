@@ -2147,6 +2147,8 @@ struct LessonView {
         if(vm.input){const auto visible=edit_text(vm.input);request.stdin_utf8=visible==vm.input_visual?vm.input_original:visible;}
         request.projects_directory=environment.paths.projects;request.project_key=draft_key(index);
         if(vm.project)vm.project->snapshot(request);
+        if(block(index).named_rule_source_check)
+            request.named_rule_probe=block(index).named_rule_source_check->execution_probe;
         // All C++ exercises use the native MSVC backend while the optional WASI
         // alternative is not confirmed compatible with Windows app protection.
         if(block(index).compile_check){
@@ -4055,12 +4057,29 @@ struct LessonView {
             if (evaluation.verdict != curriculum::OutputVerdict::unavailable) {
                 const bool preserved_source=windows::compiler_runtime_request_allowed(
                     block(index),running_program);
-                const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct&&preserved_source;
+                const bool independent=!block(index).named_rule_source_check||
+                    !block(index).named_rule_source_check->execution_probe||
+                    fresh.named_rule_probe_correct;
+                const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
+                    preserved_source&&independent;
                 auto text = verdict_text(correct);
-                if(!preserved_source)text+='\n'+ui(
-                    "Este objetivo exige conservar todos los archivos originales, la entrada y las opciones CMake.",
-                    "This objective requires the exact original project files, input and CMake options.",
-                    "Cet objectif exige de conserver les fichiers, l'entrée et les options CMake d'origine.");
+                if(!independent&&preserved_source)
+                    text+='\n'+ui(
+                        "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
+                        "The edited test output matches, but an independent execution of the functions failed. Review the actual computation.",
+                        "La sortie du test modifié correspond, mais la vérification indépendante des fonctions a échoué. Vérifiez le calcul réel.");
+                if(!preserved_source) {
+                    if(block(index).named_rule_source_check)
+                        text+='\n'+ui(
+                            "La salida coincide, pero este objetivo también exige declarar constantes locales con nombres de propósito, valores correctos y uso real en el cálculo. Comprueba las dos condiciones antes de continuar.",
+                            "The output matches, but this goal also requires purpose-named local constants with correct values and real use in the calculation.",
+                            "La sortie correspond, mais cet objectif exige aussi des constantes locales bien nommées, des valeurs correctes et une utilisation réelle dans le calcul.");
+                    else
+                        text+='\n'+ui(
+                            "Este objetivo exige conservar todos los archivos originales, la entrada y las opciones CMake.",
+                            "This objective requires the exact original project files, input and CMake options.",
+                            "Cet objectif exige de conserver les fichiers, l'entrée et les options CMake d'origine.");
+                }
                 if(evaluation.stdout_correct&&!evaluation.exit_code_correct)text+='\n'+ui(
                     "La salida estándar es correcta; el código de salida no coincide con el requerido.",
                     "Standard output is correct; the process exit code does not match the required code.",

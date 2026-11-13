@@ -165,6 +165,25 @@ void bounded_u3_rejection_inputs() {
     check(balances_eight.has_value()&&!balances_nine.has_value()&&
         balances_eight->rejected.empty()&&balances_eight->exit_code==0,
         "U3L6 balances did not keep their eight-pair domain");
+    check(!curriculum::rejection_expected_for_input(
+                RejectionOperation::boxes,"2147483648").has_value()&&
+          !curriculum::rejection_expected_for_input(
+                RejectionOperation::boxes,"-2147483649").has_value()&&
+          !curriculum::rejection_expected_for_input(
+                RejectionOperation::balance,"0 0 2147483648").has_value(),
+          "U3L6 accepted an integer overflow at EOF as valid completed input");
+    check(!curriculum::rejection_expected_for_input(
+                RejectionOperation::boxes,"0 trailing").has_value(),
+          "U3L6 accepted a malformed suffix after valid input");
+    const auto adjacent=curriculum::rejection_expected_for_input(
+        RejectionOperation::boxes,"0+1");
+    const auto whitespace=curriculum::rejection_expected_for_input(
+        RejectionOperation::boxes," \r\n\t");
+    check(adjacent&&adjacent->rejected.empty()&&
+        adjacent->standard_output=="Cajas=0\nCajas=1\n"&&
+        whitespace&&whitespace->rejected.empty()&&
+        whitespace->standard_output.empty(),
+        "U3L6 lost supported signed numbers or clean empty stdin");
 }
 void u3_rejection_diagnostics_contracts() {
     const auto boxes=rejection_expected_for_input(
@@ -267,6 +286,58 @@ void u3_rejection_diagnostics_contracts() {
         "Cajas, peticion 3, piezas 21: rango 0 a 20; conviene verificar la entrada.\n",
         RejectionOperation::boxes,boxes->rejected).correct,
         "U3L6 rejected two equivalent affirmative recommendations");
+    check(evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1. Enteros entre 0 y 20. Verificacion necesaria.\n"
+        "Cajas, peticion 3, piezas 21. Enteros entre 0 y 20. Revision obligatoria.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 rejected equivalent affirmative nominal corrective requests");
+    check(evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1: rango de 0 a 20; comprobacion requerida de los datos.\n"
+        "Cajas, peticion 3, piezas 21: rango de 0 a 20; verificacion necesaria de la entrada.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 rejected a nominal review request with an explicit data object");
+    for(const std::string_view denied_nominal:{
+        "sin verificacion necesaria",
+        "verificacion necesaria no",
+        "la verificacion necesaria ya fue realizada",
+        "se realizo la verificacion necesaria",
+        "la verificacion ya se hizo"}) {
+        const auto first="Cajas, peticion 1, piezas -1: rango 0 a 20; "+
+            std::string(denied_nominal)+".\n";
+        const auto second="Cajas, peticion 3, piezas 21: rango 0 a 20; "+
+            std::string(denied_nominal)+".\n";
+        check(!evaluate_rejection_diagnostics(first+second,
+                RejectionOperation::boxes,boxes->rejected).correct,
+            "U3L6 mistook a denied or completed nominal review for corrective advice");
+    }
+    for(const std::string_view advice:{
+        "se requiere una revision de los datos",
+        "se recomienda una verificacion",
+        "es necesaria una comprobacion",
+        "solicite una revision",
+        "no modifique el informe; revision necesaria"}) {
+        const auto first="Cajas, peticion 1, piezas -1: rango 0 a 20; "+
+            std::string(advice)+".\n";
+        const auto second="Cajas, peticion 3, piezas 21: rango 0 a 20; "+
+            std::string(advice)+".\n";
+        check(evaluate_rejection_diagnostics(first+second,
+                RejectionOperation::boxes,boxes->rejected).correct,
+            "U3L6 rejected an equivalent affirmative nominal correction");
+    }
+    for(const std::string_view prohibited:{
+        "no se requiere una revision",
+        "no se recomienda una verificacion necesaria",
+        "sin necesidad de hacer una comprobacion",
+        "no hay que realizar una revision obligatoria",
+        "la revision necesaria ya fue realizada"}) {
+        const auto first="Cajas, peticion 1, piezas -1: rango 0 a 20; "+
+            std::string(prohibited)+".\n";
+        const auto second="Cajas, peticion 3, piezas 21: rango 0 a 20; "+
+            std::string(prohibited)+".\n";
+        check(!evaluate_rejection_diagnostics(first+second,
+                RejectionOperation::boxes,boxes->rejected).correct,
+            "U3L6 accepted a cancelled or completed nominal correction");
+    }
     check(!evaluate_rejection_stream_probe(messages+"unexpected", "",RejectionOperation::boxes).correct,
         "U3L6 accepted missing independent stream separation");
     const auto split=messages.find('\n');

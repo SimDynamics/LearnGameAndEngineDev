@@ -42,7 +42,7 @@ V2_OPTIONAL_FIELDS = frozenset({"retired", "retirementHistory", "orderRefinement
 RETIRABLE_TYPES = frozenset({"heading", "paragraph", "note", "code", "cpp_compiler", "image"})
 PRESENTATION_FIELDS = frozenset({"referenceAfter", "activityAfter"})
 VISUAL_PRESENTATION_FIELDS = frozenset({"orderVisualSeparators"})
-FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks"})
+FLOW_FIELDS = frozenset({"compilerPuzzlesRequired", "compilerWorkflowChecks", "compilerRuntimeChecks", "compilerNamedRuleChecks"})
 TEXT_PRESENTATION_FIELDS = frozenset({text_semantics.ROOT_FIELD})
 DEPENDENT_ACTIVITY_TYPES = frozenset({"cpp_compiler", "multiple_choice", "fill_code", "output_prediction",
                                       "order_code", "drag_fill_code", "inline_fill_code", "math_puzzle"})
@@ -1921,6 +1921,129 @@ def _validate_compiler_runtime_checks(document: dict) -> None:
             "The published client cannot be evaluated as the reviewed EOF case")
 
 
+def _validate_compiler_named_rule_checks(document: dict) -> None:
+    """Validate source-role prerequisites without rewriting editor history."""
+    if "compilerNamedRuleChecks" not in document:
+        return
+    meta = document.get("stateLayout")
+    require(type(meta) is dict and meta.get("version") == 2 and meta.get("locale") == "es",
+            "Named-rule declarations require an original Spanish v2 lesson")
+    checks = document["compilerNamedRuleChecks"]
+    require(type(checks) is list and 0 < len(checks) <= 64,
+            "Named-rule declarations require 1..64 owners")
+    owners, seen = _blocks(document), set()
+    for record in checks:
+        require(type(record) is dict and
+                {"activity", "path", "rules"} <= set(record) <=
+                {"activity", "path", "rules", "editablePaths", "commentOnlyPaths",
+                 "executionProbe"},
+                "Named-rule owner must declare activity, path and rules only")
+        identity = _identity(record["activity"])
+        require(identity not in seen, "Repeated named-rule owner")
+        seen.add(identity)
+        block = owners.get(identity)
+        require(type(block) is dict and block.get("type") == "cpp_compiler"
+                and type(block.get("outputCheck")) is dict
+                and type(block["outputCheck"].get("cases")) is list
+                and bool(block["outputCheck"]["cases"]) and "compileCheck" not in block,
+                "Named rules require a mapped editor with a real output objective")
+        source = record["path"]
+        require(type(source) is str, "Named-rule source path must be text")
+        files = block.get("projectFiles")
+        if files:
+            require(type(files) is list and source.endswith(".cpp")
+                    and source in {entry.get("path") for entry in files if type(entry) is dict}
+                    and type(block.get("cmake")) is dict,
+                    "Named-rule project must reference an original C++ source")
+        else:
+            require(source == "" and not block.get("cmake") and
+                    type(block.get("initialCode")) is str,
+                    "Single-file named rules must use an empty source path")
+        extra = record.get("editablePaths", [])
+        require(type(extra) is list and len(extra) <= 32 and
+                all(type(path) is str for path in extra) and
+                len(set(extra)) == len(extra) and
+                (not extra or (bool(files) and source not in extra and
+                    set(extra) <= {item.get("path") for item in files if type(item) is dict})),
+                "Extra editable paths must be unique original project members")
+        comments = record.get("commentOnlyPaths", [])
+        require(type(comments) is list and len(comments) <= 32 and
+                all(type(path) is str and
+                    path.endswith((".h", ".hpp", ".hxx")) for path in comments) and
+                len(set(comments)) == len(comments) and set(comments) <= set(extra),
+                "Comment-only edits require unique editable original header paths")
+        rules = record["rules"]
+        require(type(rules) is list and 0 < len(rules) <= 8,
+                "Each named-rule source requires 1..8 function contracts")
+        functions = set()
+        for rule in rules:
+            require(type(rule) is dict and set(rule) == {
+                "function", "value", "purposeWords", "minUses"},
+                "A named rule requires function, value, purposeWords and minUses")
+            name = rule["function"]
+            require(type(name) is str and re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*", name)
+                    and name not in functions, "Missing or duplicate named-rule function")
+            functions.add(name)
+            value = rule["value"]
+            require(type(value) is int and -(2 ** 31) <= value <= 2 ** 31 - 1,
+                    "Named-rule value must be a signed representable integer")
+            count = rule["minUses"]
+            require(type(count) is int and 1 <= count <= 8,
+                    "Named-rule minimum source uses must be between 1 and 8")
+            words = rule["purposeWords"]
+            require(type(words) is list and 1 <= len(words) <= 12
+                    and all(type(w) is str and re.fullmatch(r"[A-Za-z_]{3,32}", w)
+                            for w in words) and len(set(words)) == len(words),
+                    "Named-rule purpose vocabulary must be bounded and unique")
+        if "executionProbe" in record:
+            probe = record["executionProbe"]
+            require(bool(files) and type(block.get("cmake")) is dict and
+                    type(probe) is dict and set(probe) == {"harness", "header", "cases"},
+                    "Independent named-rule probes require original CMake projects")
+            harness, header = probe["harness"], probe["header"]
+            existing = {entry.get("path") for entry in files if type(entry) is dict}
+            require(type(harness) is str and harness.endswith(".cpp") and
+                    harness in existing and harness != source,
+                    "Independent probe must replace a different original C++ file")
+            require(type(header) is str and len(header) <= 256 and
+                    re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_./-]*", header) and
+                    ".." not in header,
+                    "Independent probe include path must be a safe relative name")
+            main_cmake = next((entry.get("initialCode", "")
+                               for entry in files if type(entry) is dict
+                               and entry.get("path") == "CMakeLists.txt"), "")
+            target = block["cmake"].get("target")
+            require(type(target) is str and
+                    f"add_executable({target} {harness})" in main_cmake,
+                    "The independent probe must replace the selected executable source")
+            comparisons = probe["cases"]
+            require(type(comparisons) is list and 1 <= len(comparisons) <= 32,
+                    "Independent source probe needs 1..32 comparisons")
+            seen_cases, covered = set(), set()
+            for case in comparisons:
+                require(type(case) is dict and set(case) == {
+                    "function", "input", "expected"} and
+                    case["function"] in functions and
+                    type(case["input"]) is int and
+                    type(case["expected"]) is int and
+                    all(-(2 ** 31) <= case[k] <= 2 ** 31 - 1
+                        for k in ("input", "expected")),
+                    "Independent cases must call named functions with C++ int facts")
+                key = case["function"], case["input"]
+                require(key not in seen_cases, "An independent probe repeated an input")
+                seen_cases.add(key)
+                covered.add(case["function"])
+            require(covered == functions,
+                    "Every named function requires an independent execution case")
+        # An editable .cpp file can itself be the CMake test driver.
+        # Never allow it to fabricate stdout unless a separate independent
+        # executable verifies the same functions.
+        if any(path.endswith(".cpp") for path in extra):
+            require("executionProbe" in record and
+                    record["executionProbe"]["harness"] in extra,
+                    "Editable CMake test drivers require independent execution probes")
+
+
 def _validate_order_visual_separators(document: dict) -> None:
     """A visual-only root extension, never an order fragment or progress slot."""
     if "orderVisualSeparators" not in document:
@@ -1961,6 +2084,7 @@ def validate(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
     _validate_order_visual_separators(document)
     _validate_compiler_workflow_checks(document)
     _validate_compiler_runtime_checks(document)
+    _validate_compiler_named_rule_checks(document)
     _validate_presentation_relationships(document)
     _validate_retirement_history(document)
     _validate_compile_checks(document)
@@ -2225,6 +2349,9 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerRuntimeChecks") or
             baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
             "Published compiler runtime objective cannot be removed or rewritten")
+    require(not baseline.get("compilerNamedRuleChecks") or
+            baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
+            "Published named-rule requirements cannot be removed or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")
@@ -2453,6 +2580,9 @@ def validate_transition(previous: dict, current: dict) -> None:
     require(not baseline.get("compilerRuntimeChecks") or
             baseline.get("compilerRuntimeChecks") == current.get("compilerRuntimeChecks"),
             "Published compiler runtime objective cannot be removed or rewritten")
+    require(not baseline.get("compilerNamedRuleChecks") or
+            baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
+            "Published named-rule requirements cannot be removed or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")

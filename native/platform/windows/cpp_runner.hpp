@@ -1,5 +1,6 @@
 #pragma once
 #include "core/cpp_project.hpp"
+#include "core/named_rule_check.hpp"
 
 #include <chrono>
 #include <cstddef>
@@ -98,6 +99,7 @@ struct CppRunRequest {
     // free laboratory or by a project without this reviewed C++ objective.
     std::optional<curriculum::RejectionOperation> rejection_probe;
     std::optional<curriculum::ReportMode> observation_probe;
+    std::optional<curriculum::NamedRuleExecutionProbe> named_rule_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
 };
 struct CppRejectionProbe {
@@ -114,6 +116,10 @@ struct CppAssertionProbe {
     std::string source_sha256, standard_input;
     CppPhaseResult compilation, execution;
 };
+struct CppNamedRuleProbe {
+    std::string source_sha256, project_sha256;
+    CppPhaseResult compilation, execution;
+};
 
 struct CppRunResult {
     std::uint64_t request_id = 0;
@@ -128,6 +134,7 @@ struct CppRunResult {
     std::string error_utf8;
     std::optional<CppDiagnosticEvidence> diagnostic;
     std::optional<CppRejectionProbe> rejection_probe;
+    std::optional<CppNamedRuleProbe> named_rule_probe;
     std::vector<CppObservationProbe> observation_probes;
     std::vector<CppAssertionProbe> assertion_probes;
 };

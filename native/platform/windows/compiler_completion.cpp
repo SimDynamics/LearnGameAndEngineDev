@@ -277,6 +277,46 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(block.named_rule_source_check) {
+        const auto& named=*block.named_rule_source_check;
+        if(request.named_rule_probe!=named.execution_probe)return false;
+        if(!named.execution_probe&&std::ranges::any_of(named.editable_paths,
+                [](std::string_view path) {
+                    return curriculum::is_cpp_source_file(path);
+                }))return false;
+        if(request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake!=block.cmake||request.source_files!=block.source_files)
+            return false;
+        std::string_view source;
+        if(named.path.empty()) {
+            if(!block.project_files.empty()||!request.project_files.empty()||
+               request.cmake||!named.editable_paths.empty()||request.source_files.size())
+                return false;
+            source=request.source_utf8;
+        }else{
+            if(block.project_files.empty()||request.project_files.size()!=block.project_files.size())
+                return false;
+            for(std::size_t i=0;i<block.project_files.size();++i) {
+                const auto& original=block.project_files[i];
+                const auto& current=request.project_files[i];
+                if(original.first!=current.first)return false;
+                if(original.first!=named.path&&
+                   std::ranges::find(named.editable_paths,original.first)==
+                       named.editable_paths.end()&&
+                   original.second!=current.second)return false;
+                if(std::ranges::find(named.comment_only_paths,original.first)!=
+                       named.comment_only_paths.end()&&
+                   !curriculum::named_rule_comment_only_edit(
+                       original.second,current.second))return false;
+            }
+            const auto found=std::ranges::find_if(request.project_files,
+                [&](const auto& file){return file.first==named.path;});
+            if(found==request.project_files.end())return false;
+            source=found->second;
+        }
+        if(!curriculum::analyze_named_rule_sources(source,named.requirements).source_evidence)
+            return false;
+    }
     const auto goal=block.compiler_workflow_check;
     if(goal==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1||
        goal==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1||
@@ -509,7 +549,10 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
 bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
-       !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured))return false;
+       !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured)||
+       (block.named_rule_source_check&&
+           block.named_rule_source_check->execution_probe&&
+           !execution.named_rule_probe_correct))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);

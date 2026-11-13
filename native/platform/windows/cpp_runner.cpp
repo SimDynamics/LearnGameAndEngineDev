@@ -939,6 +939,20 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             if(!valid){fresh.report_probe_correct=false;break;}
         }
     }
+    if(request.named_rule_probe&&request.cmake&&result.named_rule_probe) {
+        const auto independent=curriculum::named_rule_probe_source(*request.named_rule_probe);
+        if(independent) {
+            const auto& probe=*result.named_rule_probe;
+            fresh.named_rule_probe_correct=
+                probe.source_sha256==state::sha256(*independent)&&
+                probe.project_sha256==state::sha256(
+                    curriculum::cpp_project_frame(request.project_files,
+                        request.source_files,request.cmake))&&
+                probe.compilation.succeeded()&&probe.execution.succeeded()&&
+                probe.execution.stdout_bytes.empty()&&
+                probe.execution.stderr_bytes.empty();
+        }
+    }
     if(request.rejection_probe&&result.rejection_probe&&
         result.rejection_probe->compilation.succeeded()&&result.rejection_probe->execution.succeeded()) {
         const auto source=curriculum::rejection_stream_probe_source(
@@ -981,6 +995,40 @@ CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){
     ensure_winrt_apartment();if(!request.cmake)return {};validate_request_project(request);const auto workspace=cmake_workspace(request);const auto mutex=project_mutex(workspace);std::unique_lock<std::timed_mutex> lock(*mutex,std::try_to_lock);
     if(!lock.owns_lock()){CppProjectAvailability busy;busy.workspace=workspace;busy.project_fingerprint=fingerprint(request);busy.configuration_fingerprint=fingerprint(request,true);return busy;}return inspect_unlocked(request);
 }
+// The independently generated harness is compiled in a fresh owned CMake
+// workspace against the student's unchanged library sources. Its executable
+// never reuses the student-editable test driver or changes the submitted
+// project. The worker owns this work; the window thread never runs it.
+void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result,
+        std::stop_token stop) {
+    if(!request.named_rule_probe||!request.cmake||request.project_files.empty()||
+       request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+       !result.compilation.succeeded()||!result.execution.succeeded()||
+       !result.error_utf8.empty()||stop.stop_requested())return;
+    const auto source=curriculum::named_rule_probe_source(*request.named_rule_probe);
+    if(!source)return;
+    auto second=request;
+    second.named_rule_probe.reset(); // recursion and double credit forbidden
+    second.rejection_probe.reset();
+    second.observation_probe.reset();
+    second.assertion_mode.reset();
+    second.request_id=~request.request_id;
+    second.project_key+="/named-rule-independent-v1";
+    const auto entry=std::ranges::find_if(second.project_files,
+        [&](const auto& file) {
+            return file.first==request.named_rule_probe->harness_path;
+        });
+    if(entry==second.project_files.end())return;
+    entry->second=*source;
+    const auto proof=run_cpp(second,stop);
+    if(!proof.error_utf8.empty())return;
+    result.named_rule_probe=CppNamedRuleProbe{
+        state::sha256(*source),
+        state::sha256(curriculum::cpp_project_frame(request.project_files,
+            request.source_files,request.cmake)),
+        proof.compilation,proof.execution};
+}
+
 // A second, isolated compile/execute exercise proves that the same student
 // diagnostic function writes to the caller-supplied ostream, not hard-coded
 // std::cerr. Never convert an incomplete probe into an execution achievement.
@@ -1109,7 +1157,11 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             else run_diagnostic(request,result,compiler,compiler_input,stop);
             return result;
         }
-        if(request.cmake){run_cmake(request,result,input,compiler_input,stop);return result;}
+        if(request.cmake){
+            run_cmake(request,result,input,compiler_input,stop);
+            complete_named_rule_probe(request,result,stop);
+            return result;
+        }
         if(!request.project_files.empty()){run_multifile(request,result,input,compiler_input,stop);return result;}
         write_exact(source, request.source_utf8);
         const std::vector<std::wstring> arguments{

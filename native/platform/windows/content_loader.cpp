@@ -2501,6 +2501,181 @@ void read_order_visual_separators(const JsonObject& root,Lesson& lesson) {
     }
 }
 
+void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
+    if(!root.HasKey(L"compilerNamedRuleChecks"))return;
+    const auto records=array(root,"compilerNamedRuleChecks");
+    require(lesson.locale=="es"&&lesson.state_layout.version==2&&
+            records.Size()>0&&records.Size()<=64,
+        "Named-rule source contracts require Spanish v2 and 1..64 mapped owners");
+    std::set<std::string> owners;
+    const auto identifier=[](std::string_view value) {
+        if(value.empty()||value.size()>128)return false;
+        const auto first=static_cast<unsigned char>(value.front());
+        if(!((first>='a'&&first<='z')||(first>='A'&&first<='Z')||first=='_'))
+            return false;
+        return std::ranges::all_of(value,[](unsigned char c){
+            return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+                (c>='0'&&c<='9')||c=='_';
+        });
+    };
+    for(const auto& entry:records) {
+        const auto item=entry.GetObject();
+        allowed_keys(item,{"activity","path","rules","editablePaths",
+            "commentOnlyPaths","executionProbe"});
+        require(item.HasKey(L"activity")&&item.HasKey(L"path")&&item.HasKey(L"rules"),
+            "Named-rule source requires activity, path and rules");
+        const auto identity=text(item,"activity");
+        require(valid_id(identity)&&owners.insert(identity).second,
+            "Repeated or invalid named-rule activity");
+        Block* owner=nullptr;
+        for(auto& page:lesson.pages)for(auto& block:page.blocks)
+            if(block.stable_id==identity) {
+                require(!owner,"Named-rule activity has duplicate native owners");
+                owner=&block;
+            }
+        require(owner&&owner->type==BlockType::cpp_compiler&&owner->output_check&&
+                !owner->output_check->cases.empty()&&!owner->compile_check,
+            "Named-rule prerequisite requires a mapped output-check editor");
+        NamedRuleSourceCheck check;
+        check.path=text(item,"path");
+        if(owner->project_files.empty()) {
+            require(check.path.empty()&&!owner->cmake&&!owner->initial_code.empty(),
+                "A single-file named-rule source must have an empty path");
+        }else {
+            require(owner->cmake&&is_cpp_source_file(check.path)&&
+                    std::ranges::any_of(owner->project_files,
+                        [&](const auto& f){return f.first==check.path;}),
+                "Named-rule project source is not an existing authored C++ file");
+        }
+        if(item.HasKey(L"editablePaths")) {
+            auto more=strings(array(item,"editablePaths"),false,false);
+            require(more.size()<=32,"Too many optional named-rule editable files");
+            std::set<std::string> seen;
+            for(const auto& candidate:more)
+                require(!check.path.empty()&&candidate!=check.path&&
+                    seen.insert(candidate).second&&
+                    std::ranges::any_of(owner->project_files,
+                        [&](const auto& file){return file.first==candidate;}),
+                    "An additional named-rule edit must belong to an original project file");
+            check.editable_paths=std::move(more);
+        }
+        if(item.HasKey(L"commentOnlyPaths")) {
+            auto limited=strings(array(item,"commentOnlyPaths"),false,false);
+            require(limited.size()<=32,
+                "Too many comment-only named-rule source files");
+            std::set<std::string> unique;
+            for(const auto& candidate:limited) {
+                const bool header=candidate.ends_with(".h")||
+                    candidate.ends_with(".hpp")||candidate.ends_with(".hxx");
+                require(header&&unique.insert(candidate).second&&
+                        std::ranges::find(check.editable_paths,candidate)!=
+                        check.editable_paths.end(),
+                    "Comment-only files must be unique, editable original C++ headers");
+            }
+            check.comment_only_paths=std::move(limited);
+        }
+        const auto rules=array(item,"rules");
+        require(rules.Size()>0&&rules.Size()<=8,
+            "Named-rule source must declare between one and eight functions");
+        std::set<std::string> functions;
+        for(const auto& rule_value:rules) {
+            const auto rule=rule_value.GetObject();
+            allowed_keys(rule,{"function","value","purposeWords","minUses"},true);
+            NamedRuleRequirement declaration;
+            declaration.function=text(rule,"function");
+            require(identifier(declaration.function)&&
+                    functions.insert(declaration.function).second,
+                "Duplicate or invalid named-rule function");
+            const auto value=rule.GetNamedValue(L"value");
+            require(value.ValueType()==JsonValueType::Number,
+                "Named-rule source value must be an integer");
+            const auto number=value.GetNumber();
+            require(std::isfinite(number)&&std::trunc(number)==number&&
+                    number>=static_cast<double>(std::numeric_limits<int>::min())&&
+                    number<=static_cast<double>(std::numeric_limits<int>::max()),
+                "Named-rule integer outside representable signed range");
+            declaration.value=static_cast<int>(number);
+            declaration.min_uses=integer(rule.GetNamedValue(L"minUses"),8);
+            require(declaration.min_uses>0,
+                "Named-rule source requires at least one meaningful use");
+            declaration.purpose_words=strings(array(rule,"purposeWords"),true,false);
+            require(declaration.purpose_words.size()<=12,
+                "Named-rule purpose vocabulary is too large");
+            std::set<std::string> unique;
+            for(const auto& word:declaration.purpose_words) {
+                const bool acceptable=word.size()>=3&&word.size()<=32&&
+                    std::ranges::all_of(word,[](unsigned char c) {
+                        return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||c=='_';
+                    });
+                require(acceptable&&unique.insert(word).second,
+                    "Invalid or duplicate named-rule purpose term");
+            }
+            check.requirements.push_back(std::move(declaration));
+        }
+        if(item.HasKey(L"executionProbe")) {
+            require(owner->cmake&&owner->project_files.size()>0&&
+                    !check.path.empty(),
+                "An independent named-rule probe requires an original CMake editor");
+            const auto declaration=item.GetNamedObject(L"executionProbe");
+            allowed_keys(declaration,{"harness","header","cases"},true);
+            NamedRuleExecutionProbe probe;
+            probe.harness_path=text(declaration,"harness");
+            probe.header=text(declaration,"header");
+            require(probe.harness_path!=check.path&&
+                    is_cpp_source_file(probe.harness_path)&&
+                    std::ranges::any_of(owner->project_files,
+                        [&](const auto& file){return file.first==probe.harness_path;}),
+                "Independent test harness must replace an existing different C++ file");
+            // The old target must actually build the harness being replaced.
+            const auto cml=std::ranges::find_if(owner->project_files,
+                [](const auto& file){return file.first=="CMakeLists.txt";});
+            require(cml!=owner->project_files.end()&&
+                    cml->second.find("add_executable("+owner->cmake->target+
+                        " "+probe.harness_path+")")!=std::string::npos,
+                "Probe cannot target a file outside the original reviewed executable");
+            const auto cases=array(declaration,"cases");
+            require(cases.Size()>0&&cases.Size()<=32,
+                "Independent named-rule probe needs between 1 and 32 comparisons");
+            std::set<std::string> covered;
+            const auto bounded_signed=[](const IJsonValue& value) {
+                require(value.ValueType()==JsonValueType::Number,
+                    "Independent probe arguments must be JSON integers");
+                const auto number=value.GetNumber();
+                require(std::isfinite(number)&&std::trunc(number)==number&&
+                        number>=static_cast<double>(std::numeric_limits<int>::min())&&
+                        number<=static_cast<double>(std::numeric_limits<int>::max()),
+                    "Independent probe integer is outside signed C++ range");
+                return static_cast<int>(number);
+            };
+            for(const auto& cv:cases) {
+                const auto one=cv.GetObject();
+                allowed_keys(one,{"function","input","expected"},true);
+                NamedRuleProbeCase item_case;
+                item_case.function=text(one,"function");
+                require(functions.contains(item_case.function),
+                    "An independent probe must call an authored named-rule function");
+                item_case.input=bounded_signed(one.GetNamedValue(L"input"));
+                item_case.expected=bounded_signed(one.GetNamedValue(L"expected"));
+                covered.insert(item_case.function);
+                probe.cases.push_back(std::move(item_case));
+            }
+            require(covered==functions&&named_rule_probe_source(probe).has_value(),
+                "Every named function needs independent, unambiguous executable cases");
+            check.execution_probe=std::move(probe);
+        }
+        // An editable C++ driver can print a forged report. Never activate
+        // such a rubric unless the runner will build a separate trusted driver.
+        const bool editable_cpp=std::ranges::any_of(check.editable_paths,
+            [](std::string_view path){return is_cpp_source_file(path);});
+        require(!editable_cpp||(check.execution_probe&&
+                std::ranges::find(check.editable_paths,
+                    check.execution_probe->harness_path)!=
+                    check.editable_paths.end()),
+            "Editable CMake test executable requires an independent function probe");
+        owner->named_rule_source_check=std::move(check);
+    }
+}
+
 void read_compiler_runtime_checks(const JsonObject& root,Lesson& lesson) {
     if(!root.HasKey(L"compilerRuntimeChecks"))return;
     const auto records=array(root,"compilerRuntimeChecks");
@@ -2770,6 +2945,7 @@ curriculum::Lesson parse_lesson_json(std::string_view source, std::string_view e
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
+        read_compiler_named_rule_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);
@@ -2858,6 +3034,7 @@ curriculum::Lesson parse_lesson_progress_metadata(std::string_view source, std::
         read_order_visual_separators(root,lesson);
         read_compiler_workflow_checks(root,lesson);
         read_compiler_runtime_checks(root,lesson);
+        read_compiler_named_rule_checks(root,lesson);
         read_text_semantics(root,lesson);
         validate_reference_relationships(lesson);
         validate_activity_relationships(lesson);

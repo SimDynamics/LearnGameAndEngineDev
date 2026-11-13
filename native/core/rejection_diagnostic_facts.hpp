@@ -163,10 +163,61 @@ inline bool actionable(const std::vector<Word>& words) {
             {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"})
             if(words[i].text.starts_with(stem)){action=true;break;}
         if(!action)continue;
-        // A retrospective report or a noun does not instruct the reader to
-        // correct the rejected input. "La revision ya se hizo", "se reviso"
-        // and "se verificaron" must not receive the same credit as "revise".
-        // Keep genuine infinitives, imperatives and other affirmative advice.
+        // An affirmative nominal request ("verificacion necesaria") also
+        // directs the reader to review rejected data. It is not the same as
+        // reporting a completed verification or saying it is unnecessary.
+        if(one_of(words[i].text,{"revision","verificacion","comprobacion",
+                "rectificacion","modificacion"})) {
+            const bool necessary=i+1<words.size()&&one_of(words[i+1].text,
+                {"necesaria","necesario","obligatoria","obligatorio",
+                 "requerida","requerido"});
+            // "Se requiere una revision" and "es necesaria una revision"
+            // are instructions too. Do not require the adjective to follow
+            // its noun, but do require a nearby affirmative modal expression.
+            const auto modal=[](std::string_view value) {
+                return one_of(value,{"requiere","requieren","recomienda",
+                    "recomiendan","aconseja","aconsejan","solicita",
+                    "solicite","necesaria","necesario","obligatoria",
+                    "obligatorio","haga","realice"});
+            };
+            const bool modal_before=
+                (i&&modal(words[i-1].text))||
+                (i>=2&&one_of(words[i-1].text,{"una","un","la","el"})&&
+                    modal(words[i-2].text));
+            bool denied=i&&one_of(words[i-1].text,{"no","sin","ninguna","ningun"});
+            const auto start=i>7?i-7:0;
+            for(std::size_t j=start;j<i;++j) {
+                if(one_of(words[j].text,{"ya","hizo","hicieron","realizo",
+                        "realizaron","completo","completaron","fue","estaba"}))
+                    denied=true;
+                if(!one_of(words[j].text,{"no","sin","nunca","jamas"}))continue;
+                // A negated modal belongs to the same instruction only if
+                // its intervening words are grammatical auxiliaries. For
+                // example "no se recomienda una revision" is negated, while
+                // "no modifique el informe; revision necesaria" is not.
+                bool same_clause=true;
+                for(std::size_t k=j+1;k<i;++k)
+                    if(!one_of(words[k].text,{"se","es","son","hay","hace",
+                        "falta","que","de","una","un","la","el","necesidad",
+                        "necesaria","necesario","obligatoria","obligatorio",
+                        "hacer","realizar","requiere","requieren","recomienda",
+                        "recomiendan","aconseja","aconsejan","conviene"})){
+                        same_clause=false;
+                        break;
+                    }
+                if(same_clause)denied=true;
+            }
+            for(std::size_t j=i+1;j<words.size()&&j<=i+6;++j)
+                if(one_of(words[j].text,{"no","nunca","jamas","ya","fue",
+                        "realizada","realizado","hecha","hecho","completada",
+                        "completado","cancelada","cancelado"}))
+                    denied=true;
+            if((necessary||modal_before)&&!denied)return true;
+            continue;
+        }
+        // A retrospective report or another noun does not instruct the
+        // reader to correct the rejected input. Genuine infinitives and
+        // imperatives still count, unless they are negated.
         if(one_of(words[i].text,{
             "revision","revisiones","revisado","revisada","revisados","revisadas",
             "revisando","reviso","revisaron","revisaba","revisabamos",
@@ -312,11 +363,17 @@ inline std::optional<RejectionExpected> rejection_expected_for_input(
     // unrequested observations as though they were in the authored domain.
     const std::size_t maximum_numbers =
         operation==RejectionOperation::boxes ? 8 : 16;
-    while(source>>number) {
+    for(;;) {
+        // Test for a clean end before extracting the next integer. An
+        // out-of-range integer at EOF sets both failbit and eofbit; checking
+        // eof() alone after extraction would wrongly accept that input.
+        source>>std::ws;
+        if(source.eof())break;
+        if(!(source>>number))return {};
         if(numbers.size()==maximum_numbers)return {};
         numbers.push_back(number);
     }
-    if(!source.eof()||(operation==RejectionOperation::balance&&numbers.size()%2))return {};
+    if(source.bad()||(operation==RejectionOperation::balance&&numbers.size()%2))return {};
     RejectionExpected expected;
     if(operation==RejectionOperation::boxes) {
         for(std::size_t i=0;i<numbers.size();++i) {

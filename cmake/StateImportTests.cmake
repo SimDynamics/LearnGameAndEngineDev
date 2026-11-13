@@ -141,7 +141,9 @@ add_custom_target(lgaed_u6_compile_check_format_fixtures DEPENDS ${LGAED_U6_COMP
 set(LGAED_REAL_CODE_FORMAT_PILOT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/real-code-format")
 set(LGAED_REAL_CODE_FORMAT_PILOT_FILES
     "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}/real.before.json"
-    "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}/real.after.json")
+    "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}/real.after.json"
+    "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}/after-editorial/real.before.json"
+    "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}/after-editorial/real.after.json")
 add_custom_command(OUTPUT ${LGAED_REAL_CODE_FORMAT_PILOT_FILES}
     COMMAND ${_lgaed_state_fixture_python} "${CMAKE_SOURCE_DIR}/scripts/curriculum/test_real_code_format_pilot.py"
         --output-dir "${LGAED_REAL_CODE_FORMAT_PILOT_DIR}"

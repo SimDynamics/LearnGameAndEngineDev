@@ -626,3 +626,164 @@ Los programas retirados conservan sus datos, sin controles ni obligaciones
 activas. El segundo editor conserva su dependencia real del primero. La ausencia
 de `outputCheck` sólo conserva exploración libre en el Laboratorio independiente;
 un editor curricular sin evaluador continúa pendiente técnicamente.
+
+## Requisitos generales de constantes nombradas
+
+Un bloque `cpp_compiler` existente que ya dispone de `outputCheck` puede
+recibir, desde la raíz de la lección española con `stateLayout` v2, una
+declaración `compilerNamedRuleChecks`. No se cambian el bloque original, sus
+respuestas, `initialCode`, `projectFiles` ni las direcciones históricas.
+
+```json
+{
+  "compilerNamedRuleChecks": [
+    {
+      "activity": "block_0002_0004",
+      "path": "componente/src/cajas.cpp",
+      "rules": [
+        {
+          "function": "cajas_para",
+          "value": 4,
+          "purposeWords": ["capacidad", "plaza", "cupo"],
+          "minUses": 2
+        }
+      ]
+    }
+  ]
+}
+```
+
+El objeto anterior es un **ejemplo de la extensión raíz**, no un JSON
+curricular publicado. `activity` identifica un editor original; `path`
+identifica un archivo C++ ya presente en el proyecto. Para editores de un solo
+archivo, `path` es la cadena vacía. `function` identifica la función;
+`value` fija el acuerdo entero; `purposeWords` permite varios nombres
+de propósito; `minUses` exige un mínimo de referencias de la constante.
+
+El lector exige una definición de la función, una constante local `int` de
+valor correspondiente, un identificador de propósito y referencias reales al
+resultado, incluso cuando se devuelve mediante variables intermedias. Los
+comentarios, las cadenas y las constantes declaradas pero no utilizadas no
+acreditan el objetivo. La constante puede inicializarse también con
+aritmética entera acotada sobre literales decimales, incluidos paréntesis,
+signos y los operadores `+`, `-`, `*`, `/` y `%`. Se respetan
+precedencia y división entera; se rechazan desbordamiento, divisor cero
+y literales de base ambigua para el comprobador, sin interpretar macros
+ni evaluar expresiones C++ arbitrarias. El analizador sólo admite
+directivas `#include` en el archivo evaluado: una función excluida con
+`#if 0`, una macro o una declaración generada no constituyen evidencia
+fuente acreditable. Los comentarios que mencionan esas directivas siguen
+siendo texto ordinario.
+
+Además, el motor comprueba la compilación, la ejecución y el primer caso
+válido de `outputCheck` antes de registrar el acierto. Los casos
+posteriores permanecen optativos.
+
+Los usos algebraicamente neutros más directos, como `capacidad -
+capacidad`, `capacidad / capacidad` o multiplicaciones por expresiones
+enteras constantes de valor cero, no cuentan como referencias útiles.
+La comprobación conserva las referencias reales que acompañen a una
+expresión neutra. Si una variable intermedia derivada de la constante
+se sobrescribe con un cálculo que ya no depende de ella, ese resultado
+descartado no acredita el `return`. Una asignación posterior que
+vuelva a utilizar la constante sí puede establecer la dependencia.
+
+**Límites de la primera integración:** el análisis léxico de usos no
+demuestra por sí solo que todas las operaciones sean correctas o que otra
+parte del programa no fabrique una salida. Las prácticas que requieren
+conservar otros archivos, ampliar baterías, demostrar dependencias
+efectivas o comprobar funciones con entradas distintas deben añadir sus
+sondas y restricciones pertinentes antes de recibir acreditación completa.
+La ficha técnica sigue abierta hasta esa verificación.
+
+Modificar por primera vez `compilerNamedRuleChecks` crea un objetivo
+nuevo, con huella de recibo distinta de los logros históricos de salida.
+Una vez publicado, el autor no puede retirarlo ni modificarlo
+silenciosamente. El validador Python, el cargador Windows, el comprobador
+de ejecución y las pruebas reales deben coincidir. Los archivos JSON los
+integra Work o GPT Work cuando la capacidad técnica esté acreditada.
+
+### Archivos adicionales autorizados en proyectos CMake
+
+De manera predeterminada, sólo puede cambiar el archivo C++ identificado
+por `path`. El resto de los archivos originales, incluido el cliente,
+la batería de pruebas y `CMakeLists.txt`, debe conservarse literalmente.
+Esto evita sustituir el comprobador por un programa que imprima la salida
+esperada sin ejecutar los cálculos del estudiante.
+
+Cuando una práctica pide también actualizar la cabecera y ampliar la
+batería, el autor puede declarar `editablePaths` con rutas de archivos
+existentes y diferentes de `path`:
+
+```json
+"editablePaths": [
+  "componente/publico/envio/cajas.h",
+  "pruebas/cajas_casos.cpp"
+]
+```
+
+La ausencia de `editablePaths` equivale a una lista vacía. Una ruta
+nueva, repetida, inexistente o ajena al proyecto es inválida. Estas
+excepciones forman parte de la huella del objetivo; no alteran los IDs
+históricos, pero un recibo obtenido con permisos diferentes no puede
+acreditar el objetivo actualizado. Los nuevos archivos autorizados
+todavía deben compilar, ejecutarse y cumplir el primer caso de salida.
+
+### Sonda independiente cuando el comprobador es editable
+
+Si `editablePaths` incluye un archivo C++ que puede reemplazar el
+comprobador, **es obligatorio** incluir `executionProbe`. El ejecutor
+genera un segundo `.cpp` de prueba sin copiar instrucciones del estudiante
+y lo compila con MSVC usando la misma biblioteca del proyecto. El archivo
+de pruebas original del alumno permanece intacto; sólo se sustituye una
+copia en el directorio de ejecución aislado.
+
+```json
+"executionProbe": {
+  "harness": "pruebas/cajas_casos.cpp",
+  "header": "envio/cajas.h",
+  "cases": [
+    {"function": "cajas_para", "input": 6, "expected": 1},
+    {"function": "cajas_para", "input": 7, "expected": 2},
+    {"function": "cajas_para", "input": 19, "expected": 4},
+    {"function": "llega_a_tiempo", "input": 4, "expected": 1},
+    {"function": "llega_a_tiempo", "input": 5, "expected": 0}
+  ]
+}
+```
+
+La sonda debe sustituir el archivo de código fuente que participa en el
+objetivo ejecutable CMake, referenciar una cabecera con ruta segura y cubrir
+cada función solicitada con datos independientes. Las entradas y salidas
+enteras son datos declarados por el currículo, no cálculos obtenidos de la
+función evaluada. Un programa que imprime el resultado esperado pero
+implementa mal las funciones no puede ganar el recibo nuevo.
+
+Se conservan por separado el resultado público, el código original, la
+compilación de la sonda, el programa/objetivo y las huellas de ambas
+ejecuciones. Los demás casos del `outputCheck` continúan siendo optativos;
+la sonda del primer caso forma parte de su propio criterio de corrección.
+
+Para los editores de un solo archivo, `path` y `editablePaths` deben
+ser vacíos; la prueba sigue evaluando el código que el estudiante editó.
+
+### Cabeceras de edición limitada a comentarios
+
+Las actividades que piden corregir una descripción, sin alterar firmas ni
+la interfaz C++, pueden añadir `commentOnlyPaths`:
+
+```json
+"commentOnlyPaths": ["componente/publico/envio/cajas.h"]
+```
+
+Las rutas deben estar incluidas en `editablePaths` y ser cabeceras `.h`,
+`.hpp` o `.hxx` preexistentes. Se admite corregir un comentario como
+«4 plazas» por «6 plazas», pero no se admite cambiar una declaración,
+introducir `#define`, redirigir una llamada ni modificar literales. El
+comprobador léxico compara el código, incluyendo directivas, y descarta
+únicamente las diferencias de comentarios. Rechaza cambios que involucren
+macros sensibles a las líneas del código.
+
+El alcance y los permisos forman parte de la identidad del objetivo
+evaluado: no se reutilizan aciertos de otra revisión. Es una capacidad
+general, no una modificación automática del material histórico.
