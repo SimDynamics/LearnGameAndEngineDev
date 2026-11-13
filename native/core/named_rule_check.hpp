@@ -252,6 +252,27 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     if(requirements.empty())return {false,"No hay reglas declaradas."};
     const auto scanned=code_format::cpp_tokens(source);
     if(!scanned)return {false,"El codigo fuente no admite analisis lexico."};
+    // The lexical source gate must not mistake code hidden behind #if 0,
+    // macro substitutions, or generated declarations for compiled evidence.
+    // A reviewed named-rule exercise only needs ordinary #include directives.
+    for(const auto& token:*scanned)if(token.starts_with("directive:")) {
+        std::string_view directive(token);
+        directive.remove_prefix(std::string_view("directive:").size());
+        if(directive.empty()||directive.front()!='#')
+            return {false,"Directiva de preprocesador no admitida."};
+        directive.remove_prefix(1);
+        while(!directive.empty()&&std::isspace(
+                static_cast<unsigned char>(directive.front())))
+            directive.remove_prefix(1);
+        constexpr std::string_view include="include";
+        if(!directive.starts_with(include))
+            return {false,"Solo se admiten directivas #include en reglas nombradas."};
+        directive.remove_prefix(include.size());
+        if(directive.empty()||!(std::isspace(
+                static_cast<unsigned char>(directive.front()))||
+                directive.front()=='<'||directive.front()=='"'))
+            return {false,"Directiva #include no valida en reglas nombradas."};
+    }
     Tokens t;
     for(const auto& token:*scanned)
         if(!token.starts_with("comment:")&&!token.starts_with("directive:")&&
