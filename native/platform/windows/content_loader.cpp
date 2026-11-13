@@ -2697,7 +2697,8 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
         std::set<std::string> unique;
         for(const auto& t:targets) {
             const auto source=t.GetObject();
-            allowed_keys(source,{"name","type","sources","linksTo","exactSources"});
+            allowed_keys(source,{"name","type","sources","linksTo","exactSources",
+                "explicitCxx20","explicitCxxExtensionsOff"});
             require(source.HasKey(L"name")&&source.HasKey(L"type"),
                 "Each CMake graph target requires a name and type");
             CmakeRequiredTarget wanted;
@@ -2734,6 +2735,16 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
                 wanted.exact_sources=value.GetBoolean();
                 require(!wanted.exact_sources||!wanted.sources.empty(),
                     "An exact CMake source requirement cannot be empty");
+            }
+            for(const auto [key,flag]:{
+                    std::pair{L"explicitCxx20",&wanted.require_explicit_cxx20},
+                    std::pair{L"explicitCxxExtensionsOff",
+                              &wanted.require_explicit_extensions_off}}) {
+                if(!source.HasKey(key))continue;
+                const auto value=source.GetNamedValue(key);
+                require(value.ValueType()==JsonValueType::Boolean,
+                    "CMake explicit toolchain requirements must be Boolean");
+                *flag=value.GetBoolean();
             }
             requirement.targets.push_back(std::move(wanted));
         }
