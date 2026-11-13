@@ -104,10 +104,71 @@ inline std::optional<int> number(const Tokens& t,std::size_t start,std::size_t e
     }
     if(start+1!=end||!t[start].starts_with("number:"))return {};
     const auto text=std::string_view(t[start]).substr(7);
+    // A leading zero introduces an octal literal in C++. Reject it rather
+    // than accidentally interpreting a different value as decimal.
+    if(text.size()>1&&text.front()=='0')return {};
     int value=0;
     const auto parsed=std::from_chars(text.data(),text.data()+text.size(),value);
     if(parsed.ec!=std::errc{}||parsed.ptr!=text.data()+text.size())return {};
     return negative?-value:value;
+}
+// Accept bounded integer arithmetic as well as decimal literals. Requiring
+// just one spelling of a constant would reject equivalent student solutions.
+// Do not evaluate arbitrary C++ or macros: these are source-side hints only,
+// and the independently compiled probe still establishes actual behavior.
+inline std::optional<int> arithmetic_constant(
+        const Tokens& t,std::size_t first,std::size_t last) {
+    if(first>=last||last-first>64)return {};
+    while(op(t[first],"(")) {
+        const auto close=closing(t,first,"(",")");
+        if(!close||*close!=last-1)break;
+        ++first;--last;
+    }
+    if(first>=last)return {};
+    // Split at the last top-level operator to preserve left associativity.
+    // Process addition before multiplication so precedence matches C++.
+    for(int precedence=0;precedence<2;++precedence) {
+        std::size_t depth=0;
+        for(auto i=last;i-->first;) {
+            if(op(t[i],")")){++depth;continue;}
+            if(op(t[i],"(")) {
+                if(!depth)return {};
+                --depth;continue;
+            }
+            if(depth||i==first)continue;
+            const bool add=op(t[i],"+")||op(t[i],"-");
+            const bool multiply=op(t[i],"*")||op(t[i],"/")||op(t[i],"%");
+            if(!(precedence==0?add:multiply))continue;
+            // A sign after another operator is unary, not a binary split.
+            if(!(t[i-1].starts_with("number:")||op(t[i-1],")")))continue;
+            const auto left=arithmetic_constant(t,first,i);
+            const auto right=arithmetic_constant(t,i+1,last);
+            if(!left||!right)return {};
+            const long long a=*left,b=*right;
+            long long result=0;
+            if(op(t[i],"+"))result=a+b;
+            else if(op(t[i],"-"))result=a-b;
+            else if(op(t[i],"*"))result=a*b;
+            else {
+                if(b==0)return {};
+                result=op(t[i],"/")?a/b:a%b;
+            }
+            if(result<std::numeric_limits<int>::min()||
+               result>std::numeric_limits<int>::max())return {};
+            return static_cast<int>(result);
+        }
+        if(depth)return {};
+    }
+    if(op(t[first],"+")||op(t[first],"-")) {
+        const auto value=arithmetic_constant(t,first+1,last);
+        if(!value)return {};
+        const long long result=op(t[first],"-")?
+            -static_cast<long long>(*value):*value;
+        if(result<std::numeric_limits<int>::min()||
+           result>std::numeric_limits<int>::max())return {};
+        return static_cast<int>(result);
+    }
+    return number(t,first,last);
 }
 inline std::optional<LocalRule> constant(
         const Tokens& t,std::size_t position,std::size_t limit) {
@@ -119,14 +180,14 @@ inline std::optional<LocalRule> constant(
         auto end=assignment+1;
         while(end<limit&&!op(t[end],";"))++end;
         if(end>=limit)return {};
-        const auto value=number(t,assignment+1,end);
+        const auto value=arithmetic_constant(t,assignment+1,end);
         if(value)return LocalRule{name,end,*value};
     }
     if(op(t[assignment],"{")||op(t[assignment],"(")) {
         const bool brace=op(t[assignment],"{");
         const auto end=closing(t,assignment,brace?"{":"(",brace?"}":")");
         if(!end||*end+1>=limit||!op(t[*end+1],";"))return {};
-        const auto value=number(t,assignment+1,*end);
+        const auto value=arithmetic_constant(t,assignment+1,*end);
         if(value)return LocalRule{name,*end+1,*value};
     }
     return {};
