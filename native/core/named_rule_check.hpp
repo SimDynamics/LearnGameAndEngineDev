@@ -515,9 +515,9 @@ inline bool named_rule_comment_only_edit(std::string_view original,
     return only_code(*before)==only_code(*after);
 }
 
-// Bounded source generation is shared by the worker and its verifier; it
-// accepts identifiers, integer values and a safe include path, never raw C++.
-inline std::optional<std::string> named_rule_probe_source(
+// Independently compiled checks are generated from reviewed identifiers,
+// integer facts and a bounded input list. The student's stdout is not trusted.
+inline std::optional<std::string> named_rule_probe_checks(
         const NamedRuleExecutionProbe& probe) {
     const auto identifier=[](std::string_view word) {
         if(word.empty()||word.size()>128)return false;
@@ -529,15 +529,8 @@ inline std::optional<std::string> named_rule_probe_source(
             if(!letter(c)&&!(c>='0'&&c<='9'))return false;
         return true;
     };
-    if(probe.cases.empty()||probe.cases.size()>32||probe.header.empty()||
-       probe.header.size()>256||probe.header.starts_with('/')||
-       probe.header.starts_with('.')||probe.header.find("..")!=std::string::npos)
-        return {};
-    for(const unsigned char c:probe.header)
-        if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
-             (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'||c=='/'))
-            return {};
-    std::string code="#include \""+probe.header+"\"\n\nint main() {\n";
+    if(probe.cases.empty()||probe.cases.size()>32)return {};
+    std::string code="int main() {\n";
     for(std::size_t i=0;i<probe.cases.size();++i) {
         const auto& item=probe.cases[i];
         if(!identifier(item.function))return {};
@@ -551,6 +544,32 @@ inline std::optional<std::string> named_rule_probe_source(
     }
     code+="    return 0;\n}\n";
     return code;
+}
+// CMake: replace the original test executable with a trusted test driver.
+inline std::optional<std::string> named_rule_probe_source(
+        const NamedRuleExecutionProbe& probe) {
+    if(probe.header.empty()||probe.header.size()>256||
+       probe.header.starts_with('/')||probe.header.starts_with('.')||
+       probe.header.find("..")!=std::string::npos)return {};
+    for(const unsigned char c:probe.header)
+        if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')||
+             (c>='0'&&c<='9')||c=='_'||c=='-'||c=='.'||c=='/'))
+            return {};
+    const auto checks=named_rule_probe_checks(probe);
+    if(!checks)return {};
+    return "#include \""+probe.header+"\"\n\n"+*checks;
+}
+// Single-file: compile the unchanged submitted functions alongside a fresh,
+// private main. The student's editable main and reports are not executed by
+// the probe. The source-gate separately rejects student preprocessor macros.
+inline std::optional<std::string> named_rule_single_file_probe_source(
+        const NamedRuleExecutionProbe& probe,std::string_view candidate) {
+    if(!probe.harness_path.empty()||!probe.header.empty()||
+       candidate.empty()||candidate.size()>4*1024*1024)return {};
+    const auto checks=named_rule_probe_checks(probe);
+    if(!checks)return {};
+    return "#define main lgaed_student_original_main\n"+
+        std::string(candidate)+"\n#undef main\n\n"+*checks;
 }
 
 } // namespace lgaed::curriculum
