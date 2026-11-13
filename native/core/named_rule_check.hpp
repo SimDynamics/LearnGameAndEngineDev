@@ -204,9 +204,41 @@ inline bool role(std::string_view name,const std::vector<std::string>& words) {
     return false;
 }
 inline bool productive(const Tokens& t,std::size_t i) {
-    // A common fake "use" of a constant must not satisfy the source goal.
-    return !(i>=2&&op(t[i-1],"*")&&t[i-2]=="number:0")&&
-           !(i+2<t.size()&&op(t[i+1],"*")&&t[i+2]=="number:0");
+    // Direct algebraic identities cannot establish that a constant is
+    // meaningfully used. This is deliberately a bounded syntactic check;
+    // arbitrary C++ still requires execution evidence.
+    if((i>=2&&(op(t[i-1],"-")||op(t[i-1],"/")||
+               op(t[i-1],"%"))&&t[i-2]==t[i])||
+       (i+2<t.size()&&(op(t[i+1],"-")||op(t[i+1],"/")||
+               op(t[i+1],"%"))&&t[i+2]==t[i]))
+        return false;
+    const zero_after=[&](std::size_t position) {
+        if(position>=t.size())return false;
+        if(t[position]=="number:0")return true;
+        if(!op(t[position],"("))return false;
+        const auto end=closing(t,position,"(",")");
+        if(!end)return false;
+        const auto value=arithmetic_constant(t,position,*end+1);
+        return value&&*value==0;
+    };
+    const zero_before=[&](std::size_t position) {
+        if(position>=t.size())return false;
+        if(t[position]=="number:0")return true;
+        if(!op(t[position],")"))return false;
+        std::size_t depth=0;
+        for(auto cursor=position+1;cursor-->0;) {
+            if(op(t[cursor],")"))++depth;
+            else if(op(t[cursor],"(")) {
+                if(--depth==0) {
+                    const auto value=arithmetic_constant(t,cursor,position+1);
+                    return value&&*value==0;
+                }
+            }
+        }
+        return false;
+    };
+    return !(i>=2&&op(t[i-1],"*")&&zero_before(i-2))&&
+           !(i+2<t.size()&&op(t[i+1],"*")&&zero_after(i+2));
 }
 inline bool used_in_return(const Tokens& t,Bounds bounds,std::string_view name) {
     // A function may compute an intermediate result and return that object.
