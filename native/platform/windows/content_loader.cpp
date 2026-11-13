@@ -2662,7 +2662,7 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
     std::set<std::string> owners;
     for(const auto& record:records) {
         const auto item=record.GetObject();
-        allowed_keys(item,{"activity","project","targets"});
+        allowed_keys(item,{"activity","project","minimumCmakeVersion","targets"});
         require(item.HasKey(L"activity")&&item.HasKey(L"targets"),
             "CMake graph check requires activity and targets");
         const auto identity=text(item,"activity");
@@ -2684,6 +2684,12 @@ void read_compiler_cmake_graph_checks(const JsonObject& root,Lesson& lesson) {
             requirement.project_name=text(item,"project");
             require(requirement.project_name.size()<=128,
                 "CMake project name is too long");
+        }
+        if(item.HasKey(L"minimumCmakeVersion")) {
+            requirement.minimum_cmake_version=text(item,"minimumCmakeVersion");
+            require(curriculum::cmake_numeric_version(
+                requirement.minimum_cmake_version).has_value(),
+                "CMake minimum requires a numeric major.minor version");
         }
         const auto targets=array(item,"targets");
         require(targets.Size()>0&&targets.Size()<=16,
