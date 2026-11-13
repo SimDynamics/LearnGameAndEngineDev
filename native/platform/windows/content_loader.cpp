@@ -472,6 +472,54 @@ JsonObject general_choice_projection(const JsonObject& current,
         "A general choice revision changed another answer, explanation or field");
     return projected;
 }
+// Authenticate the previous public-text marker, not only the option bytes.
+// The root overlay is outside statePayload; without this archive, a choice
+// could silently alter old narration offsets while preserving its answer.
+void validate_general_choice_semantic_archive(
+        const JsonObject& root,const JsonObject& revision) {
+    require(revision.HasKey(L"semanticBefore"),
+        "A general choice revision must archive its previous semantic marker");
+    const auto original=revision.GetNamedObject(L"block");
+    const auto options=array(original,"options");
+    const auto at=integer(revision.GetNamedValue(L"optionIndex"),
+        static_cast<std::size_t>(options.Size()-1));
+    const auto owner=text(revision,"id");
+    const auto path="/options/"+std::to_string(at);
+    const auto archived_value=revision.GetNamedValue(L"semanticBefore");
+    std::optional<JsonObject> archived;
+    if(archived_value.ValueType()!=JsonValueType::Null) {
+        require(archived_value.ValueType()==JsonValueType::Object,
+            "The previous semantic marker must be an object or null");
+        archived=archived_value.GetObject();
+        allowed_keys(*archived,{"block","path","sourceSha256","spans"},true);
+        require(text(*archived,"block")==owner&&
+                text(*archived,"path")==path&&
+                text(*archived,"sourceSha256")==
+                    sha256(utf8(options.GetStringAt(static_cast<unsigned>(at)))),
+            "The archived semantic marker is not the original choice's source");
+        (void)array(*archived,"spans");
+    }
+    std::optional<JsonObject> active;
+    if(root.HasKey(L"textSemantics")) {
+        const auto metadata=root.GetNamedObject(L"textSemantics");
+        for(const auto& item:array(metadata,"fields")) {
+            const auto field=item.GetObject();
+            if(text(field,"block")!=owner||text(field,"path")!=path)continue;
+            require(!active,"Duplicate semantic marker for a revised option");
+            active=field;
+        }
+    }
+    require(static_cast<bool>(archived)==static_cast<bool>(active),
+        "A revised option invented or discarded its original semantic marker");
+    if(active) {
+        auto expected=JsonObject::Parse(archived->Stringify());
+        expected.Insert(L"sourceSha256",JsonValue::CreateStringValue(
+            key(sha256(text(revision,"replacement")))));
+        require(fingerprint(*active)==fingerprint(expected),
+            "A general choice revision altered a historic semantic span");
+    }
+}
+
 struct ReviewedChoice {
     std::string_view lesson,identity,before_payload,after_payload,before_full,first_after_full;
     std::string_view paired_explanation_before,paired_explanation_after;
@@ -1539,7 +1587,8 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             const auto* reviewed=reviewed_choice_owner(lesson_id,id);
             const auto snapshot=item.GetNamedObject(L"block");
             if(item.HasKey(L"optionIndex")) {
-                allowed_keys(item,{"id","block","optionIndex","replacement"},true);
+                allowed_keys(item,{"id","block","optionIndex","replacement","semanticBefore"},true);
+                validate_general_choice_semantic_archive(root,item);
                 require(!reviewed&&text(snapshot,"type")=="multiple_choice"&&
                         state_fingerprint(snapshot)==result.signatures.at(id),
                     "General choice archive must belong to an original unchanged answer");
