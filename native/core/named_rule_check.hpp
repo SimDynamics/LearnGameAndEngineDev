@@ -573,7 +573,7 @@ inline std::optional<std::string> named_rule_probe_checks(
             std::to_string(item.expected)+") return "+
             std::to_string(i+1)+";\n";
     }
-    code+="    std::fputs(\""+std::string(named_rule_probe_completion_marker)+\"\", stderr);\n";
+    code+="    std::fputs(\""+std::string(named_rule_probe_completion_marker)+\"", stderr);\n";
     code+="    return 0;\n}\n";
     return code;
 }
