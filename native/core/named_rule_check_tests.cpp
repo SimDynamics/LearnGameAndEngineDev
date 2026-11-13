@@ -535,6 +535,37 @@ void independently_generated_probe() {
     invalid(changed,"Raw C++ was injected through a function name");
     changed=valid;changed.cases.clear();
     invalid(changed,"A vacuous independent probe was accepted");
+    // The source is deliberately supplied verbatim; the independent main
+    // uses different inputs rather than trusting the student's own report.
+    NamedRuleExecutionProbe single{"","",{
+        {"precio_total",11,77},{"alcanza_minimo",4,0},
+        {"alcanza_minimo",5,1}}};
+    const std::string candidate=R"cpp(int precio_total(int n) {return n * 7;}
+bool alcanza_minimo(int n) {return n >= 5;}
+int main() {return 0;}
+)cpp";
+    const auto independent=named_rule_single_file_probe_source(single,candidate);
+    if(!independent||
+       independent->find("#define main lgaed_student_original_main\n")!=0||
+       independent->find(candidate)==independent->npos||
+       independent->find("#undef main\n\nint main()") == independent->npos||
+       independent->find("static_cast<int>(precio_total(11)) != 77")==
+           independent->npos)
+        throw std::runtime_error("A trusted single-file main was not generated");
+    auto malicious=single;malicious.header="envio/cajas.h";
+    if(named_rule_single_file_probe_source(malicious,candidate))
+        throw std::runtime_error("A single-file probe injected a foreign header");
+    malicious=single;malicious.harness_path="pruebas/casos.cpp";
+    if(named_rule_single_file_probe_source(malicious,candidate))
+        throw std::runtime_error("A single-file probe accepted a project harness");
+    malicious=single;malicious.cases.push_back(malicious.cases.front());
+    if(named_rule_single_file_probe_source(malicious,candidate))
+        throw std::runtime_error("A single-file probe repeated an expected input");
+    malicious=single;malicious.cases.front().function="precio_total(0), abort()";
+    if(named_rule_single_file_probe_source(malicious,candidate))
+        throw std::runtime_error("A single-file probe accepted injected C++");
+    if(named_rule_single_file_probe_source(single,""))
+        throw std::runtime_error("A single-file probe accepted an empty source");
 }
 int main() {
     try {
