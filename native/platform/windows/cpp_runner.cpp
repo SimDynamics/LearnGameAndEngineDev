@@ -957,7 +957,10 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
                 probe.project_sha256==bound_source&&
                 probe.compilation.succeeded()&&probe.execution.succeeded()&&
                 probe.execution.stdout_bytes.empty()&&
-                probe.execution.stderr_bytes.empty();
+                // A student function may exit(0) before all comparisons
+                // run. Only the generated main emits this final witness.
+                probe.execution.stderr_bytes==
+                    curriculum::named_rule_probe_completion_marker;
         }
     }
     if(request.rejection_probe&&result.rejection_probe&&
