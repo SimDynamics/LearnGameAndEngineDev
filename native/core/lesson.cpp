@@ -365,6 +365,16 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         }
         token(std::to_string(contract.editable_paths.size()));
         for(const auto& file:contract.editable_paths)token(file);
+        if(contract.execution_probe) {
+            token("independent-cmake-probe-v1");
+            token(contract.execution_probe->harness_path);
+            token(contract.execution_probe->header);
+            token(std::to_string(contract.execution_probe->cases.size()));
+            for(const auto& item:contract.execution_probe->cases) {
+                token(item.function);token(std::to_string(item.input));
+                token(std::to_string(item.expected));
+            }
+        }
     }
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {
