@@ -664,8 +664,11 @@ El lector exige una definición de la función, una constante local `int` de
 valor correspondiente, un identificador de propósito y referencias reales al
 resultado, incluso cuando se devuelve mediante variables intermedias.
 Admite las grafías equivalentes `const int` e `int const`; no exige un
-orden exclusivo de los especificadores de tipo. Los
-comentarios, las cadenas y las constantes declaradas pero no utilizadas no
+orden exclusivo de los especificadores de tipo. Los resultados parciales
+pueden conservarse en variables intermedias `const int`, `int const`,
+`const auto` o `auto const`, siempre que esas referencias lleguen al
+resultado de la función. Los comentarios, las cadenas y las constantes
+declaradas pero no utilizadas no
 acreditan el objetivo. La constante puede inicializarse también con
 aritmética entera acotada sobre literales decimales, incluidos paréntesis,
 signos y los operadores `+`, `-`, `*`, `/` y `%`. Se respetan
