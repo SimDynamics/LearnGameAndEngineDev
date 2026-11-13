@@ -361,6 +361,35 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            return (piezas + 3) / 4 + 0 * (capacidad + capacidad);
+        })cpp",rules,false,"Zero times a parenthesized sum is not two uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 + (capacidad + capacidad) * (2 - 2);
+        })cpp",rules,false,"A computed zero factor on the right cancels a whole sum");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   (2 - 2) * (capacidad + capacidad);
+        })cpp",rules,false,"A computed zero factor on the left cancels a whole sum");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + 3) / 4 +
+                   0 * ((capacidad + capacidad) / 2);
+        })cpp",rules,false,"An outer zero factor cancels nested expressions too");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int ajuste = capacidad - 1;
+            return (piezas + ajuste) / capacidad +
+                   0 * (capacidad + capacidad);
+        })cpp",rules,true,"An irrelevant zero product must not erase real uses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             return (piezas + 3) / 4 +
                    capacidad / capacidad + capacidad % capacidad - 1;
         })cpp",rules,false,"Self division and remainder do not establish the agreement");
