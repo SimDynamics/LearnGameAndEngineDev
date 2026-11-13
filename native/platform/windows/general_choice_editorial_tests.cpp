@@ -100,11 +100,43 @@ int main(int argc,char** argv) {
         require(state::string_value(imported,"learning_progress",legacy)==
                     state::string_value(saved,"learning_progress",legacy),
             "Importing the old response into the revised lesson erased its historical receipt");
-        const auto new_key=state::response_storage_key(revised,after);
-        require(!new_key.empty()&&new_key!=legacy,
-            "A revised option silently reused its historical answer receipt");
-        require(state::string_value(imported,"learning_progress",new_key).empty(),
-            "An old choice response silently accredited the new wording");
+        const auto revised_key=state::response_storage_key(revised,after);
+        require(revised_key==legacy,
+            "A wording-only revision moved the choice into a different storage slot");
+        const auto preserved=state::get_response(imported,revised,after);
+        require(preserved&&preserved->correct&&preserved->selected==0&&
+            !preserved->historical_choice&&
+            state::selected_choice_text(*preserved,after)==after.options[0]&&
+            state::choice_correct_feedback(*preserved,after)==after.explanation,
+            "A valid historical success was lost or displayed as an ungraded old answer");
+        require(state::string_value(imported,"learning_progress",legacy)==
+                state::string_value(saved,"learning_progress",legacy),
+            "Reading the revised answer rewrote the historical selection or attempts");
+
+        // A reviewed incorrect choice is also compatible: its position and
+        // feedback are unchanged. Preserve its original retry/review receipt.
+        auto wrong=imported;
+        state::Response incorrect;
+        incorrect.selected=1;incorrect.correct=false;
+        incorrect.raw_json=R"({"incorrectAttempts":4,"opaque":{"caret":7}})";
+        state::mark_response_reviewed(incorrect,before);
+        state::put_response(wrong,legacy,incorrect);
+        const auto wrong_raw=state::string_value(wrong,"learning_progress",legacy);
+        const auto restored_wrong=state::get_response(wrong,revised,after);
+        require(restored_wrong&&!restored_wrong->correct&&
+            restored_wrong->selected==1&&!restored_wrong->historical_choice&&
+            state::response_reviewed(*restored_wrong,after)&&
+            state::choice_incorrect_feedback(*restored_wrong,after)==
+                incorrect_feedback(after,1)&&
+            state::string_value(wrong,"learning_progress",legacy)==wrong_raw,
+            "An editorial correction erased prior incorrect attempts or review");
+
+        // The eight existing closed revisions must still distinguish old
+        // answers from genuinely new response representations.
+        auto closed=after;
+        closed.choice_revision->general_option_index.reset();
+        require(state::response_storage_key(revised,closed)!=legacy,
+            "A response-changing closed revision incorrectly borrowed the old receipt");
 
         const auto reviewed_file=read_file(std::filesystem::path(argv[2]));
         rejected_change(reviewed_file,[](JsonObject root) {
