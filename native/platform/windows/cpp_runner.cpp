@@ -1008,11 +1008,17 @@ CppProjectAvailability inspect_cpp_project(const CppRunRequest& request){
 // project. The worker owns this work; the window thread never runs it.
 void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result,
         std::stop_token stop) {
-    if(!request.named_rule_probe||!request.cmake||request.project_files.empty()||
+    if(!request.named_rule_probe||
        request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
        !result.compilation.succeeded()||!result.execution.succeeded()||
        !result.error_utf8.empty()||stop.stop_requested())return;
-    const auto source=curriculum::named_rule_probe_source(*request.named_rule_probe);
+    const bool project=static_cast<bool>(request.cmake);
+    if(project?request.project_files.empty():
+        (!request.project_files.empty()||!request.source_files.empty()))return;
+    const auto source=project?
+        curriculum::named_rule_probe_source(*request.named_rule_probe):
+        curriculum::named_rule_single_file_probe_source(
+            *request.named_rule_probe,request.source_utf8);
     if(!source)return;
     auto second=request;
     second.named_rule_probe.reset(); // recursion and double credit forbidden
@@ -1021,18 +1027,26 @@ void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result
     second.assertion_mode.reset();
     second.request_id=~request.request_id;
     second.project_key+="/named-rule-independent-v1";
-    const auto entry=std::ranges::find_if(second.project_files,
-        [&](const auto& file) {
-            return file.first==request.named_rule_probe->harness_path;
-        });
-    if(entry==second.project_files.end())return;
-    entry->second=*source;
+    if(project) {
+        const auto entry=std::ranges::find_if(second.project_files,
+            [&](const auto& file) {
+                return file.first==request.named_rule_probe->harness_path;
+            });
+        if(entry==second.project_files.end())return;
+        entry->second=*source;
+    }else{
+        // Preserve the submitted functions, but run them with an independent
+        // main instead of trusting editable student reports and expectations.
+        second.source_utf8=*source;
+        second.stdin_utf8.clear();
+    }
     const auto proof=run_cpp(second,stop);
     if(!proof.error_utf8.empty())return;
     result.named_rule_probe=CppNamedRuleProbe{
         state::sha256(*source),
-        state::sha256(curriculum::cpp_project_frame(request.project_files,
-            request.source_files,request.cmake)),
+        project?state::sha256(curriculum::cpp_project_frame(
+            request.project_files,request.source_files,request.cmake)):
+            state::sha256(request.source_utf8),
         proof.compilation,proof.execution};
 }
 
@@ -1150,6 +1164,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
         write_exact(compiler_input, "");
         if(request.backend==CppRunRequest::Backend::wasi) {
             run_wasi_single(request,result,source,input,compiler_input,stop);
+            complete_named_rule_probe(request,result,stop);
             complete_rejection_stream_probe(request,result,stop);
             complete_observation_probes(request,result,stop);
             complete_assertion_probes(request,result,stop);
@@ -1187,6 +1202,7 @@ CppRunResult run_cpp(const CppRunRequest& request, std::stop_token stop) {
             result.execution = run_phase(executable, {}, result.run_directory, input,
                 L"execution", request.execution_timeout, request.output_limit_bytes, false, stop);
         }
+        complete_named_rule_probe(request,result,stop);
         complete_rejection_stream_probe(request,result,stop);
         complete_observation_probes(request,result,stop);
     } catch (const std::exception& exception) {
