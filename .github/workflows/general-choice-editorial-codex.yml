@@ -1,0 +1,32 @@
+name: Codex compatible choice editorial review
+
+on:
+  push:
+    branches: [Codex]
+    paths:
+      - scripts/curriculum/stable_state_layout.py
+      - scripts/curriculum/test_general_choice_editorial.py
+      - native/platform/windows/content_loader.cpp
+      - native/platform/windows/general_choice_editorial_tests.cpp
+      - CMakeLists.txt
+      - .github/workflows/general-choice-editorial-codex.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  general-choice-authoring:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Fetch Codex source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify Python syntax and original/editorial transitions
+        run: |
+          python3 -m py_compile scripts/curriculum/stable_state_layout.py \
+            scripts/curriculum/test_general_choice_editorial.py
+          python3 -B -m unittest discover \
+            -s scripts/curriculum -p test_general_choice_editorial.py -v
