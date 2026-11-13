@@ -240,6 +240,28 @@ int cajas_para(int piezas) {
 )cpp");
     require(compiler_runtime_request_allowed(owner,guarded_result),
         "Windows rejected a valid early guard before the named calculation");
+    auto conditional_shortcut=submitted;
+    change_project(conditional_shortcut,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) return (piezas + 3) / 4;
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,conditional_shortcut),
+        "A hardcoded conditional return borrowed credit from the named fallthrough");
+    auto braced_shortcut=submitted;
+    change_project(braced_shortcut,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{4};
+    if (piezas > 10) {
+        return (piezas + 3) / 4;
+    }
+    return (piezas + capacidad - 1) / capacidad;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,braced_shortcut),
+        "A braced hardcoded return borrowed evidence from a later named return");
     auto split_guards=submitted;
     change_project(split_guards,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
