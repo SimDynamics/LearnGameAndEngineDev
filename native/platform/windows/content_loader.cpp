@@ -2613,26 +2613,32 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
             check.requirements.push_back(std::move(declaration));
         }
         if(item.HasKey(L"executionProbe")) {
-            require(owner->cmake&&owner->project_files.size()>0&&
-                    !check.path.empty(),
-                "An independent named-rule probe requires an original CMake editor");
+            const bool single_file=owner->project_files.empty();
             const auto declaration=item.GetNamedObject(L"executionProbe");
             allowed_keys(declaration,{"harness","header","cases"},true);
             NamedRuleExecutionProbe probe;
             probe.harness_path=text(declaration,"harness");
             probe.header=text(declaration,"header");
-            require(probe.harness_path!=check.path&&
-                    is_cpp_source_file(probe.harness_path)&&
-                    std::ranges::any_of(owner->project_files,
-                        [&](const auto& file){return file.first==probe.harness_path;}),
-                "Independent test harness must replace an existing different C++ file");
-            // The old target must actually build the harness being replaced.
-            const auto cml=std::ranges::find_if(owner->project_files,
-                [](const auto& file){return file.first=="CMakeLists.txt";});
-            require(cml!=owner->project_files.end()&&
-                    cml->second.find("add_executable("+owner->cmake->target+
-                        " "+probe.harness_path+")")!=std::string::npos,
-                "Probe cannot target a file outside the original reviewed executable");
+            if(single_file) {
+                require(!owner->cmake&&check.path.empty()&&
+                        probe.harness_path.empty()&&probe.header.empty(),
+                    "Single-file independent probes require empty harness and header");
+            }else{
+                require(owner->cmake&&!check.path.empty(),
+                    "Project named-rule probes require a CMake editor");
+                require(probe.harness_path!=check.path&&
+                        is_cpp_source_file(probe.harness_path)&&
+                        std::ranges::any_of(owner->project_files,
+                            [&](const auto& file){return file.first==probe.harness_path;}),
+                    "Independent test harness must replace an existing different C++ file");
+                // The old target must build the harness being replaced.
+                const auto cml=std::ranges::find_if(owner->project_files,
+                    [](const auto& file){return file.first=="CMakeLists.txt";});
+                require(cml!=owner->project_files.end()&&
+                        cml->second.find("add_executable("+owner->cmake->target+
+                            " "+probe.harness_path+")")!=std::string::npos,
+                    "Probe cannot target a file outside the original reviewed executable");
+            }
             const auto cases=array(declaration,"cases");
             require(cases.Size()>0&&cases.Size()<=32,
                 "Independent named-rule probe needs between 1 and 32 comparisons");
@@ -2659,7 +2665,10 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                 covered.insert(item_case.function);
                 probe.cases.push_back(std::move(item_case));
             }
-            require(covered==functions&&named_rule_probe_source(probe).has_value(),
+            const auto generated=single_file?
+                named_rule_single_file_probe_source(probe,owner->initial_code):
+                named_rule_probe_source(probe);
+            require(covered==functions&&generated.has_value(),
                 "Every named function needs independent, unambiguous executable cases");
             check.execution_probe=std::move(probe);
         }
