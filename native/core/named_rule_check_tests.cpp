@@ -76,6 +76,26 @@ void capacity() {
         })cpp",rules,true,"A returned intermediate derived from the local capacity");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            int const cupo{4};
+            int const ajuste = cupo - 1;
+            int const cajas = (piezas + ajuste) / cupo;
+            return cajas;
+        })cpp",rules,true,"East-const intermediates preserve two genuine dependencies");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int cupo{4};
+            auto const ajuste = cupo - 1;
+            auto const cajas = (piezas + ajuste) / cupo;
+            return cajas;
+        })cpp",rules,true,"Const-qualified auto intermediates are not discarded");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int cupo{4};
+            int const observacion = cupo + cupo;
+            return (piezas + cupo - 1) / 4;
+        })cpp",rules,false,"Unused east-const intermediates cannot satisfy minUses");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int capacidad{4};
             const int observacion = capacidad + capacidad;
             return (piezas + capacidad - 1) / 4;
