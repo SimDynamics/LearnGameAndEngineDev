@@ -163,10 +163,31 @@ inline bool actionable(const std::vector<Word>& words) {
             {"revis","verific","verifiqu","comprueb","comprob","correg","corrij","rectific","modific","ajust"})
             if(words[i].text.starts_with(stem)){action=true;break;}
         if(!action)continue;
-        // A retrospective report or a noun does not instruct the reader to
-        // correct the rejected input. "La revision ya se hizo", "se reviso"
-        // and "se verificaron" must not receive the same credit as "revise".
-        // Keep genuine infinitives, imperatives and other affirmative advice.
+        // An affirmative nominal request ("verificacion necesaria") also
+        // directs the reader to review rejected data. It is not the same as
+        // reporting a completed verification or saying it is unnecessary.
+        if(one_of(words[i].text,{"revision","verificacion","comprobacion",
+                "rectificacion","modificacion"})) {
+            const bool necessary=i+1<words.size()&&one_of(words[i+1].text,
+                {"necesaria","necesario","obligatoria","obligatorio",
+                 "requerida","requerido"});
+            bool denied=i&&one_of(words[i-1].text,{"no","sin","ninguna","ningun"});
+            const auto start=i>5?i-5:0;
+            for(std::size_t j=start;j<i;++j)
+                if(one_of(words[j].text,{"ya","hizo","hicieron","realizo",
+                        "realizaron","completo","completaron","fue","estaba"}))
+                    denied=true;
+            for(std::size_t j=i+2;j<words.size()&&j<=i+5;++j)
+                if(one_of(words[j].text,{"no","nunca","jamas","ya","fue",
+                        "realizada","realizado","hecha","hecho","completada",
+                        "completado","cancelada","cancelado"}))
+                    denied=true;
+            if(necessary&&!denied)return true;
+            continue;
+        }
+        // A retrospective report or another noun does not instruct the
+        // reader to correct the rejected input. Genuine infinitives and
+        // imperatives still count, unless they are negated.
         if(one_of(words[i].text,{
             "revision","revisiones","revisado","revisada","revisados","revisadas",
             "revisando","reviso","revisaron","revisaba","revisabamos",
