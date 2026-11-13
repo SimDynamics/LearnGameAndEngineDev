@@ -310,19 +310,26 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         }
         auto start=i;
         if(id(t[start],"const")||id(t[start],"constexpr"))++start;
-        if(start+2<bounds.close&&
-           (id(t[start],"int")||id(t[start],"auto"))&&
-           t[start+1].starts_with("id:")&&
-           (op(t[start+2],"=")||op(t[start+2],"{")||
-            op(t[start+2],"("))) {
-            const auto local=t[start+1].substr(3);
-            auto last=start+3;
+        // Local intermediates may use either const placement, just like the
+        // authored rule itself: const int ajuste or int const ajuste.
+        const bool has_type=start<bounds.close&&
+            (id(t[start],"int")||id(t[start],"auto"));
+        const bool trailing_const=has_type&&start+1<bounds.close&&
+            id(t[start+1],"const");
+        const auto variable=start+1+(trailing_const?1u:0u);
+        const auto initializer=variable+1;
+        if(has_type&&initializer<bounds.close&&
+           t[variable].starts_with("id:")&&
+           (op(t[initializer],"=")||op(t[initializer],"{")||
+            op(t[initializer],"("))) {
+            const auto local=t[variable].substr(3);
+            auto last=initializer+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             if(local==name) {
                 if(declared)return 0; // Ambiguous shadowing of the named rule.
                 declared=true;
             }else {
-                const auto count=uses(start+3,last);
+                const auto count=uses(initializer+1,last);
                 const auto found=std::ranges::find_if(aliases,
                     [&](const auto& alias){return alias.first==local;});
                 if(found==aliases.end())aliases.emplace_back(local,count);
