@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un texto como `4+8` no contiene espacios. Una extracción con `>>` hacia un `std::string` obtiene esos tres caracteres juntos: no reconoce automáticamente el signo como una operación. Si el formato necesita distinguir números, separadores y signos, hay que examinar sus caracteres y establecer reglas de clasificación (Stroustrup, 2024, pp. 279–280).\n\n`entrada.get(actual)` intenta obtener el siguiente carácter y guardarlo en `actual`. Conserva también los espacios, los tabuladores y los saltos de línea; leerlos permite decidir después qué significado tienen (Stroustrup, 2024, p. 280).",
+          "text": "Un texto como `4+8` no contiene espacios. Una extracción con `>>` hacia un `std::string` obtiene esos tres caracteres juntos: no reconoce automáticamente el signo como una operación. Si el formato necesita distinguir números, separadores y signos, hay que examinar sus caracteres y establecer reglas de clasificación (Stroustrup, 2024).\n\n`entrada.get(actual)` intenta obtener el siguiente carácter y guardarlo en `actual`. Conserva también los espacios, los tabuladores y los saltos de línea; leerlos permite decidir después qué significado tienen (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "examinar sus caracteres",
@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El destino `actual` es un `char`. La operación devuelve el propio flujo; al usar `entrada.get(actual)` como condición de un `if` o de un `while`, se consulta si la lectura tuvo éxito. El cuerpo debe procesar el carácter sólo cuando esa condición lo permite (Stroustrup, 2024, p. 280).\n\nLa extracción `entrada >> actual` también obtiene un carácter, pero, con la configuración habitual que se usa aquí, omite antes el espacio en blanco inicial. Elegir una u otra lectura cambia qué caracteres llegan al cuerpo del bucle (Köppe et al., 2023).",
+          "text": "El destino `actual` es un `char`. La operación devuelve el propio flujo; al usar `entrada.get(actual)` como condición de un `if` o de un `while`, se consulta si la lectura tuvo éxito. El cuerpo debe procesar el carácter sólo cuando esa condición lo permite (Stroustrup, 2024).\n\nLa extracción `entrada >> actual` también obtiene un carácter, pero, con la configuración habitual que se usa aquí, omite antes el espacio en blanco inicial. Elegir una u otra lectura cambia qué caracteres llegan al cuerpo del bucle (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "devuelve el propio flujo",
@@ -39,7 +39,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" + 7\"};\n    char actual = '?';\n    while (entrada >> actual) {\n        std::cout << \"<\" << actual << \">\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" + 7\"};\n    char actual = '?';\n\n    while (entrada >> actual) {\n        std::cout << \"<\" << actual << \">\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -62,7 +62,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 5\\n\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"ESPACIO\\n\";\n        } else if (actual == '\\n') {\n            std::cout << \"SALTO\\n\";\n        } else {\n            std::cout << \"CARACTER:\" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 5\\n\"};\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"ESPACIO\\n\";\n        } else if (actual == '\\n') {\n            std::cout << \"SALTO\\n\";\n        } else {\n            std::cout << \"CARACTER:\" << actual << \"\\n\";\n        }\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -78,7 +78,7 @@
           "type": "output_prediction",
           "question": "Predice las etiquetas que presenta este programa para un texto diferente.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\n+ 4\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"E\";\n        } else if (actual == '\\n') {\n            std::cout << \"S\";\n        } else {\n            std::cout << actual;\n        }\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\n+ 4\"};\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"E\";\n        } else if (actual == '\\n') {\n            std::cout << \"S\";\n        } else {\n            std::cout << actual;\n        }\n    }\n\n    return 0;\n}\n",
           "answers": [
             "S+E4"
           ],
@@ -110,7 +110,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"3+8\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            const int valor = actual - '0';\n            std::cout << \"Valor: \" << valor << \"\\n\";\n        } else {\n            std::cout << \"Signo: \" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"3+8\"};\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            const int valor = actual - '0';\n            std::cout << \"Valor: \" << valor << \"\\n\";\n        } else {\n            std::cout << \"Signo: \" << actual << \"\\n\";\n        }\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -192,7 +192,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una batería que clasifique estos seis textos, en este orden: `\"7 +\\n3\"`, `\"\"`, `\"12\"`, `\" \"`, `\"()\"` y `\"001\\t-\"`. En los literales, `\\n` representa un salto de línea y `\\t` un tabulador. Cada texto tiene como máximo 40 caracteres ASCII.\n\nDefine la función `probar(const std::string& texto)`. Cada llamada crea un flujo local nuevo y clasifica cada carácter en exactamente una categoría: dígito de `'0'` a `'9'`, separador de los tres tipos definidos u otro. `main` llama a esa misma función para los seis textos, sin cambiar la implementación entre casos.\n\nCada llamada debe presentar tres líneas: Digitos: N, Separadores: N y Otros: N. Sustituye cada N por su recuento, conserva un espacio después de los dos puntos y termina cada línea con un salto, también la última. No añadas títulos ni líneas vacías entre casos. Resuelve primero la clasificación breve que aparece a continuación; después construye la batería en el editor y pulsa Compilar, ejecutar y comprobar.",
+          "text": "Construye una batería que clasifique seis textos. En los literales, `\\n` representa un salto de línea y `\\t` un tabulador. Cada texto tiene como máximo 40 caracteres ASCII.\n\nDefine la función `probar(const std::string& texto)`. Cada llamada crea un flujo local nuevo y clasifica cada carácter en exactamente una categoría: dígito de `'0'` a `'9'`, separador de los tres tipos definidos u otro. `main` llama a esa misma función para los seis textos, sin cambiar la implementación entre casos.\n\nCada llamada debe presentar tres líneas con este formato:\n\nDigitos: N\nSeparadores: N\nOtros: N\n\nSustituye cada N por su recuento, conserva un espacio después de los dos puntos y termina cada línea con un salto, también la última.\n\nEstos son los textos y sus informes completos, en el orden de las llamadas:\n\nTexto `\"7 +\\n3\"`\nDigitos: 2\nSeparadores: 2\nOtros: 1\n\nTexto `\"\"`\nDigitos: 0\nSeparadores: 0\nOtros: 0\n\nTexto `\"12\"`\nDigitos: 2\nSeparadores: 0\nOtros: 0\n\nTexto `\" \"`, que contiene un espacio\nDigitos: 0\nSeparadores: 1\nOtros: 0\n\nTexto `\"()\"`\nDigitos: 0\nSeparadores: 0\nOtros: 2\n\nTexto `\"001\\t-\"`\nDigitos: 3\nSeparadores: 1\nOtros: 1\n\nNo añadas títulos ni líneas vacías entre casos. Resuelve primero la clasificación breve que aparece a continuación; después construye la batería en el editor y pulsa Compilar, ejecutar y comprobar.",
           "emphasis": [
             {
               "text": "exactamente una categoría",
@@ -227,7 +227,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"7 +\\n3\"};\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"7 +\\n3\"};\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -245,7 +245,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia la función probar que acabas de construir antes del main de este editor, junto con los auxiliares que necesites. Su interfaz es void probar(const std::string& texto). Conserva el contrato: dígitos de '0' a '9', incluidos ambos; separadores exactamente espacio, tabulador y LF; todos los demás caracteres cuentan en otros.\n\nEl cliente mantiene las seis llamadas anteriores y añade el texto del literal \"09:Z\\r \\t\\n\". Las escrituras \\r, \\t y \\n representan respectivamente CR, tabulador y LF; cada una produce un carácter dentro del texto. El espacio escrito entre \\r y \\t también forma parte del dato. El texto se construye dentro del programa, sin entrada externa.\n\nMantén las siete llamadas y usa en todas la misma función. Cada llamada crea su flujo y sus contadores desde cero, presenta las tres líneas Digitos: N, Separadores: N y Otros: N, y termina cada línea con un salto. Pulsa «Compilar, ejecutar y comprobar»; si los resultados difieren, revisa qué categoría asigna tu función a cada carácter.",
+          "text": "Copia la función probar que acabas de construir antes del main de este editor, junto con los auxiliares que necesites. Su interfaz es void probar(const std::string& texto). Conserva el contrato: dígitos de '0' a '9', incluidos ambos; separadores exactamente espacio, tabulador y LF; todos los demás caracteres cuentan en otros.\n\nEl cliente mantiene las seis llamadas anteriores y añade el texto del literal \"09:Z\\r \\t\\n\". Estas escrituras representan caracteres diferentes:\n\n\\r representa CR, el retorno de carro.\n\\t representa un tabulador.\n\\n representa LF, el salto de línea.\n\nCada escritura produce un carácter dentro del texto. CR es distinto de LF: en este formato no está entre los separadores admitidos y cuenta en otros. El espacio escrito entre \\r y \\t también forma parte del dato. El texto se construye dentro del programa, sin entrada externa.\n\nMantén las siete llamadas y usa en todas la misma función. Cada llamada crea su flujo y sus contadores desde cero, presenta estas tres líneas y termina cada una con un salto:\n\nDigitos: N\nSeparadores: N\nOtros: N\n\nPulsa «Compilar, ejecutar y comprobar»; si los resultados difieren, revisa qué categoría asigna tu función a cada carácter.",
           "emphasis": [
             {
               "text": "separadores exactamente espacio, tabulador y LF",
@@ -263,7 +263,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui probar y los auxiliares que necesites.\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui probar y los auxiliares que necesites.\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -329,7 +329,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2\\t* 9\\n\"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Digitos: \" << digitos;\n    std::cout << \"\\nSeparadores: \" << separadores;\n    std::cout << \"\\nOtros: \" << otros;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2\\t* 9\\n\"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n\n    std::cout << \"Digitos: \" << digitos;\n    std::cout << \"\\nSeparadores: \" << separadores;\n    std::cout << \"\\nOtros: \" << otros;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -345,7 +345,7 @@
           "type": "output_prediction",
           "question": "Recupera la clasificación: predice los tres recuentos para estos datos nuevos.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\t0-9 \"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Digitos: \" << digitos;\n    std::cout << \"\\nSeparadores: \" << separadores;\n    std::cout << \"\\nOtros: \" << otros;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\t0-9 \"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n\n    std::cout << \"Digitos: \" << digitos;\n    std::cout << \"\\nSeparadores: \" << separadores;\n    std::cout << \"\\nOtros: \" << otros;\n\n    return 0;\n}\n",
           "answers": [
             "Digitos: 2\nSeparadores: 2\nOtros: 1"
           ],
@@ -365,7 +365,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') ++digitos;\n        else if (actual == ' ' || actual == '\\t' || actual == '\\n') ++separadores;\n        else ++otros;\n    }\n    std::cout << \"Digitos: \" << digitos << \"\\nSeparadores: \" << separadores\n              << \"\\nOtros: \" << otros << \"\\n\";\n}\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9')\n            ++digitos;\n        else if (actual == ' ' || actual == '\\t' || actual == '\\n')\n            ++separadores;\n        else\n            ++otros;\n    }\n\n    std::cout << \"Digitos: \" << digitos << \"\\nSeparadores: \" << separadores\n              << \"\\nOtros: \" << otros << \"\\n\";\n}\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -373,7 +373,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la séptima llamada, 0 y 9 cumplen las dos comparaciones del intervalo, incluidos sus extremos. Los dos puntos y Z no son dígitos. CR tampoco lo es y no aparece en la lista de tres separadores; por tanto, esos tres caracteres aumentan otros. El espacio, el tabulador y LF aumentan separadores. El informe es Digitos: 2, Separadores: 3 y Otros: 3, cada uno en su línea.\n\nLos seis textos anteriores no contenían 9, letras ni CR. Una condición que excluyera el último dígito podía acertarlos; en el séptimo daría 1 dígito y 4 otros. En este dominio ASCII, una condición que sólo comprobara el límite inferior también aceptaría los dos puntos y Z como dígitos: daría 4 dígitos y 1 otro. Por último, añadir CR a los separadores produciría 4 separadores y 2 otros. El caso añadido distingue esos errores sin cambiar las categorías solicitadas.\n\nLa función probar de la referencia anterior cumple también el nuevo caso. Sustituye únicamente su main por el siguiente, conservando las inclusiones y la definición de la función. Los siete informes se calculan de forma independiente porque cada llamada crea su propio flujo y sus contadores.",
+          "text": "En la séptima llamada, 0 y 9 cumplen las dos comparaciones del intervalo, incluidos sus extremos. Los dos puntos y Z no son dígitos. CR tampoco lo es y no aparece en la lista de tres separadores; por tanto, esos tres caracteres aumentan otros. El espacio, el tabulador y LF aumentan separadores. El informe contiene estas líneas:\n\nDigitos: 2\nSeparadores: 3\nOtros: 3\n\nLos seis textos anteriores no contenían 9, letras ni CR. El caso añadido permite distinguir estos errores:\n\nUna condición que excluyera el último dígito podía acertar los seis textos anteriores; en el séptimo daría 1 dígito y 4 otros.\n\nEn este dominio ASCII, una condición que sólo comprobara el límite inferior también aceptaría los dos puntos y Z como dígitos: daría 4 dígitos y 1 otro.\n\nAñadir CR a los separadores produciría 4 separadores y 2 otros.\n\nEl caso añadido distingue esos errores sin cambiar las categorías solicitadas.\n\nLa función probar de la referencia anterior cumple también el nuevo caso. Sustituye únicamente su main por el siguiente, conservando las inclusiones y la definición de la función. Los siete informes se calculan de forma independiente porque cada llamada crea su propio flujo y sus contadores.",
           "emphasis": [
             {
               "text": "incluidos sus extremos",
@@ -388,7 +388,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n    return 0;\n}\n"
+          "code": "int main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -400,7 +400,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ya se han comparado lecturas de palabras, líneas y caracteres. En una expresión como `12+3`, obtener caracteres no basta para reconocer sus unidades: `'1'` y `'2'` forman un número, mientras que `'+'` corresponde a otra unidad y `'3'` a otro número. Un token es una secuencia de caracteres tratada como una unidad, por ejemplo un número o un operador (Stroustrup, 2024, p. 122).\n\nLa construcción de ese lector se estudiará más adelante. Una de sus decisiones será cómo terminar una unidad sin perder el carácter que pertenece a la siguiente.",
+          "text": "Ya se han comparado lecturas de palabras, líneas y caracteres. En una expresión como `12+3`, obtener caracteres no basta para reconocer sus unidades: `'1'` y `'2'` forman un número, mientras que `'+'` corresponde a otra unidad y `'3'` a otro número. Un token es una secuencia de caracteres tratada como una unidad, por ejemplo un número o un operador (Stroustrup, 2024).\n\nLa construcción de ese lector se estudiará más adelante. Una de sus decisiones será cómo terminar una unidad sin perder el carácter que pertenece a la siguiente.",
           "emphasis": [
             {
               "text": "sin perder el carácter que pertenece a la siguiente",
@@ -1423,6 +1423,221 @@
         "id": "block_0006_0002",
         "beforeSha256": "41221bd253b32b426cc01f8d0118bb946eb6ec938d48347d33032081a5104702",
         "afterSha256": "826d40a1d4b611c9f2a5513874c9ff33a7d3287853e396f6e9ac8bd37564034e"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "23f4fe8ddb45555e5f36b798b60cc24e6ba2fd1fa3ab44727ba6454193418ea2",
+        "afterSha256": "c9d86bd93d4cb7a0e55b1874060195935b1207a6e6dc61f23375e4e473045a11"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "7b6d5848aed137e1633f308bea6b45892fa94937043ebd9c875aba917439b16c",
+        "afterSha256": "e9274928b40865a1d126dad23a2d1749b73f1afa26b7b7925dba8f58cd895435"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "3aca593ffd2e1d7e8d0baa80fdbb3c9013477312b9b6caef4064089d5b612247",
+        "afterSha256": "119236e6a31fd1cd47c9dbae17c91cfaa02aa3706fce7d2593048c715e570874"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "9ee222dd3acbb3c424491bdee545bb85b08dda691dfb5b16131e7a82b82461dc",
+        "afterSha256": "19b5c5980d75b755cc8401cb8b96d48103596dce0a7c955053695f153c772ce6"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "74a8a0f21a1317458f68dca8f291191c35cf658c8a6b2e959ba187140e460142",
+        "afterSha256": "2283e73590cdc988e705638a9b8307057f5b44cd46371da1511583ded70e4679"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "29f5ce2ab0e11445828509a83c153d2d23cc543f1e6add30a5fe283eec350478",
+        "afterSha256": "c648dce129f6cbde9e675ccb08885f6567cb2f7de4aacca7227dfa8756dcca35"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "b466097441e591722d221deb5bf46b2ce6d108d19a25aad16cbc825e91fa3a1a",
+        "afterSha256": "87ef7dc63510b3f68e1c4212d17c67545af47cb5000b2b14086da6999dbf4b9c"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "6e45b334082e1bff60c45d8386ee2db2ec33bfcf47d98065cd2d7b8fee65eb7d",
+        "afterSha256": "5a9c1bde6826de3ac076183fbac9297e9f18cacf965e3017b19d0a2d7db6885b"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_consigna",
+        "beforeSha256": "d5b8cca3a44398d8bea63cc2934c0fbb9ac227a8f2bce9381c5208bc5cd44fea",
+        "afterSha256": "87e761fd157f2125e6988919091826ffde18ec7fdaa47171e54d63d172c32bed"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_comprobacion",
+        "beforeSha256": "bff616578596204f1d8920eaaf353eb51e51c601ebb6982f18eea3edbd08e65a",
+        "afterSha256": "15be54ced1f1d068c4b2a9a5ae9e92d9ec07b71744f433e0cd2b756cfe2f4b9d"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "f3436735ed2f3cf63abe347d11b332789f64d371f9b9e35449a26a3b078e0507",
+        "afterSha256": "b8eea7c2a600d5e6e4ec4e28ac3127eb2f47691426bbfcc734f5d8a2f3f6b417"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "00352377e3fc196d90d97fc5482ef91b4c2499f7000165b03362cfae9b4cd99f",
+        "afterSha256": "dcf8286242e9065c2f8eae99932a6867782c9025986db5a5ed30701d8bdf9f89"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "1705d8f4c5e20f9e126d1f74fbeb14b09c9fd913e90b5f3861c2bc93c172d297",
+        "afterSha256": "014655f19f28a847ab86b935609440cb098bfc84de9e6b8658105c5f971dd793"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_referencia_razonamiento",
+        "beforeSha256": "90aae5897b8f41c4c85e262dbaa4ce41117ab2976324a1d136453d91c5723a7b",
+        "afterSha256": "b29b07c34f31f12809759930815ac75d620cc6fcabb0012d91b9de7c1df200c8"
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_referencia_main",
+        "beforeSha256": "f12a850987f7fa7e32c4026d8007899ad45d23c8a513a62d01103c083a008a2e",
+        "afterSha256": "3efa97b242324350b9b99294cceb051a57cfb8322662f1c1a3c867aafb4c4c1c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "6a0d427acd88dedc7e2a7f3eb9825581839b9df3a05c255c893a396d958791a7",
+        "afterSha256": "2e9aea880848506d52577ccb8b2d9a94ee4cfc0d13c4c433cdb00ac0fffefd95"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" + 7\"};\n    char actual = '?';\n    while (entrada >> actual) {\n        std::cout << \"<\" << actual << \">\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 5\\n\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"ESPACIO\\n\";\n        } else if (actual == '\\n') {\n            std::cout << \"SALTO\\n\";\n        } else {\n            std::cout << \"CARACTER:\" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice las etiquetas que presenta este programa para un texto diferente.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\n+ 4\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"E\";\n        } else if (actual == '\\n') {\n            std::cout << \"S\";\n        } else {\n            std::cout << actual;\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "S+E4"
+          ],
+          "explanation": "La primera llamada obtiene el salto de línea y la rama correspondiente escribe S. La siguiente obtiene +, que llega a la alternativa final y se escribe como +. Después, el espacio hace escribir E; por último, el dígito 4 se escribe como 4. Las cuatro salidas se concatenan en S+E4, sin añadir espacios ni saltos. get leyó los cuatro caracteres; las condiciones eligieron cómo presentar cada uno.",
+          "reviewFeedback": "Recorre los caracteres del literal en su orden. En cada vuelta identifica si se ejecuta la rama del espacio, la del salto o la alternativa final; distingue el carácter leído de la etiqueta que se escribe."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"3+8\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            const int valor = actual - '0';\n            std::cout << \"Valor: \" << valor << \"\\n\";\n        } else {\n            std::cout << \"Signo: \" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"7 +\\n3\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui probar y los auxiliares que necesites.\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 3\nOtros: 3\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las seis llamadas anteriores conservan sus resultados. En la séptima, 0 y 9 son dígitos; el espacio, el tabulador y LF son separadores. Los dos puntos, Z y CR pertenecen a otros: ninguno figura en las otras dos categorías del contrato. Los recuentos son 2, 3 y 3, cuya suma coincide con los ocho caracteres del texto.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 1\nSeparadores: 3\nOtros: 4\n"
+                    ],
+                    "text": "La séptima llamada presenta 1 dígito y 4 otros. Revisa si la condición está dejando fuera 9: el intervalo incluye su extremo superior, de modo que 0 y 9 deben contar en la misma categoría."
+                  },
+                  {
+                    "outputs": [
+                      "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 4\nSeparadores: 3\nOtros: 1\n"
+                    ],
+                    "text": "La séptima llamada presenta 4 dígitos y 1 otro. Revisa si la condición sólo comprueba el límite inferior: en ASCII, también aceptaría los dos puntos y Z, cuyos valores superan el del carácter '9'. El reconocimiento necesita comprobar ambos límites."
+                  },
+                  {
+                    "outputs": [
+                      "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 4\nOtros: 2\n"
+                    ],
+                    "text": "La séptima llamada presenta 4 separadores y 2 otros. Revisa si CR está contando como separador: el formato sólo admite espacio, tabulador y LF en esa categoría. CR debe aumentar otros, aunque una clasificación más amplia lo considere espacio en blanco."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2\\t* 9\\n\"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Digitos: \" << digitos;\n    std::cout << \"\\nSeparadores: \" << separadores;\n    std::cout << \"\\nOtros: \" << otros;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Recupera la clasificación: predice los tres recuentos para estos datos nuevos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\t0-9 \"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Digitos: \" << digitos;\n    std::cout << \"\\nSeparadores: \" << separadores;\n    std::cout << \"\\nOtros: \" << otros;\n    return 0;\n}\n",
+          "answers": [
+            "Digitos: 2\nSeparadores: 2\nOtros: 1"
+          ],
+          "explanation": "El recorrido obtiene, en orden, un tabulador, 0, -, 9 y un espacio. El tabulador y el espacio aumentan separadores; 0 y 9 cumplen los dos extremos incluidos del intervalo de dígitos; el guion aumenta otros. Por eso las tres líneas son Digitos: 2, Separadores: 2 y Otros: 1. Cada carácter se contó una sola vez.",
+          "reviewFeedback": "Separa los caracteres de la entrada, incluidos los separadores. Para cada uno sigue una sola alternativa y actualiza únicamente su contador; comprueba también el orden de las etiquetas de salida."
+        }
+      },
+      {
+        "id": "block_0005_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') ++digitos;\n        else if (actual == ' ' || actual == '\\t' || actual == '\\n') ++separadores;\n        else ++otros;\n    }\n    std::cout << \"Digitos: \" << digitos << \"\\nSeparadores: \" << separadores\n              << \"\\nOtros: \" << otros << \"\\n\";\n}\n\nint main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u11_clasificacion_limites_y_cr_referencia_main",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar(\"7 +\\n3\");\n    probar(\"\");\n    probar(\"12\");\n    probar(\" \");\n    probar(\"()\");\n    probar(\"001\\t-\");\n    probar(\"09:Z\\r \\t\\n\");\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1463,9 +1678,78 @@
     "version": 1,
     "fields": [
       {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "c82cd9c2dd687d063dfbabb958ed17134ae0701250f96d1d5132013df656b9d2",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "b5b65b28f0d4ef270b9a363a510d5aaec591fe3aa5d3aa0d69b5a4814e11ab76",
+        "spans": [
+          {
+            "start": 15,
+            "end": 18,
+            "text": "4+8",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 62,
+            "end": 64,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 76,
+            "end": 87,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 106,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 335,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 358,
+            "text": "entrada.get(actual)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 414,
+            "end": 420,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 548,
+            "end": 566,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "2596f9b567dc5d5ee6c38ce8904ea5c838a46733eaa7df1691435dc97acca24b",
+        "sourceSha256": "e7af8ae8c8da27fe0966657c89fdb8759339ef37c87829438ea8f2b126fadad2",
         "spans": [
           {
             "start": 12,
@@ -1504,227 +1788,22 @@
           },
           {
             "start": 257,
-            "end": 283,
-            "text": "(Stroustrup, 2024, p. 280)",
+            "end": 275,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 301,
-            "end": 318,
+            "start": 293,
+            "end": 310,
             "text": "entrada >> actual",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 519,
-            "end": 539,
+            "start": 511,
+            "end": 531,
             "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0001_0002",
-        "path": "/text",
-        "sourceSha256": "4c4dda8c168ce3acacb1cca56857f11d88cb53fc11cb2e95ec74d4ea3793676a",
-        "spans": [
-          {
-            "start": 91,
-            "end": 94,
-            "text": "' '",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 121,
-            "end": 125,
-            "text": "'\\n'",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 226,
-            "end": 246,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 317,
-            "end": 324,
-            "text": "\"SALTO\"",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 328,
-            "end": 331,
-            "text": "get",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0001",
-        "path": "/text",
-        "sourceSha256": "7b4084e55866363d7d1c831d9de2733247f4a199c1f7514bad0bf43e58e15fd6",
-        "spans": [
-          {
-            "start": 33,
-            "end": 37,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 62,
-            "end": 65,
-            "text": "'0'",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 74,
-            "end": 77,
-            "text": "'9'",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 94,
-            "end": 124,
-            "text": "actual >= '0' && actual <= '9'",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 325,
-            "end": 337,
-            "text": "actual - '0'",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 370,
-            "end": 371,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 376,
-            "end": 377,
-            "text": "9",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 428,
-            "end": 448,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0003_0003",
-        "path": "/text",
-        "sourceSha256": "d6574e92002c0cc1c5a13a2e366f9dfac4e32da66ae8ce1b17666b7a1f0db0a6",
-        "spans": [
-          {
-            "start": 25,
-            "end": 28,
-            "text": "get",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 298,
-            "end": 309,
-            "text": "get(actual)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 366,
-            "end": 371,
-            "text": "while",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 433,
-            "end": 439,
-            "text": "actual",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 441,
-            "end": 461,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0000",
-        "path": "/text",
-        "sourceSha256": "c82cd9c2dd687d063dfbabb958ed17134ae0701250f96d1d5132013df656b9d2",
-        "spans": []
-      },
-      {
-        "block": "block_0000_0001",
-        "path": "/text",
-        "sourceSha256": "88da38bebbe5fafe2d34af323d70128264f5736b9a7cab0c25e24e5f3a3d52d4",
-        "spans": [
-          {
-            "start": 15,
-            "end": 18,
-            "text": "4+8",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 62,
-            "end": 64,
-            "text": ">>",
-            "role": "cpp"
-          },
-          {
-            "start": 76,
-            "end": 87,
-            "text": "std::string",
-            "role": "cpp"
-          },
-          {
-            "start": 317,
-            "end": 348,
-            "text": "(Stroustrup, 2024, pp. 279–280)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 352,
-            "end": 371,
-            "text": "entrada.get(actual)",
-            "role": "cpp"
-          },
-          {
-            "start": 427,
-            "end": 433,
-            "text": "actual",
-            "role": "cpp"
-          },
-          {
-            "start": 561,
-            "end": 587,
-            "text": "(Stroustrup, 2024, p. 280)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1746,25 +1825,36 @@
             "start": 82,
             "end": 84,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 183,
             "end": 186,
             "text": "'+'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 208,
             "end": 211,
             "text": "'7'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 320,
             "end": 323,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1777,7 +1867,50 @@
             "start": 21,
             "end": 24,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "4c4dda8c168ce3acacb1cca56857f11d88cb53fc11cb2e95ec74d4ea3793676a",
+        "spans": [
+          {
+            "start": 91,
+            "end": 94,
+            "text": "' '",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 121,
+            "end": 125,
+            "text": "'\\n'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 246,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 324,
+            "text": "\"SALTO\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 331,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1835,6 +1968,13 @@
             "reading": "natural"
           },
           {
+            "start": 244,
+            "end": 250,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 276,
             "end": 280,
             "text": "S+E4",
@@ -1847,6 +1987,13 @@
             "text": "get",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 332,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1863,6 +2010,69 @@
         "spans": []
       },
       {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "7b4084e55866363d7d1c831d9de2733247f4a199c1f7514bad0bf43e58e15fd6",
+        "spans": [
+          {
+            "start": 33,
+            "end": 37,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 65,
+            "text": "'0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 74,
+            "end": 77,
+            "text": "'9'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 124,
+            "text": "actual >= '0' && actual <= '9'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 337,
+            "text": "actual - '0'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 376,
+            "end": 377,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 428,
+            "end": 448,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0002_0003",
         "path": "/text",
         "sourceSha256": "8315aea65efcde3e0003fbbca1c91a2c20a2d995066a4db8eba293139456841e",
@@ -1871,7 +2081,8 @@
             "start": 13,
             "end": 16,
             "text": "'8'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 62,
@@ -1884,25 +2095,28 @@
             "start": 250,
             "end": 254,
             "text": "\"38\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 280,
             "end": 283,
             "text": "'3'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 298,
             "end": 301,
             "text": "'8'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 341,
             "end": 343,
             "text": "38",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1916,7 +2130,8 @@
             "start": 11,
             "end": 14,
             "text": "'7'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 112,
@@ -1938,6 +2153,13 @@
             "text": "'7'",
             "role": "string",
             "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 42,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 65,
@@ -1985,7 +2207,8 @@
             "start": 20,
             "end": 23,
             "text": "'0'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -1998,7 +2221,8 @@
             "start": 7,
             "end": 10,
             "text": "'0'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -2011,7 +2235,8 @@
             "start": 26,
             "end": 30,
             "text": "cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2019,7 +2244,15 @@
         "block": "block_0002_0004",
         "path": "/reviewFeedback/0",
         "sourceSha256": "d11f2e7b37c08a291e0635e9a5d3d0b31387ff8411f61f18030e66ce06498b64",
-        "spans": []
+        "spans": [
+          {
+            "start": 68,
+            "end": 71,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -2048,14 +2281,15 @@
             "start": 22,
             "end": 26,
             "text": "\"12\"",
-            "role": "data",
-            "reading": "natural"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 41,
             "end": 44,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2080,8 +2314,8 @@
           },
           {
             "start": 71,
-            "end": 82,
-            "text": "dos dígitos",
+            "end": 74,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
           },
@@ -2119,7 +2353,15 @@
         "block": "block_0003_0001",
         "path": "/options/0",
         "sourceSha256": "46427f71da901af909691963c392b534fe18e23d475bb7f3eaedf42d1ee3c3ad",
-        "spans": []
+        "spans": [
+          {
+            "start": 8,
+            "end": 11,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
@@ -2144,7 +2386,8 @@
             "start": 41,
             "end": 44,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2169,7 +2412,8 @@
             "start": 36,
             "end": 39,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2177,7 +2421,57 @@
         "block": "block_0003_0002",
         "path": "/text",
         "sourceSha256": "d7f6171c8e317bc1681e1fa599eac1117e7d3f68ea7e5295938caa94005a86d4",
-        "spans": []
+        "spans": [
+          {
+            "start": 139,
+            "end": 143,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0003_0003",
+        "path": "/text",
+        "sourceSha256": "d6574e92002c0cc1c5a13a2e366f9dfac4e32da66ae8ce1b17666b7a1f0db0a6",
+        "spans": [
+          {
+            "start": 25,
+            "end": 28,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 309,
+            "text": "get(actual)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 366,
+            "end": 371,
+            "text": "while",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 433,
+            "end": 439,
+            "text": "actual",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 461,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0000",
@@ -2188,113 +2482,293 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "2f24ac3ed151523090d9ac9e210353d56541d54f2b3cbfd93f5117f28ef73732",
+        "sourceSha256": "7b583da8565c8b9448361c19fd8283293d41a7146c43bcbdceac922cbadb38f4",
         "spans": [
           {
-            "start": 72,
-            "end": 80,
-            "text": "\"7 +\\n3\"",
-            "role": "string"
+            "start": 37,
+            "end": 41,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 84,
-            "end": 86,
-            "text": "\"\"",
-            "role": "string"
-          },
-          {
-            "start": 90,
-            "end": 94,
-            "text": "\"12\"",
-            "role": "string"
-          },
-          {
-            "start": 98,
-            "end": 101,
-            "text": "\" \"",
-            "role": "string"
+            "start": 69,
+            "end": 71,
+            "text": "\\n",
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 105,
-            "end": 109,
-            "text": "\"()\"",
-            "role": "string"
-          },
-          {
-            "start": 114,
-            "end": 122,
-            "text": "\"001\\t-\"",
-            "role": "string"
-          },
-          {
-            "start": 144,
-            "end": 146,
-            "text": "\\n",
-            "role": "string"
-          },
-          {
-            "start": 180,
-            "end": 182,
+            "end": 107,
             "text": "\\t",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 227,
-            "end": 229,
+            "start": 152,
+            "end": 154,
             "text": "40",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 268,
-            "end": 300,
+            "start": 193,
+            "end": 225,
             "text": "probar(const std::string& texto)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 409,
-            "end": 412,
+            "start": 334,
+            "end": 337,
             "text": "'0'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 417,
-            "end": 420,
+            "start": 342,
+            "end": 345,
             "text": "'9'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 470,
-            "end": 474,
+            "start": 365,
+            "end": 369,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 395,
+            "end": 399,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 609,
-            "end": 619,
+            "start": 436,
+            "end": 440,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 525,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 552,
+            "end": 562,
             "text": "Digitos: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 621,
-            "end": 635,
+            "start": 563,
+            "end": 577,
             "text": "Separadores: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 638,
-            "end": 646,
+            "start": 578,
+            "end": 586,
             "text": "Otros: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 663,
-            "end": 664,
+            "start": 603,
+            "end": 604,
             "text": "N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 631,
+            "end": 633,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 807,
+            "end": 815,
+            "text": "\"7 +\\n3\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 817,
+            "end": 827,
+            "text": "Digitos: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 828,
+            "end": 842,
+            "text": "Separadores: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 843,
+            "end": 851,
+            "text": "Otros: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 860,
+            "end": 862,
+            "text": "\"\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 864,
+            "end": 874,
+            "text": "Digitos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 875,
+            "end": 889,
+            "text": "Separadores: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 890,
+            "end": 898,
+            "text": "Otros: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 907,
+            "end": 911,
+            "text": "\"12\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 913,
+            "end": 923,
+            "text": "Digitos: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 924,
+            "end": 938,
+            "text": "Separadores: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 939,
+            "end": 947,
+            "text": "Otros: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 956,
+            "end": 959,
+            "text": "\" \"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 975,
+            "end": 977,
+            "text": "un",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 986,
+            "end": 996,
+            "text": "Digitos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 997,
+            "end": 1011,
+            "text": "Separadores: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1012,
+            "end": 1020,
+            "text": "Otros: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1029,
+            "end": 1033,
+            "text": "\"()\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1035,
+            "end": 1045,
+            "text": "Digitos: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1046,
+            "end": 1060,
+            "text": "Separadores: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1061,
+            "end": 1069,
+            "text": "Otros: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1078,
+            "end": 1086,
+            "text": "\"001\\t-\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1088,
+            "end": 1098,
+            "text": "Digitos: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1099,
+            "end": 1113,
+            "text": "Separadores: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1114,
+            "end": 1122,
+            "text": "Otros: 1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2305,16 +2779,25 @@
         "sourceSha256": "4cd4f6841a5739af07f883ad3c8ad6f73f2c301c42d087c522f07c1846712171",
         "spans": [
           {
+            "start": 36,
+            "end": 40,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 66,
             "end": 74,
             "text": "\"001\\t-\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 76,
             "end": 78,
             "text": "\\t",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -2324,9 +2807,23 @@
         "sourceSha256": "6a8eeb3d13b331bd36e24410a8a479aa727f895509fbd77a9c0b1e5f66445d0a",
         "spans": [
           {
+            "start": 18,
+            "end": 21,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 37,
             "end": 38,
             "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 44,
+            "text": "una",
             "role": "data",
             "reading": "natural"
           },
@@ -2353,16 +2850,23 @@
           },
           {
             "start": 156,
-            "end": 167,
-            "text": "1 separador",
+            "end": 157,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 234,
-            "end": 240,
-            "text": "1 otro",
+            "end": 235,
+            "text": "1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 256,
+            "end": 261,
+            "text": "cinco",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -2381,8 +2885,22 @@
         "spans": [
           {
             "start": 0,
-            "end": 32,
-            "text": "3 dígitos, 1 separador y 1 otro.",
+            "end": 1,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 12,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           }
@@ -2395,8 +2913,22 @@
         "spans": [
           {
             "start": 0,
-            "end": 30,
-            "text": "1 dígito, 1 separador y 1 otro",
+            "end": 1,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 10,
+            "end": 11,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 25,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
@@ -2416,8 +2948,22 @@
         "spans": [
           {
             "start": 0,
-            "end": 33,
-            "text": "3 dígitos, 0 separadores y 1 otro",
+            "end": 1,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 12,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           }
@@ -2427,7 +2973,15 @@
         "block": "block_0004_0002",
         "path": "/reviewFeedback/0",
         "sourceSha256": "4cc4c73b8a3e0ddf939c1c7c3f9472cc3be59f387d480f99f1d458e609f18802",
-        "spans": []
+        "spans": [
+          {
+            "start": 55,
+            "end": 59,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2442,15 +2996,435 @@
         "spans": []
       },
       {
+        "block": "u11_clasificacion_limites_y_cr_titulo",
+        "path": "/text",
+        "sourceSha256": "7c47609fa0463abd9e494c07edc643a0f794b7617e17b68e9439820fe4de239c",
+        "spans": []
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_consigna",
+        "path": "/text",
+        "sourceSha256": "1985848b549f77e05345ec294ab444769aee2450d364bdeae1c5454edc8c5758",
+        "spans": [
+          {
+            "start": 17,
+            "end": 23,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 171,
+            "text": "void probar(const std::string& texto)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 206,
+            "end": 209,
+            "text": "'0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 215,
+            "text": "'9'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 281,
+            "text": "LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 357,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 420,
+            "text": "\"09:Z\\r \\t\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 475,
+            "end": 477,
+            "text": "\\r",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 489,
+            "end": 491,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 516,
+            "text": "\\t",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 542,
+            "end": 544,
+            "text": "\\n",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 556,
+            "end": 558,
+            "text": "LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 603,
+            "end": 605,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 633,
+            "end": 635,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 651,
+            "end": 653,
+            "text": "LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 755,
+            "end": 757,
+            "text": "\\r",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 760,
+            "end": 762,
+            "text": "\\t",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 869,
+            "end": 874,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 967,
+            "end": 971,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 988,
+            "end": 992,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1034,
+            "end": 1044,
+            "text": "Digitos: N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1045,
+            "end": 1059,
+            "text": "Separadores: N",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1060,
+            "end": 1068,
+            "text": "Otros: N",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_salida",
+        "path": "/text",
+        "sourceSha256": "663ecf934415d723b7815604b43ab852406fc396cb18d6d09674e5a1520b7c3e",
+        "spans": [
+          {
+            "start": 33,
+            "end": 277,
+            "text": "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 3\nOtros: 3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "177457a6daadb1e352058c79e1232bd314f9c1ff091c907899868f4d642b654e",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 71,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 118,
+            "text": "LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 153,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 158,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 210,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 255,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 295,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "dd6bd5ac5cb81d30d6c5b8ab7aff568f9253b132bb869031be1de18a4cb698b7",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 148,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "ec2a77dd580b82dc9a59721aaaf8577c58fe6360cf1bf01186bd40074c7e8d4a",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 152,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "'9'",
+            "role": "string",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "ae1aaf611e6288d9677f4da0a85e45e36ac9c63cf070d50d6a4d76257b3cc814",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 142,
+            "text": "LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 163,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0004_0004",
         "path": "/text",
         "sourceSha256": "40b088e513a71406d4e3990b8afb5732233a57c793912686bdfe166cbd718801",
         "spans": [
           {
+            "start": 75,
+            "end": 77,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 112,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 267,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 379,
             "end": 382,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2469,25 +3443,43 @@
             "start": 33,
             "end": 43,
             "text": "\"2\\t* 9\\n\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 66,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 148,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 233,
             "end": 235,
             "text": "if",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 239,
             "end": 246,
             "text": "else if",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 251,
             "end": 255,
             "text": "else",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2500,13 +3492,15 @@
             "start": 199,
             "end": 202,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 209,
             "end": 211,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2514,7 +3508,15 @@
         "block": "block_0005_0004",
         "path": "/question",
         "sourceSha256": "9f5de1ba44bf154ed768cb5ea642ed47dadcb77bd07f84a20be5ae9d706fee6d",
-        "spans": []
+        "spans": [
+          {
+            "start": 39,
+            "end": 43,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -2557,6 +3559,13 @@
             "reading": "natural"
           },
           {
+            "start": 219,
+            "end": 223,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 235,
             "end": 245,
             "text": "Digitos: 2",
@@ -2594,13 +3603,224 @@
             "start": 43,
             "end": 49,
             "text": "probar",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 75,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 141,
             "end": 145,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 163,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_referencia_titulo",
+        "path": "/text",
+        "sourceSha256": "afad57f48474e97295470319512e25488180598d7e075078837ec204c86b9536",
+        "spans": []
+      },
+      {
+        "block": "u11_clasificacion_limites_y_cr_referencia_razonamiento",
+        "path": "/text",
+        "sourceSha256": "94c294c39fba46e9837434ab9478215b902fbbfaaec301e6b57bd4575f4765a3",
+        "spans": [
+          {
+            "start": 23,
+            "end": 24,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 44,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 116,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 135,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 182,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 216,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 273,
+            "text": "LF",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 331,
+            "end": 341,
+            "text": "Digitos: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 356,
+            "text": "Separadores: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 357,
+            "end": 365,
+            "text": "Otros: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 375,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 408,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 420,
+            "end": 422,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 542,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 582,
+            "end": 583,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 593,
+            "end": 594,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 714,
+            "end": 715,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 736,
+            "end": 737,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 748,
+            "end": 749,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 764,
+            "end": 766,
+            "text": "CR",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 796,
+            "end": 797,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 812,
+            "end": 813,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 913,
+            "end": 919,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1000,
+            "end": 1004,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1086,
+            "end": 1091,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2613,7 +3833,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "7def6b814b3df98bf0d3e7601befc56ea9c9bf072ae0b65a41aca180d4d71837",
+        "sourceSha256": "a99a9ae229849f4c0472c4a8d70915a910f5338da6f48a92ca9aa04bf2fd9630",
         "spans": [
           {
             "start": 86,
@@ -2626,30 +3846,34 @@
             "start": 151,
             "end": 154,
             "text": "'1'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 159,
             "end": 162,
             "text": "'2'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 196,
             "end": 199,
             "text": "'+'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 230,
             "end": 233,
             "text": "'3'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 351,
-            "end": 377,
-            "text": "(Stroustrup, 2024, p. 122)",
+            "end": 369,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2700,7 +3924,7 @@
             "end": 89,
             "text": "+",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2747,403 +3971,6 @@
         "path": "/reviewFeedback/2",
         "sourceSha256": "bc7c644fc0581cafbf5c885335864c7d08b26dba8775396244b781e10a659895",
         "spans": []
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_titulo",
-        "path": "/text",
-        "sourceSha256": "7c47609fa0463abd9e494c07edc643a0f794b7617e17b68e9439820fe4de239c",
-        "spans": []
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_consigna",
-        "path": "/text",
-        "sourceSha256": "17f01f02282d24d3ace67a4ba857665e11c1232e9a3a31905b72aa885ff1f5af",
-        "spans": [
-          {
-            "start": 17,
-            "end": 23,
-            "text": "probar",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 58,
-            "end": 62,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 134,
-            "end": 171,
-            "text": "void probar(const std::string& texto)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 206,
-            "end": 209,
-            "text": "'0'",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 212,
-            "end": 215,
-            "text": "'9'",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 407,
-            "end": 420,
-            "text": "\"09:Z\\r \\t\\n\"",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 437,
-            "end": 439,
-            "text": "\\r",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 441,
-            "end": 443,
-            "text": "\\t",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 446,
-            "end": 448,
-            "text": "\\n",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 569,
-            "end": 571,
-            "text": "\\r",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 574,
-            "end": 576,
-            "text": "\\t",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 812,
-            "end": 822,
-            "text": "Digitos: N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 824,
-            "end": 838,
-            "text": "Separadores: N",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 841,
-            "end": 849,
-            "text": "Otros: N",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_salida",
-        "path": "/text",
-        "sourceSha256": "663ecf934415d723b7815604b43ab852406fc396cb18d6d09674e5a1520b7c3e",
-        "spans": [
-          {
-            "start": 33,
-            "end": 277,
-            "text": "Digitos: 2\nSeparadores: 2\nOtros: 1\nDigitos: 0\nSeparadores: 0\nOtros: 0\nDigitos: 2\nSeparadores: 0\nOtros: 0\nDigitos: 0\nSeparadores: 1\nOtros: 0\nDigitos: 0\nSeparadores: 0\nOtros: 2\nDigitos: 3\nSeparadores: 1\nOtros: 1\nDigitos: 2\nSeparadores: 3\nOtros: 3",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_comprobacion",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "177457a6daadb1e352058c79e1232bd314f9c1ff091c907899868f4d642b654e",
-        "spans": [
-          {
-            "start": 70,
-            "end": 71,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 75,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 152,
-            "end": 153,
-            "text": "Z",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 254,
-            "end": 255,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 257,
-            "end": 258,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 261,
-            "end": 262,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
-        "sourceSha256": "dd6bd5ac5cb81d30d6c5b8ab7aff568f9253b132bb869031be1de18a4cb698b7",
-        "spans": [
-          {
-            "start": 28,
-            "end": 36,
-            "text": "1 dígito",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 39,
-            "end": 46,
-            "text": "4 otros",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 90,
-            "end": 91,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 147,
-            "end": 148,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 151,
-            "end": 152,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
-        "sourceSha256": "ec2a77dd580b82dc9a59721aaaf8577c58fe6360cf1bf01186bd40074c7e8d4a",
-        "spans": [
-          {
-            "start": 28,
-            "end": 37,
-            "text": "4 dígitos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 40,
-            "end": 46,
-            "text": "1 otro",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 151,
-            "end": 152,
-            "text": "Z",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 192,
-            "end": 195,
-            "text": "'9'",
-            "role": "string",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
-        "sourceSha256": "ae1aaf611e6288d9677f4da0a85e45e36ac9c63cf070d50d6a4d76257b3cc814",
-        "spans": [
-          {
-            "start": 28,
-            "end": 41,
-            "text": "4 separadores",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 44,
-            "end": 51,
-            "text": "2 otros",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_referencia_titulo",
-        "path": "/text",
-        "sourceSha256": "afad57f48474e97295470319512e25488180598d7e075078837ec204c86b9536",
-        "spans": []
-      },
-      {
-        "block": "u11_clasificacion_limites_y_cr_referencia_razonamiento",
-        "path": "/text",
-        "sourceSha256": "32bbcca826d30b12016e3e517849d1f815eeebfadd5cd22842e4b5f8c3a1afe0",
-        "spans": [
-          {
-            "start": 23,
-            "end": 24,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 27,
-            "end": 28,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 115,
-            "end": 116,
-            "text": "Z",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 310,
-            "end": 320,
-            "text": "Digitos: 2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 322,
-            "end": 336,
-            "text": "Separadores: 3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 339,
-            "end": 347,
-            "text": "Otros: 3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 412,
-            "end": 413,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 512,
-            "end": 520,
-            "text": "1 dígito",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 523,
-            "end": 530,
-            "text": "4 otros",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 643,
-            "end": 644,
-            "text": "Z",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 665,
-            "end": 674,
-            "text": "4 dígitos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 677,
-            "end": 683,
-            "text": "1 otro",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 736,
-            "end": 749,
-            "text": "4 separadores",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 752,
-            "end": 759,
-            "text": "2 otros",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 852,
-            "end": 858,
-            "text": "probar",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 939,
-            "end": 943,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
       }
     ],
     "rootFields": [

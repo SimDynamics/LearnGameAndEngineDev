@@ -28,22 +28,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Para la estimación del microtaller, escoge -1,0,1,4,10 y 11 piezas. Los dos extremos exteriores comprueban rechazos. Cero comprueba la regla de pedido vacío. Uno comprueba el primer pedido real. Cuatro comprueba un caso interior. Diez comprueba el extremo aceptado. La función devuelve -1 para datos inválidos, 0 para cero y 3+2*piezas para los demás datos válidos.",
+          "text": "El contrato acepta de 0 a 10 piezas. Para un pedido vacío devuelve 0 minutos. Cada pedido no vacío requiere 3 minutos de preparación y 2 por pieza; los datos fuera del intervalo producen la señal -1.\n\nLa batería de pruebas es el conjunto organizado de los casos que vas a comprobar. Estos seis datos permiten revisar situaciones distintas:\n-1 piezas: justo por debajo del intervalo permitido.\n0 piezas: pedido vacío.\n1 pieza: primer pedido no vacío.\n4 piezas: un pedido situado entre los extremos.\n10 piezas: extremo superior aceptado.\n11 piezas: justo por encima del intervalo.\n\nLa función debe devolver -1 para los datos inválidos, 0 para el pedido vacío y 3+2*piezas para los demás pedidos válidos.",
           "emphasis": [
             {
-              "text": "extremos exteriores",
+              "text": "batería de pruebas",
               "style": "bold"
             },
             {
               "text": "pedido vacío",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "primer pedido no vacío",
               "style": "bold"
             },
             {
-              "text": "primer pedido real",
-              "style": "bold"
-            },
-            {
-              "text": "extremo aceptado",
+              "text": "extremo superior aceptado",
               "style": "bold"
             }
           ]
@@ -83,11 +84,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(4)};\n    int esperado{11};\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo: \" << real << \" esperado \" << esperado;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(4)};\n    int esperado{11};\n\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo: \" << real << \" esperado \" << esperado;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El verificador muestra el resultado real y la expectativa cuando difieren. No cambia el resultado para que la comparación pase. El desacuerdo delimita un caso que necesita investigación: puede fallar el programa, la expectativa o la interpretación del requisito.\n\nEl mensaje permite volver a los datos concretos y seguir el cálculo. Por sí solo, no identifica qué instrucción causó la diferencia.",
+          "text": "Cuando el resultado real no coincide con la expectativa, el verificador muestra ambos. No cambia el resultado para que la comparación pase. El desacuerdo señala un caso que necesita investigación.\n\nRevisa estos tres elementos:\nQué exige el requisito para los datos de ese caso.\nSi la expectativa representa lo que pide el requisito.\nCómo calcula el programa su resultado.\n\nEl mensaje permite volver a los datos concretos y seguir el cálculo. Por sí solo, no identifica qué instrucción causó la diferencia.",
           "emphasis": [
             {
               "text": "resultado real",
@@ -109,7 +110,7 @@
           "id": "comparacion_con_defecto",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(0)};\n    int esperado{0};\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo:\" << real << \":\" << esperado;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(0)};\n    int esperado{0};\n\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo:\" << real << \":\" << esperado;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Fallo:3:0"
           ],
@@ -120,7 +121,7 @@
           "id": "expectativa_tambien_puede_fallar",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(2)};\n    int esperado{4};\n    std::cout << real << \":\" << esperado << \":\" << (real == esperado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(2)};\n    int esperado{4};\n\n    std::cout << real << \":\" << esperado << \":\" << (real == esperado);\n\n    return 0;\n}\n",
           "answers": [
             "7:4:0"
           ],
@@ -136,7 +137,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La función verificar puede reunir la llamada que se prueba, la comparación y su informe, y devolver bool. Después de reparar el programa, también deben repetirse los casos que antes funcionaban: así se busca una regresión, un comportamiento correcto que el cambio haya estropeado (Stroustrup, 2024).\n\nLas llamadas de las pruebas deben ocurrir de forma independiente. En verificar(caso1) && verificar(caso2), el cortocircuito omite la segunda llamada si la primera devuelve false (Köppe et al., 2023). Combinar los resultados después de llamar a ambas conserva la información de los dos casos.",
+          "text": "La función verificar puede reunir la llamada que se prueba, la comparación y su informe, y devolver bool. Después de reparar el programa, vuelve a ejecutar también los casos que antes funcionaban. Así puedes detectar una regresión: un comportamiento que era correcto y que el cambio ha estropeado (Stroustrup, 2024).\n\nLas llamadas de las pruebas deben ocurrir de forma independiente. En verificar(caso1) && verificar(caso2), el cortocircuito omite la segunda llamada si la primera devuelve false (Köppe et al., 2023). Si guardas primero el resultado de cada llamada en una variable distinta y después combinas esos valores, se ejecutan ambas pruebas aunque la primera falle.",
           "emphasis": [
             {
               "text": "regresión",
@@ -157,7 +158,7 @@
           "id": "cortocircuito_oculta_segunda_prueba",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool todas{verificar(0) && verificar(1)};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n\n    return caso != 0;\n}\n\nint main() {\n    bool todas{verificar(0) && verificar(1)};\n\n    std::cout << \":\" << todas;\n\n    return 0;\n}\n",
           "answers": [
             "P0:0"
           ],
@@ -168,7 +169,7 @@
           "id": "llamadas_independientes",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool primera{verificar(0)};\n    bool segunda{verificar(1)};\n    bool todas{primera && segunda};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n\n    return caso != 0;\n}\n\nint main() {\n    bool primera{verificar(0)};\n    bool segunda{verificar(1)};\n    bool todas{primera && segunda};\n\n    std::cout << \":\" << todas;\n\n    return 0;\n}\n",
           "answers": [
             "P0P1:0"
           ],
@@ -179,7 +180,7 @@
           "id": "detectar_desigualdad",
           "question": "Completa sólo el operador para contar un fallo cuando resultado real y esperado son diferentes.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int real{7};\n    int esperado{7};\n    int fallos{0};\n    if (real ___ esperado) {\n        ++fallos;\n    }\n    std::cout << fallos;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int real{7};\n    int esperado{7};\n    int fallos{0};\n\n    if (real ___ esperado) {\n        ++fallos;\n    }\n\n    std::cout << fallos;\n\n    return 0;\n}\n",
           "answers": [
             "!=",
             "not_eq"
@@ -196,7 +197,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las pruebas aportan evidencia sobre los datos, expectativas y comparaciones que realmente se ejecutaron. Seleccionar los casos de forma sistemática ayuda a encontrar defectos; no existe una conclusión general de que una batería finita descubra todos los errores de cualquier programa (Stroustrup, 2024).\n\nSi el dominio permitido es pequeño, puede ser razonable recorrer todos sus valores. Esa comprobación sigue referida al contrato actual: no resuelve requisitos que faltaban ni demuestra el comportamiento de un dominio ampliado. Para datos generales, los casos representativos y los argumentos de corrección se complementan.",
+          "text": "Las pruebas aportan evidencia sobre los datos, expectativas y comparaciones que realmente se ejecutaron. Seleccionar los casos de forma sistemática ayuda a encontrar defectos, pero no hay una garantía general de que una batería finita descubra todos los errores de cualquier programa (Stroustrup, 2024).\n\nSi el conjunto de datos permitidos es pequeño, puede ser razonable probarlos todos. La comprobación sigue referida al contrato actual: no resuelve requisitos que faltaban ni demuestra el comportamiento de un dominio ampliado. Si se admitieran más piezas, habría que revisar las expectativas y las pruebas para esos nuevos pedidos.\n\nCuando no es posible probar todos los datos, se eligen casos representativos y se razona también por qué las operaciones del programa cumplen el requisito. Las pruebas y ese razonamiento se complementan.",
           "emphasis": [
             {
               "text": "realmente se ejecutaron",
@@ -226,7 +227,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe `verificar(int piezas, int esperado)`: llama a estimar, muestra el resultado real y el esperado y devuelve si coinciden. En main ejecuta de forma independiente las seis pruebas -1, 0, 1, 4, 10 y 11 con expectativas -1, 0, 5, 11, 23 y -1. Cuenta los fallos sin omitir llamadas por cortocircuito.\n\nCada prueba debe mostrar `Piezas=P real=R esperado=E ` y después Correcto o Fallo, con un salto de línea. Al final muestra `Fallos=0`, sin salto final. Pulsa Compilar, ejecutar y comprobar. Esta actividad construye el verificador de la regla correcta; el defecto controlado tiene un editor independiente después.",
+          "text": "Construye una batería de pruebas para la estimación correcta. Escribe verificar(int piezas, int esperado): llama a estimar, compara el resultado real con el esperado, muestra ambos y devuelve si coinciden.\n\nEn main ejecuta de forma independiente estas seis comparaciones:\nPiezas -1: resultado esperado -1.\nPiezas 0: resultado esperado 0.\nPiezas 1: resultado esperado 5.\nPiezas 4: resultado esperado 11.\nPiezas 10: resultado esperado 23.\nPiezas 11: resultado esperado -1.\n\nCuenta los fallos sin omitir llamadas por cortocircuito. La batería debe informar cada comparación y continuar con la siguiente aunque encuentre un desacuerdo.\n\nCada comparación muestra Piezas=P real=R esperado=E seguido de un espacio y de Correcto o Fallo, y termina con un salto de línea. Sustituye P por la cantidad de piezas, R por el resultado calculado y E por el esperado. Al final muestra Fallos=0, sin salto final.\n\nPulsa «Compilar, ejecutar y comprobar». La comprobación del editor revisa el informe completo de la batería. La actividad siguiente tiene otro objetivo: conservar un defecto deliberado y comprobar que el verificador lo detecta.",
           "emphasis": [
             {
               "text": "de forma independiente",
@@ -248,7 +249,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -267,7 +268,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor contiene deliberadamente un defecto seguro: estimar devuelve 3 para cero piezas. Conserva esa versión durante esta actividad y construye el mismo verificador con las seis expectativas del requisito, incluido cero minutos para cero piezas. No cambies las expectativas para hacerlas coincidir con el defecto.\n\nUsa el mismo formato de líneas y pulsa Compilar, ejecutar y comprobar. La prueba de cero debe mostrar Piezas=0 real=3 esperado=0 Fallo; las otras cinco deben mostrar Correcto y el resumen debe ser Fallos=1, sin salto final. Detectar el desacuerdo es el objetivo de esta actividad; la versión correcta permanece en el editor anterior.",
+          "text": "Este editor contiene deliberadamente un defecto seguro: estimar devuelve 3 para cero piezas. Conserva esa versión durante esta actividad y construye el mismo verificador con las seis expectativas del requisito, incluido cero minutos para cero piezas. No cambies las expectativas para hacerlas coincidir con el defecto.\n\nEjecuta los mismos seis pares de cantidad y resultado esperado de la batería anterior. Usa el mismo formato de líneas y pulsa «Compilar, ejecutar y comprobar». El informe completo debe ser:\n\nPiezas=-1 real=-1 esperado=-1 Correcto\nPiezas=0 real=3 esperado=0 Fallo\nPiezas=1 real=5 esperado=5 Correcto\nPiezas=4 real=11 esperado=11 Correcto\nPiezas=10 real=23 esperado=23 Correcto\nPiezas=11 real=-1 esperado=-1 Correcto\nFallos=1\n\nEl resumen termina sin salto final. Detectar el desacuerdo es el objetivo de esta actividad: sólo la comparación del pedido vacío debe fallar. La versión correcta permanece en el editor anterior.",
           "emphasis": [
             {
               "text": "Conserva esa versión",
@@ -289,7 +290,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 3; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 3;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -312,17 +313,17 @@
         },
         {
           "type": "note",
-          "text": "Compara las referencias de sus dos objetivos. La primera usa la estimación correcta; la segunda conserva el defecto que debe detectarse. Se admiten otras implementaciones que ejecuten todas las pruebas y respeten las expectativas y el formato.",
+          "text": "Las dos referencias corresponden a objetivos distintos. La primera usa la estimación correcta; la segunda conserva el defecto que debe detectarse. Se admiten otras implementaciones que ejecuten todas las pruebas y respeten las expectativas y el formato.",
           "emphasis": [
             {
-              "text": "dos objetivos",
+              "text": "objetivos distintos",
               "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "verificar compara el resultado real y una expectativa independiente, muestra ambos y devuelve si coinciden. Se ejecutan las seis pruebas -1, 0, 1, 4, 10 y 11, incluso si una falla. Con las expectativas -1, 0, 5, 11, 23 y -1, la estimación correcta termina con cero fallos.\n\nEn la actividad del defecto, estimar(0) devuelve 3 y su expectativa permanece en 0. Sólo ese caso falla en este conjunto. El objetivo de ese editor es que el verificador detecte el desacuerdo; cambiar la expectativa a 3 lo ocultaría.",
+          "text": "verificar compara el resultado real y una expectativa independiente, muestra ambos y devuelve si coinciden. Se ejecutan las seis comparaciones, incluso si una falla:\nPiezas -1: resultado esperado -1.\nPiezas 0: resultado esperado 0.\nPiezas 1: resultado esperado 5.\nPiezas 4: resultado esperado 11.\nPiezas 10: resultado esperado 23.\nPiezas 11: resultado esperado -1.\n\nCon la estimación correcta, los seis resultados coinciden con sus expectativas y el resumen informa cero fallos.\n\nEn la actividad del defecto, estimar(0) devuelve 3 y su expectativa permanece en 0. Sólo ese caso falla en este conjunto. El objetivo de ese editor es que el verificador detecte el desacuerdo; cambiar la expectativa a 3 lo ocultaría.",
           "emphasis": [
             {
               "text": "incluso si una falla",
@@ -341,7 +342,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Correcto\\n\"; }\n    else { std::cout << \"Fallo\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n\n    if (coincide) {\n        std::cout << \"Correcto\\n\";\n    } else {\n        std::cout << \"Fallo\\n\";\n    }\n\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n\n    if (!verificar(-1, -1)) {\n        ++fallos;\n    }\n    if (!verificar(0, 0)) {\n        ++fallos;\n    }\n    if (!verificar(1, 5)) {\n        ++fallos;\n    }\n    if (!verificar(4, 11)) {\n        ++fallos;\n    }\n    if (!verificar(10, 23)) {\n        ++fallos;\n    }\n    if (!verificar(11, -1)) {\n        ++fallos;\n    }\n\n    std::cout << \"Fallos=\" << fallos;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -364,7 +365,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 3; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Correcto\\n\"; }\n    else { std::cout << \"Fallo\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 3;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n\n    if (coincide) {\n        std::cout << \"Correcto\\n\";\n    } else {\n        std::cout << \"Fallo\\n\";\n    }\n\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n\n    if (!verificar(-1, -1)) {\n        ++fallos;\n    }\n    if (!verificar(0, 0)) {\n        ++fallos;\n    }\n    if (!verificar(1, 5)) {\n        ++fallos;\n    }\n    if (!verificar(4, 11)) {\n        ++fallos;\n    }\n    if (!verificar(10, 23)) {\n        ++fallos;\n    }\n    if (!verificar(11, -1)) {\n        ++fallos;\n    }\n\n    std::cout << \"Fallos=\" << fallos;\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1049,6 +1050,229 @@
         "id": "block_0004_0001",
         "beforeSha256": "f76a6aeb67656320b32ab0c789406b22ea57c39becdb86282aac9bc40cdf5b2f",
         "afterSha256": "3a75b5d30fe21b8e265444f95a1d9a7ddd5739a7726a1238eef8982ad2724f0c"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "97813cea1bc0487aae1b6f36ad778fb288011d2d72fd759184b0baaa68dfd9ae",
+        "afterSha256": "384b1d09c1b43302ce434db87c7236505e85c773aceac9cf112f90da83fc5c0f"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "f6f6f9ffb107821d0411e59070369a09f4e31531bdb47aebf440fb3b957ba841",
+        "afterSha256": "01598b484818944609bf411fbfbf77e62ba7eb928b79820a7ffea2ca882bdf63"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "7417688d1535b49a1b1752ecef35725bf1c954fb31bf06d86777f3b09ef9a249",
+        "afterSha256": "df3d3fb6105422eb559a2992eb0dcda709070e8d6729c49deab34e38e1f70f05"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "01d3a78b0818ae1e055fd547720f4d674d7f07b4e0dd7b4eaad42a5b3359137b",
+        "afterSha256": "13d09c67562f0037421f05820b587b9898227e7368589f8ca14a2aa04766a212"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "cbb98958bdefe1a1152c45018336f651c41faee794242e2fd278f1a2b1598b4d",
+        "afterSha256": "93d9b48c96a546d274aa5426b86ec1dc05082ef631dc32d62dc2b4f5f0d65eb6"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "49bfba4f57426a66ddbf287131e2899219d7b343cb6512f566446fa733d82380",
+        "afterSha256": "b0c0a50e2f4e585704afdd2bd77ab550de8d359822948318e480db517cf0dfaa"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "98906eb4ff0a480a4dc91349705eb2fa1708dfceb1e78c6b270feada2c160e77",
+        "afterSha256": "f89868fc96f7b8a8fcb8dcfd2164ffda736b7dbad0f3de30cd259ab54f461e2a"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "f621444d99e6e42b45eeaf2db46dcc39c582c6cb3f09f728eff7344a1bd9f563",
+        "afterSha256": "eec1d92c5c624fb1f63a0492989f8cf9c73b07870f22352ecdff81242cdc1a1c"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "ab2625fca8ce13893e7acc736bafe760b6bd1bac300480be5598b79a05d2037a",
+        "afterSha256": "3bce635bff432b10227c449c1d268c571225f95002b7860c3aa6cdeea958e9d9"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "322fd9af9800b40b8c90538b0f7d76deeb701654fd433d3add092165706372a6",
+        "afterSha256": "171e1788e7a9acd2f6aed21b5ee35c91d9adababce49849fa8ce4c246e365684"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "f4a59ffddc548810c3e2e465b06ff1e056e881046dc9d163dd9d67340c6d883c",
+        "afterSha256": "aa09f8e28977a6cdb1dbdcbf66b4bbc345f41d0d15696201c2e425a8b55dcaf6"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "0e5491b285a7688a0ac529b1a20a6e2c19218996458c896848f8ff120d27ef60",
+        "afterSha256": "b4ed3b5ccf99a723a5debb830cabc1e7f782bd6196e1782d3d6e809beae229a3"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "0be6fcb1aa4e6b979bdb0a2c22cd43efb498ec86a4f1a80807217adf6b4b7f62",
+        "afterSha256": "a827aa79cc75db3d47ed06a231f7614dc515328a50f1df983d4cd17590ce80d6"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "9e1540f02e906b743d33dc65a077c2521e3ff9d43c45ecf4c73b3c54266301a0",
+        "afterSha256": "3c245f38cc2f3e386502ca85a32103f7f8d2253aaf8d862706cdec39996f820e"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "3a75b5d30fe21b8e265444f95a1d9a7ddd5739a7726a1238eef8982ad2724f0c",
+        "afterSha256": "e5b471f97d7cecd3c660be0fe2cf7fa44c64cdb74dbb59109e6c6f8b690059f0"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "2f31fc26dde37762d5653820e61352af384e99a981d842f2a619c74f7c745606",
+        "afterSha256": "9458bba30f884c6bc58f9c240e1866746cd91638e1d02e5ff96c43a40d896c86"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "fc7d7b6f47f9f2a3832a55ce33429fc00fb3eff27c6a90120459df3b910b283b",
+        "afterSha256": "3973cb250b8f3b9289f9bb69a7b5edfea75243275548468c9788162e683cf1b1"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "37b1ad8d202998df4c224f348d60c94d61f95e5bebc7398ef8af9cba7887887d",
+        "afterSha256": "a95558a7d65bb7a0523c21ccbc850835fc6953399281738089802a7608120276"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(4)};\n    int esperado{11};\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo: \" << real << \" esperado \" << esperado;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "comparacion_con_defecto",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(0)};\n    int esperado{0};\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo:\" << real << \":\" << esperado;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fallo:3:0"
+          ],
+          "explanation": "La versión defectuosa añade preparación al pedido vacío. La expectativa independiente lo revela."
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "expectativa_tambien_puede_fallar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(2)};\n    int esperado{4};\n    std::cout << real << \":\" << esperado << \":\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "7:4:0"
+          ],
+          "explanation": "El cálculo devuelve correctamente 3+4=7. La expectativa 4 olvidó la preparación; hay que corregir la prueba."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cortocircuito_oculta_segunda_prueba",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool todas{verificar(0) && verificar(1)};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "P0:0"
+          ],
+          "explanation": "La primera llamada devuelve false; && no ejecuta la segunda. El resumen no prueba que se haya visitado cada caso."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "llamadas_independientes",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool primera{verificar(0)};\n    bool segunda{verificar(1)};\n    bool todas{primera && segunda};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "P0P1:0"
+          ],
+          "explanation": "Las dos llamadas ya ocurrieron antes de combinar sus resultados."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "fill_code",
+          "id": "detectar_desigualdad",
+          "question": "Completa sólo el operador para contar un fallo cuando resultado real y esperado son diferentes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int real{7};\n    int esperado{7};\n    int fallos{0};\n    if (real ___ esperado) {\n        ++fallos;\n    }\n    std::cout << fallos;\n    return 0;\n}\n",
+          "answers": [
+            "!=",
+            "not_eq"
+          ],
+          "explanation": "Un fallo se cuenta cuando real y esperado difieren. El caso igual conserva cero."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=-1 real=-1 esperado=-1 Correcto\nPiezas=0 real=0 esperado=0 Correcto\nPiezas=1 real=5 esperado=5 Correcto\nPiezas=4 real=11 esperado=11 Correcto\nPiezas=10 real=23 esperado=23 Correcto\nPiezas=11 real=-1 esperado=-1 Correcto\nFallos=0"
+                ],
+                "explanation": "Se ejecutan las seis comparaciones con expectativas independientes. Ningún caso se omite por el resultado de una prueba anterior."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 3; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=-1 real=-1 esperado=-1 Correcto\nPiezas=0 real=3 esperado=0 Fallo\nPiezas=1 real=5 esperado=5 Correcto\nPiezas=4 real=11 esperado=11 Correcto\nPiezas=10 real=23 esperado=23 Correcto\nPiezas=11 real=-1 esperado=-1 Correcto\nFallos=1"
+                ],
+                "explanation": "El verificador informa un fallo real sin cambiar la expectativa del pedido vacío. Una batería que nunca detecta defectos introducidos necesita revisión."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Correcto\\n\"; }\n    else { std::cout << \"Fallo\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 3; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Correcto\\n\"; }\n    else { std::cout << \"Fallo\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos;\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1101,67 +1325,116 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "2e2ec231bd590c55bb1fc08ec5ac9f7021ebdcdfed60c3691d4dac3fae29d89b",
+        "sourceSha256": "045a6c80e587408ddc4a7b9a7c7aa2cd4ad07ff70f9097ddc233218ac023c5ca",
         "spans": [
           {
-            "start": 43,
-            "end": 59,
-            "text": "-1,0,1,4,10 y 11",
+            "start": 22,
+            "end": 23,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 117,
-            "end": 121,
-            "text": "Cero",
+            "start": 26,
+            "end": 28,
+            "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 158,
-            "end": 161,
-            "text": "Uno",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 195,
-            "end": 201,
-            "text": "Cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 230,
-            "end": 234,
-            "text": "Diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 286,
-            "end": 288,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 311,
-            "end": 312,
+            "start": 67,
+            "end": 68,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 318,
-            "end": 322,
-            "text": "cero",
+            "start": 108,
+            "end": 109,
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 325,
-            "end": 335,
+            "start": 135,
+            "end": 136,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 198,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 293,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 342,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 393,
+            "end": 394,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 417,
+            "end": 418,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 450,
+            "end": 451,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 500,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 538,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 605,
+            "end": 607,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 634,
+            "end": 635,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 659,
+            "end": 669,
             "text": "3+2*piezas",
             "role": "cpp",
             "reading": "technical"
@@ -1243,8 +1516,15 @@
         "spans": [
           {
             "start": 28,
+            "end": 29,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
             "end": 33,
-            "text": "2 y 6",
+            "text": "6",
             "role": "data",
             "reading": "natural"
           }
@@ -1307,8 +1587,16 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "849a8713f9d94d7135072acff12ca85e0fe731d9d950ddc5d6a09bbcd96973c9",
-        "spans": []
+        "sourceSha256": "40518360ccb159d3431e3b47e8a46ca02adbbd21a18a130557a6e5b757e40d3f",
+        "spans": [
+          {
+            "start": 211,
+            "end": 215,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1337,7 +1625,8 @@
             "start": 34,
             "end": 39,
             "text": "3+4=7",
-            "role": "math"
+            "role": "math",
+            "reading": "natural"
           },
           {
             "start": 56,
@@ -1357,7 +1646,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "da453bbfa5c96f0037a6def7baed5199d20a75b0f54610f3f52bc6b4d7c49542",
+        "sourceSha256": "cc2cffca064b365fb98ba0903eef72abaafcda9eae82d8728437c573d2afca32",
         "spans": [
           {
             "start": 11,
@@ -1374,29 +1663,29 @@
             "reading": "technical"
           },
           {
-            "start": 280,
-            "end": 298,
+            "start": 297,
+            "end": 315,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 370,
-            "end": 406,
+            "start": 387,
+            "end": 423,
             "text": "verificar(caso1) && verificar(caso2)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 473,
-            "end": 478,
+            "start": 490,
+            "end": 495,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 479,
-            "end": 499,
+            "start": 496,
+            "end": 516,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1418,8 +1707,8 @@
             "start": 28,
             "end": 33,
             "text": "false",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 35,
@@ -1485,7 +1774,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "164649d81f0dcddaffbb773c85b7ee686596e878faf634c7fb7affa9f94c018f",
+        "sourceSha256": "b5756bea8fd9eb4a4f55a4dd691ccae9c32b955693d0e5f8a1ff63a07bbce2df",
         "spans": [
           {
             "start": 284,
@@ -1561,74 +1850,165 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "c048f83c6c530ecfab034f71aac4f559d02ffb849ec70baf21b53e1a173ce22f",
+        "sourceSha256": "3354aa3d70faa057fe73cd51b093a0c03698bc121401d39ed2e4938d00ad52d8",
         "spans": [
           {
-            "start": 9,
-            "end": 44,
+            "start": 70,
+            "end": 105,
             "text": "verificar(int piezas, int esperado)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 62,
+            "start": 115,
+            "end": 122,
             "text": "estimar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 136,
+            "start": 210,
+            "end": 214,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 172,
-            "end": 176,
+            "start": 252,
+            "end": 256,
             "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 185,
-            "end": 205,
-            "text": "-1, 0, 1, 4, 10 y 11",
+            "start": 279,
+            "end": 281,
+            "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 223,
-            "end": 244,
-            "text": "-1, 0, 5, 11, 23 y -1",
+            "start": 302,
+            "end": 304,
+            "text": "-1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 330,
-            "end": 357,
-            "text": "Piezas=P real=R esperado=E ",
+            "start": 313,
+            "end": 314,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 336,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 369,
-            "end": 377,
+            "start": 345,
+            "end": 346,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 367,
+            "end": 368,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 377,
+            "end": 378,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 399,
+            "end": 401,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 410,
+            "end": 412,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 435,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 444,
+            "end": 446,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 467,
+            "end": 469,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 658,
+            "end": 684,
+            "text": "Piezas=P real=R esperado=E",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 712,
+            "end": 720,
             "text": "Correcto",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 380,
-            "end": 385,
+            "start": 723,
+            "end": 728,
             "text": "Fallo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 428,
-            "end": 436,
+            "start": 773,
+            "end": 774,
+            "text": "P",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 802,
+            "end": 803,
+            "text": "R",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 833,
+            "end": 834,
+            "text": "E",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 869,
+            "end": 877,
             "text": "Fallos=0",
             "role": "output",
             "reading": "natural"
@@ -1658,7 +2038,7 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "1d9b087a58e9f420dc0d6f73b3ac67328640ac33de0e1efbe8b286e44d11d91a",
+        "sourceSha256": "78bdcff374f52c59e3f25ed4dfa91b00f183644af12eff645d31ab02c5f5b4a3",
         "spans": [
           {
             "start": 56,
@@ -1703,37 +2083,16 @@
             "reading": "natural"
           },
           {
-            "start": 404,
-            "end": 408,
-            "text": "cero",
+            "start": 339,
+            "end": 343,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 422,
-            "end": 454,
-            "text": "Piezas=0 real=3 esperado=0 Fallo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 466,
-            "end": 471,
-            "text": "cinco",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 486,
-            "end": 494,
-            "text": "Correcto",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 517,
-            "end": 525,
-            "text": "Fallos=1",
+            "start": 511,
+            "end": 743,
+            "text": "Piezas=-1 real=-1 esperado=-1 Correcto\nPiezas=0 real=3 esperado=0 Fallo\nPiezas=1 real=5 esperado=5 Correcto\nPiezas=4 real=11 esperado=11 Correcto\nPiezas=10 real=23 esperado=23 Correcto\nPiezas=11 real=-1 esperado=-1 Correcto\nFallos=1",
             "role": "output",
             "reading": "natural"
           }
@@ -1749,18 +2108,34 @@
         "block": "block_0004_0000",
         "path": "/text",
         "sourceSha256": "ac79b9948aff954a8f551a90c1e4e30db1f2262da3dd306fd5e3adf9f9cf8649",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "f8e4db23a54b7fe5f90fdd7b51b2f666e3878a7cac1c641ab0e1ee5b1909213d",
-        "spans": []
+        "sourceSha256": "0b11d2fff2e83b136525c8d6bfb7ba12b4cfe685eeae4ba0d02174fb39a67132",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "3cecb59eec90b42f36be51a6eddbbf12cebfd0426fbe58712c940a6f84f58822",
+        "sourceSha256": "df74a6fd183f245da8094ddd8547eed133b1caf142542105a79e08aba517f197",
         "spans": [
           {
             "start": 0,
@@ -1777,50 +2152,127 @@
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 157,
-            "text": "-1, 0, 1, 4, 10 y 11",
+            "start": 173,
+            "end": 175,
+            "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 202,
-            "end": 223,
-            "text": "-1, 0, 5, 11, 23 y -1",
+            "start": 196,
+            "end": 198,
+            "text": "-1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 260,
-            "end": 264,
-            "text": "cero",
-            "role": "output",
+            "start": 207,
+            "end": 208,
+            "text": "0",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 303,
-            "end": 313,
-            "text": "estimar(0)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 323,
-            "end": 324,
-            "text": "3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 355,
-            "end": 356,
+            "start": 229,
+            "end": 230,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 492,
-            "end": 493,
+            "start": 239,
+            "end": 240,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 272,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 295,
+            "text": "11",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 306,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 327,
+            "end": 329,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 340,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 363,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 398,
+            "end": 402,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 470,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 519,
+            "text": "estimar(0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 529,
+            "end": 530,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 562,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 698,
+            "end": 699,
             "text": "3",
             "role": "output",
             "reading": "natural"

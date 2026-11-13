@@ -160,7 +160,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 a{211};\n    std::mt19937 b{211};\n    std::uniform_int_distribution<int> tam_a{0, 4};\n    std::uniform_int_distribution<int> tam_b{0, 4};\n    std::uniform_int_distribution<int> val_a{0, 9};\n    std::uniform_int_distribution<int> val_b{0, 9};\n    bool iguales = true;\n    for (int intento{0}; intento < 5; ++intento) {\n        const int cantidad_a = tam_a(a);\n        const int cantidad_b = tam_b(b);\n        std::vector<int> uno;\n        std::vector<int> dos;\n        for (int i{0}; i < cantidad_a; ++i) {\n            uno.push_back(val_a(a));\n        }\n        for (int i{0}; i < cantidad_b; ++i) {\n            dos.push_back(val_b(b));\n        }\n        iguales = iguales && uno == dos;\n    }\n    std::cout << \"Repeticion:\" << iguales;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 a{211};\n    std::mt19937 b{211};\n    std::uniform_int_distribution<int> tam_a{0, 4};\n    std::uniform_int_distribution<int> tam_b{0, 4};\n    std::uniform_int_distribution<int> val_a{0, 9};\n    std::uniform_int_distribution<int> val_b{0, 9};\n    bool iguales = true;\n\n    for (int intento{0}; intento < 5; ++intento) {\n        const int cantidad_a = tam_a(a);\n        const int cantidad_b = tam_b(b);\n        std::vector<int> uno;\n        std::vector<int> dos;\n\n        for (int i{0}; i < cantidad_a; ++i) {\n            uno.push_back(val_a(a));\n        }\n\n        for (int i{0}; i < cantidad_b; ++i) {\n            dos.push_back(val_b(b));\n        }\n\n        iguales = iguales && uno == dos;\n    }\n\n    std::cout << \"Repeticion:\" << iguales;\n\n    return 0;\n}\n",
           "answers": [
             "Repeticion:1"
           ],
@@ -263,7 +263,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye contar_desde y verificar. verificar recibe el vector, el mínimo y la cantidad esperada; llama a contar_desde y devuelve si el resultado coincide con esa expectativa.\n\nEjecuta cuatro casos elegidos independientes: vacío con mínimo cuatro espera cero; {1,2} con mínimo tres espera cero; {4,4} con mínimo cuatro espera dos; {3,4,4,5} con mínimo cuatro espera tres.\n\nMuestra Fallos elegidos:N. Cuenta un fallo por cada caso cuyo resultado no coincida, aunque ese caso contenga varios valores mal contados. Ejecuta las cuatro comprobaciones: una cadena de && podría omitir las siguientes después del primer false.",
+          "text": "En este editor construirás una batería de pruebas que ejecuta los casos y resume sus comparaciones. Construye contar_desde y verificar. verificar recibe el vector, el mínimo y la cantidad esperada; llama a contar_desde y devuelve si el resultado coincide con esa expectativa.\n\nEjecuta cuatro casos elegidos independientes, con estos datos y expectativas:\n\nVector vacío; mínimo cuatro; esperado cero.\n{1,2}; mínimo tres; esperado cero.\n{4,4}; mínimo cuatro; esperado dos.\n{3,4,4,5}; mínimo cuatro; esperado tres.\n\nMuestra Fallos elegidos:N. Cuenta un fallo por cada caso cuyo resultado no coincida, aunque ese caso contenga varios valores mal contados. Ejecuta las cuatro comprobaciones: una cadena de && podría omitir las siguientes después del primer false.",
           "emphasis": [
             {
               "text": "llama a contar_desde",
@@ -329,7 +329,7 @@
                 "outputs": [
                   "Fallos elegidos:0\nFallos generados:0"
                 ],
-                "explanation": "Los casos elegidos comprueban vacío, frontera e igualdad; los ensayos generados contrastan con el conteo complementario. Cero fallos respalda esas comprobaciones y no acredita cobertura completa."
+                "explanation": "Los cuatro casos elegidos esperan, en orden, cero, cero, dos y tres elementos. La implementación que incluye la igualdad coincide con esas expectativas y muestra Fallos elegidos:0. En cada ensayo generado, contar los valores que cumplen el mínimo da lo mismo que restar del tamaño los que quedan por debajo: se muestra Fallos generados:0. Estas comparaciones respaldan los casos realmente ejecutados, sin demostrar que se recorrió todo el dominio."
               }
             ]
           }
@@ -340,7 +340,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor contiene deliberadamente contar_desde con >. Conserva esa función y reconstruye las cuatro llamadas elegidas con sus expectativas: vacío/4 espera cero; {1,2}/3 espera cero; {4,4}/4 espera dos; {3,4,4,5}/4 espera tres. Una discrepancia cuenta como un caso fallido, no como tantos fallos como valores se perdieron.\n\nstdout debe mostrar únicamente Fallos elegidos:2 y un salto final. Pulsa Compilar, ejecutar y comprobar para acreditar la detección de esos dos desacuerdos. No cambies las expectativas para que acepten el defecto.\n\nConstruye también cuarenta ensayos, con semilla 229, tamaño 0..12 y mínimo y valores 0..9. En cada ensayo obtiene tamaño, mínimo y valores, en ese orden. Compara el conteo defectuoso con esperado_por_descartes. Escribe sus diferencias en std::cerr, con el vector y el mínimo de cada caso, y termina ese canal con Fallos generados:N.\n\nEl botón compara el stdout esperado y comprueba que stderr tenga contenido. No exige un valor concreto de N ni una lista de muestras entre bibliotecas. El objetivo de este editor es construir las comprobaciones y su informe: conservar el defecto permite comprobar que las expectativas lo detectan.",
+          "text": "Este editor contiene deliberadamente contar_desde con >. Conserva esa función y reconstruye las cuatro llamadas elegidas con sus expectativas:\n\nVector vacío; mínimo 4; esperado cero.\n{1,2}; mínimo 3; esperado cero.\n{4,4}; mínimo 4; esperado dos.\n{3,4,4,5}; mínimo 4; esperado tres.\n\nUna discrepancia cuenta como un caso fallido, no como tantos fallos como valores se perdieron.\n\nstdout debe mostrar únicamente Fallos elegidos:2 y un salto final. Pulsa Compilar, ejecutar y comprobar para acreditar la detección de esos dos desacuerdos. No cambies las expectativas para que acepten el defecto.\n\nConstruye también cuarenta ensayos con esta configuración:\n\nSemilla 229.\nTamaño 0..12.\nMínimo 0..9.\nValores 0..9.\n\nEn cada ensayo obtiene tamaño, mínimo y valores, en ese orden. Compara el conteo defectuoso con esperado_por_descartes. Escribe sus diferencias en std::cerr, con el vector y el mínimo de cada caso, y termina ese canal con Fallos generados:N.\n\nEl botón compara el stdout esperado y comprueba que stderr tenga contenido. No exige un valor concreto de N ni una lista de muestras entre bibliotecas. El objetivo de este editor es construir las comprobaciones y su informe: conservar el defecto permite comprobar que las expectativas lo detectan.",
           "emphasis": [
             {
               "text": "Conserva esa función",
@@ -374,7 +374,7 @@
                 "outputs": [
                   "Fallos elegidos:2\n"
                 ],
-                "explanation": "Las expectativas independientes detectan dos casos de igualdad que la condición defectuosa excluye. La cantidad de diferencias generadas se observa aparte y no se convierte en una respuesta fija entre bibliotecas.",
+                "explanation": "La condición > devuelve cero para {4,4} con mínimo cuatro, aunque se esperan dos. Para {3,4,4,5} con mínimo cuatro sólo cuenta el cinco: devuelve uno en lugar de tres. Son dos casos con desacuerdo, de modo que stdout muestra Fallos elegidos:2; no se cuenta un fallo por cada aparición perdida. El vacío y {1,2} siguen dando sus ceros esperados. El informe de ensayos generados se observa en stderr: su cantidad depende de las muestras y no se fija una respuesta común a todas las bibliotecas.",
                 "standardError": "nonBlank"
               }
             ]
@@ -391,7 +391,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) { std::cout << '[' << dato << ']'; }\n            std::cout << '\\n';\n        }\n    }\n    std::cout << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n\n    if (!verificar({}, 4, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({1, 2}, 3, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({4, 4}, 4, 2)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) {\n        ++fallos_elegidos;\n    }\n\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cout << '[' << dato << ']';\n            }\n            std::cout << '\\n';\n        }\n    }\n\n    std::cout << \"Fallos generados:\" << fallos_generados;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -436,7 +436,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye contar_desde y verificar en este editor. Ejecuta cuatro casos: {0,4,9} con mínimo cero espera tres; {0,4,9} con mínimo nueve espera uno; doce valores cinco con mínimo cinco esperan doce; esos mismos doce valores con mínimo seis esperan cero.\n\nCuenta un desacuerdo por caso y muestra Fronteras:N, sin salto final. Pulsa Compilar, ejecutar y comprobar: se espera Fronteras:0. Todas las llamadas deben ejecutarse, incluso si alguna anterior falla.",
+          "text": "Reconstruye contar_desde y verificar en este editor. Ejecuta cuatro casos con estas expectativas:\n\n{0,4,9}; mínimo cero; esperado tres.\n{0,4,9}; mínimo nueve; esperado uno.\nDoce valores cinco; mínimo cinco; esperado doce.\nLos mismos doce valores cinco; mínimo seis; esperado cero.\n\nCuenta un desacuerdo por caso y muestra Fronteras:N, sin salto final. Pulsa Compilar, ejecutar y comprobar: se espera Fronteras:0. Todas las llamadas deben ejecutarse, incluso si alguna anterior falla.",
           "emphasis": [
             {
               "text": "cuatro casos",
@@ -465,7 +465,7 @@
                 "outputs": [
                   "Fronteras:0"
                 ],
-                "explanation": "Las fronteras y los valores repetidos se comprueban con expectativas elegidas. Cada aparición que cumple el criterio cuenta una vez."
+                "explanation": "Con mínimo cero, los tres valores de {0,4,9} se cuentan; con mínimo nueve, sólo se cuenta el nueve. Doce valores cinco aportan doce al usar mínimo cinco y cero al usar mínimo seis. Son los cuatro resultados esperados, por lo que las comparaciones del programa dejan Fronteras:0. Cada aparición que cumple el criterio cuenta una vez, aunque su valor esté repetido."
               }
             ]
           }
@@ -477,7 +477,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cerr << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) { std::cerr << '[' << dato << ']'; }\n            std::cerr << '\\n';\n        }\n    }\n    std::cerr << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato > minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n\n    if (!verificar({}, 4, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({1, 2}, 3, 0)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({4, 4}, 4, 2)) {\n        ++fallos_elegidos;\n    }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) {\n        ++fallos_elegidos;\n    }\n\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cerr << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cerr << '[' << dato << ']';\n            }\n            std::cerr << '\\n';\n        }\n    }\n    std::cerr << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -486,7 +486,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos=0;\n    if(!verificar({0,4,9},0,3)) { ++fallos; }\n    if(!verificar({0,4,9},9,1)) { ++fallos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(!verificar(iguales,5,12)) { ++fallos; }\n    if(!verificar(iguales,6,0)) { ++fallos; }\n    std::cout<<\"Fronteras:\"<<fallos;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos = 0;\n\n    if (!verificar({0,4,9},0,3)) {\n        ++fallos;\n    }\n    if (!verificar({0,4,9},9,1)) {\n        ++fallos;\n    }\n\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if (!verificar(iguales,5,12)) {\n        ++fallos;\n    }\n    if (!verificar(iguales,6,0)) {\n        ++fallos;\n    }\n\n    std::cout << \"Fronteras:\" << fallos;\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -500,7 +500,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_estricto(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) { ++cantidad; }\n    }\n    return cantidad;\n}\n\nint main() {\n    const std::vector<int> datos{1, 4, 4, 9};\n    const int real = contar_estricto(datos, 4);\n    const int esperado{3};\n    std::cout << \"Real:\" << real << \";Esperado:\" << esperado;\n    std::cout << \";Coincide:\" << (real == esperado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_estricto(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n\n    for (int dato : datos) {\n        if (dato > minimo) {\n            ++cantidad;\n        }\n    }\n\n    return cantidad;\n}\n\nint main() {\n    const std::vector<int> datos{1, 4, 4, 9};\n\n    const int real = contar_estricto(datos, 4);\n    const int esperado{3};\n\n    std::cout << \"Real:\" << real << \";Esperado:\" << esperado;\n    std::cout << \";Coincide:\" << (real == esperado);\n\n    return 0;\n}\n",
           "answers": [
             "Real:1;Esperado:3;Coincide:0"
           ],
@@ -508,7 +508,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye seleccionar_desde(const vector<int>& datos, int minimo). Devuelve todos los valores mayores o iguales al mínimo, en el orden en que aparecen. Conserva las repeticiones y no modifica datos. Cada aparición elegida debe corresponder a una posición distinta del original.\n\nComprueba estas siete parejas de datos y mínimo contra sus vectores esperados: vacío/4 devuelve vacío; {1,2}/3 devuelve vacío; {4,4}/4 devuelve {4,4}; {3,4,4,5}/4 devuelve {4,4,5}; {0,4,9}/0 devuelve {0,4,9}; {0,4,9}/9 devuelve {9}; doce valores cinco con mínimo cinco devuelven esos mismos doce valores. Muestra Fallos elegidos:N, contando un desacuerdo por caso.\n\nPrepara un motor con semilla 229 y distribuciones de tamaño 0..12, mínimo 0..9 y valor 0..9. Produce cuarenta ensayos; en cada uno obtiene tamaño, mínimo y después sus valores.\n\nComprueba tres propiedades de la selección: su tamaño coincide con esperado_por_descartes; cada valor elegido cumple el umbral; y es una subsecuencia del original. Esto último significa que sus elementos se encuentran en posiciones que avanzan siempre hacia delante, aunque se omitan otras posiciones.\n\nPara comprobar la subsecuencia, conserva una posición de búsqueda en el original. Busca desde ella el siguiente elegido y, después de encontrarlo, avanza a la posición posterior. Rechaza si no aparece antes del final. Así dos repeticiones elegidas no pueden reutilizar una misma aparición del original.\n\nCantidad, pertenencia y orden se necesitan juntas: tener el tamaño correcto no impide elegir valores incorrectos; cumplir el umbral no impide inventar repeticiones; ser subsecuencia no impide omitir valores que debían elegirse. Conserva además una copia previa de datos y compárala con el original después de seleccionar.\n\nCuenta un fallo por ensayo cuya selección incumpla alguna de esas propiedades. Muestra Fallos generados:N y Conservacion:B. Si hay una diferencia, presenta el vector y el mínimo en std::cerr para investigarlos dentro de la app; esos datos pueden añadirse como prueba fija al corregir el mismo objetivo.\n\nPulsa Compilar, ejecutar y comprobar. stdout debe contener Fallos elegidos:0, Fallos generados:0 y Conservacion:1, cada línea terminada con un salto. No se exige ninguna muestra generada concreta.",
+          "text": "Construye seleccionar_desde(const vector<int>& datos, int minimo). Devuelve todos los valores mayores o iguales al mínimo, en el orden en que aparecen. Conserva las repeticiones y no modifica datos. Cada aparición elegida debe corresponder a una posición distinta del original.\n\nComprueba estas siete parejas de datos y mínimo contra sus vectores esperados:\n\nVector vacío; mínimo 4; devuelve vacío.\n{1,2}; mínimo 3; devuelve vacío.\n{4,4}; mínimo 4; devuelve {4,4}.\n{3,4,4,5}; mínimo 4; devuelve {4,4,5}.\n{0,4,9}; mínimo 0; devuelve {0,4,9}.\n{0,4,9}; mínimo 9; devuelve {9}.\nDoce valores cinco; mínimo cinco; devuelve esos mismos doce valores.\n\nMuestra Fallos elegidos:N, contando un desacuerdo por caso.\n\nPrepara un motor con esta configuración:\n\nSemilla 229.\nTamaño 0..12.\nMínimo 0..9.\nValores 0..9.\n\nProduce cuarenta ensayos; en cada uno obtiene tamaño, mínimo y después sus valores. Comprueba tres propiedades de la selección:\n\nSu tamaño coincide con esperado_por_descartes.\nCada valor elegido cumple el umbral.\nEs una subsecuencia del original: sus elementos se encuentran en posiciones que avanzan siempre hacia delante, aunque se omitan otras posiciones.\n\nPara comprobar la subsecuencia, conserva una posición de búsqueda en el original. Busca desde ella el siguiente elegido y, después de encontrarlo, avanza a la posición posterior. Rechaza si no aparece antes del final. Así dos repeticiones elegidas no pueden reutilizar una misma aparición del original.\n\nCantidad, pertenencia y orden se necesitan juntas: tener el tamaño correcto no impide elegir valores incorrectos; cumplir el umbral no impide inventar repeticiones; ser subsecuencia no impide omitir valores que debían elegirse. Conserva además una copia previa de datos y compárala con el original después de seleccionar.\n\nCuenta un fallo por ensayo cuya selección incumpla alguna de esas propiedades. Muestra Fallos generados:N y Conservacion:B. Si hay una diferencia, presenta el vector y el mínimo en std::cerr para investigarlos dentro de la app; esos datos pueden añadirse como prueba fija al corregir el mismo objetivo.\n\nPulsa Compilar, ejecutar y comprobar. stdout debe contener estas líneas, cada una terminada con un salto:\n\nFallos elegidos:0\nFallos generados:0\nConservacion:1\n\nNo se exige ninguna muestra generada concreta.",
           "emphasis": [
             {
               "text": "todos los valores mayores o iguales",
@@ -573,7 +573,7 @@
                 "outputs": [
                   "Fallos elegidos:0\nFallos generados:0\nConservacion:1\n"
                 ],
-                "explanation": "Cantidad, pertenencia, orden y conservación se comprueban por separado. Los casos fijos complementan los ensayos generados sin exigir muestras particulares."
+                "explanation": "Para {3,4,4,5} con mínimo cuatro, seleccionar_desde devuelve {4,4,5}. Quitar una repetición daría un tamaño incorrecto. Devolver {5,4,4} conservaría el tamaño y el umbral, pero no sería una subsecuencia en ese orden. La búsqueda avanza después de cada coincidencia para no utilizar dos veces la misma aparición. Comparar el original con su copia previa comprueba además su conservación. Los casos fijos contrastan vectores esperados y los ensayos generados comprueban juntas esas propiedades, sin exigir muestras particulares."
               }
             ]
           }
@@ -605,7 +605,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos,int minimo) {\n    std::vector<int> resultado;\n    for(int dato:datos) { if(dato>=minimo) { resultado.push_back(dato); } }\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos,int minimo) {\n    int descartados=0;\n    for(int dato:datos) { if(dato<minimo) { ++descartados; } }\n    return static_cast<int>(datos.size())-descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,const std::vector<int>& elegidos,int minimo) {\n    if(static_cast<int>(elegidos.size())!=esperado_por_descartes(datos,minimo)) { return false; }\n    std::size_t posicion=0;\n    for(int elegido:elegidos) {\n        if(elegido<minimo) { return false; }\n        while(posicion<datos.size() && datos.at(posicion)!=elegido) { ++posicion; }\n        if(posicion==datos.size()) { return false; }\n        ++posicion;\n    }\n    return true;\n}\n\nint main() {\n    int fijos=0;\n    if(seleccionar_desde({},4)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({1,2},3)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({4,4},4)!=std::vector<int>{4,4}) { ++fijos; }\n    if(seleccionar_desde({3,4,4,5},4)!=std::vector<int>{4,4,5}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},0)!=std::vector<int>{0,4,9}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},9)!=std::vector<int>{9}) { ++fijos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(seleccionar_desde(iguales,5)!=iguales) { ++fijos; }\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},minimos{0,9},valores{0,9};\n    int fallos=0;\n    bool conservado=true;\n    for(int intento=0;intento<40;++intento) {\n        const int cantidad=tamanos(motor);\n        const int minimo=minimos(motor);\n        std::vector<int> datos;\n        for(int i=0;i<cantidad;++i) { datos.push_back(valores(motor)); }\n        const std::vector<int> original=datos;\n        const std::vector<int> elegidos=seleccionar_desde(datos,minimo);\n        conservado=conservado && datos==original;\n        if(!propiedades(datos,elegidos,minimo)) {\n            ++fallos;\n            std::cerr<<\"Minimo:\"<<minimo<<\";Datos:\";\n            for(int dato:datos) { std::cerr<<'['<<dato<<']'; }\n            std::cerr<<'\\n';\n        }\n    }\n    std::cout<<\"Fallos elegidos:\"<<fijos<<\"\\nFallos generados:\"<<fallos\n             <<\"\\nConservacion:\"<<conservado<<\"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos, int minimo) {\n    std::vector<int> resultado;\n\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            resultado.push_back(dato);\n        }\n    }\n\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int descartados = 0;\n\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++descartados;\n        }\n    }\n\n    return static_cast<int>(datos.size()) - descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,\n                 const std::vector<int>& elegidos, int minimo) {\n    if (static_cast<int>(elegidos.size()) != esperado_por_descartes(datos, minimo)) {\n        return false;\n    }\n    std::size_t posicion = 0;\n\n    for (int elegido : elegidos) {\n        if (elegido < minimo) {\n            return false;\n        }\n        while (posicion < datos.size() && datos.at(posicion) != elegido) {\n            ++posicion;\n        }\n        if (posicion == datos.size()) {\n            return false;\n        }\n        ++posicion;\n    }\n\n    return true;\n}\n\nint main() {\n    int fijos = 0;\n\n    if (seleccionar_desde({},4) != std::vector<int>{}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({1,2},3) != std::vector<int>{}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({4,4},4) != std::vector<int>{4,4}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({3,4,4,5},4) != std::vector<int>{4,4,5}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({0,4,9},0) != std::vector<int>{0,4,9}) {\n        ++fijos;\n    }\n    if (seleccionar_desde({0,4,9},9) != std::vector<int>{9}) {\n        ++fijos;\n    }\n\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if (seleccionar_desde(iguales,5) != iguales) {\n        ++fijos;\n    }\n\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},\n        minimos{0,9}, valores{0,9};\n    int fallos = 0;\n    bool conservado = true;\n\n    for (int intento = 0; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n\n        for (int i = 0; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n\n        const std::vector<int> original = datos;\n        const std::vector<int> elegidos = seleccionar_desde(datos, minimo);\n        conservado = conservado && datos == original;\n\n        if (!propiedades(datos, elegidos, minimo)) {\n            ++fallos;\n            std::cerr << \"Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) {\n                std::cerr << '[' << dato << ']';\n            }\n            std::cerr << '\\n';\n        }\n    }\n\n    std::cout << \"Fallos elegidos:\" << fijos\n              << \"\\nFallos generados:\" << fallos\n              << \"\\nConservacion:\" << conservado << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1599,6 +1599,136 @@
         "id": "block_0001_0002",
         "beforeSha256": "cbd0b18a15ced6d3ebfcdce7eaaf22d08ee7df36d925480165b4491f8d35d6c4",
         "afterSha256": "3f2b5f8a96509bcd8eb4d3f9ffb074acd66cafe9380472c381f826f7a140c6d4"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "c812a468ad8bfe118bc197fa7262965acbccfc4ddab8e9a0f67d624185b81e80",
+        "afterSha256": "29c34bc1072c619d83f909c8dc0b63e681db23d8a8c003f0ea5d8f48cae5133a"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "85d4bff8da3f88c5745b85c0b4a015a86a8ff1258b14f1277688faabc676fb08",
+        "afterSha256": "1cb7512c742d2a2f7d7ed83f105b417ac9fe951c1b11a6ba578d65d0e1882aa2"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "65c3bca1742c063f1dd57449d6b0d08685164f92e22457d65767814e49eb7463",
+        "afterSha256": "a3e5d95300bb9ac91552981d4e906291c2d17a968a00f15e16e2d76888a01d52"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "59f97bcccd46fbdc4b41859f6f026ed596b4effabad499495862293928a4eebb",
+        "afterSha256": "da5eacc01db5c0041642ae484e9a4c597e400b82875764396d8c6c11ec497386"
+      },
+      {
+        "id": "block_0004_0007",
+        "beforeSha256": "08d8b8ec762e2261137b3829ef00f7a005a31c199d92c76bfda25493ab15d47a",
+        "afterSha256": "d3bc68737aea4696526f4d2a18604b4500d7193d757703321975650cc9d12356"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "473b150839412c92fe6ba9288cd06a375a098ced53217d826a7eee9a8a020357",
+        "afterSha256": "909d38d537a0c2255eb96418f2f29417192b3db4809f4b8bb850bc2585799cdb"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "60139ae730fbddb876d612bb66494dc389c2ef7ee278f10aaad509fe7fd7dac2",
+        "afterSha256": "68c0845491149a45c007dbc68a342d95d75ce99d3da8d36c7458a583bb622c2a"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "c6ba32947a54eee739a89d9dcd3f9dff2758b201cd8a049a87ffd07ca25b8c77",
+        "afterSha256": "1512403d23541969ffd757e6995650f3fecc6d1ae328ecb26852d20728f6d610"
+      },
+      {
+        "id": "block_0005_0008",
+        "beforeSha256": "02933754cc2840ae428321613441bc4ab529fa6f30b7366f1edf3c1d0922b088",
+        "afterSha256": "0a43a22c06f329a0b413e9cca66da690cfda39e7dc5af0df744e1d38e6aedc1a"
+      },
+      {
+        "id": "block_0005_0010",
+        "beforeSha256": "dd3c7f78d55612c0d6128f204fc7aed3a294678dedef43cab98c9cf496396970",
+        "afterSha256": "63da0734f02a007d50a9e8e29b91f09f2cbbba4da9d39a11d6adda7667590cce"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "1180db036cbba993fdacc93a99c4d5736ffa944c9f60705214599f09708d6e60",
+        "afterSha256": "cecbbdf496fe7bbda79d62b83a7db81ac58f08f209bfd0b21281872d76aab6a2"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "418cd7d299a9c432995643f1e0a3c28e6ebb646b6ea5c6cac038a876b738b495",
+        "afterSha256": "b8d1dd39c678001cfc763e13136cf4304f7c0b2755aeb5a47b9c8cb6b8b2d0de"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "c80376bbfd3b165fd106ba419462f6ddf6f71532b1eb4133da8c7088bcb9e3e1",
+        "afterSha256": "0c5f7e116cc0b6f3e93492e711b1b9cab043da8e7fbe99d96243d2a5680608fe"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "c40c1e0934488149cd69e4a81c213511fff5cda0686234c19ed86a34aeef6be5",
+        "afterSha256": "4ee5b6d8b5814b43b2ecd6c9550d7c18592e3e57824df1e6f456faa4dcd69b94"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 a{211};\n    std::mt19937 b{211};\n    std::uniform_int_distribution<int> tam_a{0, 4};\n    std::uniform_int_distribution<int> tam_b{0, 4};\n    std::uniform_int_distribution<int> val_a{0, 9};\n    std::uniform_int_distribution<int> val_b{0, 9};\n    bool iguales = true;\n    for (int intento{0}; intento < 5; ++intento) {\n        const int cantidad_a = tam_a(a);\n        const int cantidad_b = tam_b(b);\n        std::vector<int> uno;\n        std::vector<int> dos;\n        for (int i{0}; i < cantidad_a; ++i) {\n            uno.push_back(val_a(a));\n        }\n        for (int i{0}; i < cantidad_b; ++i) {\n            dos.push_back(val_b(b));\n        }\n        iguales = iguales && uno == dos;\n    }\n    std::cout << \"Repeticion:\" << iguales;\n    return 0;\n}\n",
+          "answers": [
+            "Repeticion:1"
+          ],
+          "explanation": "Los motores parten de la misma semilla 211 y cada pareja de distribuciones tiene los mismos límites. En cada ensayo obtienen tamaños iguales y realizan la misma cantidad de llamadas a sus distribuciones de valores. Así se conservan las condiciones para repetir el procedimiento en el ensayo siguiente. Las cinco parejas de vectores coinciden y se muestra Repeticion:1, sin fijar cuáles fueron sus elementos ni cuántos valores internos consumió cada distribución."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) { std::cout << '[' << dato << ']'; }\n            std::cout << '\\n';\n        }\n    }\n    std::cout << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0008",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cerr << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) { std::cerr << '[' << dato << ']'; }\n            std::cerr << '\\n';\n        }\n    }\n    std::cerr << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0010",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos=0;\n    if(!verificar({0,4,9},0,3)) { ++fallos; }\n    if(!verificar({0,4,9},9,1)) { ++fallos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(!verificar(iguales,5,12)) { ++fallos; }\n    if(!verificar(iguales,6,0)) { ++fallos; }\n    std::cout<<\"Fronteras:\"<<fallos;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_estricto(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) { ++cantidad; }\n    }\n    return cantidad;\n}\n\nint main() {\n    const std::vector<int> datos{1, 4, 4, 9};\n    const int real = contar_estricto(datos, 4);\n    const int esperado{3};\n    std::cout << \"Real:\" << real << \";Esperado:\" << esperado;\n    std::cout << \";Coincide:\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "Real:1;Esperado:3;Coincide:0"
+          ],
+          "explanation": "Con mínimo 4, la condición estricta acepta sólo el 9 y devuelve 1. El requisito también incluye las dos apariciones de 4, por lo que la expectativa fija es 3. Comparar los resultados da falso, mostrado como 0: la línea completa es Real:1;Esperado:3;Coincide:0."
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nstd::vector<int> seleccionar_desde(const std::vector<int>& datos,int minimo) {\n    std::vector<int> resultado;\n    for(int dato:datos) { if(dato>=minimo) { resultado.push_back(dato); } }\n    return resultado;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos,int minimo) {\n    int descartados=0;\n    for(int dato:datos) { if(dato<minimo) { ++descartados; } }\n    return static_cast<int>(datos.size())-descartados;\n}\n\nbool propiedades(const std::vector<int>& datos,const std::vector<int>& elegidos,int minimo) {\n    if(static_cast<int>(elegidos.size())!=esperado_por_descartes(datos,minimo)) { return false; }\n    std::size_t posicion=0;\n    for(int elegido:elegidos) {\n        if(elegido<minimo) { return false; }\n        while(posicion<datos.size() && datos.at(posicion)!=elegido) { ++posicion; }\n        if(posicion==datos.size()) { return false; }\n        ++posicion;\n    }\n    return true;\n}\n\nint main() {\n    int fijos=0;\n    if(seleccionar_desde({},4)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({1,2},3)!=std::vector<int>{}) { ++fijos; }\n    if(seleccionar_desde({4,4},4)!=std::vector<int>{4,4}) { ++fijos; }\n    if(seleccionar_desde({3,4,4,5},4)!=std::vector<int>{4,4,5}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},0)!=std::vector<int>{0,4,9}) { ++fijos; }\n    if(seleccionar_desde({0,4,9},9)!=std::vector<int>{9}) { ++fijos; }\n    const std::vector<int> iguales{5,5,5,5,5,5,5,5,5,5,5,5};\n    if(seleccionar_desde(iguales,5)!=iguales) { ++fijos; }\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0,12},minimos{0,9},valores{0,9};\n    int fallos=0;\n    bool conservado=true;\n    for(int intento=0;intento<40;++intento) {\n        const int cantidad=tamanos(motor);\n        const int minimo=minimos(motor);\n        std::vector<int> datos;\n        for(int i=0;i<cantidad;++i) { datos.push_back(valores(motor)); }\n        const std::vector<int> original=datos;\n        const std::vector<int> elegidos=seleccionar_desde(datos,minimo);\n        conservado=conservado && datos==original;\n        if(!propiedades(datos,elegidos,minimo)) {\n            ++fallos;\n            std::cerr<<\"Minimo:\"<<minimo<<\";Datos:\";\n            for(int dato:datos) { std::cerr<<'['<<dato<<']'; }\n            std::cerr<<'\\n';\n        }\n    }\n    std::cout<<\"Fallos elegidos:\"<<fijos<<\"\\nFallos generados:\"<<fallos\n             <<\"\\nConservacion:\"<<conservado<<\"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1812,6 +1942,13 @@
             "reading": "technical"
           },
           {
+            "start": 61,
+            "end": 64,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 101,
             "end": 102,
             "text": "2",
@@ -1862,7 +1999,15 @@
         "block": "block_0000_0003",
         "path": "/reviewFeedback/1",
         "sourceSha256": "d6b7984155d0effa35800ba22d724d23183a51dc750355235ca09aa9a89d50b3",
-        "spans": []
+        "spans": [
+          {
+            "start": 66,
+            "end": 69,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -2112,11 +2257,32 @@
         "sourceSha256": "c651c268027060045d62d65da1daf4614d1316f4e8a214384ed316e672296e6a",
         "spans": [
           {
+            "start": 121,
+            "end": 124,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 131,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 365,
             "end": 377,
             "text": "contar_desde",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 391,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2153,6 +2319,13 @@
             "reading": "natural"
           },
           {
+            "start": 99,
+            "end": 102,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 158,
             "end": 159,
             "text": "0",
@@ -2183,7 +2356,15 @@
         "block": "block_0003_0002",
         "path": "/reviewFeedback/0",
         "sourceSha256": "691be1214f54281a51ca6fdb82b8406c86d187199bdf26eb772333ef30ab34ea",
-        "spans": []
+        "spans": [
+          {
+            "start": 28,
+            "end": 31,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -2220,7 +2401,7 @@
             "start": 148,
             "end": 152,
             "text": "cero",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2241,137 +2422,151 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "1b6790ef2725ac2ebcb5eca5c1acabb56dfcfa95c8c9fcd70c1cc041752ab56a",
+        "sourceSha256": "2dd09ff7f94eef6ef1ea82056a0a4614802837b53f79ad578eca13b9b1b05e7b",
         "spans": [
           {
-            "start": 10,
-            "end": 22,
+            "start": 110,
+            "end": 122,
             "text": "contar_desde",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 25,
-            "end": 34,
+            "start": 125,
+            "end": 134,
             "text": "verificar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 36,
-            "end": 45,
+            "start": 136,
+            "end": 145,
             "text": "verificar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 106,
-            "end": 118,
+            "start": 206,
+            "end": 218,
             "text": "contar_desde",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 191,
+            "start": 285,
+            "end": 291,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 240,
-            "end": 246,
+            "start": 377,
+            "end": 383,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 254,
-            "end": 258,
+            "start": 394,
+            "end": 398,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 260,
-            "end": 265,
+            "start": 400,
+            "end": 405,
             "text": "{1,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 277,
-            "end": 281,
+            "start": 414,
+            "end": 418,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 289,
-            "end": 293,
+            "start": 429,
+            "end": 433,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 295,
-            "end": 300,
+            "start": 435,
+            "end": 440,
             "text": "{4,4}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 312,
-            "end": 318,
+            "start": 449,
+            "end": 455,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 329,
+            "start": 466,
+            "end": 469,
             "text": "dos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 331,
-            "end": 340,
+            "start": 471,
+            "end": 480,
             "text": "{3,4,4,5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 352,
-            "end": 358,
+            "start": 489,
+            "end": 495,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 366,
-            "end": 370,
+            "start": 506,
+            "end": 510,
             "text": "tres",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 381,
-            "end": 398,
+            "start": 521,
+            "end": 538,
             "text": "Fallos elegidos:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 561,
-            "end": 563,
+            "start": 547,
+            "end": 549,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 664,
+            "end": 670,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 701,
+            "end": 703,
             "text": "&&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 612,
-            "end": 617,
+            "start": 752,
+            "end": 757,
             "text": "false",
             "role": "output",
             "reading": "natural"
@@ -2394,6 +2589,13 @@
             "start": 144,
             "end": 147,
             "text": "229",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 154,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
@@ -2461,6 +2663,13 @@
         "sourceSha256": "6140dc4939dbd11e401dd1375b5a6bbb4f70c42b73cb45751b2459fd8dbcac4f",
         "spans": [
           {
+            "start": 37,
+            "end": 40,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 60,
             "end": 64,
             "text": "cero",
@@ -2489,6 +2698,13 @@
             "reading": "natural"
           },
           {
+            "start": 175,
+            "end": 178,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 217,
             "end": 221,
             "text": "cero",
@@ -2500,12 +2716,54 @@
       {
         "block": "block_0004_0004",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "0fb3030f57e4b68ee0c66e3f07c992642c54371ed1ade6e4c71786e39aaaf6dc",
+        "sourceSha256": "0c7ade570b8aafc61a028caadf9439acab0728bfda5626bbd7d41e5465d02f92",
         "spans": [
           {
-            "start": 121,
-            "end": 125,
-            "text": "Cero",
+            "start": 4,
+            "end": 10,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 49,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 55,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 63,
+            "end": 67,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 179,
+            "text": "Fallos elegidos:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 319,
+            "end": 337,
+            "text": "Fallos generados:0",
             "role": "output",
             "reading": "natural"
           }
@@ -2520,7 +2778,7 @@
       {
         "block": "block_0004_0006",
         "path": "/text",
-        "sourceSha256": "fa9771c7ce0c82c5d591231f62546f6d47cffeca19871349c424460dc5ed9e5e",
+        "sourceSha256": "32410d037a6c5d61dcf2e94bf1bd1297664e57aca0387ca80c2d121c0298a941",
         "spans": [
           {
             "start": 37,
@@ -2537,148 +2795,183 @@
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 150,
-            "text": "vacío/4",
+            "start": 96,
+            "end": 102,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 158,
-            "end": 162,
+            "start": 165,
+            "end": 166,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 181,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 164,
-            "end": 171,
-            "text": "{1,2}/3",
+            "start": 183,
+            "end": 188,
+            "text": "{1,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 183,
+            "start": 197,
+            "end": 198,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 213,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 185,
-            "end": 192,
-            "text": "{4,4}/4",
+            "start": 215,
+            "end": 220,
+            "text": "{4,4}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 200,
-            "end": 203,
+            "start": 229,
+            "end": 230,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 244,
             "text": "dos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 205,
-            "end": 216,
-            "text": "{3,4,4,5}/4",
+            "start": 246,
+            "end": 255,
+            "text": "{3,4,4,5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 224,
-            "end": 228,
+            "start": 264,
+            "end": 265,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 280,
             "text": "tres",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 332,
+            "start": 379,
+            "end": 385,
             "text": "stdout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 357,
-            "end": 374,
+            "start": 410,
+            "end": 427,
             "text": "Fallos elegidos:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 466,
-            "end": 469,
+            "start": 519,
+            "end": 522,
             "text": "dos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 559,
-            "end": 567,
+            "start": 612,
+            "end": 620,
             "text": "cuarenta",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 589,
-            "end": 592,
+            "start": 662,
+            "end": 665,
             "text": "229",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 601,
-            "end": 606,
+            "start": 674,
+            "end": 679,
             "text": "0..12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 626,
-            "end": 630,
+            "start": 688,
+            "end": 692,
             "text": "0..9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 728,
-            "end": 750,
+            "start": 702,
+            "end": 706,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 805,
+            "end": 827,
             "text": "esperado_por_descartes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 779,
-            "end": 788,
+            "start": 856,
+            "end": 865,
             "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 854,
-            "end": 872,
+            "start": 931,
+            "end": 949,
             "text": "Fallos generados:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 895,
-            "end": 901,
+            "start": 972,
+            "end": 978,
             "text": "stdout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 927,
-            "end": 933,
+            "start": 1004,
+            "end": 1010,
             "text": "stderr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 981,
-            "end": 982,
+            "start": 1058,
+            "end": 1059,
             "text": "N",
             "role": "output",
             "reading": "natural"
@@ -2688,14 +2981,126 @@
       {
         "block": "block_0004_0007",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "c4cd9f071794086239f7512c73810ab445d40af4aaf927386900f358080b2826",
+        "sourceSha256": "28fb426d0f6c9ff2cd66b3f975914f54cc6dd6cdb2517b518c935f7a9cfa5e35",
         "spans": [
           {
-            "start": 41,
-            "end": 44,
+            "start": 13,
+            "end": 14,
+            "text": ">",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 24,
+            "end": 28,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 39,
+            "text": "{4,4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 51,
+            "end": 57,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 80,
             "text": "dos",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 87,
+            "end": 96,
+            "text": "{3,4,4,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 114,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 130,
+            "end": 135,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 149,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 166,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 175,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 210,
+            "end": 216,
+            "text": "stdout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 225,
+            "end": 242,
+            "text": "Fallos elegidos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 259,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 310,
+            "text": "{1,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 333,
+            "text": "ceros",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 397,
+            "text": "stderr",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2765,7 +3170,15 @@
         "block": "block_0005_0003",
         "path": "/text",
         "sourceSha256": "85317c4f16a86a83870518d031077069a73b802abc360e9de50f575985c7ecd7",
-        "spans": []
+        "spans": [
+          {
+            "start": 325,
+            "end": 328,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -2776,7 +3189,7 @@
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "e64144c71bcd21511868fb1c4c539d432836b28cec2622eacb862c1c7ebd31d8",
+        "sourceSha256": "f67c9229f7f2b44f9ac83ad4b6ab31becf25900951edd169ceaf4922577c4ae1",
         "spans": [
           {
             "start": 12,
@@ -2793,106 +3206,127 @@
             "reading": "technical"
           },
           {
-            "start": 75,
-            "end": 82,
+            "start": 61,
+            "end": 67,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 106,
             "text": "{0,4,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 94,
-            "end": 98,
+            "start": 115,
+            "end": 119,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 106,
-            "end": 110,
+            "start": 130,
+            "end": 134,
             "text": "tres",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 119,
+            "start": 136,
+            "end": 143,
             "text": "{0,4,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 131,
-            "end": 136,
+            "start": 152,
+            "end": 157,
             "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 144,
-            "end": 147,
+            "start": 168,
+            "end": 171,
             "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 149,
-            "end": 153,
-            "text": "doce",
+            "start": 173,
+            "end": 177,
+            "text": "Doce",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 162,
-            "end": 167,
+            "start": 186,
+            "end": 191,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 184,
+            "start": 200,
+            "end": 205,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 193,
-            "end": 197,
+            "start": 216,
+            "end": 220,
             "text": "doce",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 211,
-            "end": 215,
+            "start": 233,
+            "end": 237,
             "text": "doce",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 235,
-            "end": 239,
+            "start": 246,
+            "end": 251,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 264,
             "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 248,
-            "end": 252,
+            "start": 275,
+            "end": 279,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 295,
-            "end": 306,
+            "start": 289,
+            "end": 291,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 333,
             "text": "Fronteras:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 373,
-            "end": 384,
+            "start": 400,
+            "end": 411,
             "text": "Fronteras:0",
             "role": "output",
             "reading": "natural"
@@ -2902,8 +3336,107 @@
       {
         "block": "block_0005_0006",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "4b70444fab104a75bbb179f588fc2192d6eb445e2aa9785f7d9a69312721f511",
-        "spans": []
+        "sourceSha256": "056c8e492d9cca461dec9242c0f1d2b6d97aa9192bea92420c6b2a3bf8259c90",
+        "spans": [
+          {
+            "start": 11,
+            "end": 15,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 21,
+            "end": 25,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 44,
+            "text": "{0,4,9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 68,
+            "end": 73,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 104,
+            "text": "Doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 118,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 131,
+            "text": "doce",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 152,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 159,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 179,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 195,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 277,
+            "text": "Fronteras:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 327,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0007",
@@ -2956,6 +3489,13 @@
             "reading": "natural"
           },
           {
+            "start": 100,
+            "end": 103,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 119,
             "end": 120,
             "text": "4",
@@ -2966,6 +3506,13 @@
             "start": 156,
             "end": 157,
             "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 191,
+            "text": "falso",
             "role": "output",
             "reading": "natural"
           },
@@ -2988,7 +3535,7 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "d25f472e90e7ebf7df9cf91877a022ab9215b60103df44afb586097695694be1",
+        "sourceSha256": "3597257eac3ff69fcaf497fd483e30e28f067c299091be54704e8bf6ada462e4",
         "spans": [
           {
             "start": 10,
@@ -3005,218 +3552,288 @@
             "reading": "technical"
           },
           {
-            "start": 358,
-            "end": 365,
-            "text": "vacío/4",
+            "start": 295,
+            "end": 300,
+            "text": "siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 375,
-            "end": 380,
+            "start": 380,
+            "end": 381,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 392,
+            "end": 397,
             "text": "vacío",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 382,
-            "end": 389,
-            "text": "{1,2}/3",
-            "role": "data",
             "reading": "natural"
           },
           {
             "start": 399,
             "end": 404,
+            "text": "{1,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 414,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 425,
+            "end": 430,
             "text": "vacío",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 406,
-            "end": 413,
-            "text": "{4,4}/4",
+            "start": 432,
+            "end": 437,
+            "text": "{4,4}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 423,
-            "end": 428,
+            "start": 446,
+            "end": 447,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 458,
+            "end": 463,
             "text": "{4,4}",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 430,
-            "end": 441,
-            "text": "{3,4,4,5}/4",
+            "start": 465,
+            "end": 474,
+            "text": "{3,4,4,5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 451,
-            "end": 458,
+            "start": 483,
+            "end": 484,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 495,
+            "end": 502,
             "text": "{4,4,5}",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 460,
-            "end": 469,
-            "text": "{0,4,9}/0",
+            "start": 504,
+            "end": 511,
+            "text": "{0,4,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 479,
-            "end": 486,
+            "start": 520,
+            "end": 521,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 532,
+            "end": 539,
             "text": "{0,4,9}",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 488,
-            "end": 497,
-            "text": "{0,4,9}/9",
+            "start": 541,
+            "end": 548,
+            "text": "{0,4,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 507,
-            "end": 510,
+            "start": 557,
+            "end": 558,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 572,
             "text": "{9}",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 512,
-            "end": 516,
-            "text": "doce",
+            "start": 574,
+            "end": 578,
+            "text": "Doce",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 525,
-            "end": 530,
+            "start": 587,
+            "end": 592,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 542,
-            "end": 547,
+            "start": 601,
+            "end": 606,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 570,
-            "end": 574,
+            "start": 629,
+            "end": 633,
             "text": "doce",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 592,
-            "end": 609,
+            "start": 652,
+            "end": 669,
             "text": "Fallos elegidos:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 674,
-            "end": 677,
+            "start": 680,
+            "end": 682,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 755,
+            "end": 758,
             "text": "229",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 705,
-            "end": 710,
+            "start": 767,
+            "end": 772,
             "text": "0..12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 719,
-            "end": 723,
+            "start": 781,
+            "end": 785,
             "text": "0..9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 732,
-            "end": 736,
+            "start": 795,
+            "end": 799,
             "text": "0..9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 746,
-            "end": 754,
+            "start": 810,
+            "end": 818,
             "text": "cuarenta",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 890,
-            "end": 912,
+            "start": 896,
+            "end": 900,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 954,
+            "end": 976,
             "text": "esperado_por_descartes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1694,
-            "end": 1699,
+            "start": 1384,
+            "end": 1387,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1730,
+            "end": 1735,
             "text": "datos",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1840,
-            "end": 1858,
+            "start": 1796,
+            "end": 1798,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1876,
+            "end": 1894,
             "text": "Fallos generados:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1861,
-            "end": 1875,
+            "start": 1897,
+            "end": 1911,
             "text": "Conservacion:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1934,
-            "end": 1943,
+            "start": 1970,
+            "end": 1979,
             "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 2095,
-            "end": 2101,
+            "start": 2131,
+            "end": 2137,
             "text": "stdout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 2116,
-            "end": 2133,
+            "start": 2200,
+            "end": 2217,
             "text": "Fallos elegidos:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 2135,
-            "end": 2153,
+            "start": 2218,
+            "end": 2236,
             "text": "Fallos generados:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 2156,
-            "end": 2170,
+            "start": 2237,
+            "end": 2251,
             "text": "Conservacion:1",
             "role": "output",
             "reading": "natural"
@@ -3240,8 +3857,58 @@
       {
         "block": "block_0006_0004",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "32e8ae0ec91d945d1ecc5b2f79e26b25b9b8c4fe61805cb7a4dc50b50b962003",
-        "spans": []
+        "sourceSha256": "29e9361b4d8dfcd09bb29c4c807a2a5b1bb140448bb055e21f3bf8587a310026",
+        "spans": [
+          {
+            "start": 5,
+            "end": 14,
+            "text": "{3,4,4,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 26,
+            "end": 32,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 34,
+            "end": 51,
+            "text": "seleccionar_desde",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 68,
+            "text": "{4,4,5}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 80,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 136,
+            "text": "{5,4,4}",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 282,
+            "end": 285,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -3253,7 +3920,15 @@
         "block": "block_0007_0001",
         "path": "/text",
         "sourceSha256": "3fc2afe44c7dbf7d92d2578a655c9b72ace309f87e0791476f7dc68a819ee485",
-        "spans": []
+        "spans": [
+          {
+            "start": 38,
+            "end": 43,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

@@ -10,23 +10,26 @@
         },
         {
           "type": "paragraph",
-          "text": "En este Pedido, la copia que proporciona el lenguaje copia cada miembro: codigo_, unidades_ y estado_ (Köppe et al., 2023). Pedido copia = original; declara otro objeto e inicializa sus miembros con los del original. La privacidad de los datos no impide utilizar esa operación de copia.\n\nDespués, cada pedido conserva su propio valor. Enviar original cambia el estado de ese objeto; no envía también copia. La copia no queda vinculada a las operaciones futuras del original.",
+          "text": "En este Pedido, la copia que proporciona el lenguaje copia cada miembro: codigo_, unidades_ y estado_ (Köppe et al., 2023). La declaración Pedido copia = original; crea otro objeto e inicializa sus miembros con los que tiene original en ese momento:\n\ncodigo_ recibe el mismo texto.\nunidades_ recibe la misma cantidad.\nestado_ recibe el mismo estado.\n\nLa privacidad de los miembros no impide utilizar esa operación de copia. Después, cada pedido conserva su propio valor. En el programa siguiente, original.enviar() cambia el estado de original; no envía también copia. La copia no queda vinculada a los cambios posteriores del objeto del que procede.",
           "emphasis": [
             {
-              "text": "copia cada miembro"
+              "text": "copia cada miembro",
+              "style": "bold"
             },
             {
-              "text": "otro objeto"
+              "text": "otro objeto",
+              "style": "bold"
             },
             {
-              "text": "su propio valor"
+              "text": "su propio valor",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"A\", 3};\n    Pedido copia = original;\n    original.enviar();\n    std::cout << (original.estado() == Estado::enviado) << \" \" << (copia.estado() == Estado::preparado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"A\", 3};\n    Pedido copia = original;\n    original.enviar();\n\n    std::cout << (original.estado() == Estado::enviado)\n              << \" \" << (copia.estado() == Estado::preparado);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -52,7 +55,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido a{\"B\", 4};\n    Pedido b{\"C\", 7};\n    b = a;\n    a.cambiar_unidades(5);\n    std::cout << b.codigo() << \":\" << b.unidades() << \" \" << a.codigo() << \":\" << a.unidades();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido a{\"B\", 4};\n    Pedido b{\"C\", 7};\n    b = a;\n    a.cambiar_unidades(5);\n\n    std::cout << b.codigo() << \":\" << b.unidades()\n              << \" \" << a.codigo() << \":\" << a.unidades();\n\n    return 0;\n}\n",
           "answers": [
             "B:4 B:5"
           ],
@@ -68,7 +71,7 @@
             "Se concatena automáticamente con el código de a."
           ],
           "correctIndex": 1,
-          "explanation": "La asignación de esta clase copia todos sus miembros, no sólo la cantidad.",
+          "explanation": "Antes de b = a;, b tenía el código C y siete unidades. La asignación reemplaza todos sus miembros por los de a: código B, cuatro unidades y estado preparado. private impide acceder directamente a codigo_ desde fuera de la clase, pero no impide esta asignación al objeto completo. No se pide concatenar los códigos.",
           "reviewFeedback": [
             "Distingue una asignación al objeto completo de un acceso directo a uno de sus datos. Revisa qué restringe private y qué operación aparece en la sentencia.",
             "Sigue el valor completo del destino y distingue la asignación de un cambio posterior del origen.",
@@ -77,31 +80,37 @@
         },
         {
           "type": "paragraph",
-          "text": "Pedido copia = original; crea un objeto. En cambio, b = a; asigna a un objeto que ya existe. La asignación que proporciona el lenguaje para esta clase reemplaza todos sus miembros por los correspondientes de a, incluido codigo_ (Köppe et al., 2023). Después, modificar a no actualiza b.\n\nPor eso la asignación también puede sustituir el estado de un pedido enviado o cancelado por el de otro pedido válido. No es una llamada a enviar(), cancelar() o cambiar_unidades(): esas funciones mantienen las condiciones de sus propias operaciones. El modelo permite sustituir el valor completo; no promete conservar una identidad ni un historial irreversibles.\n\nCopiar tampoco comprueba que el código sea único en una colección externa. Esa condición no forma parte de las reglas de este tipo y no debe darse por garantizada.",
+          "text": "Pedido copia = original; crea un objeto nuevo. En cambio, b = a; asigna a un objeto que ya existe. Para esta clase, la asignación proporcionada por el lenguaje reemplaza cada miembro de b por el correspondiente de a, incluido codigo_ (Köppe et al., 2023). Después, modificar a no actualiza b.\n\nLa asignación también reemplaza estado_. Por ejemplo, si a está preparado y b está enviado, b = a; deja b preparado. Ambas combinaciones son válidas para este tipo: el cambio procede de sustituir el valor completo, no de ejecutar enviar(), cancelar() o cambiar_unidades(). Esas funciones conservan las condiciones de sus propias operaciones. Nuestro modelo no promete conservar una identidad ni un historial irreversibles.\n\nCopiar tampoco comprueba que el código sea único en una colección externa. Esa condición no forma parte de las reglas de este tipo y no debe darse por garantizada.",
           "emphasis": [
             {
-              "text": "un objeto que ya existe"
+              "text": "un objeto que ya existe",
+              "style": "bold"
             },
             {
-              "text": "todos sus miembros"
+              "text": "reemplaza cada miembro",
+              "style": "bold"
             },
             {
-              "text": "no forma parte de las reglas"
+              "text": "no forma parte de las reglas",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "La distinción entre objeto y referencia también importa en los parámetros. enviar_copia(Pedido pedido) recibe por valor: al llamarla con un Pedido existente, se crea un parámetro local copiando ese objeto. La función puede modificar su copia sin cambiar el pedido del llamador (Stroustrup, 2024).\n\nUn parámetro Pedido& pedido se refiere al objeto recibido y permite solicitar operaciones que lo modifiquen. const Pedido& pedido permite consultarlo sin copiarlo ni modificarlo por esa vía (Stroustrup, 2024). La referencia no elimina las condiciones de enviar() o cancelar(): también importa el estado actual del objeto.\n\nconst Pedido pedido, sin el signo de referencia, sigue siendo un parámetro por valor. const limita los cambios sobre ese parámetro local; no evita su copia (Stroustrup, 2024).",
+          "text": "La diferencia entre copiar un objeto y referirse a él también se aplica a los parámetros. Recuperamos estas formas, ahora con Pedido:\n\nenviar_copia(Pedido pedido) recibe por valor. Al llamarla con un Pedido existente, se crea un parámetro local copiando ese objeto. La función puede modificar ese objeto local sin cambiar el que conserva el llamador (Stroustrup, 2024).\n\nPedido& pedido declara un parámetro por referencia. En nuestras llamadas, ese nombre se refiere al objeto del llamador. Las operaciones solicitadas a través del parámetro actúan sobre ese mismo objeto (Stroustrup, 2024).\n\nconst Pedido& pedido también se refiere al objeto recibido. No lo copia para crear otro Pedido y sólo permite consultar el objeto por esa vía (Stroustrup, 2024). Esto no impide que el llamador lo modifique después por otra vía permitida, como veremos al cancelar entre dos consultas.\n\nconst Pedido pedido, sin &, sigue siendo un parámetro por valor. const limita los cambios sobre el parámetro local, pero no evita la copia del Pedido existente que se pasa como argumento (Stroustrup, 2024).\n\nRecibir un objeto por referencia no elimina las condiciones de enviar() o cancelar(). Para decidir si aceptan una solicitud, esas operaciones siguen comprobando el estado del objeto.",
           "emphasis": [
             {
-              "text": "recibe por valor"
+              "text": "recibe por valor",
+              "style": "bold"
             },
             {
-              "text": "se crea un parámetro local"
+              "text": "parámetro por referencia",
+              "style": "bold"
             },
             {
-              "text": "sin copiarlo ni modificarlo por esa vía"
+              "text": "sólo permite consultar el objeto por esa vía",
+              "style": "bold"
             }
           ]
         }
@@ -117,7 +126,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_copia(Pedido pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"D\", 6};\n    bool aplicado = enviar_copia(pedido);\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_copia(Pedido pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"D\", 6};\n    bool aplicado = enviar_copia(pedido);\n\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::preparado);\n\n    return 0;\n}\n",
           "answers": [
             "1 1"
           ],
@@ -133,7 +142,7 @@
             "Que la copia local aceptó enviar, no que el objeto del llamador cambió."
           ],
           "correctIndex": 2,
-          "explanation": "El contrato de la función debe tener en cuenta cómo recibe su parámetro.",
+          "explanation": "El parámetro Pedido pedido recibe una copia del pedido preparado. La llamada enviar() actúa sobre ese objeto local, lo deja enviado y devuelve true. El pedido que conserva main sigue preparado. Por eso el resultado informa de la operación sobre la copia; para conocer el efecto sobre el pedido del llamador también hay que consultar ese objeto.",
           "reviewFeedback": [
             "Una función puede devolver un resultado aunque opere sobre un objeto distinto del que conserva el llamador. Localiza cómo se crea el parámetro de esta llamada.",
             "Revisa qué hace enviar() sobre el objeto que recibe esa operación y qué estado deja cuando acepta la solicitud.",
@@ -152,7 +161,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_original(Pedido& pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"E\", 2};\n    bool aplicado = enviar_original(pedido);\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::enviado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_original(Pedido& pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"E\", 2};\n    bool aplicado = enviar_original(pedido);\n\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::enviado);\n\n    return 0;\n}\n",
           "answers": [
             "1 1"
           ],
@@ -167,7 +176,7 @@
           "answers": [
             "&"
           ],
-          "explanation": "Pedido& refiere al objeto del llamador en esta función.",
+          "explanation": "El signo & forma Pedido&. El parámetro pedido se refiere al Pedido de main; no crea otro Pedido copiándolo. Por eso pedido.enviar() solicita el cambio sobre ese mismo objeto. Como en este ejemplo empieza preparado, la operación lo cambia a Estado::enviado y devuelve true, que se muestra como 1.",
           "reviewFeedback": "Identifica si el parámetro debe crear otro objeto local o servir como otro nombre del objeto recibido. La operación se tiene que solicitar sobre el pedido del llamador."
         }
       ]
@@ -182,7 +191,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool puede_prepararse(const Pedido& pedido) {\n    return pedido.estado() == Estado::preparado;\n}\n\nint main() {\n    Pedido pedido{\"G\", 8};\n    std::cout << puede_prepararse(pedido) << \" \";\n    pedido.cancelar();\n    std::cout << puede_prepararse(pedido);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool puede_prepararse(const Pedido& pedido) {\n    return pedido.estado() == Estado::preparado;\n}\n\nint main() {\n    Pedido pedido{\"G\", 8};\n\n    std::cout << puede_prepararse(pedido) << \" \";\n    pedido.cancelar();\n    std::cout << puede_prepararse(pedido);\n\n    return 0;\n}\n",
           "answers": [
             "1 0"
           ],
@@ -198,7 +207,7 @@
             "Pedido& pedido"
           ],
           "correctIndex": 1,
-          "explanation": "La referencia constante expresa lectura sin una copia del objeto.",
+          "explanation": "En const Pedido& pedido, & permite referirse al mismo objeto sin crear una copia del Pedido para el parámetro; const impide modificarlo por esa vía. const Pedido pedido seguiría recibiendo por valor, aunque su copia local no pudiera cambiarse. Pedido& pedido evitaría copiar el objeto, pero permitiría solicitar operaciones que lo modifican.",
           "reviewFeedback": [
             "El const de un parámetro por valor restringe ese parámetro local. Comprueba por separado si la declaración evita crear otro objeto.",
             "Comprueba por separado si el parámetro copia el objeto y si permite modificarlo mediante esa vía.",
@@ -217,7 +226,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"H\", 3};\n    std::vector<Pedido> registros;\n    registros.push_back(original);\n    original.cambiar_unidades(9);\n    std::cout << registros.at(0).unidades() << \" \" << original.unidades();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"H\", 3};\n    std::vector<Pedido> registros;\n    registros.push_back(original);\n    original.cambiar_unidades(9);\n\n    std::cout << registros.at(0).unidades() << \" \" << original.unidades();\n\n    return 0;\n}\n",
           "answers": [
             "3 9"
           ],
@@ -228,7 +237,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> registros{{\"I\", 2}, {\"J\", 5}};\n    for (auto& pedido : registros) { pedido.enviar(); }\n    for (const auto& pedido : registros) {\n        std::cout << pedido.codigo() << \":\" << (pedido.estado() == Estado::enviado) << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> registros{\n        {\"I\", 2},\n        {\"J\", 5}\n    };\n    for (auto& pedido : registros) {\n        pedido.enviar();\n    }\n    for (const auto& pedido : registros) {\n        std::cout << pedido.codigo() << \":\"\n                  << (pedido.estado() == Estado::enviado) << \";\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "I:1;J:1;"
           ],
@@ -245,25 +254,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye cancelar_copia(Pedido) y cancelar_original(Pedido&). Ambas funciones devuelven el resultado de cancelar(); la diferencia es el objeto sobre el que actúa cada una. Utiliza la clase Pedido y sus reglas ya estudiadas.\n\nCrea un pedido preparado con código K y cuatro unidades. Llama primero a cancelar_copia y conserva su resultado; después consulta si el pedido del llamador sigue preparado. Llama entonces a cancelar_original y consulta si ese mismo pedido quedó cancelado. Presenta los dos pares de resultados en la primera línea: Preparado=1:1 1:1.\n\nPara la segunda prueba, crea otro pedido con código J y cinco unidades y envíalo. Aplica después ambas funciones, en el mismo orden. Tras cada llamada consulta si ese pedido conserva el estado enviado. La segunda línea debe ser Enviado=0:1 0:1. Realiza cada llamada antes de consultar su efecto.\n\nConstruye también presentar(const Pedido&). Debe mostrar el código, dos puntos, las unidades, un espacio y preparado: seguido del resultado de comparar el estado con Estado::preparado. Usa sólo consultas públicas, sin modificar el pedido.\n\nLlama a presentar para K, J y un nuevo pedido const con código P y dos unidades. Esas tres líneas deben ser K:4 preparado:0, J:5 preparado:0 y P:2 preparado:1. En total hay cinco líneas: termina las cuatro primeras con un salto y no añadas otro después de la última. Pulsa Compilar, ejecutar y comprobar.",
+          "text": "Utiliza la clase Pedido y sus reglas ya estudiadas. Construye estas funciones:\n\ncancelar_copia(Pedido) recibe por valor y devuelve el resultado de cancelar() sobre su parámetro local.\ncancelar_original(Pedido&) recibe por referencia y devuelve el resultado de cancelar() sobre el objeto del llamador.\n\nLa diferencia es el objeto sobre el que actúa cada función. Para contrastarlas, realiza las siguientes secuencias.\n\nCrea un pedido preparado con código K y cuatro unidades. Llama primero a cancelar_copia y conserva el resultado. Antes de continuar, consulta si el pedido del llamador sigue preparado y conserva también esa comparación. Después llama a cancelar_original y consulta si el mismo pedido quedó cancelado. La primera línea reúne los dos pares, resultado de la llamada y comparación posterior:\nPreparado=1:1 1:1\n\nCrea otro pedido con código J y cinco unidades y envíalo. Llama primero a cancelar_copia y consulta después si conserva el estado enviado. Llama entonces a cancelar_original y vuelve a consultar si sigue enviado. La segunda línea reúne esos pares en el mismo orden:\nEnviado=0:1 0:1\n\nRealiza cada llamada antes de consultar su efecto y conserva los resultados antes de seguir con la llamada siguiente.\n\nConstruye también presentar(const Pedido&). Debe utilizar sólo consultas públicas y mostrar, sin modificar el pedido: el código, dos puntos, las unidades, un espacio y el rótulo preparado: seguido del resultado de comparar su estado con Estado::preparado.\n\nLlama a presentar con K y J tal como quedaron después de las secuencias anteriores. Crea además un nuevo pedido const con código P y dos unidades y preséntalo. El programa debe producir estas cinco líneas, en este orden:\nPreparado=1:1 1:1\nEnviado=0:1 0:1\nK:4 preparado:0\nJ:5 preparado:0\nP:2 preparado:1\n\nTermina las cuatro primeras líneas con un salto y no añadas otro después de la última. Pulsa Compilar, ejecutar y comprobar.",
           "emphasis": [
             {
-              "text": "el objeto sobre el que actúa"
+              "text": "el objeto sobre el que actúa",
+              "style": "bold"
             },
             {
-              "text": "Realiza cada llamada antes de consultar su efecto"
+              "text": "Realiza cada llamada antes de consultar su efecto",
+              "style": "bold"
             },
             {
-              "text": "cinco líneas"
+              "text": "cinco líneas",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -278,13 +291,15 @@
         },
         {
           "type": "paragraph",
-          "text": "La función por valor cancela su copia; la función por referencia solicita cancelar el pedido del llamador. presentar observa mediante una referencia constante. Las tres declaraciones cumplen propósitos distintos.\n\nEl pedido enviado aporta otra condición de partida: ni copiarlo ni recibirlo por referencia convierte su estado en preparado. El modo de parámetro no elimina las condiciones de cancelar().",
+          "text": "La función por valor cancela su copia; la función por referencia solicita cancelar el pedido del llamador. presentar observa mediante una referencia constante. Las tres declaraciones cumplen propósitos distintos.\n\nPara el pedido preparado, cancelar_copia devuelve true porque su objeto local acepta la cancelación, mientras el pedido del llamador sigue preparado. cancelar_original también devuelve true, pero ahora el objeto del llamador queda cancelado.\n\nEl pedido enviado tiene otra condición de partida: copiarlo conserva el estado enviado. Tanto esa copia como el objeto recibido por referencia rechazan cancelar() y conservan sus miembros. El modo de parámetro no elimina las condiciones de esa operación.",
           "emphasis": [
             {
-              "text": "Las tres declaraciones"
+              "text": "Las tres declaraciones",
+              "style": "bold"
             },
             {
-              "text": "no elimina las condiciones"
+              "text": "no elimina las condiciones",
+              "style": "bold"
             }
           ]
         }
@@ -299,17 +314,19 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n    std::cout << a << \":\" << (pedido.estado() == Estado::preparado) << \" \";\n    bool b = cancelar_original(pedido);\n    std::cout << b << \":\" << (pedido.estado() == Estado::cancelado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) {\n    return pedido.cancelar();\n}\n\nbool cancelar_original(Pedido& pedido) {\n    return pedido.cancelar();\n}\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n\n    std::cout << a << \":\" << (pedido.estado() == Estado::preparado) << \" \";\n    bool b = cancelar_original(pedido);\n    std::cout << b << \":\" << (pedido.estado() == Estado::cancelado);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo anterior se concentra en las dos llamadas sobre el pedido preparado. La referencia completa al final de esta página añade la prueba del pedido enviado y las tres presentaciones para obtener las cinco líneas solicitadas.\n\nAl comparar los efectos, importa tanto el bool devuelto como el objeto que lo produjo. La función por valor sólo modifica su copia; la referencia permite actuar sobre el original. En ambos casos, una cancelación rechazada conserva los miembros del pedido sobre el que se solicitó.",
+          "text": "El ejemplo anterior se concentra en las dos llamadas sobre el pedido preparado y muestra 1:1 1:1, sin rótulo ni salto final. El primer par indica que la copia aceptó la cancelación y que el pedido del llamador siguió preparado. El segundo indica que la operación por referencia aceptó la cancelación y que el pedido del llamador quedó cancelado.\n\nLa referencia completa añade la prueba del pedido enviado y las tres presentaciones para obtener las cinco líneas solicitadas.\n\nAl comparar los efectos, importa tanto el bool devuelto como el objeto que lo produjo. En ambos modos de parámetro, una cancelación rechazada conserva los miembros del objeto sobre el que se solicitó.",
           "emphasis": [
             {
-              "text": "La referencia completa"
+              "text": "La referencia completa",
+              "style": "bold"
             },
             {
-              "text": "el objeto que lo produjo"
+              "text": "el objeto que lo produjo",
+              "style": "bold"
             }
           ]
         },
@@ -322,7 +339,7 @@
             "Observar el objeto del llamador después de la función, además de su retorno."
           ],
           "correctIndex": 2,
-          "explanation": "El efecto observable pertenece al objeto correcto, no sólo al resultado de la función.",
+          "explanation": "Con un pedido preparado, cancelar_copia y cancelar_original pueden devolver el mismo true. Sin embargo, tras cancelar_copia el pedido del llamador sigue preparado; tras cancelar_original queda cancelado. Mirar sólo el retorno no permite distinguir ambos efectos. También hay que consultar el estado del objeto que conserva el llamador.",
           "reviewFeedback": [
             "Las salidas internas pueden describir el objeto local de una función. Sitúa también qué objeto conserva el llamador tras la llamada.",
             "El mismo resultado lógico puede acompañar efectos sobre objetos diferentes. Revisa qué información del pedido falta observar.",
@@ -332,7 +349,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nvoid presentar(const Pedido& pedido) {\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n        << \" preparado:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"T\", 5};\n    presentar(pedido);\n    std::cout << \"\\n\";\n    pedido.enviar();\n    presentar(pedido);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) {\n    return pedido.cancelar();\n}\n\nbool cancelar_original(Pedido& pedido) {\n    return pedido.cancelar();\n}\n\nvoid presentar(const Pedido& pedido) {\n\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n              << \" preparado:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"T\", 5};\n    presentar(pedido);\n    std::cout << \"\\n\";\n    pedido.enviar();\n    presentar(pedido);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -353,7 +370,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nvoid presentar(const Pedido& pedido) {\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n              << \" preparado:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n    const bool preparado = pedido.estado() == Estado::preparado;\n    bool b = cancelar_original(pedido);\n    std::cout << \"Preparado=\" << a << \":\" << preparado << \" \" << b << \":\"\n              << (pedido.estado() == Estado::cancelado) << \"\\n\";\n    Pedido enviado{\"J\", 5};\n    enviado.enviar();\n    a = cancelar_copia(enviado);\n    const bool conserva_tras_copia = enviado.estado() == Estado::enviado;\n    b = cancelar_original(enviado);\n    std::cout << \"Enviado=\" << a << \":\" << conserva_tras_copia << \" \" << b << \":\"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n    presentar(pedido);\n    std::cout << \"\\n\";\n    presentar(enviado);\n    std::cout << \"\\n\";\n    const Pedido fijo{\"P\", 2};\n    presentar(fijo);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) {\n    return pedido.cancelar();\n}\n\nbool cancelar_original(Pedido& pedido) {\n    return pedido.cancelar();\n}\n\nvoid presentar(const Pedido& pedido) {\n\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n              << \" preparado:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n    const bool preparado = pedido.estado() == Estado::preparado;\n    bool b = cancelar_original(pedido);\n    std::cout << \"Preparado=\" << a << \":\" << preparado << \" \" << b << \":\"\n              << (pedido.estado() == Estado::cancelado) << \"\\n\";\n\n    Pedido enviado{\"J\", 5};\n    enviado.enviar();\n    a = cancelar_copia(enviado);\n    const bool conserva_tras_copia = enviado.estado() == Estado::enviado;\n    b = cancelar_original(enviado);\n    std::cout << \"Enviado=\" << a << \":\" << conserva_tras_copia << \" \" << b << \":\"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n    presentar(pedido);\n    std::cout << \"\\n\";\n    presentar(enviado);\n    std::cout << \"\\n\";\n\n    const Pedido fijo{\"P\", 2};\n    presentar(fijo);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1263,6 +1280,252 @@
         "id": "block_0005_0002",
         "beforeSha256": "4725ab02426605e905dafe386c78eab38c9d91407272419bae9d6197f40a8792",
         "afterSha256": "5735eca26719f85a2f1eddd7482857777100a8c240b9a0de865dc9123bcbcc5b"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "809605b9f266a39b79cdca1d85be6e3c81d61f02f1fc86cdaf0cae86291434d7",
+        "afterSha256": "36c3cdea2194d6f800a23fc477d19543edba8deed932e6003551a9fbbf026d2a"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "784dfa63b8f2612e9abf9946eaaa0148de19dc70c34751eb7a8388b715a4b732",
+        "afterSha256": "9f1a5f49d4b52a2996ffecec949b9b955c8142a0fc90c391e945c621ee24d6b8"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "cf67113eee11dfbdabf357356db95760f3042386bddaec4a60b35cb1a1d17d21",
+        "afterSha256": "037abae0bb6f31d836e87bdf4822d52973095c4b63ddea52c1ac090d776615a5"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "60ea06788535d7f632014fa23e64a739972a35729c76e8a4e238a6c12bf2f8c2",
+        "afterSha256": "9d2a8ad7db0a3e74a0c496281b48469cafa54df57f21ffe08c2a75cb58b3954a"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "033c62d03a53bb507f358c2fb8d44eab54fb335468d4bb7aaf108a7ac5b42932",
+        "afterSha256": "f630bb43227e17575ed82d782f8f1aebcd5ee955365c8be1537ff2925b772268"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "b48237145d21f22f40a7dd330125cce40cb2230d01633da6d7ad67863b47272c",
+        "afterSha256": "7213f725e68ad61a532d5e58115674ac3e1dd111dcab9578552a7765515daba1"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "e70e66f00ba90d2780ec9655e85777f65c4867f1f0f7a759a5a6a927c38890be",
+        "afterSha256": "977f24f941973150d242843c165e9768f938d7890342c0e22fb79f413998896e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "81efc46f39410b9992506772e8a1e3de4423b0317f8ea6d8f276ebaa1b94f0bc",
+        "afterSha256": "f4332b21decf698cefe987f799090821a726e801d57f4d93dc0e1a34c549c574"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "0276fed7f1bf8b7f23eee9bf41788fac3e6bcc73eedd00bbdae7aa11f02e91a4",
+        "afterSha256": "39213603ebd112f5fd1753bcef8a0d98f83fd6cb50a12c088e1079828456727a"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "9c08582465ed277bc3dfa0d6697fa1baceb490dc620d8f87bbf5428a2dfc0fd6",
+        "afterSha256": "4e1da39026316087e9ade62cddf1d7b02127ca1e657607c1449d5ff1d9b96d79"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "38749c79f7c291062d313efc3d5ad15e1b836684725d489c953d76397854431f",
+        "afterSha256": "ecd94fa20b5de6b2b555fed9cdbf5ebdd7e0f00f7c7fcc334cbc5154f9dbf944"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "50d45b86d5da42eaa304fe357203dbb9784aadc6160ff15ff98a1c38e03756ec",
+        "afterSha256": "a62fe06a0f5a6deb5b7965491ded9d85660a74043770009daba324da0991eb3f"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "16f8188f351f56b01bb3355a9a1513ec9dec7df617596cd898e0e56781a1afe9",
+        "afterSha256": "967b6b9227e813374e46919a46061c31441f9698a0cc8d121dc9a49ecdc6353d"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "5735eca26719f85a2f1eddd7482857777100a8c240b9a0de865dc9123bcbcc5b",
+        "afterSha256": "ca7b3425a362b7e215e7788532fcde585b63240807a01eccb938d012d2a508ac"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "c13a526b0f6c850a9904c7f6e590fc8d7e4ec959aa85ba89430dd702aa7ae088",
+        "afterSha256": "7b8dbd03d7c6be2fadfd8d8b95c5a979061ab9b59321eeafb7bec98468120f7d"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "2714509206baaf2c29e0efac8a2a01609d904b25d560a10f18bd008db95dbf55",
+        "afterSha256": "8717903ed266cb1ebc62694cc87f925384b3a2ee81329f1a6322d191bfac2dce"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "44b5383241f49f5b39bc670f1bff38f0d06f3591d3c469e2ad929b118e78b1f9",
+        "afterSha256": "90b65e2782706441e9ebc815c8023f7a147cbec9782be174206e2ab1c9bf7242"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "95d57f2a2c877d0f814b77c56e12a064b486c5868ef0ee96145299b4321e1ee3",
+        "afterSha256": "a30a4adcaff6758a55de9eee7900a0d0c81eeb207422f3c3d84d2edf9fc538b5"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "a5132208f48e96480678ec80dfec8528386a3709cea601b88fe79792340a852a",
+        "afterSha256": "f283b3a3f43e53e2b25c7e8d44d673cbf2a447762a1d54056db566b4144f70d6"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "99eead8a120bad6a0158226259507d07f4ac2f093b441cfb0872a4ce665b3b02",
+        "afterSha256": "86b6023df237a8950d8968cc259dfeafa638ed4b6ca6b4c966bccef3d8b6d4ee"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "8bac06d8c4c23bf2d146e46d3b1d116a8af2baf1e4b8e5d4d4c2af0044f6ba4e",
+        "afterSha256": "a226130257dd7b3bfe2ff168245994c56db80e2ad55c6cef19ea9f0064c39957"
+      },
+      {
+        "id": "block_0007_0007",
+        "beforeSha256": "cc14aa54010ccf341c2b9b3eb6918fb929c31ec74a52dd21a5280a2d69529a23",
+        "afterSha256": "0f053acbc8c3e4adefd62f13055e98330613ddbd883f2c1e6addb7ce2cf3b7b4"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"A\", 3};\n    Pedido copia = original;\n    original.enviar();\n    std::cout << (original.estado() == Estado::enviado) << \" \" << (copia.estado() == Estado::preparado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido a{\"B\", 4};\n    Pedido b{\"C\", 7};\n    b = a;\n    a.cambiar_unidades(5);\n    std::cout << b.codigo() << \":\" << b.unidades() << \" \" << a.codigo() << \":\" << a.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "B:4 B:5"
+          ],
+          "explanation": "La asignación b = a; sustituye el código C y las 7 unidades de b por el código B, las 4 unidades y el estado preparado de a. Después, a.cambiar_unidades(5) modifica sólo a. Al consultar ambos, b muestra B:4 y a muestra B:5.",
+          "reviewFeedback": "Sigue primero qué miembros recibe b en la asignación y después qué objeto se modifica. Identifica de cuál de los dos se lee cada parte de la salida."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_copia(Pedido pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"D\", 6};\n    bool aplicado = enviar_copia(pedido);\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n",
+          "answers": [
+            "1 1"
+          ],
+          "explanation": "enviar_copia(pedido) crea su parámetro copiando el pedido preparado. enviar() actúa sobre ese objeto local y devuelve true, mostrado como 1. El pedido de main conserva el estado preparado; su comparación también produce 1. Los dos unos describen objetos distintos.",
+          "reviewFeedback": "Localiza cómo se recibe el parámetro de enviar_copia. Separa el resultado de esa llamada del estado que conserva el pedido de main."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_original(Pedido& pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"E\", 2};\n    bool aplicado = enviar_original(pedido);\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "1 1"
+          ],
+          "explanation": "El parámetro Pedido& pedido se refiere al pedido de main. enviar() cambia ese mismo objeto a Estado::enviado y devuelve true, mostrado como 1. La consulta posterior observa el cambio en el pedido del llamador y produce el segundo 1.",
+          "reviewFeedback": "Comprueba a qué objeto se refiere el parámetro de enviar_original y sobre cuál actúa la llamada a enviar(). Sigue después la consulta de main."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool puede_prepararse(const Pedido& pedido) {\n    return pedido.estado() == Estado::preparado;\n}\n\nint main() {\n    Pedido pedido{\"G\", 8};\n    std::cout << puede_prepararse(pedido) << \" \";\n    pedido.cancelar();\n    std::cout << puede_prepararse(pedido);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "La primera llamada consulta el pedido preparado y devuelve true, mostrado como 1. Después, main llama a cancelar(). La segunda consulta encuentra el estado cancelado y devuelve false, mostrado como 0. La diferencia procede de esa cancelación, no de un cambio realizado por la función de consulta.",
+          "reviewFeedback": "La función consulta el estado que tiene el pedido en cada llamada. Sitúa la cancelación entre ambas consultas y conserva el orden de presentación."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"H\", 3};\n    std::vector<Pedido> registros;\n    registros.push_back(original);\n    original.cambiar_unidades(9);\n    std::cout << registros.at(0).unidades() << \" \" << original.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "3 9"
+          ],
+          "explanation": "registros.push_back(original) añade una copia cuando original tiene 3 unidades. La llamada posterior original.cambiar_unidades(9) cambia el original, pero no el elemento del vector. Sus consultas muestran, en ese orden, 3 y 9.",
+          "reviewFeedback": "Sitúa cuándo se añadió el elemento al vector y cuándo se cambió el original. Identifica qué objeto consulta cada expresión de salida."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> registros{{\"I\", 2}, {\"J\", 5}};\n    for (auto& pedido : registros) { pedido.enviar(); }\n    for (const auto& pedido : registros) {\n        std::cout << pedido.codigo() << \":\" << (pedido.estado() == Estado::enviado) << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "I:1;J:1;"
+          ],
+          "explanation": "En el primer recorrido, auto& pedido se refiere a cada elemento del vector. Sus llamadas a enviar() dejan enviados los pedidos I y J. El segundo recorrido utiliza const auto& para consultar esos mismos elementos: ambas comparaciones producen 1 y forman I:1;J:1;.",
+          "reviewFeedback": "Revisa cómo accede cada recorrido a sus elementos: primero se solicitan envíos y después se consultan sus estados en el mismo orden."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Preparado=1:1 1:1\nEnviado=0:1 0:1\nK:4 preparado:0\nJ:5 preparado:0\nP:2 preparado:1"
+                ],
+                "explanation": "La copia por valor y la referencia modificable tienen efectos distintos sobre un pedido preparado. Un pedido enviado rechaza ambas cancelaciones; las consultas const conservan los objetos."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n    std::cout << a << \":\" << (pedido.estado() == Estado::preparado) << \" \";\n    bool b = cancelar_original(pedido);\n    std::cout << b << \":\" << (pedido.estado() == Estado::cancelado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nvoid presentar(const Pedido& pedido) {\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n        << \" preparado:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"T\", 5};\n    presentar(pedido);\n    std::cout << \"\\n\";\n    pedido.enviar();\n    presentar(pedido);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nvoid presentar(const Pedido& pedido) {\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n              << \" preparado:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n    const bool preparado = pedido.estado() == Estado::preparado;\n    bool b = cancelar_original(pedido);\n    std::cout << \"Preparado=\" << a << \":\" << preparado << \" \" << b << \":\"\n              << (pedido.estado() == Estado::cancelado) << \"\\n\";\n    Pedido enviado{\"J\", 5};\n    enviado.enviar();\n    a = cancelar_copia(enviado);\n    const bool conserva_tras_copia = enviado.estado() == Estado::enviado;\n    b = cancelar_original(enviado);\n    std::cout << \"Enviado=\" << a << \":\" << conserva_tras_copia << \" \" << b << \":\"\n              << (enviado.estado() == Estado::enviado) << \"\\n\";\n    presentar(pedido);\n    std::cout << \"\\n\";\n    presentar(enviado);\n    std::cout << \"\\n\";\n    const Pedido fijo{\"P\", 2};\n    presentar(fijo);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1294,7 +1557,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "67ee166fa5e5a11fb7179dbd1c8f7be4a1ea9301469572624fe68d25ab48e1fd",
+        "sourceSha256": "f7a61b1361559346fa3aa38a1d768be201fc5ff4833918b9cfe994ac9aa6a9a1",
         "spans": [
           {
             "start": 8,
@@ -1332,22 +1595,57 @@
             "reading": "natural"
           },
           {
-            "start": 124,
-            "end": 148,
+            "start": 139,
+            "end": 163,
             "text": "Pedido copia = original;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 342,
-            "end": 350,
+            "start": 225,
+            "end": 233,
             "text": "original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 400,
-            "end": 405,
+            "start": 251,
+            "end": 258,
+            "text": "codigo_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 282,
+            "end": 291,
+            "text": "unidades_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 318,
+            "end": 325,
+            "text": "estado_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 497,
+            "end": 514,
+            "text": "original.enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 535,
+            "end": 543,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 562,
+            "end": 567,
             "text": "copia",
             "role": "cpp",
             "reading": "technical"
@@ -1418,7 +1716,7 @@
             "end": 42,
             "text": "C",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 49,
@@ -1439,7 +1737,7 @@
             "end": 80,
             "text": "B",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 86,
@@ -1510,6 +1808,13 @@
             "text": "b",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 116,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1537,8 +1842,72 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "f6e0f4220fed9c7c286a420c11a65158b546ed72af4be023c5cf2c293b4dc32f",
-        "spans": []
+        "sourceSha256": "aa3b155c0492ee30de8603f781fd1fa16c70e6ce10869f1707cc11ba51d45268",
+        "spans": [
+          {
+            "start": 9,
+            "end": 15,
+            "text": "b = a;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 18,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "text": "C",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 39,
+            "end": 44,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 110,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": "B",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 122,
+            "end": 128,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 165,
+            "text": "private",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 203,
+            "text": "codigo_",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1595,7 +1964,7 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "3e1d6a80dec1fc5891f359b87ee390d965a154c54f059987463d52fb4062510a",
+        "sourceSha256": "9a49029d65cc0e0b1082ab2335cea9cbe7ab7fbd8ddfdc5e3bf1571a4b5c4ca6",
         "spans": [
           {
             "start": 0,
@@ -1605,64 +1974,106 @@
             "reading": "technical"
           },
           {
-            "start": 52,
-            "end": 58,
+            "start": 58,
+            "end": 64,
             "text": "b = a;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 208,
-            "end": 209,
-            "text": "a",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 220,
-            "end": 227,
-            "text": "codigo_",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 228,
-            "end": 248,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 269,
-            "end": 270,
-            "text": "a",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 284,
-            "end": 285,
+            "start": 186,
+            "end": 187,
             "text": "b",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 427,
-            "end": 435,
+            "start": 214,
+            "end": 215,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 233,
+            "text": "codigo_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 254,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 276,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 291,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 333,
+            "text": "estado_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 351,
+            "end": 352,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 370,
+            "end": 371,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 392,
+            "text": "b = a;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 398,
+            "end": 399,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 524,
+            "end": 532,
             "text": "enviar()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 437,
-            "end": 447,
+            "start": 534,
+            "end": 544,
             "text": "cancelar()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 450,
-            "end": 468,
+            "start": 547,
+            "end": 565,
             "text": "cambiar_unidades()",
             "role": "cpp",
             "reading": "technical"
@@ -1672,84 +2083,126 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "3c311ce7f30b33a6c445f30504c69320b347597b3561dd571515d021514dca4a",
+        "sourceSha256": "ba7d30db26a4925a1dfcbdd7790e74d02139f3d7c15f79311bf7171d7d967c2b",
         "spans": [
           {
-            "start": 75,
-            "end": 102,
-            "text": "enviar_copia(Pedido pedido)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 140,
-            "end": 146,
+            "start": 126,
+            "end": 132,
             "text": "Pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 277,
-            "end": 295,
+            "start": 135,
+            "end": 162,
+            "text": "enviar_copia(Pedido pedido)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 200,
+            "end": 206,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 350,
+            "end": 368,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 311,
-            "end": 325,
+            "start": 371,
+            "end": 385,
             "text": "Pedido& pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 407,
-            "end": 427,
+            "start": 572,
+            "end": 590,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 593,
+            "end": 613,
             "text": "const Pedido& pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 488,
-            "end": 506,
+            "start": 681,
+            "end": 687,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 735,
+            "end": 753,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 552,
-            "end": 560,
-            "text": "enviar()",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 862,
+            "end": 865,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 563,
-            "end": 573,
-            "text": "cancelar()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 621,
-            "end": 640,
+            "start": 878,
+            "end": 897,
             "text": "const Pedido pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 707,
-            "end": 712,
+            "start": 903,
+            "end": 904,
+            "text": "&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 943,
+            "end": 948,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 777,
-            "end": 795,
+            "start": 1021,
+            "end": 1027,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1065,
+            "end": 1083,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 1149,
+            "end": 1157,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1160,
+            "end": 1170,
+            "text": "cancelar()",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1811,6 +2264,20 @@
             "text": "1",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 230,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 235,
+            "text": "unos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1842,10 +2309,17 @@
         "spans": [
           {
             "start": 3,
-            "end": 12,
-            "text": "bool true",
+            "end": 7,
+            "text": "bool",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 8,
+            "end": 12,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 26,
@@ -1859,8 +2333,37 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "c4b84aa3b45524b5b9f2a7d7ef170ac183a5bff05803cb12065f1cbc53b87cf9",
-        "spans": []
+        "sourceSha256": "a387ee4e2a2fc74c4bf7a4032624fba6e9fd4f564426811d1bb43d3fb31d4899",
+        "spans": [
+          {
+            "start": 13,
+            "end": 26,
+            "text": "Pedido pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 77,
+            "end": 85,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 147,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 176,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -2035,14 +2538,77 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "96e7d8622c45c7e2ce60cea73a840d2874d48e1a6591825014fdbab032f39222",
+        "sourceSha256": "a0793ccf3310a1fa85fbfb9026fd503865fddba8ea82995552543a1c337770ee",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
+            "start": 9,
+            "end": 10,
+            "text": "&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 17,
+            "end": 24,
             "text": "Pedido&",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 45,
+            "text": "pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 66,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 74,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 95,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 131,
+            "text": "pedido.enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 255,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 271,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 294,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2136,8 +2702,51 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "2751769ca593ed97b4c74faa09ede40840a82f8fcb2bf7d6284ffdd5af6d18d7",
-        "spans": []
+        "sourceSha256": "297a2d4eed7d9a56849f83ebd9478693c077cdcf68ce03c246d56bb93a4105b9",
+        "spans": [
+          {
+            "start": 3,
+            "end": 23,
+            "text": "const Pedido& pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 91,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 111,
+            "end": 116,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 168,
+            "text": "const Pedido pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 258,
+            "text": "Pedido& pedido",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2304,14 +2913,14 @@
             "end": 128,
             "text": "I",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 131,
             "end": 132,
             "text": "J",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 163,
@@ -2351,174 +2960,230 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "a329a1cf9c768fee89b817534cafeaeb056f6a7ca10668fbbb3c20503a96679d",
+        "sourceSha256": "c449200bf5cbd32d7cdeb830da5544b11602f62ace512746d50949f8b10ad609",
         "spans": [
           {
-            "start": 10,
-            "end": 32,
-            "text": "cancelar_copia(Pedido)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 35,
-            "end": 61,
-            "text": "cancelar_original(Pedido&)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 105,
-            "end": 115,
-            "text": "cancelar()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 190,
-            "end": 196,
+            "start": 17,
+            "end": 23,
             "text": "Pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 262,
-            "end": 263,
-            "text": "K",
-            "role": "data",
-            "reading": "natural"
+            "start": 80,
+            "end": 102,
+            "text": "cancelar_copia(Pedido)",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 266,
-            "end": 272,
+            "start": 147,
+            "end": 157,
+            "text": "cancelar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 184,
+            "end": 210,
+            "text": "cancelar_original(Pedido&)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 260,
+            "end": 270,
+            "text": "cancelar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 454,
+            "end": 455,
+            "text": "K",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 458,
+            "end": 464,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 299,
-            "end": 313,
+            "start": 491,
+            "end": 505,
             "text": "cancelar_copia",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 416,
-            "end": 433,
+            "start": 654,
+            "end": 671,
             "text": "cancelar_original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 540,
-            "end": 557,
-            "text": "Preparado=1:1 1:1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 612,
-            "end": 613,
-            "text": "J",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 616,
-            "end": 621,
-            "text": "cinco",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 788,
-            "end": 803,
-            "text": "Enviado=0:1 0:1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 875,
-            "end": 899,
-            "text": "presentar(const Pedido&)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 964,
-            "end": 974,
-            "text": "preparado:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1023,
-            "end": 1040,
-            "text": "Estado::preparado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1105,
-            "end": 1114,
-            "text": "presentar",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1120,
-            "end": 1121,
-            "text": "K",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1123,
-            "end": 1124,
-            "text": "J",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1143,
-            "end": 1148,
-            "text": "const",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1160,
-            "end": 1161,
-            "text": "P",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1164,
-            "end": 1167,
+            "start": 746,
+            "end": 749,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1205,
-            "end": 1220,
+            "start": 806,
+            "end": 823,
+            "text": "Preparado=1:1 1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 853,
+            "end": 854,
+            "text": "J",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 857,
+            "end": 862,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 899,
+            "end": 913,
+            "text": "cancelar_copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 981,
+            "end": 998,
+            "text": "cancelar_original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1091,
+            "end": 1106,
+            "text": "Enviado=0:1 0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1245,
+            "end": 1269,
+            "text": "presentar(const Pedido&)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1405,
+            "end": 1415,
+            "text": "preparado:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1464,
+            "end": 1481,
+            "text": "Estado::preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1492,
+            "end": 1501,
+            "text": "presentar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1506,
+            "end": 1507,
+            "text": "K",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1510,
+            "end": 1511,
+            "text": "J",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1596,
+            "end": 1601,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1613,
+            "end": 1614,
+            "text": "P",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1617,
+            "end": 1620,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1676,
+            "end": 1681,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1705,
+            "end": 1722,
+            "text": "Preparado=1:1 1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1723,
+            "end": 1738,
+            "text": "Enviado=0:1 0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1739,
+            "end": 1754,
             "text": "K:4 preparado:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1222,
-            "end": 1237,
+            "start": 1755,
+            "end": 1770,
             "text": "J:5 preparado:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1240,
-            "end": 1255,
+            "start": 1771,
+            "end": 1786,
             "text": "P:2 preparado:1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1800,
+            "end": 1806,
+            "text": "cuatro",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2540,7 +3205,7 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "8c8750ea94be5aca6cf747ea934890a1cf2ce43f860b7de822d2ecc6bb41a65e",
+        "sourceSha256": "9b2bdf85c4f19a0e5a3cef939e039c6a714780d1b4637bddaa79d774f35eccd4",
         "spans": [
           {
             "start": 107,
@@ -2550,8 +3215,43 @@
             "reading": "technical"
           },
           {
-            "start": 391,
-            "end": 401,
+            "start": 164,
+            "end": 168,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 254,
+            "text": "cancelar_copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 268,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 381,
+            "text": "cancelar_original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 399,
+            "end": 403,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 609,
+            "end": 619,
             "text": "cancelar()",
             "role": "cpp",
             "reading": "technical"
@@ -2562,16 +3262,52 @@
         "block": "block_0007_0000",
         "path": "/text",
         "sourceSha256": "eee17bfe507ea7560cf746553fe59e415184ad0c77cfd5fd04750bc44479a9a1",
-        "spans": []
+        "spans": [
+          {
+            "start": 23,
+            "end": 26,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "b9e1da1bfe872e8191c87cb137309d13ba4d66615989696db17ab6c68981a6ff",
+        "sourceSha256": "2e318fad842ebdc2a05b58aec7d9f7987b6237cf6f0764b0b1087dc694bad225",
         "spans": [
           {
-            "start": 274,
-            "end": 278,
+            "start": 40,
+            "end": 43,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 96,
+            "text": "1:1 1:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 411,
+            "end": 415,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 453,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 521,
             "text": "bool",
             "role": "cpp",
             "reading": "technical"
@@ -2587,8 +3323,44 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "8d2a7b63ae08f3e10eee4eb32cffb512c3caae26b4df98ae9b52041a9101f108",
-        "spans": []
+        "sourceSha256": "3087bfadc35b9fc30b22c5161751d07f196b358e836d10173fac33fb1c78ca4a",
+        "spans": [
+          {
+            "start": 25,
+            "end": 39,
+            "text": "cancelar_copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 59,
+            "text": "cancelar_original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 85,
+            "end": 89,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 123,
+            "text": "cancelar_copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 186,
+            "text": "cancelar_original",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -2675,6 +3447,13 @@
             "reading": "technical"
           },
           {
+            "start": 277,
+            "end": 280,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 312,
             "end": 320,
             "text": "enviar()",
@@ -2687,6 +3466,13 @@
             "text": "main",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 402,
+            "end": 405,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2694,7 +3480,15 @@
         "block": "block_0007_0006",
         "path": "/text",
         "sourceSha256": "620762d67940591d96c51da9110c786f30d5e6468a6515d91eceb4cedae04152",
-        "spans": []
+        "spans": [
+          {
+            "start": 33,
+            "end": 38,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

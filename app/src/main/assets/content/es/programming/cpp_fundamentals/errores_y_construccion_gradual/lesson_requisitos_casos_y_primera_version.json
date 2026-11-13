@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El microtaller de esta lección estima minutos y admite de 0 a 10 piezas, incluidos los extremos. El pedido vacío tarda 0 minutos. Un pedido no vacío necesita una preparación de 3 minutos y 2 minutos por cada pieza.\n\nLa función de estimación recibe la cantidad y devuelve el tiempo. No modifica el pedido ni imprime mensajes: main utiliza ese resultado para presentarlo.",
+          "text": "El microtaller estima cuántos minutos tarda un pedido. Estas son sus reglas:\n\nAdmite de 0 a 10 piezas, incluidos los extremos.\nEl pedido vacío tarda 0 minutos.\nUn pedido no vacío necesita una preparación de 3 minutos.\nDespués se añaden 2 minutos por cada pieza.\n\nLa función de estimación recibe la cantidad y devuelve el tiempo. No modifica el pedido ni imprime mensajes: main utiliza ese resultado para presentarlo.",
           "emphasis": [
             {
               "text": "de 0 a 10 piezas",
@@ -88,7 +88,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los casos 0, 1, 4 y 10 comprueban decisiones distintas del requisito. El cero activa la regla del pedido vacío; uno representa el primer pedido no vacío; cuatro es un caso interior, y diez pertenece a la frontera superior admitida. Las preguntas aplican la regla a esos casos sin depender de una salida producida por el programa.\n\nEl cálculo 3+2*piezas permanece pequeño en este dominio. Ese límite no constituye una promesa para cualquier valor representable por int.",
+          "text": "Estos casos comprueban decisiones distintas del requisito:\n\n0 comprueba la regla del pedido vacío.\n1 es el primer pedido no vacío.\n4 es un caso interior del intervalo admitido.\n10 comprueba la frontera superior, que también se admite.\n\nLas preguntas siguientes aplican las reglas a esos pedidos. El resultado esperado se obtiene del requisito, sin utilizar como respuesta una salida producida por el programa.\n\nEl cálculo 3+2*piezas permanece pequeño en este dominio. El límite de pedidos no constituye una promesa para cualquier valor representable por int.",
           "emphasis": [
             {
               "text": "decisiones distintas",
@@ -140,7 +140,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una primera versión puede resolver una parte limitada del problema para comprobar su diseño. Sus límites deben quedar explícitos, y los casos utilizados tienen que respetarlos (Stroustrup, 2024).\n\nAquí se construye primero la estimación para datos válidos. La validación y la política de error se incorporarán como responsabilidades explícitas en las lecciones siguientes. El prototipo no se presenta como una función que ya rechaza cualquier dato no admitido.",
+          "text": "Una primera versión limitada, o prototipo, permite experimentar con una parte del problema y comprobar su diseño. Sus límites deben quedar explícitos, y los casos utilizados tienen que respetarlos (Stroustrup, 2024).\n\nAquí se construye primero la estimación para datos válidos. La validación y la política de error se incorporarán como responsabilidades explícitas en las lecciones siguientes. El prototipo no se presenta como una función que ya rechaza cualquier dato no admitido.",
           "emphasis": [
             {
               "text": "límites deben quedar explícitos",
@@ -152,7 +152,8 @@
             },
             {
               "text": "prototipo",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         }
@@ -167,7 +168,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Precondicion del prototipo: 0 <= piezas <= 10.\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(4);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Precondicion del prototipo: 0 <= piezas <= 10.\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(4);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -188,7 +189,7 @@
           "id": "prototipo_otros_pedidos",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(1) << \":\" << estimar(10);\n\n    return 0;\n}\n",
           "answers": [
             "5:23"
           ],
@@ -199,7 +200,7 @@
           "id": "conservar_preparacion",
           "question": "Escribe un único literal numérico decimal de tipo int o double, sin operaciones ni nombres, que represente exactamente los minutos de preparación para pedidos no vacíos.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return ___ + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(3);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return ___ + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(3);\n\n    return 0;\n}\n",
           "answers": [
             "3",
             "3.0"
@@ -243,7 +244,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye estimar para el requisito original: recibe piezas entre 0 y 10, devuelve 0 para el pedido vacío y usa 3 minutos de preparación más 2 por pieza en los demás casos. Mantén el cálculo separado de la salida.\n\nEn main muestra los casos 0, 2, 7 y 10, en ese orden, con el formato piezas=minutos. Las cuatro líneas deben ser 0=0, 2=7, 7=17 y 10=23, sin espacios y con un salto al final de cada línea.\n\nPulsa «Compilar, ejecutar y comprobar». Todas las llamadas de esta actividad respetan el dominio. Después se construye la variante de preparación en otro editor.",
+          "text": "Reconstruye estimar para el requisito original:\n\nRecibe piezas entre 0 y 10.\nDevuelve 0 minutos para el pedido vacío.\nPara los demás pedidos, utiliza 3 minutos de preparación más 2 minutos por pieza.\nMantiene el cálculo separado de la salida.\n\nEn main, llama a la función con los pedidos 0, 2, 7 y 10, en ese orden. Presenta el informe completo con el formato piezas=minutos, sin espacios:\n\n0=0\n2=7\n7=17\n10=23\n\nEscribe un salto al final de cada línea, incluida la última.\n\nPulsa «Compilar, ejecutar y comprobar». Todas las llamadas de esta actividad respetan el dominio. Después se construye la variante de preparación en otro editor.",
           "emphasis": [
             {
               "text": "requisito original",
@@ -265,7 +266,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Pedido de \" << piezas << \" piezas\\n\";\n    std::cout << \"Estimacion pendiente\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n\n    std::cout << \"Pedido de \" << piezas << \" piezas\\n\";\n    std::cout << \"Estimacion pendiente\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -284,7 +285,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor la variante que utiliza 4 minutos de preparación para pedidos no vacíos y 2 por pieza. El dominio sigue siendo 0 a 10 y el pedido vacío conserva 0 minutos.\n\nMuestra los mismos cuatro casos en el formato piezas=minutos, una línea por caso: 0=0, 2=8, 7=18 y 10=24. Cada línea termina con un salto. Cambia la regla del cálculo para obtenerlos; no los escribas como mensajes fijos.\n\nPulsa «Compilar, ejecutar y comprobar». Esta construcción tiene su propio borrador y no exige volver al editor anterior.",
+          "text": "Construye en este editor la variante que utiliza 4 minutos de preparación para pedidos no vacíos y 2 minutos por pieza. El dominio sigue siendo de 0 a 10 piezas y el pedido vacío conserva 0 minutos.\n\nMuestra los mismos cuatro pedidos con el formato piezas=minutos. Este es el informe completo solicitado:\n\n0=0\n2=8\n7=18\n10=24\n\nCada línea, incluida la última, termina con un salto. Cambia la regla del cálculo para obtener esos resultados; no los escribas como mensajes fijos.\n\nPulsa «Compilar, ejecutar y comprobar». Esta construcción tiene su propio borrador y no exige volver al editor anterior.",
           "emphasis": [
             {
               "text": "4 minutos de preparación",
@@ -329,7 +330,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La primera estimación devuelve 0 para el pedido vacío y 3+2*piezas para los demás valores de 0 a 10. Sus cuatro llamadas producen 0, 7, 17 y 23 minutos.\n\nEn la variante cambia sólo la preparación de los pedidos no vacíos: esos resultados pasan a 0, 8, 18 y 24. El cero conserva su regla. Ambas construcciones mantienen el cálculo separado de la presentación y respetan el formato pedido.",
+          "text": "La primera estimación devuelve 0 para el pedido vacío. Para los demás valores entre 0 y 10, calcula 3+2*piezas. Sus llamadas dan estos resultados:\n\nPedido 0 → 0 minutos.\nPedido 2 → 7 minutos.\nPedido 7 → 17 minutos.\nPedido 10 → 23 minutos.\n\nEn la variante cambia sólo la preparación de los pedidos no vacíos. Los mismos pedidos dan:\n\nPedido 0 → 0 minutos.\nPedido 2 → 8 minutos.\nPedido 7 → 18 minutos.\nPedido 10 → 24 minutos.\n\nEl cero conserva su regla. Ambas construcciones mantienen el cálculo separado de la presentación y respetan el formato pedido.",
           "emphasis": [
             {
               "text": "El cero conserva su regla",
@@ -344,7 +345,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{3};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) {\n        return 0;\n    }\n\n    int preparacion{3};\n\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -357,7 +358,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{4};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) {\n        return 0;\n    }\n\n    int preparacion{4};\n\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1067,6 +1068,140 @@
         "id": "block_0004_0001",
         "beforeSha256": "025b8ca374994c636a6af2f1a54c5e4b6ced456f2157bd5dcffdc2a328833d43",
         "afterSha256": "d72a9815e4b615406c1279a608c00c9d1bd6365f01b819905f95b437fd6e276e"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "39a91fab127d673704d1b1adcc3f4a9ff0e351ba40244e3648b2781b1252102a",
+        "afterSha256": "2e88b41ef0242c0b05cc5838ee713d2faa9dd9aa37a8cbdd3c8e66870c795d2b"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "0457c921f2b41d962c6c9f1230d6deaf2e26eb90c602c38d7cf7e63b864ea6b4",
+        "afterSha256": "74f4f0cb9a5d4139de580352e39ce731fc719131e9499f04fc3b70d7f412c897"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "045e71be5a684be82f80c03f70f748d0c3334e8acd7d44d37e67d8f3ceef6656",
+        "afterSha256": "ff2503699278358413afbd6f6a337363ba52ed3c0febff953c0df1979a60bbf2"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b82e4ba91e8643269571fa10feff3827360bc866295fce8055841bb1a16dfc21",
+        "afterSha256": "7536505e7c8ab9fec3ea6101d1d6b4d3e671f46480d5a358981692a974876094"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "4dae3b82dae38f42dfdd41270c51b99e7ca6f65402a30133c3c968581065ddcf",
+        "afterSha256": "506f0086a55a8bdb3632c01c5cbdb8368422020fa9a34fb52cb41dabceb15cc6"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "82f0e202625902e38daa83e2e0a9bc59035ccbef4f497b8d053058c99418dca7",
+        "afterSha256": "d016e8f8eca7ef0111072e69e012edf831b2605af596accbc3449f29279c97d7"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "78c0e319802bc74d0846a7558583cee51e58d5c25d2e8850abed9d31ced2591d",
+        "afterSha256": "c9625b97b6bf557d37edbc52416eab63f2c5c6ac834fd2ebf650dae0dea53cea"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "29d38354beb21dd24703d1dbba1366eda0366c5991aeb41f6e88567d0693ed7c",
+        "afterSha256": "f23949cb3bb69e0f6d8c0bb13c22f732ed5316d058f71e61e272cc9366e7b65a"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "c9b51ea099e628428fd082b824ed3a31df25621db0988f8ca22a3ca3c9878b39",
+        "afterSha256": "8a4df845f16a965d27d92fe5021b4a9ce6a3af8b629e76c3ed16017175cb9fd1"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "9f25104c44d8df3797908c9ac8a145bb58e1f34ba32e73d5c737f3530296c182",
+        "afterSha256": "50806fc81f520f207c93542ea7099dec6010169cec3bd08dcc8213902b710c8e"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "b437070bb1ef0ce1586a8de93616142e648afb17863ec752473f45dd905f34a7",
+        "afterSha256": "149c2e46d53c08d724df5133963feec0a1201f86194f669fa83c1aa3c89c6d7e"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "fb63f33fd87984caeec2e2a3a860c8c9774ab54098a1ebdad512c281e86bc469",
+        "afterSha256": "6165b630c251cc6d3c00f15cbc3b07a24a4a81fee152ba1df76184fbc252bd16"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondicion del prototipo: 0 <= piezas <= 10.\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(4);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "prototipo_otros_pedidos",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "5:23"
+          ],
+          "explanation": "El primer pedido real requiere 3+2=5; la frontera requiere 3+20=23."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "fill_code",
+          "id": "conservar_preparacion",
+          "question": "Escribe un único literal numérico decimal de tipo int o double, sin operaciones ni nombres, que represente exactamente los minutos de preparación para pedidos no vacíos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return ___ + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(3);\n    return 0;\n}\n",
+          "answers": [
+            "3",
+            "3.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "La preparación es de tres minutos. 3 y 3.0 representan esa cantidad; aquí el cálculo con 3.0 no genera fracción y su retorno int conserva el resultado. Que una cantidad distinta se trunque al mismo entero no satisface el requisito. La contribución por pieza sigue siendo 2*piezas; el pedido vacío retorna antes de sumarla."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Pedido de \" << piezas << \" piezas\\n\";\n    std::cout << \"Estimacion pendiente\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0=0\n2=7\n7=17\n10=23\n"
+                ],
+                "explanation": "El pedido vacío conserva cero minutos. Los demás incluyen una sola preparación de tres minutos y dos minutos por pieza."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{3};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{4};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1124,39 +1259,46 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "44ff52201d99f38f848cc9dd329e9db6c3f47d3c30260cd900de2d0e9996859b",
+        "sourceSha256": "4230e6e717d338e405087fe651d7191803a75dbac76d51f244b803410626fce4",
         "spans": [
           {
-            "start": 58,
-            "end": 64,
-            "text": "0 a 10",
+            "start": 88,
+            "end": 89,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 119,
-            "end": 120,
+            "start": 92,
+            "end": 94,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 150,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 178,
+            "start": 207,
+            "end": 208,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 189,
-            "end": 190,
+            "start": 236,
+            "end": 237,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 325,
-            "end": 329,
+            "start": 372,
+            "end": 376,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -1306,53 +1448,46 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "34aadd822dc07f935c89cb9b00e87818454ae553cb32959bd6af4ac6d3cc6857",
+        "sourceSha256": "5f70af5ecc97edd17cd43b4b68c133b58b18c9dcc014d4c5c743a0d268c9647f",
         "spans": [
           {
-            "start": 10,
-            "end": 22,
-            "text": "0, 1, 4 y 10",
+            "start": 60,
+            "end": 61,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 73,
-            "end": 77,
-            "text": "cero",
+            "start": 99,
+            "end": 100,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 115,
-            "text": "uno",
+            "start": 131,
+            "end": 132,
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 160,
-            "text": "cuatro",
+            "start": 177,
+            "end": 179,
+            "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 188,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 342,
-            "end": 352,
+            "start": 422,
+            "end": 432,
             "text": "3+2*piezas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 464,
-            "end": 467,
+            "start": 554,
+            "end": 557,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -1544,11 +1679,11 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "58d5a1d619c98503100d132d6ed54b748dc1b0158eb15e16c0e4f3033185d55f",
+        "sourceSha256": "a379ddc221b0454f2325537ce4400102cf861e516085bafefe54fd64f8cb65ef",
         "spans": [
           {
-            "start": 176,
-            "end": 194,
+            "start": 197,
+            "end": 215,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1773,8 +1908,15 @@
         "spans": [
           {
             "start": 0,
+            "end": 1,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 4,
             "end": 5,
-            "text": "0 y 1",
+            "text": "1",
             "role": "data",
             "reading": "natural"
           }
@@ -1783,7 +1925,7 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "59b6a1bf9046ca8c6b7b07a4b0460fcfd8c5feea2d524652d345dfe861753a9e",
+        "sourceSha256": "f73fdf3f32c5bc331e39571e4720bbbcf2208234db5e41d27a66ad402d6dafae",
         "spans": [
           {
             "start": 12,
@@ -1793,65 +1935,93 @@
             "reading": "technical"
           },
           {
-            "start": 55,
-            "end": 61,
+            "start": 56,
+            "end": 62,
             "text": "piezas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 68,
-            "end": 74,
-            "text": "0 y 10",
+            "start": 69,
+            "end": 70,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 85,
-            "end": 86,
+            "start": 73,
+            "end": 75,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 87,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 115,
+            "start": 150,
+            "end": 151,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 143,
-            "end": 144,
+            "start": 179,
+            "end": 180,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 224,
+            "start": 247,
+            "end": 251,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 243,
-            "end": 255,
-            "text": "0, 2, 7 y 10",
+            "start": 288,
+            "end": 289,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 286,
+            "start": 291,
+            "end": 292,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 295,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
             "end": 300,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 374,
             "text": "piezas=minutos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 330,
-            "end": 352,
-            "text": "0=0, 2=7, 7=17 y 10=23",
+            "start": 391,
+            "end": 409,
+            "text": "0=0\n2=7\n7=17\n10=23",
             "role": "output",
             "reading": "natural"
           }
@@ -1894,7 +2064,7 @@
       {
         "block": "block_0003_0006",
         "path": "/text",
-        "sourceSha256": "4bb5cd3e6fc87955d9926960b0bb4241f4d614f63b00e1c1b763880377a0385a",
+        "sourceSha256": "d2bda89661bb68ab1ed80407b9892e2728bbec660c242af24072123da2bc616b",
         "spans": [
           {
             "start": 49,
@@ -1911,30 +2081,44 @@
             "reading": "natural"
           },
           {
-            "start": 136,
-            "end": 142,
-            "text": "0 a 10",
+            "start": 147,
+            "end": 148,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 170,
-            "end": 171,
+            "start": 151,
+            "end": 153,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 189,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 228,
-            "end": 242,
+            "start": 219,
+            "end": 225,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 263,
             "text": "piezas=minutos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 264,
-            "end": 286,
-            "text": "0=0, 2=8, 7=18 y 10=24",
+            "start": 306,
+            "end": 324,
+            "text": "0=0\n2=8\n7=18\n10=24",
             "role": "output",
             "reading": "natural"
           }
@@ -1969,7 +2153,7 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "8a4cfec14143ca7bfc155f40b562f5b143de93936e4186429ee86044b100630c",
+        "sourceSha256": "4f2f7403894d5cc35303446df1b355faa94600e60a2ce6443b6a94417c86cfdc",
         "spans": [
           {
             "start": 31,
@@ -1979,36 +2163,141 @@
             "reading": "natural"
           },
           {
-            "start": 56,
-            "end": 66,
+            "start": 84,
+            "end": 85,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 90,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 110,
             "text": "3+2*piezas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 93,
-            "end": 99,
-            "text": "0 a 10",
+            "start": 155,
+            "end": 156,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 130,
-            "end": 143,
-            "text": "0, 7, 17 y 23",
+            "start": 159,
+            "end": 160,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 246,
-            "end": 259,
-            "text": "0, 8, 18 y 24",
+            "start": 177,
+            "end": 178,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 182,
+            "text": "7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 264,
-            "end": 268,
+            "start": 199,
+            "end": 200,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 205,
+            "text": "17",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 224,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 229,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 341,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 345,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 362,
+            "end": 363,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 367,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 385,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 390,
+            "text": "18",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 409,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 414,
+            "text": "24",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 428,
+            "end": 432,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -2019,7 +2308,15 @@
         "block": "block_0004_0004",
         "path": "/text",
         "sourceSha256": "21a8c2d803676e4e1b4cfad5fa633dae7ff53b761eb406df9563db4c5da7da60",
-        "spans": []
+        "spans": [
+          {
+            "start": 57,
+            "end": 63,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0005",

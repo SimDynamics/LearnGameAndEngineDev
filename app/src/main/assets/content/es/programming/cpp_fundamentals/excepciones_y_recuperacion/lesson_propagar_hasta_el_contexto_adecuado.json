@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una función puede llamar a otra que lance una excepción. Si no la captura, tampoco continúa normalmente después de esa llamada: la búsqueda de un tratamiento compatible prosigue por las llamadas que estaban pendientes (Stroustrup, 2024).\n\nNo hace falta repetir el mismo catch en cada función intermedia. La función pequeña puede detectar el incumplimiento y el coordinador puede decidir si presenta el fallo, abandona la operación o continúa con otra (Stroustrup, 2024).",
+          "text": "En el programa siguiente, main llama a estimacion_doble y esta llama a estimar. La función intermedia, estimacion_doble, necesita que estimar le devuelva los minutos para poder duplicarlos. Si estimar lanza una excepción y estimacion_doble no la captura, tampoco continúa normalmente después de esa llamada: no recibe el resultado que esperaba. La búsqueda de un catch compatible prosigue por las llamadas que se estaban ejecutando (Stroustrup, 2024).\n\nNo hace falta repetir el mismo catch en todas las funciones intermedias. En este ejemplo, main actúa como coordinador: su tratamiento puede presentar el fallo de la operación. En otro programa, el contexto llamador podría decidir abandonar ese trabajo o continuar con otro. Así se separa dónde se detecta el error de dónde se decide cómo tratarlo (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "tampoco continúa normalmente",
@@ -29,11 +29,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << \"Sesion:\";\n        int total{estimacion_doble(11)};\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << \"Sesion:\";\n\n        int total{estimacion_doble(11)};\n\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "estimar rechaza 11 antes del cálculo. estimacion_doble no obtiene minutos y no alcanza su multiplicación. El catch de main trata el fallo de esa operación.\n\nEn el camino válido, piezas permanece entre 0 y 10. La estimación y su doble son enteros pequeños en ese dominio; esta función no promete duplicar cualquier int sin restricciones.",
+          "text": "Sigue el recorrido del ejemplo:\nmain muestra Sesion: antes de llamar a estimacion_doble(11).\nestimar rechaza 11 y ejecuta throw en lugar de devolver minutos.\nestimacion_doble no obtiene el valor para inicializar minutos y no alcanza su multiplicación.\nEl catch de main trata el fallo y muestra Rechazado.\n\nCuando termina ese catch, la ejecución continúa después del tratamiento y muestra :Fin. No regresa a la llamada fallida ni ejecuta la salida de total que quedó pendiente dentro del try. La salida completa del ejemplo es Sesion:Rechazado:Fin.\n\nEn el camino válido, piezas permanece entre 0 y 10. Con diez piezas, la estimación es 23 y su doble es 46: ambos resultados caben en int. La justificación del cálculo se aplica en ese dominio.",
           "emphasis": [
             {
               "text": "no alcanza su multiplicación",
@@ -54,7 +54,7 @@
           "id": "propagacion_con_dato_distinto",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        int total{estimacion_doble(-1)};\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        int total{estimacion_doble(-1)};\n\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Rechazado:Fin"
           ],
@@ -70,7 +70,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al propagarse una excepción, se abandonan los ámbitos afectados y termina la vida de sus objetos locales de duración automática: los que se crean de nuevo para cada llamada o bloque de estos ejemplos. Sólo se destruyen los que ya se habían construido; no todos los objetos del programa (Köppe et al., 2023).\n\nLos cambios ya realizados sobre un objeto cuya vida continúa no se revierten automáticamente. En los puzzles siguientes, pendientes se declaró antes del try y sigue existiendo después del catch: importa si el decremento se alcanzó antes del fallo. Para conservarlo ante ese argumento inválido, la llamada que comprueba el dato debe preceder a la modificación.",
+          "text": "En los puzzles siguientes, pendientes se declaró antes del try. Ese objeto sigue existiendo después del catch. Si se modificó antes de que fallara la llamada, el tratamiento encontrará el valor ya modificado.\n\nAl propagarse una excepción, se abandonan los ámbitos afectados y termina la vida de sus objetos locales de duración automática: los que se crean de nuevo para cada llamada o bloque de estos ejemplos. Sólo se destruyen los que ya se habían construido en esos ámbitos; no todos los objetos del programa (Köppe et al., 2023).\n\nLos cambios sobre un objeto cuya vida continúa no se revierten automáticamente. Para conservar pendientes ante ese argumento inválido, la llamada que comprueba el dato debe preceder a la modificación. Las dos predicciones siguientes permiten comparar esos órdenes de ejecución.",
           "emphasis": [
             {
               "text": "ámbitos afectados",
@@ -91,7 +91,7 @@
           "id": "cambio_previo_permanece",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n    try {\n        --pendientes;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n\n    try {\n        --pendientes;\n\n        int minutos{estimar(11)};\n\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n\n    std::cout << pendientes;\n\n    return 0;\n}\n",
           "answers": [
             "Fallo:4"
           ],
@@ -102,7 +102,7 @@
           "id": "validar_antes_de_cambiar",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n    try {\n        int minutos{estimar(11)};\n        --pendientes;\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n\n    try {\n        int minutos{estimar(11)};\n\n        --pendientes;\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n\n    std::cout << pendientes;\n\n    return 0;\n}\n",
           "answers": [
             "Fallo:5"
           ],
@@ -173,7 +173,7 @@
           "id": "propagacion_camino_normal",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << estimacion_doble(4);\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << estimacion_doble(4);\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "22"
           ],
@@ -203,7 +203,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Añade estimacion_doble(int piezas): llama a estimar y devuelve el doble del resultado válido, sin capturar dentro de esa función.\n\nEn main, recorre 2 y 12. Para cada dato, inicia aceptadas en cero. Dentro del try obtén la estimación doble y sólo después incrementa ese contador. El único catch, situado en main, muestra Rechazado:. En el camino válido muestra el resultado seguido de dos puntos. Después del tratamiento muestra el contador de ese caso y un salto de línea.\n\nPulsa «Compilar, ejecutar y comprobar». Las líneas deben ser 14:1 y Rechazado:0, sin espacios y terminadas con un salto. El mismo programa comprueba éxito y rechazo. Los reintentos sirven para corregir esta construcción, sin cambiar su dominio ni sus dos casos.",
+          "text": "Añade estimacion_doble(int piezas): llama a estimar y devuelve el doble del resultado válido, sin capturar dentro de esa función.\n\nEn main, recorre 2 y 12. Para cada dato, inicia aceptadas en cero. Dentro del try obtén la estimación doble y sólo después incrementa ese contador. El único catch, situado en main, muestra Rechazado:. En el camino válido muestra el resultado seguido de dos puntos. Después del tratamiento muestra el contador de ese caso.\n\nEn una misma ejecución deben aparecer estas dos líneas, en este orden:\nPara el dato 2: 14:1\nPara el dato 12: Rechazado:0\n\nCada línea, incluida la última, termina con un salto de línea y no lleva espacios. Pulsa «Compilar, ejecutar y comprobar». El mismo programa comprueba éxito y rechazo. Los reintentos sirven para corregir esta construcción, sin cambiar su dominio ni sus dos casos.",
           "emphasis": [
             {
               "text": "sin capturar dentro de esa función",
@@ -225,7 +225,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptadas{0};\n    try {\n        int minutos{estimar(2)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptadas{0};\n\n    try {\n        int minutos{estimar(2)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n\n    std::cout << aceptadas;\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -252,7 +252,7 @@
         },
         {
           "type": "paragraph",
-          "text": "estimacion_doble llama a estimar y duplica el resultado válido. No captura ni devuelve un cero para ocultar el fallo. El único catch queda en main.\n\nPara 2, la estimación doble es 14 y el contador pasa de 0 a 1. Para 12, se informa Rechazado y el contador conserva 0. Otra implementación es válida si conserva esos resultados, el estado independiente de cada contador y el formato solicitado.",
+          "text": "estimacion_doble llama a estimar y duplica el resultado válido. No captura ni devuelve un cero para ocultar el fallo. El único catch queda en main.\n\nCompara los dos caminos:\nPara 2 piezas, la estimación es 7 y su doble es 14. Después de obtenerlo, el contador pasa de 0 a 1. La línea completa es 14:1.\nPara 12 piezas, estimar lanza antes de devolver minutos. El tratamiento muestra Rechazado: y el contador conserva 0. La línea completa es Rechazado:0.\n\nOtra implementación es válida si conserva esos resultados, el estado independiente de cada contador y el formato solicitado.",
           "emphasis": [
             {
               "text": "No captura",
@@ -267,11 +267,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    int piezas{2};\n    int aceptadas{0};\n    try {\n        int minutos{estimacion_doble(piezas)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    int piezas{2};\n    int aceptadas{0};\n\n    try {\n        int minutos{estimacion_doble(piezas)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n\n    std::cout << aceptadas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La referencia anterior presenta el caso válido aislado. La siguiente reúne ambos datos con las mismas funciones. Cuando estimar lanza, la función intermedia no obtiene un resultado normal; la propagación llega al tratamiento de main y evita alcanzar el incremento.\n\naceptadas pertenece a cada vuelta del recorrido y se inicializa en cero en esa vuelta. No representa un total compartido entre los dos casos.",
+          "text": "La referencia anterior presenta el caso válido aislado. La siguiente reúne ambos datos con las mismas funciones. Cuando estimar lanza, la función intermedia no devuelve un resultado normal: el control pasa al catch de main y evita alcanzar el incremento ++aceptadas. Después del tratamiento se muestra el contador y termina esa vuelta del recorrido.\n\naceptadas pertenece a cada vuelta del recorrido y se inicializa en cero en esa vuelta. Al comenzar la segunda, se crea otro objeto inicializado en cero; no conserva el incremento de la primera. Por eso el rechazo mantiene el contador de ese caso sin incrementar: no se ha deshecho un incremento anterior ni se ha restaurado el contador desde el catch.",
           "emphasis": [
             {
               "text": "evita alcanzar el incremento",
@@ -286,7 +286,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <vector>\n#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    for (int piezas : std::vector<int>{2, 12}) {\n        int aceptadas{0};\n        try {\n            int minutos{estimacion_doble(piezas)};\n            ++aceptadas;\n            std::cout << minutos << \":\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Rechazado:\";\n        }\n        std::cout << aceptadas << \"\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <vector>\n#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    for (int piezas : std::vector<int>{2, 12}) {\n        int aceptadas{0};\n\n        try {\n            int minutos{estimacion_doble(piezas)};\n            ++aceptadas;\n            std::cout << minutos << \":\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Rechazado:\";\n        }\n\n        std::cout << aceptadas << \"\\n\";\n    }\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -931,6 +931,176 @@
         "id": "block_0002_0002",
         "beforeSha256": "49d79e02ca8fbe0f39b9ab7ac82544bf19faf4ea26be27a75fbcb2cddf9a695b",
         "afterSha256": "31a4ad1f8657bbdecdc265038406d8d7f969db3b1ba558ac7fffd993b78223d9"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "1764260fef19a13f5ad6cc38c481b120a45fb2c77c610cc04ccf3a21a516d477",
+        "afterSha256": "4c4f621a572da1340b1460c4e764fe0f14b7b9370c97369d677cab37491aac2d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "0b7ba30765a66b7865440925d11b9cb7a09e8c900039da44e18ea1969c949675",
+        "afterSha256": "450b3d2fafc9e2d1ac29ee28aaba561af344b2bd6fadf4b86216532672d3fcb9"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "5aa0d8e4dace6d1dfcf2c53d7fd76298d174d5d03605f66e8e540aa9c3dfa5c0",
+        "afterSha256": "f9d2078ef6476ed0c9fe34c80f89afc163484e616fd81a78c64173b826182727"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "060979e3e4ad0a0e1cfa6648963de887baf9256815d4336100f3d14aead846d7",
+        "afterSha256": "885840d4266f1d6cff5a1b0bb65151d004a07b431ab9211805e45381c4b8089b"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "4867c57da36a70a6f677a1e4b8a1fbf590f342cf08c97060c0c208ac50e64884",
+        "afterSha256": "e3a3ec23ea46f75d6031dc18929a76a33dfd61027e792f1b5d33968d80a02883"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "5ad80e7cb7b27a7af93ce4232a8b0a624fbe380e00e05ed130af920ef49b0e5d",
+        "afterSha256": "89ab22317cdf38ea408bdfe9e72334f44b6745c8d12cab7068995bdf84c07dd5"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "9401e2ec38f464688c8f920a13e8f4ece5d97a23f9bc74e17f6c13f647fef8de",
+        "afterSha256": "3e8310e7bf9013e00b56a99dcdc6b4c0c08c44ff85d6099a0c8446cc021aebaa"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "fa6b2eda9dc469b1c108940294399abccef0234cafd9da14ffcb012df6d51770",
+        "afterSha256": "a5433a40ddf0435fa44279d4fafd4bb704fd68b3bd37e5069b6333291809c701"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "4f01144e4d6d667f906a55987dd62474b20cef1ca3631c3d9e79b2d3efd29184",
+        "afterSha256": "65c7ef3d3abd9690c4b815c986a1a3a5259954b1298a0b6ec28e9f739380373b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "f15786cc87b2702155bcc23a26dd8a06296e0c22d96d18aecbde4e3639cbc165",
+        "afterSha256": "290549eb19371cf077eda83e28e5cd250979e99548442101b34301381b9528c8"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "92d87395314b9fb0c578e5e308dd8f2835917dc341e84ce82c5820fcbc68def9",
+        "afterSha256": "c2ada482e0160297ba548ae117fd2cafd5f708ecc35f3a785322be8ba01655af"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "3e3c11f6278c647d0fafca3df591be28122c36ad92c7b8e3b3ad60d1cb0c9567",
+        "afterSha256": "1461c84587f4c677129276fd83a740479ce3743eacfc390546526275180d2d35"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "de243692159af812e7c01a69e5e5edff1bf0e19d6121f6915edc101c37812f7a",
+        "afterSha256": "b5a34b1deb4670422112a70bd046223a924441223ac726a3ca20e77986622ed3"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "72fc882e268efdd9fdd9cc01bd1930289b9eda24b6fdc4851dad5417c5db3902",
+        "afterSha256": "a34e26edc155eaf89b54391c5ffa40e4da428d9db4d083b55c16f6c938b15dab"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << \"Sesion:\";\n        int total{estimacion_doble(11)};\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "propagacion_con_dato_distinto",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        int total{estimacion_doble(-1)};\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado:Fin"
+          ],
+          "explanation": "El rechazo en estimar atraviesa la función intermedia hasta el tratamiento de main."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cambio_previo_permanece",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n    try {\n        --pendientes;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "Fallo:4"
+          ],
+          "explanation": "pendientes empieza en 5. La instrucción --pendientes lo reduce a 4 antes de llamar a estimar(11). Esa llamada rechaza once piezas y no devuelve un resultado; el catch escribe Fallo: y después se muestra el valor 4 que conserva pendientes. Por eso la salida es Fallo:4. Capturar no deshace el decremento."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "validar_antes_de_cambiar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n    try {\n        int minutos{estimar(11)};\n        --pendientes;\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "Fallo:5"
+          ],
+          "explanation": "pendientes empieza en 5. La llamada estimar(11) rechaza el dato antes de que se alcance --pendientes. No se ejecuta el decremento ni la salida de minutos del try. El catch escribe Fallo: y, fuera del tratamiento, se muestra el valor 5 conservado: la salida completa es Fallo:5."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "propagacion_camino_normal",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << estimacion_doble(4);\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "22"
+          ],
+          "explanation": "La estimación válida es 11 y la función intermedia devuelve su doble."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptadas{0};\n    try {\n        int minutos{estimar(2)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "14:1\nRechazado:0\n"
+                ],
+                "explanation": "La llamada intermedia no fabrica un resultado cuando estimar lanza. El contador sólo aumenta después de recibir un resultado válido."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    int piezas{2};\n    int aceptadas{0};\n    try {\n        int minutos{estimacion_doble(piezas)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <vector>\n#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    for (int piezas : std::vector<int>{2, 12}) {\n        int aceptadas{0};\n        try {\n            int minutos{estimacion_doble(piezas)};\n            ++aceptadas;\n            std::cout << minutos << \":\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"Rechazado:\";\n        }\n        std::cout << aceptadas << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -954,35 +1124,49 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "f79c53dcff2a010b6599250d43c1a1575da7a49db4344b0d8c66840d1d54e65c",
+        "sourceSha256": "e558d54cf4fe3bc3d553567735b9ffb8254b2e0c756435f16362e3c5864b56bc",
         "spans": [
           {
-            "start": 286,
-            "end": 306,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 430,
-            "end": 440,
+            "start": 27,
+            "end": 37,
             "text": "pendientes",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 462,
-            "end": 465,
+            "start": 59,
+            "end": 62,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 497,
-            "end": 502,
+            "start": 104,
+            "end": 109,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 512,
+            "end": 532,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 630,
+            "end": 640,
+            "text": "pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 740,
+            "end": 743,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -995,25 +1179,88 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "131373430349f4c28c26f9993d223094b54c0da4fc4c4bf750842d40a4d94712",
+        "sourceSha256": "81f1ee3125da553ce816acea83d978a47de8a990b9a6f6a7a9125229dee46274",
         "spans": [
           {
-            "start": 218,
-            "end": 236,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 26,
+            "end": 30,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 270,
-            "end": 275,
+            "start": 39,
+            "end": 55,
+            "text": "estimacion_doble",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 78,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 103,
+            "end": 119,
+            "text": "estimacion_doble",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 141,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 193,
+            "end": 200,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 239,
+            "text": "estimacion_doble",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 363,
+            "end": 368,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 451,
-            "end": 469,
+            "start": 432,
+            "end": 450,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 484,
+            "end": 489,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 543,
+            "end": 547,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 800,
+            "end": 818,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1023,74 +1270,165 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "07969606162b5f795a622644d9ddf544a07a036b8dd5ecc7cd9e3dc347d629c2",
+        "sourceSha256": "3564d8575f4df17cd88e45aa62b620a23f5473d83b7a07eb7f1b6cd34b30a731",
         "spans": [
           {
-            "start": 0,
-            "end": 7,
-            "text": "estimar",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 16,
-            "end": 18,
-            "text": "11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 38,
-            "end": 54,
-            "text": "estimacion_doble",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 66,
-            "end": 73,
-            "text": "minutos",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 109,
-            "end": 114,
-            "text": "catch",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 118,
-            "end": 122,
+            "start": 32,
+            "end": 36,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 178,
-            "end": 184,
+            "start": 45,
+            "end": 52,
+            "text": "Sesion:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 91,
+            "text": "estimacion_doble(11)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 93,
+            "end": 100,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 111,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 127,
+            "text": "throw",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 158,
+            "end": 174,
+            "text": "estimacion_doble",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 212,
+            "end": 219,
+            "text": "minutos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 260,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 264,
+            "end": 268,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 303,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 325,
+            "end": 330,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 392,
+            "text": ":Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 450,
+            "end": 455,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 487,
+            "end": 490,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 526,
+            "end": 546,
+            "text": "Sesion:Rechazado:Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 570,
+            "end": 576,
             "text": "piezas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 202,
+            "start": 593,
+            "end": 594,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 205,
-            "end": 207,
+            "start": 597,
+            "end": 599,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 314,
-            "end": 317,
+            "start": 605,
+            "end": 609,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 635,
+            "end": 637,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 652,
+            "end": 654,
+            "text": "46",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 682,
+            "end": 685,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -1448,14 +1786,14 @@
             "start": 61,
             "end": 62,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 71,
             "end": 72,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1537,7 +1875,7 @@
             "start": 9,
             "end": 13,
             "text": "cero",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1600,8 +1938,15 @@
           },
           {
             "start": 74,
+            "end": 75,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
             "end": 80,
-            "text": "2 y 12",
+            "text": "12",
             "role": "data",
             "reading": "natural"
           },
@@ -1617,7 +1962,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "b2f52fc2b3e618e43dfe837d225a5a76ce88348c99bdcee4a0a97c468325e3fb",
+        "sourceSha256": "eb3ede2dc13eed11c60a82cc32e9d2a98ba18bcdd65a1183e822aea0a175c323",
         "spans": [
           {
             "start": 6,
@@ -1642,8 +1987,15 @@
           },
           {
             "start": 148,
+            "end": 149,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
             "end": 154,
-            "text": "2 y 12",
+            "text": "12",
             "role": "data",
             "reading": "natural"
           },
@@ -1690,17 +2042,52 @@
             "reading": "natural"
           },
           {
-            "start": 535,
+            "start": 384,
+            "end": 387,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 501,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
             "end": 539,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 541,
+            "end": 545,
             "text": "14:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 542,
-            "end": 553,
+            "start": 559,
+            "end": 561,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 563,
+            "end": 574,
             "text": "Rechazado:0",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 829,
+            "end": 832,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1734,7 +2121,7 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "b92a63047bb8cb52d4b8306f2e1f6fc737c3ac8fc556b5adc8df78482041a2fb",
+        "sourceSha256": "dd287f2124b21f24d252c87de768f5179dc176d1fcb3e7950b6bd1d6d5f68e82",
         "spans": [
           {
             "start": 0,
@@ -1754,7 +2141,7 @@
             "start": 90,
             "end": 94,
             "text": "cero",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1772,52 +2159,87 @@
             "reading": "technical"
           },
           {
-            "start": 154,
-            "end": 155,
+            "start": 161,
+            "end": 164,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 180,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 180,
-            "end": 182,
+            "start": 206,
+            "end": 207,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 224,
             "text": "14",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 205,
-            "end": 206,
+            "start": 268,
+            "end": 269,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 209,
-            "end": 210,
+            "start": 272,
+            "end": 273,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 217,
-            "end": 219,
+            "start": 296,
+            "end": 300,
+            "text": "14:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 309,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 232,
-            "end": 241,
-            "text": "Rechazado",
+            "start": 318,
+            "end": 325,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 382,
+            "end": 392,
+            "text": "Rechazado:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 265,
-            "end": 266,
+            "start": 416,
+            "end": 417,
             "text": "0",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 451,
+            "text": "Rechazado:0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1825,7 +2247,7 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "05ed878acc5acb88e27def7ac4c1bc010150341a447e5c7dd9d25ada30618488",
+        "sourceSha256": "4fb648227519bbd2714776a5b2095fdd9c4d669ca4a8e03da7067b36a9379c8e",
         "spans": [
           {
             "start": 120,
@@ -1835,25 +2257,53 @@
             "reading": "technical"
           },
           {
-            "start": 228,
-            "end": 232,
+            "start": 209,
+            "end": 214,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 218,
+            "end": 222,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 266,
-            "end": 275,
+            "start": 254,
+            "end": 265,
+            "text": "++aceptadas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 351,
+            "end": 360,
             "text": "aceptadas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 333,
-            "end": 337,
+            "start": 418,
+            "end": 422,
             "text": "cero",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 502,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 696,
+            "end": 701,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

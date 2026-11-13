@@ -2,7 +2,10 @@
   "id": "cpp_fundamentals__excepciones_y_recuperacion__recuperar_por_operacion",
   "title": "Recuperar por operación sin perder el estado válido",
   "orderVisualSeparators": [
-    {"activity": "block_0002_0003", "count": 3}
+    {
+      "activity": "block_0002_0003",
+      "count": 3
+    }
   ],
   "pages": [
     {
@@ -13,7 +16,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El lugar del try determina qué trabajo se abandona al lanzar una excepción. Si rodea todo el recorrido, un fallo dentro de un pedido sale de ese recorrido para buscar su tratamiento. Si está dentro del bucle y rodea sólo el pedido actual, el tratamiento puede terminar y permitir que el recorrido continúe con el siguiente (Stroustrup, 2024).\n\nNo se reanuda la instrucción que falló. Al terminar normalmente el catch, el control sigue después del conjunto try/catch; desde allí, el programa decide cómo continuar (Köppe et al., 2023). La política debe corresponder a la unidad de trabajo que el requisito permite abandonar.",
+          "text": "En estos ejemplos, estimar lanza una excepción cuando rechaza un pedido. El lugar del try determina qué instrucciones se abandonan al salir de esa llamada.\n\nCompara estas dos organizaciones:\nSi el try rodea todo el recorrido, la excepción hace salir del bucle para entrar en su catch. Al terminar ese tratamiento, se continúa después del conjunto completo; no se vuelve al bucle abandonado.\nSi el try está dentro del bucle y rodea sólo el pedido actual, la excepción abandona las instrucciones de ese pedido. El catch puede terminar y el bucle pasar al siguiente dato (Stroustrup, 2024).\n\nNo se reanuda la instrucción que falló. Al terminar normalmente el catch, el control sigue después del conjunto try/catch (Köppe et al., 2023). Por eso la colocación del tratamiento debe corresponder al trabajo que el requisito permite abandonar: toda la sesión o sólo el pedido actual.",
           "emphasis": [
             {
               "text": "todo el recorrido",
@@ -21,7 +24,8 @@
             },
             {
               "text": "sólo el pedido actual",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "No se reanuda la instrucción que falló",
@@ -34,7 +38,7 @@
           "id": "try_fuera_de_sesion",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{2, 11, 3};\n    int aceptados{0};\n    int total{0};\n    try {\n        for (int piezas : pedidos) {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        }\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Corte:\";\n    }\n    std::cout << aceptados << \":\" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{2, 11, 3};\n    int aceptados{0};\n    int total{0};\n\n    try {\n        for (int piezas : pedidos) {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        }\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Corte:\";\n    }\n\n    std::cout << aceptados << \":\" << total;\n\n    return 0;\n}\n",
           "answers": [
             "Corte:1:7"
           ],
@@ -42,7 +46,7 @@
         },
         {
           "type": "paragraph",
-          "text": "aceptados y total se declararon fuera del try, por lo que siguen disponibles después de abandonarlo. El pedido de dos piezas ya había aumentado ambos resultados; la excepción de once piezas no deshace esas operaciones. Tampoco hace que el bucle abandonado visite el pedido de tres.\n\nSi el requisito exige atender todos los datos, el try/catch debe permitir tratar el pedido actual y pasar al siguiente. Recuperar exige continuar con datos en un estado conocido, no sólo escribir un mensaje (Stroustrup, 2024).",
+          "text": "aceptados y total se declararon fuera del try, por lo que siguen disponibles después de abandonarlo. Sigue los datos de la sesión:\nEl pedido de dos piezas devuelve 7 minutos. Se cuenta un pedido aceptado y se suman esos minutos.\nEl pedido de once piezas lanza la excepción antes de actualizar el resumen. Se conservan el pedido aceptado y sus 7 minutos.\nEl pedido de tres piezas no se visita, porque el recorrido estaba dentro del try que se ha abandonado.\n\nEl catch escribe Corte: y después se muestran los resultados conservados. La salida es Corte:1:7. La excepción no deshace esas operaciones: el pedido aceptado antes del fallo permanece en el resumen.\n\nSi el requisito exige atender todos los datos, el try/catch debe permitir tratar el pedido actual y pasar al siguiente. Recuperar exige continuar con datos en un estado conocido, no sólo escribir un mensaje (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "no deshace esas operaciones",
@@ -67,7 +71,7 @@
           "id": "try_por_pedido",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{1, 12, 4};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{1, 12, 4};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n\n    return 0;\n}\n",
           "answers": [
             "2:1:16"
           ],
@@ -90,7 +94,7 @@
           "id": "todos_fallan_y_se_visitan",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int rechazados{0};\n    for (int piezas : std::vector<int>{-1, 11}) {\n        try {\n            std::cout << estimar(piezas);\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Rechazados=\" << rechazados;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int rechazados{0};\n\n    for (int piezas : std::vector<int>{-1, 11}) {\n        try {\n            std::cout << estimar(piezas);\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n\n    std::cout << \"Rechazados=\" << rechazados;\n\n    return 0;\n}\n",
           "answers": [
             "Rechazados=2"
           ],
@@ -106,7 +110,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En los programas de esta lección, estimar puede rechazar el pedido antes de devolver minutos. Si aumentas aceptados antes de llamarla, ese incremento permanece aunque la llamada lance una excepción. Un catch no restaura automáticamente el estado anterior.\n\nObtén primero un resultado válido y después incorpóralo al total y al contador. Con los límites de estas sesiones, esas actualizaciones mantienen el resumen previsto. La misma decisión de orden se necesita al utilizar códigos de error: cambia la forma de informar del rechazo, pero no el significado de un pedido aceptado (Stroustrup, 2024).",
+          "text": "En los programas de esta lección, estimar puede rechazar el pedido antes de devolver minutos. Si aumentas aceptados antes de llamarla, ese incremento permanece aunque la llamada lance una excepción. El catch no contiene ninguna instrucción que deshaga el incremento y no restaura automáticamente el estado anterior.\n\nOrdena las acciones de aceptación así:\nObtén primero un resultado válido.\nDespués incorpóralo al total de minutos.\nAumenta en uno el contador de pedidos aceptados.\n\nSi la llamada lanza la excepción, esas actualizaciones todavía no se han ejecutado y el tratamiento puede registrar el rechazo sin falsear los aceptados. Con los límites de estas sesiones, las actualizaciones posteriores al retorno mantienen el resumen previsto. La misma decisión de orden se necesita al utilizar códigos de error: cambia la forma de informar del rechazo, pero no el significado de un pedido aceptado (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "permanece",
@@ -117,7 +121,7 @@
               "style": "bold"
             },
             {
-              "text": "después incorpóralo",
+              "text": "Después incorpóralo",
               "style": "bold"
             }
           ]
@@ -127,7 +131,7 @@
           "id": "contar_antes_del_fallo",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    try {\n        ++aceptados;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptados;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n\n    try {\n        ++aceptados;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n\n    std::cout << aceptados;\n\n    return 0;\n}\n",
           "answers": [
             "Rechazado:1"
           ],
@@ -191,7 +195,7 @@
         },
         {
           "type": "note",
-          "text": "Esta construcción comprueba cuatro sesiones en una misma ejecución. Los datos ya están fijados en las llamadas del objetivo; no tienes que modificar el programa entre casos. Cada llamada crea sus propios contadores antes de recorrer los pedidos.",
+          "text": "Esta construcción comprueba cuatro sesiones en una misma ejecución. Los datos ya están fijados en las llamadas del objetivo; no tienes que modificar el programa entre casos. Cada llamada prepara dos contadores y un total de minutos antes de recorrer los pedidos. Los tres comienzan en cero.",
           "emphasis": [
             {
               "text": "cuatro sesiones",
@@ -205,7 +209,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye `procesar(const std::vector<int>& pedidos)`, que conserva contadores nuevos de aceptados, rechazados y minutos para cada sesión. Dentro del recorrido, usa `try/catch` por pedido: incorpora el tiempo sólo después de obtenerlo; ante `invalid_argument`, muestra `Rechazado=`, el dato rechazado y `;`, y continúa con el siguiente. Al terminar la sesión, muestra `aceptados:rechazados:minutos` y un salto de línea.\n\nEn una misma ejecución llama a procesar con `{0,11,2,-1,5}`, `{}`, `{11,-1}` y `{11,2}`, en ese orden. Así compruebas una mezcla de caminos, la ausencia de datos, sólo rechazos y un rechazo seguido de un dato válido sin editar sucesivas versiones del programa. Las líneas esperadas son:\n\nRechazado=11;Rechazado=-1;3:2:20\n0:0:0\nRechazado=11;Rechazado=-1;0:2:0\nRechazado=11;1:1:7\n\nNo añadas espacios; termina también la última línea con un salto. Pulsa Compilar, ejecutar y comprobar. Una coincidencia respalda estas sesiones; no comprueba por sí sola todos los datos posibles del dominio.",
+          "text": "Construye procesar(const std::vector<int>& pedidos). Cada llamada debe preparar dos contadores, uno de pedidos aceptados y otro de rechazados, y un total de minutos. Los tres comienzan en cero.\n\nDentro del recorrido, usa try/catch por pedido:\nLlama a estimar dentro del try e incorpora el tiempo sólo después de obtenerlo. Si retorna normalmente, suma los minutos al total y aumenta el contador de aceptados.\nAnte std::invalid_argument, aumenta sólo el contador de rechazados y muestra Rechazado=, el dato rechazado y el signo ;. Continúa después con el siguiente pedido.\n\nLos avisos de rechazo se escriben sin cerrar la línea. Al terminar la sesión, añade aceptados:rechazados:minutos y un salto de línea.\n\nEn main, llama a procesar con estas colecciones, en este orden:\n{0,11,2,-1,5}: una sesión que mezcla pedidos válidos e inválidos.\n{}: una sesión sin datos.\n{11,-1}: una sesión con sólo rechazos.\n{11,2}: un rechazo seguido de un pedido válido.\n\nLas líneas esperadas son:\n\nRechazado=11;Rechazado=-1;3:2:20\n0:0:0\nRechazado=11;Rechazado=-1;0:2:0\nRechazado=11;1:1:7\n\nNo añadas espacios; termina también la última línea con un salto. Pulsa «Compilar, ejecutar y comprobar». Una coincidencia respalda estas sesiones; no comprueba por sí sola todos los datos posibles del dominio.",
           "emphasis": [
             {
               "text": "Dentro del recorrido",
@@ -227,7 +231,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 11, 2, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Dato=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 11, 2, -1, 5};\n\n    for (int piezas : pedidos) {\n        std::cout << \"Dato=\" << piezas << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -260,7 +264,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La sesión {0,11,2,-1,5} acepta tres pedidos, rechaza dos y reúne 20 minutos. Los rechazos identifican once y menos uno sin sumarlos al tiempo. La colección vacía produce 0:0:0; {11,-1} produce 0:2:0; {11,2} produce 1:1:7.\n\nEl primer programa siguiente desarrolla sólo la sesión mezclada y termina su resumen sin salto. La referencia completa posterior cumple las cuatro líneas del constructor, incluido el salto final. El orden de los campos es aceptados:rechazados:minutos. El último caso confirma que un rechazo no impide aceptar el dato válido que viene después.",
+          "text": "La sesión {0,11,2,-1,5} acepta tres pedidos y rechaza dos:\nEl pedido vacío aporta 0 minutos.\nEl pedido de 2 piezas aporta 7 minutos.\nEl pedido de 5 piezas aporta 13 minutos.\n\nEl tiempo total es 20 minutos. Los pedidos de once y menos uno se rechazan sin sumarlos al tiempo.\n\nLas demás llamadas producen estos resúmenes:\nColección vacía: 0:0:0.\n{11,-1}: 0:2:0.\n{11,2}: 1:1:7.\n\nEl primer programa siguiente desarrolla sólo la sesión mezclada y termina su resumen sin salto. La referencia completa posterior cumple las cuatro líneas de la construcción, incluido el salto final. El orden de los campos es aceptados:rechazados:minutos. El último caso confirma que un rechazo no impide aceptar el dato válido que viene después.",
           "emphasis": [
             {
               "text": "sin sumarlos al tiempo",
@@ -279,7 +283,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, 11, 2, -1, 5}) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n            std::cout << \"Rechazado=\" << piezas << \";\";\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : std::vector<int>{0, 11, 2, -1, 5}) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n            std::cout << \"Rechazado=\" << piezas << \";\";\n        }\n    }\n\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -302,7 +306,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument&) {\n            ++rechazados;\n            std::cout << \"Rechazado=\" << piezas << \";\";\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 11, 2, -1, 5});\n    procesar({});\n    procesar({11, -1});\n    procesar({11, 2});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument&) {\n            ++rechazados;\n            std::cout << \"Rechazado=\" << piezas << \";\";\n        }\n    }\n\n    std::cout << aceptados << \":\" << rechazados << \":\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 11, 2, -1, 5});\n    procesar({});\n    procesar({11, -1});\n    procesar({11, 2});\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -878,6 +882,71 @@
         "id": "block_0004_0001",
         "beforeSha256": "aea28b3d2db683464427a618ddbdbc97c801936aa925b37f2deff323601035e9",
         "afterSha256": "97c96869836f4117635513ecd6c55043623027b19f3f36f6af6f7176f583f88e"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "c947f94255ae83f1ecfc413c14470d90f683ba3e0d469fa163f5b3214cebf8fc",
+        "afterSha256": "18029ff031a5786a4d848547da1617890b931fff3611f87263f28fbf0bde7812"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "375488d74b2b7b47d3b9e355d516968de8219c6d5be0b03296c90f3a17172eca",
+        "afterSha256": "388690d0a77fac91a298a566ac63dffa27b679b57e432a8f74d847cae7b9490b"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ca649597d9a1bf32286b0b82d205f4b1c96d95afa503cd7c901e1387cb84fe5c",
+        "afterSha256": "ca443569c543b35c786584549e1efdb4ad450dd718b7b9635185767df85b4e0a"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "63dc2b208e227ed1d2b5d39581d958b0d3957df2fcd1345a78d666c9a903d850",
+        "afterSha256": "0e4cfb92597a0ba767df2087aad5ab75e11a7b6d9a6471de0b568f2cddd48bc2"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "9e89531dc6714f4132eae122960c8456a747068738d0d963e3edc5bff0d5fb1d",
+        "afterSha256": "3c7da6666295ae500294537d14a59e7484f39ce9abf47b5dbb6dce22444ec78c"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "67aad53c0be0883847211645dbcdb1d01e8901b4f93632580c2acc7ab5c12c39",
+        "afterSha256": "b30b83e28f1962bef2c458ba7232551b0ef21ccf75729b19d697137197b01a2e"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "cc977461c7f80d10169c2ffcebe41c7a856b755f940c2362b3aa00bc8d8ef6e3",
+        "afterSha256": "3b1070d3fe47acf14741b81c99405e308b822c3efde4169ce99f53853d6da182"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "03042773558659a4efc19ec3b3dc91b6ec03694e5790b8ec546b969f77cccba9",
+        "afterSha256": "0d12f14e81b98f2a799e8894afa815512259fe7c647663c7907d54ff1ffcef10"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "586adaf0d366b3cdce8d8ff558efa1543772f17cdf4075222e257f91f52617e3",
+        "afterSha256": "0cf21d513d5b5d306d0ff19f0f46f634623de91a8dd3e52428784d922a7371e8"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "dde6e1cbeb2a901b0e8807d356e27a039c76a2ab57173a0de968143c6c54610c",
+        "afterSha256": "e266d005784b17d4fac771264b20383915bbe11561cb732c08142e9ed6313bcc"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "d5016f66bd483f8898da2c2046af85cf4194e3dc6570968639a7facb8a54a9ac",
+        "afterSha256": "3dbd9e45875c6437b18fc855f423cdac1d22b6bed8e0157638db64527a251c79"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "ee675831a6746646bfa70a8406c104e3cd9fb9b51a016ce7d4061b7fc2514601",
+        "afterSha256": "b7b38ae1b43f09328938be39646e8d94e160dd46f39fd793f4d232e6089aef70"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "cc4d5b66c07ab7e0a9b051adc2e8fd37a12a649d857e66bec9dcd31c4b3e8c2b",
+        "afterSha256": "551f802d96f2ca770984a48ec867739821f389160e190c57c1c724451acb7ac6"
       }
     ],
     "orderRefinements": [
@@ -902,6 +971,98 @@
             3
           ],
           "explanation": "Primero se obtiene el resultado; después se incorporan los efectos de aceptación. El catch conserva el contador si la llamada falla."
+        }
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "try_fuera_de_sesion",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{2, 11, 3};\n    int aceptados{0};\n    int total{0};\n    try {\n        for (int piezas : pedidos) {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        }\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Corte:\";\n    }\n    std::cout << aceptados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Corte:1:7"
+          ],
+          "explanation": "Se incorpora 2; el fallo de 11 abandona el recorrido del try. Nunca se visita 3."
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "try_por_pedido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{1, 12, 4};\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            ++aceptados;\n            total += minutos;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "2:1:16"
+          ],
+          "explanation": "Se aceptan 1 y 4 con 5 y 11 minutos; se rechaza 12 y continúa el recorrido."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "todos_fallan_y_se_visitan",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int rechazados{0};\n    for (int piezas : std::vector<int>{-1, 11}) {\n        try {\n            std::cout << estimar(piezas);\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n        }\n    }\n    std::cout << \"Rechazados=\" << rechazados;\n    return 0;\n}\n",
+          "answers": [
+            "Rechazados=2"
+          ],
+          "explanation": "Cada fallo se trata localmente y ambos datos se visitan."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "contar_antes_del_fallo",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    try {\n        ++aceptados;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptados;\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado:1"
+          ],
+          "explanation": "El incremento ya ocurrió y el catch no lo revierte. Ese contador no cumple su nombre."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 11, 2, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Dato=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Rechazado=11;Rechazado=-1;3:2:20\n0:0:0\nRechazado=11;Rechazado=-1;0:2:0\nRechazado=11;1:1:7\n"
+                ],
+                "explanation": "Cada rechazo conserva el resumen válido y permite procesar el dato siguiente. La sesión vacía no inventa pedidos ni minutos."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : std::vector<int>{0, 11, 2, -1, 5}) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument& error) {\n            ++rechazados;\n            std::cout << \"Rechazado=\" << piezas << \";\";\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int aceptados{0};\n    int rechazados{0};\n    int total{0};\n    for (int piezas : pedidos) {\n        try {\n            int minutos{estimar(piezas)};\n            total += minutos;\n            ++aceptados;\n        } catch (const std::invalid_argument&) {\n            ++rechazados;\n            std::cout << \"Rechazado=\" << piezas << \";\";\n        }\n    }\n    std::cout << aceptados << \":\" << rechazados << \":\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 11, 2, -1, 5});\n    procesar({});\n    procesar({11, -1});\n    procesar({11, 2});\n    return 0;\n}\n"
         }
       }
     ]
@@ -940,46 +1101,88 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "c970045e56d75a120969912109ab6b99189618e6fd08e6a3b053c4660649c2d3",
+        "sourceSha256": "1ffd0f576065a6927a870e81dbc1a2a1562541f7f90cadd9e12eef5c2aa9d060",
         "spans": [
           {
-            "start": 13,
-            "end": 16,
+            "start": 19,
+            "end": 26,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 89,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 323,
-            "end": 341,
+            "start": 171,
+            "end": 174,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 283,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 397,
+            "end": 400,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 512,
+            "end": 517,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 568,
+            "end": 586,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 411,
-            "end": 416,
+            "start": 656,
+            "end": 661,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 456,
-            "end": 459,
+            "start": 701,
+            "end": 704,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 460,
-            "end": 465,
+            "start": 705,
+            "end": 710,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 513,
-            "end": 533,
+            "start": 711,
+            "end": 731,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1030,7 +1233,7 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "810facc496d269fe2fbbcf889c919732b2f4cf3b3ea59f4c8ac69024322fd24d",
+        "sourceSha256": "245d284cad3cf1ca37c92ff78386a8ea493b33cbcca3f1fa6cbb358018628fae",
         "spans": [
           {
             "start": 0,
@@ -1054,43 +1257,85 @@
             "reading": "technical"
           },
           {
-            "start": 114,
-            "end": 117,
+            "start": 144,
+            "end": 147,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 178,
-            "end": 182,
+            "start": 164,
+            "end": 165,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 246,
             "text": "once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 276,
-            "end": 280,
+            "start": 343,
+            "end": 344,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 367,
+            "end": 371,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 333,
-            "end": 336,
+            "start": 431,
+            "end": 434,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 337,
-            "end": 342,
+            "start": 461,
+            "end": 466,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 490,
-            "end": 508,
+            "start": 475,
+            "end": 481,
+            "text": "Corte:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 545,
+            "end": 554,
+            "text": "Corte:1:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 709,
+            "end": 712,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 713,
+            "end": 718,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 866,
+            "end": 884,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1116,15 +1361,29 @@
         "spans": [
           {
             "start": 11,
+            "end": 12,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 15,
             "end": 16,
-            "text": "1 y 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 21,
+            "end": 22,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
             "end": 27,
-            "text": "5 y 11",
+            "text": "11",
             "role": "output",
             "reading": "natural"
           },
@@ -1188,7 +1447,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "0d71b067f41afc244d4e0ce6ce7bde93b75a17fb8a7e18b32a927a9fe3ca4e66",
+        "sourceSha256": "ada8ba6183b75dff0e0621bc32728c847f80cfa435a77650af3f79297f14f613",
         "spans": [
           {
             "start": 34,
@@ -1212,8 +1471,15 @@
             "reading": "technical"
           },
           {
-            "start": 579,
-            "end": 597,
+            "start": 443,
+            "end": 446,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 900,
+            "end": 918,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1277,12 +1543,33 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "25ff6c1945527967574dbcbb7341d6f794c17093507704e2928e232bdd9fef14",
+        "sourceSha256": "2ddb9045705a3798d87097fe9f08bbdf4e65eaa236a52f254233b64d1611c621",
         "spans": [
           {
             "start": 28,
             "end": 34,
             "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 198,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 267,
+            "end": 271,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 285,
+            "end": 289,
+            "text": "cero",
             "role": "data",
             "reading": "natural"
           }
@@ -1291,95 +1578,144 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "64c0eff80c7db781c4e456fc0ce747cdf7df0b0d09554086f39342fefd9e5d7a",
+        "sourceSha256": "3fcbd3a4483f9ebc4fd5ac170d45b1b2308bf85dcba2e15afed52119f90f0a1d",
         "spans": [
           {
-            "start": 11,
-            "end": 52,
+            "start": 10,
+            "end": 51,
             "text": "procesar(const std::vector<int>& pedidos)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 169,
+            "start": 80,
+            "end": 83,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 99,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 174,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 192,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 224,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 170,
-            "end": 175,
+            "start": 225,
+            "end": 230,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 242,
+            "start": 251,
             "end": 258,
-            "text": "invalid_argument",
+            "text": "estimar",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 270,
-            "end": 280,
+            "end": 273,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 414,
+            "end": 435,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 486,
+            "end": 496,
             "text": "Rechazado=",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 304,
-            "end": 305,
+            "start": 527,
+            "end": 528,
             "text": ";",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 369,
-            "end": 397,
+            "start": 657,
+            "end": 685,
             "text": "aceptados:rechazados:minutos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 452,
-            "end": 460,
+            "start": 711,
+            "end": 715,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 725,
+            "end": 733,
             "text": "procesar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 466,
-            "end": 479,
+            "start": 772,
+            "end": 785,
             "text": "{0,11,2,-1,5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 483,
-            "end": 485,
+            "start": 838,
+            "end": 840,
             "text": "{}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 489,
-            "end": 496,
+            "start": 864,
+            "end": 871,
             "text": "{11,-1}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 501,
-            "end": 507,
+            "start": 903,
+            "end": 909,
             "text": "{11,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 709,
-            "end": 798,
+            "start": 979,
+            "end": 1068,
             "text": "Rechazado=11;Rechazado=-1;3:2:20\n0:0:0\nRechazado=11;Rechazado=-1;0:2:0\nRechazado=11;1:1:7",
             "role": "output",
             "reading": "natural"
@@ -1422,7 +1758,7 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "89f3bb3448bb423dbb43a75b54e70143ccfc83127d6a91cdbb10ee861c6634ae",
+        "sourceSha256": "2395af7fed883add437b8523376fa957f32e7f7eb610bf7faafc0eddcff2e48e",
         "spans": [
           {
             "start": 10,
@@ -1439,78 +1775,113 @@
             "reading": "natural"
           },
           {
-            "start": 53,
-            "end": 56,
+            "start": 54,
+            "end": 57,
             "text": "dos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 65,
-            "end": 67,
+            "start": 82,
+            "end": 83,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 107,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 147,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 162,
+            "end": 164,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 196,
             "text": "20",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 102,
-            "end": 106,
+            "start": 221,
+            "end": 225,
             "text": "once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 109,
-            "end": 118,
+            "start": 228,
+            "end": 237,
             "text": "menos uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 170,
-            "end": 175,
+            "start": 337,
+            "end": 342,
             "text": "0:0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 184,
+            "start": 344,
+            "end": 351,
             "text": "{11,-1}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 193,
-            "end": 198,
+            "start": 353,
+            "end": 358,
             "text": "0:2:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 200,
-            "end": 206,
+            "start": 360,
+            "end": 366,
             "text": "{11,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 215,
-            "end": 220,
+            "start": 368,
+            "end": 373,
             "text": "1:1:7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 363,
-            "end": 369,
+            "start": 516,
+            "end": 522,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 445,
-            "end": 473,
+            "start": 601,
+            "end": 629,
             "text": "aceptados:rechazados:minutos",
             "role": "output",
             "reading": "natural"

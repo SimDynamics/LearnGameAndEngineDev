@@ -10,19 +10,22 @@
         },
         {
           "type": "paragraph",
-          "text": "std::vector::at comprueba el índice. Con un vector de tamaño dos se pueden consultar las posiciones cero y uno; consultar la posición dos mediante at lanza std::out_of_range en vez de proporcionar un elemento (Köppe et al., 2023).\n\nEl acceso con [] exige un índice válido y no promete esa misma excepción recuperable. No se puede asignar una salida portable a un acceso con [] fuera del rango. Cuando el dato puede rechazarse de forma normal, comprobar previamente sus límites sigue siendo una decisión útil.",
+          "text": "std::vector::at comprueba el índice antes de proporcionar el elemento solicitado. Con un vector de tamaño dos, los índices se interpretan así:\nCero identifica el primer elemento.\nUno identifica el segundo elemento.\nDos queda fuera: at lanza std::out_of_range en lugar de proporcionar un elemento (Köppe et al., 2023).\n\nEl acceso con [] exige un índice válido. Si queda fuera del rango, en C++23 el comportamiento es indefinido: no hay una salida que podamos prometer ni una excepción recuperable que debamos dar por garantizada. Corrige esa consulta antes de ejecutarla. Comprobar los límites de un dato antes de utilizarlo sigue siendo una decisión útil.\n\nstd::runtime_error es otro tipo de excepción de la biblioteca estándar que puede conservar un mensaje de error (Stroustrup, 2024). Añadir una captura de ese tipo no convierte un índice inválido en una consulta válida ni establece qué ocurrirá al utilizar [].",
           "emphasis": [
             {
-              "text": "std::vector::at",
-              "style": "bold"
-            },
-            {
-              "text": "lanza std::out_of_range",
-              "style": "bold"
+              "text": "comprueba el índice",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "exige un índice válido",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "Corrige esa consulta antes de ejecutarla",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -31,7 +34,7 @@
           "id": "at_con_indice_valido",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{4, 8};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{4, 8};\n\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "8:Fin"
           ],
@@ -42,7 +45,7 @@
           "id": "at_con_extremo_excluido",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{3, 7};\n    try {\n        int valor{datos.at(2)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{3, 7};\n\n    try {\n        int valor{datos.at(2)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n",
           "answers": [
             "Fuera:Fin"
           ],
@@ -70,19 +73,22 @@
         },
         {
           "type": "paragraph",
-          "text": "std::invalid_argument y std::out_of_range son tipos distintos: capturar uno de ellos no captura automáticamente el otro. Ambos pertenecen al conjunto de excepciones estándar que puede recibir una captura de std::exception, cuyo tipo se declara en <exception> (Köppe et al., 2023).\n\nLos catch asociados a un try se examinan en su orden escrito. Coloca primero el tratamiento específico y después el general. Así un error de rango puede recibir su mensaje propio, mientras que las otras excepciones estándar llegan al tratamiento general (Köppe et al., 2023).",
+          "text": "std::invalid_argument y std::out_of_range son tipos distintos. Una captura escrita para uno no recibe automáticamente el otro. Ambos sí pueden recibirse mediante una captura de std::exception. Para utilizar este tipo general, añade #include <exception> (Köppe et al., 2023).\n\nLos catch asociados al mismo try se comprueban en el orden en que están escritos. Se elige el primero que puede recibir la excepción; los posteriores no se ejecutan para ese mismo lanzamiento (Köppe et al., 2023).\n\nPor eso se coloca primero el tratamiento específico de std::out_of_range y después el de std::exception. Un error de rango entra en el primero; una excepción std::invalid_argument no coincide con él y puede llegar al tratamiento general.",
           "emphasis": [
             {
               "text": "tipos distintos",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "orden escrito",
-              "style": "bold"
+              "text": "el primero que puede recibir la excepción",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "primero el tratamiento específico",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -91,7 +97,7 @@
           "id": "captura_especifica_antes_general",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n#include <exception>\n\nint main() {\n    std::vector<int> datos{6};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n#include <exception>\n\nint main() {\n    std::vector<int> datos{6};\n\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Indice"
           ],
@@ -102,7 +108,7 @@
           "id": "argumento_no_es_error_de_rango",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <stdexcept>\n#include <exception>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        std::cout << estimar(12);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <exception>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        std::cout << estimar(12);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Otro fallo"
           ],
@@ -130,11 +136,12 @@
         },
         {
           "type": "paragraph",
-          "text": "En catch (const std::out_of_range& error), el parámetro error enlaza mediante una referencia de sólo lectura el objeto de excepción capturado. La llamada error.what() consulta su diagnóstico textual (Stroustrup, 2024). Ese texto ayuda a investigar el fallo, pero la frase generada por at no es una salida fija que este programa pueda prometer para todas las bibliotecas (Köppe et al., 2023).\n\nDefine por separado un mensaje estable del programa, como Indice invalido. La selección de catch se realiza por el tipo de la excepción; no necesita buscar palabras dentro de what(). En la actividad de diagnóstico se conservarán el mensaje estable en std::cout y el detalle adicional en std::cerr.\n\nstd::cout envía la salida al canal estándar stdout; std::cerr envía su texto al canal estándar de errores stderr (Köppe et al., 2023). Separarlos permite conservar el mensaje del programa sin mezclarlo con el detalle del diagnóstico. En este ejemplo, escribir en std::cerr no lanza otra excepción ni significa que el programa haya terminado con un error: el catch trata el acceso rechazado y permite continuar.",
+          "text": "En catch (const std::out_of_range& error), error es el nombre del parámetro de captura. La referencia de sólo lectura permite consultar el objeto de excepción sin modificarlo. La llamada error.what() obtiene su diagnóstico textual (Stroustrup, 2024).\n\nEl texto que prepara la biblioteca al rechazar un índice puede variar entre implementaciones. Por eso no se utiliza esa frase como respuesta exacta de la actividad (Köppe et al., 2023). El programa elige su propio mensaje estable, Indice invalido. La selección del catch depende del tipo de la excepción; no se buscan palabras dentro de what().\n\nEn la actividad de diagnóstico se separan los dos textos:\nstd::cout envía el mensaje estable al canal de salida estándar, llamado stdout.\nstd::cerr envía el detalle de la biblioteca al canal estándar de errores, llamado stderr (Köppe et al., 2023).\n\nSon canales distintos aunque una consola pueda mostrar ambos. En este ejemplo, escribir el diagnóstico no lanza otra excepción ni obliga a terminar el programa: el catch ya trata el acceso rechazado y después se continúa.",
           "emphasis": [
             {
               "text": "diagnóstico textual",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "mensaje estable",
@@ -142,12 +149,9 @@
               "occurrence": 1
             },
             {
-              "text": "por el tipo de la excepción",
-              "style": "bold"
-            },
-            {
-              "text": "canal estándar de errores stderr",
-              "style": "bold"
+              "text": "Son canales distintos",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -169,29 +173,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una prueba que recorra los índices 0, 1 y 2 de un vector con los datos `{2,9}`. Para cada índice, el `try` obtiene el dato mediante `at` y lo muestra; el `catch` de `out_of_range` muestra `Indice invalido`. Después del tratamiento de cada intento, muestra `:Fin` y un salto de línea. El mismo programa debe comprobar las dos posiciones válidas y la posición que queda fuera del vector.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas deben ser `2:Fin`, `9:Fin` e `Indice invalido:Fin`, en ese orden, sin espacios añadidos y con salto al final de cada una. Conserva `at`: no sustituyas el acceso comprobado por `[]` fuera de rango. El diagnóstico adicional de biblioteca tiene su propia actividad después de este intento.",
+          "text": "Construye un programa que consulte con at los índices 0, 1 y 2 de un vector que contiene {2,9}. Para cada índice, coloca la consulta dentro de un try y trata std::out_of_range en su catch.\n\nEl resultado de cada intento debe ser:\nÍndice 0: se obtiene 2 y la línea es 2:Fin.\nÍndice 1: se obtiene 9 y la línea es 9:Fin.\nÍndice 2: se rechaza la consulta y la línea es Indice invalido:Fin.\n\nPara conseguir ese formato, muestra el dato cuando la consulta sea válida. En la captura, muestra Indice invalido. Después del tratamiento del intento, muestra :Fin y un salto de línea. No añadas espacios; también la última línea termina con un salto.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva at: no sustituyas la consulta rechazada por un acceso con [] fuera de rango. El diagnóstico adicional de la biblioteca tiene su propia actividad después de esta construcción.",
           "emphasis": [
             {
               "text": "Para cada índice",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "Después del tratamiento de cada intento",
-              "style": "bold"
+              "text": "Después del tratamiento del intento",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "Conserva `at`",
-              "style": "bold"
+              "text": "Conserva at",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "Compilar, ejecutar y comprobar",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    try {\n        int valor{datos.at(0)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n\n    try {\n        int valor{datos.at(0)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -210,29 +218,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor independiente prepara el índice 2 y conserva una bandera para el diagnóstico adicional. Cambia sólo `mostrarDiagnostico` a `true` y pulsa Compilar, ejecutar y comprobar. El objetivo reúne dos condiciones de la misma ejecución: conservar `Indice invalido:Fin` en std::cout, sin salto final, y aportar información de `error.what()` en std::cerr.\n\nObserva el detalle en la consola de errores de ejecución. No se exige una frase concreta, porque puede variar entre bibliotecas. Si coincide la salida estable pero falta el diagnóstico adicional, la actividad permanece pendiente. No modifiques el índice ni el vector durante este intento.",
+          "text": "El editor siguiente prepara el índice 2 y una bandera llamada mostrarDiagnostico. Cambia sólo su valor a true. Conserva el índice, el vector y el resto del objetivo.\n\nPulsa «Compilar, ejecutar y comprobar». La misma ejecución debe cumplir ambas condiciones:\nEn std::cout aparece Indice invalido:Fin, sin salto final.\nEn std::cerr aparece el diagnóstico obtenido mediante error.what().\n\nEl detalle se consulta en la consola de errores de ejecución. No se exige una frase concreta de la biblioteca, pero sí que el diagnóstico contenga texto. Si la salida estable coincide y el canal de errores queda vacío, la actividad sigue pendiente.\n\nLa condición de diagnóstico no vacío se comprueba con la biblioteca utilizada por el Laboratorio. No fija un mensaje universal para todas las implementaciones de C++.",
           "emphasis": [
             {
-              "text": "Cambia sólo `mostrarDiagnostico` a `true`",
-              "style": "bold"
+              "text": "Cambia sólo su valor a true",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "dos condiciones de la misma ejecución",
-              "style": "bold"
+              "text": "La misma ejecución debe cumplir ambas condiciones",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "la actividad permanece pendiente",
-              "style": "bold"
+              "text": "la actividad sigue pendiente",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "Compilar, ejecutar y comprobar",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{false};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{false};\n\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -266,49 +278,55 @@
         },
         {
           "type": "paragraph",
-          "text": "Con datos {2,9}, los índices 0, 1 y 2 producen 2:Fin, 9:Fin e Indice invalido:Fin, respectivamente, con un salto después de cada intento. El programa usa at y trata std::out_of_range; no sustituye la consulta comprobada por [] fuera del rango.\n\nEl primer ejemplo siguiente muestra un único índice válido y no incluye el recorrido ni el salto exigidos al constructor. La referencia posterior de tres intentos sí corresponde a su objetivo completo. En el proyecto de diagnóstico se conserva el mensaje estable y se observa por separado what() en el canal de errores.",
+          "text": "Con los datos {2,9}, el programa de consultas debe producir estas líneas, en este orden:\nÍndice 0 → 2:Fin\nÍndice 1 → 9:Fin\nÍndice 2 → Indice invalido:Fin\n\nCada línea termina con un salto. El programa usa at y trata std::out_of_range; no consulta con [] fuera del rango.\n\nEl primer ejemplo muestra únicamente un índice válido y termina sin salto final. El programa posterior reúne los tres intentos y corresponde al objetivo completo del primer editor. La última referencia corresponde a la actividad independiente de diagnóstico: conserva el mensaje del programa y añade what() al canal de errores.",
           "emphasis": [
             {
-              "text": "con un salto después de cada intento",
-              "style": "bold"
+              "text": "Cada línea termina con un salto",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "objetivo completo",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "por separado",
-              "style": "bold"
+              "text": "actividad independiente de diagnóstico",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{0};\n    bool mostrarDiagnostico{false};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{0};\n    bool mostrarDiagnostico{false};\n\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La referencia anterior consulta un índice válido con el diagnóstico desactivado. El programa siguiente coloca try/catch dentro de cada vuelta para reunir las tres posiciones en una ejecución. Cuando at rechaza el índice dos, el catch escribe el mensaje del programa; después se alcanza :Fin y su salto.\n\nEn la actividad independiente de diagnóstico, std::cerr añade el detalle de what() y std::cout conserva Indice invalido:Fin, sin salto final. La frase de la biblioteca no sustituye la respuesta estable de ese objetivo.",
+          "text": "La primera referencia consulta un índice válido con el diagnóstico desactivado. La siguiente coloca try y catch dentro de cada vuelta del recorrido. Si at rechaza el índice dos, el catch muestra Indice invalido; al terminar el tratamiento se ejecuta la instrucción que muestra :Fin y su salto.\n\nEn catch (const std::out_of_range&), el parámetro no tiene nombre. Se conserva el tipo que se quiere tratar, pero se omite el nombre porque el cuerpo no consulta el objeto de excepción.\n\nEn la actividad independiente de diagnóstico sí se utiliza error.what(): std::cerr añade ese detalle y std::cout conserva Indice invalido:Fin, sin salto final. La frase de la biblioteca no sustituye el mensaje estable del programa.",
           "emphasis": [
             {
               "text": "dentro de cada vuelta",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "se alcanza :Fin",
-              "style": "bold"
+              "text": "el parámetro no tiene nombre",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "sin salto final",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    for (int indice : std::vector<int>{0, 1, 2}) {\n        try {\n            std::cout << datos.at(indice);\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido\";\n        }\n        std::cout << \":Fin\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n\n    for (int indice : std::vector<int>{0, 1, 2}) {\n        try {\n            std::cout << datos.at(indice);\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido\";\n        }\n\n        std::cout << \":Fin\\n\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -317,7 +335,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{true};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{true};\n\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n\n    std::cout << \":Fin\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -938,6 +956,215 @@
         "id": "block_0002_0001",
         "beforeSha256": "5ce37c5156b422b621a79fb6dc475e909b08741dc70193790f46746d957e38b0",
         "afterSha256": "ecb1a95f350e1eec41ce0886185409f1997c3a73af467551e6e6affef2f59a10"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "56436215e25f861613eb730b7bcf755a7a17aa85ff2e86e7ae806394b8d8f839",
+        "afterSha256": "25bfb50c640f4773b4505190b843cfe912353cc63c3c1e1ab6f950120c1a0af4"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "910ea3af966949e8eb5eb6474b0cb2ed3168de9cb27c0ba9ce0d9f16bf6752aa",
+        "afterSha256": "ade2836538fb5aa25f41c2359ef69248eea5394003cc863fb4b18f42f80c1ae4"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "cf0f2ac230e736b3f63e6fe447e2b414eeb7ab1ead9dbb6ab8493e06aa738dfe",
+        "afterSha256": "0039ed9afe5fb1b2f6c22bbb602cbb17226cde4327dd5d743c8f96d0b20de140"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "5ac95e6d303e5595d2e7d8819f9d2eede093cf5216eacad2a5df8cecbfe8d95c",
+        "afterSha256": "115740bfadc73b5a3dab5c37ccb97123367efb9ef0ad267967fbb8c95d41b192"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "e163425d215d515e8541645162e787b2f64c475da160dbc3a8d36eea30fb0826",
+        "afterSha256": "1e8db16d3298b8899cdbd61a4c4f9a457cda66813b38d29d83e7c5af92fa29e7"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "b7a0d4c27004aad98cbc66e0ec9bc03838809abf3524ce3125115023ed588f36",
+        "afterSha256": "92abd25ef155ff3584dab9adb896a483263b5046f1c654d1318e06d0320391ea"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ecb1a95f350e1eec41ce0886185409f1997c3a73af467551e6e6affef2f59a10",
+        "afterSha256": "e2646cc42b3c81c894cf1ab97e9928cb7a74a9f72bd0b595d64151ea7edfe712"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "aa0f4df48e60c53be76943210d06074906ef973d3ce07b5d6a3580d2fa8d0b16",
+        "afterSha256": "40b7e25fb09ebbbd617a47858dccf8e57f40ba1deed170bc7c482fa9bb1e3b3d"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "8c79f4016e5c57c8418cc0dc8db6473d424b199233a13d5bd257329673880f12",
+        "afterSha256": "1842648fa9568573af3d77671c6119169d21aa74c7454d22febcb5f3a2be4a30"
+      },
+      {
+        "id": "block_0002_0007",
+        "beforeSha256": "facc168e05ab846e8850a66ddb145f0e17646f5273a88810b9c4f57d74dbcd1a",
+        "afterSha256": "029215cd8ad285963251411e8926cfcaf04656ae9ce069a743437939928cd66f"
+      },
+      {
+        "id": "block_0002_0008",
+        "beforeSha256": "e044e0f7fd932e66b5d7050160405f6c45a94d1d91a3a31983913340938a6b7e",
+        "afterSha256": "a6a0b266005d194607c35c067f15eba5dc028a5af5faccddb98e835ae4e4b424"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "ae65e2cd50e0da3626338d70c217d5289f3f102a1a7a424c7225b60a019fc41d",
+        "afterSha256": "469b153ea4391d2f79e740dc995098f0681e92456938cfde6dcd4a529850a758"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "dfd1d2d977bec08ec26834f90134a35ae068158ec1e7773c719a5c41dda1585f",
+        "afterSha256": "63efc35343e9227069554c3e561d364571168f5534f10e66f6335098a1f9fa98"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "cfaa9dbf23c473a7c30d8690c100eda50a6e851a600ba73e874425b043dfec10",
+        "afterSha256": "c84cc75779571b7da044f6d8130e314d7dfd2dd0e7221bf52607cec3e843b146"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "f65d3a94985767e8f82d673be7ff5dbcb0b0d07fb5b84103b2affaea838867d6",
+        "afterSha256": "18d0906664725ab2b7990003020f1fde41a8e0e0f04446d0e49bdc9d4ae794e8"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "cd43a2ef147d41c6ed24e84ac570b5718f8cc2f177024269b20a8e2cdbaa4420",
+        "afterSha256": "aa9226848d1bf806ea594aeb11a6fb0d6b81a18088f1b3077e3c01b628d440e9"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "25bfb50c640f4773b4505190b843cfe912353cc63c3c1e1ab6f950120c1a0af4",
+        "afterSha256": "0d260c394469160a0db37e7ccf7013033b5dc85b989fbe01647ff0a6fb8576a2"
+      },
+      {
+        "id": "block_0002_0007",
+        "beforeSha256": "029215cd8ad285963251411e8926cfcaf04656ae9ce069a743437939928cd66f",
+        "afterSha256": "145fb8fded002103ec25bd91b192e0ccbc3e56ebe577e9bc7f0ac2852348abfc"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "at_con_indice_valido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{4, 8};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "8:Fin"
+          ],
+          "explanation": "El índice 1 está dentro del tamaño 2 y la consulta devuelve el segundo dato."
+        }
+      },
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "at_con_extremo_excluido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{3, 7};\n    try {\n        int valor{datos.at(2)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fuera:Fin"
+          ],
+          "explanation": "El tamaño 2 es el primer índice excluido. at lanza antes de proporcionar un elemento."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "captura_especifica_antes_general",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n#include <exception>\n\nint main() {\n    std::vector<int> datos{6};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Indice"
+          ],
+          "explanation": "El primer tratamiento compatible es el específico de rango."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "argumento_no_es_error_de_rango",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <exception>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        std::cout << estimar(12);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Otro fallo"
+          ],
+          "explanation": "invalid_argument no coincide con out_of_range. La captura general estándar sí recibe ese fallo."
+        }
+      },
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    try {\n        int valor{datos.at(0)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2:Fin\n9:Fin\nIndice invalido:Fin\n"
+                ],
+                "explanation": "El índice 2 se rechaza porque el vector tiene dos elementos. La captura conserva la continuación que muestra Fin en cada intento."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0002_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{false};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Indice invalido:Fin"
+                ],
+                "explanation": "La ejecución conserva Indice invalido:Fin y aporta el diagnóstico adicional en std::cerr. Se comprueban ambos canales de esa ejecución; no se exige una frase concreta de what(), porque la biblioteca puede variar.",
+                "standardError": "nonBlank"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{0};\n    bool mostrarDiagnostico{false};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    for (int indice : std::vector<int>{0, 1, 2}) {\n        try {\n            std::cout << datos.at(indice);\n        } catch (const std::out_of_range&) {\n            std::cout << \"Indice invalido\";\n        }\n        std::cout << \":Fin\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{2};\n    bool mostrarDiagnostico{true};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -982,7 +1209,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "005e0c5ab927f1a43e8fd6aa2a569b183876182d38f3db408f147c4e6ae93f90",
+        "sourceSha256": "e8c3e3d13daae0850edcba53b000a7b699911993eca67ecd2140e5c562ecdb68",
         "spans": [
           {
             "start": 0,
@@ -992,64 +1219,85 @@
             "reading": "technical"
           },
           {
-            "start": 61,
-            "end": 64,
+            "start": 106,
+            "end": 109,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 100,
-            "end": 104,
-            "text": "cero",
+            "start": 143,
+            "end": 147,
+            "text": "Cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 110,
-            "text": "uno",
+            "start": 179,
+            "end": 182,
+            "text": "Uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 134,
-            "end": 137,
-            "text": "dos",
+            "start": 215,
+            "end": 218,
+            "text": "Dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 147,
-            "end": 149,
+            "start": 232,
+            "end": 234,
             "text": "at",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 156,
-            "end": 173,
+            "start": 241,
+            "end": 258,
             "text": "std::out_of_range",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 209,
-            "end": 229,
+            "start": 296,
+            "end": 316,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 246,
-            "end": 248,
+            "start": 333,
+            "end": 335,
             "text": "[]",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 374,
-            "end": 376,
+            "start": 389,
+            "end": 394,
+            "text": "C++23",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 657,
+            "end": 675,
+            "text": "std::runtime_error",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 768,
+            "end": 786,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 912,
+            "end": 914,
             "text": "[]",
             "role": "cpp",
             "reading": "technical"
@@ -1188,7 +1436,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "6f6110ce47b3e37ade4003355018ec2d37335c04172a73f3cd28fe58094c653d",
+        "sourceSha256": "594c64091207eafa92e9e7940ee292687d93470e640a1f71c76bf0cb6225903c",
         "spans": [
           {
             "start": 0,
@@ -1205,46 +1453,67 @@
             "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 221,
+            "start": 177,
+            "end": 191,
             "text": "std::exception",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 247,
-            "end": 258,
-            "text": "<exception>",
+            "start": 232,
+            "end": 252,
+            "text": "#include <exception>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 259,
-            "end": 279,
+            "start": 253,
+            "end": 273,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 286,
-            "end": 291,
+            "start": 280,
+            "end": 285,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 307,
-            "end": 310,
+            "start": 305,
+            "end": 308,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 536,
-            "end": 556,
+            "start": 468,
+            "end": 488,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 546,
+            "end": 563,
+            "text": "std::out_of_range",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 580,
+            "end": 594,
+            "text": "std::exception",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 649,
+            "end": 670,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1364,7 +1633,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "303e42ee5d5bcb85abaaf1bcf505054ffef3fbb07b568d6606a01c3f22fe983b",
+        "sourceSha256": "cb484040ec5d4d1b93583462abae9471b7f130059c3e1a8d3797aca90c661caf",
         "spans": [
           {
             "start": 3,
@@ -1374,120 +1643,99 @@
             "reading": "technical"
           },
           {
-            "start": 56,
-            "end": 61,
+            "start": 43,
+            "end": 48,
             "text": "error",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 154,
-            "end": 166,
+            "start": 187,
+            "end": 199,
             "text": "error.what()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 217,
+            "start": 231,
+            "end": 249,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 285,
-            "end": 287,
-            "text": "at",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 370,
-            "end": 390,
+            "start": 416,
+            "end": 436,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 451,
-            "end": 466,
+            "start": 483,
+            "end": 498,
             "text": "Indice invalido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 484,
-            "end": 489,
+            "start": 517,
+            "end": 522,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 568,
-            "end": 574,
+            "start": 589,
+            "end": 595,
             "text": "what()",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 644,
-            "end": 653,
+            "end": 647,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 656,
+            "end": 665,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 680,
-            "end": 689,
-            "text": "std::cerr",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 692,
-            "end": 701,
-            "text": "std::cout",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 728,
+            "end": 734,
+            "text": "stdout",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 736,
-            "end": 742,
-            "text": "stdout",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 744,
-            "end": 753,
+            "end": 745,
             "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 798,
-            "end": 804,
+            "start": 818,
+            "end": 824,
             "text": "stderr",
-            "role": "cpp",
-            "reading": "technical"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 805,
-            "end": 825,
+            "start": 825,
+            "end": 845,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 955,
-            "end": 964,
-            "text": "std::cerr",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 1050,
-            "end": 1055,
+            "start": 1012,
+            "end": 1017,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
@@ -1561,6 +1809,13 @@
         "sourceSha256": "19ad2d849170c9d0ba157a361d7a85203395c7ad157e87c7e8d649d934db1441",
         "spans": [
           {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 101,
             "end": 105,
             "text": "tres",
@@ -1572,95 +1827,144 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "14a8fe9a31bdb1a7930bfc7ef173f8d0167ed3a40c2f362fad8d7c41061372b6",
+        "sourceSha256": "12ee58dd4aa19b22bd057e8237c9322aaf8a13b9afb9ab16c2c01b24c32ba4bd",
         "spans": [
           {
-            "start": 45,
-            "end": 53,
-            "text": "0, 1 y 2",
+            "start": 39,
+            "end": 41,
+            "text": "at",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 82,
-            "end": 87,
+            "start": 57,
+            "end": 58,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
+            "end": 94,
             "text": "{2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 115,
+            "start": 146,
+            "end": 149,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 145,
-            "text": "at",
+            "start": 158,
+            "end": 175,
+            "text": "std::out_of_range",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 170,
+            "start": 182,
+            "end": 187,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 188,
-            "text": "out_of_range",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 236,
+            "end": 237,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 214,
-            "text": "Indice invalido",
+            "start": 250,
+            "end": 251,
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 267,
+            "start": 266,
             "end": 271,
-            "text": ":Fin",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 457,
-            "end": 462,
             "text": "2:Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 466,
-            "end": 471,
+            "start": 280,
+            "end": 281,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 295,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 315,
             "text": "9:Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 476,
-            "end": 495,
+            "start": 324,
+            "end": 325,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 383,
             "text": "Indice invalido:Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 578,
-            "end": 580,
+            "start": 484,
+            "end": 499,
+            "text": "Indice invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 546,
+            "end": 550,
+            "text": ":Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 688,
+            "end": 690,
             "text": "at",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 623,
-            "end": 625,
+            "start": 746,
+            "end": 748,
             "text": "[]",
             "role": "cpp",
             "reading": "technical"
@@ -1704,54 +2008,54 @@
       {
         "block": "block_0002_0007",
         "path": "/text",
-        "sourceSha256": "13413c0defbc2a618dba86981e454ac13c9c9ef9e60599eb3f4442af969e60ee",
+        "sourceSha256": "718fdba36385240ae6e22ecec4b5d44a4762f986ca2f08525e96c78086b595fb",
         "spans": [
           {
-            "start": 44,
-            "end": 45,
+            "start": 38,
+            "end": 39,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 113,
-            "end": 131,
+            "start": 62,
+            "end": 80,
             "text": "mostrarDiagnostico",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 140,
+            "start": 105,
+            "end": 109,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 250,
-            "end": 269,
-            "text": "Indice invalido:Fin",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 274,
-            "end": 283,
+            "start": 261,
+            "end": 270,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 328,
-            "end": 340,
-            "text": "error.what()",
+            "start": 279,
+            "end": 298,
+            "text": "Indice invalido:Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 329,
+            "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 345,
-            "end": 354,
-            "text": "std::cerr",
+            "start": 371,
+            "end": 383,
+            "text": "error.what()",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1808,74 +2112,88 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "21f2e05ff887f5f402278a473b7b1e2cdac80fc9b520caa99775f2d5b3c79f77",
+        "sourceSha256": "171a8e534fabc2fa012f9501f3ea072362de743fc52e91ede3a457de50efdb10",
         "spans": [
           {
-            "start": 10,
-            "end": 15,
+            "start": 14,
+            "end": 19,
             "text": "{2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 29,
-            "end": 37,
-            "text": "0, 1 y 2",
+            "start": 96,
+            "end": 97,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 47,
-            "end": 52,
+            "start": 100,
+            "end": 105,
             "text": "2:Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 54,
-            "end": 59,
+            "start": 113,
+            "end": 114,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 122,
             "text": "9:Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 81,
+            "start": 130,
+            "end": 131,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 153,
             "text": "Indice invalido:Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 156,
+            "start": 204,
+            "end": 206,
             "text": "at",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 182,
+            "start": 215,
+            "end": 232,
             "text": "std::out_of_range",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 224,
-            "end": 226,
+            "start": 250,
+            "end": 252,
             "text": "[]",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 394,
-            "end": 398,
+            "start": 384,
+            "end": 388,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 534,
-            "end": 540,
+            "start": 571,
+            "end": 577,
             "text": "what()",
             "role": "cpp",
             "reading": "technical"
@@ -1885,81 +2203,88 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "0b6c70b07106eb504430544c0d13dfb33724cdc83b71a9976f02eb22bb8b12ca",
+        "sourceSha256": "37abf92f1e0551c3e0174bb255f213b00eedeea5d83e3a2f34fb56f7dede358b",
         "spans": [
           {
-            "start": 110,
-            "end": 113,
+            "start": 100,
+            "end": 103,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 114,
-            "end": 119,
+            "start": 106,
+            "end": 111,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 158,
-            "end": 162,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 199,
-            "end": 201,
+            "start": 152,
+            "end": 154,
             "text": "at",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 220,
-            "end": 223,
+            "start": 173,
+            "end": 176,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 228,
-            "end": 233,
+            "start": 181,
+            "end": 186,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 286,
-            "end": 290,
+            "start": 195,
+            "end": 210,
+            "text": "Indice invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 281,
             "text": ":Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 350,
-            "end": 359,
+            "start": 298,
+            "end": 330,
+            "text": "catch (const std::out_of_range&)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 541,
+            "end": 553,
+            "text": "error.what()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 555,
+            "end": 564,
             "text": "std::cerr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 380,
-            "end": 386,
-            "text": "what()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 389,
-            "end": 398,
+            "start": 585,
+            "end": 594,
             "text": "std::cout",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 408,
-            "end": 427,
+            "start": 604,
+            "end": 623,
             "text": "Indice invalido:Fin",
             "role": "output",
             "reading": "natural"

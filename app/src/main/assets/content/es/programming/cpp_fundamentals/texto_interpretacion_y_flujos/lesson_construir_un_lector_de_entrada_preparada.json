@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El lector exterior usará ahora `std::cin`, que recibe el texto del campo Entrada. Un `std::istringstream` local analizará cada línea por separado, igual que en la lección anterior. La lectura desde el origen y la interpretación del texto obtenido siguen siendo responsabilidades distintas (Stroustrup, 2024, pp. 279, 283).\n\nEl cambio permite probar varias secuencias de datos con el mismo código: se modifica la entrada de una ejecución, sin sustituir una cadena dentro del programa.",
+          "text": "El lector exterior usará ahora `std::cin`, que recibe el texto del campo Entrada. Un `std::istringstream` local analizará cada línea por separado, igual que en la lección anterior. La lectura desde el origen y la interpretación del texto obtenido siguen siendo responsabilidades distintas (Stroustrup, 2024).\n\nEl cambio permite probar varias secuencias de datos con el mismo código: se modifica la entrada de una ejecución, sin sustituir una cadena dentro del programa.",
           "emphasis": [
             {
               "text": "el mismo código",
@@ -65,7 +65,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada operación ocupa una línea con el formato entran:salen. El analizador obtiene los dos valores como `int` mediante `>>` y exige que el separador sea el carácter `':'`. La extracción formateada omite el espacio en blanco inicial de cada campo (Köppe et al., 2023).\n\nPor ejemplo, las líneas 2:1, +2 : 01 y 2 : 1 representan los mismos valores. El contrato permite los signos y los espacios que reconoce esa extracción; no exige que toda la línea sea una secuencia continua de dígitos.",
+          "text": "Cada operación ocupa una línea con el formato entran:salen. El analizador obtiene los dos valores como `int` mediante `>>` y exige que el separador sea el carácter `':'`. La extracción formateada omite el espacio en blanco inicial de cada campo (Köppe et al., 2023).\n\nPor ejemplo, estas líneas representan los mismos valores:\n2:1\n+2 : 01\n2 : 1\n\nEl contrato permite los signos y los espacios que reconoce esa extracción; no exige que toda la línea sea una secuencia continua de dígitos.",
           "emphasis": [
             {
               "text": "Cada operación ocupa una línea",
@@ -99,7 +99,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La línea 2:1 resto deja texto adicional; la línea 2: termina sin aportar el segundo entero. En ambos casos, `getline` puede haber obtenido correctamente la línea completa: es el análisis local el que decide su rechazo.\n\nCualquiera de los rechazos diagnosticados conserva la ocupación anterior. Un diagnóstico explica qué incumplió la línea; no autoriza a aplicar parcialmente sus cantidades.",
+          "text": "La línea 2:1 resto deja texto adicional.\nLa línea 2: termina sin aportar el segundo entero. En ambos casos, `getline` puede haber obtenido correctamente la línea completa: es el análisis local el que decide su rechazo.\n\nCualquiera de los rechazos diagnosticados conserva la ocupación anterior. Un diagnóstico explica qué incumplió la línea; no autoriza a aplicar parcialmente sus cantidades.",
           "emphasis": [
             {
               "text": "conserva la ocupación anterior",
@@ -161,7 +161,7 @@
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e03",
           "language": "cpp",
           "question": "Predice los cinco valores: línea obtenida, EOF exterior, campos completos, EOF local y fallo local. Los bool se imprimen como 0 o 1.",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"1:\"};\n    std::string linea;\n    const bool obtenida = static_cast<bool>(std::getline(origen, linea));\n    std::istringstream campos{linea};\n    int primero = 0;\n    char separador = ' ';\n    int segundo = 0;\n    const bool completa = static_cast<bool>(campos >> primero >> separador >> segundo);\n    std::cout << obtenida << \" \" << origen.eof() << \" \"\n              << completa << \" \" << campos.eof() << \" \" << campos.fail();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"1:\"};\n    std::string linea;\n\n    const bool obtenida = static_cast<bool>(std::getline(origen, linea));\n\n    std::istringstream campos{linea};\n    int primero = 0;\n    char separador = ' ';\n    int segundo = 0;\n\n    const bool completa = static_cast<bool>(campos >> primero >> separador >> segundo);\n\n    std::cout << obtenida << \" \" << origen.eof() << \" \"\n              << completa << \" \" << campos.eof() << \" \" << campos.fail();\n\n    return 0;\n}\n",
           "answers": [
             "1 1 0 1 1"
           ],
@@ -222,10 +222,14 @@
         },
         {
           "type": "paragraph",
-          "text": "El campo Entrada contiene inicialmente siete líneas. La segunda tiene un espacio seguido de un tabulador y la última no lleva salto final. Ese caso inicial debe producir lo siguiente, con un salto también después de la última línea:\n\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nEl objetivo es un único lector comprobado con veintiuna entradas. Entre ejecuciones cambia únicamente Entrada y conserva el mismo código; cada ejecución empieza otra vez con ocupación 3. Además del caso inicial, comprueba estos grupos:\n\n• Entrada completamente vacía; un único LF; 0:0 sin LF final, con un LF final y con dos LF finales.\n• Los textos de una línea 2:, q:1, 2;1, 2:1x, 2:1 0, -1:0, 0:4 y +2 : 01, cada uno en su propia ejecución.\n• Las parejas 3:0 y 1:0; 0:3 y 0:1; q:2 y 1:0. Cada pareja ocupa dos líneas de una ejecución, sin salto al final de la segunda.\n• La secuencia 1:0, 1:0 resto y 0:1, en tres líneas y sin salto al final de la tercera.\n• La pareja 0:0 y 0:4, en dos líneas y sin salto al final de la segunda.\n• Los textos 4:0 aviso y 4;0 aviso, cada uno en su propia ejecución. Combinan defectos: aplica el orden de diagnósticos del contrato y conserva el estado ante el rechazo.\n\nSalvo las variantes que piden expresamente uno o dos LF finales, no añadas un salto después del último dato. Los saltos entre líneas son caracteres reales en Entrada; escribir los dos caracteres barra invertida y n no los sustituye. En esta lista LF representa ese salto de línea. Pulsa Compilar, ejecutar y comprobar con cada entrada; no cambies la implementación para resolver casos individuales.",
+          "text": "El campo Entrada empieza con el caso inicial de siete líneas. La segunda contiene un espacio y un tabulador; la última no tiene salto final. Construye un único lector. Sólo necesitas la primera comprobación correcta del caso inicial para avanzar. Las otras veinte entradas son ensayos opcionales: conserva el mismo código y cambia únicamente Entrada entre ejecuciones. Cada ejecución vuelve a empezar con ocupación 3.\n\nEn la notación de las entradas, las comillas delimitan el texto y no forman parte de él; \"\" representa texto vacío. \\n representa un salto de línea LF real y \\t un tabulador real. Los espacios dentro de las comillas también forman parte de la entrada. En el campo Entrada usa los caracteres reales representados, no las comillas ni las barras de esta notación. Cada línea de salida termina con un salto, incluida la última.\n\nCaso inicial obligatorio\nEntrada: \"2:1\\n \\t\\nx:2\\n1:2 sobra\\n4:0\\n3:0\\n0:3\"\nSalida esperada:\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nEnsayo opcional\nEntrada: \"\"\nSalida esperada:\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"\\n\"\nSalida esperada:\nSin datos | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"0:0\"\nSalida esperada:\nAceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"0:0\\n\"\nSalida esperada:\nAceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"0:0\\n\\n\"\nSalida esperada:\nAceptada | Ocupadas: 3\nSin datos | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"2:\"\nSalida esperada:\nFormato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"q:1\"\nSalida esperada:\nFormato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"2;1\"\nSalida esperada:\nFormato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"2:1x\"\nSalida esperada:\nDatos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"2:1 0\"\nSalida esperada:\nDatos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"-1:0\"\nSalida esperada:\nFuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"0:4\"\nSalida esperada:\nFuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"+2 : 01\"\nSalida esperada:\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n\nEnsayo opcional\nEntrada: \"3:0\\n1:0\"\nSalida esperada:\nAceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptadas: 1\nOcupadas: 6\n\nEnsayo opcional\nEntrada: \"0:3\\n0:1\"\nSalida esperada:\nAceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptadas: 1\nOcupadas: 0\n\nEnsayo opcional\nEntrada: \"q:2\\n1:0\"\nSalida esperada:\nFormato invalido | Ocupadas: 3\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n\nEnsayo opcional\nEntrada: \"1:0\\n1:0 resto\\n0:1\"\nSalida esperada:\nAceptada | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nAceptada | Ocupadas: 3\nAceptadas: 2\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"0:0\\n0:4\"\nSalida esperada:\nAceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"4:0 aviso\"\nSalida esperada:\nDatos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nEnsayo opcional\nEntrada: \"4;0 aviso\"\nSalida esperada:\nFormato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n\nUsa Compilar, ejecutar y comprobar para la entrada que prepares. Puedes corregir y reintentar el mismo programa; no cambies la implementación para resolver un caso de forma aislada.",
           "emphasis": [
             {
-              "text": "un único lector comprobado con veintiuna entradas",
+              "text": "Sólo necesitas la primera comprobación correcta del caso inicial para avanzar.",
+              "style": "bold"
+            },
+            {
+              "text": "Las otras veinte entradas son ensayos opcionales",
               "style": "bold"
             },
             {
@@ -240,7 +244,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n\n    return 0;\n}\n",
           "initialStandardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
           "outputCheck": {
             "cases": [
@@ -452,11 +456,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nenum class Resultado {\n    aceptada,\n    sin_datos,\n    formato_invalido,\n    adicionales,\n    fuera_de_dominio,\n    capacidad_invalida\n};\n\nResultado aplicar_linea(const std::string& texto, int& ocupadas) {\n    std::istringstream presencia{texto};\n    std::string primera;\n    if (!(presencia >> primera)) {\n        if (presencia.bad() || !presencia.eof()) {\n            return Resultado::formato_invalido;\n        }\n        return Resultado::sin_datos;\n    }\n\n    std::istringstream campos{texto};\n    int entran = 0;\n    char separador = ' ';\n    int salen = 0;\n    if (!(campos >> entran >> separador >> salen) || separador != ':') {\n        return Resultado::formato_invalido;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return Resultado::adicionales;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return Resultado::formato_invalido;\n    }\n    if (entran < 0 || entran > 3 || salen < 0 || salen > 3) {\n        return Resultado::fuera_de_dominio;\n    }\n\n    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n    ocupadas = candidata;\n    return Resultado::aceptada;\n}\n\nstd::string mensaje(Resultado resultado) {\n    if (resultado == Resultado::aceptada) {\n        return \"Aceptada\";\n    }\n    if (resultado == Resultado::sin_datos) {\n        return \"Sin datos\";\n    }\n    if (resultado == Resultado::formato_invalido) {\n        return \"Formato invalido\";\n    }\n    if (resultado == Resultado::adicionales) {\n        return \"Datos adicionales\";\n    }\n    if (resultado == Resultado::fuera_de_dominio) {\n        return \"Fuera de dominio\";\n    }\n    return \"Capacidad invalida\";\n}\n\nint main() {\n    int ocupadas = 3;\n    int aceptadas = 0;\n    std::string linea;\n    while (std::getline(std::cin, linea)) {\n        const Resultado resultado = aplicar_linea(linea, ocupadas);\n        if (resultado == Resultado::aceptada) {\n            ++aceptadas;\n        }\n        std::cout << mensaje(resultado) << \" | Ocupadas: \" << ocupadas << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cout << \"Fallo del origen\\n\";\n        return 1;\n    }\n    std::cout << \"Aceptadas: \" << aceptadas << \"\\n\";\n    std::cout << \"Ocupadas: \" << ocupadas << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nenum class Resultado {\n    aceptada,\n    sin_datos,\n    formato_invalido,\n    adicionales,\n    fuera_de_dominio,\n    capacidad_invalida\n};\n\nResultado aplicar_linea(const std::string& texto, int& ocupadas) {\n    std::istringstream presencia{texto};\n    std::string primera;\n    if (!(presencia >> primera)) {\n        if (presencia.bad() || !presencia.eof()) {\n            return Resultado::formato_invalido;\n        }\n        return Resultado::sin_datos;\n    }\n\n    std::istringstream campos{texto};\n    int entran = 0;\n    char separador = ' ';\n    int salen = 0;\n    if (!(campos >> entran >> separador >> salen) || separador != ':') {\n        return Resultado::formato_invalido;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return Resultado::adicionales;\n    }\n\n    if (campos.bad() || !campos.eof()) {\n        return Resultado::formato_invalido;\n    }\n\n    if (entran < 0 || entran > 3 || salen < 0 || salen > 3) {\n        return Resultado::fuera_de_dominio;\n    }\n\n    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n\n    ocupadas = candidata;\n    return Resultado::aceptada;\n}\n\nstd::string mensaje(Resultado resultado) {\n    if (resultado == Resultado::aceptada) {\n        return \"Aceptada\";\n    }\n\n    if (resultado == Resultado::sin_datos) {\n        return \"Sin datos\";\n    }\n\n    if (resultado == Resultado::formato_invalido) {\n        return \"Formato invalido\";\n    }\n\n    if (resultado == Resultado::adicionales) {\n        return \"Datos adicionales\";\n    }\n\n    if (resultado == Resultado::fuera_de_dominio) {\n        return \"Fuera de dominio\";\n    }\n    return \"Capacidad invalida\";\n}\n\nint main() {\n    int ocupadas = 3;\n    int aceptadas = 0;\n    std::string linea;\n\n    while (std::getline(std::cin, linea)) {\n        const Resultado resultado = aplicar_linea(linea, ocupadas);\n\n        if (resultado == Resultado::aceptada) {\n            ++aceptadas;\n        }\n\n        std::cout << mensaje(resultado) << \" | Ocupadas: \" << ocupadas << \"\\n\";\n    }\n\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cout << \"Fallo del origen\\n\";\n        return 1;\n    }\n\n    std::cout << \"Aceptadas: \" << aceptadas << \"\\n\";\n    std::cout << \"Ocupadas: \" << ocupadas << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El flujo `presencia` sólo distingue si hay algún campo; no obtiene los valores del movimiento. El flujo `campos` comienza desde el principio de la misma línea para extraer los dos enteros y el separador. Son dos lectores locales distintos y ninguno cambia los indicadores de `std::cin` (Stroustrup, 2024, p. 283).\n\nEl intento de obtener `extra` falla normalmente cuando no queda otro campo. Después se comprueba que el flujo llegó al final sin un problema grave. Ese fallo esperado no invalida los campos completos que ya se obtuvieron, igual que en el analizador de la lección anterior.",
+          "text": "El flujo `presencia` sólo distingue si hay algún campo; no obtiene los valores del movimiento. El flujo `campos` comienza desde el principio de la misma línea para extraer los dos enteros y el separador. Son dos lectores locales distintos y ninguno cambia los indicadores de `std::cin` (Stroustrup, 2024).\n\nEl intento de obtener `extra` falla normalmente cuando no queda otro campo. Después se comprueba que el flujo llegó al final sin un problema grave. Ese fallo esperado no invalida los campos completos que ya se obtuvieron, igual que en el analizador de la lección anterior.",
           "emphasis": [
             {
               "text": "no obtiene los valores del movimiento",
@@ -470,7 +474,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Antes de calcular la candidata se comprueban ambas cantidades. Con una ocupación de `0` a `6` y entradas y salidas de `0` a `3`, la expresión puede producir valores de `-3` a `9`; todos caben en `int`. La comprobación de capacidad decide después si esa candidata pertenece al intervalo permitido.\n\nLa única asignación a `ocupadas` queda al final. Los rechazos diagnosticados por la función no llegan a esa asignación y conservan la ocupación del llamador (Stroustrup, 2024, p. 267).",
+          "text": "Antes de calcular la candidata se comprueban ambas cantidades. Con una ocupación de `0` a `6` y entradas y salidas de `0` a `3`, la expresión puede producir valores de `-3` a `9`; todos caben en `int`. La comprobación de capacidad decide después si esa candidata pertenece al intervalo permitido.\n\nLa única asignación a `ocupadas` queda al final. Los rechazos diagnosticados por la función no llegan a esa asignación y conservan la ocupación del llamador (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "La única asignación a",
@@ -543,10 +547,14 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia en este editor el lector completo que has construido, con sus inclusiones, funciones y main. Conserva el estado inicial, el orden de los diagnósticos y el formato de salida. Repite aquí las veintiuna entradas de la batería anterior y comprueba también la nueva secuencia que aparece en el campo Entrada. Tras preparar cada entrada, pulsa «Compilar, ejecutar y comprobar»: cada pulsación ejecuta y comprueba únicamente la entrada actual. Mantén el mismo código para todos los casos; si lo corriges, vuelve a comprobarlos con esa versión.\n\nEn esta secuencia hay movimientos que incorporan y retiran la misma cantidad cuando la ocupación está en un extremo. Sigue aplicándose el contrato ya definido: cada cantidad pertenece a 0..3 y se comprueba la ocupación candidata después de sumar las entradas y restar las salidas. No se exige una ocupación intermedia entre esas dos operaciones.\n\nCompila, ejecuta y comprueba el programa. Revisa tanto el diagnóstico de cada línea como el contador final: un movimiento aceptado cuenta aunque deje la ocupación igual. La última línea de Entrada termina en 1:0, sin un salto posterior; todas las líneas de salida sí deben terminar con salto.",
+          "text": "Copia en este editor el lector completo que has construido, con sus inclusiones, funciones y main. Conserva el estado inicial, el orden de los diagnósticos y el formato de salida. No necesitas repetir todas las comprobaciones para avanzar: sólo la primera comprobación correcta del primer caso declarado es obligatoria.\n\nEse primer caso coincide con el caso inicial del editor anterior. Prepáralo así, usando la notación de saltos y tabuladores ya explicada:\nEntrada: \"2:1\\n \\t\\nx:2\\n1:2 sobra\\n4:0\\n3:0\\n0:3\"\nSalida esperada:\nAceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n\nLos otros veinte casos del editor anterior conservan aquí las mismas entradas y salidas esperadas y son opcionales. También es opcional la nueva secuencia con movimientos compensados, que ya está preparada en el campo Entrada:\nEntrada: \"3:0\\n3:3\\n0:3\\n0:3\\n3:3\\n1:0\"\n\nEn esa secuencia hay movimientos que incorporan y retiran la misma cantidad cuando la ocupación está en un extremo. Sigue aplicándose el contrato ya definido: cada cantidad pertenece a 0..3 y se comprueba la ocupación candidata después de sumar las entradas y restar las salidas. No se exige una ocupación intermedia entre esas dos operaciones.\n\nCada pulsación de Compilar, ejecutar y comprobar ejecuta y comprueba únicamente la entrada actual. Mantén el mismo código al variar los ensayos opcionales. Compara el diagnóstico de cada línea y el contador final: un movimiento aceptado cuenta aunque deje la ocupación igual. La última línea de la nueva secuencia es 1:0, sin un salto posterior; todas las líneas de salida sí terminan con salto. Su salida completa aparece a continuación.",
           "emphasis": [
             {
-              "text": "cada pulsación ejecuta y comprueba únicamente la entrada actual",
+              "text": "sólo la primera comprobación correcta del primer caso declarado es obligatoria",
+              "style": "bold"
+            },
+            {
+              "text": "También es opcional la nueva secuencia con movimientos compensados",
               "style": "bold"
             },
             {
@@ -565,7 +573,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu lector completo.\n\nint main() {\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu lector completo.\n\nint main() {\n\n    return 0;\n}\n",
           "initialStandardInput": "3:0\n3:3\n0:3\n0:3\n3:3\n1:0",
           "outputCheck": {
             "inputComparison": "exact",
@@ -746,11 +754,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n    ocupadas = candidata;\n    return Resultado::aceptada;\n"
+          "code": "    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n\n    ocupadas = candidata;\n    return Resultado::aceptada;\n"
         },
         {
           "type": "heading",
-          "text": "La recuperación conserva la frontera del formato"
+          "text": "Un error en una línea no impide analizar la siguiente"
         },
         {
           "type": "multiple_choice",
@@ -771,7 +779,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La sesión conserva los movimientos aceptados aunque después se rechace otra línea; no deshace todo el trabajo anterior. Una ejecución nueva vuelve al estado inicial.\n\nEste formato usa líneas como operaciones completas. El intérprete posterior podrá elegir otra frontera, pero tendrá que definirla antes de decidir qué texto descartar para continuar.",
+          "text": "La sesión conserva los movimientos aceptados aunque después se rechace otra línea; no deshace todo el trabajo anterior. Una ejecución nueva vuelve al estado inicial.\n\nEste formato usa líneas como operaciones completas. El intérprete posterior podrá agrupar el texto de otra forma, pero tendrá que definir dónde termina cada operación antes de decidir qué texto descartar para continuar.",
           "emphasis": [
             {
               "text": "La sesión conserva los movimientos aceptados",
@@ -2047,6 +2055,81 @@
         "id": "block_0006_0003",
         "beforeSha256": "dc8f8dd8e44ee7c2aaf730b5a28e6f3be4fc398b57b5aab92f62d088cefa62a5",
         "afterSha256": "8684751e389f596e8189773f0390c332e4f06f9a37d8e2df2102eb288ba294fb"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "ec845376b05ca635f554ca089ff431b1d738eb061a96b773164501014fd55911",
+        "afterSha256": "4f74cc9247cd20df7b0fd1433eaf5b521678ba04c7d426d8e2a3d1114f992d21"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a25df5e7194fceef1e0242d935649aba2a382bdb69e84f522b72596efae44fe2",
+        "afterSha256": "e7e1ccf3d173bf31407b7573f24877850c106d497479fc4bbcbf49590bc3ef90"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "7a444b1c50d849a911d4a395a423307e41aad8ed98d10f49e4cf25917591e25f",
+        "afterSha256": "f5f882800c99d79520d798530977f49196f1324ea6e7f5b3df3f04666af02c6b"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "4d7c0764f6f96e721661c0ab234c8709bc9a6f7e85251c8737dada90f95ef059",
+        "afterSha256": "8b03b64572e8f42326de0bfcc81ed4f91d542f9581f00076f520ac58058a5c7a"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "c15cb93b91db978aba17bfc2fea64500a9451123494ec24c6a2f8970a436d2ed",
+        "afterSha256": "0c03d77fdc33350aed0fb89373b0d870bf579d667e6a9a42ea7ffaf0910b47f8"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "e3d81fc9c5d397dfdd1be6df7271b34cba21d56a696cce43ca5ad1c8e5ae088a",
+        "afterSha256": "06780c33d732b4a38aacf7213042050d78b695ce560989db741754a07b8d83dc"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "dbde453241dd9a16d443fd4d7b859b52c4ce5f16d86079a38c7054a507d4f872",
+        "afterSha256": "dac9fa8f7488ffdb0dc200f804e2cffd7913062c887243f1a62a6f515fb38009"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "2a06e2d1c9d0b658d6cae8b297839e2b4f0b95f490332463a6829e5391cb438c",
+        "afterSha256": "99f2da6915fa550ad7a3b26a9f822032e18973200768075ccc7cf56e8fdafa36"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "429741e5544747652a3bf105aafa758a58a6e15186e450693e2174fcd5b74cc4",
+        "afterSha256": "b01ffe7fb3550cb802d55e75e9b1cf755deec4f82edbc2e2bbcb44440ff72f52"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_consigna",
+        "beforeSha256": "524a6c07a78dbca90b19eb0fa0e3e8e9d9468514443b550463b498f0e501dab1",
+        "afterSha256": "e87557ced4fb510ce2efacc9d7f2fa0fd12e84adbae0d7b3ca0534070ed9b2af"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+        "beforeSha256": "83b1755cb3b64de21af6b1f0e1805f09de8d6491f1ad5ea9ea03e6b3ff8f65e1",
+        "afterSha256": "956800aee68b55ed747cddfa4f0d680b4fb834f0c2d133c3d4d70f4aafdd1d4e"
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_referencia_codigo",
+        "beforeSha256": "a6a6863526175453b792027720dba68485f79d633e1234c3aa6b42cf34183032",
+        "afterSha256": "49d78560345297f4595e09e164e9e7cf54de0fae1838e0a4bc1aa3324aea466c"
+      },
+      {
+        "id": "block_0007_0000",
+        "beforeSha256": "40af1287298354b791196b5d1508ef69521f9c68b559fbe6d8c1b1508754fc11",
+        "afterSha256": "858eb5ec40f5f0232eaec8534b6576bf4d2383ad48f44767cd85365e7556b483"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "34baf0fe820618012590fce07fbd433de8747157bb49020f1ab579cd3d624589",
+        "afterSha256": "603949f2510680b4633492d3649455f0b3cf2fd0370ee726f8b0e2dda8c131d2"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "e7e1ccf3d173bf31407b7573f24877850c106d497479fc4bbcbf49590bc3ef90",
+        "afterSha256": "6bdcad37319b39e66be79f0f22ad0e5a1ffc9ccf6201d9092a4d41f1da670d24"
       }
     ],
     "choiceRevisions": [
@@ -2198,6 +2281,338 @@
           }
         }
       }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e03",
+          "language": "cpp",
+          "question": "Predice los cinco valores: línea obtenida, EOF exterior, campos completos, EOF local y fallo local. Los bool se imprimen como 0 o 1.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"1:\"};\n    std::string linea;\n    const bool obtenida = static_cast<bool>(std::getline(origen, linea));\n    std::istringstream campos{linea};\n    int primero = 0;\n    char separador = ' ';\n    int segundo = 0;\n    const bool completa = static_cast<bool>(campos >> primero >> separador >> segundo);\n    std::cout << obtenida << \" \" << origen.eof() << \" \"\n              << completa << \" \" << campos.eof() << \" \" << campos.fail();\n    return 0;\n}\n",
+          "answers": [
+            "1 1 0 1 1"
+          ],
+          "explanation": "getline obtiene los dos caracteres 1: antes de encontrar el final del origen. Hay una línea obtenida, aunque falte el salto final: la lectura se evalúa como verdadera y el indicador de fin exterior queda activo. De ahí salen los primeros dos valores, 1 1.\n\nEl flujo local reconoce 1 y :, pero no encuentra el segundo entero. La extracción conjunta falla y el flujo local señala tanto fin como fallo: los tres valores restantes son 0 1 1. La salida completa 1 1 0 1 1 distingue obtener el texto de una línea de aceptar su operación.",
+          "reviewFeedback": "Evalúa por separado la obtención de la línea y la extracción de sus campos. Consulta después los indicadores del objeto correspondiente; encontrar EOF no responde por sí solo si la operación solicitada se completó."
+        }
+      },
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "\n",
+                "outputs": [
+                  "Sin datos | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nSin datos | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "q:1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2;1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1x",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1 0",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "-1:0",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:4",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "+2 : 01",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "3:0\n1:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptadas: 1\nOcupadas: 6\n"
+                ]
+              },
+              {
+                "standardInput": "0:3\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptadas: 1\nOcupadas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "q:2\n1:0",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "1:0\n1:0 resto\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nAceptada | Ocupadas: 3\nAceptadas: 2\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n0:4",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4:0 aviso",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4;0 aviso",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nenum class Resultado {\n    aceptada,\n    sin_datos,\n    formato_invalido,\n    adicionales,\n    fuera_de_dominio,\n    capacidad_invalida\n};\n\nResultado aplicar_linea(const std::string& texto, int& ocupadas) {\n    std::istringstream presencia{texto};\n    std::string primera;\n    if (!(presencia >> primera)) {\n        if (presencia.bad() || !presencia.eof()) {\n            return Resultado::formato_invalido;\n        }\n        return Resultado::sin_datos;\n    }\n\n    std::istringstream campos{texto};\n    int entran = 0;\n    char separador = ' ';\n    int salen = 0;\n    if (!(campos >> entran >> separador >> salen) || separador != ':') {\n        return Resultado::formato_invalido;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return Resultado::adicionales;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return Resultado::formato_invalido;\n    }\n    if (entran < 0 || entran > 3 || salen < 0 || salen > 3) {\n        return Resultado::fuera_de_dominio;\n    }\n\n    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n    ocupadas = candidata;\n    return Resultado::aceptada;\n}\n\nstd::string mensaje(Resultado resultado) {\n    if (resultado == Resultado::aceptada) {\n        return \"Aceptada\";\n    }\n    if (resultado == Resultado::sin_datos) {\n        return \"Sin datos\";\n    }\n    if (resultado == Resultado::formato_invalido) {\n        return \"Formato invalido\";\n    }\n    if (resultado == Resultado::adicionales) {\n        return \"Datos adicionales\";\n    }\n    if (resultado == Resultado::fuera_de_dominio) {\n        return \"Fuera de dominio\";\n    }\n    return \"Capacidad invalida\";\n}\n\nint main() {\n    int ocupadas = 3;\n    int aceptadas = 0;\n    std::string linea;\n    while (std::getline(std::cin, linea)) {\n        const Resultado resultado = aplicar_linea(linea, ocupadas);\n        if (resultado == Resultado::aceptada) {\n            ++aceptadas;\n        }\n        std::cout << mensaje(resultado) << \" | Ocupadas: \" << ocupadas << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cout << \"Fallo del origen\\n\";\n        return 1;\n    }\n    std::cout << \"Aceptadas: \" << aceptadas << \"\\n\";\n    std::cout << \"Ocupadas: \" << ocupadas << \"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\n// Copia aqui tu lector completo.\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "3:0\n3:3\n0:3\n0:3\n3:3\n1:0",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "2:1\n \t\nx:2\n1:2 sobra\n4:0\n3:0\n0:3",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Aceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "\n",
+                "outputs": [
+                  "Sin datos | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n\n",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nSin datos | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "q:1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2;1",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1x",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "2:1 0",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "-1:0",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:4",
+                "outputs": [
+                  "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "+2 : 01",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "3:0\n1:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptadas: 1\nOcupadas: 6\n"
+                ]
+              },
+              {
+                "standardInput": "0:3\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptadas: 1\nOcupadas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "q:2\n1:0",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4\n"
+                ]
+              },
+              {
+                "standardInput": "1:0\n1:0 resto\n0:1",
+                "outputs": [
+                  "Aceptada | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nAceptada | Ocupadas: 3\nAceptadas: 2\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "0:0\n0:4",
+                "outputs": [
+                  "Aceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4:0 aviso",
+                "outputs": [
+                  "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "4;0 aviso",
+                "outputs": [
+                  "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3\n"
+                ]
+              },
+              {
+                "standardInput": "3:0\n3:3\n0:3\n0:3\n3:3\n1:0",
+                "outputs": [
+                  "Aceptada | Ocupadas: 6\nAceptada | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 6\nOcupadas: 1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Desde 3, las ocupaciones aceptadas son 6, 6, 3, 0, 0 y 1. Los dos movimientos 3:3 conservan respectivamente 6 y 0 porque las entradas y las salidas se compensan. Las seis líneas cumplen el contrato, por lo que el resumen es Aceptadas: 6 y Ocupadas: 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 5\nOcupadas: 1\n"
+                    ],
+                    "text": "Se está rechazando 3:3 cuando hay 6 plazas ocupadas. Sumar sólo las entradas produce 9, pero aún falta restar las 3 salidas del mismo movimiento: la candidata es 6. Revisa si estás exigiendo una capacidad intermedia que el contrato no establece. Ese movimiento debe aceptarse y contarse."
+                  },
+                  {
+                    "outputs": [
+                      "Aceptada | Ocupadas: 6\nAceptada | Ocupadas: 6\nAceptada | Ocupadas: 3\nAceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptada | Ocupadas: 1\nAceptadas: 5\nOcupadas: 1\n"
+                    ],
+                    "text": "Se está rechazando 3:3 cuando la ocupación es 0. Este contrato admite el efecto conjunto: las 3 entradas compensan las 3 salidas y la candidata sigue siendo 0. Revisa si comparas las salidas con la ocupación anterior sin incluir las entradas del mismo movimiento. Esa condición adicional impide contar una operación válida."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u11_movimientos_compensados_en_los_extremos_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n    ocupadas = candidata;\n    return Resultado::aceptada;\n"
+        }
+      }
     ]
   },
   "compilerPuzzlesRequired": true,
@@ -2234,216 +2649,6 @@
     "version": 1,
     "fields": [
       {
-        "block": "block_0001_0001",
-        "path": "/text",
-        "sourceSha256": "19cb1c4eae8df9266a9e6aaf3f4370db9ea26f51ef3f30955c5f4d8be04fe553",
-        "spans": [
-          {
-            "start": 46,
-            "end": 58,
-            "text": "entran:salen",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 86,
-            "end": 89,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 104,
-            "end": 107,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 119,
-            "end": 121,
-            "text": ">>",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 165,
-            "end": 168,
-            "text": "':'",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 245,
-            "end": 265,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 292,
-            "end": 295,
-            "text": "2:1",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 297,
-            "end": 304,
-            "text": "+2 : 01",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 307,
-            "end": 312,
-            "text": "2 : 1",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0001",
-        "path": "/text",
-        "sourceSha256": "b4775b6348f00581def27373c5a8afa8da7ee9eccaee9ec9714ebc0e1a4a651e",
-        "spans": [
-          {
-            "start": 1,
-            "end": 8,
-            "text": "getline",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 113,
-            "end": 116,
-            "text": "EOF",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 239,
-            "end": 259,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0002",
-        "path": "/text",
-        "sourceSha256": "716465b841c495e4470ddd07025483d137c5cbaa9d4a649557c6465a2445785f",
-        "spans": [
-          {
-            "start": 10,
-            "end": 13,
-            "text": "EOF",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 185,
-            "end": 189,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 239,
-            "end": 247,
-            "text": "std::cin",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 266,
-            "end": 288,
-            "text": "static_cast<bool>(...)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 497,
-            "end": 503,
-            "text": "good()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 505,
-            "end": 525,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0002_0004",
-        "path": "/text",
-        "sourceSha256": "f29b4fe6c848555c604433b7510426e81da0a9137a86fd08a0eff2479fc9fa47",
-        "spans": [
-          {
-            "start": 35,
-            "end": 40,
-            "text": "bad()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 57,
-            "end": 60,
-            "text": "EOF",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 243,
-            "end": 250,
-            "text": "getline",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 382,
-            "end": 405,
-            "text": "while (!std::cin.eof())",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 515,
-            "end": 535,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0003",
-        "path": "/text",
-        "sourceSha256": "e68f069b2249fd5976a6cfb71dfe017379ca455ae075e03ae013fdfba61085f7",
-        "spans": [
-          {
-            "start": 1,
-            "end": 8,
-            "text": "getline",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 249,
-            "end": 269,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
         "block": "block_0000_0000",
         "path": "/text",
         "sourceSha256": "720988ed0b9de72c575e1a2c8148d44852bf08b816e53ecfa86c674d8447f488",
@@ -2452,31 +2657,34 @@
             "start": 19,
             "end": 22,
             "text": "cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "1b4092c0dc2097a075a57f9681bd15d5bc67ec8ddc26a2b75799dc95d76d9672",
+        "sourceSha256": "08891ad71561b2695a1a239f055add106e932f16b1f2669b6f3f86042133f72c",
         "spans": [
           {
             "start": 32,
             "end": 40,
             "text": "std::cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 86,
             "end": 104,
             "text": "std::istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 289,
-            "end": 321,
-            "text": "(Stroustrup, 2024, pp. 279, 283)",
+            "end": 307,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2486,7 +2694,15 @@
         "block": "block_0000_0002",
         "path": "/text",
         "sourceSha256": "782fec2fc5e77c9e2a4072c5676daf6b67fe53394a0ebd5627856aa515035cfd",
-        "spans": []
+        "spans": [
+          {
+            "start": 137,
+            "end": 140,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -2504,7 +2720,8 @@
             "start": 338,
             "end": 347,
             "text": "std::cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2512,7 +2729,15 @@
         "block": "block_0000_0004",
         "path": "/question",
         "sourceSha256": "941e53147e75a0a0256995562fd1adab1c4a1f70a21bee6ba47eed2d47509cf6",
-        "spans": []
+        "spans": [
+          {
+            "start": 18,
+            "end": 21,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -2571,13 +2796,15 @@
             "start": 21,
             "end": 25,
             "text": "cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 59,
             "end": 62,
             "text": "cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2590,7 +2817,8 @@
             "start": 30,
             "end": 33,
             "text": "cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2609,13 +2837,15 @@
             "start": 23,
             "end": 27,
             "text": "cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 83,
             "end": 86,
             "text": "cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2628,19 +2858,22 @@
             "start": 27,
             "end": 30,
             "text": "cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 83,
             "end": 89,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 146,
             "end": 149,
             "text": "cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2649,6 +2882,76 @@
         "path": "/text",
         "sourceSha256": "0e47a5b28ba9caf81c1e346543552fc7681f7189143162f580adb8a9e668fa51",
         "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "fe10d3ea61ebd24e7bddc3a33069a7fff863df1985134b17eee931068aaf0b63",
+        "spans": [
+          {
+            "start": 46,
+            "end": 58,
+            "text": "entran:salen",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 86,
+            "end": 89,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 107,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 119,
+            "end": 121,
+            "text": ">>",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 165,
+            "end": 168,
+            "text": "':'",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 265,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 329,
+            "text": "2:1",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 330,
+            "end": 337,
+            "text": "+2 : 01",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 338,
+            "end": 343,
+            "text": "2 : 1",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -2701,7 +3004,8 @@
             "start": 486,
             "end": 490,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 504,
@@ -2718,10 +3022,24 @@
         "sourceSha256": "7425463c44af2d54603685da12e0cc99f8a568ff4ea6383b632cb76b63c2a10a",
         "spans": [
           {
+            "start": 146,
+            "end": 147,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 149,
             "end": 158,
             "text": "Sin datos",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 191,
+            "text": "2",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -2732,10 +3050,31 @@
             "reading": "natural"
           },
           {
+            "start": 240,
+            "end": 243,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 277,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 279,
             "end": 296,
             "text": "Datos adicionales",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 364,
+            "text": "4",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -2749,6 +3088,13 @@
             "start": 429,
             "end": 434,
             "text": "0 a 3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 436,
+            "end": 437,
+            "text": "5",
             "role": "data",
             "reading": "natural"
           },
@@ -2778,7 +3124,7 @@
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "416f120fdbcbb1ab1daac1da1cbb93f282c01fc920796870484f9fc9a43fa513",
+        "sourceSha256": "ba20122a27ed5e85fed4eb52cc7de977e4bfc2be56f229167cf3b3d3295bd98a",
         "spans": [
           {
             "start": 9,
@@ -2798,7 +3144,8 @@
             "start": 109,
             "end": 116,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2974,15 +3321,114 @@
         "spans": []
       },
       {
+        "block": "block_0002_0001",
+        "path": "/text",
+        "sourceSha256": "b4775b6348f00581def27373c5a8afa8da7ee9eccaee9ec9714ebc0e1a4a651e",
+        "spans": [
+          {
+            "start": 1,
+            "end": 8,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 116,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 239,
+            "end": 259,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "716465b841c495e4470ddd07025483d137c5cbaa9d4a649557c6465a2445785f",
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 185,
+            "end": 189,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 247,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 266,
+            "end": 288,
+            "text": "static_cast<bool>(...)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 497,
+            "end": 503,
+            "text": "good()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 505,
+            "end": 525,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0002_0003",
         "path": "/question",
         "sourceSha256": "c85e9e405dc1bc9395d24d75c095aea271fd187f09cf60059d3138215aca1c8a",
         "spans": [
           {
+            "start": 12,
+            "end": 17,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 46,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 75,
+            "end": 78,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
             "start": 104,
             "end": 108,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 126,
@@ -3013,9 +3459,23 @@
             "reading": "technical"
           },
           {
+            "start": 20,
+            "end": 23,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 35,
             "end": 37,
             "text": "1:",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 241,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -3041,6 +3501,13 @@
             "reading": "characters"
           },
           {
+            "start": 404,
+            "end": 408,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 431,
             "end": 436,
             "text": "0 1 1",
@@ -3060,7 +3527,57 @@
         "block": "block_0002_0003",
         "path": "/reviewFeedback",
         "sourceSha256": "c751b9a928603920eaf0e2a21469603ad732daa4c388d9f0c6e2436618cc73f4",
-        "spans": []
+        "spans": [
+          {
+            "start": 147,
+            "end": 150,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0004",
+        "path": "/text",
+        "sourceSha256": "f29b4fe6c848555c604433b7510426e81da0a9137a86fd08a0eff2479fc9fa47",
+        "spans": [
+          {
+            "start": 35,
+            "end": 40,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 243,
+            "end": 250,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 382,
+            "end": 405,
+            "text": "while (!std::cin.eof())",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 515,
+            "end": 535,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0000",
@@ -3077,19 +3594,22 @@
             "start": 60,
             "end": 68,
             "text": "std::cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 177,
             "end": 195,
             "text": "const std::string&",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 341,
             "end": 351,
             "text": "enum class",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3127,6 +3647,13 @@
             "reading": "natural"
           },
           {
+            "start": 398,
+            "end": 401,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
             "start": 412,
             "end": 424,
             "text": "Aceptadas: A",
@@ -3162,6 +3689,13 @@
         "sourceSha256": "98fda5178f7bacf6095bc8a5abcf3ae2dc764d8d7a90d2261a25ecbfdaca16a6",
         "spans": [
           {
+            "start": 120,
+            "end": 123,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
             "start": 144,
             "end": 145,
             "text": "0",
@@ -3172,7 +3706,15 @@
             "start": 169,
             "end": 174,
             "text": "bad()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 207,
+            "text": "EOF",
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 215,
@@ -3186,6 +3728,13 @@
             "end": 272,
             "text": "1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 522,
+            "end": 526,
+            "text": "ocho",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -3214,174 +3763,349 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "ee74e439ad4afcde9fb9d53ccb6c2dba87638a5cc306e7259e2fa21b246dce5e",
+        "sourceSha256": "395075ff78a24a2764482ee6117ecb09975ede01a0847accc8ac38dee5a8aa23",
         "spans": [
           {
-            "start": 234,
-            "end": 455,
-            "text": "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1",
-            "role": "output",
+            "start": 48,
+            "end": 53,
+            "text": "siete",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 641,
-            "end": 642,
+            "start": 257,
+            "end": 263,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 415,
+            "end": 416,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 738,
-            "end": 741,
-            "text": "0:0",
+            "start": 508,
+            "end": 510,
+            "text": "\"\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 820,
-            "end": 822,
-            "text": "2:",
+            "start": 535,
+            "end": 537,
+            "text": "\\n",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 824,
-            "end": 827,
-            "text": "q:1",
+            "start": 567,
+            "end": 569,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 577,
+            "end": 579,
+            "text": "\\t",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 829,
-            "end": 832,
-            "text": "2;1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 834,
-            "end": 838,
-            "text": "2:1x",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 840,
-            "end": 845,
-            "text": "2:1 0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 847,
-            "end": 851,
-            "text": "-1:0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 853,
-            "end": 856,
-            "text": "0:4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 859,
-            "end": 866,
-            "text": "+2 : 01",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 915,
-            "end": 918,
-            "text": "3:0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 921,
-            "end": 924,
-            "text": "1:0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 926,
-            "end": 929,
-            "text": "0:3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 932,
-            "end": 935,
-            "text": "0:1",
+            "start": 878,
+            "end": 919,
+            "text": "\"2:1\\n \\t\\nx:2\\n1:2 sobra\\n4:0\\n3:0\\n0:3\"",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 937,
-            "end": 940,
-            "text": "q:2",
+            "end": 1158,
+            "text": "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1185,
+            "end": 1187,
+            "text": "\"\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 943,
-            "end": 946,
-            "text": "1:0",
+            "start": 1205,
+            "end": 1229,
+            "text": "Aceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1256,
+            "end": 1260,
+            "text": "\"\\n\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1044,
-            "end": 1047,
-            "text": "1:0",
+            "start": 1278,
+            "end": 1326,
+            "text": "Sin datos | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1353,
+            "end": 1358,
+            "text": "\"0:0\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1049,
-            "end": 1058,
-            "text": "1:0 resto",
+            "start": 1376,
+            "end": 1423,
+            "text": "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1450,
+            "end": 1457,
+            "text": "\"0:0\\n\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1061,
-            "end": 1064,
-            "text": "0:1",
+            "start": 1475,
+            "end": 1522,
+            "text": "Aceptada | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1549,
+            "end": 1558,
+            "text": "\"0:0\\n\\n\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1129,
-            "end": 1132,
-            "text": "0:0",
+            "start": 1576,
+            "end": 1647,
+            "text": "Aceptada | Ocupadas: 3\nSin datos | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1674,
+            "end": 1678,
+            "text": "\"2:\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1135,
-            "end": 1138,
-            "text": "0:4",
+            "start": 1696,
+            "end": 1751,
+            "text": "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1778,
+            "end": 1783,
+            "text": "\"q:1\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1203,
-            "end": 1212,
-            "text": "4:0 aviso",
+            "start": 1801,
+            "end": 1856,
+            "text": "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1883,
+            "end": 1888,
+            "text": "\"2;1\"",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1215,
-            "end": 1224,
-            "text": "4;0 aviso",
+            "start": 1906,
+            "end": 1961,
+            "text": "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1988,
+            "end": 1994,
+            "text": "\"2:1x\"",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2012,
+            "end": 2068,
+            "text": "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2095,
+            "end": 2102,
+            "text": "\"2:1 0\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2120,
+            "end": 2176,
+            "text": "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2203,
+            "end": 2209,
+            "text": "\"-1:0\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2227,
+            "end": 2282,
+            "text": "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2309,
+            "end": 2314,
+            "text": "\"0:4\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2332,
+            "end": 2387,
+            "text": "Fuera de dominio | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2414,
+            "end": 2423,
+            "text": "\"+2 : 01\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2441,
+            "end": 2488,
+            "text": "Aceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2515,
+            "end": 2525,
+            "text": "\"3:0\\n1:0\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2543,
+            "end": 2623,
+            "text": "Aceptada | Ocupadas: 6\nCapacidad invalida | Ocupadas: 6\nAceptadas: 1\nOcupadas: 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2650,
+            "end": 2660,
+            "text": "\"0:3\\n0:1\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2678,
+            "end": 2758,
+            "text": "Aceptada | Ocupadas: 0\nCapacidad invalida | Ocupadas: 0\nAceptadas: 1\nOcupadas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2785,
+            "end": 2795,
+            "text": "\"q:2\\n1:0\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2813,
+            "end": 2891,
+            "text": "Formato invalido | Ocupadas: 3\nAceptada | Ocupadas: 4\nAceptadas: 1\nOcupadas: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2918,
+            "end": 2939,
+            "text": "\"1:0\\n1:0 resto\\n0:1\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2957,
+            "end": 3059,
+            "text": "Aceptada | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nAceptada | Ocupadas: 3\nAceptadas: 2\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 3086,
+            "end": 3096,
+            "text": "\"0:0\\n0:4\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 3114,
+            "end": 3192,
+            "text": "Aceptada | Ocupadas: 3\nFuera de dominio | Ocupadas: 3\nAceptadas: 1\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 3219,
+            "end": 3230,
+            "text": "\"4:0 aviso\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 3248,
+            "end": 3304,
+            "text": "Datos adicionales | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 3331,
+            "end": 3342,
+            "text": "\"4;0 aviso\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 3360,
+            "end": 3415,
+            "text": "Formato invalido | Ocupadas: 3\nAceptadas: 0\nOcupadas: 3",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3432,9 +4156,23 @@
             "reading": "natural"
           },
           {
+            "start": 292,
+            "end": 295,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 341,
             "end": 342,
             "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 398,
+            "end": 401,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           }
@@ -3519,7 +4257,7 @@
             "start": 382,
             "end": 383,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3533,6 +4271,13 @@
             "start": 449,
             "end": 450,
             "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 460,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -3579,6 +4324,13 @@
         "sourceSha256": "64335e036b4fd550ecb43687229b99db6de0454b8588fb30ce33d5a25b4fe597",
         "spans": [
           {
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 30,
             "end": 33,
             "text": "3:0",
@@ -3596,7 +4348,7 @@
             "start": 83,
             "end": 84,
             "text": "6",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3610,7 +4362,7 @@
             "start": 161,
             "end": 162,
             "text": "6",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3624,7 +4376,7 @@
             "start": 214,
             "end": 215,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3638,7 +4390,7 @@
             "start": 269,
             "end": 270,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3666,14 +4418,14 @@
             "start": 75,
             "end": 76,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 120,
             "end": 121,
             "text": "4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3698,10 +4450,17 @@
             "reading": "natural"
           },
           {
+            "start": 270,
+            "end": 273,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 324,
             "end": 325,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3721,52 +4480,71 @@
             "start": 246,
             "end": 253,
             "text": "mensaje",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "6c9c6ce7a8049263ebafd7e5371e231c4f36fbabd19cf1e7641bbe500da93689",
+        "sourceSha256": "5d8d007958504979e8781e22344e80fb58fc3d824ebb030e7818bc2e3e5c2cc5",
         "spans": [
           {
             "start": 10,
             "end": 19,
             "text": "presencia",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 105,
             "end": 111,
             "text": "campos",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 211,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 276,
             "end": 284,
             "text": "std::cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 286,
-            "end": 312,
-            "text": "(Stroustrup, 2024, p. 283)",
+            "end": 304,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 338,
-            "end": 343,
+            "start": 330,
+            "end": 335,
             "text": "extra",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "1ef8f116bba9850ecb255567b5a2be3554abaca232e3c98e2a88b0e3f742aa8b",
+        "sourceSha256": "0eab08eaa50330053265e6c9c35cc9c919cd4cb5d8d733d729545adecf3da3e4",
         "spans": [
           {
             "start": 85,
@@ -3814,18 +4592,20 @@
             "start": 196,
             "end": 199,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 321,
             "end": 329,
             "text": "ocupadas",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 455,
-            "end": 481,
-            "text": "(Stroustrup, 2024, p. 267)",
+            "end": 473,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -3866,7 +4646,7 @@
             "start": 92,
             "end": 93,
             "text": "6",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3915,7 +4695,8 @@
             "start": 283,
             "end": 287,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 299,
@@ -3978,7 +4759,7 @@
             "end": 162,
             "text": "3 + 0 - 0 = 3",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 219,
@@ -4116,134 +4897,15 @@
             "text": "Ocupadas",
             "role": "output",
             "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0000",
-        "path": "/text",
-        "sourceSha256": "cefd081f4707df2650793503f0217442b115ae75c38e3deeb0ef687e2dfd46da",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/question",
-        "sourceSha256": "569e6e68897ab43b3de8771680f48b76f0a92a79b175d6086ad570303524adf6",
-        "spans": [
-          {
-            "start": 31,
-            "end": 37,
-            "text": "campos",
-            "role": "cpp"
           },
           {
-            "start": 86,
-            "end": 89,
-            "text": "cin",
-            "role": "cpp"
+            "start": 360,
+            "end": 363,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/explanation",
-        "sourceSha256": "509b538d47e3e3dd07ea0cd0f2fa8ef026b4ac47424410ba3f11ef159bc7ee8e",
-        "spans": [
-          {
-            "start": 103,
-            "end": 109,
-            "text": "campos",
-            "role": "cpp"
-          },
-          {
-            "start": 143,
-            "end": 151,
-            "text": "std::cin",
-            "role": "cpp"
-          },
-          {
-            "start": 164,
-            "end": 171,
-            "text": "clear()",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/options/0",
-        "sourceSha256": "cd418dcfdce42f415dd906ff142888ea6d5830a1456a9ac3c76072cc4ec4cdfc",
-        "spans": [
-          {
-            "start": 0,
-            "end": 5,
-            "text": "clear",
-            "role": "cpp"
-          },
-          {
-            "start": 12,
-            "end": 15,
-            "text": "cin",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/options/1",
-        "sourceSha256": "178f228a045fdc4117d0a12a746e8eddb61663a0f45e9c6946b775c606736db3",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/options/2",
-        "sourceSha256": "d4e8bc191cd86278126226a531402062a43a3de434372e9ec954220288d19308",
-        "spans": [
-          {
-            "start": 0,
-            "end": 7,
-            "text": "getline",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/reviewFeedback/0",
-        "sourceSha256": "bce6c49de69d46b8d2614e6530d309403e4615260fcd8cfcf92217316f99d0ba",
-        "spans": [
-          {
-            "start": 0,
-            "end": 5,
-            "text": "clear",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/reviewFeedback/1",
-        "sourceSha256": "229ee255dbf251667820a2522f391ec6a6d882b992a5b83da0ba49dea430685c",
-        "spans": [
-          {
-            "start": 118,
-            "end": 121,
-            "text": "cin",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/reviewFeedback/2",
-        "sourceSha256": "52a4ab69aa80f8ce1fdbfda0cc4773cba00970fa59f00609ca45c26fcd0e8076",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0002",
-        "path": "/text",
-        "sourceSha256": "560c87fd51be44353e5cf1b557f81afd26c372d493f948fd39719945245f80d8",
-        "spans": []
       },
       {
         "block": "u11_movimientos_compensados_en_los_extremos_titulo",
@@ -4254,7 +4916,7 @@
       {
         "block": "u11_movimientos_compensados_en_los_extremos_consigna",
         "path": "/text",
-        "sourceSha256": "6dac9ead44d57ad420a5cc4b356568b202acb5e6c52785db76b1f84dad2de23f",
+        "sourceSha256": "9b3b3eb14433cbc790e69d7382d4de47c1f6cb9c73c545f748d2972fa18ef6f9",
         "spans": [
           {
             "start": 93,
@@ -4264,15 +4926,43 @@
             "reading": "technical"
           },
           {
-            "start": 730,
-            "end": 734,
+            "start": 468,
+            "end": 509,
+            "text": "\"2:1\\n \\t\\nx:2\\n1:2 sobra\\n4:0\\n3:0\\n0:3\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 748,
+            "text": "Aceptada | Ocupadas: 4\nSin datos | Ocupadas: 4\nFormato invalido | Ocupadas: 4\nDatos adicionales | Ocupadas: 4\nFuera de dominio | Ocupadas: 4\nCapacidad invalida | Ocupadas: 4\nAceptada | Ocupadas: 1\nAceptadas: 2\nOcupadas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 760,
+            "end": 766,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 986,
+            "end": 1016,
+            "text": "\"3:0\\n3:3\\n0:3\\n0:3\\n3:3\\n1:0\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1203,
+            "end": 1207,
             "text": "0..3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1099,
-            "end": 1102,
+            "start": 1681,
+            "end": 1684,
             "text": "1:0",
             "role": "data",
             "reading": "natural"
@@ -4313,6 +5003,13 @@
             "reading": "natural"
           },
           {
+            "start": 62,
+            "end": 65,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 78,
             "end": 81,
             "text": "3:3",
@@ -4323,13 +5020,20 @@
             "start": 108,
             "end": 109,
             "text": "6",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 112,
             "end": 113,
             "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 170,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },
@@ -4372,7 +5076,7 @@
             "start": 85,
             "end": 86,
             "text": "9",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4386,7 +5090,7 @@
             "start": 162,
             "end": 163,
             "text": "6",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4428,7 +5132,7 @@
             "start": 157,
             "end": 158,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4462,7 +5166,7 @@
             "start": 49,
             "end": 50,
             "text": "6",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4477,12 +5181,19 @@
             "end": 92,
             "text": "6 + 3 - 3 = 6",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 146,
             "end": 147,
             "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 235,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -4497,14 +5208,14 @@
             "start": 283,
             "end": 284,
             "text": "3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 289,
             "end": 290,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -4519,7 +5230,7 @@
             "end": 333,
             "text": "0 + 3 - 3 = 0",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 489,
@@ -4532,6 +5243,34 @@
             "start": 499,
             "end": 500,
             "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 520,
+            "end": 524,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 609,
+            "end": 618,
+            "text": "veintiuna",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 724,
+            "end": 727,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 893,
+            "end": 896,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -4548,6 +5287,163 @@
             "text": "ocupadas",
             "role": "cpp",
             "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "c4f1b851969e7eb62092a2805cc55d29cff91fe5f9f4a07a62d3422300c74176",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/question",
+        "sourceSha256": "569e6e68897ab43b3de8771680f48b76f0a92a79b175d6086ad570303524adf6",
+        "spans": [
+          {
+            "start": 31,
+            "end": 37,
+            "text": "campos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 89,
+            "text": "cin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/explanation",
+        "sourceSha256": "509b538d47e3e3dd07ea0cd0f2fa8ef026b4ac47424410ba3f11ef159bc7ee8e",
+        "spans": [
+          {
+            "start": 103,
+            "end": 109,
+            "text": "campos",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 151,
+            "text": "std::cin",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 171,
+            "text": "clear()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/options/0",
+        "sourceSha256": "cd418dcfdce42f415dd906ff142888ea6d5830a1456a9ac3c76072cc4ec4cdfc",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "clear",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 12,
+            "end": 15,
+            "text": "cin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/options/1",
+        "sourceSha256": "178f228a045fdc4117d0a12a746e8eddb61663a0f45e9c6946b775c606736db3",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/options/2",
+        "sourceSha256": "d4e8bc191cd86278126226a531402062a43a3de434372e9ec954220288d19308",
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "bce6c49de69d46b8d2614e6530d309403e4615260fcd8cfcf92217316f99d0ba",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "clear",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "229ee255dbf251667820a2522f391ec6a6d882b992a5b83da0ba49dea430685c",
+        "spans": [
+          {
+            "start": 118,
+            "end": 121,
+            "text": "cin",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "52a4ab69aa80f8ce1fdbfda0cc4773cba00970fa59f00609ca45c26fcd0e8076",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "d605f4b524a29960ad3ef69917e2836d3e6f68e0e068e74533ad2219dd1cd22c",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0003",
+        "path": "/text",
+        "sourceSha256": "e68f069b2249fd5976a6cfb71dfe017379ca455ae075e03ae013fdfba61085f7",
+        "spans": [
+          {
+            "start": 1,
+            "end": 8,
+            "text": "getline",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 249,
+            "end": 269,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       }

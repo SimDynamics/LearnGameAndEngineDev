@@ -34,7 +34,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La pila de llamadas organiza esos registros con la regla último en entrar, primero en salir. En esta lección las listas representan sólo main y las funciones de nuestros programas, sin incluir las llamadas internas de la biblioteca.\n\nEs un modelo para razonar sobre la ejecución. Los detalles de almacenamiento pueden variar entre implementaciones; una optimización tampoco tiene que reproducir literalmente cada registro del modelo. Por eso no inferiremos direcciones, bytes ni un diseño físico exacto (Stroustrup, 2024).",
+          "text": "La pila de llamadas organiza los registros con la regla último en entrar, primero en salir. Por ejemplo, si main llama a exterior y ésta llama a interior, la llamada más reciente es la de interior. Cuando termina, continúa exterior; cuando ésta termina, continúa main.\n\nEn esta lección las listas representan sólo main y las funciones de nuestros programas, sin incluir las llamadas internas de la biblioteca.\n\nEs un modelo para razonar sobre la ejecución. Los detalles de almacenamiento pueden variar entre implementaciones; una optimización tampoco tiene que reproducir literalmente cada registro del modelo. Por eso no inferiremos direcciones, bytes ni un diseño físico exacto (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "último en entrar, primero en salir",
@@ -68,7 +68,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 2;\n    const int resultado = exterior(dato);\n    std::cout << \"M:\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n\n    std::cout << \"E:\" << guardado << \"|\";\n\n    const int recibido = interior(guardado);\n\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 2;\n\n    const int resultado = exterior(dato);\n\n    std::cout << \"M:\" << dato << \":\" << resultado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -84,7 +84,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n    const int resultado = exterior(dato);\n    std::cout << \"M:\" << dato << \":\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n\n    std::cout << \"E:\" << guardado << \"|\";\n\n    const int recibido = interior(guardado);\n\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n\n    const int resultado = exterior(dato);\n\n    std::cout << \"M:\" << dato << \":\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "E:5|I:5:10|V:5:10|M:4:15"
           ],
@@ -134,7 +134,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int primero = exterior(1);\n    const int segundo = exterior(3);\n    std::cout << \"R:\" << primero << \":\" << segundo;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n\n    std::cout << \"E:\" << guardado << \"|\";\n\n    const int recibido = interior(guardado);\n\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n\n    return guardado + recibido;\n}\n\nint main() {\n    const int primero = exterior(1);\n    const int segundo = exterior(3);\n\n    std::cout << \"R:\" << primero << \":\" << segundo;\n\n    return 0;\n}\n",
           "answers": [
             "E:2|I:2:4|V:2:4|E:4|I:4:8|V:4:8|R:6:12"
           ],
@@ -177,7 +177,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n    const int recibido = doble(dato);\n    std::cout << \"V:\" << recibido << \"|\";\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(0);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n\n    const int recibido = doble(dato);\n\n    std::cout << \"V:\" << recibido << \"|\";\n\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(0);\n\n    std::cout << \"M:\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "I:0|Base|M:0"
           ],
@@ -187,7 +187,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n    const int recibido = doble(dato);\n    std::cout << \"V:\" << recibido << \"|\";\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(3);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n\n    const int recibido = doble(dato);\n\n    std::cout << \"V:\" << recibido << \"|\";\n\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(3);\n\n    std::cout << \"M:\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "I:3|D:3|V:6|M:6"
           ],
@@ -226,7 +226,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n    const int recibido = sumar_con_traza(nivel - 1);\n    const int resultado = nivel + recibido;\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(2);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n\n    const int recibido = sumar_con_traza(nivel - 1);\n\n    const int resultado = nivel + recibido;\n\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(2);\n\n    std::cout << \"M:\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "E2|E1|E0|S0|S1:1|S2:3|M:3"
           ],
@@ -263,7 +263,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye dos funciones y la conexión desde main. El dato inicial permitido está entre cero y siete.\n\npieza(int dato), llamada aquí con valores entre tres y diez, muestra P+ seguido de su argumento, calcula un local guardado como el doble y muestra P- seguido de guardado; retorna ese guardado.\n\nconjunto(int dato) crea otro guardado igual a dato+3, muestra C+ seguido de ese valor, llama a pieza(guardado), guarda el resultado en recibido, muestra C-guardado:recibido y retorna la suma de guardado y recibido. Cada marca ocupa su propia línea.",
+          "text": "Construye dos funciones y la conexión desde main. El dato inicial permitido está entre cero y siete. Cada marca ocupa su propia línea.\n\nLa función int pieza(int dato) recibe, en estas llamadas, un valor entre tres y diez. Debe realizar estas acciones en orden:\n\nMostrar P+ seguido del argumento recibido.\nCrear un local guardado con el doble del argumento.\nMostrar P- seguido de guardado.\nDevolver guardado.\n\nLa función int conjunto(int dato) debe realizar estas acciones en orden:\n\nCrear su propio local guardado con el valor de dato + 3.\nMostrar C+ seguido de ese valor.\nLlamar a pieza(guardado) y conservar el resultado en recibido.\nMostrar C-guardado:recibido, sustituyendo los nombres por sus valores.\nDevolver la suma de guardado y recibido.",
           "emphasis": [
             {
               "text": "Construye dos funciones",
@@ -277,7 +277,7 @@
         },
         {
           "type": "paragraph",
-          "text": "main valida su dato antes de cualquier marca. Si es inválido muestra únicamente Datos invalidos y no llama a conjunto. Si es válido muestra M+dato, obtiene el resultado de conjunto y muestra M-dato:resultado. Usa cuatro como caso inicial.\n\nLas marcas deben proceder de las instrucciones de las llamadas, no de escribir una traza fija. Ambos locales guardado deben tener ese mismo nombre: sus declaraciones en funciones distintas permitirán observar que pertenecen a contextos separados.",
+          "text": "Usa cuatro como dato inicial de main. Valídalo antes de cualquier marca: si es inválido, muestra únicamente Datos invalidos y termina sin llamar a conjunto.\n\nCon un dato válido, sigue este orden:\n\nMostrar M+dato, sustituyendo dato por su valor.\nLlamar a conjunto y conservar su resultado.\nMostrar M-dato:resultado, sustituyendo ambos nombres por sus valores.\n\nLas marcas deben proceder de las instrucciones de las llamadas, no de escribir una traza fija. Ambos locales guardado deben tener ese mismo nombre: sus declaraciones en funciones distintas permitirán observar que pertenecen a contextos separados.",
           "emphasis": [
             {
               "text": "antes de cualquier marca",
@@ -326,11 +326,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n    std::cout << \"P-\" << guardado << \"\\n\";\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n    std::cout << \"C+\" << guardado << \"\\n\";\n    const int recibido = pieza(guardado);\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n    const int resultado = conjunto(dato);\n    std::cout << \"M-\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n\n    std::cout << \"P-\" << guardado << \"\\n\";\n\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n\n    std::cout << \"C+\" << guardado << \"\\n\";\n\n    const int recibido = pieza(guardado);\n\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n\n    const int resultado = conjunto(dato);\n\n    std::cout << \"M-\" << dato << \":\" << resultado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Para cuatro las líneas son M+4, C+7, P+7, P-14, C-7:14 y M-4:21. Durante pieza representamos main → conjunto → pieza; después de su retorno quedan main → conjunto.\n\nCada marca aparece al alcanzar su instrucción. conjunto conserva su guardado durante la llamada y combina ese valor con recibido al volver; main conserva su propio dato. Los inválidos se rechazan antes de cualquier marca. Una traza fija que sólo imite la salida de cuatro no cumple esos criterios.",
+          "text": "Con el dato inicial cuatro, cada línea permite seguir una parte de la ejecución:\n\nM+4: main presenta su dato inicial.\nC+7: conjunto ya ha calculado su guardado, con valor siete.\nP+7: pieza recibe ese siete como argumento.\nP-14: el guardado de pieza contiene el doble, catorce, que devuelve al llamador.\nC-7:14: conjunto conserva su siete y ha recibido catorce.\nM-4:21: main conserva el dato cuatro y recibe la suma veintiuno.\n\nDurante pieza representamos main → conjunto → pieza; después de su retorno quedan main → conjunto.\n\nCada marca aparece al alcanzar su instrucción. conjunto conserva su guardado durante la llamada y combina ese valor con recibido al volver; main conserva su propio dato. Los inválidos se rechazan antes de cualquier marca. Una traza fija que sólo imite la salida de cuatro no cumple esos criterios.",
           "emphasis": [
             {
               "text": "conjunto conserva su guardado durante la llamada",
@@ -344,7 +344,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para cero se obtiene M+0, C+3, P+3, P-6, C-3:6 y M-0:9; para siete, M+7, C+10, P+10, P-20, C-10:20 y M-7:30. Las entradas -1 y 8 producen sólo Datos invalidos.\n\nOtra implementación es válida si conserva responsabilidades, contratos y secuencia. Las marcas hacen visible parte del trabajo; no miden el almacenamiento físico de la implementación.",
+          "text": "Con el dato inicial cero, la salida es:\n\nM+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9\n\nCon el dato inicial siete, la salida es:\n\nM+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30\n\nLas entradas -1 y 8 producen sólo Datos invalidos.\n\nOtra implementación es válida si conserva responsabilidades, contratos y secuencia. Las marcas hacen visible parte del trabajo; no miden el almacenamiento físico de la implementación.",
           "emphasis": [
             {
               "text": "no miden el almacenamiento físico",
@@ -358,11 +358,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Este programa lee el dato inicial. Comprueba `0`, `7`, `-1` y `8`. Las aceptaciones deben mostrar en orden las seis marcas de entrada y salida; los rechazos muestran únicamente `Datos invalidos`, antes de cualquier marca de llamada.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos declarados. El salto después del último mensaje es opcional."
+          "text": "Este programa lee el dato inicial. Para avanzar, basta con comprobar correctamente el primer caso.\n\nCaso inicial obligatorio\nEntrada: 0\nSalida:\nM+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9\n\nLos demás casos son ensayos optativos. Permiten observar el extremo superior y los rechazos sin bloquear el avance.\n\nEntrada: 7\nSalida:\nM+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30\n\nEntrada: -1 → Salida: Datos invalidos\nEntrada: 8 → Salida: Datos invalidos\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». Cada aceptación debe conservar el orden de las seis marcas. Los rechazos ocurren antes de llamar y no presentan marcas. El salto después del último mensaje es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n    std::cout << \"P-\" << guardado << \"\\n\";\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n    std::cout << \"C+\" << guardado << \"\\n\";\n    const int recibido = pieza(guardado);\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n    return guardado + recibido;\n}\n\nint main() {\n    int dato{0};\n    std::cin >> dato;\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n    const int resultado = conjunto(dato);\n    std::cout << \"M-\" << dato << \":\" << resultado;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n\n    std::cout << \"P-\" << guardado << \"\\n\";\n\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n\n    std::cout << \"C+\" << guardado << \"\\n\";\n\n    const int recibido = pieza(guardado);\n\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n\n    return guardado + recibido;\n}\n\nint main() {\n    int dato{0};\n    std::cin >> dato;\n\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n\n    const int resultado = conjunto(dato);\n\n    std::cout << \"M-\" << dato << \":\" << resultado;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -410,7 +410,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n    const int recibido = sumar_con_traza(nivel - 1);\n    const int resultado = nivel + recibido;\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(1);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n\n    const int recibido = sumar_con_traza(nivel - 1);\n\n    const int resultado = nivel + recibido;\n\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(1);\n\n    std::cout << \"M:\" << resultado;\n\n    return 0;\n}\n",
           "answers": [
             "E1|E0|S0|S1:1|M:1"
           ],
@@ -446,7 +446,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye el programa desde el esqueleto siguiente. Comprueba Entrada cero, dos y cinco: las salidas son `B0|M0:0`, `E3|T3|S3:9|M2:12` y `E6|T6|S6:18|M5:24`. Las entradas -1 y 6 deben producir sólo `Datos invalidos`. El salto final es opcional.\n\nPulsa «Compilar, ejecutar y comprobar». Varía sólo Entrada entre los casos del mismo programa; cada marca debe proceder de su función y del camino realmente ejecutado.",
+          "text": "Construye el programa desde el esqueleto. Cada marca debe proceder de su función y del camino realmente ejecutado.\n\nPara avanzar, basta con comprobar correctamente el caso inicial:\nEntrada: 0 → Salida: B0|M0:0\n\nLos demás casos son ensayos optativos:\nEntrada: 2 → Salida: E3|T3|S3:9|M2:12\nEntrada: 5 → Salida: E6|T6|S6:18|M5:24\nEntrada: -1 → Salida: Datos invalidos\nEntrada: 6 → Salida: Datos invalidos\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». Conserva las funciones al variar el dato; el salto final es opcional.",
           "emphasis": [
             {
               "text": "Construye el programa desde el esqueleto",
@@ -524,7 +524,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint triplicar(int dato) {\n    std::cout << \"T\" << dato << \"|\";\n    return dato * 3;\n}\n\nint evaluar(int dato) {\n    if (dato == 0) {\n        std::cout << \"B0|\";\n        return 0;\n    }\n    const int base = dato + 1;\n    std::cout << \"E\" << base << \"|\";\n    const int recibido = triplicar(base);\n    std::cout << \"S\" << base << \":\" << recibido << \"|\";\n    return base + recibido;\n}\n\nint main() {\n    int dato{0};\n    std::cin >> dato;\n    if (dato < 0 || dato > 5) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    const int resultado = evaluar(dato);\n    std::cout << \"M\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint triplicar(int dato) {\n    std::cout << \"T\" << dato << \"|\";\n\n    return dato * 3;\n}\n\nint evaluar(int dato) {\n    if (dato == 0) {\n        std::cout << \"B0|\";\n        return 0;\n    }\n    const int base = dato + 1;\n\n    std::cout << \"E\" << base << \"|\";\n\n    const int recibido = triplicar(base);\n\n    std::cout << \"S\" << base << \":\" << recibido << \"|\";\n\n    return base + recibido;\n}\n\nint main() {\n    int dato{0};\n    std::cin >> dato;\n\n    if (dato < 0 || dato > 5) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n\n    const int resultado = evaluar(dato);\n\n    std::cout << \"M\" << dato << \":\" << resultado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1605,6 +1605,236 @@
         "id": "block_0007_0004",
         "beforeSha256": "91693f1ec5d1e687f18a926f341a32a1330fa30bf9bede9337820a47bebde5f4",
         "afterSha256": "278f32f4c7538b3c46eb9e4234ffd0008f119a04962e80ad71a836fa7394e944"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "5be15576772e72f09ef5f0ef9423c72d953e0e95a01e0b866a36016a13d7296b",
+        "afterSha256": "5cadaebb0e589208d2f33af6d6bf0f0ef645d2929e2f2b10ec12fd1559d74d65"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "bd395a5d70bae8c72b88a40820b2093c4008a50c4b861d9629de25f82ff09b6a",
+        "afterSha256": "1b6d8ea70d01a3f4d126efa82fb09389104f5b195a40af0e044b6f81dd0f179e"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "c0a6e50eb3398979eb581cdef219124cea7d1a83ccace44cbefc0e412da508bb",
+        "afterSha256": "17042d5c2209665aca0ffc34c4ba333263f5a96179c199255f53462c345954f9"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "fa4d4b7dc4efd5fc68be33591d42f017c340d803a780361b4ae26c60b6c9e7c7",
+        "afterSha256": "44a6bde9f00078baa4f6577b4cfbab5df3e26023ee9825caed23436e1b67a19b"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "4eaa2ad44a335e992ed0077faa4eaf11b5c6bb1011457a22e5a38eeede358c60",
+        "afterSha256": "3de6f663bcab93ea088b36b4a5735d6843df18707d7cbe9a989b62df4d1961be"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "77eed40aadd1ae0ca346e63aa5fd9ea7f662ccfc5683dc828284695832c92300",
+        "afterSha256": "8868c4858d30e2b4e1aa8376066ff88afeed0af88fac54fe127cd9ae4209012c"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "90a6fe02a62676c74363c979e723d41b3b53309bfc3e9c9d2caa41c7e7ec1d52",
+        "afterSha256": "d2a1352495e4aacfd7fae377ff5b8c089c1b480d7ae8869098171a0aacd2f506"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "62b8f2e5a3ac2e64da24cbeb61fd79ddd7d06daec89627c656385320a21ecb31",
+        "afterSha256": "86cabf1317341154fef086dd63bd222ba3b8a5e9624eb98de0a29aa670db445a"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "4f30d4f75eba4f9c6e979e14f9ad8591917cf42712f1a13f2c94c6fb046267c4",
+        "afterSha256": "967d6c246f723ff8a8cd47f4ec6d2a834a623141af75408fdd6e3525ced66cc0"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "1f9e4549fd6dbc4511d8652702ff471266a43366f455fe45227229d5343e9b7a",
+        "afterSha256": "7a5ef9bfca705896f080d589b0407a1c243989c52b7cba88aa8a24d241bcbf3f"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "0be8399c4bfbffa649f84eea487bde1e507e848c61fa368df84e004edb2d8b5b",
+        "afterSha256": "0c9ff876aa9eaced236a2872bbd143a2a375a6b560922f49eac30735025d362d"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "93a5c6f31272b1ba71d8e24cb9794cbb9bee8d1e9c5f079d08ee19d6727f3424",
+        "afterSha256": "fd89edcf174e3cb79959eeac468b11908cff6f0fa8bfde1e62665743e42bbf39"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "7987a3c9fa61bf11c78637a16424dc3130d0f58aa0f2084d24cc3561a6a29457",
+        "afterSha256": "4e378d908b8a06c313f8c9e7d1b0ae5176996399003056ba9a8e3d820474793f"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "a6f583ec61a00aa4286b46f1be4e7f9c2553941d2f42f28ce405246bcb547a9c",
+        "afterSha256": "7cd4b8986a805b9c1ccb315949411312115c83a5a33e7d2017a21e5f675b500a"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "ac065b36e3d8bb6a33712d747a55047a40d223ac5994dd7f3a80c21039ac3c72",
+        "afterSha256": "7516c97e59d0b054c46172e8489b27d055cb8c4d4beebed40038598b7efe01bc"
+      },
+      {
+        "id": "llamada_omitida_casos",
+        "beforeSha256": "221f6101874e8a7908526b61bc6fcfa497cf0fe1e6f3a0c1a619671d63fd0876",
+        "afterSha256": "da6560adef9e8fde0bfd11f63442aa554b99ad3604c2430e026a4f4f5042c039"
+      },
+      {
+        "id": "llamada_omitida_referencia_codigo",
+        "beforeSha256": "b167d529e63f661241a730d386cd642b27f5df9bed904d606c7752d922bb5192",
+        "afterSha256": "f73e071f7b5b8e21e1b2f4ab431d4fa66f2e08e92740f4c23398e9c0271f5394"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 2;\n    const int resultado = exterior(dato);\n    std::cout << \"M:\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n    const int resultado = exterior(dato);\n    std::cout << \"M:\" << dato << \":\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "E:5|I:5:10|V:5:10|M:4:15"
+          ],
+          "explanation": "exterior conserva cinco durante la llamada interior. interior devuelve diez; exterior combina ambos y main recibe quince."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int primero = exterior(1);\n    const int segundo = exterior(3);\n    std::cout << \"R:\" << primero << \":\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "E:2|I:2:4|V:2:4|E:4|I:4:8|V:4:8|R:6:12"
+          ],
+          "explanation": "La primera cadena de llamadas termina antes de comenzar la segunda. Cada nueva llamada crea su propio contexto."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n    const int recibido = doble(dato);\n    std::cout << \"V:\" << recibido << \"|\";\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(0);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "I:0|Base|M:0"
+          ],
+          "explanation": "El retorno del caso cero evita la llamada doble y la declaración recibido que aparece después."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n    const int recibido = doble(dato);\n    std::cout << \"V:\" << recibido << \"|\";\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(3);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "I:3|D:3|V:6|M:6"
+          ],
+          "explanation": "inspeccionar espera a doble; al recibir seis continúa con su salida y devuelve el resultado a main."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n    const int recibido = sumar_con_traza(nivel - 1);\n    const int resultado = nivel + recibido;\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(2);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "E2|E1|E0|S0|S1:1|S2:3|M:3"
+          ],
+          "explanation": "Las entradas llegan a cero. Después retorna cero, la llamada de nivel uno completa uno y la de nivel dos completa tres."
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n    std::cout << \"P-\" << guardado << \"\\n\";\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n    std::cout << \"C+\" << guardado << \"\\n\";\n    const int recibido = pieza(guardado);\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n    const int resultado = conjunto(dato);\n    std::cout << \"M-\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n    std::cout << \"P-\" << guardado << \"\\n\";\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n    std::cout << \"C+\" << guardado << \"\\n\";\n    const int recibido = pieza(guardado);\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n    return guardado + recibido;\n}\n\nint main() {\n    int dato{0};\n    std::cin >> dato;\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n    const int resultado = conjunto(dato);\n    std::cout << \"M-\" << dato << \":\" << resultado;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "M+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9",
+                  "M+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9\n"
+                ]
+              },
+              {
+                "standardInput": "7",
+                "outputs": [
+                  "M+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30",
+                  "M+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30\n"
+                ]
+              },
+              {
+                "standardInput": "-1",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              },
+              {
+                "standardInput": "8",
+                "outputs": [
+                  "Datos invalidos",
+                  "Datos invalidos\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n    const int recibido = sumar_con_traza(nivel - 1);\n    const int resultado = nivel + recibido;\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(1);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "E1|E0|S0|S1:1|M:1"
+          ],
+          "explanation": "Hay dos llamadas de sumar_con_traza activas al entrar a cero, además de main. Cada una retorna una vez."
+        }
+      },
+      {
+        "id": "llamada_omitida_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint triplicar(int dato) {\n    std::cout << \"T\" << dato << \"|\";\n    return dato * 3;\n}\n\nint evaluar(int dato) {\n    if (dato == 0) {\n        std::cout << \"B0|\";\n        return 0;\n    }\n    const int base = dato + 1;\n    std::cout << \"E\" << base << \"|\";\n    const int recibido = triplicar(base);\n    std::cout << \"S\" << base << \":\" << recibido << \"|\";\n    return base + recibido;\n}\n\nint main() {\n    int dato{0};\n    std::cin >> dato;\n    if (dato < 0 || dato > 5) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    const int resultado = evaluar(dato);\n    std::cout << \"M\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1676,18 +1906,60 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "c7b176f615a1a13117e378a413124c422d2cc5104c5070a3f16d9fab2c9beb90",
+        "sourceSha256": "ef17bb72a7e3ec1104237961082e2ae131f4489bcb2f90259f54898a740db763",
         "spans": [
           {
-            "start": 137,
-            "end": 141,
+            "start": 108,
+            "end": 112,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 503,
-            "end": 521,
+            "start": 121,
+            "end": 129,
+            "text": "exterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 145,
+            "end": 153,
+            "text": "interior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 196,
+            "text": "interior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 223,
+            "end": 231,
+            "text": "exterior",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 267,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 318,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 680,
+            "end": 698,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -3034,7 +3306,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "6db3dd1f91c6aa1714b9d7bfd8231365cc250b769ce2b4a1a8c225cdddbfdf0f",
+        "sourceSha256": "74b23e551ad1134effdfe304ed9a967d6cb63b53ee1b227442477409ea9e5862",
         "spans": [
           {
             "start": 10,
@@ -3065,120 +3337,120 @@
             "reading": "natural"
           },
           {
-            "start": 102,
-            "end": 117,
-            "text": "pieza(int dato)",
+            "start": 147,
+            "end": 166,
+            "text": "int pieza(int dato)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 154,
+            "start": 209,
+            "end": 213,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 161,
+            "start": 216,
+            "end": 220,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 173,
+            "start": 270,
+            "end": 272,
             "text": "P+",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 224,
+            "start": 320,
+            "end": 328,
             "text": "guardado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 249,
-            "end": 251,
+            "start": 365,
+            "end": 367,
             "text": "P-",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 263,
-            "end": 271,
+            "start": 379,
+            "end": 387,
             "text": "guardado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 285,
-            "end": 293,
+            "start": 398,
+            "end": 406,
             "text": "guardado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 296,
-            "end": 314,
-            "text": "conjunto(int dato)",
+            "start": 420,
+            "end": 442,
+            "text": "int conjunto(int dato)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 325,
-            "end": 333,
+            "start": 505,
+            "end": 513,
             "text": "guardado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 342,
-            "end": 348,
-            "text": "dato+3",
+            "start": 530,
+            "end": 538,
+            "text": "dato + 3",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 358,
-            "end": 360,
+            "start": 548,
+            "end": 550,
             "text": "C+",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 391,
-            "end": 406,
+            "start": 582,
+            "end": 597,
             "text": "pieza(guardado)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 431,
-            "end": 439,
+            "start": 626,
+            "end": 634,
             "text": "recibido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 449,
-            "end": 468,
+            "start": 644,
+            "end": 663,
             "text": "C-guardado:recibido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 490,
-            "end": 498,
+            "start": 727,
+            "end": 735,
             "text": "guardado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 501,
-            "end": 509,
+            "start": 738,
+            "end": 746,
             "text": "recibido",
             "role": "cpp",
             "reading": "technical"
@@ -3188,60 +3460,67 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "317f766b1b8d4a76cfeb6e0b1a34ebadfe1a59a3177aaafed597703c041fdc48",
+        "sourceSha256": "cb796f58e304a1e0313434412ae5df11b928f6e0404e6286911a988af277c3a0",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 80,
-            "end": 95,
-            "text": "Datos invalidos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 109,
-            "end": 117,
-            "text": "conjunto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 140,
-            "end": 146,
-            "text": "M+dato",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 172,
-            "end": 180,
-            "text": "conjunto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 191,
-            "end": 207,
-            "text": "M-dato:resultado",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 213,
-            "end": 219,
+            "start": 4,
+            "end": 10,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 349,
-            "end": 357,
+            "start": 32,
+            "end": 36,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 108,
+            "end": 123,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 155,
+            "text": "conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 211,
+            "text": "M+dato",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 226,
+            "end": 230,
+            "text": "dato",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 254,
+            "end": 262,
+            "text": "conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 297,
+            "end": 313,
+            "text": "M-dato:resultado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 477,
             "text": "guardado",
             "role": "cpp",
             "reading": "technical"
@@ -3271,137 +3550,242 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "8adb3fff6ed674e0e23c8e0dc2be192a471f328e3ba166c393a034c01eb60a88",
+        "sourceSha256": "623f6b1833f22e3b23d79c8c0d9125bc3dc2da440e93cb6abfb9f34d8d177bb8",
         "spans": [
           {
-            "start": 5,
-            "end": 11,
+            "start": 20,
+            "end": 26,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 27,
-            "end": 30,
+            "start": 82,
+            "end": 85,
             "text": "M+4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 35,
+            "start": 87,
+            "end": 91,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 121,
             "text": "C+7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 37,
-            "end": 40,
-            "text": "P+7",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 42,
-            "end": 46,
-            "text": "P-14",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 54,
-            "text": "C-7:14",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 57,
-            "end": 63,
-            "text": "M-4:21",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 73,
-            "end": 78,
-            "text": "pieza",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 93,
-            "end": 97,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 100,
-            "end": 108,
+            "start": 123,
+            "end": 131,
             "text": "conjunto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 111,
-            "end": 116,
-            "text": "pieza",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 147,
-            "end": 151,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 154,
-            "end": 162,
-            "text": "conjunto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 212,
-            "end": 220,
-            "text": "conjunto",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 233,
-            "end": 241,
+            "start": 151,
+            "end": 159,
             "text": "guardado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 285,
-            "end": 293,
-            "text": "recibido",
+            "start": 171,
+            "end": 176,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 181,
+            "text": "P+7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 188,
+            "text": "pieza",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 305,
+            "start": 200,
+            "end": 205,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 226,
+            "text": "P-14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 239,
+            "text": "guardado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 248,
+            "text": "pieza",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 275,
+            "text": "catorce",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
             "end": 309,
+            "text": "C-7:14",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 319,
+            "text": "conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 332,
+            "end": 337,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 359,
+            "text": "catorce",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 361,
+            "end": 367,
+            "text": "M-4:21",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 369,
+            "end": 373,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 329,
-            "end": 333,
+            "start": 391,
+            "end": 397,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 415,
+            "end": 424,
+            "text": "veintiuno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 435,
+            "end": 440,
+            "text": "pieza",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 455,
+            "end": 459,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 462,
+            "end": 470,
+            "text": "conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 473,
+            "end": 478,
+            "text": "pieza",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 509,
+            "end": 513,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 516,
+            "end": 524,
+            "text": "conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 574,
+            "end": 582,
+            "text": "conjunto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 595,
+            "end": 603,
+            "text": "guardado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 647,
+            "end": 655,
+            "text": "recibido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 667,
+            "end": 671,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 691,
+            "end": 695,
             "text": "dato",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 430,
-            "end": 436,
+            "start": 792,
+            "end": 798,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
@@ -3411,123 +3795,53 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "15b4b19b1fbfc0ce4a778075243bb26236c5b1f42d0a18714a91986f1f57b338",
+        "sourceSha256": "7dcf429d987d744cdeae74325f4f5329d1273980d2a34dc0f78b34812611d92e",
         "spans": [
           {
-            "start": 5,
-            "end": 9,
+            "start": 20,
+            "end": 24,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 21,
-            "end": 24,
-            "text": "M+0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 26,
-            "end": 29,
-            "text": "C+3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 31,
-            "end": 34,
-            "text": "P+3",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 36,
-            "end": 39,
-            "text": "P-6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
             "start": 41,
-            "end": 46,
-            "text": "C-3:6",
+            "end": 68,
+            "text": "M+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 49,
-            "end": 54,
-            "text": "M-0:9",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 61,
-            "end": 66,
+            "start": 90,
+            "end": 95,
             "text": "siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 68,
-            "end": 71,
-            "text": "M+7",
+            "start": 112,
+            "end": 145,
+            "text": "M+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 73,
-            "end": 77,
-            "text": "C+10",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 79,
-            "end": 83,
-            "text": "P+10",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 85,
-            "end": 89,
-            "text": "P-20",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 91,
-            "end": 98,
-            "text": "C-10:20",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 101,
-            "end": 107,
-            "text": "M-7:30",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 122,
-            "end": 124,
+            "start": 160,
+            "end": 162,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 128,
+            "start": 165,
+            "end": 166,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 143,
-            "end": 158,
+            "start": 181,
+            "end": 196,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"
@@ -3543,48 +3857,69 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "d28c42dd9c288e9829f0d2936c22a14af645d7a9f4a18d8a776babfe641723ca",
+        "sourceSha256": "b4c3e59442d87222ba98ecf0b48855ec54d774f0d9130fe0da9a1d4f9639351c",
         "spans": [
           {
-            "start": 46,
-            "end": 47,
+            "start": 134,
+            "end": 135,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 51,
-            "end": 52,
+            "start": 144,
+            "end": 171,
+            "text": "M+0\nC+3\nP+3\nP-6\nC-3:6\nM-0:9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 300,
             "text": "7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 56,
-            "end": 58,
+            "start": 309,
+            "end": 342,
+            "text": "M+7\nC+10\nP+10\nP-20\nC-10:20\nM-7:30",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 355,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 63,
-            "end": 64,
+            "start": 366,
+            "end": 381,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 392,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 115,
-            "text": "seis",
-            "role": "data",
+            "start": 403,
+            "end": 418,
+            "text": "Datos invalidos",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 178,
-            "end": 193,
-            "text": "Datos invalidos",
-            "role": "output",
+            "start": 529,
+            "end": 533,
+            "text": "seis",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -3856,67 +4191,74 @@
       {
         "block": "llamada_omitida_casos",
         "path": "/text",
-        "sourceSha256": "236b5963f76862e4e0663abe3341cb0df2ca4addaeefec5bee40807f9bf4746b",
+        "sourceSha256": "353d52c5d56914f4c12b3289fd26ab9108c8972a618185b1023311bd626038e0",
         "spans": [
           {
-            "start": 70,
-            "end": 74,
-            "text": "cero",
+            "start": 190,
+            "end": 191,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 76,
-            "end": 79,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 82,
-            "end": 87,
-            "text": "cinco",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 106,
-            "end": 113,
+            "start": 202,
+            "end": 209,
             "text": "B0|M0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 117,
-            "end": 133,
+            "start": 259,
+            "end": 260,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 287,
             "text": "E3|T3|S3:9|M2:12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 138,
-            "end": 155,
+            "start": 297,
+            "end": 298,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 326,
             "text": "E6|T6|S6:18|M5:24",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 173,
+            "start": 336,
+            "end": 338,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 176,
-            "end": 177,
+            "start": 349,
+            "end": 364,
+            "text": "Datos invalidos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 374,
+            "end": 375,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 214,
+            "start": 386,
+            "end": 401,
             "text": "Datos invalidos",
             "role": "output",
             "reading": "natural"

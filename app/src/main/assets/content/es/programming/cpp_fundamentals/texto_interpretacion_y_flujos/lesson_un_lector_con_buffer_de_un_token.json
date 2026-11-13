@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Al combinar tokens, una función puede necesitar obtener la unidad siguiente antes de saber si debe utilizarla. Por ejemplo, después de un número, `*` puede continuar una multiplicación y `;` puede marcar el final de la operación. La unidad que no utiliza esa función debe seguir disponible para la que la necesita (Stroustrup, 2024, p. 142).\n\nDespués de obtener el número 3 y el signo `+` de `\"3+7;\"`, los caracteres pendientes comienzan en el 7. Guardar el token `+` permite entregarlo otra vez sin mover ese flujo hacia atrás. Así puede seguir disponible para la función que deba utilizarlo.",
+          "text": "Al combinar tokens, una función puede necesitar obtener la unidad siguiente antes de saber si debe utilizarla. Por ejemplo, después de un número, `*` puede continuar una multiplicación y `;` puede marcar el final de la operación. La unidad que no utiliza esa función debe seguir disponible para la que la necesita (Stroustrup, 2024).\n\nDespués de obtener el número 3 y el signo `+` de `\"3+7;\"`, los caracteres pendientes comienzan en el 7. Guardar el token `+` permite entregarlo otra vez sin mover ese flujo hacia atrás. Así puede seguir disponible para la función que deba utilizarlo.",
           "emphasis": [
             {
               "text": "Guardar el token",
@@ -20,7 +20,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un búfer de un token es una reserva con capacidad para una sola unidad. La interfaz ofrece dos operaciones:\n• `leer()` entrega primero el token reservado, si lo hay. Sólo cuando la reserva está vacía pide otra unidad al lector de caracteres.\n• `devolver(token)` guarda una copia del token para que la siguiente llamada a `leer()` pueda obtenerlo. No inserta caracteres ni retrocede el flujo (Stroustrup, 2024, pp. 143–145).\n\nGuardar un `Token` en una variable del cliente y reservarlo dentro del lector son acciones distintas. La variable conserva una copia local; sólo la llamada a `devolver` cambia la reserva que utilizará una lectura posterior.",
+          "text": "Un búfer de un token es una reserva con capacidad para una sola unidad. La interfaz ofrece dos operaciones:\n• `leer()` entrega primero el token reservado, si lo hay. Sólo cuando la reserva está vacía pide otra unidad al lector de caracteres.\n• `devolver(token)` guarda una copia del token para que la siguiente llamada a `leer()` pueda obtenerlo. No inserta caracteres ni retrocede el flujo (Stroustrup, 2024).\n\nGuardar un `Token` en una variable del cliente y reservarlo dentro del lector son acciones distintas. La variable conserva una copia local; sólo la llamada a `devolver` cambia la reserva que utilizará una lectura posterior.",
           "emphasis": [
             {
               "text": "capacidad para una sola unidad",
@@ -34,7 +34,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La clase `Lector_tokens` recupera la separación entre interfaz pública y representación privada. Cada objeto contiene su propio `std::istringstream`, una marca que indica si existe una reserva y un `Token` inicializado para guardarla. Las funciones públicas controlan cómo cambian esos miembros; el cliente no necesita modificarlos directamente (Stroustrup, 2024, pp. 142–143).\n\nEl constructor recibe el texto de prueba y lo utiliza para construir el flujo miembro en la lista de inicialización. Crear otro lector con otro texto permite comenzar un recorrido independiente, con su propia reserva vacía.",
+          "text": "La clase `Lector_tokens` recupera la separación entre interfaz pública y representación privada. Cada objeto contiene su propio `std::istringstream`, una marca que indica si existe una reserva y un `Token` inicializado para guardarla. Las funciones públicas controlan cómo cambian esos miembros; el cliente no necesita modificarlos directamente (Stroustrup, 2024).\n\nEl constructor recibe el texto de prueba y lo utiliza para construir el flujo miembro en la lista de inicialización. Crear otro lector con otro texto permite comenzar un recorrido independiente, con su propia reserva vacía.",
           "emphasis": [
             {
               "text": "su propio",
@@ -56,7 +56,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La capacidad de una unidad establece estas transiciones:\n• Reserva vacía y devolución de un token válido: se guarda el token y la reserva queda llena.\n• Reserva llena y lectura: se entrega la copia guardada y la reserva queda vacía.\n• Reserva llena y otra devolución: se lanza una excepción con el diagnóstico `\"Buffer ocupado\"`, conservando la primera reserva.\n• Reserva vacía y devolución de un token inválido: se lanza una excepción con el diagnóstico `\"Token invalido\"` y la reserva sigue vacía.\n\nComprobar que la reserva está libre antes de sobrescribirla evita perder la unidad pendiente (Stroustrup, 2024, p. 144). En esta interfaz también se valida la combinación de categoría y valor antes de cambiar los miembros. Si coinciden reserva ocupada y propuesta inválida, se informa primero de la ocupación: las comprobaciones tienen un orden definido.",
+          "text": "La capacidad de una unidad establece estas transiciones:\n• Reserva vacía y devolución de un token válido: se guarda el token y la reserva queda llena.\n• Reserva llena y lectura: se entrega la copia guardada y la reserva queda vacía.\n• Reserva llena y otra devolución: se lanza una excepción con el diagnóstico `\"Buffer ocupado\"`, conservando la primera reserva.\n• Reserva vacía y devolución de un token inválido: se lanza una excepción con el diagnóstico `\"Token invalido\"` y la reserva sigue vacía.\n\nComprobar que la reserva está libre antes de sobrescribirla evita perder la unidad pendiente (Stroustrup, 2024). En esta interfaz también se valida la combinación de categoría y valor antes de cambiar los miembros. Si coinciden reserva ocupada y propuesta inválida, se informa primero de la ocupación: las comprobaciones tienen un orden definido.",
           "emphasis": [
             {
               "text": "conservando la primera reserva",
@@ -93,11 +93,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"3+7;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"3+7;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La traza obtiene primero el número 3. Después lee `+` desde los caracteres, lo reserva, lo obtiene de nuevo desde el búfer y continúa con el número 7. `leer()` desactiva la marca al entregar la reserva; así una devolución no repite el signo indefinidamente (Stroustrup, 2024, p. 145).\n\nTodos los miembros están inicializados. La marca tiene significado tanto si es verdadera como si es falsa; el token guardado sólo se entrega cuando la marca indica una reserva llena. Inicializar `guardado_` con la categoría final no significa que exista un token pendiente desde la construcción.",
+          "text": "La traza obtiene primero el número 3. Después lee `+` desde los caracteres, lo reserva, lo obtiene de nuevo desde el búfer y continúa con el número 7. `leer()` desactiva la marca al entregar la reserva; así una devolución no repite el signo indefinidamente (Stroustrup, 2024).\n\nTodos los miembros están inicializados. La marca tiene significado tanto si es verdadera como si es falsa; el token guardado sólo se entrega cuando la marca indica una reserva llena. Inicializar `guardado_` con la categoría final no significa que exista un token pendiente desde la construcción.",
           "emphasis": [
             {
               "text": "desactiva la marca al entregar la reserva",
@@ -121,7 +121,7 @@
           "type": "output_prediction",
           "question": "Predice la traza completa con datos diferentes. Distingue leer el búfer de leer caracteres nuevos.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"8/4;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"8/4;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n\n    return 0;\n}\n",
           "answers": [
             "Primero: 8\nPendiente: 1\nRepetido: /\nPendiente: 0\nSiguiente: 4"
           ],
@@ -155,7 +155,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"2+6;\"};\n    lector.leer();\n    const Token signo = lector.leer();\n    lector.devolver(signo);\n    try {\n        lector.devolver(Token{'n', 9});\n    } catch (const std::runtime_error& error) {\n        std::cout << error.what() << \"\\n\";\n    }\n    const Token conservado = lector.leer();\n    std::cout << \"Conservado: \" << conservado.clase << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"2+6;\"};\n    lector.leer();\n    const Token signo = lector.leer();\n    lector.devolver(signo);\n    try {\n        lector.devolver(Token{'n', 9});\n    } catch (const std::runtime_error& error) {\n        std::cout << error.what() << \"\\n\";\n    }\n\n    const Token conservado = lector.leer();\n    std::cout << \"Conservado: \" << conservado.clase << \"\\n\";\n\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -197,18 +197,18 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor proporciona la interfaz ya estudiada y un `main` vacío. Construye el cliente y su batería sin cambiar la clase ni el reconocimiento de tokens. Usa únicamente las funciones públicas para obtener unidades, reservarlas y consultar el estado.\n\nLa batería es un solo programa con cuatro situaciones, en este orden:\n\n1. Define una función de traza que cree un lector nuevo para el texto recibido. Para `\"5*2;\"`, presenta `Primero: 5`, lee y devuelve el signo siguiente, presenta `Pendiente: 1`, vuelve a leerlo y presenta `Repetido: *`, consulta y presenta `Pendiente: 0`, y lee el siguiente número para presentar `Siguiente: 2`.\n\n2. Llama a esa misma función con `\"9-0;\"`. Mantén las cinco etiquetas y el mismo orden de operaciones. Los resultados de este lector proceden de su propio texto y no continúan el recorrido anterior.\n\n3. Crea otro lector para `\"3+6;\"`. Consume 3, lee y reserva `+`, e intenta reservar `Token{'-', 0}`. Captura la excepción y presenta `Buffer ocupado`. Después muestra `Conservado: +` y `Siguiente: 6` al obtener las dos unidades correspondientes.\n\n4. Crea un lector para `\"4;\"`, con reserva vacía. Intenta devolver `Token{'n', 10}`, captura la excepción y presenta `Token invalido`. Consulta y presenta `Pendiente: 0`; lee la unidad siguiente y presenta `Siguiente: 4`.\n\nCada resultado ocupa una línea y termina con un salto de línea, incluido el último. Escribe un espacio después de cada etiqueta con dos puntos; los dos diagnósticos no llevan etiqueta adicional. No añadas títulos ni líneas vacías entre situaciones.\n\nUsa Compilar, ejecutar y comprobar cuando el programa reúna las cuatro situaciones.",
+          "text": "El editor proporciona la interfaz ya estudiada y un main vacío. Construye el cliente sin cambiar la clase ni el reconocimiento de tokens. Usa únicamente las funciones públicas para obtener unidades, reservarlas y consultar el estado.\n\nEl programa reúne estas cuatro situaciones en el orden indicado. Cada una construye un lector nuevo; dentro de ella, las llamadas sí utilizan el estado que dejaron las anteriores.\n\nPrimera situación: traza con \"5*2;\"\n\nDefine una función de traza que construya un lector nuevo a partir del texto recibido.\nObtén el primer número y presenta su valor.\nLee y devuelve el signo siguiente; presenta el resultado de consultar si hay una reserva pendiente.\nLee de nuevo ese signo, preséntalo y vuelve a presentar el estado de la reserva.\nObtén el siguiente número y presenta su valor.\n\nSalida esperada:\nPrimero: 5\nPendiente: 1\nRepetido: *\nPendiente: 0\nSiguiente: 2\n\nSegunda situación: traza con \"9-0;\"\n\nLlama a la misma función de traza con este otro texto. Conserva las cinco etiquetas y el orden de las llamadas. La función debe construir otro lector: esta situación no continúa el recorrido de la anterior.\n\nSalida esperada:\nPrimero: 9\nPendiente: 1\nRepetido: -\nPendiente: 0\nSiguiente: 0\n\nTercera situación: reserva ocupada con \"3+6;\"\n\nCrea otro lector para este texto.\nObtén el número 3, lee el signo + y resérvalo.\nIntenta reservar Token{'-', 0}; captura la excepción y presenta su diagnóstico.\nDespués del rechazo, obtén el signo conservado y el número siguiente. Presenta ambos.\n\nSalida esperada:\nBuffer ocupado\nConservado: +\nSiguiente: 6\n\nCuarta situación: token inválido con \"4;\"\n\nCrea otro lector para este texto; su reserva empieza vacía.\nIntenta devolver Token{'n', 10}; captura la excepción y presenta su diagnóstico.\nConsulta si hay una reserva pendiente y presenta ese resultado. Obtén y presenta la unidad siguiente del texto.\n\nSalida esperada:\nToken invalido\nPendiente: 0\nSiguiente: 4\n\nCada resultado ocupa una línea y termina con un salto, incluido el último. Escribe un espacio después de cada etiqueta con dos puntos. Los diagnósticos Buffer ocupado y Token invalido no llevan una etiqueta adicional. No añadas títulos ni líneas vacías entre situaciones.\n\nUsa Compilar, ejecutar y comprobar cuando el programa reúna las cuatro situaciones.",
           "emphasis": [
             {
-              "text": "sin cambiar la clase ni el reconocimiento",
+              "text": "sin cambiar la clase ni el reconocimiento de tokens",
               "style": "bold"
             },
             {
-              "text": "cuatro situaciones, en este orden",
+              "text": "cuatro situaciones en el orden indicado",
               "style": "bold"
             },
             {
-              "text": "termina con un salto de línea",
+              "text": "termina con un salto",
               "style": "bold"
             },
             {
@@ -236,7 +236,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -273,7 +273,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"5*2;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"5*2;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -319,7 +319,7 @@
           "type": "output_prediction",
           "question": "Predice el estado y las etiquetas después de reservar el token de final.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"\"};\n    const Token fin = lector.leer();\n    lector.devolver(fin);\n    std::cout << lector.tiene_pendiente() << \"\\n\";\n    const Token otra_vez = lector.leer();\n    std::cout << otra_vez.clase << \" \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << siguiente.clase;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"\"};\n    const Token fin = lector.leer();\n    lector.devolver(fin);\n    std::cout << lector.tiene_pendiente() << \"\\n\";\n\n    const Token otra_vez = lector.leer();\n    std::cout << otra_vez.clase << \" \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token siguiente = lector.leer();\n    std::cout << siguiente.clase;\n\n    return 0;\n}\n",
           "answers": [
             "1\nf 0\nf"
           ],
@@ -350,7 +350,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La reserva almacena una unidad interpretada, no una cantidad fija de caracteres. Por eso puede seguir entregando un `Token` aunque, más adelante, un número ocupe varios dígitos en el texto (Stroustrup, 2024, pp. 142–145).\n\nLa interfaz de lectura y devolución puede mantenerse mientras cambia el reconocimiento. El cliente no necesita conocer cómo se reúnen los caracteres de cada número para reservar la unidad resultante.",
+          "text": "La reserva almacena una unidad interpretada, no una cantidad fija de caracteres. Por eso puede seguir entregando un `Token` aunque, más adelante, un número ocupe varios dígitos en el texto (Stroustrup, 2024).\n\nLa interfaz de lectura y devolución puede mantenerse mientras cambia el reconocimiento. El cliente no necesita conocer cómo se reúnen los caracteres de cada número para reservar la unidad resultante.",
           "emphasis": [
             {
               "text": "una unidad interpretada",
@@ -383,7 +383,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nvoid trazar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor << \"\\n\";\n}\n\nint main() {\n    trazar(\"5*2;\");\n    trazar(\"9-0;\");\n    Lector_tokens ocupado{\"3+6;\"};\n    ocupado.leer();\n    const Token signo = ocupado.leer();\n    ocupado.devolver(signo);\n    try { ocupado.devolver(Token{'-', 0}); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    std::cout << \"Conservado: \" << ocupado.leer().clase << \"\\n\";\n    std::cout << \"Siguiente: \" << ocupado.leer().valor << \"\\n\";\n    Lector_tokens invalido{\"4;\"};\n    try { invalido.devolver(Token{'n', 10}); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    std::cout << \"Pendiente: \" << invalido.tiene_pendiente() << \"\\n\";\n    std::cout << \"Siguiente: \" << invalido.leer().valor << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nvoid trazar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor << \"\\n\";\n}\n\nint main() {\n    trazar(\"5*2;\");\n    trazar(\"9-0;\");\n\n    Lector_tokens ocupado{\"3+6;\"};\n    ocupado.leer();\n    const Token signo = ocupado.leer();\n    ocupado.devolver(signo);\n    try {\n        ocupado.devolver(Token{'-', 0});\n    }\n    catch (const std::runtime_error& error) {\n        std::cout << error.what() << \"\\n\";\n    }\n    std::cout << \"Conservado: \" << ocupado.leer().clase << \"\\n\";\n    std::cout << \"Siguiente: \" << ocupado.leer().valor << \"\\n\";\n\n    Lector_tokens invalido{\"4;\"};\n    try {\n        invalido.devolver(Token{'n', 10});\n    }\n    catch (const std::runtime_error& error) {\n        std::cout << error.what() << \"\\n\";\n    }\n    std::cout << \"Pendiente: \" << invalido.tiene_pendiente() << \"\\n\";\n    std::cout << \"Siguiente: \" << invalido.leer().valor << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1318,6 +1318,190 @@
         "id": "block_0006_0001",
         "beforeSha256": "88d1b8a866853ba7d8230f78d159725e760ec303ed50f1ca17e2fcb32fd5df4b",
         "afterSha256": "2fc3d1824bbe39b9396069b593b3bb10ca842f0a95f28585f20f2fd50a07aa95"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0277560d6df01bdea85a65a188a511d593e564186692d57dc4f5067a59e69e0b",
+        "afterSha256": "65d006f316207aee3872d3f69d61c47fdd541f9b1c2651388bfb2a2946c0f5b8"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "61396d61a022c58dc2f309025792d8043fa9cbfdee48d79a4012dabc01331069",
+        "afterSha256": "a1bd7cef75af4626693991a2c86dcf940c1a7be40ad8ab9d0079bfd43ecb22b4"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "585d0fcb87010bdd1eaa9b3c36e619744eae569757f7b77f36facaff81a5219a",
+        "afterSha256": "87612f434528409d6f108aa1ab3459c9a3e33662f47f4b50f1a10f5dbeae51fa"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "1ca6de48a73bb6d6646bc66d083d4865ad6e921033acc7ff0f2e13584f0db584",
+        "afterSha256": "958541f854a9da09d69422afe876fa9dceefb48436b93fd67b1e2765efabeafe"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "714c73b367f421296affb54d0b68546c2d855b40d37d253aee038408651bbd3d",
+        "afterSha256": "bff417f775733e1dc0adb7db1f56278c44560d810b885ed65e390a921b8d4f24"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "1a74f7c73832a128ec796a31e5b5103c8457800290d9e637e09bac20afc69a81",
+        "afterSha256": "886b4c7e356a8130f887c5ec8481128de264252e915a65759da18d1943b8e677"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "0a373655cd840ebf58688d6661d1de3d4f34c55aa253d05231faac3aacbce220",
+        "afterSha256": "5d3ed3d1a9a75cfba95f9e3ecbabcc586743305ccb5520c8782f7e7dffe58d68"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "9f98fe758839d8f06d15fc92794746f15c1d3827e7498cfc3df254bc14524dac",
+        "afterSha256": "b6167b0190c0a5fb8690e67ef04f2a9708bc1890c76781b4ccb11d1c7810229d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e07590f67fdf1e018b98027eb963b0441bef43908909aa0234ee6e5509b56b13",
+        "afterSha256": "18e98dcc2a490f875d1dca3d719f12b75cd7f2c10f7ede36bcecafc52ec9f5ac"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "901805882b89c735ca7ac363f15b83700832fbdf63c2181fcaf7e24d85af11a2",
+        "afterSha256": "b08cf9c1bfa9dbee746fee156db42a64631a85438bbdaa336819a5d8834e4572"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "18468190d79df88c386222f174c1b84ee1869fb8b87cd1803c6667af9995769c",
+        "afterSha256": "e739a7a37a8536d3d5af0caac4a8a7f9ef5dcd5e22ccd61c66a732dd0c0b4e44"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "2fc3d1824bbe39b9396069b593b3bb10ca842f0a95f28585f20f2fd50a07aa95",
+        "afterSha256": "586e295d0bb5d7a53b961ecf83557561d96bb355ff5b67e9d4567da90710a18d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "138b11a1deb4b180e7e3d4bcb151f9236612917a785f06aa378b33f415b4f734",
+        "afterSha256": "b08a25662c9dcb66710da5fbd64abc9a5b78ef7eb3020816a0dd04d16f142b9b"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "dee5cfffb6e2ab9f813fb67d279df409a9bcf4eb84d58899ba250e9294de6b80",
+        "afterSha256": "466e8f42bcea778999c3972ed1c77b408e3d71c39b6559174e9ea2d743dfc700"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "bff417f775733e1dc0adb7db1f56278c44560d810b885ed65e390a921b8d4f24",
+        "afterSha256": "38147f7f01a0a63c7fb6dd275aeda8531799771e77b28ad9c644f1a396864c37"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "5d3ed3d1a9a75cfba95f9e3ecbabcc586743305ccb5520c8782f7e7dffe58d68",
+        "afterSha256": "ad65a5433666321058ae2127446b6b1438c6c67dcbcd1227491e22aa41d5b371"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "b6167b0190c0a5fb8690e67ef04f2a9708bc1890c76781b4ccb11d1c7810229d",
+        "afterSha256": "f8c708d32f0f2c16af8b5c2b55622b6a13f6565fc9c1a0bda65e9144a997d1e9"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "b08cf9c1bfa9dbee746fee156db42a64631a85438bbdaa336819a5d8834e4572",
+        "afterSha256": "cf3a3b95654bcd3fd9cbe34b0e3625a67a4eb5d201d4e2535b01e7b98248ba5f"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "e739a7a37a8536d3d5af0caac4a8a7f9ef5dcd5e22ccd61c66a732dd0c0b4e44",
+        "afterSha256": "7bba72f524c93c13a29d2d2f140e92127ec4d6d267655cec9464ab8263637259"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "586e295d0bb5d7a53b961ecf83557561d96bb355ff5b67e9d4567da90710a18d",
+        "afterSha256": "0d92a84e986f7c28934c43c7e60f7d046c5ffac8216051ec72193897de5468c1"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "466e8f42bcea778999c3972ed1c77b408e3d71c39b6559174e9ea2d743dfc700",
+        "afterSha256": "be74be00c21877e6ce8970c37ae2fdf2439a50e08c632ddc0c63963c5e7c9ec3"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"3+7;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la traza completa con datos diferentes. Distingue leer el búfer de leer caracteres nuevos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"8/4;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n",
+          "answers": [
+            "Primero: 8\nPendiente: 1\nRepetido: /\nPendiente: 0\nSiguiente: 4"
+          ],
+          "explanation": "La primera lectura obtiene 8 y permite escribir Primero: 8. La segunda obtiene el signo / desde el texto; al devolverlo, la reserva queda llena y se muestra Pendiente: 1. Los caracteres aún no consumidos empiezan en 4;.\n\nLa lectura siguiente entrega el signo guardado, por eso se escribe Repetido: /. También vacía la reserva, y la consulta muestra Pendiente: 0. Sólo la lectura posterior vuelve al flujo de caracteres y obtiene 4, produciendo Siguiente: 4. No se ha retrocedido ni saltado ningún carácter.",
+          "reviewFeedback": "Sigue por separado el flujo de caracteres y la marca de la reserva. Después de una devolución, comprueba de dónde obtiene la unidad cada llamada a leer y cuándo cambia la marca."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"2+6;\"};\n    lector.leer();\n    const Token signo = lector.leer();\n    lector.devolver(signo);\n    try {\n        lector.devolver(Token{'n', 9});\n    } catch (const std::runtime_error& error) {\n        std::cout << error.what() << \"\\n\";\n    }\n    const Token conservado = lector.leer();\n    std::cout << \"Conservado: \" << conservado.clase << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Primero: 5\nPendiente: 1\nRepetido: *\nPendiente: 0\nSiguiente: 2\nPrimero: 9\nPendiente: 1\nRepetido: -\nPendiente: 0\nSiguiente: 0\nBuffer ocupado\nConservado: +\nSiguiente: 6\nToken invalido\nPendiente: 0\nSiguiente: 4\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"5*2;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice el estado y las etiquetas después de reservar el token de final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"\"};\n    const Token fin = lector.leer();\n    lector.devolver(fin);\n    std::cout << lector.tiene_pendiente() << \"\\n\";\n    const Token otra_vez = lector.leer();\n    std::cout << otra_vez.clase << \" \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << siguiente.clase;\n    return 0;\n}\n",
+          "answers": [
+            "1\nf 0\nf"
+          ],
+          "explanation": "El texto está vacío, así que la primera lectura devuelve el token Token{'f', 0}. La devolución lo guarda y la primera consulta imprime 1. Después, leer() entrega esa copia y desactiva la marca, por lo que se imprime f 0.\n\nLa última lectura encuentra la reserva vacía y vuelve a consultar el origen, que continúa agotado. Obtiene otra vez la categoría final y se imprime f. Reservar y recuperar el token no añadió caracteres al texto; el cliente es quien debe detenerse cuando ese final complete su tarea.",
+          "reviewFeedback": "Distingue reservar una unidad de insertar caracteres. Sigue la marca después de entregar la copia y revisa qué puede devolver el lector cuando el texto ya está agotado."
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nvoid trazar(const std::string& texto) {\n    Lector_tokens lector{texto};\n    const Token primero = lector.leer();\n    std::cout << \"Primero: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Repetido: \" << repetido.clase << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Siguiente: \" << siguiente.valor << \"\\n\";\n}\n\nint main() {\n    trazar(\"5*2;\");\n    trazar(\"9-0;\");\n    Lector_tokens ocupado{\"3+6;\"};\n    ocupado.leer();\n    const Token signo = ocupado.leer();\n    ocupado.devolver(signo);\n    try { ocupado.devolver(Token{'-', 0}); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    std::cout << \"Conservado: \" << ocupado.leer().clase << \"\\n\";\n    std::cout << \"Siguiente: \" << ocupado.leer().valor << \"\\n\";\n    Lector_tokens invalido{\"4;\"};\n    try { invalido.devolver(Token{'n', 10}); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    std::cout << \"Pendiente: \" << invalido.tiene_pendiente() << \"\\n\";\n    std::cout << \"Siguiente: \" << invalido.leer().valor << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1340,10 +1524,225 @@
     "version": 1,
     "fields": [
       {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "3047dde8f10bd6b43dc612b9e5e07e0fefdac501f22e7f07695508f02b74b3de",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "4a53bd5f3b459125ddfacadb2c1946be73f2234042a2b3b31b34e00b16a26894",
+        "spans": [
+          {
+            "start": 147,
+            "end": 148,
+            "text": "*",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 188,
+            "end": 189,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 314,
+            "end": 332,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 365,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 379,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 385,
+            "end": 391,
+            "text": "\"3+7;\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 436,
+            "end": 437,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 458,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "40853bc1477da86706de73d91e54909ae3dd475296e65c2047260b7a5b4f0afc",
+        "spans": [
+          {
+            "start": 55,
+            "end": 58,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 91,
+            "end": 94,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 111,
+            "end": 117,
+            "text": "leer()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 245,
+            "end": 260,
+            "text": "devolver(token)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 328,
+            "text": "leer()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 409,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 429,
+            "text": "Token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 571,
+            "end": 579,
+            "text": "devolver",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/text",
+        "sourceSha256": "16cad3a55307fc57572f9d70bda70f1f056c747cbc02e65967868e6ac2a04e49",
+        "spans": [
+          {
+            "start": 10,
+            "end": 23,
+            "text": "Lector_tokens",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 147,
+            "text": "std::istringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 199,
+            "end": 204,
+            "text": "Token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 363,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "b3e2b335bcbc3a2486fdb76ce1504b79c4811116e3fc9a40fb349a3f43fa354e",
+        "spans": []
+      },
+      {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "1eada7034554be4147d5243e4639da76c79f617368495e5b64a2f44f529ca86a",
+        "spans": [
+          {
+            "start": 16,
+            "end": 19,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 327,
+            "text": "\"Buffer ocupado\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 456,
+            "end": 472,
+            "text": "\"Token invalido\"",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 594,
+            "end": 612,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0001_0002",
         "path": "/text",
         "sourceSha256": "4c5bb38b0d6d8c0d3d5a8754dc50f24279968e21d87493a6cca2088aa1eebffd",
         "spans": [
+          {
+            "start": 74,
+            "end": 76,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 94,
             "end": 95,
@@ -1494,222 +1893,9 @@
         ]
       },
       {
-        "block": "block_0005_0003",
-        "path": "/text",
-        "sourceSha256": "eb1d46bf8dc7b9924a0de616dac65ec98d7ed7d4a9a16a112c265ba1d15664eb",
-        "spans": [
-          {
-            "start": 99,
-            "end": 117,
-            "text": "std::istringstream",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 186,
-            "end": 199,
-            "text": "Lector_tokens",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 201,
-            "end": 221,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 462,
-            "end": 463,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0000",
-        "path": "/text",
-        "sourceSha256": "3047dde8f10bd6b43dc612b9e5e07e0fefdac501f22e7f07695508f02b74b3de",
-        "spans": []
-      },
-      {
-        "block": "block_0000_0001",
-        "path": "/text",
-        "sourceSha256": "b211bcf5389f17fdea55fc8ffd12156268f45a1f4458d61d33bebe3cf6e369f3",
-        "spans": [
-          {
-            "start": 147,
-            "end": 148,
-            "text": "*",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 188,
-            "end": 189,
-            "text": ";",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 314,
-            "end": 340,
-            "text": "(Stroustrup, 2024, p. 142)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 372,
-            "end": 373,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 386,
-            "end": 387,
-            "text": "+",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 393,
-            "end": 399,
-            "text": "\"3+7;\"",
-            "role": "string"
-          },
-          {
-            "start": 444,
-            "end": 445,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 465,
-            "end": 466,
-            "text": "+",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0002",
-        "path": "/text",
-        "sourceSha256": "4a6f81b87dd7f189af006fc0d107ddd1148ccf78877737ef3e7e1750d3257a1b",
-        "spans": [
-          {
-            "start": 111,
-            "end": 117,
-            "text": "leer()",
-            "role": "cpp"
-          },
-          {
-            "start": 245,
-            "end": 260,
-            "text": "devolver(token)",
-            "role": "cpp"
-          },
-          {
-            "start": 322,
-            "end": 328,
-            "text": "leer()",
-            "role": "cpp"
-          },
-          {
-            "start": 391,
-            "end": 422,
-            "text": "(Stroustrup, 2024, pp. 143–145)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 437,
-            "end": 442,
-            "text": "Token",
-            "role": "cpp"
-          },
-          {
-            "start": 584,
-            "end": 592,
-            "text": "devolver",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0003",
-        "path": "/text",
-        "sourceSha256": "710559512de84746146fc10832f71cac69ecf74bcce90866cd29bcc3034604d2",
-        "spans": [
-          {
-            "start": 10,
-            "end": 23,
-            "text": "Lector_tokens",
-            "role": "cpp"
-          },
-          {
-            "start": 129,
-            "end": 147,
-            "text": "std::istringstream",
-            "role": "cpp"
-          },
-          {
-            "start": 199,
-            "end": 204,
-            "text": "Token",
-            "role": "cpp"
-          },
-          {
-            "start": 345,
-            "end": 376,
-            "text": "(Stroustrup, 2024, pp. 142–143)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0001_0000",
-        "path": "/text",
-        "sourceSha256": "b3e2b335bcbc3a2486fdb76ce1504b79c4811116e3fc9a40fb349a3f43fa354e",
-        "spans": []
-      },
-      {
-        "block": "block_0001_0001",
-        "path": "/text",
-        "sourceSha256": "e9bc7503aa7ebdd4a154615695c94dcafbcf28535427cca2120f16e2992da075",
-        "spans": [
-          {
-            "start": 311,
-            "end": 327,
-            "text": "\"Buffer ocupado\"",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 456,
-            "end": 472,
-            "text": "\"Token invalido\"",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 594,
-            "end": 620,
-            "text": "(Stroustrup, 2024, p. 144)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "586c68f40789de2041f339373a6ec044c0df646b2c3be1a857ad1ed374cd3386",
+        "sourceSha256": "838b276bfec50ff93d249b5b7b72801d155166c4d355355ad1b74991abef97bc",
         "spans": [
           {
             "start": 35,
@@ -1736,20 +1922,36 @@
             "start": 152,
             "end": 158,
             "text": "leer()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 257,
-            "end": 283,
-            "text": "(Stroustrup, 2024, p. 145)",
+            "end": 275,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 482,
-            "end": 491,
+            "start": 357,
+            "end": 366,
+            "text": "verdadera",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 383,
+            "text": "falsa",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 474,
+            "end": 483,
             "text": "guardado_",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1844,7 +2046,8 @@
             "start": 147,
             "end": 151,
             "text": "leer",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1857,13 +2060,15 @@
             "start": 39,
             "end": 52,
             "text": "istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 65,
             "end": 73,
             "text": "devolver",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1934,7 +2139,15 @@
         "block": "block_0002_0002",
         "path": "/options/0",
         "sourceSha256": "8fc718a1ba55f775734765eba40ba8098e1818fbc099a499354260c9c5c946f1",
-        "spans": []
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1957,13 +2170,15 @@
             "start": 21,
             "end": 26,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 120,
             "end": 128,
             "text": "devolver",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1979,10 +2194,18 @@
         "sourceSha256": "0b10eb948e738e55b230ff9fcebcb130767f199b411a08f01647e22337d5eec8",
         "spans": [
           {
+            "start": 62,
+            "end": 65,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 98,
             "end": 106,
             "text": "devolver",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1997,6 +2220,13 @@
         "path": "/text",
         "sourceSha256": "b41f7add356ce2d1180d39bcb316f3c5bb5d4dc4227f5ead8ec07dd7d04eb7c2",
         "spans": [
+          {
+            "start": 22,
+            "end": 26,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 76,
             "end": 77,
@@ -2015,19 +2245,22 @@
             "start": 184,
             "end": 193,
             "text": "guardado_",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 357,
             "end": 366,
             "text": "guardado_",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 388,
             "end": 394,
             "text": "lleno_",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2040,7 +2273,8 @@
             "start": 39,
             "end": 53,
             "text": "Token{'n', 14}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2111,6 +2345,13 @@
             "text": "lleno_",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 344,
+            "end": 347,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2132,7 +2373,15 @@
         "block": "block_0003_0003",
         "path": "/options/1",
         "sourceSha256": "1a155951ace9a172907c5547763a5ecd26c1880fa13d4389a3066f02487e908b",
-        "spans": []
+        "spans": [
+          {
+            "start": 17,
+            "end": 20,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2157,13 +2406,15 @@
             "start": 22,
             "end": 25,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 134,
             "end": 146,
             "text": "token_valido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2176,7 +2427,8 @@
             "start": 19,
             "end": 24,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2195,139 +2447,132 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "c8670c2469b30c2d29a15c1330c964cdc31a56eefcfe5df5f11ee38164489620",
+        "sourceSha256": "596725498f2356a1f55b2c953e7cd862653bfce3d2c121c558c9f2ac0e15ab58",
         "spans": [
           {
-            "start": 53,
-            "end": 57,
+            "start": 52,
+            "end": 56,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 407,
-            "end": 413,
+            "start": 259,
+            "end": 265,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 451,
             "text": "\"5*2;\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 426,
-            "end": 436,
-            "text": "Primero: 5",
+            "start": 830,
+            "end": 891,
+            "text": "Primero: 5\nPendiente: 1\nRepetido: *\nPendiente: 0\nSiguiente: 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 484,
-            "end": 496,
-            "text": "Pendiente: 1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 527,
-            "end": 538,
-            "text": "Repetido: *",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 562,
-            "end": 574,
-            "text": "Pendiente: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 619,
-            "end": 631,
-            "text": "Siguiente: 2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 669,
-            "end": 675,
+            "start": 922,
+            "end": 928,
             "text": "\"9-0;\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 861,
-            "end": 867,
+            "start": 998,
+            "end": 1003,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1155,
+            "end": 1216,
+            "text": "Primero: 9\nPendiente: 1\nRepetido: -\nPendiente: 0\nSiguiente: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1257,
+            "end": 1263,
             "text": "\"3+6;\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 878,
-            "end": 879,
+            "start": 1315,
+            "end": 1316,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 896,
-            "end": 897,
+            "start": 1331,
+            "end": 1332,
             "text": "+",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 920,
-            "end": 933,
+            "start": 1363,
+            "end": 1376,
             "text": "Token{'-', 0}",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 969,
-            "end": 983,
+            "start": 1530,
+            "end": 1571,
+            "text": "Buffer ocupado\nConservado: +\nSiguiente: 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1610,
+            "end": 1614,
+            "text": "\"4;\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1693,
+            "end": 1707,
+            "text": "Token{'n', 10}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1887,
+            "end": 1927,
+            "text": "Token invalido\nPendiente: 0\nSiguiente: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2081,
+            "end": 2095,
             "text": "Buffer ocupado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1003,
-            "end": 1016,
-            "text": "Conservado: +",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1021,
-            "end": 1033,
-            "text": "Siguiente: 6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1106,
-            "end": 1110,
-            "text": "\"4;\"",
-            "role": "string"
-          },
-          {
-            "start": 1150,
-            "end": 1164,
-            "text": "Token{'n', 10}",
-            "role": "cpp"
-          },
-          {
-            "start": 1200,
-            "end": 1214,
+            "start": 2098,
+            "end": 2112,
             "text": "Token invalido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1238,
-            "end": 1250,
-            "text": "Pendiente: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1289,
-            "end": 1301,
-            "text": "Siguiente: 4",
-            "role": "output",
+            "start": 2266,
+            "end": 2272,
+            "text": "cuatro",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2404,7 +2649,7 @@
             "start": 270,
             "end": 271,
             "text": "+",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2418,7 +2663,7 @@
             "start": 0,
             "end": 1,
             "text": "-",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2432,7 +2677,7 @@
             "start": 0,
             "end": 1,
             "text": "+",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           }
         ]
@@ -2465,7 +2710,15 @@
         "block": "block_0004_0004",
         "path": "/text",
         "sourceSha256": "e6909f3ad8573730a5271f47e9a1c47904970c0665a26e1d973137c80faabc09",
-        "spans": []
+        "spans": [
+          {
+            "start": 51,
+            "end": 57,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -2482,19 +2735,71 @@
             "start": 59,
             "end": 65,
             "text": "\"5*2;\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 101,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 305,
             "end": 310,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 432,
             "end": 440,
             "text": "devolver",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/text",
+        "sourceSha256": "eb1d46bf8dc7b9924a0de616dac65ec98d7ed7d4a9a16a112c265ba1d15664eb",
+        "spans": [
+          {
+            "start": 99,
+            "end": 117,
+            "text": "std::istringstream",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 199,
+            "text": "Lector_tokens",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 221,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 435,
+            "end": 440,
+            "text": "falsa",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 462,
+            "end": 463,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2548,7 +2853,7 @@
             "end": 371,
             "text": "f",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2573,18 +2878,19 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "50a6b1bf9b490cd86cf13fa2825f34e68838dbc4f8cbba49552e0314af5e107c",
+        "sourceSha256": "cbfcd91e53210dbb386b4d1b83122d73ddb536231940b3b5a4957df2366b3a6f",
         "spans": [
           {
             "start": 117,
             "end": 122,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 189,
-            "end": 220,
-            "text": "(Stroustrup, 2024, pp. 142–145)",
+            "end": 207,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2599,7 +2905,8 @@
             "start": 64,
             "end": 76,
             "text": "token_valido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 180,
@@ -2612,7 +2919,8 @@
             "start": 287,
             "end": 292,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },

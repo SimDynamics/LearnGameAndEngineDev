@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un pedido puede estar preparado, enviado o cancelado según las reglas del ejemplo. Usar números sueltos obliga a recordar qué significa cada uno; usar cadenas permite escribir otra palabra sin que deje de ser texto válido.\n\nenum class Estado { preparado, enviado, cancelado }; define un tipo propio con nombres para esas alternativas. Cada nombre de la lista es un enumerador: una constante del tipo Estado (Stroustrup, 2024).",
+          "text": "Un pedido puede estar preparado, enviado o cancelado según las reglas del ejemplo. Usar números sueltos obliga a recordar qué significa cada uno; usar cadenas permite escribir otra palabra sin que deje de ser texto válido.\n\nLa definición enum class Estado { preparado, enviado, cancelado }; crea un tipo propio llamado Estado. Las palabras enum class indican que definimos una enumeración; entre las llaves escribimos los nombres de sus alternativas. Cada nombre de esa lista es un enumerador: una constante del tipo Estado. Por ejemplo, preparado es uno de esos enumeradores; no es el nombre de una variable que podamos modificar (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "tipo propio",
@@ -18,18 +18,15 @@
             },
             {
               "text": "enumerador",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Escribimos Estado::enviado porque enviado pertenece al ámbito de Estado. Los dos puntos dobles califican el nombre con su tipo; el punto de un acceso como registro.estado, en cambio, selecciona un miembro de un objeto concreto. La declaración enum class define una enumeración con ámbito (Stroustrup, 2024).\n\nUna variable Estado recibe valores de ese tipo. Ni el entero 1 ni el texto \"enviado\" se convierten implícitamente en Estado::enviado. Esto permite que el compilador detecte esas mezclas de tipos antes de ejecutar el programa (Stroustrup, 2024).",
+          "text": "Para usar el enumerador enviado, escribimos Estado::enviado. Estado indica el tipo al que pertenece enviado y :: une ambos nombres. Por eso hablamos de una enumeración con ámbito: sus enumeradores pertenecen al ámbito de su tipo. En cambio, el punto de registro.estado selecciona el miembro estado de un objeto concreto llamado registro (Stroustrup, 2024).\n\nUna variable de tipo Estado recibe valores de ese tipo. En Estado estado = Estado::enviado;, el valor inicial lo proporciona el enumerador. Si lo sustituimos por el entero 1 o por el texto \"enviado\", el compilador rechaza esas definiciones: ninguno se convierte implícitamente en Estado::enviado. Así se detectan esas mezclas de tipos antes de ejecutar el programa (Stroustrup, 2024).",
           "emphasis": [
-            {
-              "text": "ámbito de Estado",
-              "style": "bold"
-            },
             {
               "text": "enumeración con ámbito",
               "style": "bold"
@@ -43,7 +40,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::preparado;\n    if (estado == Estado::preparado) {\n        std::cout << \"Preparado\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nint main() {\n    Estado estado = Estado::preparado;\n\n    if (estado == Estado::preparado) {\n        std::cout << \"Preparado\";\n    }\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -62,7 +59,7 @@
             "Estado estado = Estado::enviado;"
           ],
           "correctIndex": 2,
-          "explanation": "La enumeración es un tipo distinto del texto y de int; no convierte esas entradas implícitamente."
+          "explanation": "Estado::enviado es un enumerador del tipo Estado y puede proporcionar el valor inicial de estado. En cambio, \"enviado\" es un literal de texto y 1 es un entero de tipo int. Estas dos definiciones se rechazan porque no hay una conversión implícita desde esos tipos a Estado."
         },
         {
           "type": "fill_code",
@@ -72,13 +69,13 @@
           "answers": [
             "Estado"
           ],
-          "explanation": "El enumerador se califica por su tipo."
+          "explanation": "Estado es el nombre del tipo. Al escribir Estado::enviado, :: indica que buscamos el enumerador enviado dentro de ese tipo. Así el valor usado para inicializar estado pertenece a Estado."
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado a = Estado::preparado;\n    Estado b = Estado::cancelado;\n    a = Estado::enviado;\n    std::cout << (a == Estado::enviado) << \" \" << (b == Estado::enviado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nint main() {\n    Estado a = Estado::preparado;\n    Estado b = Estado::cancelado;\n    a = Estado::enviado;\n    std::cout << (a == Estado::enviado)\n              << \" \" << (b == Estado::enviado);\n\n    return 0;\n}\n",
           "answers": [
             "1 0"
           ],
@@ -94,11 +91,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Si no se escribe un valor explícito para el primer enumerador, su valor numérico es cero. Cada enumerador siguiente sin inicializador toma el valor anterior más uno. static_cast<int>(estado) permite consultar ese valor como un entero (Stroustrup, 2024).\n\nEn este modelo, los números identifican alternativas: no son cantidades de pedidos. Que enviado siga a preparado en la lista tampoco define cuándo se permite enviar un pedido. La numeración y las reglas para cambiar de estado cumplen funciones distintas.",
+          "text": "Si no se escribe un valor explícito para el primer enumerador, su valor numérico es cero. Cada enumerador siguiente sin inicializador toma el valor anterior más uno. La conversión static_cast<int>(estado) obtiene como int el valor numérico que corresponde al Estado guardado en estado (Stroustrup, 2024).\n\nPara la definición del ejemplo anterior, las correspondencias son:\npreparado: cero.\nenviado: uno.\ncancelado: dos.\n\nEstos números identifican alternativas; no son cantidades de pedidos. Que enviado siga a preparado en la lista tampoco establece que un pedido pueda pasar de preparado a enviado en cualquier momento. La numeración y las reglas para cambiar de estado cumplen funciones distintas.",
           "emphasis": [
             {
               "text": "valor numérico",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "reglas para cambiar de estado",
@@ -114,7 +112,7 @@
           "answers": [
             "2"
           ],
-          "explanation": "Los tres enumeradores sin valores explícitos corresponden a cero, uno y dos."
+          "explanation": "preparado es el primer enumerador y no tiene un valor escrito, por lo que le corresponde cero. enviado toma el siguiente valor, uno, y cancelado toma dos. estado guarda Estado::cancelado; static_cast<int>(estado) obtiene su representación como entero y std::cout muestra 2."
         },
         {
           "type": "multiple_choice",
@@ -125,7 +123,7 @@
             "4"
           ],
           "correctIndex": 1,
-          "explanation": "El enumerador siguiente aumenta en uno la representación anterior."
+          "explanation": "Al escribir preparado = 4, fijamos la representación de preparado en cuatro. enviado no tiene un valor escrito, así que recibe el anterior más uno: cinco. La representación de cancelado pasaría a ser seis; los nombres y el tipo de esas alternativas se conservan."
         },
         {
           "type": "paragraph",
@@ -147,11 +145,12 @@
         },
         {
           "type": "paragraph",
-          "text": "En esta definición de enum class no se especifica otro tipo de representación: el tipo subyacente es int. Sus valores posibles incluyen los valores de ese tipo entero, aunque no todos tengan un enumerador asociado (Köppe et al., 2023).\n\nPor eso static_cast<Estado>(9) produce un Estado que no coincide con preparado, enviado ni cancelado. La conversión explícita solicita el cambio de tipo; no comprueba que el número esté en la lista de alternativas que reconoce este programa. Esa comprobación debe escribirse aparte (Stroustrup, 2024).",
+          "text": "Cada enumeración tiene un tipo entero que sirve para representar numéricamente sus valores: su tipo subyacente. En esta definición de enum class no indicamos otro tipo, por lo que el tipo subyacente es int y está fijado desde la definición. Los valores posibles de este Estado incluyen todos los de int, aunque algunos no tengan un enumerador asociado (Köppe et al., 2023).\n\nPor ejemplo, static_cast<Estado>(9) produce un valor de tipo Estado cuya representación numérica es nueve. No coincide con preparado, enviado ni cancelado, que en esta definición corresponden a cero, uno y dos. La conversión explícita cambia el tipo, pero no comprueba que el valor corresponda a uno de los enumeradores de la lista. Si el programa sólo admite esas alternativas, necesita una comprobación aparte (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "tipo subyacente",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "no comprueba",
@@ -163,7 +162,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = static_cast<Estado>(9);\n    bool reconocido = estado == Estado::preparado || estado == Estado::enviado || estado == Estado::cancelado;\n    std::cout << reconocido;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nint main() {\n    Estado estado = static_cast<Estado>(9);\n    bool reconocido = estado == Estado::preparado\n        || estado == Estado::enviado\n        || estado == Estado::cancelado;\n    std::cout << reconocido;\n\n    return 0;\n}\n",
           "answers": [
             "0"
           ],
@@ -178,7 +177,7 @@
             "Qué representaciones admite la aplicación y cómo rechazar las demás."
           ],
           "correctIndex": 2,
-          "explanation": "La conversión y la comprobación de dominio son operaciones distintas."
+          "explanation": "Que nueve quepa en int permite representarlo, pero no lo convierte en una alternativa reconocida. En el ejemplo, sólo preparado, enviado y cancelado tienen nombre en la lista. Hay que decidir qué valores admite el programa y comprobarlos antes de usarlos como un estado válido; static_cast no hace esa comprobación."
         }
       ]
     },
@@ -191,11 +190,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Preparado\"; }\n    if (estado == Estado::enviado) { return \"Enviado\"; }\n    if (estado == Estado::cancelado) { return \"Cancelado\"; }\n    return \"No reconocido\";\n}\n\nint main() {\n    std::cout << nombre(Estado::enviado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstd::string nombre(Estado estado) {\n\n    if (estado == Estado::preparado) {\n        return \"Preparado\";\n    }\n\n    if (estado == Estado::enviado) {\n        return \"Enviado\";\n    }\n\n    if (estado == Estado::cancelado) {\n        return \"Cancelado\";\n    }\n    return \"No reconocido\";\n}\n\nint main() {\n    std::cout << nombre(Estado::enviado);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La función devuelve texto en todos los caminos: si no coincide ninguna alternativa nombrada, devuelve No reconocido. Ese último camino tiene sentido porque la conversión explícita de la página anterior puede producir un Estado sin nombre en la lista.\n\nPresentar un valor no lo valida como estado de un pedido. Las reglas del programa deben decidir qué valores admitir y qué cambios de estado permitir. La función nombre se ocupa únicamente de elegir el texto.",
+          "text": "La función nombre compara su parámetro estado con cada alternativa, en el orden escrito. Si recibe Estado::enviado, la primera comparación, con Estado::preparado, es falsa. La segunda es verdadera y se ejecuta return \"Enviado\";. Esa devolución termina la llamada y entrega el texto Enviado a std::cout.\n\nSi ninguna comparación es verdadera, se alcanza el último return. Así ocurre con el valor obtenido de static_cast<Estado>(9): la función devuelve No reconocido. Por eso devuelve texto en todos los caminos, también para un valor que no tenga nombre en la lista.\n\nPresentar un valor no lo valida como estado de un pedido. La función nombre sólo elige un texto; las reglas del programa deben decidir qué valores admitir y qué cambios de estado permitir.",
           "emphasis": [
             {
               "text": "devuelve texto en todos los caminos",
@@ -215,7 +214,7 @@
           "answers": [
             "Cancelado"
           ],
-          "explanation": "La función traduce la alternativa nombrada a texto de salida."
+          "explanation": "estado contiene Estado::cancelado. En nombre, las comparaciones con Estado::preparado y Estado::enviado son falsas. La comparación con Estado::cancelado es verdadera y devuelve el texto Cancelado. std::cout muestra ese texto, sin las comillas del literal."
         }
       ]
     },
@@ -227,7 +226,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En código anterior también aparece enum sin class: una enumeración sin ámbito. Sus enumeradores quedan disponibles en el ámbito que contiene la declaración y sus valores admiten conversión implícita a enteros. Con enum class se usa la calificación del tipo y no se ofrece esa conversión implícita a int (Stroustrup, 2024).\n\nLa diferencia importa cuando dos conjuntos tienen un nombre como normal: Estado::normal y Prioridad::normal identifican constantes de tipos distintos. En estas actividades se usa enum class para conservar esa distinción y hacer explícitas las conversiones necesarias.",
+          "text": "En código anterior también aparece enum sin class: una enumeración sin ámbito. Sus enumeradores quedan disponibles en el ámbito que contiene la declaración y sus valores admiten conversión implícita a enteros. Con enum class, los nombres pertenecen al ámbito del tipo y no se ofrece esa conversión implícita a int (Stroustrup, 2024).\n\nPor ejemplo, podríamos definir dos tipos enum class, Estado y Prioridad, que incluyeran cada uno un enumerador llamado normal. Escribiríamos Estado::normal para usar la alternativa del primero y Prioridad::normal para usar la del segundo. Aunque el último nombre coincida, son constantes de tipos distintos. En estas actividades usamos enum class para conservar esa distinción y hacer explícitas las conversiones necesarias.",
           "emphasis": [
             {
               "text": "enumeración sin ámbito",
@@ -253,7 +252,7 @@
             "Sus valores se convierten implícitamente a bool."
           ],
           "correctIndex": 1,
-          "explanation": "La decisión afecta al ámbito y a las conversiones, no a la existencia de representación."
+          "explanation": "Con enum class, la alternativa enviado se usa aquí como Estado::enviado: el nombre pertenece al ámbito de Estado. Además, un valor de ese tipo no se convierte implícitamente a int ni a bool. Una enum sin ámbito permite usar sus enumeradores en el ámbito exterior y sí admite la conversión implícita a enteros."
         },
         {
           "type": "multiple_choice",
@@ -264,7 +263,7 @@
             "No pueden existir ambos tipos en el mismo programa."
           ],
           "correctIndex": 1,
-          "explanation": "El tipo y su calificación comunican cuál conjunto de alternativas usamos."
+          "explanation": "Estado::normal identifica el enumerador de Estado; Prioridad::normal identifica el de Prioridad. Anteponer el tipo mediante :: distingue a qué conjunto pertenece normal. Que ambas constantes tengan el mismo nombre final no hace que sus tipos sean iguales."
         }
       ]
     },
@@ -276,7 +275,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un programa con enum class Prioridad y los enumeradores normal, urgente y aplazada. Define nombre_prioridad para devolver Normal, Urgente o Aplazada según la alternativa y No reconocida para el valor convertido explícitamente desde nueve.\n\nEn main, muestra primero los nombres de urgente, normal, aplazada y el valor convertido desde nueve, en ese orden: Urgente, Normal, Aplazada y No reconocida. Cada resultado ocupa una línea y termina con un salto de línea.\n\nDefine también struct Registro con codigo de tipo std::string y prioridad de tipo Prioridad. Prepara un vector con los registros A normal, B urgente y C aplazada. Después de las cuatro líneas anteriores, recórrelo para producir una quinta línea: A:Normal;B:Urgente;C:Aplazada;. No añadas espacios ni un salto de línea al final de esa quinta línea.\n\nPulsa Compilar, ejecutar y comprobar. La comprobación contrasta la salida completa del mismo programa.",
+          "text": "Construye el programa en este editor a partir de los siguientes elementos.\n\nDefine enum class Prioridad con los enumeradores normal, urgente y aplazada.\n\nDefine la función nombre_prioridad. Recibe una Prioridad y devuelve el texto Normal, Urgente o Aplazada según la alternativa. Para el valor obtenido al convertir explícitamente nueve a Prioridad, debe devolver No reconocida.\n\nEn main, llama a la función con los siguientes valores, en este orden:\nPrioridad::urgente.\nPrioridad::normal.\nPrioridad::aplazada.\nEl valor convertido explícitamente desde nueve.\n\nMuestra cada resultado en su propia línea, terminada con un salto de línea. Deben aparecer:\nUrgente\nNormal\nAplazada\nNo reconocida\n\nDefine también struct Registro con dos miembros: codigo, de tipo std::string, y prioridad, de tipo Prioridad. Prepara un vector con estos registros, en este orden:\nCódigo A y prioridad normal.\nCódigo B y prioridad urgente.\nCódigo C y prioridad aplazada.\n\nDespués de las cuatro líneas anteriores, recorre el vector y muestra en una quinta línea el código y la prioridad de cada registro, usando nombre_prioridad para obtener su texto:\nA:Normal;B:Urgente;C:Aplazada;\n\nNo añadas espacios ni un salto de línea al final de esa quinta línea. Pulsa Compilar, ejecutar y comprobar. La comprobación del editor contrasta la salida completa que acabamos de describir.",
           "emphasis": [
             {
               "text": "enum class Prioridad",
@@ -287,11 +286,6 @@
               "style": "bold"
             },
             {
-              "text": "quinta línea",
-              "style": "bold",
-              "occurrence": 1
-            },
-            {
               "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
             }
@@ -299,7 +293,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -314,7 +308,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los miembros de Registro conservan alternativas de Prioridad. La función nombre_prioridad entrega el rótulo correspondiente sin reemplazar el miembro por texto ni modificarlo.\n\nEl valor convertido desde nueve prueba el camino No reconocida; no añade un enumerador a la definición. Los resultados deben proceder de las llamadas y del recorrido solicitados, no de un único mensaje escrito de antemano.",
+          "text": "Cada registro conserva su código y una prioridad de tipo Prioridad. La función nombre_prioridad recibe ese valor y entrega el rótulo correspondiente sin reemplazar el miembro por texto ni modificarlo.\n\nConvertir explícitamente nueve a Prioridad permite probar el camino que devuelve No reconocida. La conversión crea un valor de ese tipo; no añade un enumerador a la definición.\n\nLos resultados deben proceder de las llamadas y del recorrido solicitados, no de un único mensaje escrito de antemano.",
           "emphasis": [
             {
               "text": "sin reemplazar el miembro por texto",
@@ -337,13 +331,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nint main() {\n    Prioridad prioridad = Prioridad::urgente;\n    std::cout << nombre_prioridad(prioridad);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad {\n    normal,\n    urgente,\n    aplazada\n};\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n\n    if (prioridad == Prioridad::normal) {\n        return \"Normal\";\n    }\n\n    if (prioridad == Prioridad::urgente) {\n        return \"Urgente\";\n    }\n\n    if (prioridad == Prioridad::aplazada) {\n        return \"Aplazada\";\n    }\n    return \"No reconocida\";\n}\n\nint main() {\n    Prioridad prioridad = Prioridad::urgente;\n    std::cout << nombre_prioridad(prioridad);\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct Registro {\n    std::string codigo;\n    Estado estado;\n};\n\nint main() {\n    Registro original{\"A3\", Estado::preparado};\n    Registro copia = original;\n    original.estado = Estado::enviado;\n    std::cout << (copia.estado == Estado::preparado) << \" \" << (original.estado == Estado::preparado);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct Registro {\n    std::string codigo;\n    Estado estado;\n};\n\nint main() {\n    Registro original{\"A3\", Estado::preparado};\n    Registro copia = original;\n    original.estado = Estado::enviado;\n    std::cout << (copia.estado == Estado::preparado)\n              << \" \" << (original.estado == Estado::preparado);\n\n    return 0;\n}\n",
           "answers": [
             "1 0"
           ],
@@ -358,11 +352,11 @@
             "Una interfaz que compruebe y controle las operaciones sobre su estado."
           ],
           "correctIndex": 2,
-          "explanation": "Nombrar alternativas es útil, pero no define por sí solo cuándo una transición está permitida."
+          "explanation": "Una variable de tipo Estado puede recibir otra alternativa de ese tipo mediante una asignación. La enumeración no comprueba si el pedido puede pasar de preparado a cancelado en ese momento. Para imponer esa regla necesitamos operaciones que comprueben el cambio antes de modificar el estado: eso es lo que debe controlar la interfaz."
         },
         {
           "type": "paragraph",
-          "text": "En la referencia, cada alternativa pertenece a Prioridad y se califica con ese tipo; nombre_prioridad devuelve el rótulo sin modificar el argumento. El caso convertido desde nueve comprueba el camino No reconocida.\n\nLos registros conservan juntos su código y su prioridad. La función de presentación se reutiliza en el recorrido: no hace falta convertir la prioridad en un entero para obtener su nombre. La selección puede resolverse con distintas implementaciones correctas.",
+          "text": "En la referencia, cada alternativa pertenece a Prioridad y se califica con ese tipo. nombre_prioridad compara el valor recibido y devuelve el rótulo correspondiente sin modificarlo. Al recibir el valor convertido desde nueve, ninguna de las comparaciones con los enumeradores es verdadera y se devuelve No reconocida.\n\nLos registros conservan juntos su código y su prioridad. Durante el recorrido, cada llamada a nombre_prioridad obtiene el texto de la prioridad del registro que se está visitando. No hace falta convertir esa prioridad en un entero para obtener su nombre. La selección puede resolverse con distintas implementaciones correctas.",
           "emphasis": [
             {
               "text": "conservan juntos su código y su prioridad",
@@ -377,11 +371,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\nstruct Registro { std::string codigo; Prioridad prioridad; };\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", Prioridad::urgente}, {\"S\", Prioridad::normal}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad {\n    normal,\n    urgente,\n    aplazada\n};\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n\n    if (prioridad == Prioridad::normal) {\n        return \"Normal\";\n    }\n\n    if (prioridad == Prioridad::urgente) {\n        return \"Urgente\";\n    }\n\n    if (prioridad == Prioridad::aplazada) {\n        return \"Aplazada\";\n    }\n    return \"No reconocida\";\n}\n\nint main() {\n    std::vector<Registro> registros{\n        {\"R\", Prioridad::urgente},\n        {\"S\", Prioridad::normal}\n    };\n\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Este ejemplo de dos registros produce R:Urgente;S:Normal;, sin salto final. Recupera la asociación entre el código y la prioridad de cada registro usando otros datos. La referencia siguiente reúne todos los resultados solicitados en la actividad del editor.",
+          "text": "El ejemplo anterior utiliza dos registros: el código R con Prioridad::urgente y el código S con Prioridad::normal. El recorrido presenta primero el código R, los dos puntos, el texto Urgente y el punto y coma; después hace lo mismo con el segundo registro. El resultado completo es:\nR:Urgente;S:Normal;\n\nNo hay un salto de línea final. Así recuperamos la asociación entre código y prioridad usando otros datos. La referencia siguiente reúne todos los resultados solicitados en la actividad del editor.",
           "emphasis": [
             {
               "text": "otros datos",
@@ -400,7 +394,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <vector>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nint main() {\n    std::cout << nombre_prioridad(Prioridad::urgente) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::normal) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::aplazada) << \"\\n\";\n    std::cout << nombre_prioridad(static_cast<Prioridad>(9)) << \"\\n\";\n    const std::vector<Registro> registros{{\"A\", Prioridad::normal}, {\"B\", Prioridad::urgente}, {\"C\", Prioridad::aplazada}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <vector>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad {\n    normal,\n    urgente,\n    aplazada\n};\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n\n    if (prioridad == Prioridad::normal) {\n        return \"Normal\";\n    }\n\n    if (prioridad == Prioridad::urgente) {\n        return \"Urgente\";\n    }\n\n    if (prioridad == Prioridad::aplazada) {\n        return \"Aplazada\";\n    }\n    return \"No reconocida\";\n}\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nint main() {\n    std::cout << nombre_prioridad(Prioridad::urgente) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::normal) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::aplazada) << \"\\n\";\n    std::cout << nombre_prioridad(static_cast<Prioridad>(9)) << \"\\n\";\n\n    const std::vector<Registro> registros{\n        {\"A\", Prioridad::normal},\n        {\"B\", Prioridad::urgente},\n        {\"C\", Prioridad::aplazada}\n    };\n\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1364,6 +1358,245 @@
         "id": "block_0007_0002",
         "beforeSha256": "dc19a1f6aacd9c742d82ea3e2afa8e529907c5d0b72eb699509c06fe43b0b201",
         "afterSha256": "7bcca4ca57a8aaa371a92c210c15b3fdf7e9c53484523ee91f2241bf212d779c"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "ee148536d75929191d29f42192da1f8f75933e6670e9df762cd969c5de9c4bd9",
+        "afterSha256": "fb9c66cc7bb14c4998d0450ae80a3ef6d51865d971e85569bd3246b37bbdfbd1"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "7014d1c6a4c5ecaa935bde84d9655005fd0268f5aefa7434126fc1d2ecf0f472",
+        "afterSha256": "5a7cecadda69ad0731616286c3b8aea5187355f49e8a93f19eda78c91f802258"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "4a35437a40e97c1625afc43f45a79c74df84b34d4cab1b0bb93cffe734595a5d",
+        "afterSha256": "a6efdd73e158ef8dd387b8cfc108bb5be9d9e687fdde350a58e58248689fc60d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "0ccf204e31dd3e2f508c8d626202d5511fccb9a203f44ca123a4e4e3d48d075c",
+        "afterSha256": "bcd6e4f7718ebb8ceabf3d8672c44aeea39d2e4987228906fc301c562a95dc64"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "a9fa87b1b73cc3860008e93ef4b693dc4157b8f42040857ed8abbccac706e79f",
+        "afterSha256": "e1b60a8a9374d1371572ed2b4f29362687ccbb6a41c74c077d2037aa7370537c"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "02f834ac565d80c7a5178c639b9b8e1f7daef82a51e7975b18d449f1b6111eec",
+        "afterSha256": "505a68710e5f938a9c7769ee57a1e5a4d43cc0552583262e7b8b8458cacfbed0"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "c7521359d2e607f86b68dc730993e1eba5642b354f01e56cfeeadfa75b1d874c",
+        "afterSha256": "e23a3a7b2ea2cc0e3dc32cdd75bfa7dd226b3e991b1494c965279c423d19b0cf"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "d6cf4e4be21a786a43be5c456498760354a8a57b88f5f866cb2a1d3a522ddc9d",
+        "afterSha256": "fa9c482f1a95938338964b9aefe597919c4e3659014ca11db5266d43507f522f"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1173d44a01304dd0839e837b40ba24e1ad41542ae5135eb3e4dc650c12f08420",
+        "afterSha256": "c7c87b38e18309bd51f30404df64fb639dfec9a3ec1dcd611ce889052177e828"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "76a31597ed53b98d872f26e7ffbf87542f544f7af437c7b49422054f62bc824a",
+        "afterSha256": "07aeda718a8abc0ee89e8b1ee182970b4d11fb21e9438c5540364cba4302a9fa"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8e740084951f8e4fad58082c4205be9ed88fea2660500f4c830f9547b77cc342",
+        "afterSha256": "5047bc17de60beebc424dcce4f4a4bf659b3e105ce2d55ad07561160b14d2336"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "0c287fef9e7dc49391e60e93cc59f63d0e82e19e7684175a21aee0c1d7e2bbb3",
+        "afterSha256": "2aa1dc41e15cb96248780251c6a69f978aad981be3a2347b122a9a9e55eba9c8"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "6ce443dd624ac35de6b946d6a16b0678dca7d465aeead2d0e5e1c12f3e76a0c3",
+        "afterSha256": "aaf94734818b471c8b301b83c83d253b27397087669a43c0609673a0476d79f9"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "bfbc81762de79943c8402591df1b4d5d5893db05f439d7724787640877d9cd14",
+        "afterSha256": "b65d21ce56a7e57ddb9b0509e27d61e6a76d41ec3029ad5f5868d959d34a6238"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "efaa74864f76ff63e613712cdfb66063afce4d253f74fc0841611d5e11e26831",
+        "afterSha256": "43dae08921498b6efe99ed9675605ca9d0eeda3290357b5ee10a1b063e759193"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "4b13c8c7cc1fe8d3643bb9c9eee2121d154b74ce91e6872136b27028094e90c9",
+        "afterSha256": "8db17369bac28bc2c2e796650f2ede9328872f8031d640efee69689d3e2511e2"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "44cd2380055c5f4f7e28b0ea2e54fdc8dc99ad640de62280580f094dfe31afd8",
+        "afterSha256": "9a23b9071867a61152059dab88ef90b60e1d08700625e2a772b0d8191bb04170"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "4fe764bc2b939e2c801f6ecee6d7482c34e5ad87724d8abce5d857a353759d14",
+        "afterSha256": "3140b958f7b98b5b7ba1f972ac11dd898e402938947a2a67a037f67a58efaa9c"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "c7f8d63521c79a3f1ffb2f0276862a13f9362bb61684a4b868aa6da080034cab",
+        "afterSha256": "c1bbd1fb15d31dadd39712d0292522699a1ff07bf0992504767d5d0058dbae0f"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "c2489e7234b60a5ac6500fa07679dceec71554cf5dea3ebe9578af866b5f96b8",
+        "afterSha256": "4b3527e4ce0bccbab366c4dc2b3eae69441230517577b2e81e14c515191e72da"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "942c970d2064f1a711d2074600974dfcf29d781759daff3de35c4eb1b4722e42",
+        "afterSha256": "25d86c813ad9b7f47c75b2521d7145f8178e36a408dd7cd921e67b4e779a62af"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "1dd03f3ad3a2a6ab336b5ac3f03b019eca46a769ec1dcdd7983f128764b51328",
+        "afterSha256": "a5b33b5bd54dc1309a9aa6a7f539c861f5de35dbdb556fcb3dbd65fea7d6c583"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "7bcca4ca57a8aaa371a92c210c15b3fdf7e9c53484523ee91f2241bf212d779c",
+        "afterSha256": "63df4aa11cc68209d7697a6cb0bd956a2761f152e4ef49f69e37e7e757ca1b93"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "2451929cbeaca8c221cc923467b5877d40778c569a06fe42e0f753d3c9f13b27",
+        "afterSha256": "a22d766d03cb94ff02242bc8c66b12f08cb1e72ce88321354a052c89c9f75a24"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "2b2130600a438efb3dcb42b02f21a19abbfb5374c1cf7945be83ea2d1dbe459c",
+        "afterSha256": "dd7343cd08c8da2360e8ae114d98c11b75b2555be275c2ff1b2ef8240438956b"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "d7449f2f3eeea375894034a4b9b4c5df999f160d04f8e8153d7fbfaff94ee89e",
+        "afterSha256": "04488813afc5267bcd09a244076896b7bc74edbd980ab6bfb8a644a54bcab111"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "b0f413e9f411cf17f7e07dba54829bb9657cb5340ef7c22a92549abed3f166b1",
+        "afterSha256": "10e8b90ffffd075b62ebeb11e2d0daaeaebd0018978530401ff911adf78b8c58"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "56d9c44a23a21b79ae8e14b4118912e6b5ad1e3979630a635e5e69e9470c12c0",
+        "afterSha256": "767298979c338efac0d5048701fcbaa631808d942fc6bc5ab5b5b45b7229f52e"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::preparado;\n    if (estado == Estado::preparado) {\n        std::cout << \"Preparado\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado a = Estado::preparado;\n    Estado b = Estado::cancelado;\n    a = Estado::enviado;\n    std::cout << (a == Estado::enviado) << \" \" << (b == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "La asignación cambia a de Estado::preparado a Estado::enviado. b conserva Estado::cancelado. La primera comparación resulta verdadera y la segunda falsa; en esta salida se representan como 1 y 0, separados por un espacio."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = static_cast<Estado>(9);\n    bool reconocido = estado == Estado::preparado || estado == Estado::enviado || estado == Estado::cancelado;\n    std::cout << reconocido;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "La conversión crea el valor de tipo Estado cuya representación es 9. Los enumeradores preparado, enviado y cancelado corresponden a 0, 1 y 2. Ninguna de las tres comparaciones es verdadera, de modo que reconocido es falso y se imprime 0. Convertir el número no lo hizo coincidir con una alternativa nombrada."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Preparado\"; }\n    if (estado == Estado::enviado) { return \"Enviado\"; }\n    if (estado == Estado::cancelado) { return \"Cancelado\"; }\n    return \"No reconocido\";\n}\n\nint main() {\n    std::cout << nombre(Estado::enviado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Urgente\nNormal\nAplazada\nNo reconocida\nA:Normal;B:Urgente;C:Aplazada;"
+                ],
+                "explanation": "Las alternativas conservan su tipo dentro de cada registro. Presentarlas como texto es una operación separada; el valor convertido desde nueve usa el camino no reconocido."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nint main() {\n    Prioridad prioridad = Prioridad::urgente;\n    std::cout << nombre_prioridad(prioridad);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct Registro {\n    std::string codigo;\n    Estado estado;\n};\n\nint main() {\n    Registro original{\"A3\", Estado::preparado};\n    Registro copia = original;\n    original.estado = Estado::enviado;\n    std::cout << (copia.estado == Estado::preparado) << \" \" << (original.estado == Estado::preparado);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "copia recibe el código A3 y el estado Estado::preparado que tenía el original al copiarlo. Después sólo original.estado cambia a Estado::enviado. Comparar el estado de la copia con Estado::preparado produce verdadero; hacer esa misma comparación con el original produce falso. La salida es 1 0."
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\nstruct Registro { std::string codigo; Prioridad prioridad; };\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", Prioridad::urgente}, {\"S\", Prioridad::normal}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0008",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <vector>\n#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nstruct Registro {\n    std::string codigo;\n    Prioridad prioridad;\n};\n\nint main() {\n    std::cout << nombre_prioridad(Prioridad::urgente) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::normal) << \"\\n\";\n    std::cout << nombre_prioridad(Prioridad::aplazada) << \"\\n\";\n    std::cout << nombre_prioridad(static_cast<Prioridad>(9)) << \"\\n\";\n    const std::vector<Registro> registros{{\"A\", Prioridad::normal}, {\"B\", Prioridad::urgente}, {\"C\", Prioridad::aplazada}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1380,25 +1613,46 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "73c1d40929f8a1a4eef2540a85b2bd22d0ffc98e0e050dea5e7288d40358a6d9",
+        "sourceSha256": "4e5b51f59e0a6f661a5fd46a10ae1b81aa7349f710dde46ebd91f231a6791ca5",
         "spans": [
           {
-            "start": 224,
-            "end": 276,
+            "start": 238,
+            "end": 290,
             "text": "enum class Estado { preparado, enviado, cancelado };",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 400,
-            "end": 406,
+            "start": 319,
+            "end": 325,
             "text": "Estado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 407,
-            "end": 425,
+            "start": 340,
+            "end": 350,
+            "text": "enum class",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 517,
+            "end": 523,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 538,
+            "end": 547,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 631,
+            "end": 649,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1408,81 +1662,109 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "916450c6c11cbe9e89d4eb70849570af49ab6e4e78b00db0c430a68597f78711",
+        "sourceSha256": "57557b5c94a5766775393bb82e0dcc91f01de8cec25c2e97af601a72ac4276ec",
         "spans": [
           {
-            "start": 11,
-            "end": 26,
-            "text": "Estado::enviado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 34,
-            "end": 41,
+            "start": 24,
+            "end": 31,
             "text": "enviado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 71,
-            "text": "Estado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 155,
-            "end": 170,
-            "text": "registro.estado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 243,
-            "end": 253,
-            "text": "enum class",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 288,
-            "end": 306,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 322,
-            "end": 328,
-            "text": "Estado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 370,
-            "end": 371,
-            "text": "1",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 384,
-            "end": 393,
-            "text": "\"enviado\"",
-            "role": "string",
-            "reading": "technical"
-          },
-          {
-            "start": 426,
-            "end": 441,
+            "start": 44,
+            "end": 59,
             "text": "Estado::enviado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 534,
-            "end": 552,
+            "start": 61,
+            "end": 67,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 107,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 112,
+            "text": "::",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 268,
+            "text": "registro.estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 297,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 328,
+            "end": 336,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 337,
+            "end": 355,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 385,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 417,
+            "end": 449,
+            "text": "Estado estado = Estado::enviado;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 530,
+            "end": 531,
+            "text": "1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 547,
+            "end": 556,
+            "text": "\"enviado\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 638,
+            "end": 653,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 723,
+            "end": 741,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1512,12 +1794,54 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "cf1935cac9ae4ca617de50fb10c302689298f75b82817f932e6a6bc673326d7d",
+        "sourceSha256": "d58fb1f28642733ff4d5d333fab919265c55acc109cfa1227b85869988714f22",
         "spans": [
           {
-            "start": 50,
-            "end": 53,
+            "start": 0,
+            "end": 15,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 96,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 118,
+            "text": "\"enviado\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 145,
+            "text": "1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 167,
+            "end": 170,
             "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 265,
+            "end": 271,
+            "text": "Estado",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1582,8 +1906,51 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "843791e0b2103e375238f8c0c7b2816a94d19805479dc024e59be5e55994ab42",
-        "spans": []
+        "sourceSha256": "e4d31349834fd53ccf8d95e304fab51d972c7610209942e33900634b6437b2c3",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 57,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 59,
+            "end": 61,
+            "text": "::",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 103,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 160,
+            "end": 166,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 185,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1656,7 +2023,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "ec7ae06fde7c600246abe5cf089a7171440738ea3a2a626549fe31fd47a0059d",
+        "sourceSha256": "aec785c3f5aa051a7f0a6ed220021d34cf291394aac3e04e00de8554cb235feb",
         "spans": [
           {
             "start": 84,
@@ -1673,30 +2040,107 @@
             "reading": "natural"
           },
           {
-            "start": 166,
-            "end": 190,
+            "start": 180,
+            "end": 204,
             "text": "static_cast<int>(estado)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 234,
-            "end": 252,
+            "start": 218,
+            "end": 221,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 265,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 284,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 285,
+            "end": 303,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 343,
-            "end": 350,
+            "start": 373,
+            "end": 382,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 384,
+            "end": 388,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 397,
             "text": "enviado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 358,
-            "end": 367,
+            "start": 399,
+            "end": 402,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 404,
+            "end": 413,
+            "text": "cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 418,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 495,
+            "end": 502,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 519,
             "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 579,
+            "end": 588,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 591,
+            "end": 598,
+            "text": "enviado",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1711,12 +2155,82 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "976e64b575ed65a5d5f6b2dffecac9736d24688e1750dd9d07ffff50b55c81dc",
+        "sourceSha256": "201fe492b252ad714b06b595b43302adb5d2d0420fb009ec7ec82320e921a6ec",
         "spans": [
           {
-            "start": 60,
-            "end": 75,
-            "text": "cero, uno y dos",
+            "start": 0,
+            "end": 9,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 93,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 102,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 131,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 144,
+            "text": "cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 150,
+            "end": 153,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 161,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 186,
+            "text": "Estado::cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 212,
+            "text": "static_cast<int>(estado)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 262,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 271,
+            "end": 272,
+            "text": "2",
             "role": "output",
             "reading": "natural"
           }
@@ -1746,13 +2260,62 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "37af718fb57a4dcbec61bc22113bc28e9f71069881aa18cc77e2700e6d3d5137",
+        "sourceSha256": "038cf1bc34b8146a31fc9ce36e8d3fe79886c0e91f24a9419cedcec10ac7c7d4",
         "spans": [
           {
-            "start": 35,
-            "end": 38,
+            "start": 12,
+            "end": 25,
+            "text": "preparado = 4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 65,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 69,
+            "end": 75,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 84,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 146,
             "text": "uno",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 153,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 185,
+            "text": "cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 200,
+            "end": 204,
+            "text": "seis",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1843,67 +2406,109 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "e7d79f761190a7587aa9966695908a6d3688220d2555268d16646c064bbd93b8",
+        "sourceSha256": "62e4f7a9e2fe961b9c3ba6174265838295f7d501f728d433ae3f7f8aca48a27e",
         "spans": [
           {
-            "start": 22,
-            "end": 32,
+            "start": 134,
+            "end": 144,
             "text": "enum class",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 104,
+            "start": 202,
+            "end": 205,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 214,
-            "end": 234,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 245,
-            "end": 267,
-            "text": "static_cast<Estado>(9)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 279,
-            "end": 285,
+            "start": 270,
+            "end": 276,
             "text": "Estado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 306,
-            "end": 315,
+            "start": 299,
+            "end": 302,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 352,
+            "end": 372,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 410,
+            "text": "static_cast<Estado>(9)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 442,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 475,
+            "end": 480,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 507,
             "text": "preparado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 317,
-            "end": 324,
+            "start": 509,
+            "end": 516,
             "text": "enviado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 328,
-            "end": 337,
+            "start": 520,
+            "end": 529,
             "text": "cancelado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 519,
-            "end": 537,
+            "start": 569,
+            "end": 573,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 575,
+            "end": 578,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 581,
+            "end": 584,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 787,
+            "end": 805,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1978,6 +2583,13 @@
             "reading": "natural"
           },
           {
+            "start": 157,
+            "end": 161,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 202,
             "end": 212,
             "text": "reconocido",
@@ -2002,8 +2614,51 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "4e21fc9e21147e42551b7b8c3914fbf19634e9df43abaca44d243d9cc74586da",
-        "spans": []
+        "sourceSha256": "9e353ca93e1db143efa563a64f7149d2f10e7651f90182c58079e275cefa8381",
+        "spans": [
+          {
+            "start": 4,
+            "end": 9,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 22,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 118,
+            "end": 127,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 136,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 148,
+            "text": "cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 289,
+            "text": "static_cast",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2048,25 +2703,81 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "b3e876101dfe87fb6541d89a88c6895e1d8ad69d2a7afa6f02b428bd447e0279",
+        "sourceSha256": "55955f5336ccafdb24ef37119a92207ad04893aa58f70fdf4b61e36da172405c",
         "spans": [
           {
-            "start": 102,
-            "end": 115,
+            "start": 11,
+            "end": 17,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 39,
+            "end": 45,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 114,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 161,
+            "text": "Estado::preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 210,
+            "end": 227,
+            "text": "return \"Enviado\";",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 282,
+            "end": 289,
+            "text": "Enviado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 301,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 362,
+            "end": 368,
+            "text": "return",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 406,
+            "end": 428,
+            "text": "static_cast<Estado>(9)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 450,
+            "end": 463,
             "text": "No reconocido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 226,
-            "text": "Estado",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 413,
-            "end": 419,
+            "start": 635,
+            "end": 641,
             "text": "nombre",
             "role": "cpp",
             "reading": "technical"
@@ -2082,8 +2793,65 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "bccdc5a7ccddd3943d727351ee7e921a7a9f7040012b7d200a2641b99199f808",
-        "spans": []
+        "sourceSha256": "c8c688c7fade352283fca3f31408d2b4da255d80a4989dc50614265b8642e2ae",
+        "spans": [
+          {
+            "start": 0,
+            "end": 6,
+            "text": "estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 16,
+            "end": 33,
+            "text": "Estado::cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 44,
+            "text": "nombre",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 85,
+            "text": "Estado::preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 103,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 135,
+            "end": 152,
+            "text": "Estado::cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 195,
+            "text": "Cancelado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 206,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -2094,7 +2862,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "0cbc7a46a810d11c7ac80a8e14c9e2d761428e5f2f50bba7faa8d6c03e12b078",
+        "sourceSha256": "0b21071123a8b758cdfa22d95ce62c23b3c753a79b330698024b5e1b6cb2ed40",
         "spans": [
           {
             "start": 35,
@@ -2118,43 +2886,71 @@
             "reading": "technical"
           },
           {
-            "start": 299,
-            "end": 302,
+            "start": 310,
+            "end": 313,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 303,
-            "end": 321,
+            "start": 314,
+            "end": 332,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 389,
-            "end": 395,
-            "text": "normal",
+            "start": 366,
+            "end": 369,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 376,
+            "end": 386,
+            "text": "enum class",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 388,
+            "end": 394,
+            "text": "Estado",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 397,
-            "end": 411,
+            "end": 406,
+            "text": "Prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 454,
+            "end": 460,
+            "text": "normal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 476,
+            "end": 490,
             "text": "Estado::normal",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 414,
-            "end": 431,
+            "start": 530,
+            "end": 547,
             "text": "Prioridad::normal",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 503,
-            "end": 513,
+            "start": 671,
+            "end": 681,
             "text": "enum class",
             "role": "cpp",
             "reading": "technical"
@@ -2178,8 +2974,58 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "1c50288c729b14c5958a764cca370acdfc8b6899c805af1bf255a303294cc43d",
-        "spans": []
+        "sourceSha256": "ff97d3826e490f07c4c394baa6270b5d57cc29a72f547b15ba1bb59336690dc8",
+        "spans": [
+          {
+            "start": 4,
+            "end": 14,
+            "text": "enum class",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 38,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 71,
+            "text": "Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 106,
+            "end": 112,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 185,
+            "end": 189,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 199,
+            "text": "enum",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -2253,8 +3099,51 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "088e10645dc1ca2000d889cc99687418e884c2bff52b5f6f76807eb15c28ff40",
-        "spans": []
+        "sourceSha256": "9e90b1090bbd5fdf1cb2e862121e60f42c1a44d7ec98a94649fb5b30aa71e375",
+        "spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "Estado::normal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 43,
+            "end": 49,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 51,
+            "end": 68,
+            "text": "Prioridad::normal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 95,
+            "text": "Prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 126,
+            "text": "::",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 168,
+            "text": "normal",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2306,223 +3195,300 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "fa3c546ec71ad702fa7fa1d2e936b98f5046544dba4ab17a4f6f853c3c7bbe40",
+        "sourceSha256": "d18f7711194be62cfe7e21cbc2b23bc2408f611aa1cde3b8a5e38affe26e5871",
         "spans": [
           {
-            "start": 26,
-            "end": 46,
+            "start": 83,
+            "end": 103,
             "text": "enum class Prioridad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 72,
+            "start": 125,
+            "end": 131,
             "text": "normal",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 74,
-            "end": 81,
+            "start": 133,
+            "end": 140,
             "text": "urgente",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 84,
-            "end": 92,
+            "start": 143,
+            "end": 151,
             "text": "aplazada",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 101,
-            "end": 117,
+            "start": 172,
+            "end": 188,
             "text": "nombre_prioridad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 132,
-            "end": 138,
-            "text": "Normal",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 140,
-            "end": 147,
-            "text": "Urgente",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 150,
-            "end": 158,
-            "text": "Aplazada",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 182,
-            "end": 195,
-            "text": "No reconocida",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 242,
-            "end": 247,
-            "text": "nueve",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 253,
-            "end": 257,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 290,
-            "end": 297,
-            "text": "urgente",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 299,
-            "end": 305,
-            "text": "normal",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 307,
-            "end": 315,
-            "text": "aplazada",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 344,
-            "end": 349,
-            "text": "nueve",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 365,
-            "end": 372,
-            "text": "Urgente",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 374,
-            "end": 380,
-            "text": "Normal",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 382,
-            "end": 390,
-            "text": "Aplazada",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 393,
-            "end": 406,
-            "text": "No reconocida",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 488,
-            "end": 503,
-            "text": "struct Registro",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 508,
-            "end": 514,
-            "text": "codigo",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 523,
-            "end": 534,
-            "text": "std::string",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 537,
-            "end": 546,
-            "text": "prioridad",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 555,
-            "end": 564,
+            "start": 201,
+            "end": 210,
             "text": "Prioridad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 602,
-            "end": 603,
-            "text": "A",
+            "start": 231,
+            "end": 237,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 246,
+            "text": "Urgente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 249,
+            "end": 257,
+            "text": "Aplazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 331,
+            "end": 336,
+            "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 604,
-            "end": 610,
+            "start": 339,
+            "end": 348,
+            "text": "Prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 364,
+            "end": 377,
+            "text": "No reconocida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 387,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 469,
+            "text": "Prioridad::urgente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 471,
+            "end": 488,
+            "text": "Prioridad::normal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 490,
+            "end": 509,
+            "text": "Prioridad::aplazada",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 552,
+            "end": 557,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 652,
+            "end": 659,
+            "text": "Urgente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 660,
+            "end": 666,
+            "text": "Normal",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 667,
+            "end": 675,
+            "text": "Aplazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 676,
+            "end": 689,
+            "text": "No reconocida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 706,
+            "end": 721,
+            "text": "struct Registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 726,
+            "end": 729,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 740,
+            "end": 746,
+            "text": "codigo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 756,
+            "end": 767,
+            "text": "std::string",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 771,
+            "end": 780,
+            "text": "prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 790,
+            "end": 799,
+            "text": "Prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 862,
+            "end": 863,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 866,
+            "end": 875,
+            "text": "prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 876,
+            "end": 882,
             "text": "normal",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 612,
-            "end": 613,
+            "start": 891,
+            "end": 892,
             "text": "B",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 614,
-            "end": 621,
+            "start": 895,
+            "end": 904,
+            "text": "prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 905,
+            "end": 912,
             "text": "urgente",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 624,
-            "end": 625,
+            "start": 921,
+            "end": 922,
             "text": "C",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 626,
-            "end": 634,
+            "start": 925,
+            "end": 934,
+            "text": "prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 935,
+            "end": 943,
             "text": "aplazada",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 719,
-            "end": 749,
+            "start": 961,
+            "end": 967,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1022,
+            "end": 1028,
+            "text": "quinta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1050,
+            "end": 1059,
+            "text": "prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1085,
+            "end": 1101,
+            "text": "nombre_prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1125,
+            "end": 1155,
             "text": "A:Normal;B:Urgente;C:Aplazada;",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1213,
+            "end": 1219,
+            "text": "quinta",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2544,39 +3510,39 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "800d3e2d4809261499e785cda1fd0c71082ecd2f8969e947bcd13667460bd1b0",
+        "sourceSha256": "2ce46a1fe091ccdc7b1f0bc7381e43df64770e26715bb51f1970896551be0f9d",
         "spans": [
           {
-            "start": 16,
-            "end": 24,
-            "text": "Registro",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 51,
-            "end": 60,
+            "start": 57,
+            "end": 66,
             "text": "Prioridad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 73,
-            "end": 89,
+            "start": 79,
+            "end": 95,
             "text": "nombre_prioridad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 203,
-            "end": 208,
+            "start": 227,
+            "end": 232,
             "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 226,
-            "end": 239,
+            "start": 235,
+            "end": 244,
+            "text": "Prioridad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 283,
+            "end": 296,
             "text": "No reconocida",
             "role": "output",
             "reading": "natural"
@@ -2660,8 +3626,30 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "2af287cd3dd2c7d4c3ecea04ef67e37c3ffe347bd2ee72261a7e86b94e46665b",
-        "spans": []
+        "sourceSha256": "bab75df82860df26dffb922b0c1f65b5a2e400e938451926c4cab477aebf6bd1",
+        "spans": [
+          {
+            "start": 21,
+            "end": 27,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 161,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 173,
+            "text": "cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -2692,7 +3680,7 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "40a53edf2d8550b7024a04d9f4e5eabc08390f5b4c15aec759726bf26651f1fd",
+        "sourceSha256": "ded5d2057ad62f6a5a93bef43f9b716801e508c71e927e383567eff6fcc0a273",
         "spans": [
           {
             "start": 47,
@@ -2709,29 +3697,85 @@
             "reading": "technical"
           },
           {
-            "start": 174,
-            "end": 179,
+            "start": 219,
+            "end": 224,
             "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 200,
-            "end": 213,
+            "start": 303,
+            "end": 316,
             "text": "No reconocida",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 429,
+            "text": "nombre_prioridad",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0007_0006",
         "path": "/text",
-        "sourceSha256": "4ed216ae2437bcff99ccdb22fa16e90948e19a8be91994f4c2e6f082e7cb93fe",
+        "sourceSha256": "7217492e09480e16fa639708175ce7ce5b84b6ae0e8e878a2b5e43f0ed6d58a0",
         "spans": [
           {
-            "start": 38,
-            "end": 57,
+            "start": 28,
+            "end": 31,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 54,
+            "text": "R",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 59,
+            "end": 77,
+            "text": "Prioridad::urgente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 90,
+            "end": 91,
+            "text": "S",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 96,
+            "end": 113,
+            "text": "Prioridad::normal",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "R",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 183,
+            "end": 190,
+            "text": "Urgente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 302,
             "text": "R:Urgente;S:Normal;",
             "role": "output",
             "reading": "natural"
@@ -2754,7 +3798,8 @@
             "start": 25,
             "end": 35,
             "text": "enum class",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

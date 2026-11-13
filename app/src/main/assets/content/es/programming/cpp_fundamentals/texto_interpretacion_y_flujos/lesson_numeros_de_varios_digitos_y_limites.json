@@ -39,7 +39,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int valor = 2;\n    const char siguiente = '7';\n    if (siguiente >= '0' && siguiente <= '9') {\n        valor = valor * 10 + (siguiente - '0');\n    }\n    std::cout << valor;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int valor = 2;\n    const char siguiente = '7';\n\n    if (siguiente >= '0' && siguiente <= '9') {\n        valor = valor * 10 + (siguiente - '0');\n    }\n\n    std::cout << valor;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -65,7 +65,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para saber dónde termina una secuencia, el lector intenta obtener otro carácter con `get`. Si obtiene un signo, ese carácter ya salió del flujo, aunque no pertenezca al número. `putback(actual)` permite devolver el carácter recién obtenido para que otra lectura vuelva a encontrarlo. La devolución de un carácter al flujo también permite coordinar reconocimiento numérico y lectura de tokens (Stroustrup, 2024, pp. 145–146).\n\nEn este programa, `putback` sólo se llama después de un `get` que obtuvo un carácter y con ese mismo carácter. Después se comprueba el estado del flujo: si la devolución falla, se lanza una excepción con el diagnóstico correspondiente en lugar de afirmar que la frontera se conservó (Köppe et al., 2023).",
+          "text": "Para saber dónde termina una secuencia, el lector intenta obtener otro carácter con `get`. Si obtiene un signo, ese carácter ya salió del flujo, aunque no pertenezca al número. `putback(actual)` permite devolver el carácter recién obtenido para que otra lectura vuelva a encontrarlo. La devolución de un carácter al flujo también permite coordinar reconocimiento numérico y lectura de tokens (Stroustrup, 2024).\n\nEn este programa, `putback` sólo se llama después de un `get` que obtuvo un carácter y con ese mismo carácter. Después se comprueba el estado del flujo: si la devolución falla, se lanza una excepción con el diagnóstico correspondiente en lugar de afirmar que la frontera se conservó (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "devolver el carácter recién obtenido",
@@ -79,7 +79,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Hay dos reservas en niveles diferentes:\n• `entrada.putback(actual)` devuelve un carácter al flujo de biblioteca. En `\"27+4;\"`, conserva el `+` que terminó el número.\n• `lector.devolver(token)` conserva un `Token` completo en el búfer de la clase. Ese token puede representar varios caracteres, como las dos cifras de 27.\n\nDevolver un token numérico permite obtener otra vez su categoría y valor; no vuelve a colocar sus dígitos en el texto. Esta separación mantiene la reserva de una unidad enseñada antes (Stroustrup, 2024, pp. 143–146).",
+          "text": "Hay dos reservas en niveles diferentes:\n\n`entrada.putback(actual)` devuelve un carácter al flujo de biblioteca. En `\"27+4;\"`, conserva el `+` que terminó el número.\n\n`lector.devolver(token)` conserva un `Token` completo en el búfer de la clase. Ese token puede representar varios caracteres, como las dos cifras de 27.\n\nDevolver un token numérico permite obtener otra vez su categoría y valor; no vuelve a colocar sus dígitos en el texto. Esta separación mantiene la reserva de una unidad enseñada antes (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "dos reservas en niveles diferentes",
@@ -94,7 +94,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"27+4;\"};\n    try {\n        const Token numero = leer_token(entrada);\n        const Token signo = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        std::cout << signo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n\n                    return Token{'n', valor};\n                }\n            }\n\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n\n            return Token{'n', valor};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"27+4;\"};\n\n    try {\n        const Token numero = leer_token(entrada);\n        const Token signo = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        std::cout << signo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -118,7 +118,7 @@
           "type": "output_prediction",
           "question": "Predice lo que entrega el lector cuando el texto acaba justo después del número.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"99\"};\n    try {\n        const Token numero = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        const Token fin = leer_token(entrada);\n        std::cout << fin.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n\n                    return Token{'n', valor};\n                }\n            }\n\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n\n            return Token{'n', valor};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"99\"};\n\n    try {\n        const Token numero = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        const Token fin = leer_token(entrada);\n        std::cout << fin.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n",
           "answers": [
             "n:99\nf"
           ],
@@ -167,7 +167,7 @@
           "type": "output_prediction",
           "question": "Predice el inspector para estas unidades, sin calcular la expresión.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" -12+07;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n\n                    return Token{'n', valor};\n                }\n            }\n\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n\n            return Token{'n', valor};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" -12+07;\"};\n\n    try {\n        bool continuar = true;\n\n        while (continuar) {\n            const Token token = leer_token(entrada);\n\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Signo: -\nNumero: 12\nSigno: +\nNumero: 7\nSigno: ;\nFin"
           ],
@@ -176,7 +176,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El repertorio sigue limitado: hay enteros de 0 a 99 y los signos `+`, `-`, `*`, `/`, `(`, `)` y `;`. No se han añadido puntos decimales, exponentes ni nombres. En `\"2.5\"`, el lector puede entregar primero el número 2; la llamada siguiente encuentra el punto y lanza una excepción con el diagnóstico `Caracter no admitido`.\n\nEn `\"12 3\"`, devuelve un token numérico de valor 12. La lectura siguiente omite el espacio y devuelve otro de valor 3; no entrega un token de espacio. Reconocer ambos números no decide si se pueden escribir juntos en una expresión. Esa decisión corresponderá a las reglas de combinación.",
+          "text": "El repertorio sigue limitado: hay enteros de 0 a 99 y los signos `+`, `-`, `*`, `/`, `(`, `)` y `;`. El punto y las letras no pertenecen a este repertorio. En `\"2.5\"`, el lector puede entregar primero el número 2; la llamada siguiente encuentra el punto y lanza una excepción con el diagnóstico `Caracter no admitido`.\n\nEn `\"12 3\"`, devuelve un token numérico de valor 12. La lectura siguiente omite el espacio y devuelve otro de valor 3; no entrega un token de espacio. Reconocer ambos números no decide si se pueden escribir juntos en una expresión. Esa decisión corresponderá a las reglas de combinación.",
           "emphasis": [
             {
               "text": "no entrega un token de espacio",
@@ -214,7 +214,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El editor contiene el lector de dígitos aislados y un cliente inicial para `\"34+5;\"`. Amplía `leer_token` para reunir cifras y admitir valores de 0 a 99. Actualiza también `token_valido`, de modo que un número reconocido pueda reservarse y recuperarse.\n\nConserva `Token`, las funciones públicas `leer`, `devolver` y `tiene_pendiente`, la capacidad de un token y las reglas de rechazo de la reserva. Mantén el repertorio de signos. Integra las comprobaciones siguientes en un único programa:\n\n1. Define `trazar(texto)`. Crea un lector nuevo, lee el primer número, resérvalo y vuelve a leerlo. Lee después el signo y el número siguiente. Presenta cuatro líneas, con las etiquetas `Numero: `, `Repetido: `, `Signo: ` y `Siguiente: `, respectivamente.\n2. En `main`, llama a esa función con `\"34+5;\"`, `\"99+0;\"`, `\"007+2;\"` y `\"100+1;\"`, en ese orden. Cada llamada captura su propio error. La cuarta muestra únicamente `Error: Numero fuera de dominio`, sin una traza numérica parcial.\n3. Crea otro lector para `\"99\"`. Dos lecturas deben producir las líneas `Numero final: 99` y `Fin: f`, con sus etiquetas.\n4. Crea otro lector para `\"1 2\"`. Sus dos lecturas numéricas se presentan juntas en la línea `Separados: 1:2`.\n5. Por último, llama a `trazar(\"0007+2;\")`. Esta séptima situación usa cuatro cifras para escribir el valor 7; debe producir la misma traza de valores que `\"007+2;\"`.\n\nTodas las líneas terminan con un salto de línea. No añadas títulos ni líneas vacías entre las pruebas. Pulsa Compilar, ejecutar y comprobar para contrastar la batería completa. Si falla, revisa esa misma implementación y vuelve a intentarlo.",
+          "text": "El editor contiene el lector de dígitos aislados y un cliente inicial para `\"34+5;\"`. Amplía `leer_token` para reunir cifras y admitir valores de 0 a 99. Actualiza también `token_valido`, de modo que un número reconocido pueda reservarse y recuperarse.\n\nConserva `Token`, las funciones públicas `leer`, `devolver` y `tiene_pendiente`, la capacidad de un token y las reglas de rechazo de la reserva. Mantén el repertorio de signos. Integra las comprobaciones siguientes en un único programa.\n\nDefine `trazar(texto)`. Cada llamada crea un lector nuevo, lee el primer número, reserva ese token y vuelve a leerlo. Después lee el signo y el número siguiente. Presenta cuatro líneas con estas etiquetas, en orden:\n\nNumero: seguido del valor del primer número.\nRepetido: seguido del valor recuperado de la reserva.\nSigno: seguido del carácter del signo.\nSiguiente: seguido del valor del número siguiente.\n\nDeja un espacio después de cada etiqueta. Cada llamada captura su propio error. Si el primer número supera el dominio, presenta únicamente Error: Numero fuera de dominio, sin una traza numérica parcial.\n\nEn `main`, llama a `trazar` con estos cuatro textos, en el orden indicado. Debajo de cada literal aparece su salida:\n\nTexto `\"34+5;\"`\nNumero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\n\nTexto `\"99+0;\"`\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\n\nTexto `\"007+2;\"`\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\n\nTexto `\"100+1;\"`\nError: Numero fuera de dominio\n\nDespués crea otro lector para `\"99\"`. Sus dos lecturas deben producir estas líneas:\n\nNumero final: 99\nFin: f\n\nCrea otro lector para `\"1 2\"`. Presenta juntas sus dos lecturas numéricas:\n\nSeparados: 1:2\n\nPor último, llama a `trazar(\"0007+2;\")`. Esta séptima situación usa cuatro cifras para escribir el valor 7; debe producir la misma traza de valores que `\"007+2;\"`:\n\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\n\nTodas las líneas terminan con un salto de línea. No añadas títulos ni líneas vacías entre las pruebas. Pulsa Compilar, ejecutar y comprobar para contrastar la batería completa. Si falla, revisa esa misma implementación y vuelve a intentarlo.",
           "emphasis": [
             {
               "text": "un único programa",
@@ -253,7 +253,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"34+5;\"};\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"34+5;\"};\n\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -304,7 +304,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"42+6;\"};\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n\n                    return Token{'n', valor};\n                }\n            }\n\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n\n            return Token{'n', valor};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"42+6;\"};\n\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -332,7 +332,7 @@
           "type": "output_prediction",
           "question": "Predice el inspector con un número que excede el dominio después de una operación anterior.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8;100;2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n\n                    return Token{'n', valor};\n                }\n            }\n\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n\n            return Token{'n', valor};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8;100;2;\"};\n\n    try {\n        bool continuar = true;\n\n        while (continuar) {\n            const Token token = leer_token(entrada);\n\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Numero: 8\nSigno: ;\nError: Numero fuera de dominio"
           ],
@@ -359,7 +359,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia tus definiciones de Token, leer_token, token_valido, Lector_tokens y trazar antes de examinar_reserva en este editor. Conserva la interfaz y el cliente proporcionado. El programa vuelve a ejecutar toda la batería anterior y añade cuatro pruebas de reserva, para los valores 0, 99, -1 y 100.\n\nCada prueba crea un lector nuevo con el texto 8; y la reserva vacía. El cliente intenta devolver un token numérico con el valor indicado. La categoría numérica admite exactamente 0..99, incluidos ambos extremos. Un rechazo debe dejar vacía la reserva y conservar el recorrido del texto. Después se consulta el estado, se lee una unidad y se consulta otra vez.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva los informes originales y las cuatro trazas nuevas, con los rótulos y saltos del cliente. Si falla un caso, corrige la misma implementación y vuelve a ejecutar el cliente completo. Los dos puntos de Leido: n:0 separan el rótulo, la categoría y el valor; no indican una operación aritmética."
+          "text": "Copia tus definiciones de Token, leer_token, token_valido, Lector_tokens y trazar antes de examinar_reserva en este editor. Conserva la interfaz y el cliente proporcionado. El programa vuelve a ejecutar toda la batería anterior y añade cuatro pruebas de reserva, con estos valores, en orden:\n\n0\n99\n-1\n100\n\nCada prueba crea un lector nuevo con el texto 8; y la reserva vacía. El cliente intenta devolver un token numérico con el valor indicado. La categoría numérica admite exactamente 0..99, incluidos ambos extremos. Un rechazo debe dejar vacía la reserva y conservar el recorrido del texto. Después se realizan estas observaciones, en orden:\n\nSe consulta si hay un token pendiente.\nSe lee una unidad.\nSe consulta otra vez si hay un token pendiente.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva los informes originales y las cuatro trazas nuevas, con los rótulos y saltos del cliente. Si falla un caso, corrige la misma implementación y vuelve a ejecutar el cliente completo. Los dos puntos de Leido: n:0 separan el rótulo, la categoría y el valor; no indican una operación aritmética."
         },
         {
           "type": "paragraph",
@@ -367,7 +367,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\n// Copia aqui tus definiciones y funciones, sin repetir main.\n\nvoid examinar_reserva(int valor) {\n    Lector_tokens lector{\"8;\"};\n    try {\n        lector.devolver(Token{'n', valor});\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Leido: \" << siguiente.clase << ':' << siguiente.valor << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n}\n\nint main() {\n    trazar(\"34+5;\");\n    trazar(\"99+0;\");\n    trazar(\"007+2;\");\n    trazar(\"100+1;\");\n    Lector_tokens final{\"99\"};\n    std::cout << \"Numero final: \" << final.leer().valor << \"\\n\";\n    std::cout << \"Fin: \" << final.leer().clase << \"\\n\";\n    Lector_tokens separados{\"1 2\"};\n    const Token primero = separados.leer();\n    const Token segundo = separados.leer();\n    std::cout << \"Separados: \" << primero.valor << \":\" << segundo.valor << \"\\n\";\n    trazar(\"0007+2;\");\n    examinar_reserva(0);\n    examinar_reserva(99);\n    examinar_reserva(-1);\n    examinar_reserva(100);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\n// Copia aqui tus definiciones y funciones, sin repetir main.\n\nvoid examinar_reserva(int valor) {\n    Lector_tokens lector{\"8;\"};\n\n    try {\n        lector.devolver(Token{'n', valor});\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Leido: \" << siguiente.clase << ':' << siguiente.valor << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n}\n\nint main() {\n    trazar(\"34+5;\");\n    trazar(\"99+0;\");\n    trazar(\"007+2;\");\n    trazar(\"100+1;\");\n\n    Lector_tokens final{\"99\"};\n    std::cout << \"Numero final: \" << final.leer().valor << \"\\n\";\n    std::cout << \"Fin: \" << final.leer().clase << \"\\n\";\n\n    Lector_tokens separados{\"1 2\"};\n    const Token primero = separados.leer();\n    const Token segundo = separados.leer();\n    std::cout << \"Separados: \" << primero.valor << \":\" << segundo.valor << \"\\n\";\n\n    trazar(\"0007+2;\");\n\n    examinar_reserva(0);\n    examinar_reserva(99);\n    examinar_reserva(-1);\n    examinar_reserva(100);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -412,12 +412,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Las pruebas originales reservaban números de valor 34, 99 y 7, pero no reservaban 0 ni intentaban devolver valores numéricos exteriores al dominio ampliado. El caso 100+1; se rechazaba durante el reconocimiento, antes de llamar a devolver. Por eso no distinguía una validación de reserva que olvidara uno de sus límites.\n\nEn las pruebas nuevas, 0 y 99 se guardan y ocupan la reserva; la primera lectura entrega respectivamente n:0 y n:99, aunque el texto aún comience por 8. Para -1 y 100, la validación debe lanzar la excepción antes de cambiar los miembros: la reserva sigue vacía y la lectura entrega n:8. Las consultas posteriores muestran también que leer una reserva la vacía.\n\nLa función siguiente mantiene el dominio de la categoría numérica y las reglas anteriores para signos y final. Se conserva el orden de devolver: comprobar ocupación, validar el token y sólo entonces guardar la copia y marcar la reserva llena."
+          "text": "Las pruebas originales reservaban números de valor 34, 99 y 7, pero no reservaban 0 ni intentaban devolver valores numéricos exteriores al dominio ampliado. El caso 100+1; se rechazaba durante el reconocimiento, antes de llamar a devolver. Por eso no distinguía una validación de reserva que olvidara uno de sus límites.\n\nLas nuevas pruebas contrastan los dos resultados posibles:\n\nCon 0 y 99, los tokens se guardan y ocupan la reserva. La primera lectura entrega respectivamente n:0 y n:99, aunque el texto aún comience por 8.\n\nPara -1 y 100, la validación debe lanzar la excepción antes de cambiar los miembros. La reserva sigue vacía y la lectura entrega n:8.\n\nLas consultas posteriores muestran también que leer una reserva la vacía.\n\nLa función siguiente mantiene el dominio de la categoría numérica y las reglas anteriores para signos y final. Se conserva el orden de devolver:\n\nComprobar ocupación.\nValidar el token.\nSólo entonces guardar la copia y marcar la reserva llena."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "bool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n"
+          "code": "bool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n"
         },
         {
           "type": "heading",
@@ -425,7 +425,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El lector puede reunir un número y conservar la unidad que otra función necesitará después. El siguiente paso consiste en decidir cómo se combinan esas unidades: una sucesión de tokens reconocidos todavía puede no formar una expresión válida (Stroustrup, 2024, pp. 127–128).\n\nLa progresión comienza con sumas y restas, incorpora después la prioridad de multiplicación y división y recupera, por último, signos unarios y paréntesis. Cada ampliación conservará ejemplos ya resueltos y añadirá casos que permitan comprobar las reglas nuevas.",
+          "text": "El lector puede reunir un número y conservar la unidad que otra función necesitará después. El siguiente paso consiste en decidir cómo se combinan esas unidades: una sucesión de tokens reconocidos todavía puede no formar una expresión válida (Stroustrup, 2024).\n\nLa progresión comienza con sumas y restas, incorpora después la prioridad de multiplicación y división y recupera, por último, signos unarios y paréntesis. Cada ampliación conservará ejemplos ya resueltos y añadirá casos que permitan comprobar las reglas nuevas.",
           "emphasis": [
             {
               "text": "todavía puede no formar una expresión válida",
@@ -1555,6 +1555,86 @@
         "id": "block_0006_0001",
         "beforeSha256": "5bdfaf1768f5f0db114a8be37a6c19f722a285e0d4956db42a60d2bd0d4af523",
         "afterSha256": "e924460677ea8241c3d1b194c24f72ace4a9a951c988e791dcc809699b9d1d77"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "84efcf688c5f97bedf5f324e84badaff00f3cb66e3a806c551d39342b286e6a3",
+        "afterSha256": "cd2fcdf236c3ee1d7f36a31dc8ccbcf55a443d4c036787b2ad5f92eac43fd339"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "ceddcfb69232dc8bf5e43b6e489bfc94633deefe9b5710af389eced24e8abc98",
+        "afterSha256": "c3b254a0dcff3ba4f4abfc0f32b7775a71990428d0c9ac750e675288a5652209"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "6f2df5e3d6376e08f3c38b722137d840d6a89d804941e319b857903afe84d47b",
+        "afterSha256": "42ffd0f71abdda9f90d824936cbbb6d98955207bfa5e7ca8ca52f63a0a3bb6fc"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "7733b013ccda0a95810af5fc51066dcc283f8c6936507fd4f986f988f454a8b4",
+        "afterSha256": "c4e294bab99179a9b5cb768ecc6cc4f6cc9c4d10d8b32f2b5a05ef0617a75764"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "6c20af2cd1586811417ad830925c42380caf2505eeb3e6f1403df2a0d577de80",
+        "afterSha256": "938d6179495f3668b930d146414b57ae5f2c46e40b009dd618659bd432d35d2f"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "65aba32c046aa66de3f3b0634570eb887c37d0838ae8e0ae055fc47bed84fbb3",
+        "afterSha256": "d2afcab5e92e214034ef6677d137d2a4f8822895731f72ca64cf8efd5a9d0d5d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "2d5006034660ae2f1817cf833dc33c6d0c9ae6b5dc42bd39705de5c68fdde1b6",
+        "afterSha256": "6eb2737a032346979f5a1b213b18b57328ddb19fc4ec97dcf04120718ff4ea45"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "27698af9c281a19311b4c1c070cc49a86bf68223d85175aeff0bae4aaffc3d7a",
+        "afterSha256": "3c9bb505045b5ad5d02d6a85960ae252ae42a8be48156e5075536f6b1e00e4bb"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "b51af5faca534b9c2b74b2b5af003109bf4551be5806de6f1cdf4291336ea030",
+        "afterSha256": "050b9de389d1d47973cb54819de52b04c6901f97e21fd68dbe36e553f8499946"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "e924460677ea8241c3d1b194c24f72ace4a9a951c988e791dcc809699b9d1d77",
+        "afterSha256": "a7d5b2fccaa26f40f88a91200600150e4bce38b3a5947a4802e9b43b6fbcd905"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_consigna",
+        "beforeSha256": "36d91191e5266738e355a7ee539ae85a42c0c69af5fe2cb14f6b21d5bab94a2d",
+        "afterSha256": "98f80f51f565fdd4974e077dcab82e094ae32839c0cb324af70dd75d156fc4da"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "beforeSha256": "aabb86a5fbb12d3ee48755bac17a1dc83b5f4a0bf27a64255da2a50f30b22329",
+        "afterSha256": "90e24166423aa33be71e8744b5db8953c086aee02c93c4d2a9b3e5f3fb85c0a1"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_referencia_razonamiento",
+        "beforeSha256": "856f107c432ab0d87284139ce1d5da3889a50c30f68704a93fe45b55e003640f",
+        "afterSha256": "e0dc00f196903665ac1714330d9694d72ff61f00407dc3981a8c86e50fc6bc63"
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_referencia_codigo",
+        "beforeSha256": "549c4e692691d1e2833a3aa1c32d86961d5a83c85dc925df219cbc88f88a2f1c",
+        "afterSha256": "435841affd33daacacb6e0465d0f61e3161a634eb53cb0f7e1dbc13ae6a94a0e"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "6f93ec5d8a07715352582691ee4bc89c99b33023c4d7a1ab7682f18f0f676593",
+        "afterSha256": "08e24093f13b4992ae70b0d4679361bca12d4a15b2cb64a514860266bd7804bd"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "5afb49f535b678a680035bec2cc77e5dc6ee314d324a02fe44413bf36d41c34d",
+        "afterSha256": "ed0badb4d01cb83485548114aadc48990a2594fdb8c4a4672f46bafa9fd9ff49"
       }
     ],
     "compilerRevisions": [
@@ -1585,11 +1665,303 @@
           }
         ]
       }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int valor = 2;\n    const char siguiente = '7';\n    if (siguiente >= '0' && siguiente <= '9') {\n        valor = valor * 10 + (siguiente - '0');\n    }\n    std::cout << valor;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"27+4;\"};\n    try {\n        const Token numero = leer_token(entrada);\n        const Token signo = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        std::cout << signo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice lo que entrega el lector cuando el texto acaba justo después del número.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"99\"};\n    try {\n        const Token numero = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        const Token fin = leer_token(entrada);\n        std::cout << fin.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "n:99\nf"
+          ],
+          "explanation": "La primera lectura obtiene el primer 9 y lo usa como acumulado. Al incorporar el segundo, calcula 9 * 10 + 9 = 99, que todavía pertenece al dominio. El siguiente get llega al final sin obtener otro carácter. Esa frontera termina el número: la función entrega su categoría y valor, y se imprime n:99.\n\nNo se llama a putback porque ese último intento no obtuvo un carácter. La segunda llamada a leer_token encuentra el final y entrega la categoría f, que el cliente presenta en la última línea, sin salto posterior. El fin del origen no invalida el número que ya se reconoció.",
+          "reviewFeedback": "Sigue el último intento de get después de las cifras. Distingue el número ya reconocido de la lectura posterior que busca otra unidad."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice el inspector para estas unidades, sin calcular la expresión.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" -12+07;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Signo: -\nNumero: 12\nSigno: +\nNumero: 7\nSigno: ;\nFin"
+          ],
+          "explanation": "El lector omite el espacio inicial y entrega - como signo. La llamada siguiente reúne las cifras de 12 en un número y devuelve al flujo el + que encuentra después. Por eso las primeras líneas son Signo: - y Numero: 12, seguidas de Signo: +.\n\nDespués, 07 se acumula como 0 * 10 + 7 = 7 y produce Numero: 7. Quedan el terminador y el final: Signo: ; y Fin. Este inspector reconoce unidades; todavía no aplica el signo menos al número ni calcula una suma.",
+          "reviewFeedback": "Recorre las llamadas en orden y separa la clasificación de los signos del valor formado por cifras. Respeta cada salto de línea del cliente."
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"34+5;\"};\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"42+6;\"};\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice el inspector con un número que excede el dominio después de una operación anterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8;100;2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Numero: 8\nSigno: ;\nError: Numero fuera de dominio"
+          ],
+          "explanation": "El inspector reconoce 8 y después ;, por lo que ya ha presentado Numero: 8 y Signo: ;. Al leer 100, el acumulado pasa por 1, 10 y el candidato 100. Ese último valor supera 99 y provoca la excepción antes de entregar otro token numérico.\n\nEl catch está fuera del bucle: presenta Error: Numero fuera de dominio y termina la prueba. Las dos líneas anteriores permanecen, pero el lector no vuelve a procesar el texto pendiente ;2;. Lanzar la excepción no realiza por sí solo una recuperación.",
+          "reviewFeedback": "Localiza dónde se lanza la excepción y qué parte del programa la captura. Conserva las líneas que ya se imprimieron antes de ese punto."
+        }
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\n// Copia aqui tus definiciones y funciones, sin repetir main.\n\nvoid examinar_reserva(int valor) {\n    Lector_tokens lector{\"8;\"};\n    try {\n        lector.devolver(Token{'n', valor});\n        std::cout << \"Reserva: aceptada\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Reserva: \" << error.what() << \"\\n\";\n    }\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Leido: \" << siguiente.clase << ':' << siguiente.valor << \"\\n\";\n    std::cout << \"Pendiente: \" << lector.tiene_pendiente() << \"\\n\";\n}\n\nint main() {\n    trazar(\"34+5;\");\n    trazar(\"99+0;\");\n    trazar(\"007+2;\");\n    trazar(\"100+1;\");\n    Lector_tokens final{\"99\"};\n    std::cout << \"Numero final: \" << final.leer().valor << \"\\n\";\n    std::cout << \"Fin: \" << final.leer().clase << \"\\n\";\n    Lector_tokens separados{\"1 2\"};\n    const Token primero = separados.leer();\n    const Token segundo = separados.leer();\n    std::cout << \"Separados: \" << primero.valor << \":\" << segundo.valor << \"\\n\";\n    trazar(\"0007+2;\");\n    examinar_reserva(0);\n    examinar_reserva(99);\n    examinar_reserva(-1);\n    examinar_reserva(100);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Reservar 0 y 99 tiene éxito: la consulta muestra Pendiente: 1 y la lectura entrega el token reservado antes del texto. Reservar -1 o 100 debe producir Reserva: Token invalido, mantener Pendiente: 0 y permitir leer el 8 original. Después de cada lectura la reserva queda vacía.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\n"
+                    ],
+                    "text": "La reserva rechaza 0, aunque pertenece al dominio 0..99. Revisa si has usado un límite inferior estricto que sólo permite valores positivos. Reconocer un cero en el texto y admitirlo en la reserva deben obedecer al mismo dominio."
+                  },
+                  {
+                    "outputs": [
+                      "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:-1\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\n"
+                    ],
+                    "text": "La traza acepta el token de valor -1 y lo entrega desde la reserva. Ese valor puede representarse en int, pero no pertenece al dominio numérico 0..99. Comprueba ambos límites antes de modificar el token guardado y el indicador de ocupación."
+                  },
+                  {
+                    "outputs": [
+                      "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:100\nPendiente: 0\n"
+                    ],
+                    "text": "La traza acepta el token de valor 100 y lo entrega desde la reserva. El rechazo de 100 por el lector de caracteres no protege una devolución directa. token_valido también debe comprobar el máximo 99 antes de ocupar la reserva."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u11_reserva_numerica_en_ambos_limites_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "bool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n"
+        }
+      }
     ]
   },
   "textSemantics": {
     "version": 1,
     "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "4bd9674267dae187b9b8c3e30d24f714205e1acb03ce81a6c16feba0c0ca52fd",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "a9bfbef4fa020d80528af73207e0d2755413f280bdb907b44834251caea06d72",
+        "spans": [
+          {
+            "start": 165,
+            "end": 166,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 171,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 200,
+            "text": "\"27\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 224,
+            "text": "27",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 280,
+            "text": "\"1 2\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 294,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 351,
+            "text": "\"27+4;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 381,
+            "end": 382,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 389,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 404,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "91cd22880c0940e840cf3b609ce253faea9423b4e6be0f3a8ae5dab7a4472389",
+        "spans": [
+          {
+            "start": 74,
+            "end": 76,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 144,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 153,
+            "text": "\"27\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 171,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 186,
+            "text": "2 * 10 + 7",
+            "role": "math"
+          },
+          {
+            "start": 198,
+            "end": 200,
+            "text": "27",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 276,
+            "end": 285,
+            "text": "siguiente",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 314,
+            "end": 317,
+            "text": "'0'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 325,
+            "text": "'9'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 343,
+            "end": 358,
+            "text": "siguiente - '0'",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
       {
         "block": "block_0000_0004",
         "path": "/text",
@@ -1661,9 +2033,15 @@
         ]
       },
       {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "7d2940883b03f93dd55043e40c2e1f061b0ee96ace9da953bf87f77445267e10",
+        "spans": []
+      },
+      {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "186aa8dc62b59ec1c213bd0207ee7104088c21422e6fca84de37e2f750e68746",
+        "sourceSha256": "8343f7e6e94889eb94224e7c43978aceaf6a5756ca6f854ac9e10009494cab11",
         "spans": [
           {
             "start": 85,
@@ -1681,287 +2059,99 @@
           },
           {
             "start": 392,
-            "end": 423,
-            "text": "(Stroustrup, 2024, pp. 145–146)",
+            "end": 410,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 445,
-            "end": 452,
+            "start": 432,
+            "end": 439,
             "text": "putback",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 483,
-            "end": 486,
+            "start": 470,
+            "end": 473,
             "text": "get",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 709,
-            "end": 729,
+            "start": 696,
+            "end": 716,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           }
         ]
-      },
-      {
-        "block": "block_0002_0002",
-        "path": "/text",
-        "sourceSha256": "0a979a0b58cb802cf1c10b0072d260fbb2ff78c2f933cad1890c1c5d161b13ec",
-        "spans": [
-          {
-            "start": 95,
-            "end": 98,
-            "text": "get",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 154,
-            "end": 161,
-            "text": "putback",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 335,
-            "end": 340,
-            "text": "bad()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 391,
-            "end": 406,
-            "text": "Fallo del flujo",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 478,
-            "end": 481,
-            "text": "'f'",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 659,
-            "end": 665,
-            "text": "good()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 674,
-            "end": 694,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0000",
-        "path": "/text",
-        "sourceSha256": "4bd9674267dae187b9b8c3e30d24f714205e1acb03ce81a6c16feba0c0ca52fd",
-        "spans": []
-      },
-      {
-        "block": "block_0000_0001",
-        "path": "/text",
-        "sourceSha256": "a9bfbef4fa020d80528af73207e0d2755413f280bdb907b44834251caea06d72",
-        "spans": [
-          {
-            "start": 165,
-            "end": 166,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 169,
-            "end": 171,
-            "text": "99",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 196,
-            "end": 200,
-            "text": "\"27\"",
-            "role": "string"
-          },
-          {
-            "start": 222,
-            "end": 224,
-            "text": "27",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 275,
-            "end": 280,
-            "text": "\"1 2\"",
-            "role": "string"
-          },
-          {
-            "start": 344,
-            "end": 351,
-            "text": "\"27+4;\"",
-            "role": "string"
-          },
-          {
-            "start": 381,
-            "end": 382,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 388,
-            "end": 389,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 403,
-            "end": 404,
-            "text": "+",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0002",
-        "path": "/text",
-        "sourceSha256": "91cd22880c0940e840cf3b609ce253faea9423b4e6be0f3a8ae5dab7a4472389",
-        "spans": [
-          {
-            "start": 74,
-            "end": 76,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 143,
-            "end": 144,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 149,
-            "end": 153,
-            "text": "\"27\"",
-            "role": "string"
-          },
-          {
-            "start": 170,
-            "end": 171,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 176,
-            "end": 186,
-            "text": "2 * 10 + 7",
-            "role": "cpp"
-          },
-          {
-            "start": 198,
-            "end": 200,
-            "text": "27",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 276,
-            "end": 285,
-            "text": "siguiente",
-            "role": "cpp"
-          },
-          {
-            "start": 314,
-            "end": 317,
-            "text": "'0'",
-            "role": "string"
-          },
-          {
-            "start": 322,
-            "end": 325,
-            "text": "'9'",
-            "role": "string"
-          },
-          {
-            "start": 343,
-            "end": 358,
-            "text": "siguiente - '0'",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0001_0000",
-        "path": "/text",
-        "sourceSha256": "7d2940883b03f93dd55043e40c2e1f061b0ee96ace9da953bf87f77445267e10",
-        "spans": []
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "78fa07200a2812f2020bd787fb5f344d8b392c287530641375d71edefe354a0b",
+        "sourceSha256": "6e779b7fb508db3d75d05702142b79785217cb76f78cd750f17365fd08528164",
         "spans": [
           {
-            "start": 43,
-            "end": 66,
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
+            "end": 65,
             "text": "entrada.putback(actual)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 117,
-            "end": 124,
+            "start": 116,
+            "end": 123,
             "text": "\"27+4;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 140,
-            "end": 141,
+            "start": 139,
+            "end": 140,
             "text": "+",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 169,
-            "end": 191,
+            "start": 167,
+            "end": 189,
             "text": "lector.devolver(token)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 211,
+            "start": 204,
+            "end": 209,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 317,
-            "end": 319,
+            "start": 301,
+            "end": 304,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 317,
             "text": "27",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 506,
-            "end": 537,
-            "text": "(Stroustrup, 2024, pp. 143–146)",
+            "start": 504,
+            "end": 522,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1973,17 +2163,31 @@
         "sourceSha256": "78861f40434e22ef9ad1fc830788593ca118df3b8888714b3705f89b4c42487e",
         "spans": [
           {
-            "start": 32,
-            "end": 38,
-            "text": "n:27\n+",
+            "start": 20,
+            "end": 23,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 32,
+            "end": 36,
+            "text": "n:27",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
           },
           {
             "start": 74,
             "end": 76,
             "text": "27",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1997,34 +2201,35 @@
             "start": 261,
             "end": 266,
             "text": "\"007\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 279,
             "end": 280,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 322,
             "end": 323,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 325,
             "end": 326,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 329,
             "end": 330,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2058,7 +2263,7 @@
             "end": 113,
             "text": "9 * 10 + 9 = 99",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 162,
@@ -2106,7 +2311,64 @@
             "start": 27,
             "end": 30,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0002_0002",
+        "path": "/text",
+        "sourceSha256": "0a979a0b58cb802cf1c10b0072d260fbb2ff78c2f933cad1890c1c5d161b13ec",
+        "spans": [
+          {
+            "start": 95,
+            "end": 98,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 161,
+            "text": "putback",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 335,
+            "end": 340,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 391,
+            "end": 406,
+            "text": "Fallo del flujo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 481,
+            "text": "'f'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 659,
+            "end": 665,
+            "text": "good()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 674,
+            "end": 694,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -2148,14 +2410,14 @@
             "end": 82,
             "text": "1 * 10 + 0 = 10",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 111,
             "end": 128,
             "text": "10 * 10 + 0 = 100",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 152,
@@ -2168,6 +2430,13 @@
             "start": 179,
             "end": 181,
             "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 233,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
@@ -2196,7 +2465,7 @@
             "start": 24,
             "end": 27,
             "text": "100",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2210,7 +2479,8 @@
             "start": 47,
             "end": 50,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2223,14 +2493,21 @@
             "start": 12,
             "end": 14,
             "text": "10",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 17,
             "end": 18,
             "text": "0",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 27,
+            "text": "dos",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2250,7 +2527,8 @@
             "start": 81,
             "end": 84,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2300,10 +2578,17 @@
           },
           {
             "start": 196,
-            "end": 204,
-            "text": "Signo: -",
+            "end": 203,
+            "text": "Signo: ",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 204,
+            "text": "-",
+            "role": "output",
+            "reading": "characters"
           },
           {
             "start": 207,
@@ -2314,10 +2599,17 @@
           },
           {
             "start": 231,
-            "end": 239,
-            "text": "Signo: +",
+            "end": 238,
+            "text": "Signo: ",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 238,
+            "end": 239,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
           },
           {
             "start": 251,
@@ -2331,7 +2623,7 @@
             "end": 284,
             "text": "0 * 10 + 7 = 7",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 295,
@@ -2342,10 +2634,17 @@
           },
           {
             "start": 339,
-            "end": 347,
-            "text": "Signo: ;",
+            "end": 346,
+            "text": "Signo: ",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 346,
+            "end": 347,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
           },
           {
             "start": 350,
@@ -2365,7 +2664,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "f5fee7b44610941530bcefca6bccc602ae1be404cdd6c1415f149380068cd825",
+        "sourceSha256": "c558d692ccdb1bb304f2f08c949adf08e3cd77a756b01cfe904f5bb23467feaa",
         "spans": [
           {
             "start": 45,
@@ -2431,41 +2730,43 @@
             "reading": "characters"
           },
           {
-            "start": 164,
-            "end": 169,
+            "start": 160,
+            "end": 165,
             "text": "\"2.5\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 215,
-            "end": 216,
+            "start": 211,
+            "end": 212,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 300,
-            "end": 320,
+            "start": 296,
+            "end": 316,
             "text": "Caracter no admitido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 328,
-            "end": 334,
+            "start": 324,
+            "end": 330,
             "text": "\"12 3\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 373,
-            "end": 375,
+            "start": 369,
+            "end": 371,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 440,
-            "end": 441,
+            "start": 436,
+            "end": 437,
             "text": "3",
             "role": "data",
             "reading": "natural"
@@ -2531,7 +2832,15 @@
         "block": "block_0003_0003",
         "path": "/options/1",
         "sourceSha256": "85305881ab1842ccd3ef4df2ad326b78092ecd2a0f051ae47054fdd69685f182",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2542,7 +2851,7 @@
             "start": 14,
             "end": 16,
             "text": "12",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2574,19 +2883,21 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "1b21abde27c50124af3afda8741f93c76204479c12545ef2a48e563c9ad6e91d",
+        "sourceSha256": "a787166ef31e7a5424b0e3e7c1c77113009a8d7ba2648e928d7c2f0860fe2e7c",
         "spans": [
           {
             "start": 76,
             "end": 83,
             "text": "\"34+5;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 94,
             "end": 104,
             "text": "leer_token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 146,
@@ -2606,154 +2917,358 @@
             "start": 173,
             "end": 185,
             "text": "token_valido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 264,
             "end": 269,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 296,
             "end": 300,
             "text": "leer",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 304,
             "end": 312,
             "text": "devolver",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 317,
             "end": 332,
             "text": "tiene_pendiente",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 503,
-            "end": 516,
+            "start": 500,
+            "end": 513,
             "text": "trazar(texto)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 679,
-            "end": 687,
-            "text": "Numero: ",
+            "start": 663,
+            "end": 669,
+            "text": "cuatro",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 691,
-            "end": 701,
-            "text": "Repetido: ",
+            "start": 709,
+            "end": 716,
+            "text": "Numero:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 705,
-            "end": 712,
-            "text": "Signo: ",
+            "start": 754,
+            "end": 763,
+            "text": "Repetido:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 717,
-            "end": 728,
-            "text": "Siguiente: ",
+            "start": 808,
+            "end": 814,
+            "text": "Signo:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 755,
-            "end": 759,
-            "text": "main",
-            "role": "cpp"
+            "start": 847,
+            "end": 857,
+            "text": "Siguiente:",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 787,
-            "end": 794,
-            "text": "\"34+5;\"",
-            "role": "string"
-          },
-          {
-            "start": 798,
-            "end": 805,
-            "text": "\"99+0;\"",
-            "role": "string"
-          },
-          {
-            "start": 809,
-            "end": 817,
-            "text": "\"007+2;\"",
-            "role": "string"
-          },
-          {
-            "start": 822,
-            "end": 830,
-            "text": "\"100+1;\"",
-            "role": "string"
-          },
-          {
-            "start": 915,
-            "end": 945,
+            "start": 1038,
+            "end": 1068,
             "text": "Error: Numero fuera de dominio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1006,
-            "end": 1010,
-            "text": "\"99\"",
-            "role": "string"
+            "start": 1107,
+            "end": 1111,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 1053,
-            "end": 1069,
+            "start": 1123,
+            "end": 1129,
+            "text": "trazar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1141,
+            "end": 1147,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1228,
+            "end": 1235,
+            "text": "\"34+5;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1237,
+            "end": 1247,
+            "text": "Numero: 34",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1248,
+            "end": 1260,
+            "text": "Repetido: 34",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1261,
+            "end": 1268,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1268,
+            "end": 1269,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1270,
+            "end": 1282,
+            "text": "Siguiente: 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1291,
+            "end": 1298,
+            "text": "\"99+0;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1300,
+            "end": 1310,
+            "text": "Numero: 99",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1311,
+            "end": 1323,
+            "text": "Repetido: 99",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1324,
+            "end": 1331,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1331,
+            "end": 1332,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1333,
+            "end": 1345,
+            "text": "Siguiente: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1354,
+            "end": 1362,
+            "text": "\"007+2;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1364,
+            "end": 1373,
+            "text": "Numero: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1374,
+            "end": 1385,
+            "text": "Repetido: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1386,
+            "end": 1393,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1393,
+            "end": 1394,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1395,
+            "end": 1407,
+            "text": "Siguiente: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1416,
+            "end": 1424,
+            "text": "\"100+1;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1426,
+            "end": 1456,
+            "text": "Error: Numero fuera de dominio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1489,
+            "end": 1493,
+            "text": "\"99\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1500,
+            "end": 1503,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1543,
+            "end": 1559,
             "text": "Numero final: 99",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1074,
-            "end": 1080,
+            "start": 1560,
+            "end": 1566,
             "text": "Fin: f",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1128,
-            "end": 1133,
+            "start": 1591,
+            "end": 1596,
             "text": "\"1 2\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 1196,
-            "end": 1210,
+            "start": 1619,
+            "end": 1622,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1644,
+            "end": 1658,
             "text": "Separados: 1:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1237,
-            "end": 1254,
+            "start": 1681,
+            "end": 1698,
             "text": "trazar(\"0007+2;\")",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 1321,
-            "end": 1322,
-            "text": "7",
+            "start": 1728,
+            "end": 1734,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1369,
-            "end": 1377,
+            "start": 1765,
+            "end": 1766,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1813,
+            "end": 1821,
             "text": "\"007+2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1825,
+            "end": 1834,
+            "text": "Numero: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1835,
+            "end": 1846,
+            "text": "Repetido: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1847,
+            "end": 1854,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1854,
+            "end": 1855,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1856,
+            "end": 1868,
+            "text": "Siguiente: 2",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2845,6 +3360,13 @@
             "text": "valor > 99",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 341,
+            "end": 345,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2852,7 +3374,15 @@
         "block": "block_0004_0002",
         "path": "/options/0",
         "sourceSha256": "24155ac712d1dff04a47d30e07360c42eec576801d8899071c806eb37778d9ec",
-        "spans": []
+        "spans": [
+          {
+            "start": 27,
+            "end": 31,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2863,21 +3393,21 @@
             "start": 11,
             "end": 12,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 23,
             "end": 24,
             "text": "+",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
             "start": 58,
             "end": 59,
             "text": "2",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2891,21 +3421,21 @@
             "start": 33,
             "end": 34,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 36,
             "end": 37,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 40,
             "end": 41,
             "text": "7",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2919,7 +3449,8 @@
             "start": 34,
             "end": 44,
             "text": "valor > 99",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2933,7 +3464,15 @@
         "block": "block_0004_0002",
         "path": "/reviewFeedback/2",
         "sourceSha256": "ada72341ee2b9ea3821aaf5385b1f32bd1aa090c7d7c2adf1516c661361e7274",
-        "spans": []
+        "spans": [
+          {
+            "start": 88,
+            "end": 92,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
@@ -2965,7 +3504,15 @@
             "start": 110,
             "end": 118,
             "text": "devolver",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 228,
+            "end": 231,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 251,
@@ -2978,25 +3525,36 @@
             "start": 316,
             "end": 324,
             "text": "\"007+2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 391,
             "end": 400,
             "text": "\"0007+2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 440,
+            "end": 446,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 526,
             "end": 530,
             "text": "\"99\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 564,
             "end": 569,
             "text": "\"1 2\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 734,
@@ -3022,7 +3580,8 @@
             "start": 29,
             "end": 36,
             "text": "\"42+6;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 126,
@@ -3038,6 +3597,13 @@
         "path": "/text",
         "sourceSha256": "73e05bdf4b1ed7fbc6c86a1de30549a69b4b9cc43cdb5dfa3269f9e222a108f4",
         "spans": [
+          {
+            "start": 52,
+            "end": 58,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
           {
             "start": 70,
             "end": 72,
@@ -3057,7 +3623,7 @@
             "end": 80,
             "text": "+",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 84,
@@ -3071,6 +3637,13 @@
             "end": 132,
             "text": "34",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 202,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -3122,10 +3695,17 @@
           },
           {
             "start": 77,
-            "end": 85,
-            "text": "Signo: ;",
+            "end": 84,
+            "text": "Signo: ",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 84,
+            "end": 85,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
           },
           {
             "start": 95,
@@ -3177,6 +3757,13 @@
             "reading": "natural"
           },
           {
+            "start": 334,
+            "end": 337,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 423,
             "end": 426,
             "text": ";2;",
@@ -3200,41 +3787,17 @@
             "start": 139,
             "end": 142,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 198,
             "end": 203,
             "text": "catch",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
-      },
-      {
-        "block": "block_0007_0000",
-        "path": "/text",
-        "sourceSha256": "f51981ae9ad1029c675814a22c9afed8acb11d7a48cf6ed31791ff0d3facdfb2",
-        "spans": []
-      },
-      {
-        "block": "block_0007_0001",
-        "path": "/text",
-        "sourceSha256": "98f5077e5628d05decd23ec8fe8f2a365d3410e1ebeae52fbed794c3cf6a946b",
-        "spans": [
-          {
-            "start": 242,
-            "end": 273,
-            "text": "(Stroustrup, 2024, pp. 127–128)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0008_0000",
-        "path": "/text",
-        "sourceSha256": "7ca888a95f38ed5b86a27233c5bcfd89f7f4a60019d5d203124edef60c840d0b",
-        "spans": []
       },
       {
         "block": "u11_reserva_numerica_en_ambos_limites_titulo",
@@ -3245,7 +3808,7 @@
       {
         "block": "u11_reserva_numerica_en_ambos_limites_consigna",
         "path": "/text",
-        "sourceSha256": "44ca1cda326005470c1e9b659e94f6b3971ee3f6b1719a174ab853336de6d4af",
+        "sourceSha256": "f2a1022fa0e2b655ee598277ebc4c043a8eb613c1aa7c43c2b8084fdf534ea2d",
         "spans": [
           {
             "start": 26,
@@ -3290,50 +3853,64 @@
             "reading": "technical"
           },
           {
-            "start": 280,
-            "end": 281,
+            "start": 236,
+            "end": 242,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 294,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 283,
-            "end": 285,
+            "start": 295,
+            "end": 297,
             "text": "99",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 287,
-            "end": 289,
+            "start": 298,
+            "end": 300,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 292,
-            "end": 295,
+            "start": 301,
+            "end": 304,
             "text": "100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 344,
-            "end": 346,
+            "start": 352,
+            "end": 354,
             "text": "8;",
             "role": "data",
             "reading": "characters"
           },
           {
-            "start": 477,
-            "end": 482,
+            "start": 485,
+            "end": 490,
             "text": "0..99",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 907,
-            "end": 917,
+            "start": 831,
+            "end": 837,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1000,
+            "end": 1010,
             "text": "Leido: n:0",
             "role": "output",
             "reading": "natural"
@@ -3347,9 +3924,128 @@
         "spans": [
           {
             "start": 33,
-            "end": 515,
-            "text": "Numero: 34\nRepetido: 34\nSigno: +\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: +\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: +\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0",
+            "end": 64,
+            "text": "Numero: 34\nRepetido: 34\nSigno: ",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
+            "end": 65,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 65,
+            "end": 110,
+            "text": "\nSiguiente: 5\nNumero: 99\nRepetido: 99\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 111,
+            "end": 154,
+            "text": "\nSiguiente: 0\nNumero: 7\nRepetido: 7\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 155,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 155,
+            "end": 268,
+            "text": "\nSiguiente: 2\nError: Numero fuera de dominio\nNumero final: 99\nFin: f\nSeparados: 1:2\nNumero: 7\nRepetido: 7\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 269,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 269,
+            "end": 515,
+            "text": "\nSiguiente: 2\nReserva: aceptada\nPendiente: 1\nLeido: n:0\nPendiente: 0\nReserva: aceptada\nPendiente: 1\nLeido: n:99\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0\nReserva: Token invalido\nPendiente: 0\nLeido: n:8\nPendiente: 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u11_reserva_numerica_en_ambos_limites_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "0bc601e197afd1ad99501f13cb5cd633e4bb93a988d757cfc57bfb01ee57f40b",
+        "spans": [
+          {
+            "start": 9,
+            "end": 10,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 13,
+            "end": 15,
+            "text": "99",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 61,
+            "text": "Pendiente: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 136,
+            "text": "100",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
+            "end": 174,
+            "text": "Reserva: Token invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 197,
+            "text": "Pendiente: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": "8",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -3439,69 +4135,6 @@
         ]
       },
       {
-        "block": "u11_reserva_numerica_en_ambos_limites_comprobacion",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "0bc601e197afd1ad99501f13cb5cd633e4bb93a988d757cfc57bfb01ee57f40b",
-        "spans": [
-          {
-            "start": 9,
-            "end": 10,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 13,
-            "end": 15,
-            "text": "99",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 49,
-            "end": 61,
-            "text": "Pendiente: 1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 128,
-            "end": 130,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 133,
-            "end": 136,
-            "text": "100",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 151,
-            "end": 174,
-            "text": "Reserva: Token invalido",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 185,
-            "end": 197,
-            "text": "Pendiente: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 217,
-            "end": 218,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
         "block": "u11_reserva_numerica_en_ambos_limites_referencia_titulo",
         "path": "/text",
         "sourceSha256": "8078d06f99d6878c6b17bbd3ab9c5d19576142112fd7648cfb54e3686af13c60",
@@ -3510,7 +4143,7 @@
       {
         "block": "u11_reserva_numerica_en_ambos_limites_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "57e684c5f6cc1301b8fb55864475b8b8dcf2f29f5141acb101df005fd5b9d315",
+        "sourceSha256": "a53dbbe21f11245c05e949007daec0ddd0a132f895d9bfe410524f7431c59629",
         "spans": [
           {
             "start": 51,
@@ -3541,6 +4174,13 @@
             "reading": "natural"
           },
           {
+            "start": 98,
+            "end": 106,
+            "text": "devolver",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
             "start": 165,
             "end": 171,
             "text": "100+1;",
@@ -3555,69 +4195,102 @@
             "reading": "technical"
           },
           {
-            "start": 345,
-            "end": 346,
+            "start": 356,
+            "end": 359,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 387,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 349,
-            "end": 351,
+            "start": 390,
+            "end": 392,
             "text": "99",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 427,
-            "end": 430,
+            "start": 480,
+            "end": 483,
             "text": "n:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 433,
-            "end": 437,
+            "start": 486,
+            "end": 490,
             "text": "n:99",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 472,
-            "end": 473,
+            "start": 525,
+            "end": 526,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 480,
-            "end": 482,
+            "start": 534,
+            "end": 536,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 485,
-            "end": 488,
+            "start": 539,
+            "end": 542,
             "text": "100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 604,
-            "end": 607,
+            "start": 658,
+            "end": 661,
             "text": "n:8",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 819,
-            "end": 827,
+            "start": 874,
+            "end": 882,
             "text": "devolver",
             "role": "cpp",
             "reading": "technical"
           }
         ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "f51981ae9ad1029c675814a22c9afed8acb11d7a48cf6ed31791ff0d3facdfb2",
+        "spans": []
+      },
+      {
+        "block": "block_0007_0001",
+        "path": "/text",
+        "sourceSha256": "0dfa46ab0c83c50c300aa73f8562d56bef8e52761c579ede9706713ed8280321",
+        "spans": [
+          {
+            "start": 242,
+            "end": 260,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "7ca888a95f38ed5b86a27233c5bcfd89f7f4a60019d5d203124edef60c840d0b",
+        "spans": []
       }
     ],
     "rootFields": [

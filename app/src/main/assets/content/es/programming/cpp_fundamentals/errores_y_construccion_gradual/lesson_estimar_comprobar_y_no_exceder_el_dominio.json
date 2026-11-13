@@ -84,7 +84,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La media necesita al menos un dato. Ante una colección vacía, el programa debe tomar una decisión antes de acceder a un elemento o dividir por la cantidad. La comprobación de esa precondición permite evitar una operación que no corresponde al caso recibido (Stroustrup, 2024).\n\nEn los programas siguientes, el caso vacío produce Sin datos. Sólo una colección no vacía llega a la suma y a la división. No se intenta dividir primero para decidir después si había datos.",
+          "text": "La media necesita al menos un dato. Ante una colección vacía, el programa debe tomar una decisión antes de acceder a un elemento o dividir por la cantidad. La comprobación de esa precondición permite evitar una operación que no corresponde al caso recibido (Stroustrup, 2024).\n\nEn los programas siguientes, el caso vacío produce Sin datos. La comprobación previa del caso vacío actúa como una guarda: separa ese caso para que no llegue a las operaciones que necesitan datos. Sólo una colección no vacía llega a la suma y a la división. No se intenta dividir primero para decidir después si había datos.",
           "emphasis": [
             {
               "text": "antes de acceder a un elemento o dividir",
@@ -101,7 +101,7 @@
           "id": "media_de_vacio_controlada",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        double media{static_cast<double>(suma) / datos.size()};\n        std::cout << media;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{};\n\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n\n        for (int dato : datos) {\n            suma += dato;\n        }\n\n        double media{static_cast<double>(suma) / datos.size()};\n\n        std::cout << media;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Sin datos"
           ],
@@ -112,7 +112,7 @@
           "id": "media_fraccionaria_controlada",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 3};\n    int suma{0};\n    for (int dato : datos) { suma += dato; }\n    double media{static_cast<double>(suma) / datos.size()};\n    std::cout << media;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 3};\n    int suma{0};\n\n    for (int dato : datos) {\n        suma += dato;\n    }\n\n    double media{static_cast<double>(suma) / datos.size()};\n\n    std::cout << media;\n\n    return 0;\n}\n",
           "answers": [
             "2.5"
           ],
@@ -140,7 +140,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El resultado matemático de una multiplicación de int debe ser representable por ese tipo. Un desbordamiento aritmético con signo produce comportamiento indefinido; comprobar después si el resultado parece negativo no hace válida la operación (Köppe et al., 2023).\n\nLas actividades de esta lección fijan dominios pequeños antes de calcular. Si se aceptaran datos generales, sería necesario comprobar los límites de representación antes de multiplicar.",
+          "text": "El resultado matemático de una multiplicación de int debe ser representable por ese tipo. Si no cabe, se produce un desbordamiento aritmético con signo y el comportamiento es indefinido: el lenguaje no exige que el programa siga un comportamiento concreto en ese caso. Comprobar después si el resultado parece negativo no hace válida la operación (Köppe et al., 2023).\n\nLas actividades de esta lección fijan dominios pequeños antes de calcular. Si se aceptaran datos generales, sería necesario comprobar los límites de representación antes de multiplicar.",
           "emphasis": [
             {
               "text": "debe ser representable",
@@ -154,7 +154,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si piezas está entre 0 y 10 y minutosPorPieza entre 1 y 100, el producto queda entre 0 y 1000. La anchura mínima exigida para int permite representar esos valores; no hace falta suponer que int ocupa exactamente 32 bits (Köppe et al., 2023).\n\nLa justificación depende de respetar ambos intervalos. Por eso el programa verifica los dos argumentos antes de multiplicar.",
+          "text": "El programa siguiente limita cada argumento antes de multiplicar:\npiezas debe estar entre 0 y 10.\nminutosPorPieza debe estar entre 1 y 100.\n\nSi se respetan esos límites, el producto queda entre 0 y 1000. La anchura mínima exigida para int permite representar esos valores; no hace falta suponer que int ocupa exactamente 32 bits (Köppe et al., 2023).\n\nLa justificación depende de respetar ambos intervalos. Por eso el programa verifica los dos argumentos antes de multiplicar.",
           "emphasis": [
             {
               "text": "entre 0 y 1000",
@@ -171,7 +171,7 @@
           "id": "producto_dominio_rechazado",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    int minutosPorPieza{20};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    int minutosPorPieza{20};\n\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Fuera del dominio"
           ],
@@ -182,7 +182,7 @@
           "id": "producto_fronteras_validas",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    int minutosPorPieza{100};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    int minutosPorPieza{100};\n\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n\n    return 0;\n}\n",
           "answers": [
             "1000"
           ],
@@ -210,7 +210,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye `informar(const std::vector<int>& datos)` para mostrar suma, media, mínimo, máximo y si la media queda dentro del rango. Mantén como máximo cinco enteros de 0 a 10. Ante una colección vacía, muestra Sin datos y termina esa llamada antes de dividir o acceder a un elemento. En los demás casos, usa el formato `Suma=S Media=M Minimo=N Maximo=X Dentro=B`, con un espacio entre campos. La media debe conservar la fracción; B es el bool de la propiedad mostrado como 0 o 1. Termina cada llamada con un salto de línea.\n\nEn una misma ejecución llama con `{1,4,7}`, `{1,2}`, `{5}` y `{}`. Las líneas esperadas son:\n\nSuma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\n\nPulsa Compilar, ejecutar y comprobar. La comparación exacta y la propiedad de rango comprueban cosas distintas: una media plausible todavía puede ser incorrecta.",
+          "text": "Construye informar(const std::vector<int>& datos) para mostrar suma, media, mínimo, máximo y si la media queda dentro del rango. Mantén como máximo cinco enteros de 0 a 10.\n\nAnte una colección vacía, muestra Sin datos y termina esa llamada antes de dividir o acceder a un elemento. En los demás casos, usa el formato Suma=S Media=M Minimo=N Maximo=X Dentro=B, con un espacio entre campos. La media debe conservar la fracción; B es el valor bool que indica si la media está entre el mínimo y el máximo, incluidos; se muestra como 1 si se cumple y como 0 si no. Termina cada llamada con un salto de línea.\n\nEn una misma ejecución llama a informar con cada colección, en este orden. A cada llamada le corresponde la línea indicada:\n{1,4,7} debe mostrar Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\n{1,2} debe mostrar Suma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\n{5} debe mostrar Suma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\n{} debe mostrar Sin datos\n\nPulsa Compilar, ejecutar y comprobar. La comparación exacta y la propiedad de rango comprueban cosas distintas: una media plausible todavía puede ser incorrecta.",
           "emphasis": [
             {
               "text": "Construye",
@@ -232,7 +232,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Suma=\" << suma;\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n\n        for (int dato : datos) {\n            suma += dato;\n        }\n        std::cout << \"Suma=\" << suma;\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -283,7 +283,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\n// Copia aqui tu definicion completa de informar y sus auxiliares.\n// Conserva las cinco llamadas de main.\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Copia aqui tu definicion completa de informar y sus auxiliares.\n// Conserva las cinco llamadas de main.\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -320,7 +320,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Para {1,4,7}, suma=12, media=4, mínimo=1 y máximo=7. La media debe quedar dentro del rango y también coincidir con la expectativa exacta. Para {1,2}, suma=3, media=1.5, mínimo=1 y máximo=2; para {5}, los cuatro valores son 5. Con {}, debe mostrarse Sin datos antes de dividir o consultar un elemento. Usa como máximo cinco datos entre 0 y 10; otras implementaciones son válidas cuando conservan los cálculos y el formato de la actividad.",
+          "text": "Criterios de corrección: la media debe quedar dentro del rango y también coincidir con la expectativa exacta. Estos son los informes requeridos:\nPara {1,4,7}: Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nPara {1,2}: Suma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nPara {5}: Suma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\n\nCon {}, debe mostrarse Sin datos antes de dividir o consultar un elemento. Cada llamada termina su línea con un salto.\n\nUsa como máximo cinco datos entre 0 y 10; otras implementaciones son válidas cuando conservan los cálculos y el formato de la actividad.",
           "emphasis": [
             {
               "text": "también coincidir con la expectativa exacta",
@@ -335,11 +335,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n        return 0;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n        return 0;\n    }\n\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) {\n            minimo = dato;\n        }\n        if (dato > maximo) {\n            maximo = dato;\n        }\n    }\n\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La guarda vacía precede tanto al acceso datos[0] como a la división. La conversión de suma ocurre antes de dividir, de modo que no se pierde antes la parte fraccionaria.\n\nDentro=1 informa de la propiedad de rango; la comprobación exacta contrasta además la media solicitada. La referencia siguiente reúne los cuatro casos en llamadas independientes. Como hay a lo sumo cinco enteros de 0 a 10, la suma no supera 50.",
+          "text": "La guarda vacía precede tanto al acceso datos[0] como a la división. La conversión de suma a double ocurre antes de dividir.\n\nCon la colección {1,2}, las variables suma y cantidad guardan 3 y 2; la media requerida es 1.5. Si primero se dividieran los enteros, el cociente sería 1. Convertir después ese cociente no recuperaría la fracción descartada.\n\nDentro=1 informa de la propiedad de rango; la comprobación exacta contrasta además la media solicitada. La referencia siguiente reúne los cuatro casos en llamadas independientes. Como hay a lo sumo cinco enteros de 0 a 10, el acumulado no supera 50.",
           "emphasis": [
             {
               "text": "antes de dividir",
@@ -362,7 +362,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nvoid informar(const std::vector<int>& datos) {\n    if (datos.empty()) {\n        std::cout << \"Sin datos\\n\";\n        return;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro << \"\\n\";\n}\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nvoid informar(const std::vector<int>& datos) {\n    if (datos.empty()) {\n        std::cout << \"Sin datos\\n\";\n        return;\n    }\n\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) {\n            minimo = dato;\n        }\n        if (dato > maximo) {\n            maximo = dato;\n        }\n    }\n\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro << \"\\n\";\n}\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -370,7 +370,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En {4,10,0,1,5}, la suma es 4 + 10 + 0 + 1 + 5 = 20 y la media es 20 / 5 = 4. La función informar de la referencia anterior inicia ambos extremos con el primer dato, 4. Al recorrer 10, actualiza el máximo a 10; al recorrer 0, actualiza el mínimo a 0. Los valores posteriores 1 y 5 no cambian esos extremos.\n\nTomar directamente el primero y el último produciría Minimo=4 y Maximo=5. La media 4 quedaría dentro de ese intervalo incorrecto y todavía se mostraría Dentro=1. La comparación exacta de los extremos permite detectar el error.\n\nEl main siguiente sustituye al main de la referencia anterior, manteniendo sus inclusiones y la definición de informar. Reúne las cinco llamadas de la comprobación complementaria; otras formas de calcular los extremos son válidas si conservan el contrato y las salidas.",
+          "text": "En {4,10,0,1,5}, la suma es 4 + 10 + 0 + 1 + 5 = 20 y la media es 20 / 5 = 4.\n\nLa función informar de la referencia anterior inicia ambos extremos con el primer dato, 4. Después compara cada dato con los extremos que tiene hasta ese momento:\nAl recorrer 10, actualiza el máximo a 10.\nAl recorrer 0, actualiza el mínimo a 0.\nLos valores posteriores 1 y 5 no cambian esos extremos.\n\nTomar directamente el primero y el último produciría Minimo=4 y Maximo=5. La media 4 quedaría dentro de ese intervalo incorrecto y todavía se mostraría Dentro=1. La comparación exacta de los extremos permite detectar el error.\n\nEl main siguiente sustituye al main de la referencia anterior, manteniendo sus inclusiones y la definición de informar. Reúne las cinco llamadas de la comprobación complementaria; otras formas de calcular los extremos son válidas si conservan el contrato y las salidas.",
           "emphasis": [
             {
               "text": "La comparación exacta de los extremos permite detectar el error",
@@ -381,7 +381,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n    return 0;\n}\n"
+          "code": "int main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1123,6 +1123,219 @@
         "id": "block_0002_0002",
         "beforeSha256": "29a383e22344b74231f4b09df80daa2b4bc911ca02c06cfeb1373fb2d3269588",
         "afterSha256": "dcfb0dc187bf69dbf6edc5b00977e6873a6fd235706173f69bbdcad9ba68fd93"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "7e7a00f967538f2e666b6bedc85bf792c0be538ce391ca42ba904367e803b81d",
+        "afterSha256": "69174b28c87fa8e2380ac7f678e52ceb23718bc056b1d35593f39f9649d9cae1"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "63adf9ef274c46c2c484a9da4859cb5ea0e1fe8f678183d6dad08b2aeca2a2b4",
+        "afterSha256": "3408eb03de60c32b2e764ec8c93a1b65ca691010ebd2a2f64733e4d9b47ec394"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "469590dc12d4c9159cd1f12e07cc1d36d20d171685d81ae36e8c6f6eb47e73f7",
+        "afterSha256": "7232ac72612c5259f58c8501c431e63f57b09bdbc1e6f93e0615a7db6f4de70e"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "6ce27cf39c2a8a9f9c20d47393e5f0c66b86e013edd2fbf1413a0b3cebffc67f",
+        "afterSha256": "b68e2628ea0281965b291e6774fa4cb793b27e9017e0dbf71178d6f122412365"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "dcfb0dc187bf69dbf6edc5b00977e6873a6fd235706173f69bbdcad9ba68fd93",
+        "afterSha256": "01752a5eb8d077ea8fd9f12a2114d68ad8114ee85f0c1c394648ffccb4bdb62b"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "99f783459f66e011296998ec8502f5f93600271167438496475edf1b8054b438",
+        "afterSha256": "bb506f2323e9f737bf47e12586088d85ad8a94b792149ddd88579cd2fbebf2dd"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "3c0d5f20984920f0dce9625a57762968ca380deef36127f238fad4b4204a0ab8",
+        "afterSha256": "48f836252c13f8b31cc310e1f55a303dd750fb2bf1151fbd9c990f39ddc99d38"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "92353628fba28d819e3d9b18da38c9182e89a036e3fb2845297cdd4f7af4e506",
+        "afterSha256": "3cb10614799a60c9a9c2ed847e6e72d815fd7e6b3d76950f02bd37fdb9e2b2ac"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "29889b0395a3b35bba139c495f57e6b0a4f7abece85c03934f1f8585d7740585",
+        "afterSha256": "8370a44aea879f404a5e125e129028e294d366c0e091aa8225ade94490c18090"
+      },
+      {
+        "id": "u7_informe_orden_libre_comprobacion",
+        "beforeSha256": "1b974167dd5a5fbb68bb867cfdecd2421df0eef8f10345c656e545949883d1cd",
+        "afterSha256": "957acc90e34787a0ed91c956bb0517e832c84a60ff37dadee0a471188ec3e542"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "c692241a66c592534f202c4bacc5374f91742da801da7306c98c12e797779f24",
+        "afterSha256": "a3d8f9f5025538721cb210bdc895ceda69a8b737f2e0948983202460706188df"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "c57060ce0ab3424aeb078c8cc91e5969095d9d26e329f8d07d9cbb23d0d04fba",
+        "afterSha256": "5258cb8e0d6c5977a864525a03cd7dd678d0c769d721245b985c41a89ebcb511"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "9b4ced2fedab89762bb5e14c1c3864f1ed34ea33025bac68ded2352addb2436b",
+        "afterSha256": "919d4670d13e9cd6c216235e33e79a15bbe23b658fd79cfbc5ba1f06f43dfa05"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "1f84398fa752b517ad3044d0926f8ae58c9af1c701c118bcb137e7f4a8bd03f0",
+        "afterSha256": "730be8c6630c84e8f9a7598609fa8ac84643057534bcc7268a68c34b21b2f5ec"
+      },
+      {
+        "id": "u7_informe_orden_libre_referencia_calculo",
+        "beforeSha256": "5d850509cd8fd5dd2829ebe46ba5fbebd2a20f34169d6b9cb4b16010bc83d9c5",
+        "afterSha256": "178fc85ea58d9587834bc66e1bba9215b2fded1f00f69ef9e413f8ea973ec9b4"
+      },
+      {
+        "id": "u7_informe_orden_libre_referencia_main",
+        "beforeSha256": "0c385853b069bc6f4b0f5d8e0205b53c37de66e1a184a5ee8f405be5a1eb36fe",
+        "afterSha256": "3ca8134c69baab3492fa57e15bd64529c34343bf5a3ce7d21f37923ec57dab1d"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "3cb10614799a60c9a9c2ed847e6e72d815fd7e6b3d76950f02bd37fdb9e2b2ac",
+        "afterSha256": "559ff3df9d7057b01122ab2dc168113c0e3b983ba9110851490ff940c75fd2e9"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "media_de_vacio_controlada",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        double media{static_cast<double>(suma) / datos.size()};\n        std::cout << media;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Sin datos"
+          ],
+          "explanation": "La rama vacía evita el cálculo. No se evalúa ningún cociente sin datos."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "media_fraccionaria_controlada",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 3};\n    int suma{0};\n    for (int dato : datos) { suma += dato; }\n    double media{static_cast<double>(suma) / datos.size()};\n    std::cout << media;\n    return 0;\n}\n",
+          "answers": [
+            "2.5"
+          ],
+          "explanation": "La conversión ocurre antes de dividir y conserva la media fraccionaria."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "id": "producto_dominio_rechazado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    int minutosPorPieza{20};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fuera del dominio"
+          ],
+          "explanation": "La regla rechaza 11 antes de realizar el producto dentro de la rama válida."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "producto_fronteras_validas",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    int minutosPorPieza{100};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1000"
+          ],
+          "explanation": "Ambos extremos se incluyen y el producto está dentro del dominio seguro justificado."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Suma=\" << suma;\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\n"
+                ],
+                "explanation": "La guarda vacía protege tanto el acceso inicial como la división. La conversión ocurre antes de dividir y la media también coincide con la expectativa exacta."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u7_informe_orden_libre_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Copia aqui tu definicion completa de informar y sus auxiliares.\n// Conserva las cinco llamadas de main.\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\nSuma=20 Media=4 Minimo=0 Maximo=10 Dentro=1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La misma función conserva los cuatro casos anteriores y procesa la colección sin ordenar. Para {4,10,0,1,5}, la suma es 20, la media 4, el mínimo 0 y el máximo 10. Los dos extremos están en posiciones interiores; comprobar sólo el primero y el último no obtiene esos valores.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos\nSuma=20 Media=4 Minimo=4 Maximo=5 Dentro=1\n"
+                    ],
+                    "text": "Los valores Minimo=4 y Maximo=5 coinciden con el primero y el último de esta colección. Revisa cómo obtienes los extremos de todos los datos: 0 y 10 están en su interior. La media 4 también queda entre 4 y 5, por lo que Dentro=1 no basta para demostrar que esos extremos son correctos."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n        return 0;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid informar(const std::vector<int>& datos) {\n    if (datos.empty()) {\n        std::cout << \"Sin datos\\n\";\n        return;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro << \"\\n\";\n}\n\nint main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u7_informe_orden_libre_referencia_main",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    informar({1, 4, 7});\n    informar({1, 2});\n    informar({5});\n    informar({});\n    informar({4, 10, 0, 1, 5});\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1150,7 +1363,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "db5a1afacd45f5e45cd6149f12482498554141a47b98f3e0151e2ed70e2a4f9f",
+        "sourceSha256": "8f1eebcceb9cf2ed9b193088cb5db775e04e6d50efbf4deb25bc1e5dcee01182",
         "spans": [
           {
             "start": 49,
@@ -1160,8 +1373,8 @@
             "reading": "technical"
           },
           {
-            "start": 242,
-            "end": 262,
+            "start": 347,
+            "end": 367,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1171,90 +1384,97 @@
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "38f7634dc4be680c10aa4293f064fbbaa1eca36dd020c75eae75b8fb1c773e87",
+        "sourceSha256": "ae5c9780894b74c3dbe1fdf46a5e097322f19e4d2119b4449da343da576e0414",
         "spans": [
           {
-            "start": 3,
-            "end": 9,
+            "start": 66,
+            "end": 72,
             "text": "piezas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 21,
-            "end": 22,
+            "start": 90,
+            "end": 91,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 25,
-            "end": 27,
+            "start": 94,
+            "end": 96,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 30,
-            "end": 45,
+            "start": 98,
+            "end": 113,
             "text": "minutosPorPieza",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 52,
-            "end": 53,
+            "start": 131,
+            "end": 132,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 56,
-            "end": 59,
+            "start": 135,
+            "end": 138,
             "text": "100",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 85,
-            "end": 86,
+            "start": 194,
+            "end": 195,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 93,
+            "start": 198,
+            "end": 202,
             "text": "1000",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 129,
+            "start": 235,
+            "end": 238,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 190,
-            "end": 193,
+            "start": 299,
+            "end": 302,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 212,
-            "end": 214,
+            "start": 321,
+            "end": 323,
             "text": "32",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 240,
+            "start": 329,
+            "end": 349,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 440,
+            "end": 443,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1286,8 +1506,22 @@
         "spans": [
           {
             "start": 5,
+            "end": 6,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 8,
+            "end": 9,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 12,
             "end": 13,
-            "text": "2, 4 y 6",
+            "text": "6",
             "role": "data",
             "reading": "natural"
           },
@@ -1320,8 +1554,15 @@
           },
           {
             "start": 229,
+            "end": 230,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
             "end": 234,
-            "text": "2 y 6",
+            "text": "6",
             "role": "data",
             "reading": "natural"
           }
@@ -1334,8 +1575,22 @@
         "spans": [
           {
             "start": 14,
+            "end": 15,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 17,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
             "end": 19,
-            "text": "2,4,6",
+            "text": "6",
             "role": "data",
             "reading": "natural"
           },
@@ -1348,8 +1603,15 @@
           },
           {
             "start": 118,
+            "end": 119,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
             "end": 123,
-            "text": "2 y 6",
+            "text": "6",
             "role": "data",
             "reading": "natural"
           }
@@ -1412,8 +1674,22 @@
         "spans": [
           {
             "start": 14,
+            "end": 15,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 17,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
             "end": 19,
-            "text": "1,3,5",
+            "text": "5",
             "role": "data",
             "reading": "natural"
           },
@@ -1447,8 +1723,22 @@
           },
           {
             "start": 214,
+            "end": 215,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
             "end": 222,
-            "text": "2, 4 y 6",
+            "text": "6",
             "role": "data",
             "reading": "natural"
           },
@@ -1481,8 +1771,15 @@
         "spans": [
           {
             "start": 41,
+            "end": 42,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
             "end": 46,
-            "text": "1 y 5",
+            "text": "5",
             "role": "data",
             "reading": "natural"
           }
@@ -1521,7 +1818,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "ce1d772593bf614d0abde3b00aa3cd2786bfcb2ccfa3af15544fab2e44874e0d",
+        "sourceSha256": "14dde5a11550a832efb5b77d2540f7d4eeaed80bf636d263a6ffb11a159b1d05",
         "spans": [
           {
             "start": 257,
@@ -1718,101 +2015,151 @@
         "block": "block_0003_0000",
         "path": "/text",
         "sourceSha256": "dc3a1429579fe2a70e5749bd754f8807d2a0da6e064f71ce833d61074efe2c4f",
-        "spans": []
+        "spans": [
+          {
+            "start": 25,
+            "end": 28,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "9e2133926300c1c6518ae88badbdbd1b88d1ba70d2f7486c4760a50b8061659c",
+        "sourceSha256": "9abeab017807c5273751fe72ae53cc622c42fbadf676f2a87ad5ef26152eddb8",
         "spans": [
           {
-            "start": 11,
-            "end": 50,
+            "start": 10,
+            "end": 49,
             "text": "informar(const std::vector<int>& datos)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 155,
+            "start": 148,
+            "end": 153,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 167,
-            "end": 173,
-            "text": "0 a 10",
+            "start": 165,
+            "end": 166,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 209,
-            "end": 218,
+            "start": 169,
+            "end": 171,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 217,
             "text": "Sin datos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 319,
-            "end": 360,
+            "start": 317,
+            "end": 358,
             "text": "Suma=S Media=M Minimo=N Maximo=X Dentro=B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 429,
-            "end": 430,
+            "start": 426,
+            "end": 427,
             "text": "B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 437,
-            "end": 441,
+            "start": 440,
+            "end": 444,
             "text": "bool",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 472,
-            "end": 477,
-            "text": "0 o 1",
+            "start": 529,
+            "end": 530,
+            "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 558,
-            "end": 565,
+            "start": 551,
+            "end": 552,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 636,
+            "end": 644,
+            "text": "informar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 729,
+            "end": 736,
             "text": "{1,4,7}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 569,
-            "end": 574,
+            "start": 750,
+            "end": 792,
+            "text": "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 793,
+            "end": 798,
             "text": "{1,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 578,
-            "end": 581,
+            "start": 812,
+            "end": 855,
+            "text": "Suma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 856,
+            "end": 859,
             "text": "{5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 586,
-            "end": 588,
+            "start": 873,
+            "end": 914,
+            "text": "Suma=5 Media=5 Minimo=5 Maximo=5 Dentro=1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 915,
+            "end": 917,
             "text": "{}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 618,
-            "end": 756,
-            "text": "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1\nSuma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1\nSuma=5 Media=5 Minimo=5 Maximo=5 Dentro=1\nSin datos",
+            "start": 931,
+            "end": 940,
+            "text": "Sin datos",
             "role": "output",
             "reading": "natural"
           }
@@ -1839,75 +2186,82 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "e63d01b64a955ab5c42a0db3a02eb8ec7914ecb0def06ac109d6a0c83e1eb90f",
+        "sourceSha256": "78b8343abf4fde51ca8570c4a4b65e30181d46381c755f3f607f56f98894d1fe",
         "spans": [
           {
-            "start": 30,
-            "end": 37,
+            "start": 150,
+            "end": 157,
             "text": "{1,4,7}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 39,
-            "end": 76,
-            "text": "suma=12, media=4, mínimo=1 y máximo=7",
+            "start": 159,
+            "end": 201,
+            "text": "Suma=12 Media=4 Minimo=1 Maximo=7 Dentro=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 173,
+            "start": 207,
+            "end": 212,
             "text": "{1,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 175,
-            "end": 213,
-            "text": "suma=3, media=1.5, mínimo=1 y máximo=2",
+            "start": 214,
+            "end": 257,
+            "text": "Suma=3 Media=1.5 Minimo=1 Maximo=2 Dentro=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 223,
+            "start": 263,
+            "end": 266,
             "text": "{5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 248,
-            "end": 249,
-            "text": "5",
+            "start": 268,
+            "end": 309,
+            "text": "Suma=5 Media=5 Minimo=5 Maximo=5 Dentro=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 255,
-            "end": 257,
+            "start": 315,
+            "end": 317,
             "text": "{}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 274,
-            "end": 283,
+            "start": 334,
+            "end": 343,
             "text": "Sin datos",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 342,
-            "end": 347,
+            "start": 447,
+            "end": 452,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 360,
-            "end": 366,
-            "text": "0 y 10",
+            "start": 465,
+            "end": 466,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 471,
+            "text": "10",
             "role": "data",
             "reading": "natural"
           }
@@ -1916,7 +2270,7 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "cb868bf25d46024a8658cbed105d83a6468ff8fa08c7131b5823782d915dd22f",
+        "sourceSha256": "19df9c4c6d6c85bd19f24494747ba0ff09fdf883692e6b65732c1cfa367a2e66",
         "spans": [
           {
             "start": 40,
@@ -1933,29 +2287,99 @@
             "reading": "technical"
           },
           {
+            "start": 93,
+            "end": 99,
+            "text": "double",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 148,
+            "text": "{1,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 164,
+            "end": 168,
+            "text": "suma",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
             "start": 171,
             "end": 179,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 188,
+            "end": 189,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 193,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 220,
+            "text": "1.5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 278,
+            "end": 279,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 360,
             "text": "Dentro=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 369,
-            "end": 374,
+            "start": 490,
+            "end": 496,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 550,
+            "end": 555,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 386,
-            "end": 392,
-            "text": "0 a 10",
+            "start": 567,
+            "end": 568,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 412,
-            "end": 414,
+            "start": 571,
+            "end": 573,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 598,
+            "end": 600,
             "text": "50",
             "role": "output",
             "reading": "natural"
@@ -1966,7 +2390,15 @@
         "block": "block_0004_0005",
         "path": "/text",
         "sourceSha256": "14881d0e924a4879cd1d154b428415cd3c02b43751ac3e3b833df9fdf2cdab9e",
-        "spans": []
+        "spans": [
+          {
+            "start": 18,
+            "end": 24,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "u7_informe_orden_libre_titulo",
@@ -1995,8 +2427,15 @@
           },
           {
             "start": 335,
+            "end": 336,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
             "end": 341,
-            "text": "0 y 10",
+            "text": "10",
             "role": "data",
             "reading": "natural"
           },
@@ -2149,8 +2588,15 @@
           },
           {
             "start": 202,
+            "end": 203,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
             "end": 207,
-            "text": "4 y 5",
+            "text": "5",
             "role": "data",
             "reading": "natural"
           },
@@ -2172,7 +2618,7 @@
       {
         "block": "u7_informe_orden_libre_referencia_calculo",
         "path": "/text",
-        "sourceSha256": "5a18fb08d6628d3d848a688da29adab7ecaf8938e6e272f90b522aa8f88de155",
+        "sourceSha256": "58e7e47875aa726e56e218d7a3b197ff994cda0aa539cac7d23d974104fbfd21",
         "spans": [
           {
             "start": 3,
@@ -2186,116 +2632,123 @@
             "end": 51,
             "text": "4 + 10 + 0 + 1 + 5 = 20",
             "role": "math",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
             "start": 66,
             "end": 76,
             "text": "20 / 5 = 4",
             "role": "math",
-            "reading": "technical"
+            "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 97,
+            "start": 90,
+            "end": 98,
             "text": "informar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 167,
+            "start": 167,
+            "end": 168,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 181,
-            "end": 183,
+            "start": 254,
+            "end": 256,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 207,
-            "end": 209,
+            "start": 280,
+            "end": 282,
             "text": "10",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 223,
-            "end": 224,
+            "start": 296,
+            "end": 297,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 248,
-            "end": 249,
+            "start": 321,
+            "end": 322,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 275,
-            "end": 280,
-            "text": "1 y 5",
+            "start": 348,
+            "end": 349,
+            "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 361,
-            "end": 369,
+            "start": 352,
+            "end": 353,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 434,
+            "end": 442,
             "text": "Minimo=4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 372,
-            "end": 380,
+            "start": 445,
+            "end": 453,
             "text": "Maximo=5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 391,
-            "end": 392,
+            "start": 464,
+            "end": 465,
             "text": "4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 460,
-            "end": 468,
+            "start": 533,
+            "end": 541,
             "text": "Dentro=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 539,
-            "end": 543,
+            "start": 612,
+            "end": 616,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 567,
-            "end": 571,
+            "start": 640,
+            "end": 644,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 646,
-            "end": 654,
+            "start": 719,
+            "end": 727,
             "text": "informar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 666,
-            "end": 671,
+            "start": 739,
+            "end": 744,
             "text": "cinco",
             "role": "data",
             "reading": "natural"

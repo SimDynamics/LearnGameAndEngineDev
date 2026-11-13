@@ -54,7 +54,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 uno{43};\n    std::mt19937 dos{43};\n    std::uniform_int_distribution<int> reparto_uno{1, 8};\n    std::uniform_int_distribution<int> reparto_dos{1, 8};\n    std::vector<int> primera;\n    std::vector<int> segunda;\n    for (int i{0}; i < 5; ++i) {\n        primera.push_back(reparto_uno(uno));\n        segunda.push_back(reparto_dos(dos));\n    }\n    std::cout << (primera == segunda) << ':' << primera.size();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 uno{43};\n    std::mt19937 dos{43};\n    std::uniform_int_distribution<int> reparto_uno{1, 8};\n    std::uniform_int_distribution<int> reparto_dos{1, 8};\n\n    std::vector<int> primera;\n    std::vector<int> segunda;\n\n    for (int i{0}; i < 5; ++i) {\n        primera.push_back(reparto_uno(uno));\n        segunda.push_back(reparto_dos(dos));\n    }\n\n    std::cout << (primera == segunda) << ':' << primera.size();\n\n    return 0;\n}\n",
           "answers": [
             "1:5"
           ],
@@ -86,7 +86,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando se conservan el motor y la distribución, la siguiente obtención utiliza el estado al que llegaron esos objetos. Dividir seis obtenciones en un bucle de dos y otro de cuatro no los reconstruye: la segunda parte continúa desde donde terminó la primera.\n\nEl motor mantiene su estado entre llamadas; el número utilizado como semilla no se aplica de nuevo en cada vuelta (Köppe et al., 2023). Crear otros objetos desde la configuración inicial comienza otro experimento.",
+          "text": "Cuando se conservan el motor y la distribución, la siguiente obtención utiliza el estado al que llegaron esos objetos. Dividir seis obtenciones en un bucle de dos y otro de cuatro no los reconstruye: la segunda parte continúa desde donde terminó la primera.\n\nEl motor mantiene su estado entre llamadas; el número utilizado como semilla no se aplica de nuevo en cada vuelta (Köppe et al., 2023). Crear otros objetos desde la configuración inicial comienza otro experimento.\n\nCopiar un motor ya utilizado es distinto de construirlo desde su semilla. Por ejemplo, std::mt19937 copia = motor; crea otro motor con el estado actual de motor. Los dos pueden seguir desde ese punto, pero las llamadas sobre copia no modifican motor. La copia no retrocede al comienzo del experimento (Köppe et al., 2023).\n\nEsta diferencia también importa al separar las obtenciones en funciones. Un parámetro std::mt19937& motor permite continuar sobre el objeto recibido; std::mt19937 motor crea una copia de su estado para esa llamada. Si sólo se modifica la copia, el motor original conserva el estado que tenía antes de llamar. Para conservar también una distribución recibida, se utiliza una referencia a ella, como std::uniform_int_distribution<int>& reparto (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "se conservan el motor y la distribución",
@@ -109,7 +109,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 entero{67};\n    std::mt19937 dividido{67};\n    std::uniform_int_distribution<int> a{2, 9};\n    std::uniform_int_distribution<int> b{2, 9};\n    std::vector<int> todos;\n    std::vector<int> por_partes;\n    for (int i{0}; i < 6; ++i) {\n        todos.push_back(a(entero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    for (int i{0}; i < 4; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    std::cout << (todos == por_partes) << ':' << por_partes.size();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 entero{67};\n    std::mt19937 dividido{67};\n    std::uniform_int_distribution<int> a{2, 9};\n    std::uniform_int_distribution<int> b{2, 9};\n\n    std::vector<int> todos;\n    std::vector<int> por_partes;\n\n    for (int i{0}; i < 6; ++i) {\n        todos.push_back(a(entero));\n    }\n\n    for (int i{0}; i < 2; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n\n    for (int i{0}; i < 4; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n\n    std::cout << (todos == por_partes) << ':' << por_partes.size();\n\n    return 0;\n}\n",
           "answers": [
             "1:6"
           ],
@@ -164,7 +164,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{97};\n    std::uniform_int_distribution<int> elegir{-4, 4};\n    std::vector<int> antes;\n    std::vector<int> despues;\n    for (int i{0}; i < 4; ++i) {\n        antes.push_back(elegir(motor));\n    }\n    motor.seed(97);\n    elegir.reset();\n    for (int i{0}; i < 4; ++i) {\n        despues.push_back(elegir(motor));\n    }\n    std::cout << (antes == despues);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{97};\n    std::uniform_int_distribution<int> elegir{-4, 4};\n\n    std::vector<int> antes;\n    std::vector<int> despues;\n\n    for (int i{0}; i < 4; ++i) {\n        antes.push_back(elegir(motor));\n    }\n\n    motor.seed(97);\n    elegir.reset();\n\n    for (int i{0}; i < 4; ++i) {\n        despues.push_back(elegir(motor));\n    }\n\n    std::cout << (antes == despues);\n\n    return 0;\n}\n",
           "answers": [
             "1"
           ],
@@ -251,7 +251,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 a{113};\n    std::mt19937 b{113};\n    const auto primero_a = a();\n    const auto primero_b = b();\n    const auto segundo_a = a();\n    const auto segundo_b = b();\n    std::cout << (primero_a == primero_b) << ':';\n    std::cout << (segundo_a == segundo_b);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 a{113};\n    std::mt19937 b{113};\n\n    const auto primero_a = a();\n    const auto primero_b = b();\n    const auto segundo_a = a();\n    const auto segundo_b = b();\n\n    std::cout << (primero_a == primero_b) << ':';\n    std::cout << (segundo_a == segundo_b);\n\n    return 0;\n}\n",
           "answers": [
             "1:1"
           ],
@@ -267,7 +267,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye probar(int cantidad, int primer_lote). Las llamadas de esta actividad cumplen 0 <= primer_lote <= cantidad. Cada llamada prepara dos motores con semilla 53 y dos distribuciones independientes para 1..9.\n\nCon el primer par obtiene cantidad datos y los conserva en un vector. Con el segundo par obtiene primer_lote datos y después cantidad-primer_lote, manteniendo los mismos objetos entre los dos bucles y reuniendo sus resultados en otro vector. Compara ambas secuencias completas y muestra Por lotes:B.\n\nDespués restablece el primer motor con la semilla 53 y llama a reset() en su distribución. Obtiene de nuevo cantidad datos en otro vector y los compara con la muestra original, que debe conservarse intacta. Muestra Reinicio:B. Termina ambas líneas con un salto.\n\nEn main reúne (6,2), (0,0), (1,0) y (1,1), en ese orden. Pulsa Compilar, ejecutar y comprobar. Las ocho líneas deben alternar Por lotes:1 y Reinicio:1. Los bools deben proceder de las comparaciones de los vectores, incluyendo tamaño, valores y orden, en lugar de imprimirse como constantes.",
+          "text": "Construye probar(int cantidad, int primer_lote). Las llamadas de esta actividad cumplen 0 <= primer_lote <= cantidad. Cada llamada prepara dos motores con semilla 53 y dos distribuciones independientes para 1..9.\n\nCon el primer par obtiene cantidad datos y los conserva en un vector. Con el segundo par obtiene primer_lote datos y después cantidad-primer_lote, manteniendo los mismos objetos entre los dos bucles y reuniendo sus resultados en otro vector. Compara ambas secuencias completas y muestra Por lotes:B.\n\nDespués restablece el primer motor con la semilla 53 y llama a reset() en su distribución. Obtiene de nuevo cantidad datos en otro vector y los compara con la muestra original, que debe conservarse intacta. Muestra Reinicio:B. B representa el resultado de cada comparación: 1 si los vectores son iguales y 0 si son distintos. Termina ambas líneas con un salto.\n\nEn main reúne las siguientes llamadas, en orden. Cada una muestra las dos líneas indicadas:\n\nprobar(6,2): obtiene seis datos; el segundo experimento los divide en dos y cuatro.\nPor lotes:1\nReinicio:1\n\nprobar(0,0): no obtiene datos en ninguno de los lotes.\nPor lotes:1\nReinicio:1\n\nprobar(1,0): obtiene un dato; el primer lote está vacío.\nPor lotes:1\nReinicio:1\n\nprobar(1,1): obtiene un dato; el segundo lote está vacío.\nPor lotes:1\nReinicio:1\n\nPulsa Compilar, ejecutar y comprobar. Los bools deben proceder de las comparaciones de los vectores, incluyendo tamaño, valores y orden, en lugar de imprimirse como constantes.",
           "emphasis": [
             {
               "text": "0 <= primer_lote <= cantidad",
@@ -318,7 +318,7 @@
                 "outputs": [
                   "Por lotes:1\nReinicio:1\nPor lotes:1\nReinicio:1\nPor lotes:1\nReinicio:1\nPor lotes:1\nReinicio:1\n"
                 ],
-                "explanation": "Conservar el generador permite continuar; restablecer motor y distribución permite repetir en el mismo entorno. La coincidencia vacía no acredita obtenciones."
+                "explanation": "En probar(6,2), el segundo par de objetos obtiene dos datos y continúa con otros cuatro desde el estado alcanzado. Su vector debe coincidir con el que obtuvo seis datos seguidos. Después, seed y reset restablecen el primer experimento para repetir su muestra original en el mismo entorno: las comparaciones muestran Por lotes:1 y Reinicio:1.\n\nprobar(0,0) compara vectores vacíos: la igualdad es verdadera, pero no acredita ninguna obtención. probar(1,0) y probar(1,1) comprueban respectivamente que el primer lote y el segundo pueden estar vacíos. En cada llamada deben compararse las colecciones reales, sin sustituir el resultado por una constante."
               }
             ]
           }
@@ -334,7 +334,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n    std::vector<int> completa;\n    std::vector<int> lotes;\n    for (int i{0}; i < 6; ++i) {\n        completa.push_back(a(primero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    for (int i{0}; i < 4; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    std::cout << \"Por lotes:\" << (completa == lotes) << '\\n';\n    primero.seed(53);\n    a.reset();\n    std::vector<int> repetida;\n    for (int i{0}; i < 6; ++i) {\n        repetida.push_back(a(primero));\n    }\n    std::cout << \"Reinicio:\" << (completa == repetida);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n\n    std::vector<int> completa;\n    std::vector<int> lotes;\n\n    for (int i{0}; i < 6; ++i) {\n        completa.push_back(a(primero));\n    }\n\n    for (int i{0}; i < 2; ++i) {\n        lotes.push_back(b(segundo));\n    }\n\n    for (int i{0}; i < 4; ++i) {\n        lotes.push_back(b(segundo));\n    }\n\n    std::cout << \"Por lotes:\" << (completa == lotes) << '\\n';\n\n    primero.seed(53);\n    a.reset();\n\n    std::vector<int> repetida;\n\n    for (int i{0}; i < 6; ++i) {\n        repetida.push_back(a(primero));\n    }\n\n    std::cout << \"Reinicio:\" << (completa == repetida);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -386,7 +386,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nvoid probar(int cantidad, int primer_lote) {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n    std::vector<int> completa;\n    std::vector<int> lotes;\n    for (int i{0}; i < cantidad; ++i) {\n        completa.push_back(a(primero));\n    }\n    for (int i{0}; i < primer_lote; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    for (int i{0}; i < cantidad-primer_lote; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    std::cout << \"Por lotes:\" << (completa == lotes) << '\\n';\n    primero.seed(53);\n    a.reset();\n    std::vector<int> repetida;\n    for (int i{0}; i < cantidad; ++i) {\n        repetida.push_back(a(primero));\n    }\n    std::cout << \"Reinicio:\" << (completa == repetida) << \"\\n\";\n}\n\nint main() {\n    probar(6,2);\n    probar(0,0);\n    probar(1,0);\n    probar(1,1);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nvoid probar(int cantidad, int primer_lote) {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n\n    std::vector<int> completa;\n    std::vector<int> lotes;\n\n    for (int i{0}; i < cantidad; ++i) {\n        completa.push_back(a(primero));\n    }\n\n    for (int i{0}; i < primer_lote; ++i) {\n        lotes.push_back(b(segundo));\n    }\n\n    for (int i{0}; i < cantidad - primer_lote; ++i) {\n        lotes.push_back(b(segundo));\n    }\n\n    std::cout << \"Por lotes:\" << (completa == lotes) << '\\n';\n\n    primero.seed(53);\n    a.reset();\n\n    std::vector<int> repetida;\n\n    for (int i{0}; i < cantidad; ++i) {\n        repetida.push_back(a(primero));\n    }\n\n    std::cout << \"Reinicio:\" << (completa == repetida) << \"\\n\";\n}\n\nint main() {\n    probar(6, 2);\n    probar(0, 0);\n    probar(1, 0);\n    probar(1, 1);\n    return 0;\n}\n"
         }
       ]
     },
@@ -414,7 +414,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Integra la generación de datos con una suma en este editor independiente. Prepara un motor con semilla 67 y una distribución 2..2. Conserva sus objetos mientras obtiene primero tres datos en un vector y después otros dos en un segundo vector.\n\nCalcula las sumas de ambas colecciones y muestra Primero:6 y Continuacion:4. Después restablece el motor con la semilla 67 y reinicia la distribución; obtiene otros tres datos y muestra Repeticion:1 al compararlos con el primer vector. Cada línea termina con un salto. Pulsa Compilar, ejecutar y comprobar.\n\nEl intervalo de un único valor fija las sumas y permite centrar la práctica en las colecciones y su resumen. El programa debe conservar o restablecer los objetos en los puntos indicados, sin suponer cuántos avances internos necesita la distribución.",
+          "text": "Integra la generación de datos con una suma en este editor independiente. Prepara un motor con semilla 67 y una distribución 2..2.\n\nConserva ambos objetos mientras obtiene primero tres datos en un vector y después otros dos en un segundo vector. Calcula la suma de cada colección.\n\nDespués restablece el motor con la semilla 67 y reinicia la distribución. Obtiene otros tres datos en un nuevo vector y los compara con el primero.\n\nLa salida esperada es:\n\nPrimero:6\nContinuacion:4\nRepeticion:1\n\nCada línea termina con un salto. Pulsa Compilar, ejecutar y comprobar. El intervalo de un único valor fija las sumas y permite centrar la práctica en las colecciones y su resumen. El programa debe conservar o restablecer los objetos en los puntos indicados, sin suponer cuántos avances internos necesita la distribución.",
           "emphasis": [
             {
               "text": "una suma",
@@ -464,7 +464,7 @@
                 "outputs": [
                   "Primero:6\nContinuacion:4\nRepeticion:1\n"
                 ],
-                "explanation": "Cada colección conserva sus datos y su suma. Para distinguir los procedimientos, comprueba también dónde se conserva o se restablece el generador; el resultado no cuenta sus avances internos."
+                "explanation": "El primer vector contiene tres valores iguales a dos, cuya suma es seis. El segundo contiene dos valores iguales a dos, cuya suma es cuatro. La colección repetida vuelve a contener tres doses y se compara con la primera: por eso se muestra Repeticion:1.\n\nEstas salidas comprueban los datos, sus sumas y la igualdad de las colecciones. El intervalo 2..2 da esos mismos valores aunque el motor se restablezca indebidamente antes de cada obtención. Para distinguir continuación y reinicio hay que seguir también los objetos y sus llamadas; las sumas no indican cuántas veces se avanzó el motor."
               }
             ]
           }
@@ -513,7 +513,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint suma(const std::vector<int>& datos) {\n    int total=0;\n    for (int dato:datos) { total+=dato; }\n    return total;\n}\n\nint main() {\n    std::mt19937 motor{67};\n    std::uniform_int_distribution<int> elegir{2,2};\n    std::vector<int> primera;\n    std::vector<int> continuacion;\n    for (int i=0;i<3;++i) { primera.push_back(elegir(motor)); }\n    for (int i=0;i<2;++i) { continuacion.push_back(elegir(motor)); }\n    motor.seed(67);\n    elegir.reset();\n    std::vector<int> repetida;\n    for (int i=0;i<3;++i) { repetida.push_back(elegir(motor)); }\n    std::cout<<\"Primero:\"<<suma(primera)<<\"\\nContinuacion:\"<<suma(continuacion)\n             <<\"\\nRepeticion:\"<<(primera==repetida)<<\"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint suma(const std::vector<int>& datos) {\n    int total = 0;\n\n    for (int dato : datos) {\n        total += dato;\n    }\n\n    return total;\n}\n\nint main() {\n    std::mt19937 motor{67};\n    std::uniform_int_distribution<int> elegir{2, 2};\n\n    std::vector<int> primera;\n    std::vector<int> continuacion;\n\n    for (int i = 0; i < 3; ++i) {\n        primera.push_back(elegir(motor));\n    }\n\n    for (int i = 0; i < 2; ++i) {\n        continuacion.push_back(elegir(motor));\n    }\n\n    motor.seed(67);\n    elegir.reset();\n\n    std::vector<int> repetida;\n\n    for (int i = 0; i < 3; ++i) {\n        repetida.push_back(elegir(motor));\n    }\n\n    std::cout << \"Primero:\" << suma(primera)\n              << \"\\nContinuacion:\" << suma(continuacion)\n              << \"\\nRepeticion:\" << (primera == repetida) << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1474,6 +1474,144 @@
         "id": "intervalo_unico_y_evidencia_del_procedimiento",
         "beforeSha256": "47c864a1bd7e4c16832842407c03ae44b4a6446fc71af91f51782dd86f1887af",
         "afterSha256": "0961479f5b8502e5183875f7072587348bd11b136279f9f92a529d57ca982833"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "4d3e0ceb667b0b152a73bf3964b17ea7a85ef237fb3801c72004d74b84f7aa87",
+        "afterSha256": "a4e669cfeb35dd032ec4a11950abc41c6a863d39ef55d3e59f04f22adf11f66b"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "03390593775af9ae0482af0d530c36c259aecb953adc699dc06215dc65098cbc",
+        "afterSha256": "79e703a20c450b0ec02aab6c2d8941ad2d2d8d5cf675dbc557d2bd56b10e6e5a"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "64346a317173b90da7273a727d70c5024cb378c1f45a109afbead64c87c58264",
+        "afterSha256": "b98691d8a692870679996cdb71ff82c0d94cfcada0de44c0a26ec84fa8d0fd33"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "ac229c230092365edabd3dbfacb2f550db5c2a87aa2fb597de9828fb4f688a51",
+        "afterSha256": "59944de805582bef2fd55cc5534100fe34b57b3eaac67b2d13ddeb97f77ad588"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "84a60894d4de80c41aab8a2289640d5b0a40cbabc154b358d4a6ec04ddd80636",
+        "afterSha256": "45f97f70abe907442b121b8e62640b88ac457f9f42535703b55e83ca5d9aae56"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "ea2bac8803f4911f63d546b7cc70d7e395b116a920553d7478490e346caca1e6",
+        "afterSha256": "44adb6a689597a274aeab4e7bb4d4fce7956d4f3a2a81baef1701761877e1722"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "4eece38ab8f6f2efe2ef3876dfa3ebea08795376335c680bf48e480454aac9eb",
+        "afterSha256": "8ec18db6c22bf079e92e1268139d607cdcf0d91ebe68ab1f56c465c38658d293"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c5700ab0e0c562f30c99219d02059900c558360cea0fefdedf1fe4701b713303",
+        "afterSha256": "324af9dc15893b1b7568fe8b1900977591905cad33c16f1da5d997b0a19e24ff"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "ffd3744eaa09ddcfd855786b9a9e1f0c670a0657e99b9b0debe1a84f168a2a64",
+        "afterSha256": "c4df444a405dd4463cfa280b30c1a0b047c774f8cf2820d5f422e4c5cb3692de"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "5246c943f1b9b80c5607244a84dea41ed6a09c749faf064007fe3c191f76f501",
+        "afterSha256": "e8efd91802dc32db787d5f3000147480775c97e7001d3b20038a5581809d48d1"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "770705085d92687fb513808b1d1dd152368966c283f449ad2e4e04b1366c2164",
+        "afterSha256": "9ce39109dc12b7a34915147a3484e4647962b885203ba8af78ae2fd22a43712b"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "9b5aab5a2d36a7bb92795413a0fbf72885ca1c172f27b008e22c3a69f35239b9",
+        "afterSha256": "631d3562ab04b2ca8869ab9ddb5cca695a6c3a81ff0c3a02505177579e9795b1"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 uno{43};\n    std::mt19937 dos{43};\n    std::uniform_int_distribution<int> reparto_uno{1, 8};\n    std::uniform_int_distribution<int> reparto_dos{1, 8};\n    std::vector<int> primera;\n    std::vector<int> segunda;\n    for (int i{0}; i < 5; ++i) {\n        primera.push_back(reparto_uno(uno));\n        segunda.push_back(reparto_dos(dos));\n    }\n    std::cout << (primera == segunda) << ':' << primera.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:5"
+          ],
+          "explanation": "Los motores uno y dos comienzan con semilla 43, y sus distribuciones se preparan para 1..8. En cada vuelta se hace la siguiente obtención de ambos experimentos, sin llamadas adicionales. Los vectores guardan cinco resultados iguales en las posiciones correspondientes, por lo que primera == segunda da true y se imprime 1:5. La comparación no requiere fijar una lista válida para todas las bibliotecas."
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 entero{67};\n    std::mt19937 dividido{67};\n    std::uniform_int_distribution<int> a{2, 9};\n    std::uniform_int_distribution<int> b{2, 9};\n    std::vector<int> todos;\n    std::vector<int> por_partes;\n    for (int i{0}; i < 6; ++i) {\n        todos.push_back(a(entero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    for (int i{0}; i < 4; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    std::cout << (todos == por_partes) << ':' << por_partes.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:6"
+          ],
+          "explanation": "El primer par obtiene seis datos seguidos. El segundo obtiene dos y conserva dividido y b para las cuatro llamadas siguientes; no los vuelve a construir ni reiniciar entre bucles. Ambos experimentos completan así las mismas seis obtenciones desde la misma preparación. Los vectores tienen igual tamaño, valores y orden: la comparación se imprime como 1 y el tamaño como 6, formando 1:6."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{97};\n    std::uniform_int_distribution<int> elegir{-4, 4};\n    std::vector<int> antes;\n    std::vector<int> despues;\n    for (int i{0}; i < 4; ++i) {\n        antes.push_back(elegir(motor));\n    }\n    motor.seed(97);\n    elegir.reset();\n    for (int i{0}; i < 4; ++i) {\n        despues.push_back(elegir(motor));\n    }\n    std::cout << (antes == despues);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Los cuatro resultados de las primeras llamadas quedan guardados en antes. Después motor.seed(97) restablece el comienzo del motor y elegir.reset() elimina la dependencia de obtenciones anteriores de la distribución, cuyos límites siguen siendo -4 y 4. Tras ese reinicio, las cuatro llamadas siguientes repiten el recorrido en el mismo entorno. despues contiene los mismos datos en el mismo orden, por lo que la igualdad muestra 1."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 a{113};\n    std::mt19937 b{113};\n    const auto primero_a = a();\n    const auto primero_b = b();\n    const auto segundo_a = a();\n    const auto segundo_b = b();\n    std::cout << (primero_a == primero_b) << ':';\n    std::cout << (segundo_a == segundo_b);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "a y b son motores del mismo tipo y comienzan con semilla 113. Las llamadas a() y b() obtienen el primer valor de cada secuencia; las siguientes obtienen el segundo. Se compara primero con primero y segundo con segundo, por lo que ambas igualdades dan true y se muestra 1:1. No se está comparando el primer valor con el segundo ni pasando los resultados por una distribución."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n    std::vector<int> completa;\n    std::vector<int> lotes;\n    for (int i{0}; i < 6; ++i) {\n        completa.push_back(a(primero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    for (int i{0}; i < 4; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    std::cout << \"Por lotes:\" << (completa == lotes) << '\\n';\n    primero.seed(53);\n    a.reset();\n    std::vector<int> repetida;\n    for (int i{0}; i < 6; ++i) {\n        repetida.push_back(a(primero));\n    }\n    std::cout << \"Reinicio:\" << (completa == repetida);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nvoid probar(int cantidad, int primer_lote) {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n    std::vector<int> completa;\n    std::vector<int> lotes;\n    for (int i{0}; i < cantidad; ++i) {\n        completa.push_back(a(primero));\n    }\n    for (int i{0}; i < primer_lote; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    for (int i{0}; i < cantidad-primer_lote; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    std::cout << \"Por lotes:\" << (completa == lotes) << '\\n';\n    primero.seed(53);\n    a.reset();\n    std::vector<int> repetida;\n    for (int i{0}; i < cantidad; ++i) {\n        repetida.push_back(a(primero));\n    }\n    std::cout << \"Reinicio:\" << (completa == repetida) << \"\\n\";\n}\n\nint main() {\n    probar(6,2);\n    probar(0,0);\n    probar(1,0);\n    probar(1,1);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint suma(const std::vector<int>& datos) {\n    int total=0;\n    for (int dato:datos) { total+=dato; }\n    return total;\n}\n\nint main() {\n    std::mt19937 motor{67};\n    std::uniform_int_distribution<int> elegir{2,2};\n    std::vector<int> primera;\n    std::vector<int> continuacion;\n    for (int i=0;i<3;++i) { primera.push_back(elegir(motor)); }\n    for (int i=0;i<2;++i) { continuacion.push_back(elegir(motor)); }\n    motor.seed(67);\n    elegir.reset();\n    std::vector<int> repetida;\n    for (int i=0;i<3;++i) { repetida.push_back(elegir(motor)); }\n    std::cout<<\"Primero:\"<<suma(primera)<<\"\\nContinuacion:\"<<suma(continuacion)\n             <<\"\\nRepeticion:\"<<(primera==repetida)<<\"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1504,6 +1642,13 @@
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 409,
+            "end": 412,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1531,6 +1676,13 @@
             "end": 145,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 320,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1572,6 +1724,13 @@
             "end": 90,
             "text": "1..8",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 213,
+            "text": "cinco",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1627,7 +1786,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "f2c09367bcf93512bac9b3d8f89fda99f66f33d750dd753a0ad10289a1e099b0",
+        "sourceSha256": "e967135961d0fb9d150934fd7cb155aafef4aecaf461f64f42f7582e6421413f",
         "spans": [
           {
             "start": 127,
@@ -1656,6 +1815,76 @@
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 588,
+            "text": "std::mt19937 copia = motor;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 629,
+            "end": 634,
+            "text": "motor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 640,
+            "end": 643,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 699,
+            "end": 704,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 718,
+            "end": 723,
+            "text": "motor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 775,
+            "end": 795,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 884,
+            "end": 903,
+            "text": "std::mt19937& motor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 948,
+            "end": 966,
+            "text": "std::mt19937 motor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1196,
+            "end": 1239,
+            "text": "std::uniform_int_distribution<int>& reparto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1240,
+            "end": 1258,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1671,6 +1900,20 @@
         "sourceSha256": "17ba321f26fcee986c4e2a190af1ff4eb2cd71b3f76859a1ee513c2b48984a13",
         "spans": [
           {
+            "start": 22,
+            "end": 26,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 65,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 77,
             "end": 85,
             "text": "dividido",
@@ -1683,6 +1926,20 @@
             "text": "b",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 99,
+            "end": 105,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 228,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 351,
@@ -1717,7 +1974,15 @@
         "block": "block_0001_0003",
         "path": "/explanation",
         "sourceSha256": "d3a0e9d98648b886d72c2ee383bff5766187ba0bcf920314fa914dabb450e126",
-        "spans": []
+        "spans": [
+          {
+            "start": 327,
+            "end": 330,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1801,6 +2066,20 @@
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 667,
+            "end": 670,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 673,
+            "end": 676,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1815,6 +2094,13 @@
         "path": "/explanation",
         "sourceSha256": "3932419657671e84696c66e9b93e80acf98106fea66c84f9075701b89ec30d35",
         "spans": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 67,
             "end": 72,
@@ -1847,6 +2133,13 @@
             "start": 249,
             "end": 250,
             "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 275,
+            "end": 281,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
@@ -2000,6 +2293,13 @@
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 214,
+            "end": 217,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2008,6 +2308,13 @@
         "path": "/question",
         "sourceSha256": "29f729faf65d257cf6ec37a127eb01135b6674163856ad777e2ca0550f029ad4",
         "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 65,
             "end": 69,
@@ -2030,6 +2337,13 @@
             "reading": "natural"
           },
           {
+            "start": 31,
+            "end": 35,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 48,
             "end": 49,
             "text": "1",
@@ -2048,6 +2362,13 @@
             "end": 56,
             "text": "3",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 122,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2086,7 +2407,15 @@
         "block": "block_0003_0002",
         "path": "/reviewFeedback/2",
         "sourceSha256": "1828fbfd9358e521f615ff1d2547ec6694659c9a25c15b769c2f5233fcdcb67e",
-        "spans": []
+        "spans": [
+          {
+            "start": 100,
+            "end": 103,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2194,7 +2523,7 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "b4ea56bdabac32a9f2a09a5d6dd1c22ed15b4782c326e87c763585f3ade80346",
+        "sourceSha256": "f25902baf73b4fa25d002c466dabab1648bcfa63cd529886b5e79423a3de1905",
         "spans": [
           {
             "start": 10,
@@ -2207,12 +2536,27 @@
             "start": 88,
             "end": 116,
             "text": "0 <= primer_lote <= cantidad",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
+          },
+          {
+            "start": 139,
+            "end": 142,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 163,
             "end": 165,
             "text": "53",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 171,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -2243,6 +2587,13 @@
             "text": "cantidad-primer_lote",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 402,
+            "end": 405,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 501,
@@ -2280,36 +2631,155 @@
             "reading": "natural"
           },
           {
-            "start": 781,
-            "end": 785,
+            "start": 742,
+            "end": 743,
+            "text": "B",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 789,
+            "end": 790,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 821,
+            "end": 822,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 880,
+            "end": 884,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 792,
-            "end": 819,
-            "text": "(6,2), (0,0), (1,0) y (1,1)",
+            "start": 947,
+            "end": 950,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 877,
-            "end": 881,
-            "text": "ocho",
+            "start": 970,
+            "end": 981,
+            "text": "probar(6,2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 991,
+            "end": 995,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 904,
-            "end": 915,
+            "start": 1040,
+            "end": 1043,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1046,
+            "end": 1052,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1054,
+            "end": 1065,
             "text": "Por lotes:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 918,
-            "end": 928,
+            "start": 1066,
+            "end": 1076,
+            "text": "Reinicio:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1078,
+            "end": 1089,
+            "text": "probar(0,0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1133,
+            "end": 1144,
+            "text": "Por lotes:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1145,
+            "end": 1155,
+            "text": "Reinicio:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1157,
+            "end": 1168,
+            "text": "probar(1,0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1178,
+            "end": 1180,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1214,
+            "end": 1225,
+            "text": "Por lotes:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1226,
+            "end": 1236,
+            "text": "Reinicio:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1238,
+            "end": 1249,
+            "text": "probar(1,1)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1259,
+            "end": 1261,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1296,
+            "end": 1307,
+            "text": "Por lotes:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1308,
+            "end": 1318,
             "text": "Reinicio:1",
             "role": "output",
             "reading": "natural"
@@ -2341,7 +2811,22 @@
         "block": "block_0004_0002",
         "path": "/explanation",
         "sourceSha256": "f86c0393e1c1f2b83e8122fa4cca2d529afb2d4de42632cd3fec81eeac4e3df3",
-        "spans": []
+        "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 113,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2382,14 +2867,100 @@
       {
         "block": "block_0004_0003",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "f3b005b4108a706a4a73e265ecc33eeb457c3d29808c73d1db561ea97fa57737",
-        "spans": []
+        "sourceSha256": "963a7de16819bf1e56f60ad568646410a7e7d26865c0aa4417850e8d57123fc6",
+        "spans": [
+          {
+            "start": 3,
+            "end": 14,
+            "text": "probar(6,2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 50,
+            "end": 53,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 87,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 162,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 192,
+            "text": "seed",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 200,
+            "text": "reset",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 327,
+            "text": "Por lotes:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 340,
+            "text": "Reinicio:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 354,
+            "text": "probar(0,0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 442,
+            "end": 453,
+            "text": "probar(1,0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 456,
+            "end": 467,
+            "text": "probar(1,1)",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
         "path": "/text",
         "sourceSha256": "a8406926debbd99c7c7e81ae591b331eb7b5485c4c9a54964b1de5f3d4eec423",
-        "spans": []
+        "spans": [
+          {
+            "start": 18,
+            "end": 21,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -2405,8 +2976,15 @@
           },
           {
             "start": 65,
+            "end": 68,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
             "end": 77,
-            "text": "dos y cuatro",
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
@@ -2465,6 +3043,20 @@
             "text": "cero",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 441,
+            "end": 444,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 456,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2521,6 +3113,34 @@
             "text": "1..9",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 82,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 211,
+            "end": 217,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 283,
+            "end": 286,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 326,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2528,7 +3148,15 @@
         "block": "block_0005_0003",
         "path": "/options/0",
         "sourceSha256": "568f87287fc5d7e7fddb69effc827891188c9bc9eb00872d91a97cc22193b279",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2540,7 +3168,15 @@
         "block": "block_0005_0003",
         "path": "/options/2",
         "sourceSha256": "3f519e1c07c2f5a16742c843ecaff7b2dce583e94d5c5ca2f01441dca0c05cf4",
-        "spans": []
+        "spans": [
+          {
+            "start": 24,
+            "end": 27,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2647,7 +3283,7 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "6ccd5d11f9aa87d55f32633c7b470e5e82fd513edb682b912b2ca90e3a254d01",
+        "sourceSha256": "7179943401eff4442c8ececb16a03ac50f9f621072bc2ee8035ec0ef410ed692",
         "spans": [
           {
             "start": 103,
@@ -2664,50 +3300,50 @@
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 181,
+            "start": 180,
+            "end": 184,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 217,
-            "end": 220,
+            "start": 220,
+            "end": 223,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 293,
-            "end": 302,
-            "text": "Primero:6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 305,
-            "end": 319,
-            "text": "Continuacion:4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 364,
-            "end": 366,
+            "start": 325,
+            "end": 327,
             "text": "67",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 409,
-            "end": 413,
+            "start": 370,
+            "end": 374,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 430,
-            "end": 442,
+            "start": 455,
+            "end": 464,
+            "text": "Primero:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 465,
+            "end": 479,
+            "text": "Continuacion:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 480,
+            "end": 492,
             "text": "Repeticion:1",
             "role": "output",
             "reading": "natural"
@@ -2734,6 +3370,13 @@
             "reading": "natural"
           },
           {
+            "start": 424,
+            "end": 427,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 465,
             "end": 485,
             "text": "(Köppe et al., 2023)",
@@ -2745,8 +3388,79 @@
       {
         "block": "block_0006_0004",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "80dc58a94e15551231520d39b298d315e7e2800db26198d8abaa71418bc9745f",
-        "spans": []
+        "sourceSha256": "dde930e23774d3f11ef0b394ae48d8db1ce86a31726bdea8429ea76b80ac0865",
+        "spans": [
+          {
+            "start": 26,
+            "end": 30,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 52,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 71,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 96,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 118,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 133,
+            "end": 139,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 185,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 191,
+            "text": "doses",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 252,
+            "text": "Repeticion:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 348,
+            "end": 352,
+            "text": "2..2",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "intervalo_unico_y_evidencia_del_procedimiento",
@@ -2771,7 +3485,7 @@
             "start": 141,
             "end": 146,
             "text": "doses",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2783,8 +3497,15 @@
           },
           {
             "start": 195,
+            "end": 196,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
             "end": 200,
-            "text": "6 y 4",
+            "text": "4",
             "role": "output",
             "reading": "natural"
           }
@@ -2803,9 +3524,30 @@
             "reading": "natural"
           },
           {
+            "start": 13,
+            "end": 17,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 43,
+            "end": 44,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 47,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
             "end": 51,
-            "text": "2, 2 y 2",
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
@@ -2817,9 +3559,23 @@
             "reading": "natural"
           },
           {
+            "start": 81,
+            "end": 84,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 89,
+            "end": 90,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
             "end": 94,
-            "text": "2 y 2",
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
@@ -2893,6 +3649,13 @@
         "path": "/text",
         "sourceSha256": "6d47d1725b57650868783115591b3cbcb40ccec1f2b6f0060455b9cf1832615b",
         "spans": [
+          {
+            "start": 47,
+            "end": 50,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 209,
             "end": 213,

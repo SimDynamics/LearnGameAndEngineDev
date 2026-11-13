@@ -10,28 +10,34 @@
         },
         {
           "type": "paragraph",
-          "text": "En este modelo, un Pedido tiene un código no vacío, entre una y veinte unidades y uno de los estados preparado, enviado o cancelado. Un pedido nuevo empieza siempre preparado. Son requisitos de esta actividad, no reglas universales de todos los pedidos.\n\nEstas condiciones permiten decidir qué datos admite el constructor y qué propiedades deberán conservar las operaciones del tipo.",
+          "text": "En este modelo, los datos de un Pedido deben cumplir conjuntamente estas condiciones:\n\nEl código no está vacío.\nLa cantidad está entre una y veinte unidades, incluidos ambos extremos.\nEl estado es uno de los enumeradores preparado, enviado o cancelado del tipo Estado.\n\nAdemás, un pedido nuevo empieza siempre en Estado::preparado. Empezar en ese estado es una condición de la construcción; no significa que el pedido deba permanecer preparado para siempre.\n\nEstos son requisitos de la actividad, no reglas universales de todos los pedidos. Nos permitirán decidir qué datos admite el constructor y qué propiedades deben conservar las operaciones del tipo.",
           "emphasis": [
             {
-              "text": "código no vacío"
+              "text": "código no está vacío",
+              "style": "bold"
             },
             {
-              "text": "entre una y veinte unidades"
+              "text": "entre una y veinte unidades",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Un invariante expresa qué estados representan valores válidos del tipo. El constructor debe establecerlo antes de terminar normalmente; las operaciones públicas que trabajan con un objeto válido deben conservarlo al finalizar (Stroustrup, 2024). No se supone que los argumentos ya cumplan esa regla antes de comprobarlos.\n\nEn este Pedido, la regla combina el código, la cantidad y el estado. Un código no vacío satisface sólo una de esas condiciones; tampoco demuestra que exista en algún sistema externo.\n\nEl programa siguiente declara struct PedidoInvalido {}; como un tipo sin miembros de datos. La expresión PedidoInvalido{} crea una señal de ese tipo para lanzarla cuando se rechaza la construcción. El tipo de la excepción permite seleccionar su tratamiento (Köppe et al., 2023).",
+          "text": "Un invariante es una regla que expresa qué estados representan valores válidos de un tipo (Stroustrup, 2024). Por ejemplo, un pedido con código P2 y seis unidades satisface las condiciones de código y cantidad de nuestro modelo; con ese mismo código y cero unidades, no las satisface. Un código no vacío, por sí solo, no basta ni demuestra que exista en algún sistema externo.\n\nEl constructor debe establecer el invariante antes de terminar normalmente. Las operaciones públicas que reciben un objeto válido deben conservarlo al finalizar (Stroustrup, 2024). Los argumentos recibidos por el constructor pueden incumplir la regla: comprobarlos sirve precisamente para aceptar la construcción o rechazarla. En este Pedido, la regla exige a la vez un código no vacío, una cantidad admitida y un estado reconocido.\n\nEl programa siguiente declara struct PedidoInvalido {}; como un tipo sin miembros de datos para comunicar el rechazo. En throw PedidoInvalido{};, la expresión PedidoInvalido{} crea el objeto de excepción que se lanza. Lo utilizamos como señal de rechazo; su tipo permite seleccionar el catch que debe tratarlo (Köppe et al., 2023).",
           "emphasis": [
             {
-              "text": "invariante"
+              "text": "invariante",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "antes de terminar normalmente"
+              "text": "antes de terminar normalmente",
+              "style": "bold"
             },
             {
-              "text": "tipo de la excepción"
+              "text": "objeto de excepción",
+              "style": "bold"
             }
           ]
         },
@@ -44,7 +50,7 @@
             "Código vacío y seis unidades."
           ],
           "correctIndex": 0,
-          "explanation": "Se necesitan conjuntamente código no vacío y unidades entre una y veinte."
+          "explanation": "El código P2 no está vacío y seis está entre una y veinte, por lo que ambos argumentos cumplen las condiciones. Con cero unidades se incumple el mínimo aunque el código sea válido. Con código vacío se incumple la condición del texto aunque seis sea una cantidad admitida. El constructor establece además el estado inicial preparado."
         }
       ]
     },
@@ -57,17 +63,19 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"P2\", 6};\n    std::cout << pedido.codigo() << \":\" << pedido.unidades() << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"P2\", 6};\n\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n              << \" \" << (pedido.estado() == Estado::preparado);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Antes de ejecutar el cuerpo del constructor ya se han inicializado los miembros: codigo_ y unidades_ reciben los argumentos mediante la lista; estado_ utiliza su inicializador Estado::preparado (Köppe et al., 2023).\n\nLa consulta codigo_.empty() devuelve true cuando la cadena no contiene caracteres. El cuerpo la combina con las comparaciones de cantidad: se rechaza un código vacío o una cantidad fuera del intervalo permitido. Si se cumple cualquiera de esas condiciones, throw interrumpe la construcción. El llamador no recibe un Pedido que haya terminado de construirse con esos datos inválidos (Stroustrup, 2024).",
+          "text": "Antes de ejecutar el cuerpo del constructor ya se han inicializado los miembros:\n\ncodigo_ recibe el código mediante codigo_{codigo}.\nunidades_ recibe la cantidad mediante unidades_{unidades}.\nestado_ recibe Estado::preparado. En la declaración Estado estado_ = Estado::preparado;, escrita dentro de la clase, proporcionamos ese inicializador de miembro. Como este constructor no indica otro para estado_ en su lista, se utiliza el de la declaración (Köppe et al., 2023).\n\nInicializar los miembros todavía no demuestra que los datos cumplan la regla. El cuerpo comprueba el código y la cantidad antes de que la construcción termine normalmente.\n\nLa consulta codigo_.empty() devuelve true si la cadena no tiene caracteres y false si contiene alguno. La condición del if rechaza que el código esté vacío, que unidades_ sea menor que uno o que supere veinte. Basta con que una de esas condiciones sea verdadera para ejecutar throw PedidoInvalido{};.\n\nthrow interrumpe la construcción: el llamador no obtiene un Pedido que haya terminado de construirse con esos datos inválidos (Stroustrup, 2024). Por eso podemos inicializar primero los miembros y comprobarlos en el cuerpo, sin entregar un pedido inválido como si fuera uno aceptado.",
           "emphasis": [
             {
-              "text": "ya se han inicializado los miembros"
+              "text": "ya se han inicializado los miembros",
+              "style": "bold"
             },
             {
-              "text": "throw interrumpe la construcción"
+              "text": "throw interrumpe la construcción",
+              "style": "bold"
             }
           ]
         },
@@ -80,7 +88,7 @@
             "Cambiar silenciosamente cero por una unidad."
           ],
           "correctIndex": 1,
-          "explanation": "Cambiar el dato sin informar no cumple la petición ni el requisito de rechazo."
+          "explanation": "Cero es menor que el mínimo de una unidad y satisface unidades_ < 1. El constructor debe lanzar PedidoInvalido{} antes de terminar normalmente. No entrega un pedido inválido para que sus consultas lo reparen ni cambia la cantidad por una: ambas acciones incumplirían el rechazo solicitado."
         }
       ]
     },
@@ -92,13 +100,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Como en los ejemplos anteriores de excepciones, try rodea la operación que puede fallar y catch trata una señal compatible. Lanzar desde el constructor abandona la construcción; el llamador no continúa con la instrucción que seguía a esa declaración dentro del try (Stroustrup, 2024).\n\nAquí catch (const PedidoInvalido&) reconoce la señal de rechazo. No contiene un Pedido creado correctamente ni convierte el intento fallido en uno aceptado. El tratamiento puede informar del rechazo y permitir que el programa continúe después del try/catch.",
+          "text": "Recuperamos el tratamiento de excepciones de la unidad anterior. El bloque try contiene el intento de construcción; un catch compatible trata la excepción que salga de ese intento (Stroustrup, 2024).\n\nSi el constructor lanza PedidoInvalido{}, la construcción se interrumpe. No se ejecutan las instrucciones siguientes que quedaban dentro del try. En estos ejemplos se entra en catch (const PedidoInvalido&), porque el tipo de la excepción coincide con el que reconoce ese tratamiento.\n\nEl catch recibe la señal de rechazo, no un Pedido construido correctamente. Puede informar del fallo. Al terminar su cuerpo, la ejecución continúa después del conjunto try/catch; no vuelve a la declaración que falló ni convierte ese intento en uno aceptado.",
           "emphasis": [
             {
-              "text": "Lanzar desde el constructor"
+              "text": "la construcción se interrumpe",
+              "style": "bold"
             },
             {
-              "text": "catch (const PedidoInvalido&)"
+              "text": "catch (const PedidoInvalido&)",
+              "style": "bold"
             }
           ]
         },
@@ -106,7 +116,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"A1\", 0};\n        std::cout << \"Creado\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"A1\", 0};\n        std::cout << \"Creado\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Rechazado"
           ],
@@ -120,7 +130,7 @@
           "answers": [
             "20"
           ],
-          "explanation": "Veinte pertenece al dominio y la construcción termina normalmente."
+          "explanation": "El código B2 no está vacío y veinte coincide con el máximo permitido. La cantidad no es menor que uno ni mayor que veinte; por tanto, ninguna condición del if provoca el rechazo. El constructor termina normalmente y pedido.unidades() devuelve veinte, que std::cout presenta como 20."
         }
       ]
     },
@@ -134,7 +144,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"\", 4};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Codigo no valido\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"\", 4};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Codigo no valido\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Codigo no valido"
           ],
@@ -149,7 +159,7 @@
             "Cero y veinte aceptadas; veintiuna rechazada."
           ],
           "correctIndex": 0,
-          "explanation": "Las fronteras y sus valores vecinos ponen a prueba ambas comparaciones."
+          "explanation": "Con un código no vacío, una y veinte unidades se aceptan porque los extremos están incluidos. Cero se rechaza por unidades_ < 1; veintiuna se rechaza por unidades_ > 20. Esas cuatro pruebas distinguen tanto el valor admitido de cada extremo como el valor que queda justo fuera."
         },
         {
           "type": "fill_code",
@@ -159,7 +169,7 @@
           "answers": [
             ">"
           ],
-          "explanation": "La condición debe rechazar unidades mayores que veinte."
+          "explanation": "El operador > hace que unidades_ > 20 sea verdadero al recibir veintiuna unidades. Así se lanza PedidoInvalido{} y se muestra Rechazado. Para veinte la comparación es falsa, por lo que no rechaza el máximo permitido. Usar >= rechazaría también veinte y cambiaría la regla."
         }
       ]
     },
@@ -193,7 +203,7 @@
             "Ambas se rechazan al compilar por el tipo de sus argumentos."
           ],
           "correctIndex": 1,
-          "explanation": "Los controles se complementan: tipos al compilar y valores al construir."
+          "explanation": "El parámetro de unidades es int, así que una cadena en esa posición no corresponde a su tipo y el programa se rechaza al compilar. El entero -3 sí tiene el tipo esperado, pero incumple el mínimo de una unidad: al ejecutar la construcción, la comprobación lanza PedidoInvalido{}. El catch trata ese rechazo de ejecución; no corrige una incompatibilidad de tipos."
         },
         {
           "type": "paragraph",
@@ -221,7 +231,7 @@
             "El usuario no podría cambiarlo porque el constructor ya lo comprobó."
           ],
           "correctIndex": 0,
-          "explanation": "Establecer el invariante al construir no basta si se puede romper después por acceso directo."
+          "explanation": "Después de aceptar un pedido con seis unidades, un miembro público permitiría sustituir esa cantidad por cero mediante acceso directo. El constructor no volvería a ejecutarse para revisar la asignación y la regla quedaría incumplida. Ocultar el dato evita esa vía; las operaciones que lo modifiquen también tendrán que conservar la regla."
         },
         {
           "type": "multiple_choice",
@@ -232,7 +242,7 @@
             "Declarar las consultas const y aceptar cualquier argumento."
           ],
           "correctIndex": 0,
-          "explanation": "La privacidad no transforma argumentos inválidos en un objeto correcto."
+          "explanation": "Un código vacío o cero unidades seguirían llegando a los miembros si el constructor no los comprobara. Que los miembros sean privados impide cambiar sus datos desde fuera, pero no evita aceptar datos inválidos durante la construcción. El constructor debe comprobar los argumentos y rechazar los que incumplan la regla antes de terminar normalmente."
         },
         {
           "type": "paragraph",
@@ -253,22 +263,25 @@
         },
         {
           "type": "paragraph",
-          "text": "Define Lote con un código std::string no vacío y una cantidad int entre una y cinco, ambos privados. Su constructor rechaza cualquier argumento fuera de esas condiciones mediante LoteInvalido, sin reemplazarlo por otro valor. Las consultas codigo() y cantidad() son const.\n\nConstruye una función de prueba que intente crear un lote dentro de try. Si la construcción termina normalmente, muestra codigo:cantidad usando sus consultas; si catch recibe LoteInvalido, muestra Rechazado. El tratamiento queda en esa función, fuera del constructor. Termina cada prueba con un salto de línea.\n\nEn main, llama a esa función con los pares {\"L\",1}, {\"L\",5}, {\"L\",0}, {\"L\",6}, {\"\",2} y {\"L\",-1}, en ese orden. Es el mismo programa el que debe recorrer los seis intentos, incluidos los argumentos inválidos.\n\nPulsa Compilar, ejecutar y comprobar. La salida debe tener seis líneas: L:1, L:5 y cuatro veces Rechazado. También la sexta línea termina con un salto. Conserva los argumentos de cada prueba; el rechazo no debe sustituirse por la creación de otro lote dentro del constructor.",
+          "text": "Define Lote con dos miembros privados: un código de tipo std::string y una cantidad de tipo int. Su regla exige un código no vacío y una cantidad entre una y cinco, incluidos ambos extremos.\n\nDefine el tipo LoteInvalido para señalar un rechazo. El constructor de Lote debe lanzar esa excepción si los argumentos incumplen la regla, sin sustituirlos por otros valores. Las consultas codigo() y cantidad() son const y recuperan los datos del objeto.\n\nDefine una función de prueba que reciba el código y la cantidad. Dentro de un try, intenta construir el lote. Si termina normalmente, utiliza sus consultas para mostrar codigo:cantidad. Un catch para LoteInvalido, fuera del constructor, debe mostrar Rechazado. Después del try/catch, termina la línea con un salto, tanto al aceptar como al rechazar.\n\nEn main, llama a esa función con estos datos, en este orden. Cada renglón indica también el resultado esperado de esa llamada:\nCódigo L, cantidad una: L:1.\nCódigo L, cantidad cinco: L:5.\nCódigo L, cantidad cero: Rechazado.\nCódigo L, cantidad seis: Rechazado.\nCódigo vacío, cantidad dos: Rechazado.\nCódigo L, cantidad menos una: Rechazado.\n\nEl programa del editor reúne las seis llamadas. Conserva los argumentos de cada prueba; el rechazo no debe sustituirse por la creación de otro lote dentro del constructor. Todas las líneas terminan con un salto, incluida la sexta.\n\nPulsa Compilar, ejecutar y comprobar. La comprobación utiliza las seis líneas completas.",
           "emphasis": [
             {
-              "text": "entre una y cinco"
+              "text": "entre una y cinco",
+              "style": "bold"
             },
             {
-              "text": "fuera del constructor"
+              "text": "fuera del constructor",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -287,7 +300,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera tu tipo LoteInvalido, tu clase Lote y la función que prueba una construcción. El código debe ser una cadena no vacía y la cantidad debe pertenecer a 1..5. Las consultas codigo() y cantidad() son const y conservan los valores recibidos.\n\nCopia esas definiciones antes del main suministrado. El cliente llama probar a tu función de prueba; si utilizaste otro nombre, ajusta ese nombre conservando las llamadas y sus argumentos. En cada llamada, intenta construir dentro de try, consulta ambos miembros sólo si la construcción termina normalmente y trata LoteInvalido con catch fuera del constructor.\n\nSe conservan los seis intentos anteriores. Después de sus rechazos se prueban M con 2 unidades, Zona B con 3 y R7 con 4. Usa el mismo constructor y la misma función para los nueve intentos. Muestra codigo:cantidad al aceptar o Rechazado al rechazar; cada línea termina con un salto, incluida la última. Pulsa «Compilar, ejecutar y comprobar» y compara el informe completo.",
+          "text": "Recupera tu tipo LoteInvalido, tu clase Lote y la función que prueba una construcción. La regla sigue siendo la misma: código no vacío y cantidad entre una y cinco. Las consultas codigo() y cantidad() son const y conservan los valores recibidos.\n\nCopia esas definiciones antes del main suministrado. El cliente llama probar a tu función de prueba. Si utilizaste otro nombre, ajusta el nombre de las llamadas conservando sus argumentos. En cada llamada se intenta construir dentro de try; sólo se consultan los miembros si la construcción termina normalmente. LoteInvalido se trata con catch fuera del constructor.\n\nEl programa conserva los seis intentos anteriores y añade estos tres, en este orden:\nCódigo M, cantidad dos: M:2.\nCódigo Zona B, cantidad tres: Zona B:3.\nCódigo R7, cantidad cuatro: R7:4.\n\nUsa el mismo constructor y la misma función para los nueve intentos. Cada línea muestra codigo:cantidad al aceptar o Rechazado al rechazar y termina con un salto, incluida la última. El informe completo aparece a continuación. Pulsa «Compilar, ejecutar y comprobar».",
           "emphasis": [
             {
               "text": "antes del main",
@@ -309,7 +322,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui tus definiciones de LoteInvalido, Lote y probar.\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui tus definiciones de LoteInvalido, Lote y probar.\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -358,17 +371,19 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nint main() {\n    try {\n        Lote lote{\"L\", 6};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad)\n        : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) {\n            throw LoteInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int cantidad() const {\n        return cantidad_;\n    }\n\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nint main() {\n    try {\n        Lote lote{\"L\", 6};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El programa anterior se concentra en un único intento con seis unidades. Muestra cómo el constructor lanza y cómo el llamador trata el rechazo; no reúne todavía las seis pruebas de la actividad. La referencia completa al final de esta página sí las ejecuta mediante la función probar.\n\nLas consultas se usan sólo después de una construcción aceptada. Los valores válidos se conservan sin cambios; los datos fuera del dominio interrumpen la construcción. Los miembros privados impiden que el código usuario eluda después esas reglas mediante una asignación directa.",
+          "text": "El programa anterior muestra un único intento con seis unidades. Como seis supera el máximo de cinco, el constructor lanza LoteInvalido{} y el catch del llamador muestra Rechazado. Ese ejemplo se concentra en una construcción; la referencia completa de las seis construcciones utiliza después la función probar.\n\nLas consultas se usan sólo tras una construcción aceptada. Los argumentos válidos se conservan en los miembros; los que incumplen la regla interrumpen la construcción. Al ser privados los miembros, el código que usa la clase no puede cambiar después esos datos mediante una asignación directa.",
           "emphasis": [
             {
-              "text": "un único intento"
+              "text": "un único intento",
+              "style": "bold"
             },
             {
-              "text": "La referencia completa"
+              "text": "la referencia completa",
+              "style": "bold"
             }
           ]
         },
@@ -376,7 +391,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido a{\"A\", 1};\n        std::cout << \"A \";\n        Pedido b{\"B\", 21};\n        std::cout << \"B\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido a{\"A\", 1};\n        std::cout << \"A \";\n        Pedido b{\"B\", 21};\n        std::cout << \"B\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "A Rechazado"
           ],
@@ -389,7 +404,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nvoid probar(const std::string& codigo, int cantidad) {\n    try {\n        const Lote lote{codigo, cantidad};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad)\n        : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) {\n            throw LoteInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int cantidad() const {\n        return cantidad_;\n    }\n\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nvoid probar(const std::string& codigo, int cantidad) {\n    try {\n        const Lote lote{codigo, cantidad};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -397,14 +412,14 @@
         },
         {
           "type": "paragraph",
-          "text": "La referencia completa anterior define LoteInvalido, Lote y probar. Conserva esas definiciones y sustituye sólo su main por el siguiente.\n\nLos primeros seis intentos conservan sus resultados. Después, 2, 3 y 4 pertenecen al intervalo: sus construcciones se aceptan y las consultas producen M:2, Zona B:3 y R7:4. Junto con los casos anteriores, se han consultado las cinco cantidades enteras admitidas.\n\nProbar únicamente las fronteras no distinguiría una condición que aceptara sólo 1 o 5 de otra que aceptara todo 1..5. Los códigos distintos comprueban además que la consulta recupera el miembro de cada objeto. Cada llamada trata su propio rechazo; una construcción fallida no reemplaza los argumentos de la siguiente.",
+          "text": "La referencia anterior define LoteInvalido, Lote y probar para los seis intentos iniciales. Conserva esas definiciones y sustituye sólo su main por el siguiente.\n\nLos seis primeros resultados no cambian. Las tres llamadas nuevas utilizan cantidades que también pertenecen al intervalo admitido:\nCódigo M y cantidad dos: M:2.\nCódigo Zona B y cantidad tres: Zona B:3.\nCódigo R7 y cantidad cuatro: R7:4.\n\nJunto con las cantidades una y cinco de las primeras llamadas, se han consultado las cinco cantidades enteras admitidas.\n\nImagina una condición equivocada que aceptara sólo una o cinco unidades y rechazara cualquier otra cantidad. Produciría las mismas seis líneas iniciales. En cambio, rechazaría la llamada con código M y cantidad dos, que debería producir M:2. Las llamadas con tres y cuatro unidades detectan el mismo error en otros valores del interior del intervalo.\n\nLos códigos diferentes permiten además detectar una consulta que devolviera siempre L, aunque el constructor hubiera recibido otro texto. Cada llamada trata su propio rechazo y conserva sus propios argumentos: una construcción fallida no sustituye los datos de la siguiente.",
           "emphasis": [
             {
               "text": "las cinco cantidades enteras admitidas",
               "style": "bold"
             },
             {
-              "text": "el miembro de cada objeto",
+              "text": "Cada llamada trata su propio rechazo",
               "style": "bold"
             }
           ]
@@ -412,7 +427,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n    return 0;\n}\n"
+          "code": "int main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1355,6 +1370,261 @@
         "id": "block_0007_0003",
         "beforeSha256": "2a49892879c22e837660af783a0fe66d0251d3ae26dc9a5692c4f0d9cd365fb0",
         "afterSha256": "e8b864b17ba6ab44fd18a019b86a9bbaae191210b158662b0c135baa86364a4b"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "c162853447e177821b975dde30c990da3465853fa813755e0471d20033976a69",
+        "afterSha256": "2d9eae478a940f7072d192f5bad0a414b1b4ff8aed36a87f01853dfef98836ba"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "04e4861e5958155d9e58048db1dddb970e6b3dc2725e984fc18a4786f81abc4b",
+        "afterSha256": "44bdc6ab4a456ac9d810669f3f402c73a57b98f9215fb42605a8434eb4e3e3a2"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "c974db2f0f66ab73ea9535e17dfa436187ed41890f1c226bcdb37b7d12402d50",
+        "afterSha256": "4be47867ace60ec461cab7dda2e8fb7fb1c1ea39e751256578c334780b5b7f81"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3c2f2fd15f7528baf19dc9ff9db578fc62fe63c32a2ff1103b33b91b7af62ba2",
+        "afterSha256": "ca98a326db517325b375a0b1d09ed76a6390449ad048408c5d96a0d930a4a9bc"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "a08e5190559408148bd6a64f529988b2b24a09eadccaa93973ec92695adbb573",
+        "afterSha256": "f07d0fe7355e1d34ea9e615afe74cb82ca6c3cc32827debb13240856ed924449"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "87596762e1f1d17622c5a9f63bca0ac310ca21c2110d11e2555357d648d5833f",
+        "afterSha256": "5ca3fb129ee422bba913bddfd22f137acf47ef10186c237221b02aba923dd6f8"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "257dbea89a3de2971e05a40eeeedfb243a97569f0e20110b5087f711f8c4b89d",
+        "afterSha256": "9908fd218d752de659c492c4e0e27464723e9f6c7f4c0694d08c693414fbc8bb"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "75b065a48f96ca8f81d8be339b8fad2eed6a75900ec6493a1e10a06849f0171c",
+        "afterSha256": "345c728383fad474ceec18c14f3efbe68ec48b147b1b172a160e2c96cd1c4619"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "a16f556b0dad36349705027210155ebc9146dfbb63247ef8772fde096840c63a",
+        "afterSha256": "24efc86bd2c9471d95c405c17171250f6d3628f0a97e154c09867b4413152c8d"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "029906974dfbf61e71c3b9cd6f0fcaeb16ced2195e2fabaf30afdf89b22f838c",
+        "afterSha256": "e712f807c0d2867ff9b712a75e107a4f7de8116f26b6461a90ba49a420ed8bcb"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "4f1b9e27ff593370b9315e87b84d147b6172e5499d38732aad740245b913b2d7",
+        "afterSha256": "32582ab08410570a4c84dc2ea70699afc61d33e94bcdb133a6ffba6b28497d40"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "12ca395b33e3de4994388b28743d7932d3095302d38e88a632c20134a015d2cc",
+        "afterSha256": "5235663c88116b95681f06036d9ec126195ac34d4e455d6570fd448416245550"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "befa4dab9c9de1ed0af6dc410693651e724c98b2e7296a7e4d36b41225316c0e",
+        "afterSha256": "fe94c0b4d72ef72f0238d9fce469eb2bfbe45b286e4bd2edfdfbe1f0fd49792c"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f78e148040f893604920303ae13636aa4e4d817d0017ef035742079443dbfb6c",
+        "afterSha256": "98ce62bc64993390fae2111f97c360c6c5ac5728ef4ddb9793a0833d2bd7eb5f"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "0e717dc299c630a9f65abe927b38120179873d5fabf958e15629e955072939d8",
+        "afterSha256": "e12ca19cf97a59a0921c9050516322594386bca600c5bd0d45c3057e33ca8127"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8fddf89a89c3f0ecefe02ff46624ae7b4235658836e7fa7e61a2bf09a1cf7d6d",
+        "afterSha256": "1289344c71d75a0f919a262eeeef55f57babe788e6de17ed27a8e715f54c62c8"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "d69208ea68d765aa64b99fe57c9833791a46dba10f50fafb1ed2f09d84509bc6",
+        "afterSha256": "9bae6a89f5cd61d8252f86739957884053ba4f5acac453d1c314d2db9b1daa21"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_consigna",
+        "beforeSha256": "68cdd38a518f42bde0c916225bb69a3890ce3f23f7b267e251107b0268a60eb0",
+        "afterSha256": "b449ae61e014c759fc3d50eaf7b5fc0e066928b0e79b4d74966837986cf89f9e"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_comprobacion",
+        "beforeSha256": "7d1d660aab6f87fb2e10f79da7a8a503173838ad71685324e27772640307c0da",
+        "afterSha256": "6abe159f39ec1e877c47b6827ea7a972c8a1c534f6009eff98e68f2c7c547f96"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "0feebbfb1a242f910903249c71e729183c033a6aa107192504a24b7cbce32960",
+        "afterSha256": "36177128e905806cc7d6b149886b902a9226b3c42a3645400033029bdc9efbe4"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "f2dae3ed692b3b4dfb426ef53b7191d3bb9a87b70bcb28196db170349932fb86",
+        "afterSha256": "ae69ba29b2b532071a3596a0fb7103261b0a237bdf86421b1dd5ce1ff9b721e4"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "e8b864b17ba6ab44fd18a019b86a9bbaae191210b158662b0c135baa86364a4b",
+        "afterSha256": "64853da3ab97c4a9e8a77f233e81ef35cbf10a96d12bc74df4455811b307233c"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "b3de12848d13148adbc971398fdf63e341c5b59932f648eefa8dee54e1b68ea3",
+        "afterSha256": "1582cafb9b9436c5896d5f2885106cdeca5931668bbdf64678be77923816ad68"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_referencia_razonamiento",
+        "beforeSha256": "8b39b000070a630c66c06705f77429188e376488c6097dc1fad974325f618bf4",
+        "afterSha256": "5a7f5667a492dc0e022c5f143db979a66d050e573b11a3798b489983aa86ac24"
+      },
+      {
+        "id": "u9_lote_intervalo_completo_referencia_main",
+        "beforeSha256": "660d7b8d9020ba3e2ca460a6e48a586449076527c015b0968a5c5f83bc11b020",
+        "afterSha256": "3afb600aa8581bb57058d1e6424072cb58f97ab96d682c80004203958164da3d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "44bdc6ab4a456ac9d810669f3f402c73a57b98f9215fb42605a8434eb4e3e3a2",
+        "afterSha256": "0e691c4a8ae3522119a56e5d648b3ddeb22ca399e7e9a41d7d947caf6c835fbe"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"P2\", 6};\n    std::cout << pedido.codigo() << \":\" << pedido.unidades() << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"A1\", 0};\n        std::cout << \"Creado\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado"
+          ],
+          "explanation": "La cantidad 0 cumple unidades_ < 1, por lo que el constructor lanza PedidoInvalido{}. La construcción no termina normalmente y la instrucción que habría mostrado Creado se omite. El catch correspondiente escribe Rechazado."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"\", 4};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Codigo no valido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Codigo no valido"
+          ],
+          "explanation": "La cantidad 4 está dentro de 1..20, pero codigo_.empty() es true. Basta esa condición del if para lanzar PedidoInvalido{}: no se consulta la cantidad del objeto rechazado. El tratamiento escribe Codigo no valido."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\n"
+                ],
+                "explanation": "Las fronteras una y cinco producen objetos válidos. Una cantidad exterior o un código vacío impiden completar el objeto y se tratan fuera del constructor."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u9_lote_intervalo_completo_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui tus definiciones de LoteInvalido, Lote y probar.\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nM:2\nZona B:3\nR7:4\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las cantidades 1 y 5 son las fronteras del intervalo; 2, 3 y 4 también son válidas. El constructor conserva cada código no vacío y cada cantidad aceptada. Los rechazos anteriores no impiden construir y consultar los tres lotes siguientes.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nRechazado\nRechazado\nRechazado\n"
+                    ],
+                    "text": "El intervalo admitido incluye todas las cantidades desde 1 hasta 5, también 2, 3 y 4. Revisa si tu condición está admitiendo únicamente las dos fronteras. Los tres códigos nuevos no están vacíos."
+                  },
+                  {
+                    "outputs": [
+                      "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nL:2\nL:3\nL:4\n"
+                    ],
+                    "text": "Las cantidades se conservan, pero los tres códigos nuevos aparecen sustituidos por L. Revisa qué valor guarda cada objeto y qué devuelve codigo(). La consulta debe recuperar el código de ese lote, incluidos los espacios que contiene Zona B."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nint main() {\n    try {\n        Lote lote{\"L\", 6};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido a{\"A\", 1};\n        std::cout << \"A \";\n        Pedido b{\"B\", 21};\n        std::cout << \"B\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "A Rechazado"
+          ],
+          "explanation": "Pedido a{\"A\", 1}; cumple las condiciones y permite escribir A  con su espacio. En cambio, Pedido b{\"B\", 21}; supera el máximo y lanza antes de que se escriba B. El catch añade Rechazado; la salida ya escrita se conserva y queda A Rechazado."
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nvoid probar(const std::string& codigo, int cantidad) {\n    try {\n        const Lote lote{codigo, cantidad};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u9_lote_intervalo_completo_referencia_main",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar(\"L\", 1);\n    probar(\"L\", 5);\n    probar(\"L\", 0);\n    probar(\"L\", 6);\n    probar(\"\", 2);\n    probar(\"L\", -1);\n    probar(\"M\", 2);\n    probar(\"Zona B\", 3);\n    probar(\"R7\", 4);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1387,67 +1657,144 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "8a168a89c2d178768396ff8e48b6223647dec48667a7d85e2c73f2e9e22c861e",
+        "sourceSha256": "56c218918a10fc7c627404e22e91c929c7833308051a63fe85a521a7ba7a1135",
         "spans": [
           {
-            "start": 19,
-            "end": 25,
+            "start": 32,
+            "end": 38,
             "text": "Pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 58,
-            "end": 61,
+            "start": 135,
+            "end": 138,
             "text": "una",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 64,
-            "end": 70,
+            "start": 141,
+            "end": 147,
             "text": "veinte",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 230,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 232,
+            "end": 239,
+            "text": "enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 242,
+            "end": 251,
+            "text": "cancelado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 261,
+            "end": 267,
+            "text": "Estado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 313,
+            "end": 330,
+            "text": "Estado::preparado",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "0208af7b0009e84d5965f94084a880506b07ea753ecae20892142e6fdb672e5a",
+        "sourceSha256": "1ae4e7d90e68cf08db093f6dda75944dbe7576ce3d40154bf7e1a48ffef6f4b7",
         "spans": [
           {
-            "start": 226,
-            "end": 244,
+            "start": 90,
+            "end": 108,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 331,
-            "end": 337,
+            "start": 144,
+            "end": 146,
+            "text": "P2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 153,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 539,
+            "end": 557,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 713,
+            "end": 719,
             "text": "Pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 537,
-            "end": 562,
+            "start": 842,
+            "end": 867,
             "text": "struct PedidoInvalido {};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 612,
-            "end": 628,
+            "start": 933,
+            "end": 956,
+            "text": "throw PedidoInvalido{};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 971,
+            "end": 987,
             "text": "PedidoInvalido{}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 764,
-            "end": 784,
+            "start": 1098,
+            "end": 1103,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1122,
+            "end": 1142,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1463,21 +1810,56 @@
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "71c3e803135d698a786d213802c87387617c7dae8687d2b7ba7d4b4a62d84eff",
+        "sourceSha256": "af8cc7cd9a908a52c526b0b1e26e9b83b025ba72a2ee202c6d92f5da61f72379",
         "spans": [
           {
-            "start": 60,
-            "end": 63,
+            "start": 10,
+            "end": 12,
+            "text": "P2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 33,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 48,
             "text": "una",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 66,
-            "end": 72,
+            "start": 51,
+            "end": 57,
             "text": "veinte",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 120,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 244,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 331,
+            "text": "preparado",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1546,74 +1928,144 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "b9eb379730a9ec2b2ab75de09e0799cef88d5130a8d52d829f09c379ebd0f85f",
+        "sourceSha256": "6b14786743ac666b3d2484114ea03f9f9616359a6242d957da31aa7c9728bfe9",
         "spans": [
           {
-            "start": 81,
-            "end": 88,
+            "start": 82,
+            "end": 89,
             "text": "codigo_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 91,
-            "end": 100,
+            "start": 116,
+            "end": 131,
+            "text": "codigo_{codigo}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 133,
+            "end": 142,
             "text": "unidades_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 150,
+            "start": 171,
+            "end": 190,
+            "text": "unidades_{unidades}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 192,
+            "end": 199,
             "text": "estado_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 193,
+            "start": 207,
+            "end": 224,
             "text": "Estado::preparado",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 194,
-            "end": 214,
+            "start": 244,
+            "end": 279,
+            "text": "Estado estado_ = Estado::preparado;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 403,
+            "text": "estado_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 449,
+            "end": 469,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 229,
-            "end": 244,
+            "start": 657,
+            "end": 672,
             "text": "codigo_.empty()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 258,
+            "start": 682,
+            "end": 686,
             "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 722,
+            "end": 727,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 765,
+            "end": 767,
+            "text": "if",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 474,
-            "end": 479,
+            "start": 806,
+            "end": 815,
+            "text": "unidades_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 830,
+            "end": 833,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 847,
+            "end": 853,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 921,
+            "end": 944,
+            "text": "throw PedidoInvalido{};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 947,
+            "end": 952,
             "text": "throw",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 533,
-            "end": 539,
+            "start": 1007,
+            "end": 1013,
             "text": "Pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 599,
-            "end": 617,
+            "start": 1073,
+            "end": 1091,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1637,8 +2089,44 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "c29be5a230af8cab708d8e7fea75a99152d847df79c2c4b6b4e7ab4194860c26",
-        "spans": []
+        "sourceSha256": "eb63e44b55771b3f506f16fa77ce1c44b960bf133d0ca55dfdc679cbb9e71ddf",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 34,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 67,
+            "text": "unidades_ < 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 112,
+            "text": "PedidoInvalido{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 237,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1682,60 +2170,74 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "b22a35b812ae2f89dca1c50bd5cf2410b734f531d056c73e9d2462fb5197f909",
+        "sourceSha256": "108992cff013bca30b93516654baff30392edadbd2cdbac1e725670fffa3d9e2",
         "spans": [
           {
-            "start": 48,
-            "end": 51,
+            "start": 75,
+            "end": 78,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 95,
+            "start": 119,
+            "end": 124,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 261,
-            "end": 264,
-            "text": "try",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 265,
-            "end": 283,
+            "start": 180,
+            "end": 198,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 291,
-            "end": 320,
-            "text": "catch (const PedidoInvalido&)",
+            "start": 225,
+            "end": 241,
+            "text": "PedidoInvalido{}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 366,
-            "end": 372,
-            "text": "Pedido",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 533,
-            "end": 536,
+            "start": 342,
+            "end": 345,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 537,
-            "end": 542,
+            "start": 377,
+            "end": 406,
+            "text": "catch (const PedidoInvalido&)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 489,
+            "end": 494,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 529,
+            "end": 535,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 654,
+            "end": 657,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 658,
+            "end": 663,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
@@ -1806,13 +2308,69 @@
       {
         "block": "block_0002_0003",
         "path": "/explanation",
-        "sourceSha256": "a029c0c8262802b8910698a097fc53a7e34a3bdce58a69c1fdcbcabc3593ab2d",
+        "sourceSha256": "4e3d2c3f4552312efd68bd74e728630186090e34a3fab63befc12fbb32d8881f",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
-            "text": "Veinte",
+            "start": 10,
+            "end": 12,
+            "text": "B2",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 35,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
+            "end": 101,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 121,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 158,
+            "text": "if",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 216,
+            "end": 233,
+            "text": "pedido.unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 243,
+            "end": 249,
+            "text": "veinte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 255,
+            "end": 264,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 281,
+            "text": "20",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1845,8 +2403,7 @@
             "start": 29,
             "end": 34,
             "text": "1..20",
-            "role": "data",
-            "reading": "natural"
+            "role": "math"
           },
           {
             "start": 41,
@@ -1894,8 +2451,58 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "ac261c50159dcf4213f9292fc189ae8d64da43040b692d5269f7fcc22b81170e",
-        "spans": []
+        "sourceSha256": "f9fc486769796312c0b186b4ae0acb21ca9d833c99d35b65b408b8bd2925e019",
+        "spans": [
+          {
+            "start": 24,
+            "end": 27,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 36,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 98,
+            "text": "Cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 127,
+            "text": "unidades_ < 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 129,
+            "end": 138,
+            "text": "veintiuna",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 154,
+            "end": 168,
+            "text": "unidades_ > 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 181,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -1997,11 +2604,60 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "a05a16dfec3fad82ef4dd7994593115f5b070fb31590a55ac128bb47f303101f",
+        "sourceSha256": "8b7b2d822051f62af39fad2b6b95aad99b5cf4c49ba4333522f3e20718feb7db",
         "spans": [
           {
-            "start": 48,
-            "end": 54,
+            "start": 12,
+            "end": 13,
+            "text": ">",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 23,
+            "end": 37,
+            "text": "unidades_ > 20",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 72,
+            "text": "veintiuna",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 112,
+            "text": "PedidoInvalido{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 126,
+            "end": 135,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 148,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 222,
+            "end": 224,
+            "text": ">=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 244,
+            "end": 250,
             "text": "veinte",
             "role": "data",
             "reading": "natural"
@@ -2087,8 +2743,44 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "57a2919d72b042ed5f99f10ad73d724dcb909fd8ef491ae8f047d8914aa68e44",
-        "spans": []
+        "sourceSha256": "0371414bc53b8a16a08f9a8a403d2c6bfd061a6d800af640f92a8dd76ef660d2",
+        "spans": [
+          {
+            "start": 28,
+            "end": 31,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 143,
+            "text": "-3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 198,
+            "end": 201,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 277,
+            "text": "PedidoInvalido{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 282,
+            "end": 287,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2144,8 +2836,23 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "507b5f7714621c9aae7c662fe4ef6791ff8450e69eea97cda6f8f178abf940ba",
-        "spans": []
+        "sourceSha256": "6a50144af1d6dd3df82e9e6da8e90d4dcdfb567b7756736627d2f7b1f7b6911e",
+        "spans": [
+          {
+            "start": 33,
+            "end": 37,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 109,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0001",
@@ -2174,8 +2881,16 @@
       {
         "block": "block_0005_0002",
         "path": "/explanation",
-        "sourceSha256": "2c14b9785cabfc283a6b4a72357152bc65b1293ba204d1960afa84f75253402d",
-        "spans": []
+        "sourceSha256": "d890615fc3255cf764d6936ebb7270d8e0feaaf5df5cebc72386a8836333018d",
+        "spans": [
+          {
+            "start": 18,
+            "end": 22,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0002",
@@ -2226,7 +2941,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "95dbe20d18d50edb20904c0120097ffa00b732fcd2df2491eb1224e5f64b22f7",
+        "sourceSha256": "d04788395e1ce24b87c327fe19db2bde8bb80fa49e9c5f1a62fb1c2fce4a54ad",
         "spans": [
           {
             "start": 7,
@@ -2236,164 +2951,269 @@
             "reading": "technical"
           },
           {
-            "start": 26,
-            "end": 37,
+            "start": 16,
+            "end": 19,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 68,
             "text": "std::string",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 62,
-            "end": 65,
+            "start": 92,
+            "end": 95,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 72,
-            "end": 75,
+            "start": 152,
+            "end": 155,
             "text": "una",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 78,
-            "end": 83,
+            "start": 158,
+            "end": 163,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 191,
+            "start": 207,
+            "end": 219,
             "text": "LoteInvalido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 240,
-            "end": 248,
+            "start": 263,
+            "end": 267,
+            "text": "Lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 382,
+            "end": 390,
             "text": "codigo()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 251,
-            "end": 261,
+            "start": 393,
+            "end": 403,
             "text": "cantidad()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 266,
-            "end": 271,
+            "start": 408,
+            "end": 413,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 342,
-            "end": 345,
+            "start": 527,
+            "end": 530,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 395,
-            "end": 410,
+            "start": 618,
+            "end": 633,
             "text": "codigo:cantidad",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 436,
-            "end": 441,
+            "start": 638,
+            "end": 643,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 449,
-            "end": 461,
+            "start": 649,
+            "end": 661,
             "text": "LoteInvalido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 471,
-            "end": 480,
+            "start": 699,
+            "end": 708,
             "text": "Rechazado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 589,
-            "end": 593,
+            "start": 722,
+            "end": 725,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 726,
+            "end": 731,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 803,
+            "end": 807,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 629,
-            "end": 636,
-            "text": "{\"L\",1}",
+            "start": 934,
+            "end": 935,
+            "text": "L",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 946,
+            "end": 949,
+            "text": "una",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 638,
-            "end": 645,
-            "text": "{\"L\",5}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 647,
-            "end": 654,
-            "text": "{\"L\",0}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 656,
-            "end": 663,
-            "text": "{\"L\",6}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 665,
-            "end": 671,
-            "text": "{\"\",2}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 674,
-            "end": 682,
-            "text": "{\"L\",-1}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 868,
-            "end": 871,
+            "start": 951,
+            "end": 954,
             "text": "L:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 873,
-            "end": 876,
+            "start": 963,
+            "end": 964,
+            "text": "L",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 975,
+            "end": 980,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 982,
+            "end": 985,
             "text": "L:5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 892,
-            "end": 901,
+            "start": 994,
+            "end": 995,
+            "text": "L",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1006,
+            "end": 1010,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1012,
+            "end": 1021,
             "text": "Rechazado",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1030,
+            "end": 1031,
+            "text": "L",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1042,
+            "end": 1046,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1048,
+            "end": 1057,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1082,
+            "end": 1085,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1087,
+            "end": 1096,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1105,
+            "end": 1106,
+            "text": "L",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1117,
+            "end": 1126,
+            "text": "menos una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1128,
+            "end": 1137,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1173,
+            "end": 1177,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1364,
+            "end": 1369,
+            "text": "sexta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1438,
+            "end": 1442,
+            "text": "seis",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2420,6 +3240,355 @@
         ]
       },
       {
+        "block": "u9_lote_intervalo_completo_titulo",
+        "path": "/text",
+        "sourceSha256": "9cff4c65f3841ed71c8e02f95751a5d07d04b9985623fb75db61d008165a9316",
+        "spans": []
+      },
+      {
+        "block": "u9_lote_intervalo_completo_consigna",
+        "path": "/text",
+        "sourceSha256": "523819bd3c5dd3d13963d3da87989c4eef1e6444aa386aabf6f9fdcb4173f381",
+        "spans": [
+          {
+            "start": 17,
+            "end": 29,
+            "text": "LoteInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 44,
+            "text": "Lote",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 152,
+            "end": 155,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 158,
+            "end": 163,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 179,
+            "end": 187,
+            "text": "codigo()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 200,
+            "text": "cantidad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 210,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 285,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 317,
+            "end": 323,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 483,
+            "end": 486,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 559,
+            "end": 571,
+            "text": "LoteInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 585,
+            "end": 590,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 640,
+            "end": 644,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 679,
+            "end": 683,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 707,
+            "end": 708,
+            "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 719,
+            "end": 722,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 724,
+            "end": 727,
+            "text": "M:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 736,
+            "end": 742,
+            "text": "Zona B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 753,
+            "end": 757,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 759,
+            "end": 767,
+            "text": "Zona B:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 776,
+            "end": 778,
+            "text": "R7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 789,
+            "end": 795,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 797,
+            "end": 801,
+            "text": "R7:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 857,
+            "end": 862,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 892,
+            "end": 907,
+            "text": "codigo:cantidad",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 921,
+            "end": 930,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_salida",
+        "path": "/text",
+        "sourceSha256": "55515ab0707dd4a9e7b1a273ea00312b15db11d9dc3110a22122664ff4077c29",
+        "spans": [
+          {
+            "start": 0,
+            "end": 65,
+            "text": "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nM:2\nZona B:3\nR7:4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_comprobacion",
+        "path": "/outputCheck/cases/0/explanation",
+        "sourceSha256": "9d8dbc007bebec32004982e2dd79eb81f104ffdf0a83fe49a9203834828d965e",
+        "spans": [
+          {
+            "start": 15,
+            "end": 16,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 55,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 57,
+            "end": 58,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 220,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "ca7d73d64f5617d0ff89fc1f527372991543dd5bcaf13f8031e68ee8e9c59ead",
+        "spans": [
+          {
+            "start": 57,
+            "end": 58,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 76,
+            "end": 77,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 80,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 84,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 143,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 163,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u9_lote_intervalo_completo_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "039481cf3b64ca448b014af477cd8afea925968f99518135665d0f4e08fc66a0",
+        "spans": [
+          {
+            "start": 38,
+            "end": 42,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 83,
+            "end": 84,
+            "text": "L",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 137,
+            "end": 145,
+            "text": "codigo()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 239,
+            "text": "Zona B",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0006_0003",
         "path": "/text",
         "sourceSha256": "3527d9e4b74efb4f66630a2ff8a1a012aa015eaca507705df0d351d5e07de0d6",
@@ -2434,18 +3603,60 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "7d96b4464f316f5d4fab4dc5603418c13a3c29f8bbb0e32fbbf01c7054d1ebb6",
+        "sourceSha256": "a2243c0e076708d95bf518b5f27b3c7aa625b524932d233d10ddb53378db998b",
         "spans": [
           {
-            "start": 58,
-            "end": 62,
+            "start": 50,
+            "end": 54,
             "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 277,
-            "end": 283,
+            "start": 70,
+            "end": 74,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
+            "end": 100,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 137,
+            "text": "LoteInvalido{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 148,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 179,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 261,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 304,
+            "end": 310,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
@@ -2518,275 +3729,11 @@
         "block": "block_0007_0004",
         "path": "/text",
         "sourceSha256": "8bc457b1b890dd5cbbb8f1cf2f8d347245a490823f5364d2f58ab2527f25423c",
-        "spans": []
-      },
-      {
-        "block": "u9_lote_intervalo_completo_titulo",
-        "path": "/text",
-        "sourceSha256": "9cff4c65f3841ed71c8e02f95751a5d07d04b9985623fb75db61d008165a9316",
-        "spans": []
-      },
-      {
-        "block": "u9_lote_intervalo_completo_consigna",
-        "path": "/text",
-        "sourceSha256": "94cbc8a494c517284b0dd98e36ae91d9bb595129eae3b938b9cec62a50a85854",
         "spans": [
           {
-            "start": 17,
-            "end": 29,
-            "text": "LoteInvalido",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 40,
-            "end": 44,
-            "text": "Lote",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 158,
-            "end": 162,
-            "text": "1..5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 178,
-            "end": 186,
-            "text": "codigo()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 189,
-            "end": 199,
-            "text": "cantidad()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 204,
-            "end": 209,
-            "text": "const",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 280,
-            "end": 284,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 316,
-            "end": 322,
-            "text": "probar",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 480,
-            "end": 483,
-            "text": "try",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 561,
-            "end": 573,
-            "text": "LoteInvalido",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 578,
-            "end": 583,
-            "text": "catch",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 686,
-            "end": 687,
-            "text": "M",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 692,
-            "end": 693,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 704,
-            "end": 710,
-            "text": "Zona B",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 715,
-            "end": 716,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 719,
-            "end": 721,
-            "text": "R7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 726,
-            "end": 727,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 806,
-            "end": 821,
-            "text": "codigo:cantidad",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 835,
-            "end": 844,
-            "text": "Rechazado",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u9_lote_intervalo_completo_salida",
-        "path": "/text",
-        "sourceSha256": "55515ab0707dd4a9e7b1a273ea00312b15db11d9dc3110a22122664ff4077c29",
-        "spans": [
-          {
-            "start": 0,
-            "end": 65,
-            "text": "L:1\nL:5\nRechazado\nRechazado\nRechazado\nRechazado\nM:2\nZona B:3\nR7:4",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u9_lote_intervalo_completo_comprobacion",
-        "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "9d8dbc007bebec32004982e2dd79eb81f104ffdf0a83fe49a9203834828d965e",
-        "spans": [
-          {
-            "start": 15,
-            "end": 16,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 19,
-            "end": 20,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 54,
-            "end": 55,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 57,
-            "end": 58,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 61,
-            "end": 62,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u9_lote_intervalo_completo_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
-        "sourceSha256": "ca7d73d64f5617d0ff89fc1f527372991543dd5bcaf13f8031e68ee8e9c59ead",
-        "spans": [
-          {
-            "start": 57,
-            "end": 58,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 65,
-            "end": 66,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 76,
-            "end": 77,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 79,
-            "end": 80,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 83,
-            "end": 84,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u9_lote_intervalo_completo_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
-        "sourceSha256": "039481cf3b64ca448b014af477cd8afea925968f99518135665d0f4e08fc66a0",
-        "spans": [
-          {
-            "start": 83,
-            "end": 84,
-            "text": "L",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 137,
-            "end": 145,
-            "text": "codigo()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 233,
-            "end": 239,
-            "text": "Zona B",
+            "start": 18,
+            "end": 22,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           }
@@ -2801,98 +3748,203 @@
       {
         "block": "u9_lote_intervalo_completo_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "f0369e098a6bc5803024596dc64d6f62beccdcc2f12f3a69ad4175862fec3874",
+        "sourceSha256": "f6b487f3cbb7efd3d68b747d48bc05f74c12806b1efe50542c392825ef7f7be1",
         "spans": [
           {
-            "start": 39,
-            "end": 51,
+            "start": 30,
+            "end": 42,
             "text": "LoteInvalido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 53,
-            "end": 57,
+            "start": 44,
+            "end": 48,
             "text": "Lote",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 66,
+            "start": 51,
+            "end": 57,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 115,
-            "end": 119,
+            "start": 67,
+            "end": 71,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 143,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 201,
-            "end": 202,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 204,
-            "end": 205,
-            "text": "3",
+            "start": 167,
+            "end": 171,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 208,
-            "end": 209,
-            "text": "4",
+            "end": 212,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 290,
-            "end": 293,
+            "start": 302,
+            "end": 303,
+            "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 315,
+            "end": 318,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 323,
             "text": "M:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 295,
-            "end": 303,
+            "start": 332,
+            "end": 338,
+            "text": "Zona B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 350,
+            "end": 354,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 364,
             "text": "Zona B:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 306,
-            "end": 310,
+            "start": 373,
+            "end": 375,
+            "text": "R7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 393,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 395,
+            "end": 399,
             "text": "R7:4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 483,
-            "end": 484,
-            "text": "1",
+            "start": 427,
+            "end": 430,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 433,
+            "end": 438,
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 487,
-            "end": 488,
-            "text": "5",
+            "end": 492,
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 515,
-            "end": 519,
-            "text": "1..5",
+            "start": 575,
+            "end": 578,
+            "text": "una",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 581,
+            "end": 586,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 655,
+            "end": 659,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 722,
+            "end": 723,
+            "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 735,
+            "end": 738,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 761,
+            "end": 764,
+            "text": "M:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 783,
+            "end": 787,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 790,
+            "end": 796,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 960,
+            "end": 961,
+            "text": "L",
+            "role": "output",
+            "reading": "characters"
           }
         ]
       }

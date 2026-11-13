@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un mensajero ocupa una casilla de un tablero de 3 por 3. Sus coordenadas x e y están entre 0 y 2. Las órdenes son enteros: 1 aumenta x, 2 disminuye x, 3 aumenta y y 4 disminuye y.\n\nUna orden distinta es un argumento inválido. Una propuesta que sale del tablero es un fallo de rango. Ambos rechazos deben conservar la posición anterior y permitir procesar la siguiente orden. Los registros de coordenadas permitirán comprobarlo.",
+          "text": "Un mensajero ocupa una casilla de un tablero de 3 por 3. Sus coordenadas x e y están entre 0 y 2. El primer número de cada posición indica x; el segundo indica y. Tomamos (0,0) como la esquina inferior izquierda: x crece hacia la derecha e y hacia arriba.\n\nCada orden propone desplazarse una casilla:\nLa orden 1 aumenta x.\nLa orden 2 disminuye x.\nLa orden 3 aumenta y.\nLa orden 4 disminuye y.\n\nHay dos categorías de rechazo:\nUna orden distinta de las anteriores es un argumento inválido.\nUna posición propuesta fuera del tablero es un fallo de rango.\n\nAmbos rechazos deben conservar la posición anterior y permitir procesar la siguiente orden. Los registros de coordenadas permitirán comprobarlo.",
           "emphasis": [
             {
               "text": "conservar la posición anterior",
@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "mover recibe una orden y referencias a x e y. Calcula primero una posición propuesta local; comprueba la orden y los límites antes de modificar las referencias. Sólo copia la propuesta al estado real cuando acepta el movimiento.\n\nLa precondición exige que x e y designen dos objetos distintos y que sus valores iniciales estén entre 0 y 2. Dos objetos diferentes que contienen cero cumplen la condición. Dos referencias al mismo objeto no representan coordenadas independientes y quedan fuera del contrato.\n\nEl llamador prepara esas dos coordenadas. No se exige detectar referencias compartidas dentro de mover. Los incrementos y decrementos de esta práctica mantienen pequeñas las propuestas.",
+          "text": "mover recibe una orden y referencias a x e y. Calcula una posición propuesta local, comprueba la orden y los límites antes de modificar las referencias. Sólo copia la propuesta al estado real cuando acepta el movimiento.\n\nPor ejemplo, desde (2,1), la orden 1 propondría (3,1). Esa posición sale del tablero: se rechaza y la posición continúa siendo (2,1). Una orden 2 posterior puede partir de ese estado válido y llegar a (1,1). Así se conserva la posición ante el fallo sin impedir el movimiento siguiente.\n\nLa precondición exige que x e y se refieran a dos objetos distintos y que sus valores iniciales estén entre 0 y 2. Dos objetos diferentes que contienen cero cumplen la condición. Dos referencias al mismo objeto no representan coordenadas independientes y quedan fuera del contrato.\n\nEl llamador prepara esas dos coordenadas. No se exige detectar referencias compartidas dentro de mover. Los incrementos y decrementos de esta práctica mantienen pequeñas las propuestas.",
           "emphasis": [
             {
               "text": "posición propuesta local",
@@ -89,7 +89,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Implementa void mover(int orden, int& x, int& y) con el tablero de 3 por 3. Usa std::invalid_argument para una orden desconocida y std::out_of_range para una propuesta fuera del tablero. Conserva la precondición de posición inicial válida y referencias a objetos distintos. Valida la propuesta antes de asignar x o y.\n\nConstruye una función de prueba que inicie cada sesión en (0,0), recorra todas las órdenes y capture por intento. Muestra A al aceptar, O al rechazar una orden desconocida o L al rechazar por límite. Inmediatamente después muestra x,y y un punto y coma. Cada sesión termina con un salto de línea.\n\nDesde main prueba {1,3,3,3,9,2} y después {9,1}. La primera línea debe ser A1,0;A1,1;A1,2;L1,2;O1,2;A0,2; y la segunda O0,0;A1,0;, ambas con su salto final.\n\nPulsa Compilar, ejecutar y comprobar. Cada rechazo debe conservar ambas coordenadas y permitir una orden válida posterior.",
+          "text": "Implementa void mover(int orden, int& x, int& y) con el tablero de 3 por 3. Usa std::invalid_argument para una orden desconocida y std::out_of_range para una propuesta fuera del tablero. Conserva la precondición de posición inicial válida y referencias a objetos distintos. Valida la propuesta antes de asignar x o y.\n\nConstruye una función de prueba que inicie cada sesión en (0,0), recorra todas las órdenes y capture por intento. Las letras de cada registro indican:\nA significa movimiento aceptado.\nO significa orden desconocida.\nL significa movimiento rechazado por un límite.\n\nInmediatamente después de esa letra, muestra x,y y un punto y coma. Cada sesión termina con un salto de línea.\n\nDesde main prueba las dos sesiones siguientes, en este orden:\nÓrdenes {1,3,3,3,9,2}: la línea es A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nÓrdenes {9,1}: la línea es O0,0;A1,0;\n\nAmbas líneas terminan con su salto. Pulsa Compilar, ejecutar y comprobar. Cada rechazo debe conservar ambas coordenadas y permitir una orden válida posterior.",
           "emphasis": [
             {
               "text": "capture por intento",
@@ -107,7 +107,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    int x{0};\n    int y{0};\n    std::vector<int> ordenes{1, 3, 3, 3, 9, 2};\n    for (int orden : ordenes) {\n        std::cout << \"Orden=\" << orden << \" Posicion=\" << x << \",\" << y << \"\\n\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    int x{0};\n    int y{0};\n    std::vector<int> ordenes{1, 3, 3, 3, 9, 2};\n\n    for (int orden : ordenes) {\n        std::cout << \"Orden=\" << orden << \" Posicion=\" << x << \",\" << y << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -162,7 +162,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -191,7 +191,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Este editor corresponde a otro requisito: el tablero tiene 4 por 4 posiciones y las coordenadas admitidas van de 0 a 3. Construye mover conservando las órdenes, los dos tipos de excepción y la actualización sólo después de validar. Las dos referencias siguen designando objetos distintos.\n\nUsa {1,1,1,1,9,3} desde (0,0). Presenta cada intento con A/O/L, x,y y punto y coma. La salida debe ser A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;, seguida de un salto de línea. La ampliación admite la coordenada 3 y conserva el rechazo de 4 y de la orden desconocida.\n\nPulsa Compilar, ejecutar y comprobar. Este intento conserva su propio borrador; el editor anterior mantiene el tablero de 3 por 3.",
+          "text": "Este editor corresponde a otro requisito: el tablero tiene 4 por 4 posiciones y las coordenadas admitidas van de 0 a 3. Construye mover conservando las órdenes, los dos tipos de excepción y la actualización sólo después de validar. Las dos referencias siguen designando objetos distintos.\n\nProcesa una sesión con estos datos:\nPosición inicial: (0,0).\nÓrdenes: {1,1,1,1,9,3}.\nSalida: A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\n\nPresenta cada intento con A/O/L, las coordenadas x,y y un punto y coma. Después de la sesión, añade un salto de línea.\n\nEl valor 3 está admitido como coordenada. Una propuesta con coordenada 4 queda fuera del tablero y debe rechazarse sin modificar la posición. La orden 4 sigue estando definida: propone disminuir y. Su aceptación depende de que la nueva posición esté dentro del tablero. Una orden desconocida también sigue rechazándose.\n\nPulsa Compilar, ejecutar y comprobar. Este intento conserva su propio borrador; el editor anterior mantiene el tablero de 3 por 3.",
           "emphasis": [
             {
               "text": "de 0 a 3",
@@ -205,7 +205,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> ordenes{1, 1, 1, 1, 9, 3};\n    int x{0};\n    int y{0};\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> ordenes{1, 1, 1, 1, 9, 3};\n    int x{0};\n    int y{0};\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -260,7 +260,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -296,7 +296,7 @@
           "id": "movimientos_con_rechazos",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    int propuestoX{x};\n    int propuestoY{y};\n    switch (orden) {\n    case 1: ++propuestoX; break;\n    case 2: --propuestoX; break;\n    case 3: ++propuestoY; break;\n    case 4: --propuestoY; break;\n    default: throw std::invalid_argument{\"Orden\"};\n    }\n    if (propuestoX < 0 || propuestoX > 2 || propuestoY < 0 || propuestoY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = propuestoX;\n    y = propuestoY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{2, 1, 9, 3}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    int propuestoX{x};\n    int propuestoY{y};\n\n    switch (orden) {\n        case 1:\n            ++propuestoX;\n            break;\n        case 2:\n            --propuestoX;\n            break;\n        case 3:\n            ++propuestoY;\n            break;\n        case 4:\n            --propuestoY;\n            break;\n        default:\n            throw std::invalid_argument{\"Orden\"};\n    }\n\n    if (propuestoX < 0 || propuestoX > 2 || propuestoY < 0 || propuestoY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n\n    x = propuestoX;\n    y = propuestoY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n\n    for (int orden : std::vector<int>{2, 1, 9, 3}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n\n        std::cout << x << \",\" << y << \";\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "L0,0;A1,0;O1,0;A1,1;"
           ],
@@ -352,7 +352,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La llamada original parte de dos objetos distintos, ambos dentro de 0..2. Sus valores pueden ser iguales: lo que debe ser distinto es el objeto al que se refiere cada parámetro. Las promesas siguientes corresponden a llamadas que cumplen esa precondición.\n\nUna orden desconocida lanza std::invalid_argument; una propuesta fuera del tablero lanza std::out_of_range. Sólo después de validar se asignan x e y. Para {1,3,3,3,9,2}, se obtienen (1,0), (1,1), (1,2), (1,2), (1,2) y (0,2), con estados A,A,A,L,O,A.\n\nDesde (0,0), {9,1} conserva primero (0,0) y avanza después a (1,0). Otras implementaciones son válidas si distinguen esos rechazos, conservan cada estado y producen el formato solicitado.",
+          "text": "La llamada original parte de dos objetos distintos, ambos dentro de 0..2. Sus valores pueden ser iguales: lo que debe ser distinto es el objeto al que se refiere cada parámetro. Las promesas siguientes corresponden a llamadas que cumplen esa precondición.\n\nUna orden desconocida lanza std::invalid_argument; una propuesta fuera del tablero lanza std::out_of_range. Sólo después de validar se asignan x e y.\n\nLa sesión {1,3,3,3,9,2} parte de (0,0). Sigue cada orden y el registro que deja:\nLa orden 1 se acepta: A1,0;\nLa orden 3 se acepta: A1,1;\nLa orden 3 se acepta: A1,2;\nLa siguiente orden 3 supera el límite: L1,2;\nLa orden 9 es desconocida: O1,2;\nLa orden 2 se acepta: A0,2;\n\nLa sesión {9,1} también parte de (0,0):\nLa orden 9 conserva la posición inicial: O0,0;\nLa orden 1 avanza después del rechazo: A1,0;\n\nOtras implementaciones son válidas si distinguen esos rechazos, conservan cada estado y producen el formato solicitado.",
           "emphasis": [
             {
               "text": "dos objetos distintos",
@@ -367,11 +367,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 2.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{1, 3, 3, 3, 9, 2}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 2.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n\n    int siguienteX{x};\n    int siguienteY{y};\n\n    switch (orden) {\n        case 1:\n            siguienteX += 1;\n            break;\n        case 2:\n            siguienteX -= 1;\n            break;\n        case 3:\n            siguienteY += 1;\n            break;\n        case 4:\n            siguienteY -= 1;\n            break;\n    }\n\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n\n    x = siguienteX;\n    y = siguienteY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n\n    for (int orden : std::vector<int>{1, 3, 3, 3, 9, 2}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n\n        std::cout << x << \",\" << y << \";\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "En la primera sesión, la propuesta (1,3) supera el tablero y nunca se copia al estado real. La orden 9 no tiene una propuesta aceptable. El siguiente intento todavía parte de (1,2) y puede moverse a (0,2).\n\nLa función probar mantiene un tratamiento por orden: su try está dentro del recorrido. Cada nueva llamada a probar crea sus propias coordenadas iniciales. La referencia completa reúne las dos sesiones sin reemplazar el requisito original.",
+          "text": "En la primera sesión, la propuesta (1,3) supera el tablero y nunca se copia al estado real. La orden 9 se rechaza porque no pertenece a las órdenes definidas. El siguiente intento todavía parte de (1,2) y puede moverse a (0,2).\n\nLa función probar mantiene un tratamiento por orden: su try está dentro del recorrido. Después de cada catch se muestran las coordenadas conservadas y el recorrido pasa a la orden siguiente. Cada nueva llamada a probar crea sus propias coordenadas iniciales. La referencia completa reúne las dos sesiones sin reemplazar el requisito original.",
           "emphasis": [
             {
               "text": "nunca se copia al estado real",
@@ -386,7 +386,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 2.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 2.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n\n    int siguienteX{x};\n    int siguienteY{y};\n\n    switch (orden) {\n        case 1:\n            siguienteX += 1;\n            break;\n        case 2:\n            siguienteX -= 1;\n            break;\n        case 3:\n            siguienteY += 1;\n            break;\n        case 4:\n            siguienteY -= 1;\n            break;\n    }\n\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n\n        std::cout << x << \",\" << y << \";\";\n    }\n\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -394,7 +394,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El recorrido horizontal comienza subiendo hasta (0,1). La orden 2 propone (-1,1) y se rechaza con el registro «L0,1;»: y conserva 1. Los avances siguientes alcanzan (2,1). Un avance adicional se rechaza; el retroceso posterior alcanza (1,1).\n\nEl recorrido vertical rechaza primero bajar desde (0,0), luego avanza a (1,0) y sube hasta (1,2). Subir de nuevo debe conservar esa posición. La orden 4 baja a (1,1); la orden desconocida 0 conserva ambas coordenadas, y la orden 2 permite continuar hasta (0,1).\n\nLas funciones mover y probar de la referencia de este tablero sirven para las sesiones ampliadas. El main siguiente sustituye al main de esa referencia, manteniendo las inclusiones y ambas funciones. Cada llamada vuelve a crear sus propias coordenadas; se conserva el mismo tratamiento por intento.",
+          "text": "El recorrido horizontal comprueba los límites de x mientras la coordenada y conserva el valor 1:\nComienza subiendo hasta (0,1).\nLa orden 2 propone (-1,1); se rechaza y deja el registro L0,1;.\nLos avances siguientes alcanzan (2,1).\nUn avance adicional se rechaza; el retroceso posterior alcanza (1,1).\n\nEl recorrido vertical permite seguir estas decisiones:\nRechaza primero bajar desde (0,0).\nAvanza a (1,0) y sube hasta (1,2).\nSubir de nuevo conserva ambas coordenadas en (1,2).\nLa orden 4 baja a (1,1).\nLa orden desconocida 0 conserva esa posición.\nLa orden 2 permite continuar hasta (0,1).\n\nLas funciones mover y probar de la referencia de este tablero sirven para las sesiones ampliadas. El main siguiente sustituye al main de esa referencia, manteniendo las inclusiones y ambas funciones. Cada llamada vuelve a crear sus propias coordenadas; se conserva el mismo tratamiento por intento.",
           "emphasis": [
             {
               "text": "conserva ambas coordenadas",
@@ -409,7 +409,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n"
+          "code": "int main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -418,7 +418,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 3.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 3 || siguienteY < 0 || siguienteY > 3) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 3.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n\n    int siguienteX{x};\n    int siguienteY{y};\n\n    switch (orden) {\n        case 1:\n            siguienteX += 1;\n            break;\n        case 2:\n            siguienteX -= 1;\n            break;\n        case 3:\n            siguienteY += 1;\n            break;\n        case 4:\n            siguienteY -= 1;\n            break;\n    }\n\n    if (siguienteX < 0 || siguienteX > 3 || siguienteY < 0 || siguienteY > 3) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n\n        std::cout << x << \",\" << y << \";\";\n    }\n\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -426,7 +426,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El recorrido horizontal comienza subiendo hasta (0,1). La orden 2 propone (-1,1) y se rechaza con el registro «L0,1;»: y conserva 1. Los avances siguientes alcanzan (3,1). Un avance adicional se rechaza; el retroceso posterior alcanza (2,1).\n\nEl recorrido vertical rechaza primero bajar desde (0,0), luego avanza a (1,0) y sube hasta (1,3). Subir de nuevo debe conservar esa posición. La orden 4 baja a (1,2); la orden desconocida 0 conserva ambas coordenadas, y la orden 2 permite continuar hasta (0,2).\n\nLas funciones mover y probar de la referencia de este tablero sirven para las sesiones ampliadas. El main siguiente sustituye al main de esa referencia, manteniendo las inclusiones y ambas funciones. Cada llamada vuelve a crear sus propias coordenadas; se conserva el mismo tratamiento por intento.",
+          "text": "El recorrido horizontal comprueba los límites de x mientras la coordenada y conserva el valor 1:\nComienza subiendo hasta (0,1).\nLa orden 2 propone (-1,1); se rechaza y deja el registro L0,1;.\nLos avances siguientes alcanzan (3,1).\nUn avance adicional se rechaza; el retroceso posterior alcanza (2,1).\n\nEl recorrido vertical permite seguir estas decisiones:\nRechaza primero bajar desde (0,0).\nAvanza a (1,0) y sube hasta (1,3).\nSubir de nuevo conserva ambas coordenadas en (1,3).\nLa orden 4 baja a (1,2).\nLa orden desconocida 0 conserva esa posición.\nLa orden 2 permite continuar hasta (0,2).\n\nLas funciones mover y probar de la referencia de este tablero sirven para las sesiones ampliadas. El main siguiente sustituye al main de esa referencia, manteniendo las inclusiones y ambas funciones. Cada llamada vuelve a crear sus propias coordenadas; se conserva el mismo tratamiento por intento.",
           "emphasis": [
             {
               "text": "conserva ambas coordenadas",
@@ -441,7 +441,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n"
+          "code": "int main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1184,6 +1184,249 @@
         "id": "block_0002_0003",
         "beforeSha256": "099303637e683c9d49b72475f1135cf560f55cdd81c98cdf838234dd64475e03",
         "afterSha256": "df941ee90841a1f77cc158308cd077d53d516cbe1aa2b730b553fd7e620b2dfb"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "078b439e478bdd7a04cbfdd7fbe22ed604d2e0a07e1394d2274e6f904773475c",
+        "afterSha256": "d56d319b6fe1f448a2fa5852eb410a2a230e505db5b10e80539980ad49eb03f0"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "e0da34b365989da92d4a943e80769e5bc19b146f8916fe21cb43878d660623da",
+        "afterSha256": "39f9508d0ce5436af6a3f291b0caf40691f4afe1d97bcfd3b68c3a402ba56cc4"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "4c318ed12e13aa10a654dc1297dff01d8a4aed1bcf8c464396dabcd935505eaa",
+        "afterSha256": "cc3ec36dee7848def8630d8b03bf2ae51e1242ef87fda22398c52fbeb84af96b"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "e48d2ca340383a95dbb6de0ac9f5f8c8dfe74fc5e7af8d231b3e5ca5b4b5aa04",
+        "afterSha256": "855e2597f3833685ea2461469d8f3c32f17078b85507fa9dd8ef1d4acb4343c0"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_comprobacion",
+        "beforeSha256": "ff53a6bec514ebe44e469c8e2e766d6cba51fddf55ee44bc79eccac5477478b2",
+        "afterSha256": "8ffc38bd1f01d76cad4413a745357843aed797be83e7d1b6b56a63ce0cb832f2"
+      },
+      {
+        "id": "block_0001_0005",
+        "beforeSha256": "2eb27042f540cb948c45ed0fd3642ada20096a5252c9c13cd1f50f20265b4338",
+        "afterSha256": "fc5d42947f1493b8722f5e9da1e4954908c36b2c515385424b7c04eb7cdeb5d7"
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "70b306f260e02b6f95db5d3a1fd53e3f0b69cb0897bfc81bde1dd258ad5f822b",
+        "afterSha256": "24e9f4b6ec672c09b3c0e8cfd3975a65a5ebb7aa204f10648ca06b597a8e762d"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_comprobacion",
+        "beforeSha256": "753c4fe54ffad3c471bb6357e94a6a704cef0d210786fc7d892ce3873e275e01",
+        "afterSha256": "b7bdc4c7c2be50df0a2e34cede3f3bf0e748cd7afcd9c05df3e07410bd1f81b2"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "bbe0720c54b90849160999ec6f54b3b64d75d4a193127dd977a73c80a9c35793",
+        "afterSha256": "5d03d699e9bc8ac133f467aeea3d76939442d5f827a66545537b023df0a390cb"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "8a4fa85620e78b8c7fd2e89dd8adba7ea839be9d329bd68e7c822140ace57ddb",
+        "afterSha256": "0b0f6eff295d6a04b68dde1d5298de53110a646890655c4dd682e093ba544517"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "e847a668c95e94bbc0eaa08e1ee8b06f7a72f5bd306336c2dd696ec1b054beb8",
+        "afterSha256": "cade85cf21a080a8d0029d16d1816dc9a19267af5619697b6fb11cebea001861"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "9a2375f9c03626790f285edd84e77efa99743abb04218fd0f4df8aa374234bc5",
+        "afterSha256": "27038d66113ba827e1ad554fafa3007ece2ae6fd90bf0f26a4c64c5f3c827b44"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "ffb3bc3b8bbac6a0626601061d1477f1255160ab97b925339b3f716d5be6d334",
+        "afterSha256": "d8a65e63f18d1fa3d93c10d36ead0726d4a82aa51eadeb1fabdfa5fc74e5e516"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_referencia_recorridos",
+        "beforeSha256": "5c9ab3ca86b989f8ee7a12e06f286e2d92a621a37147c5f20bde02a054d11ab2",
+        "afterSha256": "f50b8ee027e7f4323f43d1c25c704621bd4a0f1a5291f5d3fea91c071b66c1b6"
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_referencia_main",
+        "beforeSha256": "1a919248530ee031a6e4b7ae74382ad2ff691655955a70ff0a640798cd5d2edd",
+        "afterSha256": "a3bcaee0fb7c62f550092558f8387e664fe09fd29f231438f1879b196d335f95"
+      },
+      {
+        "id": "block_0003_0007",
+        "beforeSha256": "70408cff9990bf2878edb9fdfa4cfa69adadf92c50376fb083a2f6a1e4fd4676",
+        "afterSha256": "e02e6ccf0ae5d7d54edead25b1f77234bb176b3c5a57677f81e191a86d412e98"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_referencia_recorridos",
+        "beforeSha256": "6f63d484b03e43fa8ba44bb7e1c3e9486ccee75fbc8dba6662f85b828b5b25c1",
+        "afterSha256": "d5dd1a58c264fd4bdddb320cb2bf53dddab9e7441fc91a4a4e4fb239b467f8b1"
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_referencia_main",
+        "beforeSha256": "a07f2a897a5f1410d56711d7b4443699b2934f5a9741745d460cfbf259454404",
+        "afterSha256": "eba504b2b322dc565f8716b3f79a99ca2403b6862b164e75f57e1c97488e0df6"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "d56d319b6fe1f448a2fa5852eb410a2a230e505db5b10e80539980ad49eb03f0",
+        "afterSha256": "e5a715d7dcf2c09e1797e496633fc202ecdae904c580d9aefcac0a542631baac"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    int x{0};\n    int y{0};\n    std::vector<int> ordenes{1, 3, 3, 3, 9, 2};\n    for (int orden : ordenes) {\n        std::cout << \"Orden=\" << orden << \" Posicion=\" << x << \",\" << y << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\n"
+                ],
+                "explanation": "Las propuestas inválidas se rechazan antes de asignar las coordenadas. Cada sesión conserva el tratamiento por orden y continúa después del rechazo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\nA0,1;L0,1;A1,1;A2,1;L2,1;A1,1;\nL0,0;A1,0;A1,1;A1,2;L1,2;A1,1;O1,1;A0,1;\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las mismas funciones conservan las sesiones anteriores y comprueban ambos ejes entre 0 y 2. Los intentos que salen del tablero conservan la otra coordenada y permiten el movimiento válido posterior. La orden 4 disminuye la coordenada y. La orden 0 se rechaza como desconocida. Cada sesión empieza en 0,0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;\nO0,0;A1,0;\nA0,1;L0,1;A1,1;A2,1;L2,1;A1,1;\nA0,0;A1,0;A1,1;A1,2;L1,2;A1,2;O1,2;A0,2;\n"
+                    ],
+                    "text": "La orden 4 disminuye y. Desde (0,0) debe producir el registro «L0,0;». Desde una posición con y positiva debe poder bajar una casilla. Revisa ese camino y conserva la posición anterior cuando la propuesta queda fuera del tablero."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0001_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> ordenes{1, 1, 1, 1, 9, 3};\n    int x{0};\n    int y{0};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\n"
+                ],
+                "explanation": "Cambió la frontera superior, no el significado de las órdenes ni la conservación del estado tras un rechazo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui tus definiciones de mover y probar, y sus auxiliares.\n// Cada llamada a probar empieza con dos coordenadas propias en cero.\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\nA0,1;L0,1;A1,1;A2,1;A3,1;L3,1;A2,1;\nL0,0;A1,0;A1,1;A1,2;A1,3;L1,3;A1,2;O1,2;A0,2;\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las mismas funciones conservan las sesiones anteriores y comprueban ambos ejes entre 0 y 3. Los intentos que salen del tablero conservan la otra coordenada y permiten el movimiento válido posterior. La orden 4 disminuye la coordenada y. La orden 0 se rechaza como desconocida. Cada sesión empieza en 0,0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;\nA0,1;L0,1;A1,1;A2,1;A3,1;L3,1;A2,1;\nL0,0;A1,0;A1,1;A1,2;L1,2;L1,2;A1,1;O1,1;A0,1;\n"
+                    ],
+                    "text": "Comprueba la frontera de y en esta ampliación. Desde (1,2), la orden 3 debe alcanzar el registro «A1,3;». El intento de subir una casilla más se rechaza como «L1,3;». Cambiar sólo la frontera de x deja incompleta la ampliación del tablero."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "movimientos_con_rechazos",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    int propuestoX{x};\n    int propuestoY{y};\n    switch (orden) {\n    case 1: ++propuestoX; break;\n    case 2: --propuestoX; break;\n    case 3: ++propuestoY; break;\n    case 4: --propuestoY; break;\n    default: throw std::invalid_argument{\"Orden\"};\n    }\n    if (propuestoX < 0 || propuestoX > 2 || propuestoY < 0 || propuestoY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = propuestoX;\n    y = propuestoY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{2, 1, 9, 3}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "L0,0;A1,0;O1,0;A1,1;"
+          ],
+          "explanation": "La primera orden sale por x negativo; la segunda avanza, la tercera es desconocida y la cuarta avanza y. Los rechazos conservan el estado."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 2.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nint main() {\n    int x{0};\n    int y{0};\n    for (int orden : std::vector<int>{1, 3, 3, 3, 9, 2}) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument& error) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range& error) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 2.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 2 || siguienteY < 0 || siguienteY > 2) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u8_tablero_3_ambos_ejes_referencia_main",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar({1, 3, 3, 3, 9, 2});\n    probar({9, 1});\n    probar({3, 2, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nvoid mover(int orden, int& x, int& y) {\n    // Precondicion: x e y estan entre 0 y 3.\n    if (orden < 1 || orden > 4) {\n        throw std::invalid_argument{\"Orden\"};\n    }\n    int siguienteX{x};\n    int siguienteY{y};\n    switch (orden) {\n    case 1: siguienteX += 1; break;\n    case 2: siguienteX -= 1; break;\n    case 3: siguienteY += 1; break;\n    case 4: siguienteY -= 1; break;\n    }\n    if (siguienteX < 0 || siguienteX > 3 || siguienteY < 0 || siguienteY > 3) {\n        throw std::out_of_range{\"Tablero\"};\n    }\n    x = siguienteX;\n    y = siguienteY;\n}\n\nvoid probar(const std::vector<int>& ordenes) {\n    int x{0};\n    int y{0};\n    for (int orden : ordenes) {\n        try {\n            mover(orden, x, y);\n            std::cout << \"A\";\n        } catch (const std::invalid_argument&) {\n            std::cout << \"O\";\n        } catch (const std::out_of_range&) {\n            std::cout << \"L\";\n        }\n        std::cout << x << \",\" << y << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar({1, 1, 1, 1, 9, 3});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u8_tablero_4_ambos_ejes_referencia_main",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    probar({1, 1, 1, 1, 9, 3});\n    probar({3, 2, 1, 1, 1, 1, 2});\n    probar({4, 1, 3, 3, 3, 3, 4, 0, 2});\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1262,12 +1505,19 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "dc6d7818a2b974c225ae42db66ecde8effcda898f330b0ad754b1b5c0fd8d6e0",
+        "sourceSha256": "7edefc5d53c1e711078ba8f19f15a7183010b86c879e642a113987bf2c48af59",
         "spans": [
           {
             "start": 48,
+            "end": 49,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 54,
             "end": 55,
-            "text": "3 por 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
@@ -1287,73 +1537,129 @@
           },
           {
             "start": 91,
+            "end": 92,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 95,
             "end": 96,
-            "text": "0 y 2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 123,
-            "end": 124,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 133,
-            "end": 134,
-            "text": "x",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 136,
-            "end": 137,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 148,
-            "end": 149,
+            "start": 139,
+            "end": 140,
             "text": "x",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 151,
-            "end": 152,
+            "start": 160,
+            "end": 161,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 176,
+            "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 214,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 240,
+            "end": 241,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 288,
+            "end": 291,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 311,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 321,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 332,
+            "end": 333,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 345,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 356,
+            "end": 357,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 162,
+            "start": 366,
+            "end": 367,
             "text": "y",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 165,
-            "end": 166,
+            "start": 378,
+            "end": 379,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 177,
-            "end": 178,
+            "start": 390,
+            "end": 391,
             "text": "y",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 398,
+            "end": 401,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "4f6b97982ea4059c2bf9403b4d14d3f88280bcfce4bf5093374c9e0901cdb880",
+        "sourceSha256": "912db81c11f2db421f134581062f31d2ed7d795566a84968a95243177a891b67",
         "spans": [
           {
             "start": 0,
@@ -1377,43 +1683,113 @@
             "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 257,
+            "start": 241,
+            "end": 246,
+            "text": "(2,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 270,
+            "end": 275,
+            "text": "(3,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 354,
+            "text": "(2,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 366,
+            "end": 367,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 423,
+            "end": 428,
+            "text": "(1,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 537,
             "text": "x",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 260,
-            "end": 261,
+            "start": 540,
+            "end": 541,
             "text": "y",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 271,
-            "end": 274,
+            "start": 556,
+            "end": 559,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 333,
-            "end": 338,
-            "text": "0 y 2",
+            "start": 618,
+            "end": 619,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 381,
+            "start": 622,
+            "end": 623,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 625,
+            "end": 628,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 662,
+            "end": 666,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 605,
-            "end": 610,
+            "start": 689,
+            "end": 692,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 818,
+            "end": 821,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 890,
+            "end": 895,
             "text": "mover",
             "role": "cpp",
             "reading": "technical"
@@ -1622,13 +1998,20 @@
             "text": "(0,0)",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 209,
+            "end": 212,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "4cf7b95e73a83ee8b99996c413dbee37fd3761b19fc0947f3a6aacefad70861f",
+        "sourceSha256": "5a9989ad55f12e9e55f3b359c151e6d8694b689f8683b711a0950b5f9f27e977",
         "spans": [
           {
             "start": 11,
@@ -1639,8 +2022,15 @@
           },
           {
             "start": 67,
+            "end": 68,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
             "end": 74,
-            "text": "3 por 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
@@ -1680,64 +2070,71 @@
             "reading": "natural"
           },
           {
-            "start": 441,
-            "end": 442,
+            "start": 470,
+            "end": 471,
             "text": "A",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 455,
-            "end": 456,
+            "start": 503,
+            "end": 504,
             "text": "O",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 493,
-            "end": 494,
+            "start": 534,
+            "end": 535,
             "text": "L",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 550,
-            "end": 553,
+            "start": 628,
+            "end": 631,
             "text": "x,y",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 623,
-            "end": 627,
+            "start": 701,
+            "end": 705,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 635,
-            "end": 648,
+            "start": 717,
+            "end": 720,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 765,
+            "end": 778,
             "text": "{1,3,3,3,9,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 659,
-            "end": 664,
-            "text": "{9,1}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 692,
-            "end": 722,
+            "start": 792,
+            "end": 822,
             "text": "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 736,
-            "end": 746,
+            "start": 831,
+            "end": 836,
+            "text": "{9,1}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 850,
+            "end": 860,
             "text": "O0,0;A1,0;",
             "role": "output",
             "reading": "natural"
@@ -1759,19 +2156,33 @@
       {
         "block": "block_0001_0005",
         "path": "/text",
-        "sourceSha256": "a5aeb47297fb6b1cc19dbe13e9e4377968325435e33e37674adbcba0ff896184",
+        "sourceSha256": "ddd3e73fac5e7c7a3d4bb7c956da2bd39c8c01777bd8b459e898991117f97648",
         "spans": [
           {
             "start": 59,
+            "end": 60,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
             "end": 66,
-            "text": "4 por 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 113,
+            "end": 114,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
             "end": 118,
-            "text": "0 a 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
@@ -1783,58 +2194,107 @@
             "reading": "technical"
           },
           {
-            "start": 294,
-            "end": 307,
-            "text": "{1,1,1,1,9,3}",
+            "start": 165,
+            "end": 168,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 314,
-            "end": 319,
+            "start": 236,
+            "end": 239,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 349,
             "text": "(0,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 347,
-            "end": 352,
-            "text": "A/O/L",
-            "role": "output",
+            "start": 360,
+            "end": 373,
+            "text": "{1,1,1,1,9,3}",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 354,
-            "end": 357,
-            "text": "x,y",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 393,
-            "end": 423,
+            "start": 383,
+            "end": 413,
             "text": "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 490,
-            "end": 491,
+            "start": 441,
+            "end": 442,
+            "text": "A",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 443,
+            "end": 444,
+            "text": "O",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 445,
+            "end": 446,
+            "text": "L",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 464,
+            "end": 467,
+            "text": "x,y",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 545,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 517,
-            "end": 518,
+            "start": 606,
+            "end": 607,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 669,
-            "end": 676,
-            "text": "3 por 3",
+            "start": 686,
+            "end": 687,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 730,
+            "end": 731,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 978,
+            "end": 979,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 984,
+            "end": 985,
+            "text": "3",
             "role": "data",
             "reading": "natural"
           }
@@ -1952,16 +2412,37 @@
         "sourceSha256": "fddb80191433606479350e9ba085c372f872cb2da4664f5ccf707153b04c5f85",
         "spans": [
           {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 84,
+            "end": 85,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
             "end": 91,
-            "text": "4 por 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 268,
+            "end": 269,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
             "end": 275,
-            "text": "3 por 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           }
@@ -2000,9 +2481,23 @@
         "sourceSha256": "99db8eaf6b0d4e37004c0a03c263821b5b0ab5b6ca006e3f682c7bb1aa64056c",
         "spans": [
           {
+            "start": 87,
+            "end": 90,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 175,
+            "end": 176,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
             "end": 182,
-            "text": "4 por 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -2011,7 +2506,7 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "a432e96d7c1a53064f6e231ee43d8648a754227564a5e55bf123afa1f76a0333",
+        "sourceSha256": "92db074f468e2882d76f4d3e092826a726188f6f80724aa1a7840c9175603a7c",
         "spans": [
           {
             "start": 29,
@@ -2056,51 +2551,142 @@
             "reading": "technical"
           },
           {
-            "start": 412,
-            "end": 425,
+            "start": 418,
+            "end": 431,
             "text": "{1,3,3,3,9,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 439,
-            "end": 480,
-            "text": "(1,0), (1,1), (1,2), (1,2), (1,2) y (0,2)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 494,
-            "end": 505,
-            "text": "A,A,A,L,O,A",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 514,
-            "end": 519,
+            "start": 441,
+            "end": 446,
             "text": "(0,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 521,
-            "end": 526,
+            "start": 498,
+            "end": 499,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 516,
+            "text": "A1,0;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 526,
+            "end": 527,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 539,
+            "end": 544,
+            "text": "A1,1;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 554,
+            "end": 555,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 567,
+            "end": 572,
+            "text": "A1,2;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 592,
+            "end": 593,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 612,
+            "end": 617,
+            "text": "L1,2;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 627,
+            "end": 628,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 645,
+            "end": 650,
+            "text": "O1,2;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 660,
+            "end": 661,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 673,
+            "end": 678,
+            "text": "A0,2;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 690,
+            "end": 695,
             "text": "{9,1}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 544,
-            "end": 549,
+            "start": 713,
+            "end": 718,
             "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 729,
+            "end": 730,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 761,
+            "end": 766,
+            "text": "O0,0;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 569,
-            "end": 574,
-            "text": "(1,0)",
+            "start": 776,
+            "end": 777,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 806,
+            "end": 811,
+            "text": "A1,0;",
             "role": "output",
             "reading": "natural"
           }
@@ -2109,13 +2695,13 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "bd3ba8106b9c8a43489594b280eb1e6df25363e1f51193d1b86257762729248a",
+        "sourceSha256": "ee92d5f94d510aa1141a4ee59e5ed6479d05a366ac5440506a658d8e0928dff6",
         "spans": [
           {
             "start": 35,
             "end": 40,
             "text": "(1,3)",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -2126,39 +2712,53 @@
             "reading": "natural"
           },
           {
-            "start": 175,
-            "end": 180,
+            "start": 197,
+            "end": 202,
             "text": "(1,2)",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 199,
-            "end": 204,
+            "start": 221,
+            "end": 226,
             "text": "(0,2)",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 218,
-            "end": 224,
+            "start": 240,
+            "end": 246,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 266,
+            "start": 285,
+            "end": 288,
             "text": "try",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 315,
-            "end": 321,
+            "start": 332,
+            "end": 337,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 447,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 521,
+            "end": 524,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2169,8 +2769,15 @@
         "spans": [
           {
             "start": 26,
+            "end": 27,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 32,
             "end": 33,
-            "text": "4 por 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -2183,8 +2790,15 @@
         "spans": [
           {
             "start": 36,
+            "end": 37,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
             "end": 43,
-            "text": "3 por 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           }
@@ -2197,15 +2811,29 @@
         "spans": [
           {
             "start": 35,
+            "end": 36,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
             "end": 42,
-            "text": "3 por 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 66,
+            "end": 67,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
             "end": 71,
-            "text": "0 y 2",
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
@@ -2350,6 +2978,13 @@
             "reading": "technical"
           },
           {
+            "start": 336,
+            "end": 339,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 348,
             "end": 351,
             "text": "int",
@@ -2382,21 +3017,21 @@
             "end": 459,
             "text": "A",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 472,
             "end": 473,
             "text": "O",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 503,
             "end": 504,
             "text": "L",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2421,8 +3056,15 @@
         "spans": [
           {
             "start": 85,
+            "end": 86,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
             "end": 90,
-            "text": "0 y 2",
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
@@ -2505,8 +3147,15 @@
         "spans": [
           {
             "start": 38,
+            "end": 39,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
             "end": 45,
-            "text": "3 por 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           }
@@ -2515,144 +3164,158 @@
       {
         "block": "u8_tablero_3_ambos_ejes_referencia_recorridos",
         "path": "/text",
-        "sourceSha256": "2b0cd7e830bb994b07586a356186e9c5c0b0c299153e52c789830ce133d694e3",
+        "sourceSha256": "90cb4f9cce3ec5fab1800be6b319d8feea22853c838a5dd1721b3ca8ba00fe1d",
         "spans": [
           {
-            "start": 48,
-            "end": 53,
-            "text": "(0,1)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 64,
-            "end": 65,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
+            "start": 49,
+            "end": 50,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 74,
-            "end": 80,
-            "text": "(-1,1)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 111,
-            "end": 116,
-            "text": "L0,1;",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 119,
-            "end": 120,
+            "end": 75,
             "text": "y",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 131,
+            "start": 94,
+            "end": 95,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 170,
-            "text": "(2,1)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 235,
-            "end": 240,
-            "text": "(1,1)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 293,
-            "end": 298,
-            "text": "(0,0)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 315,
-            "end": 320,
-            "text": "(1,0)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 334,
-            "end": 339,
-            "text": "(1,2)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 394,
-            "end": 395,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 403,
-            "end": 408,
-            "text": "(1,1)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 431,
-            "end": 432,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 472,
-            "end": 473,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 498,
-            "end": 503,
+            "start": 121,
+            "end": 126,
             "text": "(0,1)",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 520,
-            "end": 525,
+            "start": 137,
+            "end": 138,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 153,
+            "text": "(-1,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 190,
+            "text": "L0,1;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 229,
+            "text": "(2,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 299,
+            "text": "(1,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 390,
+            "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 401,
+            "end": 406,
+            "text": "(1,0)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 420,
+            "end": 425,
+            "text": "(1,2)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 477,
+            "text": "(1,2)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 489,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 502,
+            "text": "(1,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 525,
+            "end": 526,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 559,
+            "end": 560,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 585,
+            "end": 590,
+            "text": "(0,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 607,
+            "end": 612,
             "text": "mover",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 528,
-            "end": 534,
+            "start": 615,
+            "end": 621,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 607,
-            "end": 611,
+            "start": 694,
+            "end": 698,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 635,
-            "end": 639,
+            "start": 722,
+            "end": 726,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -2666,8 +3329,15 @@
         "spans": [
           {
             "start": 36,
+            "end": 37,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
             "end": 43,
-            "text": "4 por 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -2680,15 +3350,29 @@
         "spans": [
           {
             "start": 35,
+            "end": 36,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
             "end": 42,
-            "text": "4 por 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 66,
+            "end": 67,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
             "end": 71,
-            "text": "0 y 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
@@ -2861,6 +3545,13 @@
             "reading": "technical"
           },
           {
+            "start": 566,
+            "end": 569,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 578,
             "end": 581,
             "text": "int",
@@ -2893,21 +3584,21 @@
             "end": 689,
             "text": "A",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 702,
             "end": 703,
             "text": "O",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 733,
             "end": 734,
             "text": "L",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2932,8 +3623,15 @@
         "spans": [
           {
             "start": 85,
+            "end": 86,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 89,
             "end": 90,
-            "text": "0 y 3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
@@ -3023,8 +3721,15 @@
         "spans": [
           {
             "start": 38,
+            "end": 39,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
             "end": 45,
-            "text": "4 por 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -3033,144 +3738,158 @@
       {
         "block": "u8_tablero_4_ambos_ejes_referencia_recorridos",
         "path": "/text",
-        "sourceSha256": "78677ed9ebfed0ad9f6c85250f4c4cafe8b389bf98fc185582c014b58f30ea3a",
+        "sourceSha256": "7f53a07af4ef4cebad66615159eebbf130a5a5ab0556938bd8d5f038532fdd65",
         "spans": [
           {
-            "start": 48,
-            "end": 53,
-            "text": "(0,1)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 64,
-            "end": 65,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
+            "start": 49,
+            "end": 50,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 74,
-            "end": 80,
-            "text": "(-1,1)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 111,
-            "end": 116,
-            "text": "L0,1;",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 119,
-            "end": 120,
+            "end": 75,
             "text": "y",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 131,
+            "start": 94,
+            "end": 95,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 170,
-            "text": "(3,1)",
+            "start": 121,
+            "end": 126,
+            "text": "(0,1)",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 235,
-            "end": 240,
-            "text": "(2,1)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 293,
-            "end": 298,
-            "text": "(0,0)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 315,
-            "end": 320,
-            "text": "(1,0)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 334,
-            "end": 339,
-            "text": "(1,3)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 394,
-            "end": 395,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 403,
-            "end": 408,
-            "text": "(1,2)",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 431,
-            "end": 432,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 472,
-            "end": 473,
+            "start": 137,
+            "end": 138,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 498,
-            "end": 503,
+            "start": 147,
+            "end": 153,
+            "text": "(-1,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
+            "end": 190,
+            "text": "L0,1;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 229,
+            "text": "(3,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 299,
+            "text": "(2,1)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 390,
+            "text": "(0,0)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 401,
+            "end": 406,
+            "text": "(1,0)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 420,
+            "end": 425,
+            "text": "(1,3)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 477,
+            "text": "(1,3)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 489,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 502,
+            "text": "(1,2)",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 525,
+            "end": 526,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 559,
+            "end": 560,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 585,
+            "end": 590,
             "text": "(0,2)",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 520,
-            "end": 525,
+            "start": 607,
+            "end": 612,
             "text": "mover",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 528,
-            "end": 534,
+            "start": 615,
+            "end": 621,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 607,
-            "end": 611,
+            "start": 694,
+            "end": 698,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 635,
-            "end": 639,
+            "start": 722,
+            "end": 726,
             "text": "main",
             "role": "cpp",
             "reading": "technical"

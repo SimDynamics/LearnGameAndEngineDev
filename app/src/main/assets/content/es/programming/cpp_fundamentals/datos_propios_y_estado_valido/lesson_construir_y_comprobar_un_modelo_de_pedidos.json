@@ -52,16 +52,19 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa debe definir el tipo, sus operaciones y un main de prueba. Empieza con un pedido de código M y cuatro unidades. Solicita, en este orden, cambiar a siete, cambiar a cero, enviar, cancelar y cambiar a dos. Cada solicitud actúa sobre el estado que dejó la anterior.\n\nPrimero resuelve el puzzle siguiente: completa los resultados y elige el motivo de cada aceptación o rechazo. Después construye el programa en el editor de código. Por cada solicitud, muestra resultado:consulta en su propia línea. Tras cambiar_unidades consulta unidades(); tras enviar o cancelar muestra la comparación estado() == Estado::enviado. Realiza cada solicitud antes de consultar el objeto.\n\nPulsa Compilar, ejecutar y comprobar para verificar las cinco parejas. Aquí debes implementar las reglas del modelo; la predicción anterior permite contrastar si las operaciones que construiste cumplen esas reglas.",
+          "text": "Define el tipo Pedido, sus operaciones y un main de prueba. Empieza con un pedido de código M y cuatro unidades. Aplica estas solicitudes sobre ese mismo objeto, en este orden:\n\ncambiar_unidades(7), seguido de la consulta unidades().\ncambiar_unidades(0), seguido de la consulta unidades().\nenviar(), seguido de la comparación estado() == Estado::enviado.\ncancelar(), seguido de la comparación estado() == Estado::enviado.\ncambiar_unidades(2), seguido de la consulta unidades().\n\nCada solicitud actúa sobre el estado que dejó la anterior. Realiza la llamada antes de consultar su efecto. En cada línea muestra resultado:consulta: primero el resultado de la operación y después el valor observado.\n\nResuelve el puzzle siguiente, que pide los resultados y el motivo de cada aceptación o rechazo. Después construye el programa en el editor y pulsa Compilar, ejecutar y comprobar. Debes implementar las reglas del modelo; la predicción permite contrastar si las operaciones que construiste las cumplen.",
           "emphasis": [
             {
-              "text": "Primero resuelve el puzzle siguiente"
+              "text": "ese mismo objeto",
+              "style": "bold"
             },
             {
-              "text": "Realiza cada solicitud antes de consultar el objeto"
+              "text": "Realiza la llamada antes de consultar su efecto",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -423,16 +426,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye Pedido y una función de prueba que intente crear un objeto desde código y unidades. Si la construcción termina normalmente, muestra codigo:unidades utilizando sus consultas. Si un catch situado fuera del constructor recibe PedidoInvalido, muestra Rechazado. Termina cada prueba con un salto de línea.\n\nEn main reúne estos cinco intentos, en este orden: M con una unidad, M con veinte, código vacío con cuatro, M con cero y M con veintiuna. Las líneas requeridas son M:1, M:20 y tres veces Rechazado, incluida la última con su salto. Pulsa Compilar, ejecutar y comprobar.\n\nConserva los argumentos inválidos de las pruebas: el objetivo es comprobar que impiden construir el pedido, sin sustituirlos silenciosamente por otros valores.",
+          "text": "Construye Pedido y una función de prueba que intente crear un objeto a partir de un código y una cantidad de unidades. Si la construcción termina normalmente, muestra codigo:unidades utilizando sus consultas. Si un catch situado fuera del constructor recibe PedidoInvalido, muestra Rechazado. Termina cada intento con un salto de línea.\n\nEn main reúne estos cinco intentos, en este orden. Cada renglón indica los argumentos y el resultado que debe mostrar:\n\nCódigo M, una unidad. Resultado: M:1.\nCódigo M, veinte unidades. Resultado: M:20.\nCódigo vacío, cuatro unidades. Resultado: Rechazado.\nCódigo M, cero unidades. Resultado: Rechazado.\nCódigo M, veintiuna unidades. Resultado: Rechazado.\n\nIncluye el salto de línea también después del último resultado y pulsa Compilar, ejecutar y comprobar.\n\nConserva los argumentos inválidos: el objetivo es comprobar que impiden construir el pedido. Sustituirlos por otros valores ya no comprobaría ese rechazo.",
           "emphasis": [
             {
-              "text": "cinco intentos"
+              "text": "cinco intentos",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Conserva los argumentos inválidos",
+              "style": "bold"
             },
             {
-              "text": "Conserva los argumentos inválidos"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -462,17 +468,19 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"M\", 4};\n    std::cout << pedido.cambiar_unidades(7) << \":\" << pedido.unidades() << \"\\n\";\n    std::cout << pedido.cambiar_unidades(0) << \":\" << pedido.unidades() << \"\\n\";\n    std::cout << pedido.enviar() << \":\" << (pedido.estado() == Estado::enviado) << \"\\n\";\n    std::cout << pedido.cancelar() << \":\" << (pedido.estado() == Estado::enviado) << \"\\n\";\n    std::cout << pedido.cambiar_unidades(2) << \":\" << pedido.unidades();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"M\", 4};\n\n    std::cout << pedido.cambiar_unidades(7) << \":\"\n              << pedido.unidades() << \"\\n\";\n    std::cout << pedido.cambiar_unidades(0) << \":\"\n              << pedido.unidades() << \"\\n\";\n    std::cout << pedido.enviar() << \":\"\n              << (pedido.estado() == Estado::enviado) << \"\\n\";\n    std::cout << pedido.cancelar() << \":\"\n              << (pedido.estado() == Estado::enviado) << \"\\n\";\n    std::cout << pedido.cambiar_unidades(2) << \":\"\n              << pedido.unidades();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La referencia produce 1:7, 0:7, 1:1, 0:1 y 0:7, una pareja por línea. El cambio a cero devuelve false y conserva las siete unidades aceptadas. enviar() acepta la transición y deja el pedido enviado. Desde ese estado se rechazan cancelar() y el cambio a dos; las consultas permiten observar que el valor anterior permanece.",
+          "text": "La referencia muestra estas parejas, una por línea:\n\n1:7: el cambio a siete se acepta y deja siete unidades.\n0:7: el cambio a cero se rechaza y conserva las siete unidades aceptadas.\n1:1: enviar() se acepta; la comparación posterior confirma el estado enviado.\n0:1: cancelar() se rechaza porque el pedido ya está enviado; la comparación confirma que sigue enviado.\n0:7: el cambio a dos también se rechaza por el estado, aunque dos esté dentro del intervalo de cantidades; permanecen las siete unidades.\n\nEl primer valor de cada pareja informa de la aceptación o el rechazo. El segundo permite observar si los miembros conservaron el valor que correspondía después de la solicitud.",
           "emphasis": [
             {
-              "text": "las siete unidades aceptadas"
+              "text": "El primer valor",
+              "style": "bold"
             },
             {
-              "text": "el valor anterior permanece"
+              "text": "El segundo",
+              "style": "bold"
             }
           ]
         },
@@ -496,7 +504,7 @@
           "answers": [
             "1 0 3"
           ],
-          "explanation": "a y b son valores independientes. b cancelado conserva tres y no puede enviarse."
+          "explanation": "Al construir b como copia de a, ambos empiezan con código P, tres unidades y estado preparado. La llamada b.cancelar() cambia sólo b a cancelado. Después, a.enviar() se acepta y devuelve true, mientras b.enviar() se rechaza y devuelve false porque b ya está cancelado. Ese rechazo conserva las tres unidades de b. Por eso se muestra 1 0 3: los dos resultados de enviar y la cantidad que conserva b."
         },
         {
           "type": "heading",
@@ -505,7 +513,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    try {\n        const Pedido pedido{codigo, unidades};\n        std::cout << pedido.codigo() << \":\" << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"M\", 1);\n    probar(\"M\", 20);\n    probar(\"\", 4);\n    probar(\"M\", 0);\n    probar(\"M\", 21);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    try {\n        const Pedido pedido{codigo, unidades};\n        std::cout << pedido.codigo() << \":\" << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"M\", 1);\n    probar(\"M\", 20);\n    probar(\"\", 4);\n    probar(\"M\", 0);\n    probar(\"M\", 21);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -571,25 +579,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye procesar(vector<Pedido>& pedidos, const vector<Solicitud>& solicitudes). Solicitud es un registro con codigo de tipo string y unidades de tipo int. Busca el pedido de cada solicitud por su código y comprueba la ausencia antes de acceder a un elemento.\n\nPor cada solicitud muestra codigo:Aplicada, codigo:Rechazada o codigo:Ausente, en una línea. Al terminar, muestra Pedidos:, seguido de codigo:unidades; por cada pedido en su orden original, un espacio y Total:suma. Termina también esa línea con un salto. No añadas, elimines ni reordenes pedidos. Las solicitudes aceptadas sí cambian las unidades del pedido encontrado.\n\nEn main prepara estas cinco sesiones y escribe el nombre de cada una antes de procesarla:\n\nBase: A con dos unidades, B con cinco y C con una. Envía B y solicita, en orden, A:6, B:3, X:4, A:21 y C:20.\n\nVacio: ningún pedido; solicita X:4.\n\nAusente: D con tres unidades; solicita X:4.\n\nValida e invalida: E con dos unidades; solicita E:5 y E:0.\n\nCancelado: F con cuatro unidades, previamente cancelado; solicita F:3.\n\nPulsa Compilar, ejecutar y comprobar. Los totales respectivos deben ser 31, 0, 3, 5 y 4. Evalúa las solicitudes en su orden original, sobre el estado que dejó cada anterior. Para la colección vacía, conserva el rótulo Pedidos: y el espacio que lo separa de Total:0.",
+          "text": "Construye procesar(vector<Pedido>& pedidos, const vector<Solicitud>& solicitudes). El registro Solicitud tiene dos miembros:\n\ncodigo, de tipo string, identifica el pedido que se busca.\nunidades, de tipo int, contiene la nueva cantidad solicitada.\n\nPara cada solicitud, busca el pedido por su código. Comprueba que se encontró antes de acceder a ese elemento.\n\nMuestra una línea por solicitud, con el código y el resultado que corresponda:\n\ncodigo:Aplicada, cuando el pedido encontrado acepta cambiar sus unidades.\ncodigo:Rechazada, cuando existe pero rechaza el cambio.\ncodigo:Ausente, cuando no hay un pedido con ese código.\n\nAl terminar las solicitudes, muestra una línea que empiece con Pedidos:. A continuación escribe codigo:unidades; por cada pedido, en su orden original. Añade un espacio y Total:suma, con la suma de sus unidades actuales. Termina también esa línea con un salto. No añadas, elimines ni reordenes pedidos; las solicitudes aceptadas sí cambian la cantidad del pedido encontrado.\n\nEn main prepara las siguientes cinco sesiones independientes. Escribe el nombre de cada sesión en su propia línea antes de llamar a procesar. Dentro de cada sesión, aplica las solicitudes en el orden indicado: cada una utiliza los valores que dejó la anterior. La notación A:6, por ejemplo, identifica el código A y la cantidad solicitada seis; no es todavía una línea de salida.\n\nSesión Base\nPedidos iniciales: A con dos unidades, B con cinco y C con una. Envía el pedido B antes de las solicitudes.\nSolicitudes, en este orden:\nA:6\nB:3\nX:4\nA:21\nC:20\nEl total final debe ser 31.\n\nSesión Vacio\nNo contiene pedidos.\nSolicitud: X:4.\nSu informe final debe ser exactamente Pedidos: Total:0, con el espacio entre los dos rótulos.\n\nSesión Ausente\nPedido inicial: D con tres unidades.\nSolicitud: X:4.\nEl total final debe ser 3.\n\nSesión Valida e invalida\nPedido inicial: E con dos unidades.\nSolicitudes, en este orden:\nE:5\nE:0\nEl total final debe ser 5.\n\nSesión Cancelado\nPedido inicial: F con cuatro unidades. Cancélalo antes de la solicitud.\nSolicitud: F:3.\nEl total final debe ser 4.\n\nPulsa Compilar, ejecutar y comprobar. Conserva tanto el orden de las sesiones como el de los pedidos y solicitudes de cada una.",
           "emphasis": [
             {
-              "text": "comprueba la ausencia antes de acceder"
+              "text": "Comprueba que se encontró",
+              "style": "bold"
             },
             {
-              "text": "No añadas, elimines ni reordenes pedidos"
+              "text": "cinco sesiones independientes",
+              "style": "bold"
             },
             {
-              "text": "Las solicitudes aceptadas sí cambian las unidades"
+              "text": "cada una utiliza los valores que dejó la anterior",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -628,20 +640,19 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nstruct Solicitud { std::string codigo; int unidades; };\n\nint main() {\n    std::vector<Pedido> pedidos{{\"A\", 2}, {\"B\", 5}, {\"C\", 1}};\n    pedidos.at(1).enviar();\n    std::vector<Solicitud> solicitudes{{\"A\", 6}, {\"B\", 3}, {\"X\", 4}, {\"A\", 21}, {\"C\", 20}};\n    for (const auto& solicitud : solicitudes) {\n        std::size_t posicion = pedidos.size();\n        for (std::size_t i = 0; i < pedidos.size(); ++i) {\n            if (pedidos[i].codigo() == solicitud.codigo) { posicion = i; break; }\n        }\n        std::cout << solicitud.codigo << \":\";\n        if (posicion == pedidos.size()) {\n            std::cout << \"Ausente\\n\";\n        } else if (pedidos[posicion].cambiar_unidades(solicitud.unidades)) {\n            std::cout << \"Aplicada\\n\";\n        } else {\n            std::cout << \"Rechazada\\n\";\n        }\n    }\n    int total = 0;\n    for (const auto& pedido : pedidos) {\n        std::cout << pedido.codigo() << \":\" << pedido.unidades() << \";\";\n        total += pedido.unidades();\n    }\n    std::cout << \" Total:\" << total;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nstruct Solicitud {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Pedido> pedidos{\n        {\"A\", 2},\n        {\"B\", 5},\n        {\"C\", 1}\n    };\n    pedidos.at(1).enviar();\n\n    std::vector<Solicitud> solicitudes{\n        {\"A\", 6},\n        {\"B\", 3},\n        {\"X\", 4},\n        {\"A\", 21},\n        {\"C\", 20}\n    };\n\n    for (const auto& solicitud : solicitudes) {\n        std::size_t posicion = pedidos.size();\n        for (std::size_t i = 0; i < pedidos.size(); ++i) {\n            if (pedidos[i].codigo() == solicitud.codigo) {\n                posicion = i;\n                break;\n            }\n        }\n\n        std::cout << solicitud.codigo << \":\";\n        if (posicion == pedidos.size()) {\n            std::cout << \"Ausente\\n\";\n        } else if (pedidos[posicion].cambiar_unidades(solicitud.unidades)) {\n            std::cout << \"Aplicada\\n\";\n        } else {\n            std::cout << \"Rechazada\\n\";\n        }\n    }\n\n    int total = 0;\n    for (const auto& pedido : pedidos) {\n        std::cout << pedido.codigo() << \":\"\n                  << pedido.unidades() << \";\";\n        total += pedido.unidades();\n    }\n\n    std::cout << \" Total:\" << total;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Este primer ejemplo desarrolla únicamente la búsqueda y las solicitudes de Base dentro de main. No es todavía el programa completo de las cinco sesiones: no define procesar ni imprime los rótulos que exige aquella actividad.\n\nMuestra A:Aplicada, B:Rechazada, X:Ausente, A:Rechazada y C:Aplicada en líneas distintas. El cierre es A:6;B:5;C:20; Total:31. La referencia completa de más abajo reúne la función, los nombres de sesión y todas las líneas requeridas.",
+          "text": "Este ejemplo desarrolla únicamente la búsqueda y las solicitudes de Base dentro de main. Todavía no es el programa completo de las cinco sesiones: no define procesar ni imprime sus nombres.\n\nMuestra estas líneas, en este orden:\n\nA:Aplicada\nB:Rechazada\nX:Ausente\nA:Rechazada\nC:Aplicada\nA:6;B:5;C:20; Total:31\n\nLa última línea conserva el orden de los pedidos y muestra sus cantidades después de todas las solicitudes, sin salto final. La referencia completa siguiente añade la función, los nombres de sesión y las demás líneas que exige la actividad.",
           "emphasis": [
             {
-              "text": "únicamente la búsqueda y las solicitudes de Base"
+              "text": "únicamente",
+              "style": "bold"
             },
             {
-              "text": "No es todavía el programa completo"
-            },
-            {
-              "text": "La referencia completa"
+              "text": "después de todas las solicitudes",
+              "style": "bold"
             }
           ]
         },
@@ -690,7 +701,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nstruct Solicitud { std::string codigo; int unidades; };\n\nvoid procesar(std::vector<Pedido>& pedidos, const std::vector<Solicitud>& solicitudes) {\n    for (const auto& solicitud : solicitudes) {\n        std::size_t posicion = pedidos.size();\n        for (std::size_t i = 0; i < pedidos.size(); ++i) {\n            if (pedidos[i].codigo() == solicitud.codigo) { posicion = i; break; }\n        }\n        std::cout << solicitud.codigo << \":\";\n        if (posicion == pedidos.size()) {\n            std::cout << \"Ausente\\n\";\n        } else if (pedidos[posicion].cambiar_unidades(solicitud.unidades)) {\n            std::cout << \"Aplicada\\n\";\n        } else {\n            std::cout << \"Rechazada\\n\";\n        }\n    }\n    int total = 0;\n    std::cout << \"Pedidos:\";\n    for (const auto& pedido : pedidos) {\n        std::cout << pedido.codigo() << \":\" << pedido.unidades() << \";\";\n        total += pedido.unidades();\n    }\n    std::cout << \" Total:\" << total << \"\\n\";\n}\n\nint main() {\n    std::vector<Pedido> base{{\"A\", 2}, {\"B\", 5}, {\"C\", 1}};\n    base.at(1).enviar();\n    std::cout << \"Base\\n\";\n    procesar(base, {{\"A\",6},{\"B\",3},{\"X\",4},{\"A\",21},{\"C\",20}});\n    std::vector<Pedido> vacio;\n    std::cout << \"Vacio\\n\";\n    procesar(vacio, {{\"X\",4}});\n    std::vector<Pedido> ausente{{\"D\",3}};\n    std::cout << \"Ausente\\n\";\n    procesar(ausente, {{\"X\",4}});\n    std::vector<Pedido> valido{{\"E\",2}};\n    std::cout << \"Valida e invalida\\n\";\n    procesar(valido, {{\"E\",5},{\"E\",0}});\n    std::vector<Pedido> cancelado{{\"F\",4}};\n    cancelado.at(0).cancelar();\n    std::cout << \"Cancelado\\n\";\n    procesar(cancelado, {{\"F\",3}});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nstruct Solicitud {\n    std::string codigo;\n    int unidades;\n};\n\nvoid procesar(std::vector<Pedido>& pedidos,\n              const std::vector<Solicitud>& solicitudes) {\n    for (const auto& solicitud : solicitudes) {\n        std::size_t posicion = pedidos.size();\n        for (std::size_t i = 0; i < pedidos.size(); ++i) {\n            if (pedidos[i].codigo() == solicitud.codigo) {\n                posicion = i;\n                break;\n            }\n        }\n\n        std::cout << solicitud.codigo << \":\";\n        if (posicion == pedidos.size()) {\n            std::cout << \"Ausente\\n\";\n        } else if (pedidos[posicion].cambiar_unidades(solicitud.unidades)) {\n            std::cout << \"Aplicada\\n\";\n        } else {\n            std::cout << \"Rechazada\\n\";\n        }\n    }\n\n    int total = 0;\n    std::cout << \"Pedidos:\";\n    for (const auto& pedido : pedidos) {\n        std::cout << pedido.codigo() << \":\"\n                  << pedido.unidades() << \";\";\n        total += pedido.unidades();\n    }\n\n    std::cout << \" Total:\" << total << \"\\n\";\n}\n\nint main() {\n    std::vector<Pedido> base{\n        {\"A\", 2},\n        {\"B\", 5},\n        {\"C\", 1}\n    };\n    base.at(1).enviar();\n\n    std::cout << \"Base\\n\";\n    procesar(base, {\n        {\"A\",6},\n        {\"B\",3},\n        {\"X\",4},\n        {\"A\",21},\n        {\"C\",20}\n    });\n\n    std::vector<Pedido> vacio;\n    std::cout << \"Vacio\\n\";\n    procesar(vacio, {\n        {\"X\",4}\n    });\n\n    std::vector<Pedido> ausente{\n        {\"D\", 3}\n    };\n    std::cout << \"Ausente\\n\";\n    procesar(ausente, {\n        {\"X\",4}\n    });\n\n    std::vector<Pedido> valido{\n        {\"E\", 2}\n    };\n    std::cout << \"Valida e invalida\\n\";\n    procesar(valido, {\n        {\"E\",5},\n        {\"E\",0}\n    });\n\n    std::vector<Pedido> cancelado{\n        {\"F\", 4}\n    };\n    cancelado.at(0).cancelar();\n    std::cout << \"Cancelado\\n\";\n    procesar(cancelado, {\n        {\"F\",3}\n    });\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -724,17 +735,19 @@
           "answers": [
             "8 20"
           ],
-          "explanation": "La copia conserva ocho. El original acepta veinte y rechaza veintiuna sin deshacer la aceptación anterior."
+          "explanation": "Cuando se construye copia, pedido tiene ocho unidades; copia recibe ese valor. pedido.cambiar_unidades(20) se acepta porque pedido está preparado y veinte está dentro del intervalo permitido. La solicitud siguiente, pedido.cambiar_unidades(21), se rechaza por exceder el límite y conserva las veinte unidades aceptadas. Ninguna llamada modifica copia. Por eso copia.unidades() muestra 8 y pedido.unidades() muestra 20, separados por un espacio."
         },
         {
           "type": "paragraph",
-          "text": "Las dos actividades siguientes utilizan editores y borradores independientes. La primera recupera los efectos de cancelar antes de otras solicitudes y de intentar enviar dos veces. La segunda comprueba los valores de dos objetos después de copiarlos.\n\nCada editor reúne una batería fija: corrige y reintenta ese mismo objetivo sin sustituirlo por el de la otra actividad.",
+          "text": "Las dos actividades siguientes utilizan editores y borradores independientes. El primer editor reúne dos recorridos: uno cancela el pedido V antes de otras solicitudes; el otro intenta enviar dos veces un pedido R distinto. Conserva el orden de las operaciones dentro de cada recorrido.\n\nEl segundo editor sigue conjuntamente un pedido original y su copia. Necesita observar ambos objetos después de las operaciones para comprobar que conservan valores propios.\n\nCorrige y reintenta cada programa en su editor, conservando los datos y resultados solicitados para esa actividad.",
           "emphasis": [
             {
-              "text": "editores y borradores independientes"
+              "text": "editores y borradores independientes",
+              "style": "bold"
             },
             {
-              "text": "una batería fija"
+              "text": "ambos objetos",
+              "style": "bold"
             }
           ]
         },
@@ -744,16 +757,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye Pedido desde los requisitos del modelo. Crea un pedido de código V y nueve unidades. Solicita, en este orden, cancelar, cambiar a tres, enviar y cancelar otra vez. Muestra el resultado de cada llamada en las líneas Cancelar:1, Cambiar:0, Enviar:0 y Cancelar de nuevo:0.\n\nDespués consulta ese mismo objeto y muestra Conservado:V:9:1. El último bool corresponde a la comparación de su estado con Estado::cancelado: permite comprobar que los rechazos no lo devolvieron a preparado.\n\nCrea otro pedido de código R y tres unidades. Solicita enviar dos veces y consulta después si permanece enviado. Muestra Envios:1:0:1, con los dos resultados y esa comparación en ese orden.\n\nTermina todas las líneas con un salto, salvo la última. Ejecuta las solicitudes antes de consultar los objetos y pulsa Compilar, ejecutar y comprobar. Los rechazos deben conservar todos los miembros.",
+          "text": "Reconstruye Pedido desde los requisitos del modelo. Empieza con un pedido de código V y nueve unidades. Solicita sobre ese mismo objeto, en este orden:\n\nCancelar.\nCambiar sus unidades a tres.\nEnviar.\nCancelar otra vez.\n\nMuestra el resultado de cada llamada y consulta después los miembros del objeto. Las cinco primeras líneas deben ser:\n\nCancelar:1\nCambiar:0\nEnviar:0\nCancelar de nuevo:0\nConservado:V:9:1\n\nEl último valor de Conservado:V:9:1 corresponde a comparar el estado con Estado::cancelado. Junto con el código y la cantidad, permite comprobar qué conservaron los rechazos: el pedido no volvió a preparado ni cambió sus unidades.\n\nCrea otro pedido de código R y tres unidades. Solicita enviar dos veces, conserva ambos resultados y consulta después si sigue enviado. La última línea debe ser Envios:1:0:1. Contiene los dos resultados de las llamadas y la comparación posterior, en ese orden.\n\nTermina todas las líneas con un salto, salvo la última. Ejecuta cada solicitud antes de consultar su efecto y pulsa Compilar, ejecutar y comprobar. Los rechazos deben conservar todos los miembros.",
           "emphasis": [
             {
-              "text": "Reconstruye Pedido"
+              "text": "ese mismo objeto",
+              "style": "bold"
             },
             {
-              "text": "Los rechazos deben conservar todos los miembros"
+              "text": "qué conservaron los rechazos",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -778,16 +794,19 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor reconstruye Pedido. Crea original con código C y dos unidades, y construye copia a partir de ese objeto. Cambia las unidades de original a cinco y envía sólo copia.\n\nConsulta ambos objetos y muestra Original:C:5:1 y Copia:C:2:1 en líneas distintas, sin salto al final de la segunda. En la primera línea, el bool compara el estado con Estado::preparado; en la segunda, con Estado::enviado.\n\nPulsa Compilar, ejecutar y comprobar. Las consultas deben mostrar que cada objeto conserva el resultado de las operaciones solicitadas sobre él: cambiar original no cambia automáticamente copia, y enviar copia no envía original.",
+          "text": "En este editor reconstruye Pedido y realiza esta secuencia:\n\nCrea original con código C y dos unidades.\nConstruye copia a partir de original.\nCambia las unidades de original a cinco.\nEnvía sólo copia.\n\nConsulta ambos objetos después de esas operaciones. Muestra estas dos líneas, sin salto al final de la segunda:\n\nOriginal:C:5:1\nCopia:C:2:1\n\nEl último valor de la primera línea compara el estado de original con Estado::preparado. El de la segunda compara el estado de copia con Estado::enviado.\n\nPulsa Compilar, ejecutar y comprobar. Las consultas deben mostrar el efecto de las operaciones sobre cada objeto: cambiar original no cambia automáticamente copia, y enviar copia no envía original.",
           "emphasis": [
             {
-              "text": "Consulta ambos objetos"
+              "text": "Consulta ambos objetos",
+              "style": "bold"
             },
             {
-              "text": "cada objeto conserva el resultado"
+              "text": "sobre cada objeto",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -913,7 +932,7 @@
             "Nada: el invariante numérico basta para toda la interfaz."
           ],
           "correctIndex": 0,
-          "explanation": "El intervalo de unidades no es el único requisito. enviar() debe comprobar que el pedido está preparado antes de pasar a enviado. Aceptar desde cancelado incumple esa transición, aunque la cantidad siga entre una y veinte.",
+          "explanation": "Está permitido llamar a enviar() cuando el pedido está cancelado: esa solicitud está prevista y debe devolver false sin modificarlo. El defecto descrito es que la implementación la acepta y pasa a enviado. Para aceptar ese cambio, enviar() exige que el estado de partida sea preparado. Conservar una cantidad entre una y veinte no basta para cumplir esa condición de transición.",
           "reviewFeedback": [
             "Distingue las condiciones sobre los datos de las condiciones que permiten realizar una transición.",
             "Esta elección considera suficiente terminar en un enumerador nombrado. Revisa qué estado de partida exige enviar(), además de qué estado produce.",
@@ -939,12 +958,12 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido cancelado{\"V\", 9};\n    bool resultado = cancelado.cancelar();\n    std::cout << \"Cancelar:\" << resultado << \"\\n\";\n    resultado = cancelado.cambiar_unidades(3);\n    std::cout << \"Cambiar:\" << resultado << \"\\n\";\n    resultado = cancelado.enviar();\n    std::cout << \"Enviar:\" << resultado << \"\\n\";\n    resultado = cancelado.cancelar();\n    std::cout << \"Cancelar de nuevo:\" << resultado << \"\\n\";\n    std::cout << \"Conservado:\" << cancelado.codigo() << \":\" << cancelado.unidades()\n              << \":\" << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n    Pedido enviado{\"R\", 3};\n    const bool primero = enviado.enviar();\n    const bool segundo = enviado.enviar();\n    std::cout << \"Envios:\" << primero << \":\" << segundo << \":\"\n              << (enviado.estado() == Estado::enviado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido cancelado{\"V\", 9};\n    bool resultado = cancelado.cancelar();\n\n    std::cout << \"Cancelar:\" << resultado << \"\\n\";\n\n    resultado = cancelado.cambiar_unidades(3);\n    std::cout << \"Cambiar:\" << resultado << \"\\n\";\n\n    resultado = cancelado.enviar();\n    std::cout << \"Enviar:\" << resultado << \"\\n\";\n\n    resultado = cancelado.cancelar();\n    std::cout << \"Cancelar de nuevo:\" << resultado << \"\\n\";\n\n    std::cout << \"Conservado:\" << cancelado.codigo() << \":\" << cancelado.unidades()\n              << \":\" << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n\n    Pedido enviado{\"R\", 3};\n    const bool primero = enviado.enviar();\n    const bool segundo = enviado.enviar();\n    std::cout << \"Envios:\" << primero << \":\" << segundo << \":\"\n              << (enviado.estado() == Estado::enviado);\n\n    return 0;\n}\n"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"C\", 2};\n    Pedido copia = original;\n    original.cambiar_unidades(5);\n    copia.enviar();\n    std::cout << \"Original:\" << original.codigo() << \":\" << original.unidades()\n              << \":\" << (original.estado() == Estado::preparado) << \"\\n\";\n    std::cout << \"Copia:\" << copia.codigo() << \":\" << copia.unidades()\n              << \":\" << (copia.estado() == Estado::enviado);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades)\n        : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"C\", 2};\n    Pedido copia = original;\n    original.cambiar_unidades(5);\n    copia.enviar();\n\n    std::cout << \"Original:\" << original.codigo() << \":\" << original.unidades()\n              << \":\" << (original.estado() == Estado::preparado) << \"\\n\";\n    std::cout << \"Copia:\" << copia.codigo() << \":\" << copia.unidades()\n              << \":\" << (copia.estado() == Estado::enviado);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -2093,6 +2112,164 @@
         "id": "block_0000_0001",
         "beforeSha256": "ccdad62e1d98fe608fc2477f78466fdb6d27777bffb1aef98e8060fcbad7d0e4",
         "afterSha256": "cd89c5bac6a57b2e585f4b73e3b2629bea58599d78479cf8aa7c9617f2f67802"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "cffb4ebf33ac98d6119a95ccd0dedb14a90d3f9c219cf3dd6e2cdddad544cf4b",
+        "afterSha256": "d874c476213feced6fbdf95dd45e552391adade54501a9ff937a9e299fb488c0"
+      },
+      {
+        "id": "block_0001_0006",
+        "beforeSha256": "e15f4b80181afd107b70b549ff75edf274e5333e65dad6a95e4ef53efb8980a1",
+        "afterSha256": "4a4dd13b29022434b4f5aef5b5d505b401f6e38f726171ce0136af861aa38ebd"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "ca54b14a54deda83281ff2f1224093ce13cb42b879ff51a5b3917c457bd5b8d2",
+        "afterSha256": "fa1c5dfb29e5848c6a563e6e099dfd5f4d452e23ec2cccdef6c368d978ac258f"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "6b6a11ddd66f339e4ceece5cdbd43b9dcfe0211bb308b3c4d2c2b51ef2c7f683",
+        "afterSha256": "2da46f02a950bdf1a2d0ccccd01d8f91604ff950d3c652d66dc924e924dc1099"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "4942002be1cf504ccb5ac23dff405a7c0b6e109ee736aa68c785f279985c3ef2",
+        "afterSha256": "d993d74d96b8e9e0463d5743cef5ca6390e631be4c179f36a60256c5e0d83be9"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "3ff4846981155e45a035d048d5e65231d6171a1936ffdb15eaf57b362c6820cb",
+        "afterSha256": "a5cca24f16301034d61b4e5f0ff88080d02922f1d81e9ac50aafabde854c49f1"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "1a5fc92f3f9c267aea25dc2e336271a2187faf011747ccf7b15588dad5453107",
+        "afterSha256": "c0de9fb79f04d88977953ab4048f9cf4970dd704f0b50e4cb1d71650b6dc41d1"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "478c6ff00983f49bcc0a8aaa0213c70521e85862ddf49ea2aaca612f09c8bd10",
+        "afterSha256": "93d80e2d272e1be0d1b8f0ddaf725987b690b5ed2e4dac6942345b16d7fc4fbd"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "a9930b89686c5ec306e4781db0fcec3d182536ddf139fdb2cac70fdab279f969",
+        "afterSha256": "35c952d2a1dab90e5229d0cbfc63655659c4d519ace48346696bd09f3d45d2ac"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "9ba10db75e121930fd9d789c1dc22e83655c3b31eb5f15aa66c34b4b6518f7d0",
+        "afterSha256": "8280c4f1c83c7c065d5f63ebfb4291924c23441238f1bd9b26ad0ea03ae070a3"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "980e6ac4570c61a56958500f05f59b2737d210dfdb26f2e63896188312f848b4",
+        "afterSha256": "37af470c4229edab1c5b6250aad8006c9c389d0613a6a24b891858137624739a"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "8d2327893011b9d336a3c8840e23f852bb58aa71c2d0c572df5a4f232fb03aa1",
+        "afterSha256": "ec679a9f72d795f3d07b87af3d7acc0e6f25670c2bf30c27b56faa52297bded7"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "4ba9e346806d5d56ecf9b57bee5907478ca45c0236bd607cd5822177d602f9b1",
+        "afterSha256": "f98b3c0adda974171ed8fd20b36a6810adf1940cfa46d104ebd380e7cb180feb"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "cbf31b0f2c8ebd05bd57ab071ac178b5628f3afced2046ee0b62334133fcfee7",
+        "afterSha256": "4601630deb9ec6343278efdbf21ab5f7b58f3ba67d333d47ff37b0886e02e85a"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "a8c0eb7770b3eddf4a671f451b4be64a6a267b511c08b01473a3d2534bbc2a92",
+        "afterSha256": "e15dd9d3fa3645a7ab1d659d423772eca9943948c345fac7077fc63c89db19be"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "d29b723c357e4373dee6db547c819acb9d14c0b1a30602be38c65eeb7c97bccb",
+        "afterSha256": "c3c8a6becd57d8ea0effb590f5f6f19cfa68148d3d0aa8675a04b31b51f76677"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "3e87b8ec908b5332c069adc91c10f0438b1fa73ce54feed5c6411873d890b9ce",
+        "afterSha256": "1d095989097079ee9fe0547e0da1ec5a2e6e96acc9bdb15a8445b1405ef312f6"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "9f5b29c7fa2322f1b5802c4fea850789fb225ad1e143cf850555320b323da2c2",
+        "afterSha256": "068c0801d720f5657fcc870193506a8786061c19a5839695e5db966c02087573"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"M\", 4};\n    std::cout << pedido.cambiar_unidades(7) << \":\" << pedido.unidades() << \"\\n\";\n    std::cout << pedido.cambiar_unidades(0) << \":\" << pedido.unidades() << \"\\n\";\n    std::cout << pedido.enviar() << \":\" << (pedido.estado() == Estado::enviado) << \"\\n\";\n    std::cout << pedido.cancelar() << \":\" << (pedido.estado() == Estado::enviado) << \"\\n\";\n    std::cout << pedido.cambiar_unidades(2) << \":\" << pedido.unidades();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    try {\n        const Pedido pedido{codigo, unidades};\n        std::cout << pedido.codigo() << \":\" << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"M\", 1);\n    probar(\"M\", 20);\n    probar(\"\", 4);\n    probar(\"M\", 0);\n    probar(\"M\", 21);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Base\nA:Aplicada\nB:Rechazada\nX:Ausente\nA:Rechazada\nC:Aplicada\nPedidos:A:6;B:5;C:20; Total:31\nVacio\nX:Ausente\nPedidos: Total:0\nAusente\nX:Ausente\nPedidos:D:3; Total:3\nValida e invalida\nE:Aplicada\nE:Rechazada\nPedidos:E:5; Total:5\nCancelado\nF:Rechazada\nPedidos:F:4; Total:4\n"
+                ],
+                "explanation": "La búsqueda comprueba ausencia antes de acceder. Los rechazos conservan pedidos existentes y el informe usa los valores reales después de todas las solicitudes."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nstruct Solicitud { std::string codigo; int unidades; };\n\nint main() {\n    std::vector<Pedido> pedidos{{\"A\", 2}, {\"B\", 5}, {\"C\", 1}};\n    pedidos.at(1).enviar();\n    std::vector<Solicitud> solicitudes{{\"A\", 6}, {\"B\", 3}, {\"X\", 4}, {\"A\", 21}, {\"C\", 20}};\n    for (const auto& solicitud : solicitudes) {\n        std::size_t posicion = pedidos.size();\n        for (std::size_t i = 0; i < pedidos.size(); ++i) {\n            if (pedidos[i].codigo() == solicitud.codigo) { posicion = i; break; }\n        }\n        std::cout << solicitud.codigo << \":\";\n        if (posicion == pedidos.size()) {\n            std::cout << \"Ausente\\n\";\n        } else if (pedidos[posicion].cambiar_unidades(solicitud.unidades)) {\n            std::cout << \"Aplicada\\n\";\n        } else {\n            std::cout << \"Rechazada\\n\";\n        }\n    }\n    int total = 0;\n    for (const auto& pedido : pedidos) {\n        std::cout << pedido.codigo() << \":\" << pedido.unidades() << \";\";\n        total += pedido.unidades();\n    }\n    std::cout << \" Total:\" << total;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nstruct Solicitud { std::string codigo; int unidades; };\n\nvoid procesar(std::vector<Pedido>& pedidos, const std::vector<Solicitud>& solicitudes) {\n    for (const auto& solicitud : solicitudes) {\n        std::size_t posicion = pedidos.size();\n        for (std::size_t i = 0; i < pedidos.size(); ++i) {\n            if (pedidos[i].codigo() == solicitud.codigo) { posicion = i; break; }\n        }\n        std::cout << solicitud.codigo << \":\";\n        if (posicion == pedidos.size()) {\n            std::cout << \"Ausente\\n\";\n        } else if (pedidos[posicion].cambiar_unidades(solicitud.unidades)) {\n            std::cout << \"Aplicada\\n\";\n        } else {\n            std::cout << \"Rechazada\\n\";\n        }\n    }\n    int total = 0;\n    std::cout << \"Pedidos:\";\n    for (const auto& pedido : pedidos) {\n        std::cout << pedido.codigo() << \":\" << pedido.unidades() << \";\";\n        total += pedido.unidades();\n    }\n    std::cout << \" Total:\" << total << \"\\n\";\n}\n\nint main() {\n    std::vector<Pedido> base{{\"A\", 2}, {\"B\", 5}, {\"C\", 1}};\n    base.at(1).enviar();\n    std::cout << \"Base\\n\";\n    procesar(base, {{\"A\",6},{\"B\",3},{\"X\",4},{\"A\",21},{\"C\",20}});\n    std::vector<Pedido> vacio;\n    std::cout << \"Vacio\\n\";\n    procesar(vacio, {{\"X\",4}});\n    std::vector<Pedido> ausente{{\"D\",3}};\n    std::cout << \"Ausente\\n\";\n    procesar(ausente, {{\"X\",4}});\n    std::vector<Pedido> valido{{\"E\",2}};\n    std::cout << \"Valida e invalida\\n\";\n    procesar(valido, {{\"E\",5},{\"E\",0}});\n    std::vector<Pedido> cancelado{{\"F\",4}};\n    cancelado.at(0).cancelar();\n    std::cout << \"Cancelado\\n\";\n    procesar(cancelado, {{\"F\",3}});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido cancelado{\"V\", 9};\n    bool resultado = cancelado.cancelar();\n    std::cout << \"Cancelar:\" << resultado << \"\\n\";\n    resultado = cancelado.cambiar_unidades(3);\n    std::cout << \"Cambiar:\" << resultado << \"\\n\";\n    resultado = cancelado.enviar();\n    std::cout << \"Enviar:\" << resultado << \"\\n\";\n    resultado = cancelado.cancelar();\n    std::cout << \"Cancelar de nuevo:\" << resultado << \"\\n\";\n    std::cout << \"Conservado:\" << cancelado.codigo() << \":\" << cancelado.unidades()\n              << \":\" << (cancelado.estado() == Estado::cancelado) << \"\\n\";\n    Pedido enviado{\"R\", 3};\n    const bool primero = enviado.enviar();\n    const bool segundo = enviado.enviar();\n    std::cout << \"Envios:\" << primero << \":\" << segundo << \":\"\n              << (enviado.estado() == Estado::enviado);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"C\", 2};\n    Pedido copia = original;\n    original.cambiar_unidades(5);\n    copia.enviar();\n    std::cout << \"Original:\" << original.codigo() << \":\" << original.unidades()\n              << \":\" << (original.estado() == Estado::preparado) << \"\\n\";\n    std::cout << \"Copia:\" << copia.codigo() << \":\" << copia.unidades()\n              << \":\" << (copia.estado() == Estado::enviado);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2191,7 +2368,8 @@
             "start": 12,
             "end": 18,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2204,49 +2382,78 @@
             "start": 10,
             "end": 16,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 99,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 108,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 123,
             "end": 129,
             "text": "Estado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 131,
             "end": 140,
             "text": "preparado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 142,
             "end": 149,
             "text": "enviado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 152,
             "end": 161,
             "text": "cancelado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 222,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 275,
             "end": 284,
             "text": "preparado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 357,
             "end": 371,
             "text": "PedidoInvalido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 511,
             "end": 517,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2259,55 +2466,85 @@
             "start": 45,
             "end": 53,
             "text": "codigo()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 55,
             "end": 65,
             "text": "unidades()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 68,
             "end": 76,
             "text": "estado()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 91,
             "end": 112,
             "text": "cambiar_unidades(int)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 141,
+            "end": 144,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 153,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 189,
             "end": 197,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 200,
             "end": 210,
             "text": "cancelar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 295,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 318,
             "end": 322,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 324,
             "end": 328,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 359,
             "end": 364,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2320,45 +2557,112 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "b2f2664c141946e4e2f581188df357c533748361fc3563eb026ae9e858ecbc1d",
+        "sourceSha256": "1d227a696e0677e441d0ac1c9118a89b3aee677593ad5af02587ac6b676eb15a",
         "spans": [
           {
-            "start": 55,
-            "end": 59,
-            "text": "main",
-            "role": "cpp"
+            "start": 15,
+            "end": 21,
+            "text": "Pedido",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 103,
-            "end": 104,
+            "start": 44,
+            "end": 48,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 93,
             "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 96,
+            "end": 102,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 468,
-            "end": 486,
+            "start": 178,
+            "end": 197,
+            "text": "cambiar_unidades(7)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 222,
+            "end": 232,
+            "text": "unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 234,
+            "end": 253,
+            "text": "cambiar_unidades(0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 288,
+            "text": "unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 298,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 326,
+            "end": 353,
+            "text": "estado() == Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 355,
+            "end": 365,
+            "text": "cancelar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 393,
+            "end": 420,
+            "text": "estado() == Estado::enviado",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 441,
+            "text": "cambiar_unidades(2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 466,
+            "end": 476,
+            "text": "unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 609,
+            "end": 627,
             "text": "resultado:consulta",
             "role": "output",
             "reading": "natural"
-          },
-          {
-            "start": 512,
-            "end": 528,
-            "text": "cambiar_unidades",
-            "role": "cpp"
-          },
-          {
-            "start": 538,
-            "end": 548,
-            "text": "unidades()",
-            "role": "cpp"
-          },
-          {
-            "start": 596,
-            "end": 623,
-            "text": "estado() == Estado::enviado",
-            "role": "cpp"
           }
         ]
       },
@@ -2372,45 +2676,77 @@
             "end": 30,
             "text": "M",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 32,
+            "end": 38,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 84,
+            "text": "cinco",
+            "role": "data",
             "reading": "natural"
           },
           {
             "start": 189,
             "end": 193,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 218,
             "end": 219,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 237,
             "end": 238,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 254,
             "end": 264,
             "text": "unidades()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 304,
             "end": 320,
             "text": "cambiar_unidades",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 333,
             "end": 343,
             "text": "unidades()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 356,
+            "end": 362,
+            "text": "enviar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 373,
+            "text": "cancelar",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2453,6 +2789,20 @@
             "text": "0:7",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 100,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 325,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2468,10 +2818,18 @@
         "sourceSha256": "cdbb6f07df9b16bd35273124206c93961df7cd23a67828d8518fcb26132351c0",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 32,
             "text": "cambiar_unidades(7)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2481,10 +2839,18 @@
         "sourceSha256": "edc9dc595ac86861a1b1f83a4c8868c04c2790b0d160678f0d643a7e57f1be4f",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 23,
             "text": "unidades()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2494,10 +2860,18 @@
         "sourceSha256": "9303302503a3654f1f0b4190efeaaa73cc9f002635bf0e4541c65a9c8482325d",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 32,
             "text": "cambiar_unidades(0)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2507,10 +2881,18 @@
         "sourceSha256": "b437118f6de14f5455c030208e21a0766e511f2fa90c5794920a4c09c4fcdd6d",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 23,
             "text": "unidades()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2520,10 +2902,18 @@
         "sourceSha256": "f0deebdcb2026d635f19f40dd19540a4fa93e3133cd2ca256ad71e31a26a23fa",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 21,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2533,10 +2923,18 @@
         "sourceSha256": "0d909b94f5fad52ee8cd72661a3f9ea84cb6a8c0e0d30f23bf05ac2665a8f5d8",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 40,
             "text": "estado() == Estado::enviado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2546,10 +2944,18 @@
         "sourceSha256": "8ab32e5089ee8a2cc5f63e169052afd94e0ca37e07afc9e457ef1ca610bffa09",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 23,
             "text": "cancelar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2559,10 +2965,18 @@
         "sourceSha256": "1b49fddf642384ea3e7ed989172e6bcd5564bd1157266cc26fdd041a14334eee",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 40,
             "text": "estado() == Estado::enviado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2572,10 +2986,18 @@
         "sourceSha256": "bb3f47841e50c0671e1f794fcbdaecd10d67c55fae2792d6ee6555a4d7098e37",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 32,
             "text": "cambiar_unidades(2)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2585,10 +3007,18 @@
         "sourceSha256": "a7d4189dcf12a0199c43a98b0e6129e605fb9560c8802407cbce2d4c7ad73e9f",
         "spans": [
           {
+            "start": 10,
+            "end": 11,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 23,
             "text": "unidades()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2616,10 +3046,18 @@
         "sourceSha256": "b00d5e29980dc0749849af6cd3d5ccdc33f2512c56c6bea588fa7ce619a2e8ec",
         "spans": [
           {
+            "start": 0,
+            "end": 1,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 3,
             "end": 22,
             "text": "cambiar_unidades(7)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2629,10 +3067,18 @@
         "sourceSha256": "303a0a6db4c35ce9d93b19e5e5cbe6250d30d572d91b48528dfc57ca1f06c0c8",
         "spans": [
           {
+            "start": 0,
+            "end": 1,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 3,
             "end": 22,
             "text": "cambiar_unidades(0)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2642,10 +3088,18 @@
         "sourceSha256": "b8409f2bd7dc8996a12ef792db5584ddb65ad9339148f96168eb77e10021f110",
         "spans": [
           {
+            "start": 0,
+            "end": 1,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 3,
             "end": 11,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2655,10 +3109,18 @@
         "sourceSha256": "48deb799232c43973105a3d4dfb72942fb598ee2de9e2df65c36ab7206cd7c4e",
         "spans": [
           {
+            "start": 0,
+            "end": 1,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 3,
             "end": 13,
             "text": "cancelar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2668,10 +3130,18 @@
         "sourceSha256": "f6694456feb0ee8e23a86d19f3ff0023f9d6545e191b1c7394bab7238f0c2dc4",
         "spans": [
           {
+            "start": 0,
+            "end": 1,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 3,
             "end": 22,
             "text": "cambiar_unidades(2)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2681,10 +3151,18 @@
         "sourceSha256": "583d59e4ed551a42c394895a0938b10fc91cb9a53000c1259973764cbc8eed72",
         "spans": [
           {
+            "start": 23,
+            "end": 24,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 26,
             "end": 45,
             "text": "cambiar_unidades(7)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2694,10 +3172,18 @@
         "sourceSha256": "2897c810ae43bcdcec658f61c7fc6651b8c98cc4578caf7b83825850908dc331",
         "spans": [
           {
+            "start": 23,
+            "end": 24,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 26,
             "end": 45,
             "text": "cambiar_unidades(0)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2707,10 +3193,18 @@
         "sourceSha256": "d562346357bf20de442d4b15ef95894f53658f74239a9428e587bee566726fa2",
         "spans": [
           {
+            "start": 23,
+            "end": 24,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 26,
             "end": 34,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2720,10 +3214,18 @@
         "sourceSha256": "2a45c93d9c2efab521318b2eb5619c386744b675acb7e46d4954272b2fb53c86",
         "spans": [
           {
+            "start": 23,
+            "end": 24,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 26,
             "end": 36,
             "text": "cancelar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2733,10 +3235,18 @@
         "sourceSha256": "25279b24295e661fb7f2a28bb2674587a6c598ec7b0383805a4d3c070006d5ec",
         "spans": [
           {
+            "start": 23,
+            "end": 24,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 26,
             "end": 45,
             "text": "cambiar_unidades(2)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2744,7 +3254,29 @@
         "block": "block_0001_0002",
         "path": "/outputCheck/cases/0/explanation",
         "sourceSha256": "d60646ab60928cd6cbfde3507d5256e929a9c08e0547fe8b52af6893cdb74a2d",
-        "spans": []
+        "spans": [
+          {
+            "start": 10,
+            "end": 15,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 24,
+            "end": 28,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 57,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -2761,85 +3293,151 @@
       {
         "block": "block_0001_0006",
         "path": "/text",
-        "sourceSha256": "53bdf6b1ef4cd2fd31e1d7401ee4b09ee3997a7c8da07eccb1e5afabf4499dbc",
+        "sourceSha256": "335fc6e211ff5bfc2884db922c098359f31b2d9ce2d871456bc393da72838ddb",
         "spans": [
           {
             "start": 10,
             "end": 16,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 142,
-            "end": 157,
+            "start": 167,
+            "end": 182,
             "text": "codigo:unidades",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 233,
-            "end": 247,
-            "text": "PedidoInvalido",
-            "role": "cpp"
+            "start": 215,
+            "end": 220,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 257,
-            "end": 266,
+            "start": 258,
+            "end": 272,
+            "text": "PedidoInvalido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 282,
+            "end": 291,
             "text": "Rechazado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 315,
-            "end": 319,
+            "start": 341,
+            "end": 345,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 363,
-            "end": 364,
-            "text": "M",
+            "start": 358,
+            "end": 363,
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 381,
-            "end": 382,
+            "start": 465,
+            "end": 466,
             "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 468,
+            "end": 471,
+            "text": "una",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 420,
-            "end": 421,
-            "text": "M",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 433,
-            "end": 434,
-            "text": "M",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 476,
-            "end": 479,
+            "start": 491,
+            "end": 494,
             "text": "M:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 481,
-            "end": 485,
+            "start": 503,
+            "end": 504,
+            "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 506,
+            "end": 512,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 534,
+            "end": 538,
             "text": "M:20",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 499,
-            "end": 508,
+            "start": 554,
+            "end": 560,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 582,
+            "end": 591,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 600,
+            "end": 601,
+            "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 603,
+            "end": 607,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 629,
+            "end": 638,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 647,
+            "end": 648,
+            "text": "M",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 650,
+            "end": 659,
+            "text": "veintiuna",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 681,
+            "end": 690,
             "text": "Rechazado",
             "role": "output",
             "reading": "natural"
@@ -2852,10 +3450,32 @@
         "sourceSha256": "f31237d971297688bd832d08fca170195a496748fde7e8925932f6315229dcac",
         "spans": [
           {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 66,
+            "end": 70,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 82,
+            "text": "veintiuna",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 104,
             "end": 110,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2863,65 +3483,118 @@
         "block": "block_0002_0000",
         "path": "/text",
         "sourceSha256": "2675c74215c7a37f979b31f5fd5358daf424917f9524ba516d743ea72e554ccd",
-        "spans": []
+        "spans": [
+          {
+            "start": 36,
+            "end": 41,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
         "path": "/text",
-        "sourceSha256": "94860f3da8c0c723e263334fd81a97314d9cf22f72c27bdb7be82cce785d21b3",
+        "sourceSha256": "003b2addfadf9b53baa2ec327800549293d65db32bc240cd9c6970d96c2cf7e9",
         "spans": [
           {
-            "start": 22,
-            "end": 25,
+            "start": 53,
+            "end": 56,
             "text": "1:7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 27,
-            "end": 30,
+            "start": 70,
+            "end": 75,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 93,
+            "end": 98,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 112,
             "text": "0:7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 32,
-            "end": 35,
+            "start": 126,
+            "end": 130,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 162,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 186,
             "text": "1:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 37,
-            "end": 40,
+            "start": 188,
+            "end": 196,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 261,
+            "end": 264,
             "text": "0:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 43,
-            "end": 46,
+            "start": 266,
+            "end": 276,
+            "text": "cancelar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 368,
             "text": "0:7",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 96,
-            "end": 101,
-            "text": "false",
-            "role": "cpp"
+            "start": 382,
+            "end": 385,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 143,
-            "end": 151,
-            "text": "enviar()",
-            "role": "cpp"
+            "start": 427,
+            "end": 430,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 228,
-            "end": 238,
-            "text": "cancelar()",
-            "role": "cpp"
+            "start": 487,
+            "end": 492,
+            "text": "siete",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2936,6 +3609,13 @@
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 269,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2948,25 +3628,119 @@
       {
         "block": "block_0002_0004",
         "path": "/explanation",
-        "sourceSha256": "2b87311c7fa0de598a916143301567efbbab2c0ed576f349add8b4cbd972de5b",
+        "sourceSha256": "c3b566e8fcd6eede9ac37ea5932d616efbe716181ad8dc4592edf43c97b07686",
         "spans": [
           {
-            "start": 0,
-            "end": 1,
+            "start": 13,
+            "end": 14,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 29,
+            "end": 30,
             "text": "a",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 4,
-            "end": 5,
-            "text": "b",
-            "role": "cpp"
+            "start": 58,
+            "end": 59,
+            "text": "P",
+            "role": "data",
+            "reading": "characters"
           },
           {
-            "start": 34,
-            "end": 35,
+            "start": 61,
+            "end": 65,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 106,
+            "end": 118,
+            "text": "b.cancelar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 131,
+            "end": 132,
             "text": "b",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 165,
+            "text": "a.enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 187,
+            "end": 191,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 212,
+            "text": "b.enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 240,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 249,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 294,
+            "end": 298,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 312,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 333,
+            "end": 338,
+            "text": "1 0 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 344,
+            "end": 347,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 397,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2995,10 +3769,18 @@
             "reading": "natural"
           },
           {
+            "start": 92,
+            "end": 95,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 104,
             "end": 110,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3011,7 +3793,8 @@
             "start": 13,
             "end": 19,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3054,7 +3837,8 @@
             "start": 45,
             "end": 51,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3070,16 +3854,39 @@
         "sourceSha256": "e0a6e7d30ceca53caf85d94951c475cd782f9f33b087bd12efa3c84bff601d7f",
         "spans": [
           {
+            "start": 38,
+            "end": 44,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 127,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 186,
+            "text": "cuatrocientos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 213,
             "end": 216,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 285,
             "end": 291,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3092,322 +3899,376 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "92e1c837e8117353a149c18da1d9b70e871e761653ee7a04621d3455a38c4f6d",
+        "sourceSha256": "2b3f9b526643e6c2d4a66b5f2988c87199e59fa8a0d0325b4dfae6031d72e94d",
         "spans": [
           {
             "start": 10,
             "end": 81,
             "text": "procesar(vector<Pedido>& pedidos, const vector<Solicitud>& solicitudes)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 83,
-            "end": 92,
+            "start": 95,
+            "end": 104,
             "text": "Solicitud",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 112,
-            "end": 118,
+            "start": 111,
+            "end": 114,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 132,
             "text": "codigo",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 127,
-            "end": 133,
+            "start": 142,
+            "end": 148,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 144,
+            "start": 185,
+            "end": 193,
             "text": "unidades",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 153,
-            "end": 156,
+            "start": 203,
+            "end": 206,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 290,
-            "end": 305,
+            "start": 440,
+            "end": 455,
             "text": "codigo:Aplicada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 307,
-            "end": 323,
+            "start": 514,
+            "end": 530,
             "text": "codigo:Rechazada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 340,
+            "start": 570,
+            "end": 584,
             "text": "codigo:Ausente",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 385,
+            "start": 690,
+            "end": 698,
             "text": "Pedidos:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 398,
-            "end": 414,
+            "start": 723,
+            "end": 739,
             "text": "codigo:unidades;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 466,
-            "end": 476,
+            "start": 798,
+            "end": 808,
             "text": "Total:suma",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 601,
-            "end": 609,
-            "text": "unidades",
-            "role": "cpp"
-          },
-          {
-            "start": 637,
-            "end": 641,
+            "start": 1006,
+            "end": 1010,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 725,
-            "end": 730,
-            "text": "Base:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 731,
-            "end": 732,
-            "text": "A",
+            "start": 1034,
+            "end": 1039,
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 741,
-            "end": 749,
-            "text": "unidades",
-            "role": "cpp"
+            "start": 1135,
+            "end": 1143,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 751,
-            "end": 752,
-            "text": "B",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 765,
-            "end": 766,
-            "text": "C",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 782,
-            "end": 783,
-            "text": "B",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 806,
-            "end": 809,
+            "start": 1276,
+            "end": 1279,
             "text": "A:6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 811,
-            "end": 814,
+            "start": 1315,
+            "end": 1316,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1342,
+            "end": 1346,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1391,
+            "end": 1395,
+            "text": "Base",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1415,
+            "end": 1416,
+            "text": "A",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1421,
+            "end": 1424,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1435,
+            "end": 1436,
+            "text": "B",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1441,
+            "end": 1446,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1449,
+            "end": 1450,
+            "text": "C",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1455,
+            "end": 1458,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1476,
+            "end": 1477,
+            "text": "B",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1532,
+            "end": 1535,
+            "text": "A:6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1536,
+            "end": 1539,
             "text": "B:3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 816,
-            "end": 819,
+            "start": 1540,
+            "end": 1543,
             "text": "X:4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 821,
-            "end": 825,
+            "start": 1544,
+            "end": 1548,
             "text": "A:21",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 828,
-            "end": 832,
+            "start": 1549,
+            "end": 1553,
             "text": "C:20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 835,
-            "end": 841,
-            "text": "Vacio:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 866,
-            "end": 869,
-            "text": "X:4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 872,
-            "end": 880,
-            "text": "Ausente:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 881,
-            "end": 882,
-            "text": "D",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 892,
-            "end": 900,
-            "text": "unidades",
-            "role": "cpp"
-          },
-          {
-            "start": 911,
-            "end": 914,
-            "text": "X:4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 917,
-            "end": 935,
-            "text": "Valida e invalida:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 936,
-            "end": 937,
-            "text": "E",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 946,
-            "end": 954,
-            "text": "unidades",
-            "role": "cpp"
-          },
-          {
-            "start": 965,
-            "end": 968,
-            "text": "E:5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 971,
-            "end": 974,
-            "text": "E:0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 977,
-            "end": 987,
-            "text": "Cancelado:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 988,
-            "end": 989,
-            "text": "F",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1001,
-            "end": 1009,
-            "text": "unidades",
-            "role": "cpp"
-          },
-          {
-            "start": 1043,
-            "end": 1046,
-            "text": "F:3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1121,
-            "end": 1123,
+            "start": 1578,
+            "end": 1580,
             "text": "31",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1125,
-            "end": 1126,
-            "text": "0",
+            "start": 1590,
+            "end": 1595,
+            "text": "Vacio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1128,
-            "end": 1129,
+            "start": 1628,
+            "end": 1631,
+            "text": "X:4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1671,
+            "end": 1687,
+            "text": "Pedidos: Total:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1714,
+            "end": 1717,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1735,
+            "end": 1742,
+            "text": "Ausente",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1759,
+            "end": 1760,
+            "text": "D",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1765,
+            "end": 1769,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1791,
+            "end": 1794,
+            "text": "X:4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1820,
+            "end": 1821,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1131,
-            "end": 1132,
+            "start": 1831,
+            "end": 1848,
+            "text": "Valida e invalida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1865,
+            "end": 1866,
+            "text": "E",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1871,
+            "end": 1874,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1913,
+            "end": 1916,
+            "text": "E:5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1917,
+            "end": 1920,
+            "text": "E:0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1945,
+            "end": 1946,
             "text": "5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1135,
-            "end": 1136,
+            "start": 1956,
+            "end": 1965,
+            "text": "Cancelado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1982,
+            "end": 1983,
+            "text": "F",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 1988,
+            "end": 1994,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2049,
+            "end": 2052,
+            "text": "F:3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 2078,
+            "end": 2079,
             "text": "4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1267,
-            "end": 1275,
-            "text": "Pedidos:",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1306,
-            "end": 1313,
-            "text": "Total:0",
             "role": "output",
             "reading": "natural"
           }
@@ -3442,7 +4303,8 @@
             "start": 111,
             "end": 127,
             "text": "cambiar_unidades",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 275,
@@ -3456,6 +4318,20 @@
             "end": 282,
             "text": "A",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 292,
+            "end": 296,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 309,
+            "end": 318,
+            "text": "veintiuna",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -3463,12 +4339,33 @@
             "end": 322,
             "text": "B",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 332,
+            "end": 337,
+            "text": "cinco",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 362,
             "end": 379,
             "text": "Valida e invalida",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 395,
+            "end": 399,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 413,
+            "end": 418,
+            "text": "cinco",
             "role": "output",
             "reading": "natural"
           },
@@ -3483,7 +4380,14 @@
             "start": 479,
             "end": 480,
             "text": "F",
-            "role": "data",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 486,
+            "end": 492,
+            "text": "cuatro",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3505,65 +4409,74 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "7dfe5c8cca30852ef27fc17d60ad77f0506a6c8a666d4cbfd0f47a08900b81dd",
+        "sourceSha256": "fefa5d389c8b2cc662973b53bef30c753defc86eb8173f64641f3bf9ee50febe",
         "spans": [
           {
-            "start": 75,
-            "end": 79,
+            "start": 68,
+            "end": 72,
             "text": "Base",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 90,
-            "end": 94,
+            "start": 83,
+            "end": 87,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 164,
-            "end": 172,
+            "start": 131,
+            "end": 136,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 165,
             "text": "procesar",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 234,
-            "end": 244,
+            "start": 229,
+            "end": 239,
             "text": "A:Aplicada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 246,
-            "end": 257,
+            "start": 240,
+            "end": 251,
             "text": "B:Rechazada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 259,
-            "end": 268,
+            "start": 252,
+            "end": 261,
             "text": "X:Ausente",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 270,
-            "end": 281,
+            "start": 262,
+            "end": 273,
             "text": "A:Rechazada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 284,
-            "end": 294,
+            "start": 274,
+            "end": 284,
             "text": "C:Aplicada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 329,
-            "end": 351,
+            "start": 285,
+            "end": 307,
             "text": "A:6;B:5;C:20; Total:31",
             "role": "output",
             "reading": "natural"
@@ -3579,13 +4492,15 @@
             "start": 20,
             "end": 34,
             "text": "pedidos.size()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 171,
             "end": 187,
             "text": "cambiar_unidades",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 198,
@@ -3613,7 +4528,7 @@
             "end": 19,
             "text": "X",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -3626,7 +4541,8 @@
             "start": 0,
             "end": 14,
             "text": "pedidos.size()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3639,13 +4555,15 @@
             "start": 5,
             "end": 13,
             "text": "posicion",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 26,
             "end": 52,
             "text": "posicion <= pedidos.size()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3658,7 +4576,8 @@
             "start": 48,
             "end": 65,
             "text": "pedidos[posicion]",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3666,7 +4585,15 @@
         "block": "block_0005_0004",
         "path": "/options/2",
         "sourceSha256": "9f9aa405157841ee68341304beb72273092116db1a2adb07ccfa97a6f58266f7",
-        "spans": []
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0004",
@@ -3677,13 +4604,15 @@
             "start": 23,
             "end": 31,
             "text": "posicion",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 55,
             "end": 69,
             "text": "pedidos.size()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3697,7 +4626,15 @@
         "block": "block_0005_0004",
         "path": "/reviewFeedback/2",
         "sourceSha256": "4019d0797eef754bb99c025a0481f056eddb8e07c86400956e4fa83ba0092001",
-        "spans": []
+        "spans": [
+          {
+            "start": 52,
+            "end": 56,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0005",
@@ -3708,7 +4645,15 @@
             "start": 23,
             "end": 31,
             "text": "procesar",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 43,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3733,13 +4678,15 @@
             "start": 34,
             "end": 39,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 213,
             "end": 217,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3752,7 +4699,8 @@
             "start": 17,
             "end": 21,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3777,7 +4725,8 @@
             "start": 108,
             "end": 113,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3802,14 +4751,149 @@
       {
         "block": "block_0006_0002",
         "path": "/explanation",
-        "sourceSha256": "c177edffc227031872152ae39f626736ed469f87e65b9035334358a131c7efde",
-        "spans": []
+        "sourceSha256": "8d92d837fd8f8872308643f079f17d3ae6af02349d5d2962025765cf8c3c5e89",
+        "spans": [
+          {
+            "start": 20,
+            "end": 25,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 27,
+            "end": 33,
+            "text": "pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 44,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 60,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 106,
+            "text": "pedido.cambiar_unidades(20)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 124,
+            "end": 130,
+            "text": "pedido",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 154,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 243,
+            "text": "pedido.cambiar_unidades(21)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 299,
+            "text": "veinte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 350,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 360,
+            "end": 376,
+            "text": "copia.unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 385,
+            "end": 386,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 389,
+            "end": 406,
+            "text": "pedido.unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 415,
+            "end": 417,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "2acbec3e4b172e2727e728bce84cb65e6654faa88eac2d29459033c5e66c1952",
-        "spans": []
+        "sourceSha256": "51f35b46d8bdc78bf3411da53cebbde46cfe54a0ee18061eb7f8bbd08d3fbcfe",
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
+            "end": 104,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 139,
+            "end": 140,
+            "text": "V",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 192,
+            "end": 195,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 213,
+            "text": "R",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0006_0004",
@@ -3820,80 +4904,125 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "476b5cff1d7ae578951497c9c0d8eb47423307d6aa9017c093f3a086a4d9392f",
+        "sourceSha256": "c45df24a8fc39620976982dd636b3c772eb6fa7d7700a6d5f6461eb8c7c9eb3a",
         "spans": [
           {
             "start": 12,
             "end": 18,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 77,
-            "end": 78,
+            "start": 84,
+            "end": 85,
             "text": "V",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 88,
+            "end": 93,
+            "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 227,
-            "end": 237,
+            "start": 186,
+            "end": 190,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 305,
+            "end": 310,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 339,
+            "end": 349,
             "text": "Cancelar:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 239,
-            "end": 248,
+            "start": 350,
+            "end": 359,
             "text": "Cambiar:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 250,
-            "end": 258,
+            "start": 360,
+            "end": 368,
             "text": "Enviar:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 261,
-            "end": 280,
+            "start": 369,
+            "end": 388,
             "text": "Cancelar de nuevo:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 327,
-            "end": 343,
+            "start": 389,
+            "end": 405,
             "text": "Conservado:V:9:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 355,
-            "end": 359,
-            "text": "bool",
-            "role": "cpp"
+            "start": 426,
+            "end": 442,
+            "text": "Conservado:V:9:1",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 406,
-            "end": 423,
+            "start": 480,
+            "end": 497,
             "text": "Estado::cancelado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 519,
-            "end": 520,
+            "start": 666,
+            "end": 667,
             "text": "R",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 670,
+            "end": 674,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 613,
-            "end": 625,
+            "start": 701,
+            "end": 704,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 800,
+            "end": 812,
             "text": "Envios:1:0:1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 827,
+            "end": 830,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -3913,100 +5042,147 @@
       {
         "block": "block_0006_0008",
         "path": "/text",
-        "sourceSha256": "34457738a39e24bf251de02017619533f6278928a781a63ba1d45dcca27d499e",
+        "sourceSha256": "7246d9a1cfb4c792a8cff38223a993052844e8dadd44cc26c1957da4d2388445",
         "spans": [
           {
             "start": 27,
             "end": 33,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 40,
-            "end": 48,
+            "start": 66,
+            "end": 74,
             "text": "original",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 61,
+            "start": 86,
+            "end": 87,
             "text": "C",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 90,
-            "end": 95,
+            "start": 114,
+            "end": 119,
             "text": "copia",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 143,
-            "end": 151,
+            "start": 132,
+            "end": 140,
             "text": "original",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 173,
-            "end": 178,
+            "start": 165,
+            "end": 173,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 181,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 199,
             "text": "copia",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 214,
-            "end": 228,
+            "start": 268,
+            "end": 271,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 329,
             "text": "Original:C:5:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 231,
-            "end": 242,
+            "start": 330,
+            "end": 341,
             "text": "Copia:C:2:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 322,
-            "end": 326,
-            "text": "bool",
-            "role": "cpp"
+            "start": 400,
+            "end": 408,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 349,
-            "end": 366,
+            "start": 413,
+            "end": 430,
             "text": "Estado::preparado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 387,
-            "end": 402,
+            "start": 470,
+            "end": 475,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 480,
+            "end": 495,
             "text": "Estado::enviado",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 558,
-            "end": 566,
+            "start": 620,
+            "end": 628,
             "text": "original",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 593,
-            "end": 598,
+            "start": 655,
+            "end": 660,
             "text": "copia",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 609,
-            "end": 614,
+            "start": 671,
+            "end": 676,
             "text": "copia",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 624,
-            "end": 632,
+            "start": 686,
+            "end": 694,
             "text": "original",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4014,7 +5190,15 @@
         "block": "block_0006_0009",
         "path": "/outputCheck/cases/0/explanation",
         "sourceSha256": "9f23543481b8f76620c4bb13e68810d429eaa99e0c6af3f5d337698ddfbe259d",
-        "spans": []
+        "spans": [
+          {
+            "start": 18,
+            "end": 21,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -4037,7 +5221,8 @@
             "start": 179,
             "end": 184,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4075,7 +5260,15 @@
         "block": "block_0007_0001",
         "path": "/responses/0/sources/4/label",
         "sourceSha256": "d2c5ef048ac9ec1becf0e25b2a6b8a8362812278a4df41b32e3f269d2e9be8e5",
-        "spans": []
+        "spans": [
+          {
+            "start": 9,
+            "end": 14,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0001",
@@ -4092,7 +5285,8 @@
             "start": 22,
             "end": 28,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4105,7 +5299,8 @@
             "start": 9,
             "end": 14,
             "text": "false",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4150,7 +5345,8 @@
             "start": 6,
             "end": 20,
             "text": "PedidoInvalido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4163,7 +5359,8 @@
             "start": 9,
             "end": 13,
             "text": "true",
-            "role": "cpp"
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -4171,18 +5368,55 @@
         "block": "block_0007_0002",
         "path": "/question",
         "sourceSha256": "29d7f14a3b99bce82e3739b586fcbb6b2772a9d41c19c407dae8d5b43a937b29",
-        "spans": []
+        "spans": [
+          {
+            "start": 55,
+            "end": 61,
+            "text": "enviar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0002",
         "path": "/explanation",
-        "sourceSha256": "8a14d24ac19fc2b808273b166c31a3af9a6126c3522fe452dd41eb77d6cb7d91",
+        "sourceSha256": "3c68679aef7bbd194ba0025a42cba68d5dc7a505a4abaffdfc975ebf7c54127a",
         "spans": [
           {
-            "start": 51,
-            "end": 59,
+            "start": 24,
+            "end": 32,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 115,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 239,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 318,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 327,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -4219,7 +5453,8 @@
             "start": 106,
             "end": 114,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4232,7 +5467,8 @@
             "start": 114,
             "end": 122,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4254,7 +5490,15 @@
         "block": "block_0007_0004",
         "path": "/text",
         "sourceSha256": "b7e8de498f634a9f26a6b1b95bc43c2ef213e3f7e86b31a8fb8e5da13dd4bc06",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

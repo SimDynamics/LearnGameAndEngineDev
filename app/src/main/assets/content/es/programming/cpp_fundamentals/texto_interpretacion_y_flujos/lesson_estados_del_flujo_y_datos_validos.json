@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una extracción con `>>` hacia un `int` intenta interpretar una representación de entero: puede omitir espacio inicial, reconocer un signo y reunir dígitos. Si encuentra `'x'` donde necesita comenzar ese número, no obtiene el dato solicitado.\n\nInicializar el destino evita dejarlo sin un valor inicial, pero no acredita ninguna lectura. Después de una extracción fallida, no debe usarse ese destino como si acabara de recibir un dato válido (Stroustrup, 2024, pp. 261–264).",
+          "text": "Una extracción con `>>` hacia un `int` intenta interpretar una representación de entero: puede omitir espacio inicial, reconocer un signo y reunir dígitos. Si encuentra `'x'` donde necesita comenzar ese número, no obtiene el dato solicitado.\n\nInicializar el destino evita dejarlo sin un valor inicial, pero no acredita ninguna lectura. Después de una extracción fallida, no debe usarse ese destino como si acabara de recibir un dato válido (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "no acredita ninguna lectura",
@@ -21,11 +21,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 8\"};\n    int cantidad = 0;\n    if (entrada >> cantidad) {\n        std::cout << \"Cantidad: \" << cantidad;\n    } else {\n        std::cout << \"No se obtuvo un entero\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 8\"};\n    int cantidad = 0;\n\n    if (entrada >> cantidad) {\n        std::cout << \"Cantidad: \" << cantidad;\n    } else {\n        std::cout << \"No se obtuvo un entero\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "En este ejemplo, la lectura obtiene el entero `8` y permite entrar en la alternativa que lo presenta. Si el texto preparado fuera `\"x\"`, se ejecutaría la alternativa del diagnóstico; no se trataría `cantidad` como una entrada válida.\n\nHay otra pregunta distinta: ¿sirve el valor leído para el problema? Una extracción puede reconocer un entero que queda fuera del intervalo permitido. El éxito de la lectura y la validación de ese dominio deben comprobarse por separado (Stroustrup, 2024, pp. 262–264).",
+          "text": "En este ejemplo, la lectura obtiene el entero `8` y permite entrar en la alternativa que lo presenta. Si el texto preparado fuera `\"x\"`, se ejecutaría la alternativa del diagnóstico; no se trataría `cantidad` como una entrada válida.\n\nHay otra pregunta distinta: ¿sirve el valor leído para el problema? Una extracción puede reconocer un entero que queda fuera del intervalo permitido. El éxito de la lectura y la validación de ese dominio deben comprobarse por separado (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "El éxito de la lectura y la validación de ese dominio",
@@ -59,7 +59,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un flujo conserva indicadores de lo ocurrido durante sus operaciones. `eof()` consulta si se ha encontrado el final de la entrada; no anuncia de antemano si queda un próximo dato. `fail()` consulta si hay un fallo que impide tratar la operación como satisfactoria; también incluye el estado grave que consulta `bad()` (Köppe et al., 2023).\n\n`bad()` corresponde a un problema grave de la operación del flujo, distinto de un simple formato inesperado. `good()` es más estricto: sólo devuelve verdadero cuando no hay ningún indicador de error ni de final activado (Köppe et al., 2023; Stroustrup, 2024, pp. 258–259).",
+          "text": "Un flujo conserva indicadores de lo ocurrido durante sus operaciones. `eof()` consulta si se ha encontrado el final de la entrada; no anuncia de antemano si queda un próximo dato. `fail()` consulta si hay un fallo que impide tratar la operación como satisfactoria; también incluye el estado grave que consulta `bad()` (Köppe et al., 2023).\n\n`bad()` corresponde a un problema grave de la operación del flujo, distinto de un simple formato inesperado. `good()` es más estricto: sólo devuelve verdadero cuando no hay ningún indicador de error ni de final activado (Köppe et al., 2023; Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "no anuncia de antemano si queda un próximo dato",
@@ -73,10 +73,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Los indicadores pueden coexistir; no son cuatro alternativas excluyentes. Al usar el flujo como condición, la conversión devuelve verdadero mientras `fail()` sea falso. Por tanto, `eof()` por sí solo no impide que esa condición sea verdadera: alcanzar el final y completar una extracción pueden ocurrir juntos (Köppe et al., 2023).\n\nTambién pueden coincidir `eof()` y `fail()` después de una representación incompleta al final, como un signo menos sin dígitos. Esa coincidencia no demuestra, por sí sola, si faltaba otro dato o si había comenzado una representación inválida. Para distinguir esos casos hará falta examinar algo más que los indicadores (Köppe et al., 2023).",
+          "text": "Estas cuatro consultas no describen alternativas excluyentes; los indicadores de final y de fallo pueden coexistir. Al usar el flujo como condición, la conversión devuelve verdadero mientras `fail()` sea falso. Por tanto, `eof()` por sí solo no impide que esa condición sea verdadera: alcanzar el final y completar una extracción pueden ocurrir juntos (Köppe et al., 2023).\n\nTambién pueden coincidir `eof()` y `fail()` después de una representación incompleta al final, como un signo menos sin dígitos. Esa coincidencia no demuestra, por sí sola, si faltaba otro dato o si había comenzado una representación inválida. Para distinguir esos casos hará falta examinar algo más que los indicadores (Köppe et al., 2023).",
           "emphasis": [
             {
-              "text": "Los indicadores pueden coexistir",
+              "text": "Estas cuatro consultas no describen alternativas excluyentes",
               "style": "bold"
             },
             {
@@ -88,7 +88,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int valor = 0;\n    if (entrada >> valor) {\n        std::cout << \"Dato: \" << valor;\n    }\n    std::cout << \"\\neof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" bad: \" << entrada.bad();\n    std::cout << \" good: \" << entrada.good();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int valor = 0;\n\n    if (entrada >> valor) {\n        std::cout << \"Dato: \" << valor;\n    }\n\n    std::cout << \"\\neof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" bad: \" << entrada.bad();\n    std::cout << \" good: \" << entrada.good();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -112,7 +112,7 @@
           "type": "output_prediction",
           "question": "Predice la salida completa después de intentar obtener un segundo entero.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"6\"};\n    int primero = 0;\n    int segundo = 0;\n    if (entrada >> primero) {\n        std::cout << \"Primero: \" << primero << \"\\n\";\n    }\n    if (entrada >> segundo) {\n        std::cout << \"Segundo: \" << segundo << \"\\n\";\n    } else {\n        std::cout << \"Sin segundo\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"6\"};\n    int primero = 0;\n    int segundo = 0;\n\n    if (entrada >> primero) {\n        std::cout << \"Primero: \" << primero << \"\\n\";\n    }\n\n    if (entrada >> segundo) {\n        std::cout << \"Segundo: \" << segundo << \"\\n\";\n    } else {\n        std::cout << \"Sin segundo\\n\";\n    }\n\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n\n    return 0;\n}\n",
           "answers": [
             "Primero: 6\nSin segundo\neof: 1 fail: 1"
           ],
@@ -137,7 +137,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La condición `while (!entrada.eof())` consulta lo que ocurrió antes de la siguiente extracción. Puede dejar entrar al cuerpo sin saber todavía si se obtendrá un dato nuevo. En cambio, `while (entrada >> valor)` realiza la extracción y comprueba su resultado antes de permitir que el cuerpo use `valor`. Esa ubicación de la comprobación evita procesar un intento fallido como si fuera otro dato (Stroustrup, 2024, pp. 267–268).",
+          "text": "La condición `while (!entrada.eof())` consulta lo que ocurrió antes de la siguiente extracción. Puede dejar entrar al cuerpo sin saber todavía si se obtendrá un dato nuevo. En cambio, `while (entrada >> valor)` realiza la extracción y comprueba su resultado antes de permitir que el cuerpo use `valor`. Esa ubicación de la comprobación evita procesar un intento fallido como si fuera otro dato (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "antes de permitir que el cuerpo use",
@@ -156,14 +156,14 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"12x\"};\n    int valor = 0;\n    char resto = '?';\n    if (entrada >> valor) {\n        std::cout << \"Valor: \" << valor << \"\\n\";\n    }\n    if (entrada.get(resto)) {\n        std::cout << \"Resto: \" << resto;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"12x\"};\n    int valor = 0;\n    char resto = '?';\n\n    if (entrada >> valor) {\n        std::cout << \"Valor: \" << valor << \"\\n\";\n    }\n\n    if (entrada.get(resto)) {\n        std::cout << \"Resto: \" << resto;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La extracción obtiene el entero `12` y deja `'x'` disponible para la lectura posterior con `get`. Una extracción hacia `int` puede reconocer un prefijo numérico sin exigir que todo el texto sea exclusivamente ese entero (Köppe et al., 2023).\n\nSi el formato exige un único número por línea, todavía hay que comprobar si quedaron caracteres que el contrato no admite. Obtener un dato y consumir una operación completa son requisitos diferentes.",
+          "text": "La extracción obtiene el entero `12` y deja `'x'` disponible para la lectura posterior con `get`. Una extracción hacia `int` puede reconocer un prefijo numérico sin exigir que todo el texto sea exclusivamente ese entero (Köppe et al., 2023).\n\nSi el formato exige un único número por línea, todavía hay que comprobar si quedaron caracteres que el contrato no admite. Obtener el dato solicitado y comprobar que no hay texto adicional son requisitos diferentes.",
           "emphasis": [
             {
-              "text": "Obtener un dato y consumir una operación completa son requisitos diferentes",
+              "text": "Obtener el dato solicitado y comprobar que no hay texto adicional son requisitos diferentes",
               "style": "bold"
             }
           ]
@@ -172,7 +172,7 @@
           "type": "output_prediction",
           "question": "Predice qué datos presenta el bucle y qué estado queda al detenerse.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4 9x 3\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << valor << \"\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4 9x 3\"};\n    int valor = 0;\n\n    while (entrada >> valor) {\n        std::cout << valor << \"\\n\";\n    }\n\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n\n    return 0;\n}\n",
           "answers": [
             "4\n9\neof: 0 fail: 1"
           ],
@@ -200,7 +200,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <ios>\n\nint main() {\n    std::istringstream entrada{\"3\"};\n    entrada.setstate(std::ios::badbit);\n    std::cout << \"bad: \" << entrada.bad();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" eof: \" << entrada.eof();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <ios>\n\nint main() {\n    std::istringstream entrada{\"3\"};\n\n    entrada.setstate(std::ios::badbit);\n    std::cout << \"bad: \" << entrada.bad();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" eof: \" << entrada.eof();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -238,7 +238,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una batería con la función `probar(const std::string& texto, bool grave)`. Cada llamada crea un flujo local a partir de `texto`. Sólo cuando `grave` sea `true`, activa `std::ios::badbit` antes de intentar leer. Usa la misma implementación para todos los casos.\n\nMientras la extracción de un entero tenga éxito, presenta una línea Dato: N, con un espacio después de los dos puntos. Al detenerse, escribe una única etiqueta final: Fallo del flujo si `bad()` es verdadero; en otro caso, Fin si `eof()` es verdadero; en otro caso, Formato invalido. No uses el destino del intento fallido ni saltes todavía el texto inválido.\n\n`main` debe llamar a la función con estos argumentos, en este orden: `(\"2 7 x 4\", false)`, `(\"3 8\", false)`, `(\"\", false)`, `(\"5 \", false)`, `(\"9z\", false)`, `(\"x 6\", false)`, `(\"2 -\", false)` y `(\"3\", true)`. Cada línea de datos y cada etiqueta final termina con un salto; no añadas títulos ni separaciones entre casos. Pulsa Compilar, ejecutar y comprobar para verificar toda la batería.\n\nLa etiqueta Fin sólo comunica que se observó el final. En `\"2 -\"`, el programa presenta Dato: 2 y Fin aunque el signo aislado no sea un entero válido: coinciden el final y el fallo de conversión. La última llamada observa un estado grave activado deliberadamente; no simula una avería física. La validación completa de una operación se estudiará en la lección siguiente.",
+          "text": "Construye la función probar(const std::string& texto, bool grave). Cada llamada crea un flujo local a partir de texto. Sólo cuando grave sea true, activa std::ios::badbit antes de intentar leer. Usa la misma implementación para todos los casos.\n\nMientras la extracción de un entero tenga éxito, presenta una línea Dato: N, con un espacio después de los dos puntos. Al detenerse, escribe una única etiqueta final:\nFallo del flujo si bad() es verdadero.\nFin si no hay fallo grave y eof() es verdadero.\nFormato invalido en otro caso.\n\nNo uses el destino del intento fallido ni saltes todavía el texto inválido.\n\nmain debe realizar estas llamadas, en este orden. Cada grupo muestra la llamada y sus líneas de salida esperadas. El informe completo concatena esas líneas sin títulos ni separaciones entre llamadas; cada línea termina con un salto.\n\nLlamada: probar(\"2 7 x 4\", false);\nSalida esperada:\nDato: 2\nDato: 7\nFormato invalido\n\nLlamada: probar(\"3 8\", false);\nSalida esperada:\nDato: 3\nDato: 8\nFin\n\nLlamada: probar(\"\", false);\nSalida esperada:\nFin\n\nLlamada: probar(\"5 \", false);\nSalida esperada:\nDato: 5\nFin\n\nLlamada: probar(\"9z\", false);\nSalida esperada:\nDato: 9\nFormato invalido\n\nLlamada: probar(\"x 6\", false);\nSalida esperada:\nFormato invalido\n\nLlamada: probar(\"2 -\", false);\nSalida esperada:\nDato: 2\nFin\n\nLlamada: probar(\"3\", true);\nSalida esperada:\nFallo del flujo\n\nPulsa Compilar, ejecutar y comprobar para verificar el informe completo.\n\nLa etiqueta Fin sólo comunica que se observó el final. En el texto \"2 -\", el programa presenta Dato: 2 y Fin aunque el signo aislado no sea un entero válido: coinciden el final y el fallo de conversión. La última llamada observa un estado grave activado deliberadamente; no simula una avería física. La validación completa de una operación se estudiará en la lección siguiente.",
           "emphasis": [
             {
               "text": "la misma implementación para todos los casos",
@@ -277,7 +277,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -324,7 +324,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"5 11z 2\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"5 11z 2\"};\n    int valor = 0;\n\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -366,7 +366,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la lección siguiente habrá una operación por línea. Obtener la línea completa permite conservar su frontera; un flujo local intentará interpretar después sus partes. Así se podrá rechazar el residuo de una operación y continuar con la siguiente.\n\nConviene distinguir tres requisitos: obtener el dato, comprobar el dominio del valor y comprobar que no queda texto extra no admitido. La lectura de una línea y su interpretación son responsabilidades distintas (Stroustrup, 2024, pp. 279, 283).",
+          "text": "En la lección siguiente habrá una operación por línea. Obtener la línea completa permite separar el texto de una operación del texto de la siguiente. Un flujo local intentará interpretar después las partes de cada línea. Así se podrá rechazar una operación incorrecta y continuar con la siguiente.\n\nConviene distinguir tres requisitos:\nObtener el dato.\nComprobar el dominio del valor.\nComprobar que no queda texto extra no admitido. La lectura de una línea y su interpretación son responsabilidades distintas (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "tres requisitos",
@@ -395,7 +395,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n\n#include <string>\n#include <ios>\n\nvoid probar(const std::string& texto, bool grave) {\n    std::istringstream entrada{texto};\n    if (grave) entrada.setstate(std::ios::badbit);\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"2 7 x 4\", false);\n    probar(\"3 8\", false);\n    probar(\"\", false);\n    probar(\"5 \", false);\n    probar(\"9z\", false);\n    probar(\"x 6\", false);\n    probar(\"2 -\", false);\n    probar(\"3\", true);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n\n#include <string>\n#include <ios>\n\nvoid probar(const std::string& texto, bool grave) {\n    std::istringstream entrada{texto};\n    if (grave)\n        entrada.setstate(std::ios::badbit);\n\n    int valor = 0;\n\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"2 7 x 4\", false);\n    probar(\"3 8\", false);\n    probar(\"\", false);\n    probar(\"5 \", false);\n    probar(\"9z\", false);\n    probar(\"x 6\", false);\n    probar(\"2 -\", false);\n    probar(\"3\", true);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1470,6 +1470,91 @@
         "id": "block_0006_0004",
         "beforeSha256": "0853764d61cd61df3f1ab10f310ff237a8ee4b057151d5c37e99490963589d3d",
         "afterSha256": "0310590690aee268a57642e26513b44b4ba347eac4cd40b9834ff1ca35d99df9"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "8256b37b8b42ddd0992c81af2aef3912633d25cc4e2c4a95246e4a106db546a7",
+        "afterSha256": "8e03a083b35d3f990d3d483f20514e0401c1f9d67187a9e6caae3b1804bf836e"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "5e194a13131d0a29d6811fbfb9e15ab314dc45839ad2f87e5c82bba10858c7d1",
+        "afterSha256": "01d77937b854f9bf248bd3c1057be0410b114e99d582363b77576f76ba8add64"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ed1ffec74cec59b5c581bd5933c61ddd80f3164e16fdc4aeb9a6c4c22ee51f63",
+        "afterSha256": "5b5f41509a573afa47baacacec5247f4a956c013812c1f23360630339f49b9b4"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "a3a634a53de92c74f079fb09a513d9a64a2fc5f7666cdf9dbacbd15b8af1c065",
+        "afterSha256": "ca2041979c8cb2580c1949514b73cb90cfd0aed26811376469cd7eee58239cae"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "6dda14c59a5d29dd86c1fb4a4a5cefdcf1119632b5aabd6560867f66cb0ab1ff",
+        "afterSha256": "334c75e8e2610fdbe26f3947ee6983f022a07890a548db67f8945a95e4d74e70"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "477805b8293281711f4ed22b34de75bb71901742d8b4f9aac175dd23065779ee",
+        "afterSha256": "bca482ffb3dac24bbca9a2949b2ab32be6b7dfe2f390ec0e44f4a417fa49f19c"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "41d510236df68ccc09c977526bfd38000579886c2427b410c2b5515faf047a58",
+        "afterSha256": "3d293c1268ac939bbd79b6e8260be16933bdc6a2a02e04c318b9d89f9e73db25"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "282ac2481a9fdae58deaa96b5ca25c97ff4bed4be006730fd7e72e46e88bd763",
+        "afterSha256": "a18e7a28a8c3a8792037a82bbb6a363ae0f6e9ba34155888681e5c26431b3fc7"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "ff266ccc8e73fba9122f2c23ced314878c11815ca910c8de934b5cc588baaf3d",
+        "afterSha256": "857015fe4d48891cb094e404cfe69aff6ec6596cbd6d9772bbb3dd28ecc701fb"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "49d2a0b446c7b13edd327fc3989800c361562bf3f435263d7f43d62c33b48c6e",
+        "afterSha256": "23c64bed49475e9a5b8f40a222d91c0928e5279d8a9e43395202db8a5489ac75"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "331d3dc332a6a09f14c8a5347d028413648b08b4365703cc1ad399f0a4aa52ea",
+        "afterSha256": "283d0ec80d9c08e10824f776af2748f7979e6f3dc43833d293c315c4fc9ebd88"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "7d826c9415468f573b67c43c15b15fd04774608e5a3a2230832ce84f2c7061bc",
+        "afterSha256": "afb2295d4b8b50e37bec19c0f377887458759bc675493440c98b974eee1214e4"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "5a524af758d87f3c47e3ae88bb2a3e2c91248beb3f277b058231a77abc0f559f",
+        "afterSha256": "dc49a91e08ea084abeec64df8d66d8906bf5bd23959d119db5afb31d54d2674b"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "81d93d337694c6ff5990f636d4031eed1abfc9db5634e71248fd79b77feb82de",
+        "afterSha256": "f4d6ff169577ee5a07e248ee884c511b427793d84de630778b6d3dd68ef993e3"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "4f2c04b24beafcddede8b30015038b5b270cf2038517279e86c7ba41e98be7d8",
+        "afterSha256": "bdec606e46440bc770180c3fac6afa57f9c5e515f8cdbc9388dc1b2d5c00b530"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "64245e755cc50c89e08f909cdd9a387508d6557b16009a7b42d51e3c4894894e",
+        "afterSha256": "0f27d66647d6ef37c79915219cccb679c7acbc7dbee74bcc76348a00d4d9b8cd"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "17a73c3ef9a351f42e3155b13f6dffabc7a44b4a34d501280be8feb9baa68271",
+        "afterSha256": "b2d30660307ef951814feb00fb061f11346ce6eae9e4cd9294ef302eaa3dc5ef"
       }
     ],
     "choiceRevisions": [
@@ -1490,6 +1575,101 @@
             "Cambiar el orden de los mensajes no explica por qué falta un dato reconocido. Revisa la condición que permite procesarlo.",
             "Los dos valores del ejemplo son pequeños y representables como int. Revisa qué consulta podría impedir procesar el último aunque se haya leído."
           ]
+        }
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 8\"};\n    int cantidad = 0;\n    if (entrada >> cantidad) {\n        std::cout << \"Cantidad: \" << cantidad;\n    } else {\n        std::cout << \"No se obtuvo un entero\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int valor = 0;\n    if (entrada >> valor) {\n        std::cout << \"Dato: \" << valor;\n    }\n    std::cout << \"\\neof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" bad: \" << entrada.bad();\n    std::cout << \" good: \" << entrada.good();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la salida completa después de intentar obtener un segundo entero.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"6\"};\n    int primero = 0;\n    int segundo = 0;\n    if (entrada >> primero) {\n        std::cout << \"Primero: \" << primero << \"\\n\";\n    }\n    if (entrada >> segundo) {\n        std::cout << \"Segundo: \" << segundo << \"\\n\";\n    } else {\n        std::cout << \"Sin segundo\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "Primero: 6\nSin segundo\neof: 1 fail: 1"
+          ],
+          "explanation": "La primera extracción obtiene 6 y encuentra el final al completar ese entero. Tiene éxito, por lo que se imprime Primero: 6, aunque ya esté activo el indicador de fin.\n\nEl segundo intento no puede obtener otro entero y deja también el indicador de fallo. Se ejecuta la alternativa que imprime Sin segundo, sin utilizar el destino como si contuviera un dato nuevo. Al consultar ambos indicadores, aparecen eof: 1 fail: 1.",
+          "reviewFeedback": "Sigue los dos intentos por separado. Decide si cada uno obtuvo un dato antes de elegir su alternativa y consulta al final los indicadores que hayan quedado activados."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"12x\"};\n    int valor = 0;\n    char resto = '?';\n    if (entrada >> valor) {\n        std::cout << \"Valor: \" << valor << \"\\n\";\n    }\n    if (entrada.get(resto)) {\n        std::cout << \"Resto: \" << resto;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice qué datos presenta el bucle y qué estado queda al detenerse.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4 9x 3\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << valor << \"\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "4\n9\neof: 0 fail: 1"
+          ],
+          "explanation": "La primera extracción obtiene 4. Después, >> reconoce los dígitos de 9x hasta obtener 9 y deja x pendiente. Ambas conversiones tienen éxito y el bucle imprime 4 y 9, cada uno en su línea.\n\nEl intento siguiente encuentra esa x donde debe comenzar otro entero. Falla sin consumirla ni llegar al final del texto: quedan x 3 por delante. Por eso la consulta final muestra eof: 0 fail: 1; el entero 3 no se ha obtenido.",
+          "reviewFeedback": "Sigue dónde se detiene cada extracción numérica y qué carácter queda para el intento siguiente. Procesa el destino sólo cuando ese intento tenga éxito; distingue encontrar un formato inesperado de llegar al final."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <ios>\n\nint main() {\n    std::istringstream entrada{\"3\"};\n    entrada.setstate(std::ios::badbit);\n    std::cout << \"bad: \" << entrada.bad();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" eof: \" << entrada.eof();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dato: 2\nDato: 7\nFormato invalido\nDato: 3\nDato: 8\nFin\nFin\nDato: 5\nFin\nDato: 9\nFormato invalido\nFormato invalido\nDato: 2\nFin\nFallo del flujo\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"5 11z 2\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\n#include <string>\n#include <ios>\n\nvoid probar(const std::string& texto, bool grave) {\n    std::istringstream entrada{texto};\n    if (grave) entrada.setstate(std::ios::badbit);\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"2 7 x 4\", false);\n    probar(\"3 8\", false);\n    probar(\"\", false);\n    probar(\"5 \", false);\n    probar(\"9z\", false);\n    probar(\"x 6\", false);\n    probar(\"2 -\", false);\n    probar(\"3\", true);\n    return 0;\n}\n"
         }
       }
     ]
@@ -1521,286 +1701,6 @@
     "version": 1,
     "fields": [
       {
-        "block": "block_0001_0001",
-        "path": "/text",
-        "sourceSha256": "c4108075c5556ee6a18bc89b84fd6111171f2e3e5ef3be140d89b7563effadde",
-        "spans": [
-          {
-            "start": 71,
-            "end": 76,
-            "text": "eof()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 181,
-            "end": 187,
-            "text": "fail()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 311,
-            "end": 316,
-            "text": "bad()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 318,
-            "end": 338,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 342,
-            "end": 347,
-            "text": "bad()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 451,
-            "end": 457,
-            "text": "good()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 490,
-            "end": 499,
-            "text": "verdadero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 561,
-            "end": 612,
-            "text": "(Köppe et al., 2023; Stroustrup, 2024, pp. 258–259)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0001_0002",
-        "path": "/text",
-        "sourceSha256": "9c598f716fc99d79b5af6fff98f4e52b686beb2dab5e77bcf88dcea5ae30c8e7",
-        "spans": [
-          {
-            "start": 41,
-            "end": 47,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 130,
-            "end": 139,
-            "text": "verdadero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 150,
-            "end": 156,
-            "text": "fail()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 162,
-            "end": 167,
-            "text": "falso",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 181,
-            "end": 186,
-            "text": "eof()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 232,
-            "end": 241,
-            "text": "verdadera",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 310,
-            "end": 330,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 359,
-            "end": 364,
-            "text": "eof()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 369,
-            "end": 375,
-            "text": "fail()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 436,
-            "end": 447,
-            "text": "signo menos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 652,
-            "end": 672,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0003_0002",
-        "path": "/text",
-        "sourceSha256": "6dfc702d53b37770fcf8c4108c7b3fc7a6174d9bfbd0c1bc8086768cc416ec31",
-        "spans": [
-          {
-            "start": 33,
-            "end": 35,
-            "text": "12",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 45,
-            "end": 48,
-            "text": "'x'",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 92,
-            "end": 95,
-            "text": "get",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 120,
-            "end": 123,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 220,
-            "end": 240,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0004_0001",
-        "path": "/text",
-        "sourceSha256": "f649980c8f4f9b62dd9284a70b0ca639f6babb8b1c26581a9668e368bdba4084",
-        "spans": [
-          {
-            "start": 160,
-            "end": 168,
-            "text": "setstate",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 235,
-            "end": 251,
-            "text": "std::ios::badbit",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 296,
-            "end": 316,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0004_0003",
-        "path": "/text",
-        "sourceSha256": "a2f64ab377c4d3da950d77264d687c2751a739cf95a40f29e90ef1379d5bfa2e",
-        "spans": [
-          {
-            "start": 28,
-            "end": 49,
-            "text": "bad: 1 fail: 1 eof: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 79,
-            "text": "bad()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 94,
-            "end": 103,
-            "text": "verdadero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 105,
-            "end": 111,
-            "text": "fail()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 307,
-            "end": 327,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0002",
-        "path": "/text",
-        "sourceSha256": "bbdbf3dcfc78cdafd242edcd3bb577ee14d76ec7f09936e166e2baafbdf61aad",
-        "spans": [
-          {
-            "start": 229,
-            "end": 235,
-            "text": "fail()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 386,
-            "end": 406,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
         "block": "block_0000_0000",
         "path": "/text",
         "sourceSha256": "f47476aba97800f0068390aef04febc0b6afda9e74924f570646580b393cadd5",
@@ -1809,30 +1709,33 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "7d12c6e7554b8f681089de22e3a20b4e09999a18f5c70f7c9267487cb2e226d5",
+        "sourceSha256": "6084433cc29d43b0138fa2d90fb51a0c1015203ddfe7fda0608e6a58e4e266b4",
         "spans": [
           {
             "start": 20,
             "end": 22,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 34,
             "end": 37,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 170,
             "end": 173,
             "text": "'x'",
-            "role": "string"
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 440,
-            "end": 471,
-            "text": "(Stroustrup, 2024, pp. 261–264)",
+            "end": 458,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1841,7 +1744,7 @@
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "c923e037b6b0b1543986317097f0a92d7f74e9428a670a00c72fddef87896472",
+        "sourceSha256": "4b1a90427216de20f20407f13241a64e534b2c8e702458489567c698a10c2593",
         "spans": [
           {
             "start": 47,
@@ -1854,18 +1757,20 @@
             "start": 131,
             "end": 134,
             "text": "\"x\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 199,
             "end": 207,
             "text": "cantidad",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 470,
-            "end": 501,
-            "text": "(Stroustrup, 2024, pp. 262–264)",
+            "end": 488,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1945,7 +1850,15 @@
         "block": "block_0000_0004",
         "path": "/options/0",
         "sourceSha256": "b304394107c74a9e53734daf89892c67d62ad41ea43b122ec7eec38bfe795080",
-        "spans": []
+        "spans": [
+          {
+            "start": 40,
+            "end": 45,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -1970,7 +1883,8 @@
             "start": 18,
             "end": 20,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1999,10 +1913,164 @@
         "spans": []
       },
       {
+        "block": "block_0001_0001",
+        "path": "/text",
+        "sourceSha256": "8649843062845efe75cd70363ed99eca89b43fe4c847f147df24e5da5922c771",
+        "spans": [
+          {
+            "start": 71,
+            "end": 76,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 181,
+            "end": 187,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 316,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 318,
+            "end": 338,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 342,
+            "end": 347,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 451,
+            "end": 457,
+            "text": "good()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 490,
+            "end": 499,
+            "text": "verdadero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 561,
+            "end": 599,
+            "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0002",
+        "path": "/text",
+        "sourceSha256": "6a9d71344cb4d8f723075b332eed59b8e1496483e5910bbe951edabb473ea0fc",
+        "spans": [
+          {
+            "start": 6,
+            "end": 12,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 181,
+            "text": "verdadero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 198,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 204,
+            "end": 209,
+            "text": "falso",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 228,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 283,
+            "text": "verdadera",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 352,
+            "end": 372,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 401,
+            "end": 406,
+            "text": "eof()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 411,
+            "end": 417,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 478,
+            "end": 489,
+            "text": "signo menos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 694,
+            "end": 714,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0001_0004",
         "path": "/text",
         "sourceSha256": "b874fce7ffd5b03e7e32b56a4e6fccabfd5d016a79bfbbf649c3e61c16cc4baa",
         "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 35,
             "end": 72,
@@ -2014,7 +2082,8 @@
             "start": 206,
             "end": 212,
             "text": "good()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 254,
@@ -2034,13 +2103,15 @@
             "start": 271,
             "end": 280,
             "text": "std::cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 332,
             "end": 336,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2095,7 +2166,15 @@
         "block": "block_0002_0001",
         "path": "/reviewFeedback",
         "sourceSha256": "13a7f044c04da55291d7bfa3d0249fd3ffe3f6dff6984dce02d9436df58a04b4",
-        "spans": []
+        "spans": [
+          {
+            "start": 10,
+            "end": 13,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -2106,7 +2185,8 @@
             "start": 26,
             "end": 50,
             "text": "while (entrada >> valor)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 79,
@@ -2189,13 +2269,15 @@
             "start": 0,
             "end": 5,
             "text": "eof()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 57,
             "end": 60,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2220,30 +2302,33 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "bf3780e9f0a2563cfad3e03ba25b2d7f7c2563b9fca7f241cb76af612f9a58a9",
+        "sourceSha256": "878cff145fee061e838575c6e6740bd1a637a81e10e795385262fae44597fcd8",
         "spans": [
           {
             "start": 14,
             "end": 36,
             "text": "while (!entrada.eof())",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 185,
             "end": 209,
             "text": "while (entrada >> valor)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 295,
             "end": 300,
             "text": "valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 394,
-            "end": 425,
-            "text": "(Stroustrup, 2024, pp. 267–268)",
+            "end": 412,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2254,6 +2339,48 @@
         "path": "/text",
         "sourceSha256": "167278bda8c8930fecfda0b81256c60e41681550af45bf88c414483a042ecbee",
         "spans": []
+      },
+      {
+        "block": "block_0003_0002",
+        "path": "/text",
+        "sourceSha256": "f93c19fb225ee67824d1056bd0f73be89599140bb4f2b4cfdf833a28dc2dcb56",
+        "spans": [
+          {
+            "start": 33,
+            "end": 35,
+            "text": "12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "text": "'x'",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 92,
+            "end": 95,
+            "text": "get",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 120,
+            "end": 123,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 220,
+            "end": 240,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2299,7 +2426,7 @@
             "end": 96,
             "text": "x",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 159,
@@ -2320,7 +2447,7 @@
             "end": 225,
             "text": "x",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 317,
@@ -2358,6 +2485,76 @@
         "spans": []
       },
       {
+        "block": "block_0004_0001",
+        "path": "/text",
+        "sourceSha256": "f649980c8f4f9b62dd9284a70b0ca639f6babb8b1c26581a9668e368bdba4084",
+        "spans": [
+          {
+            "start": 160,
+            "end": 168,
+            "text": "setstate",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 235,
+            "end": 251,
+            "text": "std::ios::badbit",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 316,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0004_0003",
+        "path": "/text",
+        "sourceSha256": "a2f64ab377c4d3da950d77264d687c2751a739cf95a40f29e90ef1379d5bfa2e",
+        "spans": [
+          {
+            "start": 28,
+            "end": 49,
+            "text": "bad: 1 fail: 1 eof: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 79,
+            "text": "bad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 103,
+            "text": "verdadero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 105,
+            "end": 111,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 307,
+            "end": 327,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
         "block": "block_0004_0004",
         "path": "/question",
         "sourceSha256": "5794c6917efbd7bea3fda4cb1994071be78d6393e74af3261c686bae1d4ad2ee",
@@ -2366,7 +2563,8 @@
             "start": 16,
             "end": 21,
             "text": "bad()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2407,13 +2605,15 @@
             "start": 22,
             "end": 25,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 28,
             "end": 34,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2426,7 +2626,8 @@
             "start": 0,
             "end": 5,
             "text": "eof()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2463,155 +2664,228 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "e870a195d38e6a74b07267eecdc225124c0044881b48efe6a7771843738f382f",
+        "sourceSha256": "8f9fab635c9109cb3ad235850df045c90a478b35b48fd589c4e904e02569ac40",
         "spans": [
           {
-            "start": 38,
-            "end": 82,
+            "start": 21,
+            "end": 65,
             "text": "probar(const std::string& texto, bool grave)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 117,
+            "text": "texto",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 131,
             "end": 136,
-            "text": "texto",
-            "role": "cpp"
-          },
-          {
-            "start": 152,
-            "end": 157,
             "text": "grave",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 164,
-            "end": 168,
+            "start": 141,
+            "end": 145,
             "text": "true",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 179,
-            "end": 195,
+            "start": 154,
+            "end": 170,
             "text": "std::ios::badbit",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 340,
-            "end": 347,
+            "start": 314,
+            "end": 321,
             "text": "Dato: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 439,
-            "end": 454,
+            "start": 413,
+            "end": 428,
             "text": "Fallo del flujo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 459,
-            "end": 464,
+            "start": 432,
+            "end": 437,
             "text": "bad()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 494,
-            "end": 497,
+            "start": 452,
+            "end": 455,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 502,
-            "end": 507,
+            "start": 480,
+            "end": 485,
             "text": "eof()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 537,
-            "end": 553,
+            "start": 500,
+            "end": 516,
             "text": "Formato invalido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 633,
-            "end": 637,
+            "start": 609,
+            "end": 613,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 702,
-            "end": 720,
-            "text": "(\"2 7 x 4\", false)",
-            "role": "cpp"
+            "start": 852,
+            "end": 877,
+            "text": "probar(\"2 7 x 4\", false);",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 724,
-            "end": 738,
-            "text": "(\"3 8\", false)",
-            "role": "cpp"
+            "start": 895,
+            "end": 927,
+            "text": "Dato: 2\nDato: 7\nFormato invalido",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 742,
-            "end": 753,
-            "text": "(\"\", false)",
-            "role": "cpp"
+            "start": 938,
+            "end": 959,
+            "text": "probar(\"3 8\", false);",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 757,
-            "end": 770,
-            "text": "(\"5 \", false)",
-            "role": "cpp"
+            "start": 977,
+            "end": 996,
+            "text": "Dato: 3\nDato: 8\nFin",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 774,
-            "end": 787,
-            "text": "(\"9z\", false)",
-            "role": "cpp"
+            "start": 1007,
+            "end": 1025,
+            "text": "probar(\"\", false);",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 791,
-            "end": 805,
-            "text": "(\"x 6\", false)",
-            "role": "cpp"
-          },
-          {
-            "start": 809,
-            "end": 823,
-            "text": "(\"2 -\", false)",
-            "role": "cpp"
-          },
-          {
-            "start": 828,
-            "end": 839,
-            "text": "(\"3\", true)",
-            "role": "cpp"
-          },
-          {
-            "start": 1035,
-            "end": 1038,
+            "start": 1043,
+            "end": 1046,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1082,
-            "end": 1087,
-            "text": "\"2 -\"",
-            "role": "string"
+            "start": 1057,
+            "end": 1077,
+            "text": "probar(\"5 \", false);",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 1111,
-            "end": 1118,
+            "start": 1095,
+            "end": 1106,
+            "text": "Dato: 5\nFin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1117,
+            "end": 1137,
+            "text": "probar(\"9z\", false);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1155,
+            "end": 1179,
+            "text": "Dato: 9\nFormato invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1190,
+            "end": 1211,
+            "text": "probar(\"x 6\", false);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1229,
+            "end": 1245,
+            "text": "Formato invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1256,
+            "end": 1277,
+            "text": "probar(\"2 -\", false);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1295,
+            "end": 1306,
+            "text": "Dato: 2\nFin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1317,
+            "end": 1335,
+            "text": "probar(\"3\", true);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1353,
+            "end": 1368,
+            "text": "Fallo del flujo",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1456,
+            "end": 1459,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1511,
+            "end": 1516,
+            "text": "\"2 -\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1539,
+            "end": 1546,
             "text": "Dato: 2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1121,
-            "end": 1124,
+            "start": 1549,
+            "end": 1552,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
@@ -2642,7 +2916,7 @@
             "end": 29,
             "text": "x",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 237,
@@ -2778,13 +3052,15 @@
             "start": 21,
             "end": 30,
             "text": "\"5 11z 2\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 174,
             "end": 177,
             "text": "'z'",
-            "role": "string"
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -2797,19 +3073,22 @@
             "start": 88,
             "end": 93,
             "text": "eof()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 125,
             "end": 131,
             "text": "good()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 436,
             "end": 460,
             "text": "while (entrada >> valor)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2906,7 +3185,8 @@
             "start": 45,
             "end": 51,
             "text": "good()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2939,7 +3219,8 @@
             "start": 73,
             "end": 79,
             "text": "good()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2964,12 +3245,40 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "6dc92d05575506fc5feef9676b1e0a423a1c82aedabd6acb4da58e459b82cf5b",
+        "sourceSha256": "f640f02490347425652ef2d960e4c59d1ccedded72745848f519cc064796996d",
         "spans": [
           {
-            "start": 461,
-            "end": 493,
-            "text": "(Stroustrup, 2024, pp. 279, 283)",
+            "start": 319,
+            "end": 323,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 527,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0002",
+        "path": "/text",
+        "sourceSha256": "bbdbf3dcfc78cdafd242edcd3bb577ee14d76ec7f09936e166e2baafbdf61aad",
+        "spans": [
+          {
+            "start": 229,
+            "end": 235,
+            "text": "fail()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 406,
+            "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           }

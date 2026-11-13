@@ -25,13 +25,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Capacidad y Ocupacion serán dos structs distintos, cada uno con un miembro int llamado unidades. Tener un miembro del mismo tipo no convierte dos tipos propios en el mismo tipo (Köppe et al., 2023).\n\nEstos argumentos permiten distinguir qué función cumple cada cantidad. La validez numérica requiere otra comprobación: Capacidad{30} sigue llevando un entero, aunque ese valor quede fuera de la capacidad que admite este modelo.",
+          "text": "Capacidad y Ocupacion serán dos structs distintos, cada uno con un miembro int llamado unidades. Tener un miembro del mismo tipo no convierte esos dos tipos propios en el mismo tipo (Köppe et al., 2023).\n\nPara este modelo fijamos estas condiciones numéricas:\nLa capacidad debe estar entre una y veinte plazas, incluidos ambos extremos.\nLa ocupación puede ir desde cero hasta la capacidad, también incluidos ambos extremos.\n\nLos tipos distinguen la función de cada cantidad; no comprueban esas condiciones numéricas por sí solos. Por ejemplo, Capacidad{30} tiene el tipo correcto para representar una capacidad, pero su miembro guarda treinta, que supera el máximo de veinte. Será el constructor de Reserva el que deba rechazar ese dato.",
           "emphasis": [
             {
-              "text": "dos structs distintos"
+              "text": "dos structs distintos",
+              "style": "bold"
             },
             {
-              "text": "La validez numérica"
+              "text": "no comprueban esas condiciones numéricas",
+              "style": "bold"
             }
           ]
         },
@@ -44,7 +46,7 @@
             "Intercambiar capacidad y ocupación en la llamada."
           ],
           "correctIndex": 2,
-          "explanation": "Los otros dos errores siguen siendo valores del tipo esperado y requieren comprobar las reglas.",
+          "explanation": "El primer parámetro requiere Capacidad y el segundo requiere Ocupacion. Entregarlos al revés provoca una incompatibilidad de tipos, aunque ambos structs contengan un int. En cambio, Capacidad{30} sí tiene el tipo pedido y una ocupación excesiva puede tener tipo Ocupacion. Para rechazar sus cantidades se necesitan las comprobaciones numéricas del constructor.",
           "reviewFeedback": [
             "Un argumento puede tener el tipo adecuado y contener una cantidad que el modelo no admite. Distingue el papel del dato de las comparaciones que aplican sus reglas numéricas.",
             "El miembro unidades de Capacidad sigue siendo un int. Revisa qué valores permite guardar el struct y dónde se comprueba el dominio de la reserva.",
@@ -62,20 +64,23 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{8}, Ocupacion{3}};\n    std::cout << sala.capacidad() << \":\" << sala.ocupacion() << \":\" << sala.disponibles();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad {\n    int unidades;\n};\n\nstruct Ocupacion {\n    int unidades;\n};\n\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const {\n        return capacidad_;\n    }\n\n    int ocupacion() const {\n        return ocupacion_;\n    }\n\n    int disponibles() const {\n        return capacidad_ - ocupacion_;\n    }\n\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{8}, Ocupacion{3}};\n\n    std::cout << sala.capacidad() << \":\" << sala.ocupacion()\n              << \":\" << sala.disponibles();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Capacidad{8} crea el argumento de capacidad y prepara su miembro unidades con ocho; Ocupacion{3} hace lo mismo para las plazas ocupadas (Köppe et al., 2023). En Reserva sala{Capacidad{8}, Ocupacion{3}};, el tipo de cada argumento coincide con el parámetro de esa posición.\n\nLa lista del constructor toma unidades de cada parámetro y prepara capacidad_ y ocupacion_ del nuevo objeto. Después, el cuerpo exige capacidad entre una y veinte, y ocupación entre cero y esa capacidad. disponibles() consulta la diferencia; no almacena otra cantidad independiente que haya que mantener actualizada.",
+          "text": "Capacidad{8} crea un objeto de tipo Capacidad e inicializa su miembro unidades con ocho. Ocupacion{3} crea un objeto de tipo Ocupacion cuyo miembro unidades recibe tres (Köppe et al., 2023).\n\nEn Reserva sala{Capacidad{8}, Ocupacion{3}};, cada argumento corresponde al parámetro de su posición:\nEl primer argumento es una Capacidad.\nEl segundo argumento es una Ocupacion.\n\nLa lista del constructor utiliza capacidad.unidades para inicializar capacidad_ y ocupacion.unidades para inicializar ocupacion_. Después, el cuerpo comprueba que la capacidad esté entre una y veinte y que la ocupación esté entre cero y esa capacidad. Sólo si se cumplen esas condiciones termina normalmente la construcción.\n\nLa consulta disponibles() resta ocupacion_ de capacidad_. Calcula las plazas libres cuando se la llama; no guarda una tercera cantidad que haya que actualizar por separado.",
           "emphasis": [
             {
-              "text": "el tipo de cada argumento"
+              "text": "cada argumento corresponde al parámetro",
+              "style": "bold"
             },
             {
-              "text": "capacidad entre una y veinte"
+              "text": "la capacidad esté entre una y veinte",
+              "style": "bold"
             },
             {
-              "text": "ocupación entre cero y esa capacidad"
+              "text": "la ocupación esté entre cero y esa capacidad",
+              "style": "bold"
             }
           ]
         },
@@ -87,7 +92,7 @@
           "answers": [
             "5"
           ],
-          "explanation": "La consulta resta la ocupación válida de su capacidad. No mezcla la función de los argumentos.",
+          "explanation": "Capacidad{12} aporta una capacidad de doce plazas y Ocupacion{7} aporta siete plazas ocupadas. Ambas cantidades cumplen la regla del constructor. disponibles() devuelve la diferencia entre capacidad_ y ocupacion_: doce menos siete son cinco. std::cout muestra 5.",
           "reviewFeedback": "Lee las cantidades del objeto y aplica la consulta disponibles(). Distingue las plazas ocupadas de las que todavía pueden ocuparse."
         },
         {
@@ -98,7 +103,7 @@
           "answers": [
             "Ocupacion"
           ],
-          "explanation": "El segundo parámetro espera Ocupacion.",
+          "explanation": "El segundo parámetro del constructor tiene tipo Ocupacion. Al escribir Ocupacion{2}, su miembro unidades recibe dos y expresa que esas plazas ya están ocupadas. Capacidad{6} proporciona las seis plazas totales. La consulta disponibles() devuelve cuatro, que se muestra como 4.",
           "reviewFeedback": "El hueco corresponde al tipo del segundo argumento, no al nombre de un miembro ni al valor numérico que se pone entre llaves."
         }
       ]
@@ -112,7 +117,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    // Error intencional: los papeles de los argumentos estan intercambiados.\n    Reserva sala{Ocupacion{2}, Capacidad{6}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad {\n    int unidades;\n};\n\nstruct Ocupacion {\n    int unidades;\n};\n\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const {\n        return capacidad_;\n    }\n\n    int ocupacion() const {\n        return ocupacion_;\n    }\n\n    int disponibles() const {\n        return capacidad_ - ocupacion_;\n    }\n\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    // Error intencional: los papeles de los argumentos estan intercambiados.\n    Reserva sala{Ocupacion{2}, Capacidad{6}};\n\n    std::cout << sala.disponibles();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -123,7 +128,7 @@
             "El constructor intercambia automáticamente ambos argumentos."
           ],
           "correctIndex": 1,
-          "explanation": "El problema es el tipo del argumento, aunque los números sí formarían una reserva válida en el orden correcto.",
+          "explanation": "El primer argumento es Ocupacion{2}, pero esa posición exige Capacidad; el segundo es Capacidad{6}, donde se exige Ocupacion. El compilador no intercambia los argumentos ni convierte automáticamente uno de esos tipos en el otro. Una capacidad de seis con una ocupación de dos sí cumpliría las reglas numéricas, pero la llamada escrita no tiene esos tipos en las posiciones requeridas.",
           "reviewFeedback": [
             "Examina las cantidades con las reglas del ejemplo y separa esa comprobación de la coincidencia entre el tipo del argumento y el del parámetro.",
             "Comprueba los tipos de cada posición sin intercambiarlos durante la lectura.",
@@ -158,7 +163,7 @@
           "answers": [
             "Rechazada"
           ],
-          "explanation": "Los tipos de los argumentos coinciden; la ocupación supera la capacidad y el constructor rechaza el valor.",
+          "explanation": "Capacidad{6} y Ocupacion{7} coinciden con los tipos de los parámetros. Después de inicializar los miembros, el constructor evalúa ocupacion_ > capacidad_: siete supera seis. Lanza ReservaInvalida{} antes de completar la construcción, por lo que no se llama a disponibles(). El catch muestra Rechazada.",
           "reviewFeedback": "Sigue la construcción antes de llegar a la consulta. Comprueba todas sus condiciones y qué camino continúa si se lanza la señal de rechazo."
         },
         {
@@ -169,7 +174,7 @@
           "answers": [
             "Rechazada"
           ],
-          "explanation": "Cero ocupadas podría ser válido, pero una capacidad cero está fuera del dominio especificado.",
+          "explanation": "Capacidad{0} y Ocupacion{0} tienen los tipos pedidos, pero la capacidad recibida satisface capacidad_ < 1. El constructor lanza ReservaInvalida{} y no termina normalmente. El catch muestra Rechazada. Tener cero plazas ocupadas no basta para aceptar el objeto: también se exige una capacidad positiva.",
           "reviewFeedback": "Revisa por separado el dominio de la capacidad y el de la ocupación. Que una de las cantidades sea admisible no sustituye la comprobación de la otra."
         },
         {
@@ -181,7 +186,7 @@
             "Que la capacidad es de una a veinte."
           ],
           "correctIndex": 0,
-          "explanation": "El struct público distingue una función del dato, pero no contiene una política de validación.",
+          "explanation": "Capacidad{30} crea un objeto de tipo Capacidad y guarda treinta en su miembro unidades. Ese struct no comprueba el máximo de veinte que exige Reserva. Si se usa como argumento de esa construcción, el cuerpo del constructor de Reserva detectará que la capacidad supera el máximo y la rechazará. Elegir el tipo del argumento y comprobar su valor son acciones distintas.",
           "reviewFeedback": [
             "Distingue el tipo que tiene el argumento de las condiciones numéricas que comprueba después el constructor de Reserva.",
             "Crear el argumento Capacidad no crea una Reserva ni decide su ocupación. Revisa qué información contiene ese struct.",
@@ -204,7 +209,7 @@
           "answers": [
             "4 0"
           ],
-          "explanation": "Cero ocupadas y todas ocupadas son estados válidos de esta reserva.",
+          "explanation": "Ambas reservas tienen capacidad cuatro. En vacia, la ocupación es cero y disponibles() devuelve cuatro menos cero: cuatro. En llena, la ocupación es cuatro y devuelve cuatro menos cuatro: cero. Ambas cumplen la regla de validez. Las consultas se muestran en ese orden, separadas por un espacio: 4 0.",
           "reviewFeedback": "Calcula las plazas disponibles de cada objeto a partir de su capacidad y ocupación. Conserva el orden de las dos consultas y el espacio entre sus resultados."
         },
         {
@@ -228,7 +233,7 @@
             "Cuatro capacidades distintas con ocupación siempre dos."
           ],
           "correctIndex": 0,
-          "explanation": "Los vecinos fuera del dominio distinguen las comparaciones del límite inferior y superior.",
+          "explanation": "Con capacidad cuatro, cero plazas ocupadas debe aceptarse y menos una debe rechazarse: esos datos comprueban el límite inferior. Cuatro plazas ocupadas debe aceptarse y cinco debe rechazarse: comprueban el superior. Usar sólo una cantidad interior, como dos, no permite comprobar cómo se comportan ambos límites.",
           "reviewFeedback": [
             "Relaciona cada caso con una frontera o con un vecino que queda fuera del dominio.",
             "Una cantidad interior permite comprobar un caso habitual. Revisa también qué ocurre justo en los extremos del intervalo y al salir de él.",
@@ -246,7 +251,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\ndouble porcentaje_ocupado(const Reserva& sala) {\n    return 100.0 * sala.ocupacion() / sala.capacidad();\n}\n\nint main() {\n    const Reserva sala{Capacidad{9}, Ocupacion{4}};\n    std::cout << porcentaje_ocupado(sala);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad {\n    int unidades;\n};\n\nstruct Ocupacion {\n    int unidades;\n};\n\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n\n    int capacidad() const {\n        return capacidad_;\n    }\n\n    int ocupacion() const {\n        return ocupacion_;\n    }\n\n    int disponibles() const {\n        return capacidad_ - ocupacion_;\n    }\n\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\ndouble porcentaje_ocupado(const Reserva& sala) {\n    return 100.0 * sala.ocupacion() / sala.capacidad();\n}\n\nint main() {\n    const Reserva sala{Capacidad{9}, Ocupacion{4}};\n\n    std::cout << porcentaje_ocupado(sala);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -273,28 +278,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Define Ancho y Alto como tipos distintos, cada uno con el miembro unidades de tipo int. Construye Caja con las dimensiones en miembros privados y un constructor que reciba primero Ancho y después Alto. Cada cantidad debe estar entre uno y diez, incluidos ambos extremos; fuera de ese intervalo, lanza CajaInvalida. Ofrece ancho(), alto() y area(), las tres consultas const.\n\nConstruye probar(int ancho, int alto). Dentro, crea los argumentos Ancho{ancho} y Alto{alto} e intenta construir una caja. Si acepta, muestra ancho:alto:area usando sus consultas; si el catch recibe CajaInvalida, muestra Rechazado. Termina cada prueba con un salto de línea.\n\nEn main reúne estos nueve intentos en una sola ejecución, en este orden: (3,4), (1,4), (10,4), (3,1), (3,10), (0,4), (11,4), (3,0) y (3,11). Las primeras cinco líneas deben ser 3:4:12, 1:4:4, 10:4:40, 3:1:3 y 3:10:30; cada una de las cuatro restantes debe decir Rechazado. También la novena línea termina con un salto.\n\nPulsa Compilar, ejecutar y comprobar. La actividad siguiente utiliza otro editor para observar por separado el rechazo de argumentos con los tipos intercambiados.",
+          "text": "Define Ancho y Alto como tipos distintos, cada uno con el miembro unidades de tipo int. Construye Caja con las dimensiones en miembros privados. Su constructor debe recibir primero Ancho y después Alto.\n\nCada dimensión debe estar entre uno y diez, incluidos ambos extremos. Si cualquiera queda fuera de ese intervalo, el constructor lanza CajaInvalida. Ofrece ancho(), alto() y area(), las tres consultas const.\n\nDefine probar(int ancho, int alto). Dentro de un try, crea los argumentos Ancho{ancho} y Alto{alto} e intenta construir la caja. Si la construcción termina normalmente, muestra ancho:alto:area utilizando sus consultas. Si el catch recibe CajaInvalida, muestra Rechazado. Termina la línea con un salto en ambos casos.\n\nEn main reúne estos nueve intentos en una sola ejecución, en el orden indicado. Cada renglón muestra los datos y el resultado esperado de esa llamada:\nAncho tres y alto cuatro: 3:4:12.\nAncho uno y alto cuatro: 1:4:4.\nAncho diez y alto cuatro: 10:4:40.\nAncho tres y alto uno: 3:1:3.\nAncho tres y alto diez: 3:10:30.\nAncho cero y alto cuatro: Rechazado.\nAncho once y alto cuatro: Rechazado.\nAncho tres y alto cero: Rechazado.\nAncho tres y alto once: Rechazado.\n\nTodas las líneas terminan con un salto, incluida la novena. Pulsa Compilar, ejecutar y comprobar. La actividad siguiente utiliza otro editor para comprobar por separado el rechazo de argumentos con los tipos intercambiados.",
           "emphasis": [
             {
-              "text": "tipos distintos"
+              "text": "tipos distintos",
+              "style": "bold"
             },
             {
-              "text": "incluidos ambos extremos"
+              "text": "incluidos ambos extremos",
+              "style": "bold"
             },
             {
-              "text": "nueve intentos en una sola ejecución"
+              "text": "nueve intentos en una sola ejecución",
+              "style": "bold"
             },
             {
-              "text": "También la novena línea termina con un salto"
+              "text": "incluida la novena",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -354,17 +364,19 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    const Caja caja{Ancho{3}, Alto{4}};\n    std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho {\n    int unidades;\n};\n\nstruct Alto {\n    int unidades;\n};\n\nstruct CajaInvalida {};\n\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto)\n        : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) {\n            throw CajaInvalida{};\n        }\n    }\n\n    int ancho() const {\n        return ancho_;\n    }\n\n    int alto() const {\n        return alto_;\n    }\n\n    int area() const {\n        return ancho_ * alto_;\n    }\n\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    const Caja caja{Ancho{3}, Alto{4}};\n\n    std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El primer programa muestra una caja de ancho tres y alto cuatro. Permite observar la definición del tipo, sus consultas y esa llamada concreta; la referencia completa que sigue reúne las nueve pruebas solicitadas.\n\nLos criterios se conservan: los tipos de los parámetros distinguen ancho y alto; los extremos uno y diez se admiten; cero y once se rechazan en cada dimensión; los miembros son privados y las consultas pueden aplicarse a objetos const. El área se calcula con las dimensiones del objeto. Otra organización del constructor también sirve si mantiene esas propiedades y las salidas requeridas.",
+          "text": "El primer programa construye una caja con ancho tres y alto cuatro y muestra 3:4:12. Presenta el tipo, sus consultas y una construcción concreta. La referencia completa siguiente reúne las nueve llamadas solicitadas.\n\nLos criterios de construcción son:\nEl primer parámetro tiene tipo Ancho y el segundo, Alto.\nCada dimensión admite los extremos uno y diez.\nCero y once se rechazan en cada dimensión.\nLos miembros son privados y las consultas pueden utilizarse con objetos const.\nEl área se calcula con las dimensiones del objeto.\n\nOtra organización del constructor también es válida si conserva esas propiedades y los resultados solicitados.",
           "emphasis": [
             {
-              "text": "la referencia completa"
+              "text": "La referencia completa",
+              "style": "bold"
             },
             {
-              "text": "las dimensiones del objeto"
+              "text": "las dimensiones del objeto",
+              "style": "bold"
             }
           ]
         },
@@ -376,7 +388,7 @@
           "answers": [
             "5 2"
           ],
-          "explanation": "La copia por valor conserva los dos miembros de una reserva válida.",
+          "explanation": "Reserva copia = original; crea otro objeto copiando capacidad_ y ocupacion_. Como original tenía capacidad cinco y ocupación dos, esos mismos valores quedan en copia. La primera consulta lee copia.capacidad() y muestra 5; la segunda lee copia.ocupacion() y muestra 2. La salida es 5 2.",
           "reviewFeedback": "La copia recibe juntos los miembros del original. Sigue qué cantidades se consultan y en qué orden se envían a la salida."
         },
         {
@@ -386,7 +398,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nvoid probar(int ancho, int alto) {\n    try {\n        const Caja caja{Ancho{ancho}, Alto{alto}};\n        std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    } catch (const CajaInvalida&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(3, 4);\n    probar(1, 4);\n    probar(10, 4);\n    probar(3, 1);\n    probar(3, 10);\n    probar(0, 4);\n    probar(11, 4);\n    probar(3, 0);\n    probar(3, 11);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho {\n    int unidades;\n};\n\nstruct Alto {\n    int unidades;\n};\n\nstruct CajaInvalida {};\n\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto)\n        : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) {\n            throw CajaInvalida{};\n        }\n    }\n\n    int ancho() const {\n        return ancho_;\n    }\n\n    int alto() const {\n        return alto_;\n    }\n\n    int area() const {\n        return ancho_ * alto_;\n    }\n\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nvoid probar(int ancho, int alto) {\n    try {\n        const Caja caja{Ancho{ancho}, Alto{alto}};\n        std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    } catch (const CajaInvalida&) {\n        std::cout << \"Rechazado\";\n    }\n\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(3, 4);\n    probar(1, 4);\n    probar(10, 4);\n    probar(3, 1);\n    probar(3, 10);\n    probar(0, 4);\n    probar(11, 4);\n    probar(3, 0);\n    probar(3, 11);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1320,6 +1332,166 @@
         "id": "block_0006_0005",
         "beforeSha256": "65cdb6871d2462bb17a615c7b849bb9abbdc3e8fc075eca8ed41a31bde111544",
         "afterSha256": "36631d752173ba485b295d4f26bbe44464ed6b77e9798b0fcf600f62f5b2a21a"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "749be4b84484c046d59e6c9bcd1d930d92c4997c037d7e92b139d0d4897a022d",
+        "afterSha256": "c0172e20402196c5a41e406231491c95f5aa4403190cdd67f70493a36360f6e5"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ca7706e1fa87effd939519b110aa56856482e35ebac85716d9c3cb37f0781aac",
+        "afterSha256": "ac209a2d4a4d5ef0f1d93fee2e53376614f6e9c023636e76d954840a2e63d01c"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "85468300aefb7a6f3fc44b75bfc6ef5ec92bd79befebd4199f45636fec0df9ad",
+        "afterSha256": "f731efc730287d0fd7dc0526499d7ef7cbfcca7328fe5874f6fba36520626b00"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "774be9aeb23bdb3c5b3069cefd85f65d44ce351b97e8437c302d4317b702391e",
+        "afterSha256": "7ac68399bfb2a1269445c52cc853bedfbb1bcd1997e8a9e1c41e445b03eb25b5"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "75553864b2c4b227be71a67600c12a0213bf90ee72e0243578eb34eb6dd7d94b",
+        "afterSha256": "af6d7a7d4922770aed6d311c94e694f7d19418224a7cfd36d298e2ac8d161448"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "af407ff019ded3efc3125fa9a32ff05e2c337ca3e758b99f2615b2612eb959c8",
+        "afterSha256": "e448e1d0ef3362191939ed9420381c1518bc2b40777f6b3a1a5bd882b2f1ed24"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "0af5db1cbe9426e8452c84bde3381d4dbe75c79f829b29a99f4f9042b9c7f9d3",
+        "afterSha256": "5f01af2630cb0015bf7b4603390cd75bcf6f81821353c8d2da72371e59cde79b"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "1cd7075399883c27de4fe9dce292ead9d8447b8b4de7e8400878024b9570ae78",
+        "afterSha256": "6d59e75c54f6d7e757a7fe579bb0b59b3d8230a55b70a2d4dd326dc415d4f8d1"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "228d3f990753937b7b5744df2308aa3d1adc46b977b403f829eee12dd01f3808",
+        "afterSha256": "0378f1f4bc294144109ab4a97ba40ea1b148c8f5c86594f08cf4ed50e9ce8020"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "d764c08e3f0fcac5249ad2d2d1fb799286c64644e6afa7936d8effe1eaf65227",
+        "afterSha256": "145091bb0d4e7b74a1bbc87faea541d0fe04eda48c52e4045f855a65b1e63eec"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "016f7e904ad7282b0c74c46193023fc9cd1734116173495f14e3c9174af1d237",
+        "afterSha256": "8db1dbeb93bf4d5302091428b663ea36954bf35df68df849fed853460dee4233"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "cd476f743b530a7aa74f45ddda32085f49543024776fe508edce3a5d5c11c640",
+        "afterSha256": "8c7cc28536cd27e389f72dda0e41f29b6eddea4941fc49183780364911307900"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "330065c571f96f99213a6444cf67c2ba4e4337d0e6a7e8ddb36d66affac02d60",
+        "afterSha256": "27a8aecbb898beecd25238f90ab02497f5bb3d2aa26508a92df494ae76e07a41"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "830ce98a500a7a8f32127e00a47dcabd1a3677779e102d6b23ec397d4c85995c",
+        "afterSha256": "3588d9b168fc45fe9bf00c9cdbcb4f9f5e30113094e090cb471cfe61e26afab6"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "8f231db7050935c5ff0bf37b5761ffaf79f9739890b469c5d82f37455e1087a4",
+        "afterSha256": "e1620d17e3b4054b0e4f02679a86ffa771d6c2ff365e99af1f67fc7c34de69b5"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "b93eb21d275d8a9e99af6c46b336c5dbb1bb05e36e41775d86b0cbcea51a7e7d",
+        "afterSha256": "d460ce5e741ee9f2b95a610d406d79146bb376b3d7d757e4ff7c611692fdc55a"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "31c48a9a4a171afcbd6bfec958d8d4325ce94bce9061f010b979d1441ef2d23a",
+        "afterSha256": "a2879eb5321b1c3c6b03923cd8647b44ba1daf971aa540a8f912a4ad22a6365c"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "55e4e65ebbb784c4818078640ea43041b5f6acb7df6228e230c9a62cd38da32f",
+        "afterSha256": "c2172833090f40a04e9113291056cc5b14e6cd868c88f30b7e8c4ae70680ce92"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "8675c8d2a577d1b1a7cf0a9be06189ac5776c366063e4d230bc2c4e2101e2cec",
+        "afterSha256": "1eaffbc31303aeb71cdb96563e3d0deb1e4e3d574ea86e14c25fd8ab91490f54"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "ec4e5023cea2aafd5fafec86b15e819f8bff253478a9830b5c386a8031a919a2",
+        "afterSha256": "9e9f9a83e634c58e026cfe53a27f38b019b482e2d13b2426d94adef98e35b030"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{8}, Ocupacion{3}};\n    std::cout << sala.capacidad() << \":\" << sala.ocupacion() << \":\" << sala.disponibles();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    // Error intencional: los papeles de los argumentos estan intercambiados.\n    Reserva sala{Ocupacion{2}, Capacidad{6}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\ndouble porcentaje_ocupado(const Reserva& sala) {\n    return 100.0 * sala.ocupacion() / sala.capacidad();\n}\n\nint main() {\n    const Reserva sala{Capacidad{9}, Ocupacion{4}};\n    std::cout << porcentaje_ocupado(sala);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "3:4:12\n1:4:4\n10:4:40\n3:1:3\n3:10:30\nRechazado\nRechazado\nRechazado\nRechazado\n"
+                ],
+                "explanation": "Las dos dimensiones respetan el dominio antes de calcular el área. Los tipos distinguen sus funciones y la validación numérica comprueba una condición diferente."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    const Caja caja{Ancho{3}, Alto{4}};\n    std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nvoid probar(int ancho, int alto) {\n    try {\n        const Caja caja{Ancho{ancho}, Alto{alto}};\n        std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    } catch (const CajaInvalida&) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(3, 4);\n    probar(1, 4);\n    probar(10, 4);\n    probar(3, 1);\n    probar(3, 10);\n    probar(0, 4);\n    probar(11, 4);\n    probar(3, 0);\n    probar(3, 11);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1352,7 +1524,15 @@
         "block": "block_0000_0000",
         "path": "/text",
         "sourceSha256": "21d46be0fb528b3e00022d69795cb1835857c70c0c16b13ba5e38930ffaceb80",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0001",
@@ -1378,7 +1558,7 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "55744f47c9d86b2374fdce8e6fc38480f1e14993b02d56d9f48ef2de5312f935",
+        "sourceSha256": "b7ce5461abf9273706684a43c97e9947449c1e9684322619caac145c889ffaec",
         "spans": [
           {
             "start": 0,
@@ -1395,6 +1575,13 @@
             "reading": "technical"
           },
           {
+            "start": 28,
+            "end": 31,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 75,
             "end": 78,
             "text": "int",
@@ -1409,16 +1596,65 @@
             "reading": "technical"
           },
           {
-            "start": 177,
-            "end": 197,
+            "start": 147,
+            "end": 150,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 202,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 319,
-            "end": 332,
+            "start": 289,
+            "end": 292,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 301,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 368,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
+            "end": 555,
             "text": "Capacidad{30}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 634,
+            "end": 641,
+            "text": "treinta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 667,
+            "end": 673,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 698,
+            "end": 705,
+            "text": "Reserva",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1428,13 +1664,57 @@
         "block": "block_0000_0003",
         "path": "/question",
         "sourceSha256": "4363eac45b94510a146e129039382fde6e234e31809a28d6d3d75a448d6792b1",
-        "spans": []
+        "spans": [
+          {
+            "start": 35,
+            "end": 38,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
         "path": "/explanation",
-        "sourceSha256": "be99d2c79702656d56d924f84284a370a60381f29d49e872fe523c6d99eacb78",
-        "spans": []
+        "sourceSha256": "3eb8a5f1290cc2c99c596f5366421ed18b59dd4867694ecb64819626d591769d",
+        "spans": [
+          {
+            "start": 29,
+            "end": 38,
+            "text": "Capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 70,
+            "text": "Ocupacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 166,
+            "end": 169,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 182,
+            "end": 195,
+            "text": "Capacidad{30}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 271,
+            "text": "Ocupacion",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0000_0003",
@@ -1518,7 +1798,7 @@
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "adec8b118cd302c9a70327c28b8da1b640ffadf05decb57ee8234d5ec9ee98ee",
+        "sourceSha256": "ea2f0faedb4f7c3631be2958e63047dec2cdc9ea474f7c211be89233c54066b4",
         "spans": [
           {
             "start": 0,
@@ -1528,88 +1808,158 @@
             "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 73,
+            "start": 36,
+            "end": 45,
+            "text": "Capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 70,
+            "end": 78,
             "text": "unidades",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 82,
+            "start": 83,
+            "end": 87,
             "text": "ocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 84,
-            "end": 96,
+            "start": 89,
+            "end": 101,
             "text": "Ocupacion{3}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 136,
-            "end": 156,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 161,
-            "end": 202,
-            "text": "Reserva sala{Capacidad{8}, Ocupacion{3}};",
+            "start": 125,
+            "end": 134,
+            "text": "Ocupacion",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 304,
-            "end": 312,
+            "start": 148,
+            "end": 156,
             "text": "unidades",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 341,
-            "end": 351,
+            "start": 164,
+            "end": 168,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 189,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 236,
+            "text": "Reserva sala{Capacidad{8}, Ocupacion{3}};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 321,
+            "end": 330,
+            "text": "Capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 360,
+            "end": 369,
+            "text": "Ocupacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 405,
+            "end": 423,
+            "text": "capacidad.unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 451,
             "text": "capacidad_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 354,
-            "end": 364,
+            "start": 454,
+            "end": 472,
+            "text": "ocupacion.unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 490,
+            "end": 500,
             "text": "ocupacion_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 424,
-            "end": 427,
+            "start": 559,
+            "end": 562,
             "text": "una",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 430,
-            "end": 436,
+            "start": 565,
+            "end": 571,
             "text": "veinte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 456,
-            "end": 460,
+            "start": 602,
+            "end": 606,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 478,
-            "end": 491,
+            "start": 710,
+            "end": 723,
             "text": "disponibles()",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 730,
+            "end": 740,
+            "text": "ocupacion_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 744,
+            "end": 754,
+            "text": "capacidad_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 816,
+            "end": 823,
+            "text": "tercera",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1622,8 +1972,93 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "272e9bf6ef1b0ac79dbce0f794f34bd57730db941a554056062313006342b9e1",
-        "spans": []
+        "sourceSha256": "371d5433a6854690ee424c015fdec4a151e3c11d36b2aaf1e91b602f910b8f0a",
+        "spans": [
+          {
+            "start": 0,
+            "end": 13,
+            "text": "Capacidad{12}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 42,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 64,
+            "text": "Ocupacion{7}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 72,
+            "end": 77,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 159,
+            "text": "disponibles()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 199,
+            "text": "capacidad_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 202,
+            "end": 212,
+            "text": "ocupacion_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 218,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 230,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 240,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 251,
+            "text": "std::cout",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 260,
+            "end": 261,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1648,14 +2083,70 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "3d981b36861122615d61dffa3649d8821e699f54daa7343c25bae4708323eb78",
+        "sourceSha256": "ec12baed47118549b7fa0f607d06fb3312e884af2445a98ddec830ca98845548",
         "spans": [
           {
-            "start": 28,
-            "end": 37,
+            "start": 48,
+            "end": 57,
             "text": "Ocupacion",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 83,
+            "text": "Ocupacion{2}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 104,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 112,
+            "end": 115,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 173,
+            "text": "Capacidad{6}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 194,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 223,
+            "end": 236,
+            "text": "disponibles()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 252,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 274,
+            "end": 275,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1680,8 +2171,51 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "ed377a0e40a8116869819e766066adbb8bd81896f6b76f7c20eda4a07d26e4b8",
-        "spans": []
+        "sourceSha256": "99880423c6a661666cc4bf6ff1583b23175356c6b8021a6bb599507efd87ec32",
+        "spans": [
+          {
+            "start": 23,
+            "end": 35,
+            "text": "Ocupacion{2}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 61,
+            "end": 70,
+            "text": "Capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 98,
+            "text": "Capacidad{6}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 124,
+            "text": "Ocupacion",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 246,
+            "end": 250,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 275,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1834,8 +2368,72 @@
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "d7f7f668bd2977fb03048c863d23a4372e6a3a683b90b80789a0fe9721354b07",
-        "spans": []
+        "sourceSha256": "cb3b5e639c4aecc2af262af6e9feb5d303eae45877412ccf20a5802cab248cf4",
+        "spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "Capacidad{6}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 15,
+            "end": 27,
+            "text": "Ocupacion{7}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 153,
+            "text": "ocupacion_ > capacidad_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 155,
+            "end": 160,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 172,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 197,
+            "text": "ReservaInvalida{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 272,
+            "text": "disponibles()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 277,
+            "end": 282,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 300,
+            "text": "Rechazada",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
@@ -1852,18 +2450,53 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "8e71f95c839967373adcd7b1efbed21e918b9dfa901aa42d51e3278854fc90fe",
+        "sourceSha256": "0f188f08fbe5f319cdaf7de783f8c86e4e3d328a2cf40a8b7ec65e26ec74c8a9",
         "spans": [
           {
             "start": 0,
-            "end": 4,
-            "text": "Cero",
-            "role": "data",
+            "end": 12,
+            "text": "Capacidad{0}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 15,
+            "end": 27,
+            "text": "Ocupacion{0}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 91,
+            "end": 105,
+            "text": "capacidad_ < 1",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 128,
+            "end": 145,
+            "text": "ReservaInvalida{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 175,
+            "end": 180,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 189,
+            "end": 198,
+            "text": "Rechazada",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 52,
-            "end": 56,
+            "start": 206,
+            "end": 210,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -1900,12 +2533,61 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "0961a9666358d746dd29ff10b109ae2498650bfcebc7e8156514f9d1f9aab56c",
+        "sourceSha256": "a7d8f99989fc4b385fb8eba7b5865d4816461c3149df78d07a597547e3a04842",
         "spans": [
           {
-            "start": 3,
-            "end": 9,
+            "start": 0,
+            "end": 13,
+            "text": "Capacidad{30}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 37,
+            "end": 46,
+            "text": "Capacidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 56,
+            "end": 63,
+            "text": "treinta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 86,
+            "text": "unidades",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 92,
+            "end": 98,
             "text": "struct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 125,
+            "end": 131,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 149,
+            "text": "Reserva",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 233,
+            "text": "Reserva",
             "role": "cpp",
             "reading": "technical"
           }
@@ -2031,13 +2713,97 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "a29a0f6d7ed4450b710246842393ec55267b2d79731b2094058dba72668df447",
+        "sourceSha256": "a605d7bb598e17ec930b1df4878b2815fffa0a2451cf5177437538d7a2d64368",
         "spans": [
           {
-            "start": 0,
-            "end": 4,
-            "text": "Cero",
+            "start": 32,
+            "end": 38,
+            "text": "cuatro",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 48,
+            "text": "vacia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 70,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 86,
+            "text": "disponibles()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 96,
+            "end": 102,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 121,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 131,
+            "text": "llena",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 149,
+            "end": 155,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 173,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 186,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 188,
+            "end": 192,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 295,
+            "end": 298,
+            "text": "4 0",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2046,7 +2812,15 @@
         "block": "block_0004_0001",
         "path": "/reviewFeedback",
         "sourceSha256": "a79ebc5c96112439dfa18855a33ed01409898d324198f5e957477a044ce0980e",
-        "spans": []
+        "spans": [
+          {
+            "start": 109,
+            "end": 112,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2089,6 +2863,13 @@
         "sourceSha256": "4219e4fbf62c0e767422ceadca2cae582bd9ba908ec9c7b9547e12fa41006d20",
         "spans": [
           {
+            "start": 23,
+            "end": 26,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 65,
             "end": 71,
             "text": "cuatro",
@@ -2100,8 +2881,51 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "132e5f87a5a464e0bec9e2f29f98eb4460f32069fab662ffc48613fa32a1f335",
-        "spans": []
+        "sourceSha256": "5e8772791a6dc80402c3a6f551de523e5478d81402076433090ef4bb9507fe15",
+        "spans": [
+          {
+            "start": 14,
+            "end": 20,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 26,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 69,
+            "text": "menos una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 135,
+            "text": "Cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 174,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 257,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2158,6 +2982,13 @@
         "sourceSha256": "01e35a987059bfd201f4d9a471c62c4f0c9a920cea4c570c3f238e881ffdee74",
         "spans": [
           {
+            "start": 0,
+            "end": 6,
+            "text": "Cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 51,
             "end": 54,
             "text": "dos",
@@ -2182,7 +3013,15 @@
         "block": "block_0004_0003",
         "path": "/reviewFeedback/2",
         "sourceSha256": "7237fdd6beeefa436797135cb22cd61c663e6571d19886776628f961df96d8ad",
-        "spans": []
+        "spans": [
+          {
+            "start": 86,
+            "end": 89,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -2255,7 +3094,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "d98b3ce2d3a68f8eb7f48b36f8bd6efcbfb4ba16d2c535dda8fa4ba645f1a5f6",
+        "sourceSha256": "78918f7780f9675a756328f8f5d49694513fe0ef56976c5c0ed9808355928552",
         "spans": [
           {
             "start": 7,
@@ -2293,227 +3132,339 @@
             "reading": "technical"
           },
           {
-            "start": 180,
-            "end": 185,
+            "start": 181,
+            "end": 186,
             "text": "Ancho",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 196,
-            "end": 200,
+            "start": 197,
+            "end": 201,
             "text": "Alto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 233,
-            "end": 236,
+            "start": 236,
+            "end": 239,
             "text": "uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 239,
-            "end": 243,
+            "start": 242,
+            "end": 246,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 301,
-            "end": 313,
+            "start": 339,
+            "end": 351,
             "text": "CajaInvalida",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 322,
-            "end": 329,
+            "start": 360,
+            "end": 367,
             "text": "ancho()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 331,
-            "end": 337,
+            "start": 369,
+            "end": 375,
             "text": "alto()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 340,
-            "end": 346,
+            "start": 378,
+            "end": 384,
             "text": "area()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 367,
-            "end": 372,
+            "start": 390,
+            "end": 394,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 405,
+            "end": 410,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 385,
-            "end": 412,
+            "start": 420,
+            "end": 447,
             "text": "probar(int ancho, int alto)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 442,
-            "end": 454,
+            "start": 462,
+            "end": 465,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 487,
+            "end": 499,
             "text": "Ancho{ancho}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 457,
-            "end": 467,
+            "start": 502,
+            "end": 512,
             "text": "Alto{alto}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 517,
-            "end": 532,
+            "start": 590,
+            "end": 605,
             "text": "ancho:alto:area",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 561,
-            "end": 566,
+            "start": 638,
+            "end": 643,
             "text": "catch",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 574,
-            "end": 586,
+            "start": 651,
+            "end": 663,
             "text": "CajaInvalida",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 596,
-            "end": 605,
+            "start": 673,
+            "end": 682,
             "text": "Rechazado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 654,
-            "end": 658,
+            "start": 734,
+            "end": 738,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 724,
-            "end": 729,
-            "text": "(3,4)",
+            "start": 751,
+            "end": 756,
+            "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 731,
-            "end": 736,
-            "text": "(1,4)",
+            "start": 888,
+            "end": 892,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 738,
-            "end": 744,
-            "text": "(10,4)",
+            "start": 900,
+            "end": 906,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 746,
-            "end": 751,
-            "text": "(3,1)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 753,
-            "end": 759,
-            "text": "(3,10)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 761,
-            "end": 766,
-            "text": "(0,4)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 768,
-            "end": 774,
-            "text": "(11,4)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 776,
-            "end": 781,
-            "text": "(3,0)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 784,
-            "end": 790,
-            "text": "(3,11)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 828,
-            "end": 834,
+            "start": 908,
+            "end": 914,
             "text": "3:4:12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 836,
-            "end": 841,
+            "start": 922,
+            "end": 925,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 933,
+            "end": 939,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 941,
+            "end": 946,
             "text": "1:4:4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 843,
-            "end": 850,
+            "start": 954,
+            "end": 958,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 966,
+            "end": 972,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 974,
+            "end": 981,
             "text": "10:4:40",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 852,
-            "end": 857,
+            "start": 989,
+            "end": 993,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1001,
+            "end": 1004,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1006,
+            "end": 1011,
             "text": "3:1:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 860,
-            "end": 867,
+            "start": 1019,
+            "end": 1023,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1031,
+            "end": 1035,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1037,
+            "end": 1044,
             "text": "3:10:30",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 913,
-            "end": 922,
+            "start": 1052,
+            "end": 1056,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1064,
+            "end": 1070,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1072,
+            "end": 1081,
             "text": "Rechazado",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1089,
+            "end": 1093,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1101,
+            "end": 1107,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1109,
+            "end": 1118,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1126,
+            "end": 1130,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1138,
+            "end": 1142,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1144,
+            "end": 1153,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1161,
+            "end": 1165,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1173,
+            "end": 1177,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1179,
+            "end": 1188,
+            "text": "Rechazado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1243,
+            "end": 1249,
+            "text": "novena",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2522,7 +3473,15 @@
         "block": "block_0006_0002",
         "path": "/outputCheck/cases/0/explanation",
         "sourceSha256": "b90b55f8168832dc9e8647a808d3824820e609edf4802bc5b301620a91459ec0",
-        "spans": []
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0003",
@@ -2530,18 +3489,24 @@
         "sourceSha256": "1caec3bccf7c3ca3dc7ff48212d1b583fc8b5f8eca2c46634a6f7efd3081f96c",
         "spans": [
           {
-            "start": 156,
-            "end": 160,
-            "text": "diez",
+            "start": 4,
+            "end": 9,
+            "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 169,
-            "text": "diez",
+            "start": 66,
+            "end": 69,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 156,
+            "end": 169,
+            "text": "diez por diez",
+            "role": "math"
           },
           {
             "start": 181,
@@ -2658,53 +3623,81 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "2adca9f0185fc261e691d9760f58d9dd5115fe023c3d955a854d477690039a3a",
+        "sourceSha256": "f60f22565c87539a2fea42cfb46d9e3339a554f17254919f462336fa55e825f9",
         "spans": [
           {
-            "start": 45,
-            "end": 49,
+            "start": 48,
+            "end": 52,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 57,
-            "end": 63,
+            "start": 60,
+            "end": 66,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 309,
-            "end": 312,
+            "start": 77,
+            "end": 83,
+            "text": "3:4:12",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 194,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 289,
+            "text": "Ancho",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 304,
+            "end": 308,
+            "text": "Alto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 348,
             "text": "uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 315,
-            "end": 319,
+            "start": 351,
+            "end": 355,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 332,
-            "end": 336,
-            "text": "cero",
+            "start": 357,
+            "end": 361,
+            "text": "Cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 339,
-            "end": 343,
+            "start": 364,
+            "end": 368,
             "text": "once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 444,
-            "end": 449,
+            "start": 472,
+            "end": 477,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
@@ -2720,8 +3713,93 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "e1aad3805ee2eb39f7f1825ac823e7a26d5f5ff13fd88dd0e45c500ed1a832c8",
-        "spans": []
+        "sourceSha256": "5ea8aeb323cacda7744a21d7db35216c3952794a1909b66915c0d98c272d16a0",
+        "spans": [
+          {
+            "start": 0,
+            "end": 25,
+            "text": "Reserva copia = original;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 62,
+            "text": "capacidad_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 65,
+            "end": 75,
+            "text": "ocupacion_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 82,
+            "end": 90,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 112,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 128,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 165,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 208,
+            "text": "copia.capacidad()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 219,
+            "end": 220,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 237,
+            "end": 254,
+            "text": "copia.ocupacion()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 265,
+            "end": 266,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 281,
+            "end": 284,
+            "text": "5 2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",

@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un marcador de esta actividad admite entre cero y veinte puntos. Las acciones que necesita quien lo usa son consultar la cantidad y sumar uno mientras quede espacio. Si cualquier parte del programa puede asignar otro entero directamente, también puede dejar una cantidad que incumpla esa regla.\n\nLa interfaz es el conjunto de operaciones que el tipo ofrece a quien lo utiliza. La representación contiene los datos con los que se guarda su estado. Separarlas permite que el código usuario trabaje mediante operaciones definidas y que la clase concentre las comprobaciones de esos cambios (Stroustrup, 2024).",
+          "text": "Un marcador de esta actividad admite entre cero y veinte puntos. Las acciones que necesita quien lo usa son consultar la cantidad y sumar uno mientras quede espacio. Si cualquier parte del programa puede asignar otro entero directamente, también puede dejar una cantidad que incumpla esa regla.\n\nPara representarlo definiremos Marcador mediante class. Al igual que struct, class permite definir un tipo propio; además de datos, podemos declarar funciones dentro de su definición (Stroustrup, 2024).\n\nLa interfaz es el conjunto de operaciones que el tipo ofrece a quien lo utiliza. En Marcador ofreceremos una consulta y una operación para sumar un punto. La representación contiene los datos con los que se guarda su estado: aquí, el contador de puntos. Separarlas permite que el código que utiliza los objetos trabaje mediante esas operaciones y que la clase concentre las comprobaciones de los cambios (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "interfaz"
@@ -22,27 +22,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Una función declarada dentro de la definición de la clase es una función miembro (Stroustrup, 2024). En este ejemplo, puntos() consulta el estado y sumar_uno() intenta cambiarlo.\n\npublic: permite usar los miembros que siguen desde el código usuario. private: impide que ese código acceda directamente a los miembros que siguen; las funciones de Marcador sí pueden utilizarlos. La sección continúa hasta otro especificador de acceso o hasta la llave final. Si no se escribe una sección, los miembros de class son privados por defecto y los de struct son públicos por defecto (Köppe et al., 2023).",
+          "text": "En la definición siguiente, class Marcador da nombre al tipo. Las declaraciones entre sus llaves presentan sus miembros. puntos_ es un miembro de datos; guarda el contador. Una función declarada dentro de la definición de la clase es una función miembro: puntos() consulta el estado y sumar_uno() intenta cambiarlo (Stroustrup, 2024).\n\nEl código usuario es el código que utiliza los objetos del tipo, como main en este programa. Las etiquetas public: y private: son especificadores de acceso: determinan qué miembros puede usar directamente ese código.\n\npublic: permite acceder a los miembros que siguen. En Marcador se usa para ofrecer las funciones de consulta y actualización.\n\nprivate: impide acceder directamente desde el código usuario a los miembros que siguen. Las funciones miembro de Marcador sí pueden utilizarlos. Esta sección puede contener tanto datos como funciones; aquí contiene el dato puntos_.\n\nCada sección continúa hasta otro especificador de acceso o hasta la llave final de la clase. Antes del primer especificador, los miembros de class son privados por defecto y los de struct son públicos por defecto (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "función miembro"
             },
             {
-              "text": "public:"
+              "text": "public:",
+              "occurrence": 2
             },
             {
-              "text": "private:"
+              "text": "private:",
+              "occurrence": 2
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    marcador.sumar_uno();\n    std::cout << marcador.puntos();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() {\n        return puntos_;\n    }\n\n    bool sumar_uno() {\n        if (puntos_ >= 20) {\n            return false;\n        }\n\n        ++puntos_;\n        return true;\n    }\n\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n\n    marcador.sumar_uno();\n\n    std::cout << marcador.puntos();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "puntos_ empieza en cero porque su declaración incluye = 0. Ese miembro pertenece a cada objeto Marcador; no es una cantidad compartida entre todos.\n\nEn marcador.sumar_uno(), el nombre anterior al punto identifica el objeto de la llamada. Dentro de la función, puntos_ designa el miembro de ese objeto. Si ya vale veinte, return false; termina la llamada antes del incremento. En otro caso, se suma uno y se devuelve true. marcador.puntos() obtiene después la cantidad sin cambiarla.",
+          "text": "puntos_ empieza en cero porque su declaración incluye = 0. Ese miembro pertenece a cada objeto Marcador; no es una cantidad compartida entre todos.\n\nEn marcador.sumar_uno(), el nombre anterior al punto identifica el objeto de la llamada. Dentro de la función, puntos_ designa el miembro de ese objeto. La comprobación separa estos casos:\n\nCon veinte puntos, return false; termina la llamada antes del incremento, por lo que el contador conserva veinte.\n\nCon menos de veinte, ++puntos_; aumenta el contador en uno y return true; termina la llamada indicando que se aplicó el cambio.\n\nDespués, marcador.puntos() obtiene la cantidad sin cambiarla.\n\nDentro del cuerpo de puntos() y de sumar_uno() se puede usar puntos_ aunque su declaración aparezca más abajo en la misma clase. Esa posibilidad corresponde al cuerpo de una función miembro; no cambia la regla de declarar una variable local antes de utilizarla (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "objeto de la llamada"
@@ -64,7 +66,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador a;\n    Marcador b;\n    a.sumar_uno();\n    a.sumar_uno();\n    b.sumar_uno();\n    std::cout << a.puntos() << \" \" << b.puntos();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() {\n        return puntos_;\n    }\n\n    bool sumar_uno() {\n        if (puntos_ >= 20) {\n            return false;\n        }\n\n        ++puntos_;\n        return true;\n    }\n\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador a;\n    Marcador b;\n\n    a.sumar_uno();\n    a.sumar_uno();\n    b.sumar_uno();\n\n    std::cout << a.puntos() << \" \" << b.puntos();\n\n    return 0;\n}\n",
           "answers": [
             "2 1"
           ],
@@ -79,13 +81,13 @@
             "Siempre al miembro del último Marcador creado."
           ],
           "correctIndex": 0,
-          "explanation": "Una función miembro conoce el objeto para el que se llamó."
+          "explanation": "En a.sumar_uno(), el nombre a antes del punto elige el objeto. Dentro de esa llamada, puntos_ es su contador. b conserva su propio contador y sólo cambia cuando se realiza una operación sobre ese segundo objeto."
         },
         {
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el nombre de la consulta pública del marcador.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.___();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() {\n        return puntos_;\n    }\n\n    bool sumar_uno() {\n        if (puntos_ >= 20) {\n            return false;\n        }\n\n        ++puntos_;\n        return true;\n    }\n\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n\n    std::cout << marcador.___();\n\n    return 0;\n}\n",
           "answers": [
             "puntos"
           ],
@@ -102,7 +104,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.puntos_; // Error intencional: el miembro es privado.\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() {\n        return puntos_;\n    }\n\n    bool sumar_uno() {\n        if (puntos_ >= 20) {\n            return false;\n        }\n\n        ++puntos_;\n        return true;\n    }\n\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n\n    std::cout << marcador.puntos_; // Error intencional: el miembro es privado.\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -139,7 +141,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    for (int i = 0; i < 20; ++i) { marcador.sumar_uno(); }\n    bool aceptado = marcador.sumar_uno();\n    std::cout << aceptado << \" \" << marcador.puntos();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() {\n        return puntos_;\n    }\n\n    bool sumar_uno() {\n        if (puntos_ >= 20) {\n            return false;\n        }\n\n        ++puntos_;\n        return true;\n    }\n\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n\n    for (int i = 0; i < 20; ++i) {\n        marcador.sumar_uno();\n    }\n\n    bool aceptado = marcador.sumar_uno();\n    std::cout << aceptado << \" \" << marcador.puntos();\n\n    return 0;\n}\n",
           "answers": [
             "0 20"
           ],
@@ -154,7 +156,7 @@
             "Que el programa no pudo compilar."
           ],
           "correctIndex": 0,
-          "explanation": "El resultado informa de una decisión de la operación, no de una cantidad nueva."
+          "explanation": "Cuando el marcador ya tiene 20 puntos, sumar_uno() devuelve false antes de incrementar: la consulta puntos() sigue devolviendo 20. En esa salida, false se representa como 0; ese 0 es el resultado lógico de la solicitud y no una nueva cantidad de puntos."
         },
         {
           "type": "paragraph",
@@ -185,7 +187,7 @@
             "Sólo una consulta y ningún modo de aumentar puntos."
           ],
           "correctIndex": 0,
-          "explanation": "Una interfaz útil debe permitir lo necesario sin ofrecer una vía que incumpla la regla."
+          "explanation": "sumar_uno() permite aumentar el contador cuando todavía no llegó a 20; puntos() permite consultar la cantidad. Con el dato privado, el código usuario realiza esas acciones mediante las funciones. Una operación que acepte cualquier entero permitiría escribir 21 y romper el límite; ofrecer sólo la consulta impediría aumentar los puntos."
         },
         {
           "type": "paragraph",
@@ -209,7 +211,7 @@
         },
         {
           "type": "paragraph",
-          "text": "int puntos_ = 0; escribe un inicializador de miembro: proporciona el valor de partida usado al crear cada Marcador de esta versión (Köppe et al., 2023). La declaración Marcador marcador; ya prepara su contador en cero. No hace falta llamar primero a sumar_uno() para que el valor exista.\n\nEl cero procede de la inicialización escrita. No debe deducirse que cualquier miembro int empieza en cero por pertenecer a una clase. La siguiente lección desarrolla los constructores para los casos en que se necesitan datos iniciales al crear el objeto.\n\nEn Marcador copia = original;, la copia recibe el estado del original en ese momento, incluido su miembro privado (Köppe et al., 2023). El inicializador = 0 no borra el valor que se está copiando. Después, cada objeto conserva su propio contador.",
+          "text": "En int puntos_ = 0;, la parte = 0 es un inicializador de miembro: proporciona el valor de partida al crear un objeto con una declaración como Marcador marcador; (Köppe et al., 2023). Su contador ya queda preparado en cero. No hace falta llamar primero a sumar_uno() para que el valor exista.\n\nEl cero procede de la inicialización escrita. No debe deducirse que cualquier miembro int empieza en cero por pertenecer a una clase. En la siguiente lección aprenderás cómo recibir datos al crear un objeto y utilizarlos para inicializar sus miembros, mediante constructores.\n\nEn Marcador copia = original;, la copia recibe el estado del original en ese momento, incluido su miembro privado (Köppe et al., 2023). El inicializador = 0 no borra el valor que se está copiando. Después, cada objeto conserva su propio contador.",
           "emphasis": [
             {
               "text": "inicializador de miembro"
@@ -223,7 +225,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador original;\n    original.sumar_uno();\n    Marcador copia = original;\n    original.sumar_uno();\n    std::cout << copia.puntos() << \" \" << original.puntos();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() {\n        return puntos_;\n    }\n\n    bool sumar_uno() {\n        if (puntos_ >= 20) {\n            return false;\n        }\n\n        ++puntos_;\n        return true;\n    }\n\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador original;\n    original.sumar_uno();\n\n    Marcador copia = original;\n\n    original.sumar_uno();\n\n    std::cout << copia.puntos() << \" \" << original.puntos();\n\n    return 0;\n}\n",
           "answers": [
             "1 2"
           ],
@@ -254,7 +256,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Define RegistroVisitas con el miembro privado visitas_ inicializado en cero, la consulta pública visitas() y la operación pública registrar(). Esta última devuelve true y aumenta una visita si todavía hay menos de tres; con tres devuelve false sin cambiar el estado. El código que usa los objetos debe consultar y actualizar mediante esas dos funciones.\n\nEn main crea un registro y muestra Inicio:0 consultándolo. Después realiza cuatro solicitudes. Por cada una, muestra el resultado lógico de registrar(), dos puntos, el valor de visitas() y un punto y coma, sin espacios. Añade un salto de línea después de las cuatro solicitudes.\n\nCrea otro objeto, regístrale una visita y muestra Independientes:3:1 consultando el primero y el nuevo. No añadas un salto final.\n\nPulsa Compilar, ejecutar y comprobar. Las tres líneas requeridas son Inicio:0, 1:1;1:2;1:3;0:3; e Independientes:3:1. Esta ejecución reúne la consulta inicial, el rechazo de la cuarta solicitud y la independencia de los dos objetos.",
+          "text": "Define RegistroVisitas con estos miembros:\n\nvisitas_: un miembro privado inicializado en cero que guarda la cantidad de visitas.\n\nvisitas(): una consulta pública que devuelve esa cantidad sin cambiarla.\n\nregistrar(): una operación pública que añade una visita y devuelve true si todavía hay menos de tres. Si ya hay tres, devuelve false sin cambiar el estado.\n\nEl código que usa los objetos debe consultar y actualizar mediante esas dos funciones. En main realiza esta secuencia:\n\nCrea un objeto y muestra Inicio:0 consultándolo. Termina esa primera línea con un salto de línea.\n\nRealiza cuatro solicitudes sobre ese mismo objeto. Por cada solicitud, muestra el resultado lógico de registrar(), dos puntos, el valor de visitas() y un punto y coma, sin espacios. Añade un salto de línea después de las cuatro solicitudes.\n\nCrea otro objeto, regístrale una visita y muestra Independientes:3:1 consultando el primero y el nuevo. No añadas un salto final.\n\nPulsa Compilar, ejecutar y comprobar. La ejecución debe mostrar estas tres líneas:\n\nInicio:0\n1:1;1:2;1:3;0:3;\nIndependientes:3:1\n\nEsta sesión comprueba la consulta inicial, el rechazo de la cuarta solicitud sin cambiar el contador y la independencia de los dos objetos.",
           "emphasis": [
             {
               "text": "miembro privado"
@@ -302,7 +304,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() { return visitas_; }\n    bool registrar() {\n        if (visitas_ >= 3) { return false; }\n        ++visitas_;\n        return true;\n    }\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() {\n        return visitas_;\n    }\n\n    bool registrar() {\n        if (visitas_ >= 3) {\n            return false;\n        }\n\n        ++visitas_;\n        return true;\n    }\n\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -325,7 +327,7 @@
             "No: la propia implementación también debe mantener el límite."
           ],
           "correctIndex": 2,
-          "explanation": "La separación de acceso ayuda a controlar la representación; no sustituye su corrección."
+          "explanation": "La regla de RegistroVisitas admite como máximo 3 visitas. Si una operación de la clase deja visitas_ en 4, se incumple esa regla aunque el dato sea privado. private: limita el acceso directo desde el código usuario; la implementación de las operaciones también debe comprobar el límite y conservar un estado válido."
         },
         {
           "type": "heading",
@@ -334,7 +336,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() { return visitas_; }\n    bool registrar() {\n        if (visitas_ >= 3) { return false; }\n        ++visitas_;\n        return true;\n    }\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n    std::cout << \"Inicio:\" << registro.visitas() << \"\\n\";\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n    RegistroVisitas otro;\n    otro.registrar();\n    std::cout << \"\\nIndependientes:\" << registro.visitas() << \":\" << otro.visitas();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() {\n        return visitas_;\n    }\n\n    bool registrar() {\n        if (visitas_ >= 3) {\n            return false;\n        }\n\n        ++visitas_;\n        return true;\n    }\n\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n\n    std::cout << \"Inicio:\" << registro.visitas() << \"\\n\";\n\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n\n    RegistroVisitas otro;\n    otro.registrar();\n\n    std::cout << \"\\nIndependientes:\" << registro.visitas() << \":\" << otro.visitas();\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1217,6 +1219,177 @@
         "id": "block_0005_0003",
         "beforeSha256": "f1f343e8cb3a1820497a4575727fc3ed8cf67e723e847674d786bee787521788",
         "afterSha256": "7d0f3ab5dd4f8aa884217b208f9ecbb756215bc37d511dc2f75a4cf5add35d3f"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "27f4536f1b558eb0fe990c116bfe4328b124435f57617c15e8c66beadda3a87c",
+        "afterSha256": "a4edbf58e68dd0e59f12f73aa9effb007ccd0129549ef59a3dbb38b85b8662b4"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "126d14ab058bb566a64a4a9e0112b937cd624c768b727a227f00967f9477923d",
+        "afterSha256": "1868526b69b322f0c1076af8e19faceb3e014233f2fdda61adc5dabbc3ab9f44"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "e8655c402be19f655f40e8d7346f7918cccb3f8e75fa78cf0b3f43947240d579",
+        "afterSha256": "6a8e04004f8f18df89c362b712188b28fb4bb81912daf1031a0778210fde3491"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "c7a8161841a4beeede38090186b9529690b00801adaf899e5d5d29ab4c3e29c8",
+        "afterSha256": "a582ecabc9e27e8006ccf1f10ffbb3f3f515d983aacec6d5d463913cd458dfcc"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "07e3e0d77eecd4f87ef07e62b16aaea8924d17262bf2060a2e3ac1aed6ff0102",
+        "afterSha256": "9f4853d18a94342699807fe9920fff58e23b53b8f76e3232e0e7cf70d2cfa1c5"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "46d783eb4e507c0e4c5534f70afb924a8b71cc0799d317fb35df7b969c71306e",
+        "afterSha256": "2812ba14c380b1966e4aeea5d682b284c1c4af985d692ca2479c9d91d992735c"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "54ba95126e01dbcfb58876edfa637fe2fb927351f1c0fdf70c2d7adfe7ab5aa3",
+        "afterSha256": "e18aefef947e9df7ba3f810b0b6f2a9acd64751497c69b542f7bb81beae9fd68"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "593b76da03af758f31ab059309df93d779b7219175ece7e0a596023e415ecb55",
+        "afterSha256": "b1ba42a3137c01b37b982680ece1a496b0bb9b8dd410def719e94bff78cea0fc"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "38df835c0f78a6eca83d4805a71e848ae29dfd8a0d477cc4cc21cfa9496faed8",
+        "afterSha256": "8470f6138859e0de094b2427ad8060c29680ac6ff549f7aa7e2539a3b5b02217"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "2162dc41f9f98372bc77a9bac0f42c609641de6d439a73539eb5297dee09b804",
+        "afterSha256": "95595ff97ae177a8cd3a2fc832c218d9cb5dfdece2837f7f5cb7e9cb07203286"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "9bed1821a82a5463bae0c133f4ae6905bf2105a505be9ee77cdba3b85c6a243d",
+        "afterSha256": "d08750467fecd40fa9a71331d6958be1c81b088131a872cfa5678d400a616da9"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "ad30ef12f729fafba5359efe162ba8648dba044ee281ec28c85d6618710cb300",
+        "afterSha256": "e871b697b5ae3fada4762da6f939985920c189207ea5b81259f63fc0f4006572"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "83b83f92a4fb606dc97c0a6fed7d8c25f7e055dbe0aed162346949e9c3a6ee87",
+        "afterSha256": "5f838c360a4bbbc5c5aba46208a3b71d4685b437689d97cfe5cfe19bd3a5d2d8"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "ae42353179ab008df7556a0c6bfb4fa5a325c8f6c9283cbe79e9f0400ecd6e34",
+        "afterSha256": "cd233cb20ba78b9fc7d378c50f6e7a244a4d3467eca9c7aebdc0a4345e4751b5"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "27a9ac41fc4fe3d7f4a1bf744c5380b4656466d908c72a44928153f33b684f76",
+        "afterSha256": "33471400e299c3ebbd8ab558734e50e2f90a6aaa5def118b43f50e7c681c86ca"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "a1f1f0f809b96c0fb8f779a992b8603a779c6dd3fb92cb8f9a70831afd830651",
+        "afterSha256": "ce6b01adb8fec6799f0a0505d518ffab1643cd7041648c5d0f19bc6eff564157"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "aa6c5ab13b395d132b5540ffb2f46def07848889b1260a21213f72038b85c2bb",
+        "afterSha256": "07a10f70521a531053d5ddd8eca53d8fc544ff18b3f8da29bd4645e616a3a36c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    marcador.sumar_uno();\n    std::cout << marcador.puntos();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador a;\n    Marcador b;\n    a.sumar_uno();\n    a.sumar_uno();\n    b.sumar_uno();\n    std::cout << a.puntos() << \" \" << b.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "2 1"
+          ],
+          "explanation": "Ambos objetos empiezan en 0. Las dos llamadas a a.sumar_uno() dejan el contador de a en 2; la llamada a b.sumar_uno() deja el de b en 1. Las consultas leen esos contadores distintos, por lo que la salida es 2 1."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre de la consulta pública del marcador.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.___();\n    return 0;\n}\n",
+          "answers": [
+            "puntos"
+          ],
+          "explanation": "La consulta pertenece al objeto y se llama con paréntesis."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.puntos_; // Error intencional: el miembro es privado.\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    for (int i = 0; i < 20; ++i) { marcador.sumar_uno(); }\n    bool aceptado = marcador.sumar_uno();\n    std::cout << aceptado << \" \" << marcador.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "0 20"
+          ],
+          "explanation": "Las 20 llamadas del recorrido llevan el contador desde 0 hasta 20. En la llamada adicional, puntos_ >= 20 se cumple y return false; termina antes de ++puntos_. El resultado lógico se imprime como 0 y la consulta conserva 20: aparece 0 20."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador original;\n    original.sumar_uno();\n    Marcador copia = original;\n    original.sumar_uno();\n    std::cout << copia.puntos() << \" \" << original.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "1 2"
+          ],
+          "explanation": "La primera llamada a original.sumar_uno() deja su contador en 1. Al crear copia, se copia ese valor; el inicializador = 0 no lo sustituye. La segunda llamada cambia sólo original a 2. Por eso las consultas muestran 1 2."
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() { return visitas_; }\n    bool registrar() {\n        if (visitas_ >= 3) { return false; }\n        ++visitas_;\n        return true;\n    }\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() { return visitas_; }\n    bool registrar() {\n        if (visitas_ >= 3) { return false; }\n        ++visitas_;\n        return true;\n    }\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n    std::cout << \"Inicio:\" << registro.visitas() << \"\\n\";\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n    RegistroVisitas otro;\n    otro.registrar();\n    std::cout << \"\\nIndependientes:\" << registro.visitas() << \":\" << otro.visitas();\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1246,7 +1419,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "878820abf85c237903c6d5846a2ce53b8cf195b4e2f4aca55523a2cfa95af9cd",
+        "sourceSha256": "ec7fa11f6ab4c8000e47d650228c7a41c15dee44cc20db93fead082774b89fc7",
         "spans": [
           {
             "start": 43,
@@ -1270,8 +1443,57 @@
             "reading": "natural"
           },
           {
-            "start": 587,
-            "end": 605,
+            "start": 327,
+            "end": 335,
+            "text": "Marcador",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 345,
+            "end": 350,
+            "text": "class",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 371,
+            "text": "struct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 373,
+            "end": 378,
+            "text": "class",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 479,
+            "end": 497,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 584,
+            "end": 592,
+            "text": "Marcador",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 645,
+            "end": 647,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 904,
+            "end": 922,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1281,67 +1503,116 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "e730fdb6e3013600fbf6cc9d7cd3ab03f88bcd013b5e2a3993b8d314b43982d9",
+        "sourceSha256": "f01223441a85d00bd88faadb91e1ce7917ad5ec7fa6c8f9b36637eb55ceb4533",
         "spans": [
           {
-            "start": 81,
-            "end": 99,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 28,
+            "end": 42,
+            "text": "class Marcador",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 118,
-            "end": 126,
+            "start": 121,
+            "end": 128,
+            "text": "puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 263,
             "text": "puntos()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 148,
-            "end": 159,
+            "start": 285,
+            "end": 296,
             "text": "sumar_uno()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 180,
-            "end": 187,
+            "start": 315,
+            "end": 333,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 406,
+            "end": 410,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 443,
+            "end": 450,
             "text": "public:",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 250,
-            "end": 258,
+            "start": 453,
+            "end": 461,
             "text": "private:",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 345,
-            "end": 353,
+            "start": 554,
+            "end": 561,
+            "text": "public:",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 608,
+            "end": 616,
             "text": "Marcador",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 502,
-            "end": 507,
+            "start": 681,
+            "end": 689,
+            "text": "private:",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 794,
+            "end": 802,
+            "text": "Marcador",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 904,
+            "end": 911,
+            "text": "puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1055,
+            "end": 1060,
             "text": "class",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 542,
-            "end": 548,
+            "start": 1095,
+            "end": 1101,
             "text": "struct",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 574,
-            "end": 594,
+            "start": 1127,
+            "end": 1147,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1351,7 +1622,7 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "5b8f9dff40199a75eb3118332c3563529a002db8693c64995abd3f8c8e343413",
+        "sourceSha256": "234bc673ea226ea48b06dca289fb6fe100e933bd3d902ed998fa8fa568d0442e",
         "spans": [
           {
             "start": 0,
@@ -1396,39 +1667,88 @@
             "reading": "technical"
           },
           {
-            "start": 313,
-            "end": 319,
+            "start": 343,
+            "end": 349,
             "text": "veinte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 321,
-            "end": 334,
+            "start": 358,
+            "end": 371,
             "text": "return false;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 398,
-            "end": 401,
+            "start": 445,
+            "end": 451,
+            "text": "veinte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 467,
+            "end": 473,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 475,
+            "end": 485,
+            "text": "++puntos_;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 509,
+            "end": 512,
             "text": "uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 416,
-            "end": 420,
-            "text": "true",
+            "start": 515,
+            "end": 527,
+            "text": "return true;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 422,
-            "end": 439,
+            "start": 592,
+            "end": 609,
             "text": "marcador.puntos()",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 667,
+            "end": 675,
+            "text": "puntos()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 681,
+            "end": 692,
+            "text": "sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 707,
+            "end": 714,
+            "text": "puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 907,
+            "end": 925,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1453,6 +1773,13 @@
             "start": 26,
             "end": 27,
             "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 36,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -1531,8 +1858,37 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "9d580acb34c06f4f56ce4f31d516c22305fbca1bf56c71054fcdd84c31d4d5cc",
-        "spans": []
+        "sourceSha256": "913461e27a58529a72e1e65c4030c8ef45f4b20a48360ba246829c373f8f57a2",
+        "spans": [
+          {
+            "start": 3,
+            "end": 16,
+            "text": "a.sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 28,
+            "end": 29,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 86,
+            "end": 93,
+            "text": "puntos_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 110,
+            "end": 111,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
@@ -1810,8 +2166,65 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "61507ec1b3f12335b1bc978c39bb4666e8a6ebe20f6b1086ef94a08b1a841a4b",
-        "spans": []
+        "sourceSha256": "413b5e3352e2d3a5685d8dce5307ee7a6b625c4b3cbc3e55fca4443dd7e72c6e",
+        "spans": [
+          {
+            "start": 28,
+            "end": 30,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 50,
+            "text": "sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 65,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 108,
+            "text": "puntos()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 129,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 146,
+            "end": 151,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 179,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -1856,6 +2269,13 @@
             "text": "true",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 146,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 166,
@@ -1910,14 +2330,50 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "6414a1374ab0373f35dd731bbad39b7be610a8165e80068ca983e5b8e248d44d",
-        "spans": []
+        "sourceSha256": "e45f49e88f56d945c20b76947a753dc2c920d1500028fadeecd67b55f71f767c",
+        "spans": [
+          {
+            "start": 0,
+            "end": 11,
+            "text": "sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 67,
+            "end": 69,
+            "text": "20",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 79,
+            "text": "puntos()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 258,
+            "end": 260,
+            "text": "21",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0001",
         "path": "/options/0",
         "sourceSha256": "8e36f69d9816509278856cbc41c6132a3103ca741c5d57e89a2750aebfd4df77",
         "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 24,
             "end": 33,
@@ -1976,88 +2432,88 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "4b0bb521592172dff1c601b7ed7cd16e5b69f2568c2335064774caa2934ca18a",
+        "sourceSha256": "f10d3b437669d59535f0d7341d0a38ae01e17901596b4dbca38a48eaa46635e9",
         "spans": [
           {
-            "start": 0,
-            "end": 16,
+            "start": 3,
+            "end": 19,
             "text": "int puntos_ = 0;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 106,
-            "end": 114,
-            "text": "Marcador",
+            "start": 30,
+            "end": 33,
+            "text": "= 0",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 131,
-            "end": 151,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 168,
-            "end": 186,
+            "start": 142,
+            "end": 160,
             "text": "Marcador marcador;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 213,
-            "end": 217,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 250,
-            "end": 261,
-            "text": "sumar_uno()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 292,
-            "end": 296,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 375,
-            "end": 378,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 390,
-            "end": 394,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 548,
-            "end": 574,
-            "text": "Marcador copia = original;",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 659,
-            "end": 679,
+            "start": 161,
+            "end": 181,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 698,
-            "end": 701,
+            "start": 217,
+            "end": 221,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 265,
+            "text": "sumar_uno()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 300,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 379,
+            "end": 382,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 394,
+            "end": 398,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 573,
+            "end": 599,
+            "text": "Marcador copia = original;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 684,
+            "end": 704,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 723,
+            "end": 726,
             "text": "= 0",
             "role": "cpp",
             "reading": "technical"
@@ -2202,7 +2658,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "5963d0f8a75d168a844f7ab407a1049c89b08f78bfe2dce44e770aef3a167ef3",
+        "sourceSha256": "9e82af508d28ca591534ea8d6381deb19df19730a7604616fad189e05ad4d7ef",
         "spans": [
           {
             "start": 7,
@@ -2212,122 +2668,164 @@
             "reading": "technical"
           },
           {
-            "start": 46,
-            "end": 54,
+            "start": 44,
+            "end": 52,
             "text": "visitas_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 71,
-            "end": 75,
+            "start": 89,
+            "end": 93,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 97,
-            "end": 106,
+            "start": 130,
+            "end": 139,
             "text": "visitas()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 130,
-            "end": 141,
+            "start": 204,
+            "end": 215,
             "text": "registrar()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 164,
-            "end": 168,
+            "start": 249,
+            "end": 252,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 271,
+            "end": 275,
             "text": "true",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 214,
-            "end": 218,
+            "start": 300,
+            "end": 304,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 224,
-            "end": 228,
+            "start": 316,
+            "end": 320,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 238,
-            "end": 243,
+            "start": 331,
+            "end": 336,
             "text": "false",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 358,
-            "end": 362,
+            "start": 433,
+            "end": 436,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 455,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 390,
-            "end": 398,
+            "start": 506,
+            "end": 514,
             "text": "Inicio:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 430,
-            "end": 436,
+            "start": 588,
+            "end": 594,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 495,
-            "end": 506,
+            "start": 682,
+            "end": 693,
             "text": "registrar()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 532,
-            "end": 541,
+            "start": 719,
+            "end": 728,
             "text": "visitas()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 685,
-            "end": 703,
+            "start": 801,
+            "end": 807,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 851,
+            "end": 854,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 872,
+            "end": 890,
             "text": "Independientes:3:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 835,
-            "end": 843,
+            "start": 1023,
+            "end": 1027,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1037,
+            "end": 1045,
             "text": "Inicio:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 845,
-            "end": 861,
+            "start": 1046,
+            "end": 1062,
             "text": "1:1;1:2;1:3;0:3;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 864,
-            "end": 882,
+            "start": 1063,
+            "end": 1081,
             "text": "Independientes:3:1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1210,
+            "end": 1213,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2338,10 +2836,17 @@
         "sourceSha256": "29b0585fdbdee1336cac44ca9c1344ba9698ef4f089e481d3939740f9059272f",
         "spans": [
           {
+            "start": 87,
+            "end": 90,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 129,
             "end": 133,
             "text": "tres",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2377,7 +2882,29 @@
         "block": "block_0007_0002",
         "path": "/text",
         "sourceSha256": "c138c52146764b8ebf24a3523a9cbe8919dba4c0dbf487e3d004b0c606b3e80c",
-        "spans": []
+        "spans": [
+          {
+            "start": 33,
+            "end": 36,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 60,
+            "end": 66,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 200,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -2403,8 +2930,44 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "e52182389baea6b9d54213e6737f5e9d9064cdf0a5f03db14a7e300d9866d26b",
-        "spans": []
+        "sourceSha256": "3f60c594f29e278b5d15c2ae3bd4183c6c581bba2e36df34f1501d37a3ca2301",
+        "spans": [
+          {
+            "start": 12,
+            "end": 27,
+            "text": "RegistroVisitas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 47,
+            "end": 48,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 92,
+            "end": 100,
+            "text": "visitas_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 105,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 165,
+            "text": "private:",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",

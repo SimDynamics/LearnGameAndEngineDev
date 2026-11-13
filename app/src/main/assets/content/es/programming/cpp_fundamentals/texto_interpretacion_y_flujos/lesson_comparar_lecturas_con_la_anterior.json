@@ -105,7 +105,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior{\"pino\"};\n    const std::string actual{\"roble\"};\n    const bool antes = (anterior == actual);\n    anterior = actual;\n    const bool despues = (anterior == actual);\n    std::cout << \"Antes de copiar: \" << antes\n              << \"\\nDespues de copiar: \" << despues;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior{\"pino\"};\n    const std::string actual{\"roble\"};\n\n    const bool antes = (anterior == actual);\n\n    anterior = actual;\n    const bool despues = (anterior == actual);\n\n    std::cout << \"Antes de copiar: \" << antes\n              << \"\\nDespues de copiar: \" << despues;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -158,7 +158,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recuerda que `std::cin` es el flujo estándar de entrada declarado en `<iostream>`; aquí recibe el texto del campo Entrada preparada. Construye el lector de palabras desde el editor. Usa `std::cin` con entrada preparada: lee `string` mediante `>>` y procesa sólo las lecturas válidas. El texto admite hasta ocho palabras de hasta veinte caracteres ASCII cada una. Compara las strings literalmente: mayúsculas y puntuación conservadas pertenecen al dato. No normalices, ordenes ni guardes toda la secuencia.",
+          "text": "Recuerda que `std::cin` es el flujo estándar de entrada declarado en `<iostream>`; aquí recibe el texto del campo Entrada preparada. Construye el lector de palabras desde el editor. Usa `std::cin` con entrada preparada: lee `string` mediante `>>` y procesa sólo las lecturas válidas. El texto admite hasta ocho palabras de hasta veinte caracteres ASCII cada una. Compara las strings literalmente: mayúsculas y puntuación conservadas pertenecen al dato. No conviertas mayúsculas en minúsculas ni elimines la puntuación. Tampoco ordenes ni guardes toda la secuencia.",
           "emphasis": [
             {
               "text": "procesa sólo las lecturas válidas",
@@ -182,14 +182,14 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada inicial preparada es `\"tiza tiza muro tiza muro muro\"`, sin salto final. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, sólo espacios y tabuladores, `\"lago\"`, `\"lago lago lago\"`, `\"lago sol lago\"`, `\"a b b\"` y `\"Eco eco eco.\"`. Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "text": "Construye un solo lector y conserva su código al cambiar la entrada. Usa Compilar, ejecutar y comprobar; puedes corregir y reintentar el mismo programa. Sólo necesitas la primera comprobación correcta del caso inicial para avanzar. Las demás entradas son ensayos opcionales.\n\nEn la notación de las entradas, las comillas delimitan el texto y no forman parte de él; \"\" representa texto vacío. \\t representa un tabulador real; conserva los espacios que aparecen dentro de las comillas. En Entrada preparada usa los caracteres reales representados, no las comillas ni las barras de esa notación. Cada línea de salida termina con un salto.\n\nCaso inicial obligatorio\nEntrada: \"tiza tiza muro tiza muro muro\"\nSalida esperada:\nRepetida: 2\nRepetida: 6\nPalabras: 6\nRepeticiones: 2\n\nEnsayo opcional\nEntrada: \"\"\nSalida esperada:\nPalabras: 0\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \" \\t \"\nSalida esperada:\nPalabras: 0\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \"lago\"\nSalida esperada:\nPalabras: 1\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \"lago lago lago\"\nSalida esperada:\nRepetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 2\n\nEnsayo opcional\nEntrada: \"lago sol lago\"\nSalida esperada:\nPalabras: 3\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \"a b b\"\nSalida esperada:\nRepetida: 3\nPalabras: 3\nRepeticiones: 1\n\nEnsayo opcional\nEntrada: \"Eco eco eco.\"\nSalida esperada:\nPalabras: 3\nRepeticiones: 0\n\nLa entrada inicial no tiene salto final. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
           "emphasis": [
             {
-              "text": "un solo lector",
+              "text": "Sólo necesitas la primera comprobación correcta del caso inicial para avanzar.",
               "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar",
+              "text": "Las demás entradas son ensayos opcionales.",
               "style": "bold"
             }
           ]
@@ -213,7 +213,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el estado anterior y el informe del contrato.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el estado anterior y el informe del contrato.\n\n    return 0;\n}\n",
           "initialStandardInput": "tiza tiza muro tiza muro muro",
           "outputCheck": {
             "cases": [
@@ -293,7 +293,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (std::cin >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n\n    while (std::cin >> actual) {\n        ++posicion;\n\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n\n        anterior = actual;\n    }\n\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -315,7 +315,8 @@
         },
         {
           "type": "paragraph",
-          "text": "`\"lago lago lago\"` marca dos y tres; `\"lago sol lago\"` no marca nada; `\"a b b\"` marca tres; `\"Eco eco eco.\"` tampoco marca nada. En texto vacío o sólo separadores, N y R son cero; `\"lago\"` tiene N=1 y R=0. \n\nLa asignación `anterior = actual` conserva una copia del valor recibido (Stroustrup, 2024). No crea una referencia que siga automáticamente la lectura siguiente de actual."
+          "text": "\"lago lago lago\" marca las posiciones dos y tres.\n\"lago sol lago\" no marca ninguna posición.\n\"a b b\" marca la posición tres.\n\"Eco eco eco.\" no marca ninguna posición.\nCon texto vacío o sólo separadores, N y R son cero.\n\"lago\" tiene N=1 y R=0.\n\nLa asignación `anterior = actual` conserva una copia del valor recibido (Stroustrup, 2024). No crea una referencia que siga automáticamente la lectura siguiente de actual.",
+          "emphasis": []
         },
         {
           "type": "note",
@@ -337,7 +338,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La extracción determina qué es una palabra; la comparación literal determina si dos palabras son iguales. El lector no convierte Eco en eco ni elimina el punto de eco. Cambiar esas reglas sería otro contrato. La relación entre posiciones también importa: obtener la misma palabra más tarde no implica que sea vecina de su aparición anterior.",
+          "text": "La extracción determina qué es una palabra; la comparación literal determina si dos palabras son iguales. El lector no convierte la palabra «Eco» en «eco» ni elimina el punto final de «eco.». Cambiar esas reglas sería otro contrato. La relación entre posiciones también importa: obtener la misma palabra más tarde no implica que sea vecina de su aparición anterior.",
           "emphasis": [
             {
               "text": "La relación entre posiciones también importa",
@@ -350,7 +351,7 @@
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__mayusculas_puntuacion_y_vecinos",
           "question": "Predice todas las líneas para estos datos nuevos. El texto está en el propio istringstream; este programa no necesita entrada externa.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"Eco eco eco. eco. Eco\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"Eco eco eco. eco. Eco\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n\n    while (entrada >> actual) {\n        ++posicion;\n\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n\n        anterior = actual;\n    }\n\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Repetida: 4\nPalabras: 5\nRepeticiones: 1"
           ],
@@ -372,7 +373,7 @@
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__copiar_demasiado_pronto_cambia_la_pregunta",
           "question": "Esta versión es incorrecta para el contrato. Predice lo que imprime tal como está escrita, teniendo en cuenta cuándo copia actual en anterior.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"sal roca sal\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        anterior = actual;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n    }\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"sal roca sal\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n\n    while (entrada >> actual) {\n        ++posicion;\n        anterior = actual;\n\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n    }\n\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Repetida: 1\nRepetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 3"
           ],
@@ -423,14 +424,14 @@
         },
         {
           "type": "paragraph",
-          "text": "La entrada inicial es `\"patio\\n\\n\\npatio\\n patio\\n patio\"`, sin LF final; `\\n` representa cada salto real. En este editor construye un solo lector y conserva su código mientras pruebas las entradas del contrato. Antes de abandonar esta página, ejecuta el caso inicial y las variantes de entrada: texto vacío, `\"\\n\"`, `\"\\n\\n\"`, `\"A\\nA\"`, `\"A\\nA\\n\"`, `\"A\\nB\\nA\"`, `\"A\\n A\"` y `\"\\nA\\nA\"`. Cada `\\n` representa LF. Usa Compilar, ejecutar y comprobar para cada entrada. Puedes corregir y reintentar el mismo programa. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
+          "text": "Construye un solo lector y conserva su código al cambiar la entrada. Usa Compilar, ejecutar y comprobar; puedes corregir y reintentar el mismo programa. Sólo necesitas la primera comprobación correcta del caso inicial para avanzar. Las demás entradas son ensayos opcionales.\n\nEn la notación de las entradas, las comillas delimitan el texto y no forman parte de él; \"\" representa texto vacío. \\n representa un salto de línea LF real; conserva los espacios que aparecen dentro de las comillas. En Entrada preparada usa los caracteres reales representados, no las comillas ni las barras de esa notación. Cada línea de salida termina con un salto.\n\nCaso inicial obligatorio\nEntrada: \"patio\\n\\n\\npatio\\n patio\\n patio\"\nSalida esperada:\nRepetida: 3\nRepetida: 6\nLineas: 6\nRepeticiones: 2\n\nEnsayo opcional\nEntrada: \"\"\nSalida esperada:\nLineas: 0\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \"\\n\"\nSalida esperada:\nLineas: 1\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \"\\n\\n\"\nSalida esperada:\nRepetida: 2\nLineas: 2\nRepeticiones: 1\n\nEnsayo opcional\nEntrada: \"A\\nA\"\nSalida esperada:\nRepetida: 2\nLineas: 2\nRepeticiones: 1\n\nEnsayo opcional\nEntrada: \"A\\nA\\n\"\nSalida esperada:\nRepetida: 2\nLineas: 2\nRepeticiones: 1\n\nEnsayo opcional\nEntrada: \"A\\nB\\nA\"\nSalida esperada:\nLineas: 3\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \"A\\n A\"\nSalida esperada:\nLineas: 2\nRepeticiones: 0\n\nEnsayo opcional\nEntrada: \"\\nA\\nA\"\nSalida esperada:\nRepetida: 3\nLineas: 3\nRepeticiones: 1\n\nLa entrada inicial no tiene salto final. La copia anterior se actualiza después de comparar y sólo tras una lectura válida.",
           "emphasis": [
             {
-              "text": "un solo lector",
+              "text": "Sólo necesitas la primera comprobación correcta del caso inicial para avanzar.",
               "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar",
+              "text": "Las demás entradas son ensayos opcionales.",
               "style": "bold"
             }
           ]
@@ -454,7 +455,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye el lector de lineas, la presencia previa y el informe.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye el lector de lineas, la presencia previa y el informe.\n\n    return 0;\n}\n",
           "initialStandardInput": "patio\n\n\npatio\n patio\n patio",
           "outputCheck": {
             "cases": [
@@ -540,7 +541,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(std::cin, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n\n    while (std::getline(std::cin, actual)) {\n        ++posicion;\n\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n\n        anterior = actual;\n        hay_anterior = true;\n    }\n\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -562,7 +563,8 @@
         },
         {
           "type": "paragraph",
-          "text": "Con texto vacío los dos resúmenes son cero. `\"\\n\"` produce una línea vacía y cero repeticiones; `\"\\n\\n\"` produce dos líneas vacías y marca sólo dos. `\"A\\nA\"` y `\"A\\nA\\n\"` producen dos líneas y marcan dos. `\"A\\nB\\nA\"` y `\"A\\n A\"` no marcan ninguna posición. `\"\\nA\\nA\"` marca tres. De nuevo, si N>0 hay como máximo N-1 pares; esa cota no decide cuáles son iguales."
+          "text": "Con texto vacío los dos resúmenes son cero.\n\"\\n\" produce una línea vacía y cero repeticiones.\n\"\\n\\n\" produce dos líneas vacías y marca sólo la posición dos.\n\"A\\nA\" y \"A\\nA\\n\" producen dos líneas y marcan la posición dos.\n\"A\\nB\\nA\" y \"A\\n A\" no marcan ninguna posición.\n\"\\nA\\nA\" marca la posición tres.\n\nDe nuevo, si N>0 hay como máximo N-1 pares; esa cota no decide cuáles son iguales.",
+          "emphasis": []
         },
         {
           "type": "note",
@@ -597,7 +599,7 @@
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__cr_literal_no_se_borra_al_leer_lineas",
           "question": "Predice el informe. La primera línea del istringstream contiene A seguido de CR; el informe muestra posiciones y cantidades, no imprime ese carácter de control.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"A\\r\\nA\\nA\\n\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"A\\r\\nA\\nA\\n\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n\n        anterior = actual;\n        hay_anterior = true;\n    }\n\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Repetida: 3\nLineas: 3\nRepeticiones: 1"
           ],
@@ -606,7 +608,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Los intentos y referencias con entrada externa usan LF preparado. Un origen de texto puede traducir finales de línea antes de entregar caracteres al flujo; no suponemos el mismo tratamiento de bytes CR/LF en todos los entornos. El contrato compara las strings que realmente obtiene. Si otro formato exige normalizar CR, eso sería una regla explícita adicional; aquí no se aplica.",
+          "text": "Los intentos y referencias con entrada externa usan LF preparado. Un origen de texto puede traducir finales de línea antes de entregar caracteres al flujo; no suponemos el mismo tratamiento de bytes CR/LF en todos los entornos. El contrato compara las strings que realmente obtiene. Si otro formato exige retirar un CR al final de cada línea antes de comparar, esa sería una regla explícita adicional; aquí no se aplica.",
           "emphasis": [
             {
               "text": "sería una regla explícita adicional",
@@ -619,7 +621,7 @@
           "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__espacios_y_tabuladores_forman_parte_de_la_linea",
           "question": "Predice las posiciones y los resúmenes de estas líneas nuevas, incluida la última sin LF.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"  x\\n  x\\nx\\nx \\nx \\n\\tx\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"  x\\n  x\\nx\\nx \\nx \\n\\tx\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n\n        anterior = actual;\n        hay_anterior = true;\n    }\n\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Repetida: 2\nRepetida: 5\nLineas: 6\nRepeticiones: 2"
           ],
@@ -645,7 +647,7 @@
         },
         {
           "type": "note",
-          "text": "Comparar lecturas vecinas exige conservar el dato anterior hasta haber comparado el actual. Sólo después se actualiza esa copia; contar las lecturas permite situar una repetición (Stroustrup, 2024, secciones 2.5.1 y 2.5.3). La primera lectura no tiene vecina anterior. Para líneas, una línea vacía sí es un dato válido: la marca de existencia de una lectura anterior debe distinguirse de su contenido. La comparación usa el mismo significado de `>>`, `getline` y fin del origen que ya se practicó.",
+          "text": "Comparar lecturas vecinas exige conservar el dato anterior hasta haber comparado el actual. Sólo después se actualiza esa copia; contar las lecturas permite situar una repetición (Stroustrup, 2024). La primera lectura no tiene vecina anterior. Para líneas, una línea vacía sí es un dato válido: la marca de existencia de una lectura anterior debe distinguirse de su contenido. La comparación usa el mismo significado de `>>`, `getline` y fin del origen que ya se practicó.",
           "emphasis": [
             {
               "text": "Sólo después se actualiza",
@@ -2102,6 +2104,303 @@
         "id": "block_0007_0005",
         "beforeSha256": "86d882669df6048a86113ac1dfd9e771b1f26b386727cce0a7f26a4e00229467",
         "afterSha256": "80b873c6efe731c8fec2363717e4625368d53b914363f13476a4c12bba7bf29f"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "4c1f2e06b3cfa86c843844121f71eb5fc48b1f343236c145aec3dffdccda0202",
+        "afterSha256": "2e03111678a3a67d75507c8a9568594f9f591d32a981944e5ba3d6845e880d57"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "3bc3aeb5c454b27788ff2be8d265c959a4f09a8df7032a9633af0e6512bab556",
+        "afterSha256": "850aa1277428ccde1e3c1de295900ed223b3a0743fd4f9f88631f0e26c61bcbd"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "dfed34980f6de2152678526bb5fc79108a0e414434d947e2c3fbbf0422871b29",
+        "afterSha256": "b999e9f0369d9c321e647bc9600ea29ee6c84e22f7b27dd525d1115946a5d348"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "cd5be33cee0a19b10e831cb967f70b1eb63129465a88e2a52ddf0eb36893890a",
+        "afterSha256": "6bbed6585600274678225a4bd9be0456b3519e8b5adf1ddf8dd29a86207db587"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "456475873d5aa7c837ceb6e8004d1da649ac6c87245037ac76f86b9362363689",
+        "afterSha256": "18c14709bdbe5d445586a19b53a904b0dabb15e87bfdfb4f6f0c6e5729b7cbc5"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "f2e064a07608407fae542d0d5ae8c57bf10c1503b86882940c202cc6a2a77ecd",
+        "afterSha256": "810e9f54fb83e6e52efce28f101ca440e5d52f3a10e37a7777a78e75d629af8f"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "2115d9abe8d1ca2624c21ea559451cb579d6be4787a4b0d3a231b7307e537e25",
+        "afterSha256": "1e66dc004dbd5529d5cfef0159a016dbc67332354f2d484aea0b9a8fc4420957"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "e8338e8f66a6e5a34022a83e15d01d07670eff3e46c529bf0e502b94a666e94d",
+        "afterSha256": "1359593c61955eab68fcf6a425479aa98f22ea776c23383635be8e3361f5a9a7"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "efddc33d5f8f5c1d425000bfda0a0fb02b867ef4c3a62b94dc4beda45b9f02a5",
+        "afterSha256": "b3c3aa7fa5a52e7cc05b83c5fe17d998496e30c2c488ea71db40f0078b9536e5"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "de5f3f1db3ead5b0636474a5a2e2a86ce6aeabf001c78089115657d008c84c66",
+        "afterSha256": "c09f66eb75db8378c38b7ddb8f6472d1bc56b298a589324be888d4a40f6c0f0a"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "805be13d1430c930731ba4685f0a0b2051839eafd2453b332f0676f4f4d5d333",
+        "afterSha256": "5b8c62619677e4f096a7c4d5e23947b40f85294da68049f8654ae7aaf051fc38"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "c370567723e1b703bc76f02a9939dc4b4c1563ac4be2a341098d9c1bd8158ddc",
+        "afterSha256": "0ae436245d9e361972986d5f79db45878f66952ceae7f435ac38e9d20601aeb3"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "cb6970a6268e2dc0b331056f70f6aa9db9334a5c29115d151102e11f9036f94b",
+        "afterSha256": "cb50d413ba354d68b2eb650ab3816bf7386255ee4267364a64433370814006e9"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "d18f30ac5679bde7306453d845326184ca5b0ed3085c40f51a44e8b79804efeb",
+        "afterSha256": "e446a176852d8e05a84d83d301ad45dda6ae80b8779fce11b968be0af764648e"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "6759a9f3b81de3f803c025019bf169f09f5d8120979437bc55d5212adf6cb6ea",
+        "afterSha256": "c4a37165e84d23b5ec22a76246fd4ca91cf923e0a53ed9b25a0c14d22f4aa395"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "7eb2f9a1ac7fbbf6972663feb1a12064f1301be9a862c5dff08024ad8ee17906",
+        "afterSha256": "b28e6b0d421446bb60b4ef7f87739b2d298609fd677284fa0bfa11402235802f"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "2529961f2dcb053dc31354cae6d77cf76fdd744852f458ea5f9a2738ef363010",
+        "afterSha256": "3796cde77bd94472a4ef050db00b4bb27de1b54132693f57aa5683be54e3dc20"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior{\"pino\"};\n    const std::string actual{\"roble\"};\n    const bool antes = (anterior == actual);\n    anterior = actual;\n    const bool despues = (anterior == actual);\n    std::cout << \"Antes de copiar: \" << antes\n              << \"\\nDespues de copiar: \" << despues;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el estado anterior y el informe del contrato.\n    return 0;\n}\n",
+          "initialStandardInput": "tiza tiza muro tiza muro muro",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "tiza tiza muro tiza muro muro",
+                "outputs": [
+                  "Repetida: 2\nRepetida: 6\nPalabras: 6\nRepeticiones: 2\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Palabras: 0\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": " \t ",
+                "outputs": [
+                  "Palabras: 0\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "lago",
+                "outputs": [
+                  "Palabras: 1\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "lago lago lago",
+                "outputs": [
+                  "Repetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 2\n"
+                ]
+              },
+              {
+                "standardInput": "lago sol lago",
+                "outputs": [
+                  "Palabras: 3\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "a b b",
+                "outputs": [
+                  "Repetida: 3\nPalabras: 3\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "Eco eco eco.",
+                "outputs": [
+                  "Palabras: 3\nRepeticiones: 0\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (std::cin >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__mayusculas_puntuacion_y_vecinos",
+          "question": "Predice todas las líneas para estos datos nuevos. El texto está en el propio istringstream; este programa no necesita entrada externa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"Eco eco eco. eco. Eco\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repetida: 4\nPalabras: 5\nRepeticiones: 1"
+          ],
+          "explanation": "Se obtienen cinco palabras. Eco y eco difieren en la mayúscula; eco y eco. difieren en el punto. Las palabras tercera y cuarta contienen ambas eco., de modo que se muestra Repetida: 4. La última Eco difiere de su vecina eco., aunque coincida con la primera. Los resúmenes son Palabras: 5 y Repeticiones: 1.",
+          "reviewFeedback": "Compara el contenido literal de cada palabra con el de su vecina anterior. Conserva mayúsculas y puntuación."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__copiar_demasiado_pronto_cambia_la_pregunta",
+          "question": "Esta versión es incorrecta para el contrato. Predice lo que imprime tal como está escrita, teniendo en cuenta cuándo copia actual en anterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"sal roca sal\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        anterior = actual;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n    }\n    std::cout << \"Palabras: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repetida: 1\nRepetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 3"
+          ],
+          "explanation": "En la primera vuelta, actual contiene sal y anterior = actual; copia ese valor antes de comparar. La condición compara entonces sal consigo misma y muestra Repetida: 1. Sucede lo mismo con roca en la segunda vuelta y con sal en la tercera: aparecen también Repetida: 2 y Repetida: 3. Por eso ambos contadores terminan en 3.\n\nEl contrato de vecinos no encontraría ninguna repetición en sal roca sal. Mover la copia después de la comparación permitiría conservar la palabra anterior hasta haberla comparado con la nueva.",
+          "reviewFeedback": "Traza la asignación y después la condición, en el orden en que están escritas. Predice esa versión, no una reparación imaginada."
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye el lector de lineas, la presencia previa y el informe.\n    return 0;\n}\n",
+          "initialStandardInput": "patio\n\n\npatio\n patio\n patio",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "patio\n\n\npatio\n patio\n patio",
+                "outputs": [
+                  "Repetida: 3\nRepetida: 6\nLineas: 6\nRepeticiones: 2\n"
+                ]
+              },
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Lineas: 0\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "\n",
+                "outputs": [
+                  "Lineas: 1\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "\n\n",
+                "outputs": [
+                  "Repetida: 2\nLineas: 2\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "A\nA",
+                "outputs": [
+                  "Repetida: 2\nLineas: 2\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "A\nA\n",
+                "outputs": [
+                  "Repetida: 2\nLineas: 2\nRepeticiones: 1\n"
+                ]
+              },
+              {
+                "standardInput": "A\nB\nA",
+                "outputs": [
+                  "Lineas: 3\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "A\n A",
+                "outputs": [
+                  "Lineas: 2\nRepeticiones: 0\n"
+                ]
+              },
+              {
+                "standardInput": "\nA\nA",
+                "outputs": [
+                  "Repetida: 3\nLineas: 3\nRepeticiones: 1\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(std::cin, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__cr_literal_no_se_borra_al_leer_lineas",
+          "question": "Predice el informe. La primera línea del istringstream contiene A seguido de CR; el informe muestra posiciones y cantidades, no imprime ese carácter de control.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"A\\r\\nA\\nA\\n\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repetida: 3\nLineas: 3\nRepeticiones: 1"
+          ],
+          "explanation": "getline extrae cada LF delimitador sin añadirlo al dato. La primera línea conserva dos caracteres, A y CR; la segunda contiene sólo A, por lo que no coinciden. La tercera vuelve a contener sólo A y sí coincide con la segunda: aparece Repetida: 3. El LF final ya cerró esa tercera línea; el intento posterior no obtiene ningún carácter ni delimitador. Los resúmenes quedan en Lineas: 3 y Repeticiones: 1.",
+          "reviewFeedback": "Distingue el CR que forma parte del dato del LF que delimita cada lectura. Cuenta sólo los pares vecinos con contenidos iguales."
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__espacios_y_tabuladores_forman_parte_de_la_linea",
+          "question": "Predice las posiciones y los resúmenes de estas líneas nuevas, incluida la última sin LF.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"  x\\n  x\\nx\\nx \\nx \\n\\tx\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repetida: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lineas: \" << posicion\n              << \"\\nRepeticiones: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repetida: 2\nRepetida: 5\nLineas: 6\nRepeticiones: 2"
+          ],
+          "explanation": "Las líneas primera y segunda contienen dos espacios seguidos de x; su igualdad produce Repetida: 2. La tercera contiene sólo x y la cuarta añade un espacio después: cada una difiere de su vecina anterior. La quinta vuelve a contener x seguido de un espacio, así que aparece Repetida: 5. La sexta contiene un tabulador seguido de x, distinto del contenido de la quinta.\n\nLa última línea se obtiene aunque no termine en LF. Se cuentan las seis lecturas y los dos pares iguales: Lineas: 6 y Repeticiones: 2.",
+          "reviewFeedback": "Conserva todos los caracteres de cada línea, incluidos espacios y tabuladores; después compara únicamente vecinos."
+        }
       }
     ]
   },
@@ -2175,10 +2474,24 @@
         "sourceSha256": "b5b113392886bee23125d470aa6f86b57e1f8858ac24824a1914c6c5e29bc9b6",
         "spans": [
           {
+            "start": 99,
+            "end": 102,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 240,
             "end": 258,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 304,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2238,6 +2551,13 @@
             "reading": "natural"
           },
           {
+            "start": 121,
+            "end": 124,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 155,
             "end": 156,
             "text": "P",
@@ -2248,7 +2568,8 @@
             "start": 176,
             "end": 179,
             "text": "P-1",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           },
           {
             "start": 198,
@@ -2321,10 +2642,24 @@
         "sourceSha256": "41cfdab7da09f4f745da2b94ae3ab2cfd600de4d85c5baac493ca48ffa88c7d5",
         "spans": [
           {
+            "start": 19,
+            "end": 23,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 31,
             "end": 34,
             "text": "rio",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 62,
+            "text": "uno",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2339,7 +2674,22 @@
         "block": "block_0000_0004",
         "path": "/options/2",
         "sourceSha256": "25a38062f9bb4443623f426ff181f696eb818c89e6a92542dcedc2ae1ac99e73",
-        "spans": []
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
+            "end": 32,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -2351,7 +2701,15 @@
         "block": "block_0000_0004",
         "path": "/reviewFeedback/1",
         "sourceSha256": "a5e185ceddcba5e5fb7afad516de32352a4838aaab61a8f058d93cb7c17ede7a",
-        "spans": []
+        "spans": [
+          {
+            "start": 14,
+            "end": 17,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -2433,19 +2791,78 @@
         "block": "block_0000_0005",
         "path": "/options/0",
         "sourceSha256": "061b296a25e5c16473ad2fd390fc2501ffd02a2b848d80317c249964f1ff180b",
-        "spans": []
+        "spans": [
+          {
+            "start": 5,
+            "end": 8,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 47,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0005",
         "path": "/options/1",
         "sourceSha256": "c62cb1fad3d41b17ab0283de682d2dabcea0e96e30f4c347d06d4041ce7bf5f3",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 5,
+            "end": 8,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 11,
+            "end": 15,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0005",
         "path": "/options/2",
         "sourceSha256": "7268ba06cfb72436874cf34ee2478ac250d57ad07c9b47719d5d95fa4bcfcc43",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 6,
+            "end": 10,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 16,
+            "end": 19,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0005",
@@ -2477,12 +2894,6 @@
         "sourceSha256": "cbc7f8850cc2b8ddefc4657ed6f2f0510460b78643e5c2f13db64e9c327a25ed",
         "spans": [
           {
-            "start": 29,
-            "end": 37,
-            "text": "anterior",
-            "role": "cpp"
-          },
-          {
             "start": 149,
             "end": 167,
             "text": "(Stroustrup, 2024)",
@@ -2493,7 +2904,15 @@
             "start": 203,
             "end": 211,
             "text": "anterior",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 340,
+            "end": 343,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2577,42 +2996,42 @@
             "end": 11,
             "text": "a",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 60,
             "end": 61,
             "text": "b",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 138,
             "end": 139,
             "text": "b",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 190,
             "end": 191,
             "text": "b",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 196,
             "end": 197,
             "text": "b",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 237,
             "end": 238,
             "text": "a",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2626,7 +3045,7 @@
             "end": 1,
             "text": "b",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2640,7 +3059,7 @@
             "end": 1,
             "text": "a",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2677,13 +3096,15 @@
             "start": 17,
             "end": 23,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 117,
             "end": 125,
             "text": "anterior",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 249,
@@ -2696,7 +3117,15 @@
             "start": 325,
             "end": 329,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 464,
+            "end": 467,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2709,37 +3138,56 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "656d94275e2b7b55e61ebad3b55cfc4ee7fb11662692d109b2379caf32309d70",
+        "sourceSha256": "7e3b9ec1ce9fa2434b318b0bfee5c4f373a9ae21b39bab362396bd3b11033e1a",
         "spans": [
           {
             "start": 14,
             "end": 22,
             "text": "std::cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 70,
             "end": 80,
             "text": "<iostream>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 187,
             "end": 195,
             "text": "std::cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 225,
             "end": 231,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 243,
             "end": 245,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 306,
+            "end": 310,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 329,
+            "end": 335,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2748,6 +3196,13 @@
         "path": "/text",
         "sourceSha256": "1dfe1b3aec0511d21335461f9e866cd169ce210d5cd98e7800b3a4046efc0c83",
         "spans": [
+          {
+            "start": 13,
+            "end": 16,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 79,
             "end": 90,
@@ -2775,49 +3230,167 @@
             "text": "Repeticiones: R",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 197,
+            "end": 200,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 301,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 446,
+            "end": 449,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 467,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "509d809a479a9b7468f7126d29a6b107e863d180e80ae3de1887faf83321fb2e",
+        "sourceSha256": "cecf48490c90c6b2f6257161a05105a66dbe2c140d8fab33de51fa3339bba42b",
         "spans": [
           {
-            "start": 33,
-            "end": 64,
-            "text": "\"tiza tiza muro tiza muro muro\"",
-            "role": "string"
-          },
-          {
-            "start": 316,
-            "end": 322,
-            "text": "\"lago\"",
-            "role": "string"
-          },
-          {
-            "start": 326,
-            "end": 342,
-            "text": "\"lago lago lago\"",
-            "role": "string"
-          },
-          {
-            "start": 346,
-            "end": 361,
-            "text": "\"lago sol lago\"",
-            "role": "string"
-          },
-          {
             "start": 365,
-            "end": 372,
-            "text": "\"a b b\"",
-            "role": "string"
+            "end": 367,
+            "text": "\"\"",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 391,
+            "start": 392,
+            "end": 394,
+            "text": "\\t",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 671,
+            "end": 702,
+            "text": "\"tiza tiza muro tiza muro muro\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 720,
+            "end": 771,
+            "text": "Repetida: 2\nRepetida: 6\nPalabras: 6\nRepeticiones: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 798,
+            "end": 800,
+            "text": "\"\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 818,
+            "end": 845,
+            "text": "Palabras: 0\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 872,
+            "end": 878,
+            "text": "\" \\t \"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 896,
+            "end": 923,
+            "text": "Palabras: 0\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 950,
+            "end": 956,
+            "text": "\"lago\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 974,
+            "end": 1001,
+            "text": "Palabras: 1\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1028,
+            "end": 1044,
+            "text": "\"lago lago lago\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1062,
+            "end": 1113,
+            "text": "Repetida: 2\nRepetida: 3\nPalabras: 3\nRepeticiones: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1140,
+            "end": 1155,
+            "text": "\"lago sol lago\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1173,
+            "end": 1200,
+            "text": "Palabras: 3\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1227,
+            "end": 1234,
+            "text": "\"a b b\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1252,
+            "end": 1291,
+            "text": "Repetida: 3\nPalabras: 3\nRepeticiones: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1318,
+            "end": 1332,
             "text": "\"Eco eco eco.\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1350,
+            "end": 1377,
+            "text": "Palabras: 3\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2831,7 +3404,15 @@
         "block": "block_0002_0004",
         "path": "/explanation",
         "sourceSha256": "f506db74eba69d3b901270c68baedcdd518c6289f8bc57c035c4e358abdc548c",
-        "spans": []
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0004",
@@ -2890,7 +3471,8 @@
             "start": 61,
             "end": 99,
             "text": "\"  faro\\tpuente puente\\npuente faro  \"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2919,6 +3501,34 @@
             "text": "puente",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 239,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 242,
+            "end": 246,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 271,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2931,97 +3541,148 @@
             "start": 40,
             "end": 48,
             "text": "anterior",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 146,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 228,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 398,
             "end": 400,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0005",
         "path": "/text",
-        "sourceSha256": "a476299e33c9aab0022ba20f9e0d9b7ae5706914f5c4e36ee1e0216c52c0bcc6",
+        "sourceSha256": "5acbdb3983a2e3e8a5c1c48d84dc0f518085b369b7188587a5f54c6344513e28",
         "spans": [
           {
-            "start": 1,
-            "end": 17,
+            "start": 0,
+            "end": 16,
             "text": "\"lago lago lago\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 38,
-            "end": 53,
-            "text": "\"lago sol lago\"",
-            "role": "string"
+            "end": 41,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 78,
-            "text": "\"a b b\"",
-            "role": "string"
+            "start": 44,
+            "end": 48,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 65,
+            "text": "\"lago sol lago\"",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 93,
-            "end": 107,
-            "text": "\"Eco eco eco.\"",
-            "role": "string"
+            "end": 100,
+            "text": "\"a b b\"",
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 164,
-            "end": 165,
+            "start": 119,
+            "end": 123,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 139,
+            "text": "\"Eco eco eco.\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 204,
             "text": "N",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 169,
+            "start": 207,
+            "end": 208,
             "text": "R",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 181,
-            "end": 187,
-            "text": "\"lago\"",
-            "role": "string"
+            "start": 213,
+            "end": 217,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 198,
+            "start": 219,
+            "end": 225,
+            "text": "\"lago\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 235,
             "text": "N=1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 201,
-            "end": 204,
+            "start": 238,
+            "end": 241,
             "text": "R=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 223,
-            "end": 240,
+            "start": 259,
+            "end": 276,
             "text": "anterior = actual",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 280,
-            "end": 298,
+            "start": 316,
+            "end": 334,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 372,
-            "end": 378,
+            "start": 408,
+            "end": 414,
             "text": "actual",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3034,7 +3695,8 @@
             "start": 22,
             "end": 26,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 69,
@@ -3054,19 +3716,22 @@
             "start": 99,
             "end": 102,
             "text": "N-1",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           },
           {
             "start": 142,
             "end": 145,
             "text": "N=0",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           },
           {
             "start": 147,
             "end": 150,
             "text": "R=0",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           }
         ]
       },
@@ -3079,26 +3744,33 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "f290e7d103a497156ad7031bee33bfc7276260203dd2ffb2c9e9e02e9f9929a2",
+        "sourceSha256": "23b57cf0f74df3cb7f68462ca37e0f9074c4ef117bdb37c9fe2255aef6027b67",
         "spans": [
           {
-            "start": 129,
-            "end": 132,
+            "start": 80,
+            "end": 83,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 144,
             "text": "Eco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 136,
-            "end": 139,
+            "start": 150,
+            "end": 153,
             "text": "eco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 163,
-            "end": 166,
-            "text": "eco",
+            "start": 185,
+            "end": 189,
+            "text": "eco.",
             "role": "data",
             "reading": "natural"
           }
@@ -3113,7 +3785,8 @@
             "start": 77,
             "end": 90,
             "text": "istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3122,6 +3795,13 @@
         "path": "/explanation",
         "sourceSha256": "3dec643a6d6f444c62ec8b1de96b1c008afb2130cb49606d1e7718f536f40a37",
         "spans": [
+          {
+            "start": 12,
+            "end": 17,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 28,
             "end": 31,
@@ -3209,19 +3889,22 @@
             "start": 51,
             "end": 57,
             "text": "actual",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 61,
             "end": 69,
             "text": "anterior",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 233,
-            "end": 241,
-            "text": "anterior",
-            "role": "cpp"
+            "start": 158,
+            "end": 161,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3234,13 +3917,15 @@
             "start": 123,
             "end": 129,
             "text": "actual",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 133,
             "end": 141,
             "text": "anterior",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3338,7 +4023,43 @@
         "block": "block_0004_0005",
         "path": "/text",
         "sourceSha256": "8cf7e6520038550eb5b5c749fe4832a0efc4060de355f906adb01269a65171c6",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 19,
+            "end": 23,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 171,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 205,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 212,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -3355,7 +4076,36 @@
             "start": 34,
             "end": 64,
             "text": "std::getline(std::cin, actual)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 139,
+            "end": 143,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
+            "end": 191,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 216,
+            "text": "cuarenta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 248,
+            "end": 250,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -3368,13 +4118,22 @@
             "start": 59,
             "end": 66,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 120,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 127,
             "end": 133,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 225,
@@ -3387,86 +4146,176 @@
             "start": 256,
             "end": 260,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 291,
             "end": 296,
             "text": "false",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 308,
             "end": 312,
             "text": "true",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "178c1918a131647f20c2d6869f8f1448be093e64c385e31414995617b0ef9892",
+        "sourceSha256": "9feaed8f2055072931c1d46db7a6eae1be25d9e02611dcf948129ff03e3849bd",
         "spans": [
           {
-            "start": 23,
-            "end": 57,
-            "text": "\"patio\\n\\n\\npatio\\n patio\\n patio\"",
-            "role": "string"
-          },
-          {
-            "start": 75,
-            "end": 77,
-            "text": "\\n",
-            "role": "string"
-          },
-          {
-            "start": 310,
-            "end": 314,
-            "text": "\"\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 318,
-            "end": 324,
-            "text": "\"\\n\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 328,
-            "end": 334,
-            "text": "\"A\\nA\"",
-            "role": "string"
-          },
-          {
-            "start": 338,
-            "end": 346,
-            "text": "\"A\\nA\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 350,
-            "end": 359,
-            "text": "\"A\\nB\\nA\"",
-            "role": "string"
-          },
-          {
-            "start": 363,
-            "end": 370,
-            "text": "\"A\\n A\"",
-            "role": "string"
-          },
-          {
-            "start": 375,
-            "end": 383,
-            "text": "\"\\nA\\nA\"",
-            "role": "string"
+            "start": 365,
+            "end": 367,
+            "text": "\"\"",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 392,
             "end": 394,
             "text": "\\n",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 426,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 679,
+            "end": 713,
+            "text": "\"patio\\n\\n\\npatio\\n patio\\n patio\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 731,
+            "end": 780,
+            "text": "Repetida: 3\nRepetida: 6\nLineas: 6\nRepeticiones: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 807,
+            "end": 809,
+            "text": "\"\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 827,
+            "end": 852,
+            "text": "Lineas: 0\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 879,
+            "end": 883,
+            "text": "\"\\n\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 901,
+            "end": 926,
+            "text": "Lineas: 1\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 953,
+            "end": 959,
+            "text": "\"\\n\\n\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 977,
+            "end": 1014,
+            "text": "Repetida: 2\nLineas: 2\nRepeticiones: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1041,
+            "end": 1047,
+            "text": "\"A\\nA\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1065,
+            "end": 1102,
+            "text": "Repetida: 2\nLineas: 2\nRepeticiones: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1129,
+            "end": 1137,
+            "text": "\"A\\nA\\n\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1155,
+            "end": 1192,
+            "text": "Repetida: 2\nLineas: 2\nRepeticiones: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1219,
+            "end": 1228,
+            "text": "\"A\\nB\\nA\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1246,
+            "end": 1271,
+            "text": "Lineas: 3\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1298,
+            "end": 1305,
+            "text": "\"A\\n A\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1323,
+            "end": 1348,
+            "text": "Lineas: 2\nRepeticiones: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1375,
+            "end": 1383,
+            "text": "\"\\nA\\nA\"",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1401,
+            "end": 1438,
+            "text": "Repetida: 3\nLineas: 3\nRepeticiones: 1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3481,6 +4330,27 @@
         "path": "/explanation",
         "sourceSha256": "af6c6ffbd373e84b1ee517e0629790037d16c31d989259beacef2a27e8ef0982",
         "spans": [
+          {
+            "start": 35,
+            "end": 39,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 73,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 80,
+            "end": 84,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 275,
             "end": 281,
@@ -3535,7 +4405,8 @@
             "start": 70,
             "end": 78,
             "text": "anterior",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3554,13 +4425,29 @@
             "start": 39,
             "end": 69,
             "text": "\"\\npuerta\\npuerta\\n\\n\\npuerta\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 84,
             "end": 86,
             "text": "\\n",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 102,
+            "end": 104,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 162,
+            "end": 164,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -3582,6 +4469,34 @@
             "text": "puerta",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 333,
+            "end": 337,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 344,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 350,
+            "end": 354,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 367,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -3594,72 +4509,158 @@
             "start": 63,
             "end": 69,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 215,
+            "end": 218,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 374,
+            "end": 376,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 419,
             "end": 426,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "a1758383710841c4872f894c3d321fb51506f1820008a753e2ce29a6cf436dd6",
+        "sourceSha256": "5ec6d060bc678e6c530f19d103c92a4f98f0654f7a9bc21bef1390d630b3b476",
         "spans": [
           {
-            "start": 45,
-            "end": 49,
+            "start": 20,
+            "end": 23,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 42,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
+            "end": 48,
             "text": "\"\\n\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 97,
-            "end": 103,
+            "start": 57,
+            "end": 60,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 75,
+            "end": 79,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 100,
             "text": "\"\\n\\n\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 156,
+            "start": 109,
+            "end": 112,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 155,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 157,
+            "end": 163,
             "text": "\"A\\nA\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 169,
+            "start": 166,
+            "end": 174,
             "text": "\"A\\nA\\n\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 206,
-            "end": 215,
+            "start": 184,
+            "end": 187,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 216,
+            "end": 219,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 230,
             "text": "\"A\\nB\\nA\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 220,
-            "end": 227,
+            "start": 233,
+            "end": 240,
             "text": "\"A\\n A\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 258,
-            "end": 266,
+            "start": 269,
+            "end": 277,
             "text": "\"\\nA\\nA\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           },
           {
-            "start": 293,
-            "end": 296,
+            "start": 296,
+            "end": 300,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 316,
+            "end": 319,
             "text": "N>0",
             "role": "math"
           },
           {
-            "start": 313,
-            "end": 316,
+            "start": 336,
+            "end": 339,
             "text": "N-1",
             "role": "math"
           }
@@ -3674,7 +4675,15 @@
             "start": 4,
             "end": 8,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 164,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3693,25 +4702,57 @@
             "start": 29,
             "end": 31,
             "text": "\\n",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 44,
+            "end": 46,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 65,
             "end": 72,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 110,
             "end": 112,
             "text": "\\r",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 140,
+            "end": 142,
+            "text": "CR",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 151,
+            "end": 153,
+            "text": "CR",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 191,
+            "end": 193,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 236,
             "end": 242,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 303,
@@ -3724,13 +4765,15 @@
             "start": 341,
             "end": 343,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 437,
             "end": 450,
             "text": "istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -3743,14 +4786,22 @@
             "start": 41,
             "end": 54,
             "text": "istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 64,
             "end": 65,
             "text": "A",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "CR",
+            "role": "data",
+            "reading": "characters"
           }
         ]
       },
@@ -3767,25 +4818,46 @@
             "reading": "technical"
           },
           {
+            "start": 20,
+            "end": 22,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 83,
+            "end": 86,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 99,
             "end": 100,
             "text": "A",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
+          },
+          {
+            "start": 103,
+            "end": 105,
+            "text": "CR",
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 132,
             "end": 133,
             "text": "A",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 194,
             "end": 195,
             "text": "A",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 234,
@@ -3793,6 +4865,13 @@
             "text": "Repetida: 3",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 375,
@@ -3814,19 +4893,64 @@
         "block": "block_0007_0002",
         "path": "/reviewFeedback",
         "sourceSha256": "dd719ee32c01caa024775ca4e893dd26d4cf2e0aed9ac7995a7659dbe791be58",
-        "spans": []
+        "spans": [
+          {
+            "start": 13,
+            "end": 15,
+            "text": "CR",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 45,
+            "end": 47,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "2b0e3e97ac0a9fe1a62c3a2fa65e2d1840b82a025f4a543fe374b91cde2b5cf6",
-        "spans": []
+        "sourceSha256": "cb96a2e7d05fbd0d905a816b6385e7fe75407d3c2b2279a5976c5a61858a8b08",
+        "spans": [
+          {
+            "start": 52,
+            "end": 54,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 199,
+            "end": 204,
+            "text": "CR/LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 316,
+            "end": 318,
+            "text": "CR",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
         "path": "/question",
         "sourceSha256": "a63a1ad6dd854b0172dfa21c09a61fc192de8dcd5ff15252972c63e8ac890132",
-        "spans": []
+        "spans": [
+          {
+            "start": 86,
+            "end": 88,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
       },
       {
         "block": "block_0007_0004",
@@ -3834,11 +4958,18 @@
         "sourceSha256": "34e359d2787aa27c85aeee97f2c6ee9fb9c62d803df2c522d495507d84b23b42",
         "spans": [
           {
+            "start": 39,
+            "end": 42,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 64,
             "end": 65,
             "text": "x",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 87,
@@ -3852,14 +4983,14 @@
             "end": 126,
             "text": "x",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 233,
             "end": 234,
             "text": "x",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
             "start": 274,
@@ -3873,6 +5004,27 @@
             "end": 330,
             "text": "x",
             "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 418,
+            "end": 420,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 437,
+            "end": 441,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 460,
+            "text": "dos",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3906,7 +5058,8 @@
             "start": 44,
             "end": 50,
             "text": "\"\\n\\n\"",
-            "role": "string"
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3933,8 +5086,15 @@
             "start": 124,
             "end": 130,
             "text": "\"\\n\\n\"",
-            "role": "string",
-            "reading": "technical"
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 139,
+            "text": "LF",
+            "role": "data",
+            "reading": "characters"
           },
           {
             "start": 353,
@@ -3956,25 +5116,71 @@
         "block": "block_0007_0005",
         "path": "/options/0",
         "sourceSha256": "7f89faf5399816ec691f151b61a61b8840f7376c9ae5456de8e7e485e9c74dc1",
-        "spans": []
+        "spans": [
+          {
+            "start": 13,
+            "end": 17,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
         "path": "/options/1",
         "sourceSha256": "83cfee8700e33e40dd33417a0fdca46d85992cce48d9a34459549c3906fe5cb5",
-        "spans": []
+        "spans": [
+          {
+            "start": 17,
+            "end": 20,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 49,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
         "path": "/options/2",
         "sourceSha256": "4984722fd364bde1a64918798dceddd4824980d01d5c6cbedc3600ff84fe2b56",
-        "spans": []
+        "spans": [
+          {
+            "start": 45,
+            "end": 48,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 65,
+            "end": 68,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
         "path": "/reviewFeedback/0",
         "sourceSha256": "218bdd5924c1394f6c17b5da897971e4e7558c992fbaf3e6f6a77b51f9c9269a",
-        "spans": []
+        "spans": [
+          {
+            "start": 38,
+            "end": 42,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
@@ -3991,26 +5197,28 @@
       {
         "block": "block_0007_0006",
         "path": "/text",
-        "sourceSha256": "995fbb2b144bee0f19925e84589801b07c3bcbfb05a85bc9e1f254eaabea01a9",
+        "sourceSha256": "de8ea89623933d4d739a092d8cb497c8c888d07075ad743bfad2dd9c88540c6c",
         "spans": [
           {
             "start": 179,
-            "end": 222,
-            "text": "(Stroustrup, 2024, secciones 2.5.1 y 2.5.3)",
+            "end": 197,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 446,
-            "end": 448,
+            "start": 421,
+            "end": 423,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 452,
-            "end": 459,
+            "start": 427,
+            "end": 434,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Guardar sitios y cantidades en dos vectores paralelos obliga a conservar sus tamaños y su correspondencia por índice. Si se ordena sólo el de sitios, los accesos pueden seguir siendo válidos y el programa puede compilar, pero las etiquetas quedan asociadas a cantidades distintas de las originales.\n\nUn tipo que reúne los datos de una misma observación permite representar esa relación directamente (Stroustrup, 2024). En un vector de Lectura, cada elemento mantiene juntos su sitio y su cantidad.",
+          "text": "Una observación relaciona un sitio con la cantidad de personas que se contó allí. Por ejemplo, Sur corresponde a 3 personas y Norte a 7. Guardar sitios y cantidades en dos vectores paralelos obliga a conservar sus tamaños y su correspondencia por índice. Si se ordena sólo el de sitios, los accesos pueden seguir siendo válidos y el programa puede compilar, pero las etiquetas quedan asociadas a cantidades distintas de las originales.\n\nUn tipo que reúne los datos de una misma observación permite representar esa relación directamente (Stroustrup, 2024). En un vector de Lectura, cada elemento mantiene juntos su sitio y su cantidad.\n\nEl recorrido del ejemplo usa const auto& registro para consultar cada elemento:\nauto permite deducir el tipo a partir del elemento visitado; aquí se deduce Lectura.\nEl signo & hace que el nombre registro se refiera al elemento almacenado, sin copiarlo.\nconst impide modificar ese elemento mediante esa referencia (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "vectores paralelos",
@@ -25,11 +25,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 3}, {\"Norte\", 7}};\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 3}, {\"Norte\", 7}};\n\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Cada elemento de registros es una Lectura. La forma {{...}, {...}} contiene aquí dos inicializaciones: las llaves interiores preparan los miembros de cada objeto (Köppe et al., 2023).\n\nEl recorrido visita observaciones completas. Dentro de cada visita, el punto permite elegir el miembro que se necesita: registro.sitio o registro.personas. La estructura del elemento conserva la asociación mientras se consulta el vector.",
+          "text": "Cada elemento de registros es una Lectura. La inicialización {{\"Sur\", 3}, {\"Norte\", 7}} contiene aquí dos grupos interiores: el primero prepara sitio con Sur y personas con 3; el segundo prepara sitio con Norte y personas con 7. Las llaves interiores inicializan los miembros de cada objeto (Köppe et al., 2023).\n\nEl recorrido visita observaciones completas. Dentro de cada visita, el punto permite elegir el miembro que se necesita: registro.sitio o registro.personas. La estructura del elemento conserva la asociación mientras se consulta el vector.\n\nPara modificar los miembros de los elementos almacenados, un recorrido puede usar auto& registro: mantiene la referencia y permite actualizar el elemento. En cambio, con auto registro cada visita crea una copia; modificar esa copia no modifica el elemento del vector (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "Cada elemento de registros",
@@ -72,7 +72,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Ordenar registros completos mediante sort requeriría definir cómo se comparan. Aquí se conserva la secuencia de llegada o se intercambian objetos completos mediante un temporal. Así se puede comprobar la asociación sin introducir todavía una regla para ordenar registros.",
+          "text": "Ordenar registros completos mediante sort requeriría definir cómo se comparan. Aquí se conserva la secuencia de llegada o se intercambian objetos completos. Así se puede comprobar la asociación sin introducir todavía una regla para ordenar registros.\n\nEn el siguiente programa, Lectura temporal = registros.at(0); crea un objeto auxiliar e inicializa sus miembros con los del primer elemento: copia tanto el sitio como la cantidad. Después, registros.at(0) = registros.at(1); asigna al elemento que ya existe los miembros del segundo. La última asignación recupera la observación guardada: registros.at(1) = temporal;. Estas asignaciones copian los miembros de Lectura; no crean otros elementos dentro del vector (Köppe et al., 2023).\n\nConservar la observación completa exige copiar juntos sitio y personas. Así, cambiar de posición dos observaciones conserva la cantidad que corresponde a cada etiqueta.",
           "emphasis": [
             {
               "text": "objetos completos",
@@ -90,13 +90,13 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Mover una observación completa"
+          "text": "Intercambiar observaciones completas"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 8}};\n    Lectura temporal = registros.at(0);\n    registros.at(0) = registros.at(1);\n    registros.at(1) = temporal;\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 8}};\n\n    Lectura temporal = registros.at(0);\n    registros.at(0) = registros.at(1);\n    registros.at(1) = temporal;\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
           "answers": [
             "Sala:8;Patio:2;"
           ],
@@ -125,7 +125,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Este\", 4}, {\"Oeste\", 6}, {\"Este\", 2}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.personas;\n    }\n    std::cout << registros.size() << \" \" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{\n        {\"Este\", 4},\n        {\"Oeste\", 6},\n        {\"Este\", 2}\n    };\n    int total = 0;\n\n    for (const auto& registro : registros) {\n        total += registro.personas;\n    }\n\n    std::cout << registros.size() << \" \" << total;\n\n    return 0;\n}\n",
           "answers": [
             "3 12"
           ],
@@ -135,7 +135,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el miembro numérico que se acumula.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"A\", 3}, {\"B\", 5}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.___;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"A\", 3}, {\"B\", 5}};\n    int total = 0;\n\n    for (const auto& registro : registros) {\n        total += registro.___;\n    }\n\n    std::cout << total;\n\n    return 0;\n}\n",
           "answers": [
             "personas"
           ],
@@ -164,7 +164,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 5}};\n    for (auto& registro : registros) {\n        if (registro.sitio == \"Patio\") {\n            registro.personas += 3;\n        }\n    }\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 5}};\n\n    for (auto& registro : registros) {\n        if (registro.sitio == \"Patio\") {\n            registro.personas += 3;\n        }\n    }\n\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
           "answers": [
             "Patio:5;Sala:5;"
           ],
@@ -193,25 +193,15 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros;\n    int total = 0;\n    for (const auto& registro : registros) { total += registro.personas; }\n    std::cout << registros.size() << \":\" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros;\n    int total = 0;\n\n    for (const auto& registro : registros) {\n        total += registro.personas;\n    }\n\n    std::cout << registros.size() << \":\" << total;\n\n    return 0;\n}\n",
           "answers": [
             "0:0"
           ],
           "explanation": "El vector vacío tiene tamaño 0. El recorrido no visita ningún elemento, así que total conserva el valor inicial 0. Se muestran el tamaño y la suma separados por dos puntos: 0:0. No hace falta crear un registro para representar la colección vacía."
         },
         {
-          "type": "output_prediction",
-          "language": "cpp",
-          "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 0}};\n    std::vector<Lectura> elegidos;\n    for (const auto& registro : registros) {\n        if (registro.personas > 0) { elegidos.push_back(registro); }\n    }\n    std::cout << registros.size() << \" \" << elegidos.size();\n    return 0;\n}\n",
-          "answers": [
-            "1 0"
-          ],
-          "explanation": "registros contiene una observación: Sur con cantidad 0. La condición registro.personas > 0 es falsa para ella y no se añade ningún elemento a elegidos. Por eso los tamaños son 1 y 0: una observación de cantidad cero y la ausencia de observaciones son situaciones distintas."
-        },
-        {
           "type": "paragraph",
-          "text": "push_back añade un elemento al final de un vector (Stroustrup, 2024). En este caso recibe un registro y se copia la observación completa: la selección conserva juntos sus miembros y mantiene el orden de las visitas. La colección elegida crece; no se modifica el vector que se está recorriendo.\n\nTambién se puede copiar el vector completo. El nuevo vector contiene sus propios elementos copiados (Stroustrup, 2024). Como estos registros tienen una cadena y un entero, cambiar un miembro del original después de copiar no modifica el miembro correspondiente de la copia.",
+          "text": "push_back añade un elemento al final de un vector (Stroustrup, 2024). En elegidos.push_back(registro), se copia la observación completa. Si el registro contiene el sitio Patio y la cantidad 2, el nuevo elemento conserva ambos datos.\n\nLa selección crece en el orden en que se visitan los elementos aceptados. El vector elegido es distinto del que se está recorriendo; no se añade nada al vector de origen.\n\nTambién se puede copiar el vector completo. El nuevo vector contiene sus propios elementos copiados (Stroustrup, 2024). Como estos registros tienen una cadena y un entero, cambiar un miembro del original después de copiar no modifica el miembro correspondiente de la copia.",
           "emphasis": [
             {
               "text": "se copia la observación completa",
@@ -222,6 +212,16 @@
               "style": "bold"
             }
           ]
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 0}};\n    std::vector<Lectura> elegidos;\n\n    for (const auto& registro : registros) {\n        if (registro.personas > 0) {\n            elegidos.push_back(registro);\n        }\n    }\n\n    std::cout << registros.size() << \" \" << elegidos.size();\n\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "registros contiene una observación: Sur con cantidad 0. La condición registro.personas > 0 es falsa para ella y no se añade ningún elemento a elegidos. Por eso los tamaños son 1 y 0: una observación de cantidad cero y la ausencia de observaciones son situaciones distintas."
         }
       ]
     },
@@ -233,7 +233,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye Registro con codigo de tipo std::string para la etiqueta y unidades de tipo int para la cantidad. Define procesar(const std::vector<Registro>&): visita todos los registros en su orden, suma sus unidades y crea otro vector con los que tengan al menos cuatro. Conserva los códigos repetidos: pueden pertenecer a observaciones diferentes.\n\nMuestra tres líneas por llamada: Datos: seguido de codigo:unidades; por registro, Total: seguido de la suma y Elegidos: seguido de los registros seleccionados con el mismo formato. Cada línea termina con un salto.\n\nEn una ejecución prueba {{A,2},{B,7},{A,4}}, la colección vacía, {{Z,0}} y {{R,1},{R,5}}, en ese orden. Sus totales son 13, 0, 0 y 6. La primera selección es B:7;A:4;, las dos siguientes no contienen registros y la última es R:5;. En vacío se conservan las líneas Datos:, Total:0 y Elegidos:.\n\nPulsa Compilar, ejecutar y comprobar. Las etiquetas se guardan como cadenas; los mensajes del informe deben consultar los miembros, no sustituirlos por resultados escritos de antemano.",
+          "text": "Construye Registro con estos miembros:\ncodigo, de tipo std::string, guarda la etiqueta.\nunidades, de tipo int, guarda la cantidad.\n\nDefine void procesar(const std::vector<Registro>& registros): visita todos los registros en su orden, suma sus cantidades y crea otro vector con los que tengan al menos cuatro unidades. Conserva los códigos repetidos: pueden pertenecer a observaciones diferentes.\n\nMuestra tres líneas por llamada:\nDatos: seguido de codigo:unidades; por cada registro recibido.\nTotal: seguido de la suma de todas las cantidades.\nElegidos: seguido de los registros seleccionados, con el mismo formato.\n\nCada línea termina con un salto. En una ejecución llama a procesar con las cuatro colecciones siguientes, en este orden.\n\nPara {{\"A\", 2}, {\"B\", 7}, {\"A\", 4}}:\nDatos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\n\nPara la colección vacía {}:\nDatos:\nTotal:0\nElegidos:\n\nPara {{\"Z\", 0}}:\nDatos:Z:0;\nTotal:0\nElegidos:\n\nPara {{\"R\", 1}, {\"R\", 5}}:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\n\nPulsa Compilar, ejecutar y comprobar. Las etiquetas se guardan como cadenas; los mensajes del informe deben consultar los miembros, no sustituirlos por resultados escritos de antemano.",
           "emphasis": [
             {
               "text": "Conserva los códigos repetidos",
@@ -259,7 +259,7 @@
                 "outputs": [
                   "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\n"
                 ],
-                "explanation": "Cada registro conserva su asociación y su posición, aunque otro repita el código. El filtrado selecciona registros completos y el caso vacío conserva un total cero."
+                "explanation": "En la primera selección, B:7 pasa del índice 1 de la entrada al índice 0 del vector elegido y A:4 aparece después. Las parejas y su orden relativo se conservan, aunque cambien los índices. El caso vacío mantiene un total cero."
               }
             ]
           }
@@ -292,7 +292,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui Registro, procesar y los auxiliares que necesites.\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui Registro, procesar y los auxiliares que necesites.\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -419,10 +419,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye la recuperación en este editor independiente. Crea original con C:2 y D:1, cópialo y aumenta sólo las unidades del primer registro del original en tres. Muestra Original: seguido de sus registros como codigo:unidades;, un salto de línea y Copia: con los suyos.\n\nPulsa Compilar, ejecutar y comprobar. No añadas espacios ni un salto final. Para formar la salida, consulta los miembros de cada vector y utiliza la predicción registrada en el puzzle anterior.",
+          "text": "Construye la recuperación en este editor independiente:\nCrea original con los registros C:2 y D:1, en ese orden.\nCopia el vector completo.\nAumenta sólo las unidades del primer registro del original en tres.\n\nMuestra Original: seguido de sus registros como codigo:unidades;, un salto de línea y Copia: con los suyos.\n\nPulsa Compilar, ejecutar y comprobar. No añadas espacios ni un salto final. Para formar la salida, consulta los miembros de cada vector y utiliza la predicción registrada en el puzzle anterior.",
           "emphasis": [
             {
-              "text": "aumenta sólo las unidades del primer registro",
+              "text": "Aumenta sólo las unidades del primer registro",
               "style": "bold"
             },
             {
@@ -457,13 +457,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Registro> registros{{\"A\", 2}, {\"B\", 7}, {\"A\", 4}};\n    int total = 0;\n    std::vector<Registro> elegidos;\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Registro> registros{\n        {\"A\", 2},\n        {\"B\", 7},\n        {\"A\", 4}\n    };\n    int total = 0;\n    std::vector<Registro> elegidos;\n\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) {\n            elegidos.push_back(registro);\n        }\n    }\n\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> original{{\"Sala\", 4}};\n    auto copia = original;\n    original.at(0).personas = 9;\n    std::cout << copia.at(0).sitio << \":\" << copia.at(0).personas << \" \" << original.at(0).personas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> original{{\"Sala\", 4}};\n    auto copia = original;\n\n    original.at(0).personas = 9;\n\n    std::cout << copia.at(0).sitio << \":\" << copia.at(0).personas << \" \" << original.at(0).personas;\n\n    return 0;\n}\n",
           "answers": [
             "Sala:4 9"
           ],
@@ -482,14 +482,14 @@
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo breve anterior ilustra un recorrido y una selección de una colección. Las referencias completas siguientes corresponden por separado al informe de cuatro colecciones y a la copia independiente.\n\nCriterios: cada código conserva su cantidad al recorrer, copiar y seleccionar; el total incluye las observaciones con código repetido; el filtro mantiene el orden y el vacío produce total cero sin acceder a un elemento inexistente. La actualización del original no modifica la copia de estos registros.",
+          "text": "El ejemplo breve anterior ilustra un recorrido y una selección de una colección. Las referencias completas siguientes corresponden por separado al informe de cuatro colecciones y a la copia independiente.\n\nRevisa estos criterios:\nCada código conserva su cantidad al recorrer, copiar y seleccionar.\nEl total incluye también las observaciones con código repetido.\nEl filtro mantiene el orden relativo de las observaciones elegidas.\nEl vacío produce total cero sin acceder a un elemento inexistente.\nLa actualización del original no modifica la copia de estos registros.",
           "emphasis": [
             {
               "text": "por separado",
               "style": "bold"
             },
             {
-              "text": "el filtro mantiene el orden",
+              "text": "El filtro mantiene el orden",
               "style": "bold"
             }
           ]
@@ -501,7 +501,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid procesar(const std::vector<Registro>& registros) {\n    int total = 0;\n    std::vector<Registro> elegidos;\n    std::cout << \"Datos:\";\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid procesar(const std::vector<Registro>& registros) {\n    int total = 0;\n    std::vector<Registro> elegidos;\n\n    std::cout << \"Datos:\";\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) {\n            elegidos.push_back(registro);\n        }\n    }\n\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n\n    std::cout << \"\\n\";\n}\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -509,7 +509,7 @@
         },
         {
           "type": "paragraph",
-          "text": "En la quinta llamada, las cuatro cantidades suman 3 + 4 + 6 + 3 = 16. El recorrido presenta todas las observaciones en Datos: y las suma todas en Total:16. La selección deja fuera las dos cantidades de 3, conserva U:4 y después U:6, de modo que su línea es Elegidos:U:4;U:6;.\n\nUna condición que admitiera desde 3 daría los mismos resultados con las cuatro colecciones anteriores: ninguna contenía esa cantidad. El nuevo caso permite distinguirla. Asimismo, antes no coincidían dos códigos dentro de una misma selección; ahora ambas observaciones U cumplen el filtro y deben aparecer.\n\nLa función procesar de la referencia anterior sirve también para estos datos. Sustituye únicamente su main por el siguiente, conservando las inclusiones, Registro y la función. Cada llamada crea su propio acumulador y su propio vector de selección.",
+          "text": "En la quinta llamada, las cuatro cantidades suman 3 + 4 + 6 + 3 = 16. El recorrido presenta todas las observaciones en Datos: y las suma todas en Total:16.\n\nLa selección toma estas decisiones, en el orden de llegada:\nT:3 queda fuera porque 3 es menor que el mínimo 4.\nU:4 se conserva porque alcanza ese mínimo.\nU:6 se conserva porque lo supera.\nV:3 queda fuera por la misma razón que el primer registro.\n\nLa línea obtenida es Elegidos:U:4;U:6;. Una condición que admitiera desde 3 daría los mismos resultados con las cuatro colecciones anteriores: ninguna contenía esa cantidad. El nuevo caso permite distinguirla. Asimismo, antes no coincidían dos códigos dentro de una misma selección; ahora ambas observaciones U cumplen el filtro y deben aparecer.\n\nLa función procesar de la referencia anterior sirve también para estos datos. Sustituye únicamente su main por el siguiente, conservando las inclusiones, Registro y la función. Cada llamada crea su propio acumulador y su propio vector de selección.",
           "emphasis": [
             {
               "text": "ninguna contenía esa cantidad",
@@ -528,7 +528,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "int main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n    return 0;\n}\n"
+          "code": "int main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -537,7 +537,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid presentar(const std::vector<Registro>& registros) {\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n}\n\nint main() {\n    std::vector<Registro> original{{\"C\", 2}, {\"D\", 1}};\n    const std::vector<Registro> copia = original;\n    original.at(0).unidades += 3;\n    std::cout << \"Original:\";\n    presentar(original);\n    std::cout << \"\\nCopia:\";\n    presentar(copia);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid presentar(const std::vector<Registro>& registros) {\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n}\n\nint main() {\n    std::vector<Registro> original{{\"C\", 2}, {\"D\", 1}};\n    const std::vector<Registro> copia = original;\n\n    original.at(0).unidades += 3;\n\n    std::cout << \"Original:\";\n    presentar(original);\n    std::cout << \"\\nCopia:\";\n    presentar(copia);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -784,8 +784,8 @@
         "blocks": [
           "block_0005_0000",
           "block_0005_0001",
-          "block_0005_0002",
-          "block_0005_0003"
+          "block_0005_0003",
+          "block_0005_0002"
         ]
       },
       {
@@ -1514,6 +1514,288 @@
         "id": "block_0007_0003",
         "beforeSha256": "6a9cb6d433b9a13674d9d4cd4f3aa240609147389aa4325635b89fd534f7864d",
         "afterSha256": "4cc2798e70a2d8e335a68c044fe951a30659748ff031d59bd0d4253144ddf308"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "e9ec9923ea8636770c8174ebd92447a79cc66ffd3486ee43c652f2bec3c041b8",
+        "afterSha256": "9d33aa322806999649a7069965cd416fbef8fff125f02e0ff883d1a9474f134c"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "9a95dc8ecd1affba5c745b8a8787a7272a5930e8560545e1eee8bc1e9250e374",
+        "afterSha256": "6fd36e16413d81365a4191fefe6f0dcb84b69b8c06492c9d532b55bbfd145c7e"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ef610da245452650d84f1d5caa482b890dc20760c1d52b6a539e56380ffb419d",
+        "afterSha256": "ab5085c7bd8b28a64b6cfdc24eea8f47bce57b4bca8836250f1b3672e6646ff6"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "cb22fe42fa1635275c4d5f5540230de939ae2fe9fc3d3b03a91962677c308369",
+        "afterSha256": "279133527d834c969a98baed02c0ebe251f8c09572cd9763b3e30840e53652d7"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "18def35dacf6d1273c5d98b05465f432144d784f526a9c1ff21aa68d785719ff",
+        "afterSha256": "2b572fea80e48d453938e796e615929f1e58b1a62582dd6d2c217b9240537fea"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "9a97ef91a61b207a1c52875da2b8086299af6025e8d7a16e0c97d6e8df06766b",
+        "afterSha256": "fc4809107c37d7e5e76a25cde1f07a63ef89e9189b9b0b629d5a8b7b07af2719"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "a2faed2a0bdf67b645c8841cea593f64a9cccfced8b2cb6bde8638f1d7f79a9c",
+        "afterSha256": "d7a987e71dee4d0a9395cddc8b9bd12aa972ead130e847dd2b3c74295102cccd"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "6629d26c919acc67335a449efa698c7de7fac608624a1d2dc32cc77b2f614998",
+        "afterSha256": "d2975863a2d457b4ebb307ceb2b87c7d9d7d542e361706491c97fbf96338e79d"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "c9496d275ed2cea6113ea47348563f96f6cae0a569c8aab10f64153f49ef6d63",
+        "afterSha256": "2432998e1e5df42f6db9bf43572049b08ec9e53327648ea7fabbfc24fcbd755f"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "2f21b622578747eb157077cdf1fb3d7a074042edc6d09bac670b19e0b1ca7d9b",
+        "afterSha256": "e06a9fbd3364dade23b158dd1184648ab745005060a101ff91ac3783ed578982"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "3654d069b11e17d34a690228159c86695e90212ecfa223ac5977b61a8c61b090",
+        "afterSha256": "3eb164f2d2b3b272e19b02f41d9fd1722db6e1c659da9a0fc25b5b581fa4d02d"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "2167d6b82684ba95086a40fbbd8cfa0df19dc6eeddb083a37cdc0994a646ceda",
+        "afterSha256": "036634bbedb918997bf91c826fb667628cb2a512794f211f9210939325016040"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "e508cd4b50f81acbefd7a223ac75c5b251303ef374aed046800ee86984790185",
+        "afterSha256": "0772b581e85d07a360527488ccd22e662a01d4ed552d63b32f45d09531a468d5"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "c12dc1a04ed0c169a16606561975016f08b97ade26f0d3c03179f4d2be407683",
+        "afterSha256": "4c30e620addda5a1901fcb58e7bebcdbb58e69f8e79e621b9feb871c70455c27"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_comprobacion",
+        "beforeSha256": "8748cc33b2dacf7432afabcae4da31100546b08c95b46ce5eb0bb310ce126d1d",
+        "afterSha256": "788aaa4923501787ab31f0fc36b9dee7b5e0651e9ddcae6470157bef8b96b89a"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "cb9c074146dd6aefae7570f9ac76d2fd3e3fe0115c10958628d8df0f833ac4e1",
+        "afterSha256": "d7c9c23de0759cd281ae5c6f9c9fb5437e738c50edc3cf9e60b9a465fecf6eae"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "e55e1d83b10c4ee7937e7195c866efbcfa1f86cdc46e8e80e06b84f5c9fa5dd6",
+        "afterSha256": "3de0945a195815cfa22c2d2d96954e09a76cfdbf4031bc58c5fcec642e8a3ced"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "1da8a499ca332ee767f206ef6d0e3eb3166b50241cf7d8e1752d77f84b52c882",
+        "afterSha256": "60ad80485b78c655d7fa2d44e19019c5d6ae7db0a917d6e9f5dfd65baff7874a"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "13acd12dd6576ea91de4e962070a6adf55befb300b55cf29b6a7929206cfe84d",
+        "afterSha256": "cfa65a7510599540566b60ac5a3e5626fba32531f51da9318f6a6f497330d2ec"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "027c33e44fed11cc87ec7a3e03338e593a17b4c6fea963c2fe0f3cef01486f3d",
+        "afterSha256": "044e3411f7936541c0dbedbded20840b05874d316abc6cad33ad638a360b90b6"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_referencia_razonamiento",
+        "beforeSha256": "744cb842c329cfa7c8c8457b3d87eabcf61f165961b4395e06d781f7d75d6408",
+        "afterSha256": "18288d047e0510eff8c19f9795ad2ee803f61f77677a9dba749773974b5d927c"
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_referencia_main",
+        "beforeSha256": "a350c083c2564a941ad43c9fac72a6cb600b326c9bc2f8516ac71c7f7c7f519c",
+        "afterSha256": "fff5e3f02e25813e45db4eadd39b948182e9252d7b989e81cb273fcc9dffffec"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "e29faa76860f22e591a8991de28f9d47ea26b1e89e0098efae31228d828c1b76",
+        "afterSha256": "e5f8fddc7af67519c8a04cc66965223744361b63f13bf66c24b913e93e207fcb"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 3}, {\"Norte\", 7}};\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 8}};\n    Lectura temporal = registros.at(0);\n    registros.at(0) = registros.at(1);\n    registros.at(1) = temporal;\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Sala:8;Patio:2;"
+          ],
+          "explanation": "Primero temporal copia Patio y 2. Después el elemento de la posición 0 recibe juntos Sala y 8. Por último, la posición 1 recibe la observación guardada en temporal. El recorrido muestra Sala:8;Patio:2;: se intercambiaron las observaciones completas."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Este\", 4}, {\"Oeste\", 6}, {\"Este\", 2}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.personas;\n    }\n    std::cout << registros.size() << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "3 12"
+          ],
+          "explanation": "Hay tres elementos, por lo que registros.size() da 3. El acumulador visita sus cantidades en orden y calcula 4 + 6 + 2 = 12. Las dos observaciones con etiqueta Este siguen siendo elementos distintos y ambas se suman. La salida es 3 12."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el miembro numérico que se acumula.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"A\", 3}, {\"B\", 5}};\n    int total = 0;\n    for (const auto& registro : registros) {\n        total += registro.___;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "personas"
+          ],
+          "explanation": "El total usa la cantidad de cada objeto, no su etiqueta."
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Patio\", 2}, {\"Sala\", 5}};\n    for (auto& registro : registros) {\n        if (registro.sitio == \"Patio\") {\n            registro.personas += 3;\n        }\n    }\n    for (const auto& registro : registros) {\n        std::cout << registro.sitio << \":\" << registro.personas << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Patio:5;Sala:5;"
+          ],
+          "explanation": "En el primer recorrido, registro enlaza por referencia cada elemento del vector. Sólo la observación Patio cumple la condición y su cantidad cambia de 2 a 5, mediante 2 + 3 = 5. Sala conserva su cantidad inicial, que ya era 5. El segundo recorrido lee los elementos almacenados y muestra Patio:5;Sala:5;."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros;\n    int total = 0;\n    for (const auto& registro : registros) { total += registro.personas; }\n    std::cout << registros.size() << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "explanation": "El vector vacío tiene tamaño 0. El recorrido no visita ningún elemento, así que total conserva el valor inicial 0. Se muestran el tamaño y la suma separados por dos puntos: 0:0. No hace falta crear un registro para representar la colección vacía."
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> registros{{\"Sur\", 0}};\n    std::vector<Lectura> elegidos;\n    for (const auto& registro : registros) {\n        if (registro.personas > 0) { elegidos.push_back(registro); }\n    }\n    std::cout << registros.size() << \" \" << elegidos.size();\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "registros contiene una observación: Sur con cantidad 0. La condición registro.personas > 0 es falsa para ella y no se añade ningún elemento a elegidos. Por eso los tamaños son 1 y 0: una observación de cantidad cero y la ausencia de observaciones son situaciones distintas."
+        }
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Copia aqui Registro, procesar y los auxiliares que necesites.\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:U:4;U:6;\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las cuatro colecciones anteriores conservan sus resultados. En la quinta, 3 no alcanza el mínimo 4, mientras que 4 y 6 sí lo cumplen. Los dos registros con código U permanecen en la selección. La suma incluye los cuatro registros y da 16.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:T:3;U:4;U:6;V:3;\n"
+                    ],
+                    "text": "La selección está admitiendo cantidades de 3. La consigna pide al menos 4: revisa la condición del filtro para excluir T:3 y V:3, conservando U:4 y U:6. La suma total sí incluye las cuatro observaciones."
+                  },
+                  {
+                    "outputs": [
+                      "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;\nDatos:\nTotal:0\nElegidos:\nDatos:Z:0;\nTotal:0\nElegidos:\nDatos:R:1;R:5;\nTotal:6\nElegidos:R:5;\nDatos:T:3;U:4;U:6;V:3;\nTotal:16\nElegidos:U:4;\n"
+                    ],
+                    "text": "La selección debe conservar ambas observaciones con código U: una tiene 4 unidades y la otra 6. Repetir el código no elimina un registro. Revisa si estás suprimiendo una observación por coincidir su código con otro que ya fue elegido."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    std::vector<Registro> registros{{\"A\", 2}, {\"B\", 7}, {\"A\", 4}};\n    int total = 0;\n    std::vector<Registro> elegidos;\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    std::vector<Lectura> original{{\"Sala\", 4}};\n    auto copia = original;\n    original.at(0).personas = 9;\n    std::cout << copia.at(0).sitio << \":\" << copia.at(0).personas << \" \" << original.at(0).personas;\n    return 0;\n}\n",
+          "answers": [
+            "Sala:4 9"
+          ],
+          "explanation": "La copia del vector recibe su propio registro con Sala y 4. La asignación posterior cambia únicamente original.at(0).personas a 9. Al consultar primero los miembros de la copia y después la cantidad del original, aparece Sala:4 9."
+        }
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid procesar(const std::vector<Registro>& registros) {\n    int total = 0;\n    std::vector<Registro> elegidos;\n    std::cout << \"Datos:\";\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n        total += registro.unidades;\n        if (registro.unidades >= 4) { elegidos.push_back(registro); }\n    }\n    std::cout << \"\\nTotal:\" << total << \"\\nElegidos:\";\n    for (const auto& registro : elegidos) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n    std::cout << \"\\n\";\n}\n\nint main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u9_informe_umbral_y_repetidos_referencia_main",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "int main() {\n    procesar({{\"A\", 2}, {\"B\", 7}, {\"A\", 4}});\n    procesar({});\n    procesar({{\"Z\", 0}});\n    procesar({{\"R\", 1}, {\"R\", 5}});\n    procesar({{\"T\", 3}, {\"U\", 4}, {\"U\", 6}, {\"V\", 3}});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0008",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid presentar(const std::vector<Registro>& registros) {\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << registro.unidades << \";\";\n    }\n}\n\nint main() {\n    std::vector<Registro> original{{\"C\", 2}, {\"D\", 1}};\n    const std::vector<Registro> copia = original;\n    original.at(0).unidades += 3;\n    std::cout << \"Original:\";\n    presentar(original);\n    std::cout << \"\\nCopia:\";\n    presentar(copia);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1573,28 +1855,112 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "a7a4e4fc562bb71b54ec1c281f5eb709f464f179948467f04938a135ad6008ea",
+        "sourceSha256": "d44d6f1a8c01df1c7d5aeed3b18a8ee1cbc31a03ad0daad8a708cb8c79bb00b4",
         "spans": [
           {
-            "start": 399,
-            "end": 417,
+            "start": 95,
+            "end": 98,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 126,
+            "end": 131,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 171,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 536,
+            "end": 554,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 435,
-            "end": 442,
+            "start": 572,
+            "end": 579,
             "text": "Lectura",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 665,
+            "end": 685,
+            "text": "const auto& registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 716,
+            "end": 720,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 792,
+            "end": 799,
+            "text": "Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 810,
+            "end": 811,
+            "text": "&",
+            "role": "cpp",
+            "reading": "characters"
+          },
+          {
+            "start": 831,
+            "end": 839,
+            "text": "registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 889,
+            "end": 894,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 949,
+            "end": 969,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "ff202ad36da9c994557778f8d7393f95c5d7105943ec2824d7d7fe430835a330",
+        "sourceSha256": "dc6fb129c8a22b0d6d73002eeb5d6555b0b8ca4d40c9fc36fc138c6176b62f80",
         "spans": [
           {
             "start": 17,
@@ -1611,32 +1977,116 @@
             "reading": "technical"
           },
           {
-            "start": 52,
-            "end": 66,
-            "text": "{{...}, {...}}",
+            "start": 61,
+            "end": 87,
+            "text": "{{\"Sur\", 3}, {\"Norte\", 7}}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 162,
-            "end": 182,
+            "start": 102,
+            "end": 105,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 149,
+            "text": "sitio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 154,
+            "end": 157,
+            "text": "Sur",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 160,
+            "end": 168,
+            "text": "personas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 200,
+            "text": "sitio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 205,
+            "end": 210,
+            "text": "Norte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 221,
+            "text": "personas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 226,
+            "end": 227,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 291,
+            "end": 311,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 305,
-            "end": 319,
+            "start": 434,
+            "end": 448,
             "text": "registro.sitio",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 322,
-            "end": 339,
+            "start": 451,
+            "end": 468,
             "text": "registro.personas",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 635,
+            "end": 649,
+            "text": "auto& registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 723,
+            "end": 736,
+            "text": "auto registro",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 820,
+            "end": 840,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1694,15 +2144,29 @@
           },
           {
             "start": 94,
+            "end": 99,
+            "text": "Norte",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 101,
             "end": 104,
-            "text": "Norte, Sur",
+            "text": "Sur",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 144,
+            "end": 145,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 147,
             "end": 148,
-            "text": "3, 7",
+            "text": "7",
             "role": "data",
             "reading": "natural"
           },
@@ -1747,6 +2211,20 @@
         "path": "/explanation",
         "sourceSha256": "1fb1728a3306eca88894a52163e9314e46fbf4612302950c7f2d1cd1e00ba047",
         "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 36,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 70,
             "end": 71,
@@ -1813,7 +2291,7 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "9b6e451ce2db5d4c62e17f1726f78027930ef3ff7e34bb315816a83b3a6e9174",
+        "sourceSha256": "449630bd728aac7e47674ef97bb1a94bf3af1969644f4fdf5306741f4897a0e1",
         "spans": [
           {
             "start": 37,
@@ -1821,13 +2299,69 @@
             "text": "sort",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 278,
+            "end": 313,
+            "text": "Lectura temporal = registros.at(0);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 475,
+            "text": "registros.at(0) = registros.at(1);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 590,
+            "end": 617,
+            "text": "registros.at(1) = temporal;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 661,
+            "end": 668,
+            "text": "Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 713,
+            "end": 733,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 790,
+            "end": 795,
+            "text": "sitio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 798,
+            "end": 806,
+            "text": "personas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 833,
+            "end": 836,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "b6a190d7c55da4ae9205484d7d9a9849925bb167930656bc17996bf0c7789434",
+        "sourceSha256": "08f76ff067012ae93bfba0a89ea15aa7c99eb5024c703c21bd5befcd03888fbb",
         "spans": []
       },
       {
@@ -1910,7 +2444,15 @@
         "block": "block_0002_0002",
         "path": "/question",
         "sourceSha256": "9163ddc9d63fb0e2528d1445e73471a3241fb99edc4bd76ef89a05c573095bb8",
-        "spans": []
+        "spans": [
+          {
+            "start": 25,
+            "end": 28,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1954,6 +2496,13 @@
         "sourceSha256": "753384981f7ca0ae83b72bf6a1572f754dcecd682526340c87e6902da297bf8c",
         "spans": [
           {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 31,
             "end": 47,
             "text": "registros.size()",
@@ -1972,7 +2521,14 @@
             "end": 123,
             "text": "4 + 6 + 2 = 12",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 160,
@@ -2006,7 +2562,15 @@
         "block": "block_0003_0003",
         "path": "/question",
         "sourceSha256": "3a8b8120dc22b50b7dd75dfee5e3ac1e76cabc344bf2dac91deb37eb9bc3a007",
-        "spans": []
+        "spans": [
+          {
+            "start": 21,
+            "end": 24,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -2090,7 +2654,7 @@
             "end": 176,
             "text": "2 + 3 = 5",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 178,
@@ -2193,7 +2757,15 @@
         "block": "block_0005_0000",
         "path": "/text",
         "sourceSha256": "3870b73a80e73a1258bd4cf8fa0e92cb0ccc715a89c06592273609615054e8f7",
-        "spans": []
+        "spans": [
+          {
+            "start": 7,
+            "end": 10,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0001",
@@ -2301,7 +2873,7 @@
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "f9292a90c6840bcecf7ab6fa8012b13ddcb93bc3fd8f633204c63b5f108d40c2",
+        "sourceSha256": "e7774ac7d24b890104544479f6b4c678579e67203af20c583ef6da78940e1408",
         "spans": [
           {
             "start": 0,
@@ -2318,8 +2890,29 @@
             "reading": "natural"
           },
           {
-            "start": 395,
-            "end": 413,
+            "start": 73,
+            "end": 101,
+            "text": "elegidos.push_back(registro)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 170,
+            "end": 175,
+            "text": "Patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 190,
+            "end": 191,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 506,
+            "end": 524,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2335,7 +2928,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "536c44b403bd6a6dee17e154a60afda6af0a758f5b3ee4ae0de76509dd00d188",
+        "sourceSha256": "384b768ac0a1e05b031916056eb820a54181a008322f2bc72a26ecb6a49f45bc",
         "spans": [
           {
             "start": 10,
@@ -2345,135 +2938,149 @@
             "reading": "technical"
           },
           {
-            "start": 23,
-            "end": 29,
+            "start": 39,
+            "end": 45,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 38,
-            "end": 49,
+            "start": 55,
+            "end": 66,
             "text": "std::string",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 77,
+            "start": 88,
+            "end": 96,
             "text": "unidades",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 86,
-            "end": 89,
+            "start": 106,
+            "end": 109,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 115,
-            "end": 153,
-            "text": "procesar(const std::vector<Registro>&)",
+            "start": 139,
+            "end": 192,
+            "text": "void procesar(const std::vector<Registro>& registros)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 260,
-            "end": 266,
+            "start": 301,
+            "end": 307,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 380,
-            "end": 386,
+            "start": 405,
+            "end": 409,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 436,
             "text": "Datos:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 398,
-            "end": 414,
+            "start": 448,
+            "end": 464,
             "text": "codigo:unidades;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 429,
-            "end": 435,
+            "start": 493,
+            "end": 499,
             "text": "Total:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 457,
-            "end": 466,
+            "start": 544,
+            "end": 553,
             "text": "Elegidos:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 586,
-            "end": 605,
-            "text": "{{A,2},{B,7},{A,4}}",
+            "start": 675,
+            "end": 683,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 692,
+            "end": 698,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 627,
-            "end": 634,
-            "text": "{{Z,0}}",
-            "role": "data",
-            "reading": "natural"
+            "start": 744,
+            "end": 774,
+            "text": "{{\"A\", 2}, {\"B\", 7}, {\"A\", 4}}",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 637,
-            "end": 650,
-            "text": "{{R,1},{R,5}}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 682,
-            "end": 694,
-            "text": "13, 0, 0 y 6",
+            "start": 776,
+            "end": 821,
+            "text": "Datos:A:2;B:7;A:4;\nTotal:13\nElegidos:B:7;A:4;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 720,
-            "end": 728,
-            "text": "B:7;A:4;",
+            "start": 847,
+            "end": 849,
+            "text": "{}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 851,
+            "end": 875,
+            "text": "Datos:\nTotal:0\nElegidos:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 787,
-            "end": 791,
-            "text": "R:5;",
+            "start": 882,
+            "end": 892,
+            "text": "{{\"Z\", 0}}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 894,
+            "end": 922,
+            "text": "Datos:Z:0;\nTotal:0\nElegidos:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 826,
-            "end": 832,
-            "text": "Datos:",
-            "role": "output",
-            "reading": "natural"
+            "start": 929,
+            "end": 949,
+            "text": "{{\"R\", 1}, {\"R\", 5}}",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 834,
-            "end": 841,
-            "text": "Total:0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 844,
-            "end": 853,
-            "text": "Elegidos:",
+            "start": 951,
+            "end": 987,
+            "text": "Datos:R:1;R:5;\nTotal:6\nElegidos:R:5;",
             "role": "output",
             "reading": "natural"
           }
@@ -2482,11 +3089,39 @@
       {
         "block": "block_0006_0002",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "cad33ab2d0355aa4ec867269ab126b44091b991df2ca1e0fb77ff839a1458056",
+        "sourceSha256": "57834db3e577c643d7e40d2e814c4e71993bccb4b10fa793d179de91dc3c0acf",
         "spans": [
           {
-            "start": 159,
-            "end": 163,
+            "start": 25,
+            "end": 28,
+            "text": "B:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 72,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 97,
+            "text": "A:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 221,
+            "end": 225,
             "text": "cero",
             "role": "output",
             "reading": "natural"
@@ -2525,6 +3160,13 @@
             "text": "original.at(0).unidades += 3",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 148,
+            "end": 154,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2704,7 +3346,7 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "920dc6e1b6d704fb6da0b7f827def27a07f940c197e6028a4984cb6c4afcbfde",
+        "sourceSha256": "d84f11f0bf556a9da9cfa09535cc1fb53d96d498d959c6ae77b18deed81834c2",
         "spans": [
           {
             "start": 61,
@@ -2714,43 +3356,50 @@
             "reading": "technical"
           },
           {
-            "start": 74,
-            "end": 77,
+            "start": 88,
+            "end": 91,
             "text": "C:2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 80,
-            "end": 83,
+            "start": 94,
+            "end": 97,
             "text": "D:1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 161,
+            "start": 189,
+            "end": 197,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 205,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 180,
+            "start": 216,
+            "end": 225,
             "text": "Original:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 211,
-            "end": 227,
+            "start": 256,
+            "end": 272,
             "text": "codigo:unidades;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 249,
-            "end": 255,
+            "start": 294,
+            "end": 300,
             "text": "Copia:",
             "role": "output",
             "reading": "natural"
@@ -2761,7 +3410,15 @@
         "block": "block_0006_0005",
         "path": "/outputCheck/cases/0/explanation",
         "sourceSha256": "f4f8499c9cb3e83244986af898fee458e2a7252559386bad39aec611c61a21ea",
-        "spans": []
+        "spans": [
+          {
+            "start": 22,
+            "end": 25,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -2869,6 +3526,13 @@
             "text": "10",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 137,
+            "end": 140,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2893,11 +3557,18 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "a262b367eb75349f73693d389a26bcdba54ab5fedd89b947a8858e4fbae68fbc",
+        "sourceSha256": "c8fd176e63ea2a571e24eb303f63d280f8115d39514b83903ccb010f05e35314",
         "spans": [
           {
-            "start": 394,
-            "end": 398,
+            "start": 158,
+            "end": 164,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 453,
+            "end": 457,
             "text": "cero",
             "role": "output",
             "reading": "natural"
@@ -2908,7 +3579,15 @@
         "block": "block_0007_0005",
         "path": "/text",
         "sourceSha256": "14881d0e924a4879cd1d154b428415cd3c02b43751ac3e3b833df9fdf2cdab9e",
-        "spans": []
+        "spans": [
+          {
+            "start": 18,
+            "end": 24,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0007",
@@ -2963,6 +3642,13 @@
             "reading": "natural"
           },
           {
+            "start": 417,
+            "end": 423,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 455,
             "end": 480,
             "text": "{{T,3},{U,4},{U,6},{V,3}}",
@@ -2984,9 +3670,30 @@
             "reading": "natural"
           },
           {
+            "start": 554,
+            "end": 557,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 568,
             "end": 569,
             "text": "U",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 667,
+            "end": 672,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 705,
+            "end": 709,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
@@ -3033,6 +3740,13 @@
         "sourceSha256": "271ebdb52c416536c3ed225c5b10a182220b6c07777cad93a8c77c197b278274",
         "spans": [
           {
+            "start": 4,
+            "end": 10,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 74,
             "end": 75,
             "text": "3",
@@ -3061,9 +3775,23 @@
             "reading": "natural"
           },
           {
+            "start": 138,
+            "end": 141,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 163,
             "end": 164,
             "text": "U",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 213,
+            "end": 219,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
@@ -3099,27 +3827,34 @@
             "start": 119,
             "end": 122,
             "text": "T:3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 125,
             "end": 128,
             "text": "V:3",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 142,
             "end": 145,
             "text": "U:4",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 148,
             "end": 151,
             "text": "U:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 188,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           }
@@ -3157,19 +3892,34 @@
         "block": "u9_informe_umbral_y_repetidos_referencia_titulo",
         "path": "/text",
         "sourceSha256": "b1f793902b3e5c3f713cb9cc3360a0207d3afaf19bd4d376fd389d7ebb0a2511",
-        "spans": []
+        "spans": [
+          {
+            "start": 39,
+            "end": 42,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "u9_informe_umbral_y_repetidos_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "6e43ac19aebdac8f7482f97aa5c419e3436d62dd30c465bc5a72856d35e10e86",
+        "sourceSha256": "b3acb6294dd920e536b2310a68037623fc13746514a0431cc9306a4aaa98fa23",
         "spans": [
+          {
+            "start": 26,
+            "end": 32,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 50,
             "end": 68,
             "text": "3 + 4 + 6 + 3 = 16",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 119,
@@ -3186,64 +3936,99 @@
             "reading": "natural"
           },
           {
-            "start": 202,
-            "end": 203,
+            "start": 217,
+            "end": 220,
+            "text": "T:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 241,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 214,
-            "end": 217,
+            "start": 265,
+            "end": 266,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 271,
             "text": "U:4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 228,
-            "end": 231,
-            "text": "U:6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 257,
-            "end": 274,
-            "text": "Elegidos:U:4;U:6;",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 311,
-            "end": 312,
+            "end": 314,
+            "text": "U:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 348,
+            "text": "V:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 426,
+            "end": 443,
+            "text": "Elegidos:U:4;U:6;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 479,
+            "end": 480,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 546,
-            "end": 547,
+            "start": 517,
+            "end": 523,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 645,
+            "end": 648,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 714,
+            "end": 715,
             "text": "U",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 596,
-            "end": 604,
+            "start": 764,
+            "end": 772,
             "text": "procesar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 687,
-            "end": 691,
+            "start": 855,
+            "end": 859,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 739,
-            "end": 747,
+            "start": 907,
+            "end": 915,
             "text": "Registro",
             "role": "cpp",
             "reading": "technical"

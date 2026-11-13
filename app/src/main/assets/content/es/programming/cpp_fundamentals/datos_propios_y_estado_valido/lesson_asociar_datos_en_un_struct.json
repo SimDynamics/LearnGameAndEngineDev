@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "struct Lectura { std::string sitio; int personas; }; define un tipo llamado Lectura. sitio y personas son sus miembros de datos. Cada objeto de ese tipo contiene sus propios miembros; dos objetos no comparten su cantidad por tener el mismo tipo (Stroustrup, 2024).\n\nEl punto y coma después de la llave final termina la definición del tipo. Los puntos y coma interiores terminan las declaraciones de los miembros.",
+          "text": "La palabra clave struct permite definir un tipo que reúne datos relacionados. En struct Lectura { std::string sitio; int personas; };, Lectura es el nombre del tipo nuevo.\n\nLas declaraciones entre sus llaves indican qué datos contiene cada objeto:\nstd::string sitio; declara el miembro que conserva la etiqueta.\nint personas; declara el miembro que conserva la cantidad.\n\nEstos datos se llaman miembros de datos. Cada objeto de tipo Lectura contiene sus propios miembros: dos objetos no comparten su cantidad por tener el mismo tipo (Stroustrup, 2024). Definir el tipo describe esos miembros; los objetos concretos se crean después usando ese tipo.\n\nEl punto y coma después de la llave final termina la definición del tipo. Los puntos y coma interiores terminan las declaraciones de los miembros.",
           "emphasis": [
             {
               "text": "miembros de datos",
@@ -43,11 +43,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura una{\"Patio\", 4};\n    std::cout << una.sitio << \":\" << una.personas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura una{\"Patio\", 4};\n\n    std::cout << una.sitio << \":\" << una.personas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "En Lectura una{\"Patio\", 4};, las llaves proporcionan los valores iniciales de los miembros en el orden de su declaración: sitio recibe el texto y personas recibe cuatro (Köppe et al., 2023). La definición de Lectura describe el tipo; esta declaración crea el objeto concreto una.\n\nEl punto permite acceder a un miembro de ese objeto: una.sitio obtiene su etiqueta y una.personas obtiene su cantidad (Stroustrup, 2024). Así se forman los dos datos del mensaje mostrado en el código.",
+          "text": "En Lectura una{\"Patio\", 4}; se define el objeto una de tipo Lectura. Las llaves proporcionan los valores iniciales de los miembros en el orden de su declaración:\nEl literal de texto \"Patio\" inicializa sitio, que se declaró primero.\nEl literal entero 4 inicializa personas, que se declaró después (Köppe et al., 2023).\n\nEl punto permite acceder a un miembro de ese objeto:\nuna.sitio accede a su etiqueta.\nuna.personas accede a su cantidad.\n\nEl programa muestra esos valores separados por dos puntos: Patio:4. La definición de Lectura describe el tipo; la declaración de una crea el objeto concreto cuyos miembros utiliza la salida (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "valores iniciales",
@@ -97,7 +97,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el nombre del miembro que conserva la cantidad de personas.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Este\", 8};\n    std::cout << registro.___;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Este\", 8};\n\n    std::cout << registro.___;\n\n    return 0;\n}\n",
           "answers": [
             "personas"
           ],
@@ -129,7 +129,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura a{\"Sala\", 3};\n    Lectura b{\"Taller\", 9};\n    a.personas += 2;\n    std::cout << a.sitio << \":\" << a.personas << \" \" << b.sitio << \":\" << b.personas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura a{\"Sala\", 3};\n    Lectura b{\"Taller\", 9};\n\n    a.personas += 2;\n\n    std::cout << a.sitio << \":\" << a.personas << \" \" << b.sitio << \":\" << b.personas;\n\n    return 0;\n}\n",
           "answers": [
             "Sala:5 Taller:9"
           ],
@@ -176,7 +176,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"Sur\", 5};\n    Lectura copia = original;\n    original.sitio = \"Patio\";\n    original.personas = 7;\n    std::cout << copia.sitio << \":\" << copia.personas << \" \" << original.sitio << \":\" << original.personas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"Sur\", 5};\n    Lectura copia = original;\n\n    original.sitio = \"Patio\";\n    original.personas = 7;\n\n    std::cout << copia.sitio << \":\" << copia.personas << \" \" << original.sitio << \":\" << original.personas;\n\n    return 0;\n}\n",
           "answers": [
             "Sur:5 Patio:7"
           ],
@@ -185,7 +185,7 @@
         {
           "type": "inline_fill_code",
           "question": "Completa sólo el nombre del tipo y el nombre del objeto que se copia.",
-          "template": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"A\", 2};\n    [] copia = [];\n    std::cout << copia.sitio << \":\" << copia.personas;\n    return 0;\n}\n",
+          "template": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"A\", 2};\n    [] copia = [];\n\n    std::cout << copia.sitio << \":\" << copia.personas;\n\n    return 0;\n}\n",
           "answers": [
             "Lectura",
             "original"
@@ -201,7 +201,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Agrupar los datos permite copiar una observación completa manteniendo juntos su sitio y su cantidad. Sin embargo, la asociación no comprueba automáticamente qué valores tienen sentido para el problema.\n\nEste struct deja sus miembros accesibles. int admite una cantidad negativa aunque no represente una asistencia válida. Proteger las reglas de validez requiere diseñar también las operaciones del tipo (Stroustrup, 2024).",
+          "text": "Agrupar los datos permite copiar una observación completa manteniendo juntos su sitio y su cantidad. Sin embargo, la asociación no comprueba automáticamente qué valores tienen sentido para el problema.\n\nEn este struct, los miembros son públicos: el código que usa un objeto puede acceder directamente a ellos con el punto, tanto para consultar su valor como para asignarles otro. int admite una cantidad negativa aunque no represente una asistencia válida. Proteger las reglas de validez requiere diseñar también las operaciones del tipo (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "la asociación no comprueba automáticamente",
@@ -222,11 +222,11 @@
             "int admite -2; el dominio de asistencia sigue sin comprobarse."
           ],
           "correctIndex": 2,
-          "explanation": "El nombre personas no introduce una validación de dominio."
+          "explanation": "personas tiene tipo int y acepta el valor -2. Como el miembro es público, la asignación puede ejecutarse; el nombre personas no añade una comprobación. El programa debe aplicar la regla de que una asistencia válida no sea negativa."
         },
         {
           "type": "paragraph",
-          "text": "struct define una clase cuyos miembros son públicos por defecto (Stroustrup, 2024). Puede contener también funciones y constructores; no está limitado a almacenar datos. En este ejemplo la estructura sencilla permite observar y modificar directamente la asociación antes de estudiar cómo proteger sus valores.",
+          "text": "En C++, una clase es un tipo definido por el programador que describe los datos de sus objetos y las operaciones que pueden realizarse con ellos. struct es una forma de definir una clase cuyos miembros son públicos por defecto: siguen siendo accesibles directamente mientras no se indique otra política de acceso (Stroustrup, 2024).\n\nUn tipo definido con struct no está limitado a almacenar datos; también puede incluir funciones que trabajen con ellos. Más adelante aprenderás a definir funciones especiales que preparen un objeto al crearlo. Estas funciones se llaman constructores.\n\nAquí usamos una estructura sencilla para observar y modificar directamente los datos asociados antes de estudiar cómo proteger sus valores.",
           "emphasis": [
             {
               "text": "públicos por defecto",
@@ -234,6 +234,10 @@
             },
             {
               "text": "no está limitado a almacenar datos",
+              "style": "bold"
+            },
+            {
+              "text": "constructores",
               "style": "bold"
             }
           ]
@@ -275,7 +279,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Norte\", 0};\n    std::cout << registro.personas << \" \" << registro.sitio;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Norte\", 0};\n\n    std::cout << registro.personas << \" \" << registro.sitio;\n\n    return 0;\n}\n",
           "answers": [
             "0 Norte"
           ],
@@ -291,10 +295,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Define Registro con codigo de tipo std::string y unidades de tipo int. Construye una función de prueba que reciba un código y una cantidad, cree un Registro original y lo presente como codigo:unidades. Después crea una copia de ese registro, aumenta sólo las unidades del original en tres y muestra Original codigo:unidades y Copia codigo:unidades. Cada mensaje ocupa una línea y termina con un salto.\n\nDesde main prueba primero R4 con seis unidades y después S0 con cero. Pulsa Compilar, ejecutar y comprobar. La salida requerida es:\n\nR4:6\nOriginal R4:9\nCopia R4:6\nS0:0\nOriginal S0:3\nCopia S0:0\n\nConsulta los miembros para formar los mensajes; no escribas los resultados como cadenas fijas. Ambos casos pertenecen a una sola ejecución y comprueban la misma construcción.",
+          "text": "Define el tipo Registro con estos miembros:\ncodigo, de tipo std::string.\nunidades, de tipo int.\n\nConstruye una función de prueba que reciba un código y una cantidad y realice estas acciones en orden:\nCrea un Registro original con esos valores y presenta sus miembros como codigo:unidades.\nCrea una copia de ese registro.\nAumenta sólo las unidades del original en tres.\nMuestra Original codigo:unidades y Copia codigo:unidades, consultando cada objeto.\n\nCada mensaje ocupa una línea y termina con un salto. Desde main, realiza las llamadas con estos datos, en este orden:\nPrimera llamada: código R4 y seis unidades.\nSegunda llamada: código S0 y cero unidades.\n\nPulsa «Compilar, ejecutar y comprobar». La salida requerida es:\n\nR4:6\nOriginal R4:9\nCopia R4:6\nS0:0\nOriginal S0:3\nCopia S0:0\n\nConsulta los miembros para formar los mensajes; no escribas los resultados como cadenas fijas. La ejecución actual reúne las dos llamadas y la comprobación compara sus seis líneas.",
           "emphasis": [
             {
-              "text": "aumenta sólo las unidades del original",
+              "text": "Aumenta sólo las unidades del original",
               "style": "bold"
             },
             {
@@ -347,13 +351,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    Registro original{\"R4\", 6};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    Registro original{\"R4\", 6};\n\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n\n    Registro copia = original;\n    original.unidades += 3;\n\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades;\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    Lectura registro{\"Este\", 4};\n    int total = doble(registro.personas);\n    std::cout << registro.personas << \" \" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    Lectura registro{\"Este\", 4};\n    int total = doble(registro.personas);\n\n    std::cout << registro.personas << \" \" << total;\n\n    return 0;\n}\n",
           "answers": [
             "4 8"
           ],
@@ -368,11 +372,11 @@
             "Garantizar automáticamente cualquier regla de negocio."
           ],
           "correctIndex": 1,
-          "explanation": "La asociación es una razón para crear el tipo; las restricciones requieren diseño adicional."
+          "explanation": "Al copiar una Lectura con sitio Patio y 4 personas, el objeto nuevo recibe tanto la etiqueta como la cantidad. Así se conserva la asociación entre ambos datos. Después cada objeto puede cambiar sus propios miembros. Ese agrupamiento no comprueba automáticamente si una cantidad es válida: para impedir una asistencia negativa hace falta una regla aplicada por el programa."
         },
         {
           "type": "paragraph",
-          "text": "Criterios: el tipo conserva juntos codigo y unidades; se copia antes del aumento; sólo cambian las unidades del original; los informes leen sus miembros reales y todos los miembros se inicializan antes de usarse. La referencia completa reúne las dos llamadas y los saltos solicitados. Otras implementaciones que cumplan esas condiciones y el mismo formato también son válidas.",
+          "text": "Compara la referencia con estos criterios:\nEl tipo conserva juntos codigo y unidades.\nEl registro se copia antes del aumento.\nSólo cambian las unidades del original.\nLos informes leen los miembros de cada objeto.\nTodos los miembros se inicializan antes de usarse.\n\nLa referencia completa reúne las dos llamadas y los saltos solicitados. Otras implementaciones que cumplan esas condiciones y el mismo formato también son válidas.",
           "emphasis": [
             {
               "text": "se copia antes del aumento",
@@ -391,7 +395,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    Registro original{codigo, unidades};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades << \"\\n\";\n}\n\nint main() {\n    probar(\"R4\", 6);\n    probar(\"S0\", 0);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    Registro original{codigo, unidades};\n\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n\n    Registro copia = original;\n    original.unidades += 3;\n\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades << \"\\n\";\n}\n\nint main() {\n    probar(\"R4\", 6);\n    probar(\"S0\", 0);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1322,6 +1326,194 @@
         "id": "block_0007_0002",
         "beforeSha256": "4d11a3eae5c9ba1002ea7db4287e65d9cc6b751c432900b209b7b1ba2b9012da",
         "afterSha256": "ee08c2053dd71ec2b968759a9c7cc2a02dc68adc884119647dd6316c37dc7951"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "aeea93987655c96a2f0375b13b7b02531361ef5da4be4ed5bed55474e7c95436",
+        "afterSha256": "6b221e2e1d6be60ba9aa32a3083fa2b9730e37963281197135aef8c7a6de8da6"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "ff265bfc71c8c947c1eb2d88fa1050a64ec445824309d7693786d0b3d449e9de",
+        "afterSha256": "b28be5b168861310150b0dfa97e84a8b65cde77a5065b438f649ae4159e6faef"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "ac01abaaf9a1d0a11b4af06c6b4c2eb21dc82536f016a5ced6fb29df5118ebcd",
+        "afterSha256": "918a0001f38f3ad9a368d4e00d011a54b4c1008bb01b4ae83ee4209df843e1df"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "99b14467e572e9c86608b8c4685ac92fd8b63d312b1df4be21b5c4b16533eafc",
+        "afterSha256": "993a3ccf1479335d35b10f923337313a2d78b5ed24f605c3542a4680811d81f4"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "bccbdd344cf6ccba2a9688204f8bfc6cc7acc00603f06e744b256f35d9ca33ff",
+        "afterSha256": "4530c3140090a839156b35f701df7562b37c2bdcabfad2f4ac5efa64b45d47c4"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "12285ec8286aa5cd3ee9c5eff7bc99bab0f501cbae70d8259a757744d9f96707",
+        "afterSha256": "b31c222b8c3a2e827d47796c0346654d5d599b3a2ac5f578a636c6d108baeba1"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "9d54b507f759c68dbb77f223ddee9634a426b5992a1383608f3eb085ea8f1f6b",
+        "afterSha256": "623e6ced335f5f330070c665790ef0dc7973c94943d35b043eff6bb0a9699ae7"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e9ee36465cc8a7ba51d3f96473fdc97fe26f57e61ddb4d8d74a2a1880bc2d3be",
+        "afterSha256": "f928e21a039770e051d96c077c411220ef08b4da68bbb8dbec8725e47352a014"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "3ac072e9f53d4568531075d96764d24ff8f0a3c92efc0616216cf6e3e35a1957",
+        "afterSha256": "36f40c84cfe129e9f4a6238848091409ae22d4bc91a54f340f3670eb5cd2845e"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "ab68f5243c27aa47aa3acb5b5cb608886c3eb1500d06bfddf92acfd467191dc5",
+        "afterSha256": "f66297a5d014755d794cc817b320af15f8cc8c24dc51878e00ff7b1c4f3ae0dd"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "a6c5506ba66d6e629ce6facbc77145bd2373dcf6c3c68435d95dc4564d7975ec",
+        "afterSha256": "f176a0e586c3d2eb1901bd91569bf98da2aae8e82a8bc78f4e3013c26d834b33"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "550c9d04bb6160b25121879a0db84f9e66c36de97b7fb5fec819f9c1fb0327cd",
+        "afterSha256": "b82555d027de9db29150951ebb44d38772e133067adc0634c553a9f6c0b749d2"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "6a16f684a2df78e9084c6a5e4b387685e18644493b5d6fc875ec749850d23721",
+        "afterSha256": "408b3bbbfe3a4dd4010ea92b941610ca8a49b7e4865104b4d315d119ae4bbe69"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "ee08c2053dd71ec2b968759a9c7cc2a02dc68adc884119647dd6316c37dc7951",
+        "afterSha256": "c2e7fcaf0ece1d1d694d85d22f42b3f596b355af7da7d2393eafe547de179b72"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "b2ed564affa10eaa0005f5298759476051ee957055dde8968700193cd962d274",
+        "afterSha256": "da67a942763609060abfee74e4027d1022688ab14188842749ba18b5501b1a04"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "565e3f278b0492e529a793427fe35e0c2b965c1449271b2984f5829574e4d3de",
+        "afterSha256": "f65bfff18696b10203ad54f360bb345f18541113cb9160be025aabf9b0d976d4"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "991ff3684f50a59e92a810a23ad14788dc41b400e73b346008a9d9b12a6904be",
+        "afterSha256": "bc3162d4b31bed943bcd2f778619459f2ce0abb80a2cda1b492b6c8d196cce0c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura una{\"Patio\", 4};\n    std::cout << una.sitio << \":\" << una.personas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del miembro que conserva la cantidad de personas.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Este\", 8};\n    std::cout << registro.___;\n    return 0;\n}\n",
+          "answers": [
+            "personas"
+          ],
+          "explanation": "El objeto registro se inicializa con la etiqueta Este y la cantidad 8. Al completar registro.personas, la salida consulta el miembro numérico y muestra 8. registro.sitio consultaría el otro miembro, que conserva la etiqueta."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura a{\"Sala\", 3};\n    Lectura b{\"Taller\", 9};\n    a.personas += 2;\n    std::cout << a.sitio << \":\" << a.personas << \" \" << b.sitio << \":\" << b.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Sala:5 Taller:9"
+          ],
+          "explanation": "a empieza con Sala y 3 personas; b, con Taller y 9. La instrucción a.personas += 2; cambia sólo la cantidad del primer objeto: 3 + 2 = 5. Las etiquetas se conservan y b.personas sigue valiendo 9, por lo que aparece Sala:5 Taller:9."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"Sur\", 5};\n    Lectura copia = original;\n    original.sitio = \"Patio\";\n    original.personas = 7;\n    std::cout << copia.sitio << \":\" << copia.personas << \" \" << original.sitio << \":\" << original.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Sur:5 Patio:7"
+          ],
+          "explanation": "Cuando se crea copia, original contiene Sur y 5. Ambos valores pasan a los miembros del nuevo objeto. Después se asignan Patio y 7 al original; esas asignaciones no se aplican a la copia. Por eso el primer par mostrado sigue siendo Sur:5 y el segundo es Patio:7."
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "inline_fill_code",
+          "question": "Completa sólo el nombre del tipo y el nombre del objeto que se copia.",
+          "template": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"A\", 2};\n    [] copia = [];\n    std::cout << copia.sitio << \":\" << copia.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Lectura",
+            "original"
+          ]
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Norte\", 0};\n    std::cout << registro.personas << \" \" << registro.sitio;\n    return 0;\n}\n",
+          "answers": [
+            "0 Norte"
+          ],
+          "explanation": "Las llaves proporcionan Norte a registro.sitio y 0 a registro.personas. La salida consulta primero la cantidad y después la etiqueta, con un espacio entre ellas: 0 Norte. Ese 0 procede de la inicialización escrita; el nombre del miembro no elige un valor por sí solo."
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    Registro original{\"R4\", 6};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    Lectura registro{\"Este\", 4};\n    int total = doble(registro.personas);\n    std::cout << registro.personas << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "4 8"
+          ],
+          "explanation": "registro.personas contiene 4. La llamada doble(registro.personas) copia ese entero al parámetro cantidad y devuelve 8, calculado como 4 × 2 = 8. total recibe el resultado y el miembro conserva 4. Por eso se muestra 4 8."
+        }
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nvoid probar(const std::string& codigo, int unidades) {\n    Registro original{codigo, unidades};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades << \"\\n\";\n}\n\nint main() {\n    probar(\"R4\", 6);\n    probar(\"S0\", 0);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1364,39 +1556,60 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "14dab64135579ce90ef041e2b0147dc02d354f1e7390a1d9b42a0a62bd655b79",
+        "sourceSha256": "e24730e87b33b3c7c48113485c1ed0cdd47b66d5a34650772e846717196456b6",
         "spans": [
           {
-            "start": 0,
-            "end": 52,
+            "start": 17,
+            "end": 23,
+            "text": "struct",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 133,
             "text": "struct Lectura { std::string sitio; int personas; };",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 76,
-            "end": 83,
+            "start": 135,
+            "end": 142,
             "text": "Lectura",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 90,
-            "text": "sitio",
+            "start": 248,
+            "end": 266,
+            "text": "std::string sitio;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 93,
-            "end": 101,
-            "text": "personas",
+            "start": 312,
+            "end": 325,
+            "text": "int personas;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 245,
-            "end": 263,
+            "start": 433,
+            "end": 440,
+            "text": "Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 472,
+            "end": 475,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 533,
+            "end": 551,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1406,7 +1619,7 @@
       {
         "block": "block_0000_0004",
         "path": "/text",
-        "sourceSha256": "b28bbb06c29643a688e7b8192fe189698199bc099a85d0d0ab0b3094f3d37a6b",
+        "sourceSha256": "4639e4545d528c465600a9511228de514e0f27a11530f38e99c23d989e982b88",
         "spans": [
           {
             "start": 3,
@@ -1416,64 +1629,92 @@
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 127,
-            "text": "sitio",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 146,
-            "end": 154,
-            "text": "personas",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 162,
-            "end": 168,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 169,
-            "end": 189,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 208,
-            "end": 215,
-            "text": "Lectura",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 275,
-            "end": 278,
+            "start": 48,
+            "end": 51,
             "text": "una",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 334,
-            "end": 343,
+            "start": 60,
+            "end": 67,
+            "text": "Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 182,
+            "end": 189,
+            "text": "\"Patio\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 201,
+            "end": 206,
+            "text": "sitio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 251,
+            "text": "4",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 263,
+            "end": 271,
+            "text": "personas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 296,
+            "end": 316,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 381,
             "text": "una.sitio",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 366,
-            "end": 378,
+            "start": 404,
+            "end": 416,
             "text": "una.personas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 399,
-            "end": 417,
+            "start": 499,
+            "end": 506,
+            "text": "Patio:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 525,
+            "end": 532,
+            "text": "Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 569,
+            "end": 572,
+            "text": "una",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 630,
+            "end": 648,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1602,6 +1843,13 @@
         "sourceSha256": "b38f50bc976484eda73aced3e81f727cf9e695893e0a7d82b60740483808f0ff",
         "spans": [
           {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 12,
             "end": 19,
             "text": "Lectura",
@@ -1644,6 +1892,13 @@
             "reading": "technical"
           },
           {
+            "start": 40,
+            "end": 43,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 86,
             "end": 87,
             "text": "a",
@@ -1656,6 +1911,13 @@
             "text": "b",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 195,
+            "end": 198,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1845,7 +2107,7 @@
             "end": 136,
             "text": "3 + 2 = 5",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 167,
@@ -2076,25 +2338,25 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "253da78c03c42e76761bf3f71bd200ba4999b0c07060125bce20f88dbc5639cf",
+        "sourceSha256": "ac87cdd1ca41b40865750477b8e735d832e6813ab0d9a65001a21bce996908dd",
         "spans": [
           {
-            "start": 208,
-            "end": 214,
+            "start": 211,
+            "end": 217,
             "text": "struct",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 245,
-            "end": 248,
+            "start": 380,
+            "end": 383,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 403,
-            "end": 421,
+            "start": 538,
+            "end": 556,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2132,11 +2394,32 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "66a6f4eaba5028823cc837025f6dd04827cb28a3fca6ed011bd0df4a56b15188",
+        "sourceSha256": "e62ef747cb6aa62e713ff4a80fccd163389fd488a89050824cb2131808c48fc1",
         "spans": [
           {
-            "start": 10,
-            "end": 18,
+            "start": 0,
+            "end": 8,
+            "text": "personas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 20,
+            "end": 23,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 44,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 124,
             "text": "personas",
             "role": "cpp",
             "reading": "technical"
@@ -2187,21 +2470,28 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "45e3361f0eac513c77d316fa81eb9cfcb6e88207138cea0a635f1de34c00e2fd",
+        "sourceSha256": "65ac74109207cfc55d60874a600e73ae9f1164f8db00ab3d74f2d13afdf741b9",
         "spans": [
           {
-            "start": 0,
-            "end": 6,
+            "start": 146,
+            "end": 152,
             "text": "struct",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 82,
+            "start": 313,
+            "end": 331,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
+          },
+          {
+            "start": 355,
+            "end": 361,
+            "text": "struct",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2290,6 +2580,13 @@
             "start": 74,
             "end": 78,
             "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -2422,118 +2719,132 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "f1184d41e0384f3fc30fef695e352c45b8947a16669dcd2b8b4f594afa3e9cfb",
+        "sourceSha256": "d2f6f17cb98f52605f54a8e071142e2c38e89e16a9d184755d3cb247177dd78b",
         "spans": [
           {
-            "start": 7,
-            "end": 15,
+            "start": 15,
+            "end": 23,
             "text": "Registro",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 20,
-            "end": 26,
+            "start": 44,
+            "end": 50,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 46,
+            "start": 60,
+            "end": 71,
             "text": "std::string",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 57,
+            "start": 73,
+            "end": 81,
             "text": "unidades",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 66,
-            "end": 69,
+            "start": 91,
+            "end": 94,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 148,
-            "end": 165,
+            "start": 208,
+            "end": 225,
             "text": "Registro original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 200,
+            "start": 272,
+            "end": 287,
             "text": "codigo:unidades",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 284,
-            "end": 288,
+            "start": 363,
+            "end": 367,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 299,
-            "end": 323,
+            "start": 377,
+            "end": 401,
             "text": "Original codigo:unidades",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 326,
-            "end": 347,
+            "start": 404,
+            "end": 425,
             "text": "Copia codigo:unidades",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 409,
-            "end": 413,
+            "start": 512,
+            "end": 516,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 429,
-            "end": 431,
+            "start": 595,
+            "end": 597,
             "text": "R4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 436,
-            "end": 440,
+            "start": 600,
+            "end": 604,
             "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 460,
-            "end": 462,
+            "start": 639,
+            "end": 641,
             "text": "S0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 467,
-            "end": 471,
+            "start": 644,
+            "end": 648,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 536,
-            "end": 595,
+            "start": 725,
+            "end": 784,
             "text": "R4:6\nOriginal R4:9\nCopia R4:6\nS0:0\nOriginal S0:3\nCopia S0:0",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 911,
+            "end": 914,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 954,
+            "end": 958,
+            "text": "seis",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2563,6 +2874,13 @@
             "text": "Registro",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 311,
+            "end": 314,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2623,7 +2941,7 @@
             "end": 143,
             "text": "4 × 2 = 8",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 145,
@@ -2657,14 +2975,51 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "bff929ac0db5b6931d20efec47414238a1ff7a3eadf59d1bc58dce6156f773e8",
-        "spans": []
+        "sourceSha256": "5c36ef2f0e2492c71634a4485ceb7d26da9a4eec1db358a0646ecc6d90355e44",
+        "spans": [
+          {
+            "start": 14,
+            "end": 21,
+            "text": "Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 26,
+            "end": 31,
+            "text": "sitio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 32,
+            "end": 37,
+            "text": "Patio",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
         "path": "/options/0",
         "sourceSha256": "6faecb6f99bda8ebad40afaaca6b30a3572dc2010a3c35a7eea41ccf20f6b689",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -2681,21 +3036,28 @@
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "e367ae3308731ab5c52cf9ef7ca214fdf53248db85802db75c64697de7744c7a",
+        "sourceSha256": "1490a721cc5d9fff39e1b1b9c2cccfb6df4356512a5b3259c73264662c0af4de",
         "spans": [
           {
-            "start": 35,
-            "end": 41,
+            "start": 67,
+            "end": 73,
             "text": "codigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 52,
+            "start": 76,
+            "end": 84,
             "text": "unidades",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 301,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2715,7 +3077,8 @@
             "start": 20,
             "end": 26,
             "text": "struct",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }
