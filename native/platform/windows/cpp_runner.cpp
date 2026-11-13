@@ -772,7 +772,13 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
     while(!lock.try_lock_for(std::chrono::milliseconds(10)))if(stop.stop_requested()){auto& phase=request.action==CppRunRequest::Action::execute?result.execution:request.action==CppRunRequest::Action::build?result.compilation:result.configuration;phase.status=CppPhaseStatus::cancelled;return;}
     result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);const auto& build_directory=workspace;const auto source=workspace/L"p",state_file=workspace/L"state.json";
     auto availability=inspect_unlocked(request);const auto action=request.action;
-    const bool configure=action==CppRunRequest::Action::configure||(action==CppRunRequest::Action::compile_run&&!availability.configured);
+    const bool authored_trace=requires_authored_cmake_trace(request);
+    const auto trace_file=authored_cmake_trace_path(workspace);
+    const bool missing_trace=authored_trace&&
+        !std::filesystem::is_regular_file(trace_file);
+    const bool configure=action==CppRunRequest::Action::configure||
+        (action==CppRunRequest::Action::compile_run&&
+         (!availability.configured||missing_trace));
     const auto cmake=std::filesystem::path(build::educational_cmake),ninja=std::filesystem::path(build::educational_ninja),compiler=std::filesystem::path(build::educational_vc_root)/L"bin/Hostx64/x64/cl.exe";
     if(!std::filesystem::is_regular_file(cmake)||!std::filesystem::is_regular_file(ninja)||!std::filesystem::is_regular_file(compiler))throw std::runtime_error("Pinned CMake, Ninja or MSVC is unavailable");
     if(configure){(void)verify_workspace_identity(request,true);materialize(request.project_files,source);state::require_safe_path(build_directory);std::filesystem::create_directories(build_directory);state::require_safe_path(build_directory);
@@ -784,13 +790,33 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
             "string(APPEND CMAKE_CXX_FLAGS_INIT \" /Zc:__cplusplus\")\n");
         std::vector<std::wstring> arguments{L"--fresh",L"-S",source.wstring(),L"-B",build_directory.wstring(),L"-G",L"Ninja",L"-DCMAKE_MAKE_PROGRAM="+ninja.wstring(),L"-DCMAKE_CXX_COMPILER="+compiler.wstring(),L"-DCMAKE_C_COMPILER="+compiler.wstring(),L"-DCMAKE_RC_COMPILER="+std::wstring(build::educational_resource_compiler),L"-DCMAKE_BUILD_TYPE="+std::wstring(winrt::to_hstring(request.cmake->build_type)),L"-DCMAKE_CXX_STANDARD="+std::to_wstring(build::cpp_standard),L"-DCMAKE_CXX_STANDARD_REQUIRED=ON",L"-DCMAKE_CXX_EXTENSIONS=OFF",L"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",L"-DCMAKE_USER_MAKE_RULES_OVERRIDE_CXX="+language_rules.wstring()};
         for(const auto& [key,value]:request.cmake->options)arguments.push_back(std::wstring(L"-D")+winrt::to_hstring(key).c_str()+L"="+winrt::to_hstring(value).c_str());
+        if(authored_trace) {
+            state::require_safe_path(trace_file);
+            arguments.push_back(L"--trace-expand");
+            arguments.push_back(L"--trace-format=json-v1");
+            arguments.push_back(L"--trace-redirect="+trace_file.wstring());
+            bool has_authored_cmake=false;
+            for(const auto& file:request.project_files) {
+                if(!authored_cmake_path(file.first))continue;
+                const auto owned=(source/project_path(file.first)).lexically_normal();
+                state::require_safe_path(owned);
+                arguments.push_back(L"--trace-source="+owned.wstring());
+                has_authored_cmake=true;
+            }
+            if(!has_authored_cmake)
+                throw std::invalid_argument(
+                    "Explicit CMake rules need an original authored CMake file");
+        }
         result.configuration=run_phase(cmake,arguments,result.run_directory,compiler_input,L"configuration",request.compile_timeout,request.output_limit_bytes,true,stop,true);
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
         const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
-    if(availability.configured&&request.capture_cmake_graph)
+    if(availability.configured&&request.capture_cmake_graph) {
         result.cmake_graph=snapshot_cmake_graph(workspace,request,
             result.project_fingerprint,result.configuration_fingerprint);
+        if(authored_trace)
+            attach_authored_cmake_trace(workspace,request,*result.cmake_graph);
+    }
     if(action==CppRunRequest::Action::configure)return;
     if(!availability.configured)throw std::runtime_error("Configure and generate the current project before building or running it");
     if(action==CppRunRequest::Action::build||action==CppRunRequest::Action::compile_run){materialize(request.project_files,source);auto saved=read_json(state_file);
@@ -1095,6 +1121,11 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
             [&](const auto& candidate){return candidate.name==item.name;});
         if(found==graph.targets.end()||found->type!=item.type)
             return fail("Falta el objetivo o tipo solicitado: "+item.name);
+        if(item.require_explicit_cxx20&&!found->explicit_cxx20)
+            return fail("Falta declarar el mínimo C++20 en el objetivo: "+item.name);
+        if(item.require_explicit_extensions_off&&
+           !found->explicit_extensions_off)
+            return fail("Falta desactivar las extensiones explícitamente en: "+item.name);
         for(const auto& source:item.sources)
             if(std::ranges::find(found->compiled_sources,source)==
                 found->compiled_sources.end())
