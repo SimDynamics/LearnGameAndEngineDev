@@ -333,11 +333,17 @@ inline std::optional<RejectionExpected> rejection_expected_for_input(
     // unrequested observations as though they were in the authored domain.
     const std::size_t maximum_numbers =
         operation==RejectionOperation::boxes ? 8 : 16;
-    while(source>>number) {
+    for(;;) {
+        // Test for a clean end before extracting the next integer. An
+        // out-of-range integer at EOF sets both failbit and eofbit; checking
+        // eof() alone after extraction would wrongly accept that input.
+        source>>std::ws;
+        if(source.eof())break;
+        if(!(source>>number))return {};
         if(numbers.size()==maximum_numbers)return {};
         numbers.push_back(number);
     }
-    if(!source.eof()||(operation==RejectionOperation::balance&&numbers.size()%2))return {};
+    if(source.bad()||(operation==RejectionOperation::balance&&numbers.size()%2))return {};
     RejectionExpected expected;
     if(operation==RejectionOperation::boxes) {
         for(std::size_t i=0;i<numbers.size();++i) {
