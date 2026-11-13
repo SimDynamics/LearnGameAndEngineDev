@@ -57,6 +57,7 @@ void authored_root_roundtrip(const Lesson& original) {
                    "purposeWords":["capacidad","plaza","cupo"],"minUses":2}]},
         {"activity":"block_0005_0006","path":"componente/src/cajas.cpp",
          "editablePaths":["componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"],
+         "commentOnlyPaths":["componente/publico/envio/cajas.h"],
          "executionProbe":{"harness":"pruebas/cajas_casos.cpp","header":"envio/cajas.h",
            "cases":[{"function":"cajas_para","input":0,"expected":0},
                     {"function":"cajas_para","input":6,"expected":1},
@@ -196,6 +197,8 @@ bool llega_a_tiempo(int dias) {
         "Independent six-place capacity and four-day deadline were rejected");
     owner.named_rule_source_check->editable_paths={
         "componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"};
+    owner.named_rule_source_check->comment_only_paths={
+        "componente/publico/envio/cajas.h"};
     require(!compiler_runtime_request_allowed(owner,submitted),
         "An editable C++ test harness earned credit without independent probes");
     owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
@@ -303,6 +306,8 @@ void real_independent_cmake_probe(const Lesson& lesson,
         }};
     owner.named_rule_source_check->editable_paths={
         "componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"};
+    owner.named_rule_source_check->comment_only_paths={
+        "componente/publico/envio/cajas.h"};
     owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
         "pruebas/cajas_casos.cpp","envio/cajas.h",{
             {"cajas_para",0,0},{"cajas_para",6,1},
@@ -345,6 +350,23 @@ bool llega_a_tiempo(int dias) {
     }
     require(compiler_runtime_request_allowed(owner,correct),
         "A student's valid source/battery edits did not pass authored file permissions");
+    auto altered_header=correct;
+    for(auto& file:altered_header.project_files)
+        if(file.first=="componente/publico/envio/cajas.h") {
+            file.second=replace_unique(std::move(file.second),
+                "int cajas_para(int piezas);","int cajas_para(long piezas);");
+        }
+    require(!compiler_runtime_request_allowed(owner,altered_header),
+        "A signature change hidden in an editable header earned source credit");
+    altered_header=correct;
+    for(auto& file:altered_header.project_files)
+        if(file.first=="componente/publico/envio/cajas.h") {
+            file.second=replace_unique(std::move(file.second),
+                "int cajas_para(int piezas);",
+                "#define cajas_para(n) ((n + 5) / 6)\nint cajas_para(int piezas);");
+        }
+    require(!compiler_runtime_request_allowed(owner,altered_header),
+        "An edited header macro diverted the independent function probe");
     const auto real=run_cpp(correct);
     require(real.error_utf8.empty()&&real.compilation.succeeded()&&
         real.execution.succeeded(),
