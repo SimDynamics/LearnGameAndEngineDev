@@ -22,6 +22,7 @@ struct NamedRuleRequirement {
     int value = 0;
     std::vector<std::string> purpose_words;
     std::size_t min_uses = 1;
+    bool operator==(const NamedRuleRequirement&) const = default;
 };
 struct NamedRuleAnalysis {
     bool source_evidence = false;
