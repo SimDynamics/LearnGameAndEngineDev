@@ -425,6 +425,32 @@ void capacity() {
             return (piezas + capacidad - 1) / capacidad;
         }
         )cpp",rules,true,"Normal includes and comments remain allowed");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                (__LINE__ == 1 ? 0 : 0);
+        })cpp",rules,false,"Line numbers can distinguish the private probe");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                (__FILE__[0] == 'x' ? 0 : 0);
+        })cpp",rules,false,"File identities can distinguish the probe workspace");
+    verify(R"cpp(
+        #include <source_location>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad +
+                (std::source_location::current().line() == 1 ? 0 : 0);
+        })cpp",rules,false,"std::source_location can distinguish compilations");
+    verify(R"cpp(
+        // __LINE__, __FILE__ and source_location in prose are harmless.
+        int cajas_para(int piezas) {
+            const char* texto = "__LINE__: source_location";
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"Comments and literals are not build-location evidence");
 }
 void separate_rules() {
     const std::array rules{
@@ -566,6 +592,17 @@ int main() {return 0;}
         throw std::runtime_error("A single-file probe accepted injected C++");
     if(named_rule_single_file_probe_source(single,""))
         throw std::runtime_error("A single-file probe accepted an empty source");
+    for(const auto marker:{"__LINE__","__FILE__","__COUNTER__",
+            "std::source_location::current().line()"}) {
+        const auto location_sensitive=candidate+
+            "\nint lgaed_probe_sensitive_marker = "+std::string(marker)+";\n";
+        if(named_rule_single_file_probe_source(single,location_sensitive))
+            throw std::runtime_error("A probe accepted source-dependent compilation markers");
+    }
+    const auto prose_only=candidate+
+        "\n// __LINE__ is a comment.\nconst char* note = \"__FILE__ source_location\";\n";
+    if(!named_rule_single_file_probe_source(single,prose_only))
+        throw std::runtime_error("A comment or string disabled the independent probe");
 }
 int main() {
     try {
