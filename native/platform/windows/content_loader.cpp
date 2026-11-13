@@ -498,7 +498,24 @@ void validate_general_choice_semantic_archive(
                 text(*archived,"sourceSha256")==
                     sha256(utf8(options.GetStringAt(static_cast<unsigned>(at)))),
             "The archived semantic marker is not the original choice's source");
-        (void)array(*archived,"spans");
+        // The new option's current markers are validated by the regular
+        // loader. Validate the PREVIOUS source too, before the reader can
+        // reconstruct its historical UTF-16 highlights.
+        TextSemantics previous;
+        previous.source=utf8(options.GetStringAt(static_cast<unsigned>(at)));
+        for(const auto& value:array(*archived,"spans")) {
+            const auto span=value.GetObject();
+            allowed_keys(span,{"start","end","text","role","reading"});
+            SemanticSpan part;
+            part.start=integer(span.GetNamedValue(L"start"),16*1024*1024);
+            part.end=integer(span.GetNamedValue(L"end"),16*1024*1024);
+            part.text=text(span,"text");
+            part.role=parse_semantic_role(text(span,"role"));
+            if(span.HasKey(L"reading"))
+                part.reading=parse_semantic_reading(text(span,"reading"));
+            previous.spans.push_back(std::move(part));
+        }
+        validate_text_semantics(previous);
     }
     std::optional<JsonObject> active;
     if(root.HasKey(L"textSemantics")) {
