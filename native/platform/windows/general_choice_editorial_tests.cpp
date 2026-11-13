@@ -68,6 +68,7 @@ int main(int argc,char** argv) {
             after.review_feedback_options==before.review_feedback_options,
             "A general choice changed protected answers, feedback or ownership");
         require(after.choice_revision->original_options==before.options&&
+            after.choice_revision->general_option_index==0&&
             after.choice_revision->original_correct_index==before.correct_index&&
             after.choice_revision->original_question==before.question&&
             evaluate_choice(after,0).correct&&!evaluate_choice(after,1).correct,
