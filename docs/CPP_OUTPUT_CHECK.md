@@ -687,6 +687,9 @@ expresión neutra. Si una variable intermedia derivada de la constante
 se sobrescribe con un cálculo que ya no depende de ella, ese resultado
 descartado no acredita el `return`. Una asignación posterior que
 vuelva a utilizar la constante sí puede establecer la dependencia.
+El mínimo `minUses` se cuenta sobre las referencias útiles que llegan
+al valor devuelto, directamente o a través de variables locales; una
+operación auxiliar que no llega al resultado no incrementa el mínimo.
 
 **Límites de la primera integración:** el análisis léxico de usos no
 demuestra por sí solo que todas las operaciones sean correctas o que otra
