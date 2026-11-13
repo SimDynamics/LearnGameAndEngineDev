@@ -939,15 +939,22 @@ curriculum::FreshExecution capture_cpp_execution(const CppRunRequest& request,co
             if(!valid){fresh.report_probe_correct=false;break;}
         }
     }
-    if(request.named_rule_probe&&request.cmake&&result.named_rule_probe) {
-        const auto independent=curriculum::named_rule_probe_source(*request.named_rule_probe);
+    if(request.named_rule_probe&&result.named_rule_probe) {
+        const auto independent=request.cmake?
+            curriculum::named_rule_probe_source(*request.named_rule_probe):
+            request.project_files.empty()?
+                curriculum::named_rule_single_file_probe_source(
+                    *request.named_rule_probe,request.source_utf8):
+                std::optional<std::string>{};
         if(independent) {
             const auto& probe=*result.named_rule_probe;
+            const auto bound_source=request.cmake?
+                state::sha256(curriculum::cpp_project_frame(request.project_files,
+                    request.source_files,request.cmake)):
+                state::sha256(request.source_utf8);
             fresh.named_rule_probe_correct=
                 probe.source_sha256==state::sha256(*independent)&&
-                probe.project_sha256==state::sha256(
-                    curriculum::cpp_project_frame(request.project_files,
-                        request.source_files,request.cmake))&&
+                probe.project_sha256==bound_source&&
                 probe.compilation.succeeded()&&probe.execution.succeeded()&&
                 probe.execution.stdout_bytes.empty()&&
                 probe.execution.stderr_bytes.empty();
