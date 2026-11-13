@@ -1736,10 +1736,9 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     // when the editorial chain authenticates this exact complete predecessor.
     for(const auto& [id,review]:general_choice_revisions) {
         const auto original=review.GetNamedObject(L"block");
-        const auto& expected=return_actual_blocks;
-        (void)expected;
-        require(editorial_edges[id].contains({fingerprint(original),
-                editorial.at(id)}),
+        require(editorial.contains(id)&&
+                editorial_edges[id].contains({fingerprint(original),
+                    editorial.at(id)}),
             "A general choice revision needs its exact archived editorial edge");
     }
     for(const auto& [id,reviewed]:revised_compilers)
