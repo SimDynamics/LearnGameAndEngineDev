@@ -101,6 +101,37 @@ void capacity() {
             const int capacidad{4};
             return (piezas + 3) / 4 + 0 * capacidad;
         })cpp",rules,false,"Zero multiplication as decoration");
+    verify(R"cpp(
+        #if 0
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        }
+        #endif
+        int main() {return 0;}
+        )cpp",rules,false,"An inactive function cannot establish compiled source evidence");
+    verify(R"cpp(
+        #define capacidad capacidad_falsa
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        }
+        )cpp",rules,false,"A macro cannot substitute the named local rule");
+    verify(R"cpp(
+        #include_next <iostream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        }
+        )cpp",rules,false,"Include-like preprocessing directives need an exact keyword");
+    verify(R"cpp(
+        // #if 0 is merely an explanation, not an active directive.
+        # include <iostream>
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            return (piezas + capacidad - 1) / capacidad;
+        }
+        )cpp",rules,true,"Normal includes and comments remain allowed");
 }
 void separate_rules() {
     const std::array rules{
