@@ -128,5 +128,65 @@ class CmakeGraphChecksTest(unittest.TestCase):
             state.validate(invalid)
 
 
+# U2L1 begins with an empty CMakeLists.txt. The new requirement must be
+# attached to its existing owner without moving the student's saved draft.
+FIRST_LESSON = ROOT / (
+    "app/src/main/assets/content/es/programming/programming_practice_tools/"
+    "construccion_reproducible/lesson_fuentes_objetivos_y_fases.json"
+)
+
+
+class FirstProjectGraphChecksTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.before = json.loads(FIRST_LESSON.read_text(encoding="utf-8"))
+        self.after = deepcopy(self.before)
+        self.after["compilerCmakeGraphChecks"] = [{
+            "activity": "block_0009_0003",
+            "project": "InventarioLocal",
+            "targets": [{
+                "name": "comprobar",
+                "type": "EXECUTABLE",
+                "sources": ["inventario.cpp"],
+                "exactSources": True,
+            }],
+        }]
+
+    def test_original_l1_editor_can_receive_a_root_only_graph(self):
+        state.validate(self.before)
+        state.validate(self.after)
+        state.validate_transition(self.before, self.after)
+        self.assertEqual(self.before["pages"], self.after["pages"])
+        self.assertEqual(self.before["stateLayout"], self.after["stateLayout"])
+
+    def test_owner_and_compiled_source_must_be_original(self):
+        def foreign_source(document):
+            document["compilerCmakeGraphChecks"][0]["targets"][0]["sources"] = [
+                "main.cpp"]
+
+        def wrong_owner(document):
+            document["compilerCmakeGraphChecks"][0]["activity"] = "block_0008_0003"
+
+        def wrong_target_type(document):
+            document["compilerCmakeGraphChecks"][0]["targets"][0]["type"] = (
+                "STATIC_LIBRARY")
+
+        for change in (foreign_source, wrong_owner, wrong_target_type):
+            candidate = deepcopy(self.after)
+            change(candidate)
+            with self.subTest(change=change.__name__):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(candidate)
+
+    def test_published_first_graph_cannot_be_replaced_or_removed(self):
+        updated = deepcopy(self.after)
+        updated["compilerCmakeGraphChecks"][0]["project"] = "OtroInventario"
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, updated)
+        updated = deepcopy(self.after)
+        updated.pop("compilerCmakeGraphChecks")
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, updated)
+
+
 if __name__ == "__main__":
     unittest.main()

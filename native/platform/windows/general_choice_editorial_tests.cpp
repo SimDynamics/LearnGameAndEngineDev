@@ -4,6 +4,7 @@
 #include "core/lesson_state.hpp"
 
 #include <winrt/Windows.Data.Json.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Foundation.h>
 #include <filesystem>
 #include <fstream>
