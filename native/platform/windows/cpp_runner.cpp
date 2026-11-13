@@ -674,7 +674,7 @@ void attach_authored_cmake_trace(const std::filesystem::path& workspace,
                     [&](const auto& arg){return equals(arg,"PROPERTY");});
                 if(separator==args.end())continue;
                 const auto pos=static_cast<std::size_t>(separator-args.begin());
-                if(pos<2||pos+2!=args.size())continue;
+                if(pos<2||pos+3!=args.size())continue;
                 bool append=false;
                 for(std::size_t i=1;i<pos;++i)
                     append=append||equals(args[i],"APPEND")||
