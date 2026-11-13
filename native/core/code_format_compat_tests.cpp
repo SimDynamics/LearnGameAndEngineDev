@@ -165,6 +165,25 @@ void bounded_u3_rejection_inputs() {
     check(balances_eight.has_value()&&!balances_nine.has_value()&&
         balances_eight->rejected.empty()&&balances_eight->exit_code==0,
         "U3L6 balances did not keep their eight-pair domain");
+    check(!curriculum::rejection_expected_for_input(
+                RejectionOperation::boxes,"2147483648").has_value()&&
+          !curriculum::rejection_expected_for_input(
+                RejectionOperation::boxes,"-2147483649").has_value()&&
+          !curriculum::rejection_expected_for_input(
+                RejectionOperation::balance,"0 0 2147483648").has_value(),
+          "U3L6 accepted an integer overflow at EOF as valid completed input");
+    check(!curriculum::rejection_expected_for_input(
+                RejectionOperation::boxes,"0 trailing").has_value(),
+          "U3L6 accepted a malformed suffix after valid input");
+    const auto adjacent=curriculum::rejection_expected_for_input(
+        RejectionOperation::boxes,"0+1");
+    const auto whitespace=curriculum::rejection_expected_for_input(
+        RejectionOperation::boxes," \r\n\t");
+    check(adjacent&&adjacent->rejected.empty()&&
+        adjacent->standard_output=="Cajas=0\nCajas=1\n"&&
+        whitespace&&whitespace->rejected.empty()&&
+        whitespace->standard_output.empty(),
+        "U3L6 lost supported signed numbers or clean empty stdin");
 }
 void u3_rejection_diagnostics_contracts() {
     const auto boxes=rejection_expected_for_input(
