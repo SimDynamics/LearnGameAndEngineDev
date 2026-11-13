@@ -240,23 +240,35 @@ inline bool productive(const Tokens& t,std::size_t i) {
     return !(i>=2&&op(t[i-1],"*")&&zero_before(i-2))&&
            !(i+2<t.size()&&op(t[i+1],"*")&&zero_after(i+2));
 }
-inline bool used_in_return(const Tokens& t,Bounds bounds,std::string_view name) {
-    // A function may compute an intermediate result and return that object.
-    // Follow simple local initializer dependencies instead of requiring
-    // authors to squeeze the whole expression into one return statement.
-    std::vector<std::string> dependent{std::string(name)};
-    const auto depends=[&](std::size_t first,std::size_t last) {
-        for(auto i=first;i<last;++i)
-            if(productive(t,i))
-                for(const auto& candidate:dependent)
-                    if(id(t[i],candidate))return true;
-        return false;
+inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
+        std::string_view name) {
+    // Count references that reach the returned expression. Counting every
+    // appearance in the body lets unused logging or discarded calculations
+    // satisfy minUses even when the real result uses only one hard-coded role.
+    // Local aliases carry their originating use count across initializers and
+    // assignments. An overwritten alias loses its previous evidence.
+    constexpr std::size_t limit=64;
+    std::vector<std::pair<std::string,std::size_t>> aliases;
+    const auto uses=[&](std::size_t first,std::size_t last) {
+        std::size_t count=0;
+        for(auto i=first;i<last;++i) {
+            if(!productive(t,i))continue;
+            std::size_t contribution=id(t[i],name)?1:0;
+            for(const auto& alias:aliases)
+                if(id(t[i],alias.first)) {
+                    contribution=alias.second;
+                    break;
+                }
+            count+=std::min(contribution,limit-count);
+        }
+        return count;
     };
+    bool declared=false;
     for(auto i=bounds.open+1;i<bounds.close;++i) {
         if(id(t[i],"return")) {
             auto last=i+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
-            if(depends(i+1,last))return true;
+            if(uses(i+1,last)>0)return uses(i+1,last);
             i=last;
             continue;
         }
@@ -265,33 +277,39 @@ inline bool used_in_return(const Tokens& t,Bounds bounds,std::string_view name) 
         if(start+2<bounds.close&&
            (id(t[start],"int")||id(t[start],"auto"))&&
            t[start+1].starts_with("id:")&&
-           (op(t[start+2],"=")||op(t[start+2],"{"))) {
+           (op(t[start+2],"=")||op(t[start+2],"{")||
+            op(t[start+2],"("))) {
             const auto local=t[start+1].substr(3);
             auto last=start+3;
             while(last<bounds.close&&!op(t[last],";"))++last;
-            if(depends(start+3,last)&&
-               std::ranges::find(dependent,local)==dependent.end())
-                dependent.push_back(local);
+            if(local==name) {
+                if(declared)return 0; // Ambiguous shadowing of the named rule.
+                declared=true;
+            }else {
+                const auto count=uses(start+3,last);
+                const auto found=std::ranges::find_if(aliases,
+                    [&](const auto& alias){return alias.first==local;});
+                if(found==aliases.end())aliases.emplace_back(local,count);
+                else found->second=count;
+            }
             i=last;
             continue;
         }
-        // A later assignment replaces an intermediate's old value.
-        // Without this, an abandoned calculation using a named constant
-        // could be counted even when the returned result was hard-coded.
         if(i+1<bounds.close&&t[i].starts_with("id:")&&
            op(t[i+1],"=")) {
             const auto local=t[i].substr(3);
             auto last=i+2;
             while(last<bounds.close&&!op(t[last],";"))++last;
-            const bool derived=depends(i+2,last);
-            const auto previous=std::ranges::find(dependent,local);
-            if(derived&&previous==dependent.end())dependent.push_back(local);
-            else if(!derived&&previous!=dependent.end()&&local!=name)
-                dependent.erase(previous);
+            if(local==name)return 0;
+            const auto count=uses(i+2,last);
+            const auto found=std::ranges::find_if(aliases,
+                [&](const auto& alias){return alias.first==local;});
+            if(found==aliases.end())aliases.emplace_back(local,count);
+            else found->second=count;
             i=last;
         }
     }
-    return false;
+    return 0;
 }
 } // namespace named_rule_detail
 
@@ -353,11 +371,9 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
         const auto& value=candidates.front();
         if(value.value!=rule.value)
             return {false,"La constante de "+rule.function+" no representa el acuerdo."};
-        std::size_t references=0;
-        for(auto i=value.end+1;i<bounds->close;++i)
-            if(id(t[i],value.name)&&productive(t,i))++references;
-        if(references<rule.min_uses||!used_in_return(t,*bounds,value.name))
-            return {false,"La constante no interviene en el resultado de "+rule.function+"."};
+        if(uses_in_return(t,*bounds,value.name)<rule.min_uses)
+            return {false,"La constante no interviene suficientemente en el resultado de "+
+                rule.function+"."};
     }
     return {true,{}};
 }
