@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -192,6 +193,14 @@ class RealPublishedFormatPilot(unittest.TestCase):
         published = family["es"]
         changed = deepcopy(published)
         changed["pages"][0]["blocks"][3]["text"] += " Comprueba los datos antes de calcular."
+        # The published lesson declares text semantics for every paragraph.
+        # Keep its explicit source fingerprint consistent in the simulated
+        # editorial revision, exactly as a real curriculum publication does.
+        descriptor = next(field for field in changed["textSemantics"]["fields"]
+                          if field["block"] == "block_0000_0003" and field["path"] == "/text")
+        self.assertEqual(descriptor["spans"], [])
+        descriptor["sourceSha256"] = hashlib.sha256(
+            changed["pages"][0]["blocks"][3]["text"].encode("utf-8")).hexdigest()
         revised = state.prepare_v2(changed, "es", family, published)
         self.assertEqual(revised["stateLayout"]["editorial"][-1]["id"], "block_0000_0003")
         self.assertEqual(revised["stateLayout"]["sourceFormatRevisions"],
