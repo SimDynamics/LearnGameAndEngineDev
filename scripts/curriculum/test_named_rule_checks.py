@@ -21,11 +21,26 @@ def original() -> dict:
 
 def declaration() -> list[dict]:
     return [
-        {"activity": "block_0002_0004", "path": "componente/src/cajas.cpp", "rules": [
+        {"activity": "block_0002_0004", "path": "componente/src/cajas.cpp",
+         "executionProbe": {"harness": "pruebas/cajas_casos.cpp", "header": "envio/cajas.h",
+                            "cases": [
+                                {"function": "cajas_para", "input": 0, "expected": 0},
+                                {"function": "cajas_para", "input": 4, "expected": 1},
+                                {"function": "cajas_para", "input": 19, "expected": 5}
+                            ]},
+         "rules": [
             {"function": "cajas_para", "value": 4,
              "purposeWords": ["capacidad", "plaza", "cupo"], "minUses": 2}]},
         {"activity": "block_0005_0006", "path": "componente/src/cajas.cpp",
          "editablePaths": ["componente/publico/envio/cajas.h", "pruebas/cajas_casos.cpp"],
+         "executionProbe": {"harness": "pruebas/cajas_casos.cpp", "header": "envio/cajas.h",
+                            "cases": [
+                                {"function": "cajas_para", "input": 6, "expected": 1},
+                                {"function": "cajas_para", "input": 7, "expected": 2},
+                                {"function": "cajas_para", "input": 19, "expected": 4},
+                                {"function": "llega_a_tiempo", "input": 4, "expected": 1},
+                                {"function": "llega_a_tiempo", "input": 5, "expected": 0}
+                            ]},
          "rules": [
             {"function": "cajas_para", "value": 6,
              "purposeWords": ["capacidad", "plaza", "cupo"], "minUses": 2},
@@ -71,6 +86,13 @@ class NamedRuleAuthoringTest(unittest.TestCase):
                 editablePaths=["../otro_proyecto.cpp"]),
             lambda v: v["compilerNamedRuleChecks"][2].update(
                 editablePaths=["main.cpp"]),
+            lambda v: v["compilerNamedRuleChecks"][0]["executionProbe"].update(
+                harness="componente/src/cajas.cpp"),
+            lambda v: v["compilerNamedRuleChecks"][0]["executionProbe"].update(
+                header="../../outside.h"),
+            lambda v: v["compilerNamedRuleChecks"][0]["executionProbe"]["cases"].append(
+                deepcopy(v["compilerNamedRuleChecks"][0]["executionProbe"]["cases"][0])),
+            lambda v: v["compilerNamedRuleChecks"][1]["executionProbe"]["cases"].pop(),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(value=True),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(minUses=0),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(
