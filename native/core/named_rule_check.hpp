@@ -51,6 +51,9 @@ struct NamedRuleSourceCheck {
     // In a CMake exercise, only the reviewed C++ source may change unless
     // the original author expressly permits further existing project files.
     std::vector<std::string> editable_paths;
+    // An editable header can be limited to comment-only changes so C++ code,
+    // declarations and macros cannot redirect the independent test driver.
+    std::vector<std::string> comment_only_paths;
     // Optional trusted CMake verification. A passing stdout from the edited
     // harness alone never proves the project functions calculate these cases.
     std::optional<NamedRuleExecutionProbe> execution_probe;
@@ -219,6 +222,30 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     }
     return {true,{}};
 }
+// A reviewed comment may change, but its code, includes, declarations and
+// preprocessor directives must retain exactly the same C++ tokens. Only
+// comment lexemes are ignored; string literals and raw strings are retained.
+// Line-sensitive macros are conservatively rejected if the source changes.
+inline bool named_rule_comment_only_edit(std::string_view original,
+        std::string_view candidate) {
+    if(original==candidate)return true;
+    if(code_format::physical_splice(original)||code_format::physical_splice(candidate))
+        return false;
+    for(const auto sentinel:{"__LINE__","source_location"})
+        if(original.find(sentinel)!=original.npos||
+           candidate.find(sentinel)!=candidate.npos)return false;
+    const auto before=code_format::cpp_tokens(original);
+    const auto after=code_format::cpp_tokens(candidate);
+    if(!before||!after)return false;
+    const auto only_code=[](const auto& tokens) {
+        std::vector<std::string> code;
+        for(const auto& token:tokens)
+            if(!token.starts_with("comment:"))code.push_back(token);
+        return code;
+    };
+    return only_code(*before)==only_code(*after);
+}
+
 // Bounded source generation is shared by the worker and its verifier; it
 // accepts identifiers, integer values and a safe include path, never raw C++.
 inline std::optional<std::string> named_rule_probe_source(
