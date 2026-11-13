@@ -71,6 +71,44 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            const int observacion = capacidad + capacidad;
+            return (piezas + capacidad - 1) / 4;
+        })cpp",rules,false,
+        "Unused auxiliary calculations cannot supply a second result use");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int observacion = capacidad + capacidad;
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "Unused local results cannot substitute for the named capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int ajuste = capacidad - 1;
+            const int resultado = (piezas + ajuste) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "Real dependencies across local intermediate values must be accepted");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            const int copia = resultado;
+            resultado = (piezas + 3) / 4;
+            return copia;
+        })cpp",rules,true,
+        "Reassigning a different local must not invalidate the returned copy");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int observacion = capacidad + capacidad;
+            return (piezas + capacidad - 1) / 4;
+        })cpp",rules,false,
+        "minUses must apply to the returned computation, not the whole body");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             int cajas = (piezas + capacidad - 1) / capacidad;
             cajas = (piezas + 3) / 4;
             return cajas;
