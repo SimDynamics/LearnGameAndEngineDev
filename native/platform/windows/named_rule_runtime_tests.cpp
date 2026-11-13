@@ -47,6 +47,7 @@ void authored_root_roundtrip(const Lesson& original) {
          "rules":[{"function":"cajas_para","value":4,
                    "purposeWords":["capacidad","plaza","cupo"],"minUses":2}]},
         {"activity":"block_0005_0006","path":"componente/src/cajas.cpp",
+         "editablePaths":["componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"],
          "rules":[{"function":"cajas_para","value":6,
                    "purposeWords":["capacidad","plaza","cupo"],"minUses":2},
                   {"function":"llega_a_tiempo","value":4,
@@ -138,6 +139,10 @@ int cajas_para(int piezas) {
     require(!compiler_runtime_request_allowed(owner,wrong),
         "An extra project file earned the source evidence");
     wrong=submitted;
+    change_project(wrong,"pruebas/cajas_casos.cpp","int main(){return 0;}\n");
+    require(!compiler_runtime_request_allowed(owner,wrong),
+        "An unapproved replacement for the original test battery earned credit");
+    wrong=submitted;
     wrong.cmake->target="consultar_cajas";
     require(!compiler_runtime_request_allowed(owner,wrong),
         "A different executable borrowed the named-rule receipt");
@@ -164,6 +169,16 @@ bool llega_a_tiempo(int dias) {
 )cpp");
     require(compiler_runtime_request_allowed(owner,submitted),
         "Independent six-place capacity and four-day deadline were rejected");
+    owner.named_rule_source_check->editable_paths={
+        "componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"};
+    auto revised=submitted;
+    change_project(revised,"pruebas/cajas_casos.cpp",
+        "int main(){return 0;}\n");
+    require(compiler_runtime_request_allowed(owner,revised),
+        "An expressly permitted new test battery failed the source edit gate");
+    change_project(revised,"CMakeLists.txt","project(Injected)\n");
+    require(!compiler_runtime_request_allowed(owner,revised),
+        "Changing unauthorized CMake instructions borrowed source credit");
 }
 std::string replace_unique(std::string source,std::string_view before,
         std::string_view after) {
