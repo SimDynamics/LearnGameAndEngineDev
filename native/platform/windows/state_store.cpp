@@ -365,7 +365,8 @@ std::optional<Response> get_response(const StateData& data, const curriculum::Le
             // Do not migrate an answer to a new sidecar or re-grade a valid
             // selection merely because one option was explained more clearly.
             // The historical answer remains current under the same owner.
-            auto preserved=get_response(data,curriculum::exercise_key(lesson,block));
+            const auto verified_key=response_storage_key(lesson,block);
+            auto preserved=get_response(data,verified_key);
             if(preserved)validate_choice_response(*preserved,block);
             return preserved;
         }
