@@ -548,9 +548,11 @@ bool llega_a_tiempo(int dias) {
         "Real MSVC CMake could not build or run the amended U3 battery: "+
         real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
     const auto fresh=capture_cpp_execution(correct,real);
-    require(fresh.named_rule_probe_correct&&
-        real.named_rule_probe&&real.named_rule_probe->execution.succeeded(),
-        "The correct student functions did not pass the independent CMake harness");
+    require(fresh.named_rule_probe_correct&&real.named_rule_probe&&
+        real.named_rule_probe->execution.succeeded()&&
+        real.named_rule_probe->execution.stderr_bytes==
+            named_rule_probe_completion_marker,
+        "The correct student functions did not finish the independent CMake harness");
     require(evaluate_cpp_output_check(*owner.output_check,fresh,correct.revision).verdict
         ==OutputVerdict::correct,
         "The valid amended CMake battery did not produce all published comparisons");
@@ -605,6 +607,35 @@ bool llega_a_tiempo(int dias) {
              "fake matches visible stdout")&&
         !compiler_puzzle_completed(saved,lesson,owner),
         "A fake, student-editable harness earned a curriculum receipt");
+    // The student library can exit(0) when a hidden probe calls it,
+    // even though the editable test executable prints the expected report.
+    // Its zero exit status must not be accepted without the final witness.
+    auto exit_forged=forged;
+    exit_forged.request_id=1103;exit_forged.revision=412;
+    for(auto& file:exit_forged.project_files)
+        if(file.first=="componente/src/cajas.cpp") {
+            file.second="#include <cstdlib>\n"+
+                replace_unique(std::move(file.second),
+                    "    if (piezas == 19) return 1;",
+                    "    if (piezas == 19) std::exit(0);");
+        }
+    require(compiler_runtime_request_allowed(owner,exit_forged),
+        "A forged exit(0) probe must be checked at execution, not rejected as source");
+    const auto early_run=run_cpp(exit_forged);
+    require(early_run.error_utf8.empty()&&early_run.compilation.succeeded()&&
+        early_run.execution.succeeded()&&early_run.named_rule_probe&&
+        early_run.named_rule_probe->execution.succeeded()&&
+        early_run.named_rule_probe->execution.stderr_bytes.empty(),
+        "The controlled CMake early exit did not bypass the probe's final line");
+    const auto early_capture=capture_cpp_execution(exit_forged,early_run);
+    require(evaluate_cpp_output_check(*owner.output_check,early_capture,
+            exit_forged.revision).verdict==OutputVerdict::correct&&
+        !early_capture.named_rule_probe_correct,
+        "The CMake witness check accepted an early exit(0)");
+    require(!record_compiler_puzzle_case(saved,lesson,owner,exit_forged,
+            early_capture,"premature CMake exit")&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "A zero exit before all CMake probes improperly unlocked the editor");
     require(record_compiler_puzzle_case(saved,lesson,owner,correct,fresh,"correct")&&
         compiler_puzzle_completed(saved,lesson,owner),
         "The first real case with verified independent probes did not grant progress");
