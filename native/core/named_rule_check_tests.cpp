@@ -28,6 +28,41 @@ void capacity() {
         })cpp",rules,true,"Equivalent capacity name");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            const int capacidad = 2 + 4 / 2;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"Integer arithmetic and operator precedence");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{(2 * 3) - 2};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"Parenthesized arithmetic in a brace initializer");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{-(-4)};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,"Unary arithmetic in a local constant");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{8 / 0};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"Division by zero does not establish a capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{2147483647 + 1};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"Integer overflow cannot establish a capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{010};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"An octal literal must not be read as decimal 10");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{2 + 3};
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,"A different computed value is still a wrong agreement");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int cupo{4};
             const int ajuste = cupo - 1;
             const int cajas = (piezas + ajuste) / cupo;
