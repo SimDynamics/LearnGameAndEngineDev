@@ -541,6 +541,13 @@ inline bool named_rule_comment_only_edit(std::string_view original,
 
 // Independently compiled checks are generated from reviewed identifiers,
 // integer facts and a bounded input list. The student's stdout is not trusted.
+// A zero process exit alone is not proof: a student function can call
+// exit(0) before the generated main has checked all authored cases. The
+// trusted driver emits this exact final witness only after its last check.
+// No newline avoids CRT LF/CRLF differences between Windows and WASI.
+inline constexpr std::string_view named_rule_probe_completion_marker=
+    "LGAED_NAMED_RULE_PROBE_COMPLETE_V1";
+
 inline std::optional<std::string> named_rule_probe_checks(
         const NamedRuleExecutionProbe& probe) {
     const auto identifier=[](std::string_view word) {
@@ -566,6 +573,7 @@ inline std::optional<std::string> named_rule_probe_checks(
             std::to_string(item.expected)+") return "+
             std::to_string(i+1)+";\n";
     }
+    code+="    std::fputs(\""+std::string(named_rule_probe_completion_marker)+\"\", stderr);\n";
     code+="    return 0;\n}\n";
     return code;
 }
@@ -581,7 +589,7 @@ inline std::optional<std::string> named_rule_probe_source(
             return {};
     const auto checks=named_rule_probe_checks(probe);
     if(!checks)return {};
-    return "#include \""+probe.header+"\"\n\n"+*checks;
+    return "#include <cstdio>\n#include \""+probe.header+"\"\n\n"+*checks;
 }
 // Single-file: compile the unchanged submitted functions alongside a fresh,
 // private main. The student's editable main and reports are not executed by
@@ -595,7 +603,7 @@ inline std::optional<std::string> named_rule_single_file_probe_source(
         return {};
     const auto checks=named_rule_probe_checks(probe);
     if(!checks)return {};
-    return "#define main lgaed_student_original_main\n"+
+    return "#include <cstdio>\n#define main lgaed_student_original_main\n"+
         std::string(candidate)+"\n#undef main\n\n"+*checks;
 }
 
