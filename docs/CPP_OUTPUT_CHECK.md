@@ -936,7 +936,17 @@ que cumpla todos sus criterios vigentes. Los demás casos permanecen opcionales.
 de `projectFiles`; `exactSources` exige que no existan fuentes de
 compilación adicionales. `linksTo` referencia objetivos de biblioteca
 estática también declarados, y se acredita mediante dependencia y enlace del
-artefacto real. Cada contrato ya publicado permanece inmutable. Es posible añadir
+artefacto real. `minimumCmakeVersion` es una propiedad opcional del
+propietario, por ejemplo `"minimumCmakeVersion": "3.20"`. Comprueba la versión
+mínima declarada por `cmake_minimum_required(VERSION)` en el directorio raíz,
+según el dato `minimumCMakeVersion.string` de **CMake File API codemodel v2**.
+Se comparan componentes numéricos: `3.20` y `3.20.0` son equivalentes, pero
+`3.19` y `3.21` no. No se deduce esta versión de la instalación de CMake,
+ni se sustituye por una búsqueda textual del código fuente. Este campo no
+acredita todavía el mínimo C++20 ni `CXX_EXTENSIONS OFF` explícitos, porque
+el perfil Windows puede aportarlos sin que el alumno los declare.
+
+Cada contrato ya publicado permanece inmutable. Es posible añadir
 nuevos propietarios al final de la declaración mediante una transición
 autenticada, sin modificar ni reordenar los anteriores.
 
