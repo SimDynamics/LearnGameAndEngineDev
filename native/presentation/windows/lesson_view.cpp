@@ -4057,10 +4057,18 @@ struct LessonView {
                     block(index),running_program);
                 const bool correct = evaluation.verdict == curriculum::OutputVerdict::correct&&preserved_source;
                 auto text = verdict_text(correct);
-                if(!preserved_source)text+='\n'+ui(
-                    "Este objetivo exige conservar todos los archivos originales, la entrada y las opciones CMake.",
-                    "This objective requires the exact original project files, input and CMake options.",
-                    "Cet objectif exige de conserver les fichiers, l'entrée et les options CMake d'origine.");
+                if(!preserved_source) {
+                    if(block(index).named_rule_source_check)
+                        text+='\n'+ui(
+                            "La salida coincide, pero este objetivo también exige declarar constantes locales con nombres de propósito, valores correctos y uso real en el cálculo. Comprueba las dos condiciones antes de continuar.",
+                            "The output matches, but this goal also requires purpose-named local constants with correct values and real use in the calculation.",
+                            "La sortie correspond, mais cet objectif exige aussi des constantes locales bien nommées, des valeurs correctes et une utilisation réelle dans le calcul.");
+                    else
+                        text+='\n'+ui(
+                            "Este objetivo exige conservar todos los archivos originales, la entrada y las opciones CMake.",
+                            "This objective requires the exact original project files, input and CMake options.",
+                            "Cet objectif exige de conserver les fichiers, l'entrée et les options CMake d'origine.");
+                }
                 if(evaluation.stdout_correct&&!evaluation.exit_code_correct)text+='\n'+ui(
                     "La salida estándar es correcta; el código de salida no coincide con el requerido.",
                     "Standard output is correct; the process exit code does not match the required code.",
