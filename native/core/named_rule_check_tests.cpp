@@ -542,9 +542,14 @@ void independently_generated_probe() {
         {"cajas_para",19,4},{"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}
     }};
     const auto source=named_rule_probe_source(valid);
-    if(!source||source->find("#include \"envio/cajas.h\"")==source->npos||
+    if(!source||source->find("#include <cstdio>\n")==source->npos||
+       source->find("#include \"envio/cajas.h\"")==source->npos||
        source->find("static_cast<int>(cajas_para(19)) != 4")==source->npos||
-       source->find("static_cast<int>(llega_a_tiempo(5)) != 0")==source->npos)
+       source->find("static_cast<int>(llega_a_tiempo(5)) != 0")==source->npos||
+       source->find("std::fputs(\""+std::string(named_rule_probe_completion_marker)+
+           "\", stderr);")==source->npos||
+       source->find("std::fputs(")<source->find(
+           "static_cast<int>(llega_a_tiempo(5)) != 0"))
         throw std::runtime_error("The independent probe was not derived from authored facts");
     const auto invalid=[&](NamedRuleExecutionProbe value,const char* description) {
         if(named_rule_probe_source(value))
@@ -572,11 +577,15 @@ int main() {return 0;}
 )cpp";
     const auto independent=named_rule_single_file_probe_source(single,candidate);
     if(!independent||
-       independent->find("#define main lgaed_student_original_main\n")!=0||
+       independent->find("#include <cstdio>\n#define main lgaed_student_original_main\n")!=0||
        independent->find(candidate)==independent->npos||
        independent->find("#undef main\n\nint main()") == independent->npos||
        independent->find("static_cast<int>(precio_total(11)) != 77")==
-           independent->npos)
+           independent->npos||
+       independent->find("std::fputs(\""+std::string(named_rule_probe_completion_marker)+
+           "\", stderr);")==independent->npos||
+       independent->find("std::fputs(")<independent->find(
+           "static_cast<int>(alcanza_minimo(5)) != 1"))
         throw std::runtime_error("A trusted single-file main was not generated");
     auto malicious=single;malicious.header="envio/cajas.h";
     if(named_rule_single_file_probe_source(malicious,candidate))
