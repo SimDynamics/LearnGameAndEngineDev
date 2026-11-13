@@ -279,6 +279,7 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
     if(block.named_rule_source_check) {
         const auto& named=*block.named_rule_source_check;
+        if(request.named_rule_probe!=named.execution_probe)return false;
         if(request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
            request.cmake!=block.cmake||request.source_files!=block.source_files)
             return false;
@@ -540,7 +541,10 @@ void prepare_compiler_puzzle_revisions(state::StateData& data,const curriculum::
 bool record_compiler_puzzle_case(state::StateData& data,const curriculum::Lesson& lesson,const curriculum::Block& block,
         const CppRunRequest& captured,const curriculum::FreshExecution& execution,std::string_view feedback) {
     if(block.type!=curriculum::BlockType::cpp_compiler||!block.output_check||
-       !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured))return false;
+       !matches_runtime_capture(captured,execution)||!compiler_runtime_request_allowed(block,captured)||
+       (block.named_rule_source_check&&
+           block.named_rule_source_check->execution_probe&&
+           !execution.named_rule_probe_correct))return false;
     const auto evaluation=evaluate_cpp_output_check(*block.output_check,execution,captured.revision);
     if(evaluation.verdict!=curriculum::OutputVerdict::correct)return false;
     clear_compiler_puzzle_review(data,lesson,block);
