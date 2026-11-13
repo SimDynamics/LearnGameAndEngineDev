@@ -255,7 +255,15 @@ inline NamedRuleAnalysis analyze_named_rule_sources(
     // The lexical source gate must not mistake code hidden behind #if 0,
     // macro substitutions, or generated declarations for compiled evidence.
     // A reviewed named-rule exercise only needs ordinary #include directives.
-    for(const auto& token:*scanned)if(token.starts_with("directive:")) {
+    for(const auto& token:*scanned) {
+        // A C++ comment is replaced by whitespace *before* preprocessing.
+        // The shared source lexer may not recognize /*comment*/#if 0 as a
+        // directive, leaving a standalone '#' or the %: digraph as a token.
+        // Such a token cannot be trusted as a compiled function definition.
+        if(token=="op:#"||token=="op:%:"||
+           token=="op:##"||token=="op:%:%:")
+            return {false,"Directiva de preprocesador no admitida."};
+        if(!token.starts_with("directive:"))continue;
         std::string_view directive(token);
         directive.remove_prefix(std::string_view("directive:").size());
         if(directive.empty()||directive.front()!='#')
