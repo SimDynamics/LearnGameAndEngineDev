@@ -474,10 +474,11 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=i+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             const auto result_uses=uses(i+1,last);
-            if(!nesting)return include_prior(result_uses);
-            // An unrecognized nested return does not establish a source rule.
-            i=last;
-            continue;
+            // Returns inside branches that were not fully understood must
+            // not be ignored: a hardcoded path could otherwise borrow credit
+            // from a correct but later fallthrough.
+            if(nesting)return 0;
+            return include_prior(result_uses);
         }
         auto start=i;
         if(id(t[start],"const")||id(t[start],"constexpr"))++start;
