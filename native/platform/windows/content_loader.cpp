@@ -481,6 +481,7 @@ void validate_general_choice_semantic_archive(
         "A general choice revision must archive its previous semantic marker");
     const auto original=revision.GetNamedObject(L"block");
     const auto options=array(original,"options");
+    require(options.Size()>0,"A semantic choice archive has no original options");
     const auto at=integer(revision.GetNamedValue(L"optionIndex"),
         static_cast<std::size_t>(options.Size()-1));
     const auto owner=text(revision,"id");
