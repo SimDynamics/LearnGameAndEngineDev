@@ -2520,7 +2520,7 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
     };
     for(const auto& entry:records) {
         const auto item=entry.GetObject();
-        allowed_keys(item,{"activity","path","rules","editablePaths"});
+        allowed_keys(item,{"activity","path","rules","editablePaths","executionProbe"});
         require(item.HasKey(L"activity")&&item.HasKey(L"path")&&item.HasKey(L"rules"),
             "Named-rule source requires activity, path and rules");
         const auto identity=text(item,"activity");
@@ -2595,6 +2595,57 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                     "Invalid or duplicate named-rule purpose term");
             }
             check.requirements.push_back(std::move(declaration));
+        }
+        if(item.HasKey(L"executionProbe")) {
+            require(owner->cmake&&owner->project_files.size()>0&&
+                    !check.path.empty(),
+                "An independent named-rule probe requires an original CMake editor");
+            const auto declaration=item.GetNamedObject(L"executionProbe");
+            allowed_keys(declaration,{"harness","header","cases"},true);
+            NamedRuleExecutionProbe probe;
+            probe.harness_path=text(declaration,"harness");
+            probe.header=text(declaration,"header");
+            require(probe.harness_path!=check.path&&
+                    is_cpp_source_file(probe.harness_path)&&
+                    std::ranges::any_of(owner->project_files,
+                        [&](const auto& file){return file.first==probe.harness_path;}),
+                "Independent test harness must replace an existing different C++ file");
+            // The old target must actually build the harness being replaced.
+            const auto cml=std::ranges::find_if(owner->project_files,
+                [](const auto& file){return file.first=="CMakeLists.txt";});
+            require(cml!=owner->project_files.end()&&
+                    cml->second.find("add_executable("+owner->cmake->target+
+                        " "+probe.harness_path+")")!=std::string::npos,
+                "Probe cannot target a file outside the original reviewed executable");
+            const auto cases=array(declaration,"cases");
+            require(cases.Size()>0&&cases.Size()<=32,
+                "Independent named-rule probe needs between 1 and 32 comparisons");
+            std::set<std::string> covered;
+            const auto bounded_signed=[](const IJsonValue& value) {
+                require(value.ValueType()==JsonValueType::Number,
+                    "Independent probe arguments must be JSON integers");
+                const auto number=value.GetNumber();
+                require(std::isfinite(number)&&std::trunc(number)==number&&
+                        number>=static_cast<double>(std::numeric_limits<int>::min())&&
+                        number<=static_cast<double>(std::numeric_limits<int>::max()),
+                    "Independent probe integer is outside signed C++ range");
+                return static_cast<int>(number);
+            };
+            for(const auto& cv:cases) {
+                const auto one=cv.GetObject();
+                allowed_keys(one,{"function","input","expected"},true);
+                NamedRuleProbeCase item_case;
+                item_case.function=text(one,"function");
+                require(functions.contains(item_case.function),
+                    "An independent probe must call an authored named-rule function");
+                item_case.input=bounded_signed(one.GetNamedValue(L"input"));
+                item_case.expected=bounded_signed(one.GetNamedValue(L"expected"));
+                covered.insert(item_case.function);
+                probe.cases.push_back(std::move(item_case));
+            }
+            require(covered==functions&&named_rule_probe_source(probe).has_value(),
+                "Every named function needs independent, unambiguous executable cases");
+            check.execution_probe=std::move(probe);
         }
         owner->named_rule_source_check=std::move(check);
     }
