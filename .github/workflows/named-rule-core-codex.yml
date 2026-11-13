@@ -1,4 +1,4 @@
-name: Codex named-rule core (GCC and Clang)
+name: Codex named-rule core (GCC, Clang and MSVC)
 
 on:
   push:
@@ -50,7 +50,7 @@ jobs:
       - name: Compile portable core tests with MSVC
         shell: cmd
         run: |
-          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\\core\\named_rule_check_tests.cpp /Fe:"%RUNNER_TEMP%\\lgaed_named_rule_core_tests.exe"
+          cl /nologo /std:c++latest /EHsc /W4 /WX /permissive- /Zc:__cplusplus /utf-8 /I native native\core\named_rule_check_tests.cpp /Fe:"%RUNNER_TEMP%\lgaed_named_rule_core_tests.exe"
       - name: Run MSVC named-rule regressions
         shell: cmd
-        run: '"%RUNNER_TEMP%\\lgaed_named_rule_core_tests.exe"'
+        run: '"%RUNNER_TEMP%\lgaed_named_rule_core_tests.exe"'
