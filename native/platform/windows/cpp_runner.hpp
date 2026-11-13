@@ -134,6 +134,9 @@ struct CppNamedRuleProbe {
 struct CppCmakeTargetEvidence {
     std::string name, type, source_directory;
     std::vector<std::string> compiled_sources, build_dependencies, link_libraries, artifacts;
+    // Observed author commands from a matching CMake configure, not
+    // compiler defaults or a regex against arbitrary source text.
+    bool explicit_cxx20 = false, explicit_extensions_off = false;
 };
 struct CppCmakeGraphEvidence {
     std::string project_fingerprint, configuration_fingerprint, project_name;
