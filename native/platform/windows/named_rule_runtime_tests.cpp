@@ -71,11 +71,21 @@ void authored_root_roundtrip(const Lesson& original) {
                   {"function":"llega_a_tiempo","value":4,
                    "purposeWords":["plazo","dias","tiempo"],"minUses":1}]},
         {"activity":"block_0007_0004","path":"",
+         "executionProbe":{"harness":"","header":"",
+           "cases":[{"function":"precio_total","input":11,"expected":77},
+                    {"function":"precio_total","input":5,"expected":35},
+                    {"function":"alcanza_minimo","input":4,"expected":0},
+                    {"function":"alcanza_minimo","input":5,"expected":1}]},
          "rules":[{"function":"precio_total","value":7,
                    "purposeWords":["precio","costo","tarifa"],"minUses":1},
                   {"function":"alcanza_minimo","value":5,
                    "purposeWords":["minimo","umbral","cantidad"],"minUses":1}]},
         {"activity":"block_0008_0007","path":"",
+         "executionProbe":{"harness":"","header":"",
+           "cases":[{"function":"precio_total","input":11,"expected":77},
+                    {"function":"precio_total","input":5,"expected":35},
+                    {"function":"alcanza_minimo","input":4,"expected":0},
+                    {"function":"alcanza_minimo","input":5,"expected":1}]},
          "rules":[{"function":"precio_total","value":7,
                    "purposeWords":["precio","costo","tarifa"],"minUses":1},
                   {"function":"alcanza_minimo","value":5,
@@ -125,6 +135,23 @@ void authored_root_roundtrip(const Lesson& original) {
     try {(void)parse_lesson_json(winrt::to_string(no_probe.Stringify()),"es");}
     catch(const std::exception&) {rejected=true;}
     require(rejected,"The loader accepted an editable CMake harness without a probe");
+    auto wrong_single_header=JsonObject::Parse(winrt::to_hstring(reviewed));
+    wrong_single_header.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(3)
+        .GetNamedObject(L"executionProbe")
+        .Insert(L"header",JsonValue::CreateStringValue(L"envio/forgery.h"));
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(wrong_single_header.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted an injected single-file header");
+    auto duplicate_single=JsonObject::Parse(winrt::to_hstring(reviewed));
+    auto repeated=duplicate_single.GetNamedArray(L"compilerNamedRuleChecks")
+        .GetObjectAt(3).GetNamedObject(L"executionProbe")
+        .GetNamedArray(L"cases");
+    repeated.Append(repeated.GetObjectAt(0));
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(duplicate_single.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The Windows loader accepted duplicate single-file probe arguments");
 }
 
 void project_examples(const Lesson& lesson) {
