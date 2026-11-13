@@ -641,7 +641,7 @@ void run_cmake(const CppRunRequest& request,CppRunResult& result,const std::file
         if(!result.configuration.succeeded())return;if(!std::filesystem::is_regular_file(build_directory/L"build.ninja"))throw std::runtime_error("CMake did not generate real Ninja rules");
         const auto target=cmake_target(workspace,*request.cmake);result.target_type=target.type;saved.Insert(L"configuration",JsonValue::CreateStringValue(winrt::to_hstring(result.configuration_fingerprint)));save_json(state_file,saved);availability=inspect_unlocked(request);
     }
-    if(availability.configured)
+    if(availability.configured&&request.capture_cmake_graph)
         result.cmake_graph=snapshot_cmake_graph(workspace,request,
             result.project_fingerprint,result.configuration_fingerprint);
     if(action==CppRunRequest::Action::configure)return;
@@ -909,7 +909,8 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     const auto fail=[](std::string why) {
         return CppCmakeGraphVerdict{false,std::move(why)};
     };
-    if(!request.cmake||request.backend!=CppRunRequest::Backend::native_msvc||
+    if(!request.cmake||!request.capture_cmake_graph||
+       request.backend!=CppRunRequest::Backend::native_msvc||
        request.action!=CppRunRequest::Action::compile_run||
        request.request_id!=result.request_id||
        request.revision!=result.revision||!result.error_utf8.empty()||
@@ -1219,6 +1220,7 @@ void complete_named_rule_probe(const CppRunRequest& request,CppRunResult& result
     if(!source)return;
     auto second=request;
     second.named_rule_probe.reset(); // recursion and double credit forbidden
+    second.capture_cmake_graph=false; // private probe must not grade CMake structure
     second.rejection_probe.reset();
     second.observation_probe.reset();
     second.assertion_mode.reset();

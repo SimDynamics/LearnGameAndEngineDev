@@ -101,6 +101,9 @@ struct CppRunRequest {
     std::optional<curriculum::ReportMode> observation_probe;
     std::optional<curriculum::NamedRuleExecutionProbe> named_rule_probe;
     std::optional<curriculum::AssertionMode> assertion_mode;
+    // Ordinary CMake builds and private probes do not need to parse the
+    // entire generated target graph. Enable only for structure-aware checks.
+    bool capture_cmake_graph = false;
 };
 struct CppRejectionProbe {
     std::string source_sha256;

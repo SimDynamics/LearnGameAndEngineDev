@@ -133,6 +133,8 @@ int main() {
     check(pending.workspace!=historical&&!pending.configured&&!pending.built&&pending.configuration_fingerprint!=old_configuration,
         "The C++23 profile reused the C++20 address or adopted a historical configured artifact");
     const auto migrated=run_cpp(request);ran(migrated);
+    check(!migrated.cmake_graph,
+        "An ordinary CMake compile incorrectly captured structure without opting in");
     check(migrated.configuration.succeeded()&&migrated.execution.stdout_bytes=="202302:202302:41:42:-9:42"&&migrated.execution.stderr_bytes.empty(),
         "CMake did not configure and execute the real default C++23 program with its exact library and language semantics");
     const auto available=inspect_cpp_project(request);
@@ -164,6 +166,7 @@ int main(int argc,char** argv){using namespace lgaed;using namespace windows;try
     if(!graph_only)cpp23_cmake_migration(environment);
     if(cpp23_only){qa.finish();return 0;}
     CppRunRequest request;request.projects_directory=environment.paths.projects/L"Códigos & nombres";request.project_key="original/exercise/draft";request.request_id=1;request.revision=7;
+    request.capture_cmake_graph=true;
     request.project_files={{"CMakeLists.txt",R"(cmake_minimum_required(VERSION 3.20)
 project(PersonalNative LANGUAGES CXX)
 message(STATUS "LGAED stdout áé你好")
