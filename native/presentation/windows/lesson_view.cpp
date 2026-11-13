@@ -4088,9 +4088,20 @@ struct LessonView {
                 const bool independent=!block(index).named_rule_source_check||
                     !block(index).named_rule_source_check->execution_probe||
                     fresh.named_rule_probe_correct;
+                const bool graph_ready=!block(index).cmake_graph_check||
+                    fresh.cmake_graph_correct;
                 const bool correct=evaluation.verdict==curriculum::OutputVerdict::correct&&
-                    preserved_source&&independent;
+                    preserved_source&&independent&&graph_ready;
                 auto text = verdict_text(correct);
+                if(!graph_ready&&preserved_source&&block(index).cmake_graph_check) {
+                    const auto graph=windows::evaluate_cmake_graph(running_program,
+                        *result,*block(index).cmake_graph_check);
+                    text+='\n'+ui(
+                        "La estructura CMake aún no cumple el contrato: ",
+                        "The generated CMake structure does not yet meet the contract: ",
+                        "La structure CMake ne respecte pas encore le contrat : ")
+                        +graph.reason;
+                }
                 if(!independent&&preserved_source)
                     text+='\n'+ui(
                         "La salida del comprobador coincide, pero la prueba independiente de las funciones no pasó. Revisa el cálculo real sin modificar el comparador para fabricar los resultados.",
