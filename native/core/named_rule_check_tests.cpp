@@ -70,6 +70,35 @@ void capacity() {
         })cpp",rules,true,"A returned intermediate derived from the local capacity");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            const int capacidad{4};
+            int cajas = (piezas + capacidad - 1) / capacidad;
+            cajas = (piezas + 3) / 4;
+            return cajas;
+        })cpp",rules,false,"An overwritten computed result is not a valid use");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int cajas = (piezas + 3) / 4;
+            cajas = (piezas + capacidad - 1) / capacidad;
+            return cajas;
+        })cpp",rules,true,"A later valid assignment still establishes the result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int cajas = (piezas + capacidad - 1) / capacidad;
+            cajas = cajas * 0;
+            return cajas;
+        })cpp",rules,false,"Multiplication by zero discards the computed result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int cajas = (piezas + capacidad - 1) / capacidad;
+            cajas = cajas + 0;
+            return cajas;
+        })cpp",rules,true,"An assignment preserving the result remains valid");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int cupo{4};
             const int ajuste = cupo - 1;
             const int cajas = (piezas + 3) / 4;
