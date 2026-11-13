@@ -285,14 +285,21 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
         std::string_view source;
         if(named.path.empty()) {
             if(!block.project_files.empty()||!request.project_files.empty()||
-               request.cmake||request.source_files.size())return false;
+               request.cmake||!named.editable_paths.empty()||request.source_files.size())
+                return false;
             source=request.source_utf8;
         }else{
             if(block.project_files.empty()||request.project_files.size()!=block.project_files.size())
                 return false;
-            for(std::size_t i=0;i<block.project_files.size();++i)
-                if(block.project_files[i].first!=request.project_files[i].first)
-                    return false; // No extra/renamed project members can earn a receipt.
+            for(std::size_t i=0;i<block.project_files.size();++i) {
+                const auto& original=block.project_files[i];
+                const auto& current=request.project_files[i];
+                if(original.first!=current.first)return false;
+                if(original.first!=named.path&&
+                   std::ranges::find(named.editable_paths,original.first)==
+                       named.editable_paths.end()&&
+                   original.second!=current.second)return false;
+            }
             const auto found=std::ranges::find_if(request.project_files,
                 [&](const auto& file){return file.first==named.path;});
             if(found==request.project_files.end())return false;
