@@ -109,6 +109,19 @@ int main(int argc,char** argv) {
             state::selected_choice_text(*preserved,after)==after.options[0]&&
             state::choice_correct_feedback(*preserved,after)==after.explanation,
             "A valid historical success was lost or displayed as an ungraded old answer");
+        // The identical receipt can be reused only while the authenticated
+        // current option representation is intact. A post-load mutation
+        // must never borrow the valid earlier result.
+        for(int mutation=0;mutation<2;++mutation) {
+            auto altered=after;
+            if(mutation==0)altered.options[0]+=" Falso";
+            else altered.correct_index=1;
+            bool refused=false;
+            try {(void)state::get_response(imported,revised,altered);}
+            catch(const std::runtime_error&) {refused=true;}
+            require(refused,
+                "An unauthenticated option change reused historical success");
+        }
         require(state::string_value(imported,"learning_progress",legacy)==
                 state::string_value(saved,"learning_progress",legacy),
             "Reading the revised answer rewrote the historical selection or attempts");
