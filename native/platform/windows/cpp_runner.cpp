@@ -558,6 +558,145 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
     if(!matched)throw std::runtime_error("CMake requested configuration has no generated graph");
     return graph;
 }
+// Only an explicitly authored target requirement needs this private trace.
+// No ordinary compilation, free laboratory, or independent probe collects it.
+bool requires_authored_cmake_trace(const CppRunRequest& request) {
+    return request.capture_cmake_graph&&request.cmake_graph_check&&
+        std::ranges::any_of(request.cmake_graph_check->targets,
+            [](const auto& target) {
+                return target.require_explicit_cxx20||
+                    target.require_explicit_extensions_off;
+            });
+}
+bool authored_cmake_path(std::string_view value) {
+    const auto path=project_path(value);
+    return path.filename()==L"CMakeLists.txt"||path.extension()==L".cmake";
+}
+std::filesystem::path authored_cmake_trace_path(
+        const std::filesystem::path& workspace) {
+    return workspace/L"lgaed-authored-cmake-trace.jsonl";
+}
+// The JSON CMake trace lists commands actually invoked at configure time,
+// with expanded arguments. Ignore all non-student source locations, including
+// CMake modules and compiler/toolchain defaults. This evidence supplements
+// generated File API target/source/link facts, never replaces them.
+void attach_authored_cmake_trace(const std::filesystem::path& workspace,
+        const CppRunRequest& request,CppCmakeGraphEvidence& graph) {
+    const auto path=authored_cmake_trace_path(workspace);
+    state::require_safe_path(path);
+    if(!std::filesystem::is_regular_file(path)||
+       std::filesystem::file_size(path)>4*1024*1024)return;
+    std::ifstream input(path,std::ios::binary);
+    if(!input)return;
+    const auto source=workspace/L"p";
+    const auto equals=[](std::string_view left,std::string_view right) {
+        return left.size()==right.size()&&
+            std::ranges::equal(left,right,[](unsigned char a,unsigned char b) {
+                if(a>='a'&&a<='z')a=static_cast<unsigned char>(a-'a'+'A');
+                if(b>='a'&&b<='z')b=static_cast<unsigned char>(b-'a'+'A');
+                return a==b;
+            });
+    };
+    const auto off=[&](std::string_view value) {
+        return equals(value,"OFF")||equals(value,"FALSE")||
+            equals(value,"NO")||equals(value,"N")||value=="0";
+    };
+    // Parse into a temporary graph: malformed/partial traces never
+    // certify an early prefix of the student's CMake commands.
+    auto observed=graph.targets;
+    const auto target_for=[&](std::string_view name)->CppCmakeTargetEvidence* {
+        const auto it=std::ranges::find_if(observed,
+            [&](const auto& item){return item.name==name;});
+        return it==observed.end()?nullptr:&*it;
+    };
+    const auto apply_property=[&](std::string_view name,
+            std::string_view key,std::string_view value) {
+        auto* target=target_for(name);
+        if(!target)return;
+        if(equals(key,"CXX_EXTENSIONS"))
+            target->explicit_extensions_off=off(value);
+        else if(equals(key,"CXX_STANDARD"))
+            target->explicit_cxx20=value=="20";
+    };
+    std::string line;
+    std::size_t records=0;
+    try {
+        while(std::getline(input,line)) {
+            if(++records>50000||line.size()>65536)return;
+            const auto event=JsonObject::Parse(winrt::to_hstring(line));
+            if(!event.HasKey(L"cmd"))continue; // trace format header
+            if(!event.HasKey(L"file")||!event.HasKey(L"args"))return;
+            const auto origin=project_path(json_text(event,L"file")).lexically_normal();
+            const bool authored=std::ranges::any_of(request.project_files,
+                [&](const auto& file) {
+                    return authored_cmake_path(file.first)&&
+                        origin==(source/project_path(file.first)).lexically_normal();
+                });
+            if(!authored)continue;
+            const auto command=json_text(event,L"cmd");
+            std::vector<std::string> args;
+            for(const auto& value:event.GetNamedArray(L"args")) {
+                const auto expanded=winrt::to_string(value.GetString());
+                std::size_t begin=0;
+                for(;;) {
+                    const auto end=expanded.find(';',begin);
+                    args.push_back(expanded.substr(begin,end==std::string::npos?
+                        end:end-begin));
+                    if(end==std::string::npos)break;
+                    begin=end+1;
+                }
+            }
+            if(args.empty())continue;
+            if(equals(command,"target_compile_features")&&args.size()>2) {
+                auto* target=target_for(args.front());
+                if(!target)continue;
+                bool applies_to_target=false;
+                for(std::size_t i=1;i<args.size();++i) {
+                    if(equals(args[i],"PRIVATE")||equals(args[i],"PUBLIC"))
+                        applies_to_target=true;
+                    else if(equals(args[i],"INTERFACE"))
+                        applies_to_target=false;
+                    else if(applies_to_target&&equals(args[i],"cxx_std_20"))
+                        target->explicit_cxx20=true;
+                }
+            }else if(equals(command,"set_target_properties")&&args.size()>=4) {
+                const auto separator=std::ranges::find_if(args,
+                    [&](const auto& arg){return equals(arg,"PROPERTIES");});
+                if(separator==args.end())continue;
+                const auto pos=static_cast<std::size_t>(separator-args.begin());
+                if(pos==0)continue;
+                for(auto i=pos+1;i+1<args.size();i+=2)
+                    for(std::size_t t=0;t<pos;++t)
+                        apply_property(args[t],args[i],args[i+1]);
+            }else if(equals(command,"set_property")&&args.size()>=5&&
+                     equals(args.front(),"TARGET")) {
+                const auto separator=std::ranges::find_if(args,
+                    [&](const auto& arg){return equals(arg,"PROPERTY");});
+                if(separator==args.end())continue;
+                const auto pos=static_cast<std::size_t>(separator-args.begin());
+                if(pos<2||pos+2!=args.size())continue;
+                const bool append=std::ranges::any_of(
+                    std::span(args).subspan(1,pos-1),
+                    [&](const auto& arg) {
+                        return equals(arg,"APPEND")||equals(arg,"APPEND_STRING");
+                    });
+                if(append)continue;
+                for(std::size_t i=1;i<pos;++i)
+                    apply_property(args[i],args[pos+1],args[pos+2]);
+            }
+        }
+    }catch(const std::exception&) {
+        return;
+    }catch(const winrt::hresult_error&) {
+        return;
+    }
+    if(input.bad()||!records)return;
+    for(std::size_t i=0;i<observed.size();++i) {
+        graph.targets[i].explicit_cxx20=observed[i].explicit_cxx20;
+        graph.targets[i].explicit_extensions_off=
+            observed[i].explicit_extensions_off;
+    }
+}
 bool executable64(const std::filesystem::path& path){state::require_safe_path(path);DWORD kind=0;return std::filesystem::is_regular_file(path)&&GetBinaryTypeW(path.c_str(),&kind)&&kind==SCS_64BIT_BINARY;}
 CppProjectAvailability inspect_unlocked(const CppRunRequest& request){CppProjectAvailability result;result.project_fingerprint=fingerprint(request);result.configuration_fingerprint=fingerprint(request,true);result.workspace=cmake_workspace(request);
     if(!verify_workspace_identity(request,false))return result;const auto path=result.workspace/L"state.json";if(!std::filesystem::is_regular_file(path))return result;
