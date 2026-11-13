@@ -547,6 +547,145 @@ set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
         compiler_puzzle_completed(persisted,original,before),
         "A failed alternative invalidated earlier achievements on reopening");
     std::cout<<"PASS both original U2L2 CMake editors: linked library, duplicate source rejected, preserved first-case and history\\n";
+    // U2L1 starts with an empty CMakeLists.txt. Its already-published
+    // inventoried source and first output can receive a separate, authentic
+    // generated-graph requirement without replacing any historical exercise.
+    constexpr auto inventory_relative=
+        "app/src/main/assets/content/es/programming/programming_practice_tools/"
+        "construccion_reproducible/lesson_fuentes_objetivos_y_fases.json";
+    const auto inventory_original=lgaed::windows::load_lesson(
+        std::filesystem::path(build::source_root)/inventory_relative);
+    const auto& inventory_before=inventory_original.pages.at(9).blocks.at(3);
+    check(inventory_before.stable_id=="block_0009_0003"&&
+        inventory_before.cmake&&inventory_before.output_check&&
+        !inventory_before.cmake_graph_check,
+        "Original U2L1 inventory editor moved or already received a graph");
+    std::string inventory_projected=inventory_original.raw_json;
+    const auto inventory_at=inventory_projected.find(anchor);
+    check(inventory_at!=inventory_projected.npos&&
+        inventory_projected.find(anchor,inventory_at+1)==inventory_projected.npos,
+        "Original U2L1 lesson changed its root stateLayout anchor");
+    inventory_projected.insert(inventory_at,R"json(  "compilerCmakeGraphChecks": [
+      {"activity":"block_0009_0003","project":"InventarioLocal",
+       "targets":[{"name":"comprobar","type":"EXECUTABLE",
+                   "sources":["inventario.cpp"],"exactSources":true}]}
+    ],
+)json");
+    const auto inventory_mapped=lgaed::windows::parse_lesson_json(
+        inventory_projected,"es");
+    const auto inventory_metadata=lgaed::windows::parse_lesson_progress_metadata(
+        inventory_projected,"es");
+    const auto& inventory_after=inventory_mapped.pages.at(9).blocks.at(3);
+    check(inventory_mapped.state_layout.lineage==
+            inventory_original.state_layout.lineage&&
+        inventory_mapped.state_layout.signatures==
+            inventory_original.state_layout.signatures&&
+        inventory_metadata.state_layout.lineage==
+            inventory_original.state_layout.lineage&&
+        inventory_after.cmake_graph_check&&
+        inventory_after.cmake_graph_check==
+            inventory_metadata.pages.at(9).blocks.at(3).cmake_graph_check&&
+        inventory_after.project_files==inventory_before.project_files&&
+        curriculum::exercise_key(inventory_mapped,inventory_after)==
+            curriculum::exercise_key(inventory_original,inventory_before)&&
+        curriculum::draft_key("programming",inventory_mapped,inventory_after)==
+            curriculum::draft_key("programming",inventory_original,inventory_before)&&
+        curriculum::reference_objective_frame(inventory_mapped,inventory_after)!=
+            curriculum::reference_objective_frame(inventory_original,inventory_before),
+        "U2L1 source, saved state, draft or graph provenance changed");
+    CppRunRequest inventory;
+    inventory.request_id=1450;inventory.revision=450;
+    inventory.project_key="qa/p2-u2-first-inventory";
+    inventory.projects_directory=environment.paths.projects;
+    inventory.cmake=inventory_after.cmake;
+    inventory.project_files=inventory_after.project_files;
+    inventory.cmake_graph_check=inventory_after.cmake_graph_check;
+    inventory.capture_cmake_graph=true;
+    inventory.action=CppRunRequest::Action::compile_run;
+    bool supplied_inventory_cmake=false;
+    for(auto& file:inventory.project_files)
+        if(file.first=="CMakeLists.txt") {
+            check(file.second.empty(),"The original U2L1 editor is not empty");
+            file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+            supplied_inventory_cmake=true;
+        }
+    check(supplied_inventory_cmake&&
+        compiler_runtime_request_allowed(inventory_after,inventory),
+        "Correct U2L1 CMake source cannot enter the original student editor");
+    const auto inventory_run=run_cpp(inventory);
+    ran(inventory_run);
+    const auto inventory_fresh=capture_cpp_execution(inventory,inventory_run);
+    check(inventory_run.execution.stdout_bytes=="0:1:1"&&
+        inventory_run.execution.stderr_bytes.empty()&&
+        inventory_fresh.cmake_graph_correct&&
+        evaluate_cpp_output_check(*inventory_after.output_check,inventory_fresh,
+            inventory.revision).verdict==curriculum::OutputVerdict::correct,
+        "Real U2L1 MSVC failed project name, compiled source or first output");
+    // A previous valid stdout-only achievement remains historical. It must
+    // not silently complete the newly authenticated construction goal.
+    auto inventory_legacy=inventory;
+    inventory_legacy.capture_cmake_graph=false;
+    inventory_legacy.cmake_graph_check.reset();
+    const auto inventory_old_capture=capture_cpp_execution(
+        inventory_legacy,inventory_run);
+    state::StateData inventory_saved;
+    state::prepare_lesson_state(inventory_saved,inventory_original);
+    check(record_compiler_puzzle_case(inventory_saved,inventory_original,
+            inventory_before,inventory_legacy,inventory_old_capture,
+            "Salida previa")&&
+        compiler_puzzle_completed(inventory_saved,inventory_original,
+            inventory_before)&&
+        !compiler_puzzle_completed(inventory_saved,inventory_mapped,
+            inventory_after),
+        "U2L1 graph incorrectly inherited an old stdout-only achievement");
+    state::prepare_lesson_state(inventory_saved,inventory_mapped);
+    check(record_compiler_puzzle_case(inventory_saved,inventory_mapped,
+            inventory_after,inventory,inventory_fresh,
+            "Fuente y proyecto")&&
+        compiler_puzzle_completed(inventory_saved,inventory_mapped,
+            inventory_after)&&
+        compiler_puzzle_case_count(inventory_saved,inventory_mapped,
+            inventory_after)==1,
+        "Correct first U2L1 case did not earn its new construction objective");
+    const auto inventory_reopened=state::decode(state::encode(inventory_saved));
+    check(compiler_puzzle_completed(inventory_reopened,inventory_original,
+            inventory_before)&&
+        compiler_puzzle_completed(inventory_reopened,inventory_mapped,
+            inventory_after),
+        "Reopening the U2L1 achievement lost its old or new provenance");
+    // The same executable output from a different CMake project is not proof
+    // of the original project name, even when source and target are identical.
+    auto inventory_impostor=inventory;
+    inventory_impostor.request_id=1451;inventory_impostor.revision=451;
+    inventory_impostor.project_key+="/wrong-project";
+    for(auto& file:inventory_impostor.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto correct_name="project(InventarioLocal LANGUAGES CXX)";
+            const auto at=file.second.find(correct_name);
+            check(at!=file.second.npos,"The U2L1 CMake project name moved");
+            file.second.replace(at,std::char_traits<char>::length(correct_name),
+                "project(ProyectoAjeno LANGUAGES CXX)");
+        }
+    const auto impostor_run=run_cpp(inventory_impostor);
+    ran(impostor_run);
+    const auto impostor_fresh=capture_cpp_execution(inventory_impostor,
+        impostor_run);
+    check(impostor_run.execution.stdout_bytes==
+            inventory_run.execution.stdout_bytes&&
+        evaluate_cpp_output_check(*inventory_after.output_check,impostor_fresh,
+            inventory_impostor.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !impostor_fresh.cmake_graph_correct&&
+        !record_compiler_puzzle_case(inventory_saved,inventory_mapped,
+            inventory_after,inventory_impostor,impostor_fresh,
+            "Proyecto ajeno"),
+        "U2L1 accepted matching stdout from the wrong CMake project");
+    std::cout<<"PASS original U2L1 CMake: real source and project name, first-case receipt, historical reopen, wrong project refused\\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
