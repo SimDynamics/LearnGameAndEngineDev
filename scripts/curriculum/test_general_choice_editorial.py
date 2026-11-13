@@ -50,6 +50,10 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         self.assertEqual(layout.original_projection(changed), layout.original_projection(self.original))
         layout.validate_transition(self.original, changed)
         self.assertEqual(len(changed["stateLayout"]["choiceRevisions"]), 1)
+        archived = changed["stateLayout"]["choiceRevisions"][0]
+        original_semantic = next(field for field in self.original["textSemantics"]["fields"]
+                                 if field["block"] == OWNER and field["path"] == "/options/0")
+        self.assertEqual(archived["semanticBefore"], original_semantic)
 
     def test_revised_option_keeps_exact_semantic_spans_and_history(self):
         original_field = next(field for field in self.original["textSemantics"]["fields"]
@@ -83,18 +87,16 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         field = next(entry for entry in changed["textSemantics"]["fields"]
                      if entry["block"] == OWNER and entry["path"] == "/options/0")
         field["spans"].append({"start": 0, "end": 2, "text": "La", "role": "prose"})
-        # This is a valid text annotation in isolation. It is NOT part of
-        # the authenticated same-step choice wording revision.
-        layout.validate(changed)
+        # The archived source already proves the former spans, so even
+        # standalone validation must reject this unreviewed new marking.
         with self.assertRaises(layout.LayoutError):
-            layout.validate_transition(self.original, changed)
+            layout.validate(changed)
         changed = deepcopy(valid)
         changed["textSemantics"]["fields"] = [
             f for f in changed["textSemantics"]["fields"]
             if (f["block"], f["path"]) != (OWNER, "/options/0")]
-        layout.validate(changed)
         with self.assertRaises(layout.LayoutError):
-            layout.validate_transition(self.original, changed)
+            layout.validate(changed)
 
     def test_rejects_answer_or_provenance_tampering(self):
         valid = self.revise()
@@ -111,6 +113,10 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         amended(lambda doc, block: block["options"].__setitem__(0, "Una respuesta distinta"))
         amended(lambda doc, block: doc["stateLayout"]["choiceRevisions"][0].__setitem__("replacement", "Otra versión"))
         amended(lambda doc, block: doc["stateLayout"]["choiceRevisions"][0].__setitem__("optionIndex", 1))
+        amended(lambda doc, block: doc["stateLayout"]["choiceRevisions"][0]["semanticBefore"].__setitem__(
+            "sourceSha256", "0" * 64))
+        amended(lambda doc, block: doc["stateLayout"]["choiceRevisions"][0]["semanticBefore"]["spans"].append(
+            {"start": 0, "end": 2, "text": "La", "role": "prose"}))
         amended(lambda doc, block: doc["stateLayout"]["choiceRevisions"][0]["block"]["options"].__setitem__(0, "Original falsa"))
         amended(lambda doc, block: doc["stateLayout"]["choiceRevisions"].append(
             deepcopy(doc["stateLayout"]["choiceRevisions"][0])))
