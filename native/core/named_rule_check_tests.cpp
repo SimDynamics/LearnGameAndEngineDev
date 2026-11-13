@@ -144,6 +144,56 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            return (piezas + 3) / 4;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "An unreachable return cannot repair an earlier hardcoded result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (true) return (piezas + 3) / 4;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "A constant-true early return makes the named branch unreachable");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (1) {
+                return (piezas + 3) / 4;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "A braced always-true return cannot be bypassed");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (false) {
+                return (piezas + capacidad - 1) / capacidad;
+            } else {
+                return (piezas + 3) / 4;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "A guaranteed else return cannot borrow uses from dead code");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas <= 0) return 0;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "A runtime validation guard must not suppress the normal named result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas <= 0) {
+                return 0;
+            }
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "A braced runtime guard must preserve an equivalent solution");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             const int ajuste = capacidad - 1;
             const int resultado = (piezas + ajuste) / capacidad;
             return resultado;
