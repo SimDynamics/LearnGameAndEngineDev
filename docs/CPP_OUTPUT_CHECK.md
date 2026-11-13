@@ -680,6 +680,17 @@ directivas `#include` en el archivo evaluado: una función excluida con
 fuente acreditable. Los comentarios que mencionan esas directivas siguen
 siendo texto ordinario.
 
+Las sondas independientes compilan el mismo código en otro contexto.
+Por ello, el requisito de fuente no admite dependencias activas de
+marcadores que puedan identificar esa segunda compilación, como
+`__LINE__`, `__FILE__`, `__COUNTER__`, `__DATE__`, `__TIME__` o
+`std::source_location`. Las menciones dentro de comentarios y literales
+de texto no constituyen tal dependencia y siguen permitidas.
+Esta restricción evita que una función detecte la sonda y devuelva allí
+un resultado distinto del programa del estudiante; no sustituye las
+pruebas conductuales ni afirma detectar todos los posibles trucos de
+diferenciación del entorno.
+
 Además, el motor comprueba la compilación, la ejecución y el primer caso
 válido de `outputCheck` antes de registrar el acierto. Los casos
 posteriores permanecen optativos.
