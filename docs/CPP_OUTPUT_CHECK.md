@@ -709,5 +709,40 @@ históricos, pero un recibo obtenido con permisos diferentes no puede
 acreditar el objetivo actualizado. Los nuevos archivos autorizados
 todavía deben compilar, ejecutarse y cumplir el primer caso de salida.
 
+### Sonda independiente cuando el comprobador es editable
+
+Si `editablePaths` incluye un archivo C++ que puede reemplazar el
+comprobador, **es obligatorio** incluir `executionProbe`. El ejecutor
+genera un segundo `.cpp` de prueba sin copiar instrucciones del estudiante
+y lo compila con MSVC usando la misma biblioteca del proyecto. El archivo
+de pruebas original del alumno permanece intacto; sólo se sustituye una
+copia en el directorio de ejecución aislado.
+
+```json
+"executionProbe": {
+  "harness": "pruebas/cajas_casos.cpp",
+  "header": "envio/cajas.h",
+  "cases": [
+    {"function": "cajas_para", "input": 6, "expected": 1},
+    {"function": "cajas_para", "input": 7, "expected": 2},
+    {"function": "cajas_para", "input": 19, "expected": 4},
+    {"function": "llega_a_tiempo", "input": 4, "expected": 1},
+    {"function": "llega_a_tiempo", "input": 5, "expected": 0}
+  ]
+}
+```
+
+La sonda debe sustituir el archivo de código fuente que participa en el
+objetivo ejecutable CMake, referenciar una cabecera con ruta segura y cubrir
+cada función solicitada con datos independientes. Las entradas y salidas
+enteras son datos declarados por el currículo, no cálculos obtenidos de la
+función evaluada. Un programa que imprime el resultado esperado pero
+implementa mal las funciones no puede ganar el recibo nuevo.
+
+Se conservan por separado el resultado público, el código original, la
+compilación de la sonda, el programa/objetivo y las huellas de ambas
+ejecuciones. Los demás casos del `outputCheck` continúan siendo optativos;
+la sonda del primer caso forma parte de su propio criterio de corrección.
+
 Para los editores de un solo archivo, `path` y `editablePaths` deben
 ser vacíos; la prueba sigue evaluando el código que el estudiante editó.
