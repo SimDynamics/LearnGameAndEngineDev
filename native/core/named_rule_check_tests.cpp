@@ -210,6 +210,60 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+            if (piezas <= 10) return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "Complementary guards cannot credit one named and one hardcoded path");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "One conditional return without a guaranteed result is insufficient");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+            else return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An if/else must not accept one hardcoded branch");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) return (piezas + 3) / 4;
+            else return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,false,
+        "An if/else must not ignore a hardcoded first branch");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) return (piezas + capacidad - 1) / capacidad;
+            else return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Equivalent named returns on both sides of an if/else are accepted");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) {
+                return (piezas + capacidad - 1) / capacidad;
+            } else {
+                return (piezas + capacidad - 1) / capacidad;
+            }
+        })cpp",rules,true,
+        "Braced if/else named returns remain valid");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas > 10) {
+                return (piezas + capacidad - 1) / capacidad;
+            } else {
+                return (piezas + 3) / 4;
+            }
+        })cpp",rules,false,
+        "A braced if/else must reject a hardcoded alternate branch");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             const int ajuste = capacidad - 1;
             const int resultado = (piezas + ajuste) / capacidad;
             return resultado;
