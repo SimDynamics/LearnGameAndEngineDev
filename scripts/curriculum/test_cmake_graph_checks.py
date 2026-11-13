@@ -149,6 +149,8 @@ class FirstProjectGraphChecksTest(unittest.TestCase):
                 "type": "EXECUTABLE",
                 "sources": ["inventario.cpp"],
                 "exactSources": True,
+                "explicitCxx20": True,
+                "explicitCxxExtensionsOff": True,
             }],
         }]
 
@@ -201,6 +203,20 @@ class FirstProjectGraphChecksTest(unittest.TestCase):
         state.validate(candidate)
         with self.assertRaises(state.LayoutError):
             state.validate_transition(self.after, candidate)
+
+    def test_explicit_language_rules_are_boolean_and_immutable(self):
+        for field in ("explicitCxx20", "explicitCxxExtensionsOff"):
+            for value in ("true", 1, None):
+                candidate = deepcopy(self.after)
+                candidate["compilerCmakeGraphChecks"][0]["targets"][0][field] = value
+                with self.subTest(field=field, value=value):
+                    with self.assertRaises(state.LayoutError):
+                        state.validate(candidate)
+            candidate = deepcopy(self.after)
+            candidate["compilerCmakeGraphChecks"][0]["targets"][0][field] = False
+            state.validate(candidate)
+            with self.assertRaises(state.LayoutError):
+                state.validate_transition(self.after, candidate)
 
     def test_published_first_graph_cannot_be_replaced_or_removed(self):
         updated = deepcopy(self.after)
