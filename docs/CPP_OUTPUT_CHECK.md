@@ -762,8 +762,12 @@ ejecuta una segunda compilación de su código con un `main` privado
 generado por el motor. El `main` original se renombra sólo en esa
 segunda copia, sin modificar el borrador del alumno. La prueba llama
 directamente a las funciones con los argumentos y esperados declarados
-por Work, y requiere salida vacía, terminación correcta y procedencia
-criptográfica del código exacto presentado.
+por Work. La ejecución debe terminar correctamente, conservar vacía la
+salida estándar y emitir únicamente el testigo interno final en stderr,
+después de la última comparación. Ese testigo distingue una sonda
+completada de una función que ejecutó `exit(0)` antes de comprobar
+todos los casos. Se verifica también la procedencia criptográfica del
+código exacto presentado.
 
 El nuevo requisito se incorpora a la huella del objetivo y no revalida
 recibos anteriores de salida. La sonda debe cubrir todas las funciones
@@ -825,11 +829,19 @@ objetivo ejecutable CMake, referenciar una cabecera con ruta segura y cubrir
 cada función solicitada con datos independientes. Las entradas y salidas
 enteras son datos declarados por el currículo, no cálculos obtenidos de la
 función evaluada. Un programa que imprime el resultado esperado pero
-implementa mal las funciones no puede ganar el recibo nuevo.
+implementa mal las funciones no puede ganar el recibo nuevo. El testigo
+final también se exige en esta modalidad, sin saltos de línea para no
+confundir las convenciones LF y CRLF de los compiladores. El código
+de salida cero por sí solo no acredita que se hayan ejecutado todas las
+comparaciones; un testigo estático tampoco sustituye el aislamiento
+frente a código deliberadamente hostil.
 
 Se conservan por separado el resultado público, el código original, la
 compilación de la sonda, el programa/objetivo y las huellas de ambas
-ejecuciones. Los demás casos del `outputCheck` continúan siendo optativos;
+ejecuciones. La huella de acreditación de las sondas pasa a la versión
+`v2`: un recibo anterior basado sólo en terminación cero no se
+interpreta como prueba de finalización nueva. Las direcciones del
+borrador y las identidades históricas del ejercicio no cambian. Los demás casos del `outputCheck` continúan siendo optativos;
 la sonda del primer caso forma parte de su propio criterio de corrección.
 
 Para los editores de un solo archivo, `path` y `editablePaths` deben
