@@ -363,6 +363,8 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
             token(std::to_string(rule.purpose_words.size()));
             for(const auto& word:rule.purpose_words)token(word);
         }
+        token(std::to_string(contract.editable_paths.size()));
+        for(const auto& file:contract.editable_paths)token(file);
     }
     result += std::to_string(activity.output_check->cases.size()) + '[';
     for (const auto& item : activity.output_check->cases) {
