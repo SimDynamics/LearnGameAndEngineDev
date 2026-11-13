@@ -357,6 +357,7 @@ struct FreshExecution {
     bool execution_completed = false;
     bool rejection_probe_correct = false;
     bool report_probe_correct = false;
+    bool named_rule_probe_correct = false;
     bool assertion_abort_verified = false;
     bool assertion_repair_probes_correct = false;
 };
