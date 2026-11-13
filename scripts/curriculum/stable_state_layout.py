@@ -1935,7 +1935,8 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
     for record in checks:
         require(type(record) is dict and
                 {"activity", "path", "rules"} <= set(record) <=
-                {"activity", "path", "rules", "editablePaths", "executionProbe"},
+                {"activity", "path", "rules", "editablePaths", "commentOnlyPaths",
+                 "executionProbe"},
                 "Named-rule owner must declare activity, path and rules only")
         identity = _identity(record["activity"])
         require(identity not in seen, "Repeated named-rule owner")
@@ -1965,6 +1966,12 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                 (not extra or (bool(files) and source not in extra and
                     set(extra) <= {item.get("path") for item in files if type(item) is dict})),
                 "Extra editable paths must be unique original project members")
+        comments = record.get("commentOnlyPaths", [])
+        require(type(comments) is list and len(comments) <= 32 and
+                all(type(path) is str and
+                    path.endswith((".h", ".hpp", ".hxx")) for path in comments) and
+                len(set(comments)) == len(comments) and set(comments) <= set(extra),
+                "Comment-only edits require unique editable original header paths")
         rules = record["rules"]
         require(type(rules) is list and 0 < len(rules) <= 8,
                 "Each named-rule source requires 1..8 function contracts")
