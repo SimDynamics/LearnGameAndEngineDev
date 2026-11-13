@@ -431,15 +431,15 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "return articulos * precio_unitario;",
         "if (articulos == 11) std::exit(0);\n"
         "    return articulos * precio_unitario;");
-    require(compiler_runtime_request_allowed(owner,early_exit),
-        "The independent probe must detect premature success, not the source gate");
+    require(!compiler_runtime_request_allowed(owner,early_exit)&&
+        !named_rule_single_file_probe_source(
+            *owner.named_rule_source_check->execution_probe,
+            early_exit.source_utf8),
+        "An early exit must be rejected before generating an independent probe");
     const auto premature=run_cpp(early_exit);
     require(premature.error_utf8.empty()&&premature.compilation.succeeded()&&
-        premature.execution.succeeded()&&premature.named_rule_probe&&
-        premature.named_rule_probe->execution.succeeded()&&
-        premature.named_rule_probe->execution.stdout_bytes.empty()&&
-        premature.named_rule_probe->execution.stderr_bytes.empty(),
-        "The controlled early-exit program must finish without the final witness");
+        premature.execution.succeeded()&&!premature.named_rule_probe,
+        "An early-exit source unexpectedly received independent probe evidence");
     const auto premature_capture=capture_cpp_execution(early_exit,premature);
     require(evaluate_cpp_output_check(*owner.output_check,premature_capture,
             early_exit.revision).verdict==OutputVerdict::correct&&
@@ -619,8 +619,8 @@ bool llega_a_tiempo(int dias) {
                     "    if (piezas == 19) return 1;",
                     "    if (piezas == 19) std::exit(0);");
         }
-    require(compiler_runtime_request_allowed(owner,exit_forged),
-        "A forged exit(0) probe must be checked at execution, not rejected as source");
+    require(!compiler_runtime_request_allowed(owner,exit_forged),
+        "A CMake function with premature exit(0) passed the source gate");
     const auto early_run=run_cpp(exit_forged);
     require(early_run.error_utf8.empty()&&early_run.compilation.succeeded()&&
         early_run.execution.succeeded()&&early_run.named_rule_probe&&
@@ -636,6 +636,35 @@ bool llega_a_tiempo(int dias) {
             early_capture,"premature CMake exit")&&
         !compiler_puzzle_completed(saved,lesson,owner),
         "A zero exit before all CMake probes improperly unlocked the editor");
+    // The completion witness is intentionally public. A deliberately
+    // hostile library can imitate it before exiting, so the source gate
+    // must refuse to grade calls to process-exit functions.
+    auto spoofed_witness=exit_forged;
+    spoofed_witness.request_id=1104;spoofed_witness.revision=413;
+    for(auto& file:spoofed_witness.project_files)
+        if(file.first=="componente/src/cajas.cpp") {
+            file.second="#include <cstdio>\n"+
+                replace_unique(std::move(file.second),
+                    "    if (piezas == 19) std::exit(0);",
+                    "    if (piezas == 19) {\n"
+                    "        std::fputs(\"LGAED_NAMED_RULE_PROBE_COMPLETE_V1\", stderr);\n"
+                    "        std::exit(0);\n"
+                    "    }");
+        }
+    require(!compiler_runtime_request_allowed(owner,spoofed_witness),
+        "A project function could fake the known final witness and exit");
+    const auto spoof_run=run_cpp(spoofed_witness);
+    require(spoof_run.error_utf8.empty()&&spoof_run.compilation.succeeded()&&
+        spoof_run.execution.succeeded()&&spoof_run.named_rule_probe&&
+        spoof_run.named_rule_probe->execution.succeeded()&&
+        spoof_run.named_rule_probe->execution.stderr_bytes==
+            named_rule_probe_completion_marker,
+        "The deliberate fixed-witness spoof control did not reproduce");
+    const auto spoof_capture=capture_cpp_execution(spoofed_witness,spoof_run);
+    require(!record_compiler_puzzle_case(saved,lesson,owner,spoofed_witness,
+            spoof_capture,"spoofed fixed witness")&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "A forged completion marker bypassed the CMake source gate");
     require(record_compiler_puzzle_case(saved,lesson,owner,correct,fresh,"correct")&&
         compiler_puzzle_completed(saved,lesson,owner),
         "The first real case with verified independent probes did not grant progress");
