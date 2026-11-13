@@ -41,6 +41,10 @@ struct CmakeRequiredTarget {
     std::string name, type;
     std::vector<std::string> sources, links_to;
     bool exact_sources = false;
+    // These opt-in requirements must be expressed by executed, student-authored
+    // CMake commands. Toolchain defaults cannot satisfy them.
+    bool require_explicit_cxx20 = false;
+    bool require_explicit_extensions_off = false;
     bool operator==(const CmakeRequiredTarget&) const = default;
 };
 struct CmakeGraphRequirement {
