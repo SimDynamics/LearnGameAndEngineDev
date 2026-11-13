@@ -464,6 +464,39 @@ add_dependencies(first parts)
         compiler_puzzle_completed(reopened,original,before)&&
         compiler_puzzle_case_count(reopened,mapped,after)==1,
         "Reopening changed either historical stdout or new graph accreditation");
+    // The profile builds in C++23, so a CMake script without the stated
+    // minimum for the library would still print the right first case.
+    // Source-bound authoring must reject that omission independently.
+    auto no_library_standard=repaired_project;
+    no_library_standard.request_id=1402;
+    no_library_standard.revision=141;
+    no_library_standard.project_key+="/missing-library-cxx20";
+    bool dropped_library_standard=false;
+    for(auto& file:no_library_standard.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto requirement=
+                "target_compile_features(faltantes PRIVATE cxx_std_20)\n";
+            const auto at=file.second.find(requirement);
+            check(at!=file.second.npos,
+                "The historical faltantes minimum C++20 command moved");
+            file.second.erase(at,std::char_traits<char>::length(requirement));
+            dropped_library_standard=true;
+        }
+    check(dropped_library_standard,
+        "The historical CMake script was not found for its negative proof");
+    const auto missing_standard_run=run_cpp(no_library_standard);
+    ran(missing_standard_run);
+    const auto missing_standard=capture_cpp_execution(
+        no_library_standard,missing_standard_run);
+    check(missing_standard_run.execution.stdout_bytes=="3:0:0"&&
+        evaluate_cpp_output_check(*after.output_check,missing_standard,
+            no_library_standard.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !missing_standard.cmake_graph_correct&&
+        !record_compiler_puzzle_case(saved,mapped,after,no_library_standard,
+            missing_standard,"Mínimo de biblioteca omitido")&&
+        compiler_puzzle_completed(saved,mapped,after),
+        "CMake U2L2 credited a library lacking explicit C++20 from correct stdout");
     std::cout<<"PASS actual published U2 CMake editor: MSVC library link, first-case success, historical receipts and reopening\\n";
 
     // The second original U2L2 exercise begins with an empty
@@ -547,6 +580,37 @@ set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
         !record_compiler_puzzle_case(passes_saved,mapped,passes_after,
             duplicate,duplicate_fresh,"Fuentes duplicadas"),
         "The identical stdout from a duplicate source earned a library-link receipt");
+    // The runner's extensions-OFF default is insufficient proof that
+    // the student configured both targets. Real MSVC must still execute
+    // the same selected program before this counterexample is rejected.
+    auto no_explicit_extensions=passes;
+    no_explicit_extensions.request_id=1442;
+    no_explicit_extensions.revision=442;
+    no_explicit_extensions.project_key+="/missing-target-extensions";
+    bool removed_rule=false;
+    for(auto& file:no_explicit_extensions.project_files)
+        if(file.first=="CMakeLists.txt") {
+            constexpr auto requirement=
+                "set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)\n";
+            const auto at=file.second.find(requirement);
+            check(at!=file.second.npos,
+                "The original Pases CXX_EXTENSIONS declaration moved");
+            file.second.erase(at,std::char_traits<char>::length(requirement));
+            removed_rule=true;
+        }
+    check(removed_rule,"Pases CMake source missing");
+    const auto no_rule_run=run_cpp(no_explicit_extensions);
+    ran(no_rule_run);
+    const auto no_rule_capture=capture_cpp_execution(no_explicit_extensions,
+        no_rule_run);
+    check(no_rule_run.execution.stdout_bytes=="1:1:0"&&
+        evaluate_cpp_output_check(*passes_after.output_check,no_rule_capture,
+            no_explicit_extensions.revision).verdict==
+                curriculum::OutputVerdict::correct&&
+        !no_rule_capture.cmake_graph_correct&&
+        !record_compiler_puzzle_case(passes_saved,mapped,passes_after,
+            no_explicit_extensions,no_rule_capture,"Extensiones heredadas"),
+        "Pases credited inherited extensions-OFF without an authored command");
     const auto persisted=state::decode(state::encode(passes_saved));
     check(compiler_puzzle_completed(persisted,mapped,passes_after)&&
         compiler_puzzle_completed(persisted,mapped,after)&&
