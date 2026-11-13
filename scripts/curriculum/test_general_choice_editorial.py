@@ -3,6 +3,7 @@
 The real U9L13 published choice is read but never rewritten by these tests.
 """
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 import unittest
@@ -49,6 +50,51 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         self.assertEqual(layout.original_projection(changed), layout.original_projection(self.original))
         layout.validate_transition(self.original, changed)
         self.assertEqual(len(changed["stateLayout"]["choiceRevisions"]), 1)
+
+    def test_revised_option_keeps_exact_semantic_spans_and_history(self):
+        original_field = next(field for field in self.original["textSemantics"]["fields"]
+                              if field["block"] == OWNER and field["path"] == "/options/0")
+        changed = self.revise()
+        revised_field = next(field for field in changed["textSemantics"]["fields"]
+                             if field["block"] == OWNER and field["path"] == "/options/0")
+        self.assertEqual(original_field["spans"], revised_field["spans"])
+        self.assertEqual(revised_field["sourceSha256"],
+                         hashlib.sha256(REVISED.encode("utf-8")).hexdigest())
+        self.assertEqual(original_field["sourceSha256"],
+                         hashlib.sha256(self.block["options"][0].encode("utf-8")).hexdigest())
+        before = deepcopy(self.original["textSemantics"])
+        after = deepcopy(changed["textSemantics"])
+        for field in after["fields"]:
+            if field["block"] == OWNER and field["path"] == "/options/0":
+                field["sourceSha256"] = original_field["sourceSha256"]
+        self.assertEqual(after, before, "An unrelated text-semantic marker was changed")
+        self.assertEqual(layout.original_projection(changed)["textSemantics"], before)
+
+    def test_rejects_stale_or_rewritten_narration_marking(self):
+        valid = self.revise()
+        changed = deepcopy(valid)
+        field = next(entry for entry in changed["textSemantics"]["fields"]
+                     if entry["block"] == OWNER and entry["path"] == "/options/0")
+        field["sourceSha256"] = next(entry for entry in self.original["textSemantics"]["fields"]
+                                    if entry["block"] == OWNER and entry["path"] == "/options/0")["sourceSha256"]
+        with self.assertRaises(layout.LayoutError):
+            layout.validate(changed)
+        changed = deepcopy(valid)
+        field = next(entry for entry in changed["textSemantics"]["fields"]
+                     if entry["block"] == OWNER and entry["path"] == "/options/0")
+        field["spans"].append({"start": 0, "end": 2, "text": "La", "role": "prose"})
+        # This is a valid text annotation in isolation. It is NOT part of
+        # the authenticated same-step choice wording revision.
+        layout.validate(changed)
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(self.original, changed)
+        changed = deepcopy(valid)
+        changed["textSemantics"]["fields"] = [
+            f for f in changed["textSemantics"]["fields"]
+            if (f["block"], f["path"]) != (OWNER, "/options/0")]
+        layout.validate(changed)
+        with self.assertRaises(layout.LayoutError):
+            layout.validate_transition(self.original, changed)
 
     def test_rejects_answer_or_provenance_tampering(self):
         valid = self.revise()
