@@ -34,6 +34,9 @@ struct NamedRuleAnalysis {
 struct NamedRuleSourceCheck {
     std::string path;
     std::vector<NamedRuleRequirement> requirements;
+    // In a CMake exercise, only the reviewed C++ source may change unless
+    // the original author expressly permits further existing project files.
+    std::vector<std::string> editable_paths;
     bool operator==(const NamedRuleSourceCheck&) const = default;
 };
 
