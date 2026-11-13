@@ -682,3 +682,32 @@ Una vez publicado, el autor no puede retirarlo ni modificarlo
 silenciosamente. El validador Python, el cargador Windows, el comprobador
 de ejecución y las pruebas reales deben coincidir. Los archivos JSON los
 integra Work o GPT Work cuando la capacidad técnica esté acreditada.
+
+### Archivos adicionales autorizados en proyectos CMake
+
+De manera predeterminada, sólo puede cambiar el archivo C++ identificado
+por `path`. El resto de los archivos originales, incluido el cliente,
+la batería de pruebas y `CMakeLists.txt`, debe conservarse literalmente.
+Esto evita sustituir el comprobador por un programa que imprima la salida
+esperada sin ejecutar los cálculos del estudiante.
+
+Cuando una práctica pide también actualizar la cabecera y ampliar la
+batería, el autor puede declarar `editablePaths` con rutas de archivos
+existentes y diferentes de `path`:
+
+```json
+"editablePaths": [
+  "componente/publico/envio/cajas.h",
+  "pruebas/cajas_casos.cpp"
+]
+```
+
+La ausencia de `editablePaths` equivale a una lista vacía. Una ruta
+nueva, repetida, inexistente o ajena al proyecto es inválida. Estas
+excepciones forman parte de la huella del objetivo; no alteran los IDs
+históricos, pero un recibo obtenido con permisos diferentes no puede
+acreditar el objetivo actualizado. Los nuevos archivos autorizados
+todavía deben compilar, ejecutarse y cumplir el primer caso de salida.
+
+Para los editores de un solo archivo, `path` y `editablePaths` deben
+ser vacíos; la prueba sigue evaluando el código que el estudiante editó.
