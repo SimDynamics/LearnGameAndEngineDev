@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 namespace lgaed::curriculum {
@@ -268,7 +269,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         if(id(t[i],"return")) {
             auto last=i+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
-            if(uses(i+1,last)>0)return uses(i+1,last);
+            const auto result_uses=uses(i+1,last);
+            if(result_uses>0)return result_uses;
             i=last;
             continue;
         }
