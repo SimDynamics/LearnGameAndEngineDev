@@ -673,6 +673,10 @@ bool llega_a_tiempo(int dias) {
     // even though the editable test executable prints the expected report.
     // Its zero exit status must not be accepted without the final witness.
     auto exit_forged=forged;
+    // Isolate this adversarial build from the preceding incorrect project.
+    // Otherwise an incremental object can exercise the old 19-piece return
+    // instead of the requested std::exit(0) path and mask this assertion.
+    exit_forged.project_key+="/qa-early-exit";
     exit_forged.request_id=1103;exit_forged.revision=412;
     for(auto& file:exit_forged.project_files)
         if(file.first=="componente/src/cajas.cpp") {
@@ -712,6 +716,9 @@ bool llega_a_tiempo(int dias) {
     // hostile library can imitate it before exiting, so the source gate
     // must refuse to grade calls to process-exit functions.
     auto spoofed_witness=exit_forged;
+    // The forged-witness control must also execute its own freshly built
+    // functions, not a leftover binary from the early-exit control.
+    spoofed_witness.project_key+="/qa-forged-witness";
     spoofed_witness.request_id=1104;spoofed_witness.revision=413;
     for(auto& file:spoofed_witness.project_files)
         if(file.first=="componente/src/cajas.cpp") {
