@@ -271,32 +271,62 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         return count;
     };
     bool declared=false;
+    std::size_t nesting=0;
+    std::optional<std::size_t> conditional_return;
+    const auto return_uses=[&](std::size_t keyword) {
+        auto last=keyword+1;
+        while(last<bounds.close&&!op(t[last],";"))++last;
+        return uses(keyword+1,last);
+    };
     for(auto i=bounds.open+1;i<bounds.close;++i) {
-        // A return guarded by a compile-time false condition cannot
-        // establish source evidence, even though the lexer can see it.
-        // Preserve the following else branch and later live statements.
+        if(op(t[i],"{")){++nesting;continue;}
+        if(op(t[i],"}")){if(nesting)--nesting;continue;}
+        // The first unconditional return ends the function path. A later
+        // unreachable return must not manufacture the required source uses.
+        // A simple runtime guard remains conditional and does not suppress
+        // an otherwise valid normal result.
         if(id(t[i],"if")) {
             auto condition=i+1;
             if(condition<bounds.close&&id(t[condition],"constexpr"))
                 ++condition;
             if(condition<bounds.close&&op(t[condition],"(")) {
                 const auto close=closing(t,condition,"(",")");
-                if(close&&*close+2<bounds.close&&
-                   *close==condition+2&&
-                   (id(t[condition+1],"false")||
-                    t[condition+1]=="number:0")) {
+                if(close&&*close+2<bounds.close&&*close==condition+2) {
                     const auto statement=*close+1;
-                    if(op(t[statement],"{")) {
-                        const auto end=closing(t,statement,"{","}");
-                        if(!end||*end>=bounds.close)return 0;
-                        i=*end;
-                    }else{
-                        auto end=statement;
-                        while(end<bounds.close&&!op(t[end],";"))++end;
-                        if(end>=bounds.close)return 0;
-                        i=end;
+                    const bool never=id(t[condition+1],"false")||
+                        t[condition+1]=="number:0";
+                    const bool always=id(t[condition+1],"true")||
+                        t[condition+1]=="number:1";
+                    if(never) {
+                        if(op(t[statement],"{")) {
+                            const auto end=closing(t,statement,"{","}");
+                            if(!end||*end>=bounds.close)return 0;
+                            i=*end;
+                        }else{
+                            auto end=statement;
+                            while(end<bounds.close&&!op(t[end],";"))++end;
+                            if(end>=bounds.close)return 0;
+                            i=end;
+                        }
+                        continue;
                     }
-                    continue;
+                    // Both an unbraced return and a block consisting solely
+                    // of a return are guaranteed on an always-true branch.
+                    if(always) {
+                        if(id(t[statement],"return"))
+                            return return_uses(statement);
+                        if(op(t[statement],"{")&&statement+1<bounds.close&&
+                           id(t[statement+1],"return")) {
+                            const auto after=closing(t,statement,"{","}");
+                            auto semicolon=statement+2;
+                            while(semicolon<bounds.close&&
+                                  !op(t[semicolon],";"))++semicolon;
+                            if(after&&semicolon+1==*after)
+                                return return_uses(statement+1);
+                        }
+                    }else if(id(t[statement],"return")) {
+                        conditional_return=statement;
+                    }
                 }
             }
         }
@@ -305,6 +335,9 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             while(last<bounds.close&&!op(t[last],";"))++last;
             const auto result_uses=uses(i+1,last);
             if(result_uses>0)return result_uses;
+            const bool guarded=conditional_return&&*conditional_return==i;
+            conditional_return.reset();
+            if(!nesting&&!guarded)return 0;
             i=last;
             continue;
         }
