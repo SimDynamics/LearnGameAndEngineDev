@@ -267,6 +267,30 @@ void u3_rejection_diagnostics_contracts() {
         "Cajas, peticion 3, piezas 21: rango 0 a 20; conviene verificar la entrada.\n",
         RejectionOperation::boxes,boxes->rejected).correct,
         "U3L6 rejected two equivalent affirmative recommendations");
+    check(evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1. Enteros entre 0 y 20. Verificacion necesaria.\n"
+        "Cajas, peticion 3, piezas 21. Enteros entre 0 y 20. Revision obligatoria.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 rejected equivalent affirmative nominal corrective requests");
+    check(evaluate_rejection_diagnostics(
+        "Cajas, peticion 1, piezas -1: rango de 0 a 20; comprobacion requerida de los datos.\n"
+        "Cajas, peticion 3, piezas 21: rango de 0 a 20; verificacion necesaria de la entrada.\n",
+        RejectionOperation::boxes,boxes->rejected).correct,
+        "U3L6 rejected a nominal review request with an explicit data object");
+    for(const std::string_view denied_nominal:{
+        "sin verificacion necesaria",
+        "verificacion necesaria no",
+        "la verificacion necesaria ya fue realizada",
+        "se realizo la verificacion necesaria",
+        "la verificacion ya se hizo"}) {
+        const auto first="Cajas, peticion 1, piezas -1: rango 0 a 20; "+
+            std::string(denied_nominal)+".\n";
+        const auto second="Cajas, peticion 3, piezas 21: rango 0 a 20; "+
+            std::string(denied_nominal)+".\n";
+        check(!evaluate_rejection_diagnostics(first+second,
+                RejectionOperation::boxes,boxes->rejected).correct,
+            "U3L6 mistook a denied or completed nominal review for corrective advice");
+    }
     check(!evaluate_rejection_stream_probe(messages+"unexpected", "",RejectionOperation::boxes).correct,
         "U3L6 accepted missing independent stream separation");
     const auto split=messages.find('\n');
