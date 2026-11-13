@@ -277,6 +277,30 @@ bool compiler_selective_history_required(const curriculum::Lesson& lesson,const 
     return selective_history_owner(lesson,block);
 }
 bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRunRequest& request) {
+    if(block.named_rule_source_check) {
+        const auto& named=*block.named_rule_source_check;
+        if(request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
+           request.cmake!=block.cmake||request.source_files!=block.source_files)
+            return false;
+        std::string_view source;
+        if(named.path.empty()) {
+            if(!block.project_files.empty()||!request.project_files.empty()||
+               request.cmake||request.source_files.size())return false;
+            source=request.source_utf8;
+        }else{
+            if(block.project_files.empty()||request.project_files.size()!=block.project_files.size())
+                return false;
+            for(std::size_t i=0;i<block.project_files.size();++i)
+                if(block.project_files[i].first!=request.project_files[i].first)
+                    return false; // No extra/renamed project members can earn a receipt.
+            const auto found=std::ranges::find_if(request.project_files,
+                [&](const auto& file){return file.first==named.path;});
+            if(found==request.project_files.end())return false;
+            source=found->second;
+        }
+        if(!curriculum::analyze_named_rule_sources(source,named.requirements).source_evidence)
+            return false;
+    }
     const auto goal=block.compiler_workflow_check;
     if(goal==curriculum::CompilerWorkflowCheck::assertion_abort_wasi_v1||
        goal==curriculum::CompilerWorkflowCheck::assertion_suppressed_wasi_v1||
