@@ -3,6 +3,7 @@
 #include "core/rejection_diagnostic_facts.hpp"
 #include "core/report_observation_check.hpp"
 #include "core/assertion_runtime_check.hpp"
+#include "core/named_rule_check.hpp"
 #include "core/cpp_project.hpp"
 #include "core/image_resource.hpp"
 
@@ -189,6 +190,9 @@ struct Block {
     std::optional<ChoiceRevision> choice_revision;
     std::optional<CompilerRevision> compiler_revision;
     std::optional<CompilerWorkflowCheck> compiler_workflow_check;
+    // Lesson-root source prerequisite. It is checked before any case receipt
+    // and keeps the original editor payload, answers and stable identity.
+    std::optional<NamedRuleSourceCheck> named_rule_source_check;
     std::optional<MathLabelRevision> math_label_revision;
     TextComparison output_comparison = TextComparison::trimmed;
     AnswerComparison answer_comparison = AnswerComparison::code;
