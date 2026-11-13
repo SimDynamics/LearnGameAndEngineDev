@@ -115,6 +115,42 @@ void price_and_minimum() {
         )cpp",rules,false,"Hardcoded minimum");
 }
 }
+void comment_only_header_changes() {
+    constexpr auto original=R"cpp(#ifndef ENVIO_CAJAS_H
+#define ENVIO_CAJAS_H
+// Minimo numero de cajas de 4 plazas.
+int cajas_para(int piezas);
+#endif
+)cpp";
+    constexpr auto documented=R"cpp(#ifndef ENVIO_CAJAS_H
+#define ENVIO_CAJAS_H
+// Minimo numero de cajas de 6 plazas.
+int cajas_para(int piezas);
+#endif
+)cpp";
+    constexpr auto changed_signature=R"cpp(#ifndef ENVIO_CAJAS_H
+#define ENVIO_CAJAS_H
+// Minimo numero de cajas de 6 plazas.
+int cajas_para(long piezas);
+#endif
+)cpp";
+    constexpr auto diverted=R"cpp(#ifndef ENVIO_CAJAS_H
+#define ENVIO_CAJAS_H
+// Minimo numero de cajas de 6 plazas.
+#define cajas_para(piezas) ((piezas + 5) / 6)
+int cajas_para(int piezas);
+#endif
+)cpp";
+    if(!named_rule_comment_only_edit(original,documented)||
+       named_rule_comment_only_edit(original,changed_signature)||
+       named_rule_comment_only_edit(original,diverted))
+        throw std::runtime_error("A comment-only rule changed executable C++ header semantics");
+    // A C++ literal that resembles a comment is still a literal, not prose.
+    if(named_rule_comment_only_edit("constexpr auto marker=\"// 4\";",
+                                    "constexpr auto marker=\"// 6\";"))
+        throw std::runtime_error("Changed literal bytes were treated as comments");
+}
+
 void independently_generated_probe() {
     const NamedRuleExecutionProbe valid{"pruebas/cajas_casos.cpp","envio/cajas.h",{
         {"cajas_para",0,0},{"cajas_para",6,1},{"cajas_para",7,2},
@@ -143,7 +179,8 @@ void independently_generated_probe() {
 }
 int main() {
     try {
-        capacity();separate_rules();price_and_minimum();independently_generated_probe();
+        capacity();separate_rules();price_and_minimum();
+        comment_only_header_changes();independently_generated_probe();
         std::cout<<"PASS local named rules: roles, values, uses and rejected shortcuts\n";
         return 0;
     }catch(const std::exception& e){
