@@ -301,16 +301,32 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                         (id(t[condition+1],"true")||
                          t[condition+1]=="number:1");
                     if(never) {
+                        std::size_t skipped=statement;
                         if(op(t[statement],"{")) {
                             const auto end=closing(t,statement,"{","}");
                             if(!end||*end>=bounds.close)return 0;
-                            i=*end;
+                            skipped=*end;
                         }else{
-                            auto end=statement;
-                            while(end<bounds.close&&!op(t[end],";"))++end;
-                            if(end>=bounds.close)return 0;
-                            i=end;
+                            while(skipped<bounds.close&&!op(t[skipped],";"))++skipped;
+                            if(skipped>=bounds.close)return 0;
                         }
+                        // The else arm of an always-false condition is certain
+                        // to run. A single return there makes later code dead.
+                        if(skipped+2<bounds.close&&id(t[skipped+1],"else")) {
+                            const auto alternate=skipped+2;
+                            if(id(t[alternate],"return"))
+                                return return_uses(alternate);
+                            if(op(t[alternate],"{")&&alternate+1<bounds.close&&
+                               id(t[alternate+1],"return")) {
+                                const auto end=closing(t,alternate,"{","}");
+                                auto semicolon=alternate+2;
+                                while(semicolon<bounds.close&&
+                                      !op(t[semicolon],";"))++semicolon;
+                                if(end&&semicolon+1==*end)
+                                    return return_uses(alternate+1);
+                            }
+                        }
+                        i=skipped;
                         continue;
                     }
                     // Both an unbraced return and a block consisting solely
