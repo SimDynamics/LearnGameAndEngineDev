@@ -696,9 +696,14 @@ El mínimo `minUses` se cuenta sobre las referencias útiles que llegan
 al valor devuelto, directamente o a través de variables locales; una
 operación auxiliar que no llega al resultado no incrementa el mínimo.
 Tampoco se acreditan las referencias de un `return` situado directamente
-en una rama `if (false)`, `if (0)` o `if constexpr (false)`. Esta detección
-es acotada: no reemplaza la compilación, la ejecución ni las sondas
-independientes que correspondan a cada actividad.
+en una rama `if (false)`, `if (0)` o `if constexpr (false)`, ni de
+un `return` posterior a otro que termina definitivamente esa vía.
+En condiciones constantes como `if (true)` o `if (1)` se comprueba
+el retorno inmediato ejecutado; una guarda condicional de entrada
+(por ejemplo, `if (piezas <= 0) return 0;`) no impide analizar el
+cálculo posterior en la vía ordinaria. Esta detección es acotada:
+no reemplaza la compilación, la ejecución ni las sondas independientes
+que correspondan a cada actividad.
 
 **Límites de la primera integración:** el análisis léxico de usos no
 demuestra por sí solo que todas las operaciones sean correctas o que otra
