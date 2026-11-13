@@ -569,7 +569,8 @@ set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
       {"activity":"block_0009_0003","project":"InventarioLocal",
        "minimumCmakeVersion":"3.20",
        "targets":[{"name":"comprobar","type":"EXECUTABLE",
-                   "sources":["inventario.cpp"],"exactSources":true}]}
+                   "sources":["inventario.cpp"],"exactSources":true,
+                   "explicitCxx20":true,"explicitCxxExtensionsOff":true}]}
     ],
 )json");
     const auto inventory_mapped=lgaed::windows::parse_lesson_json(
@@ -627,6 +628,73 @@ set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
         evaluate_cpp_output_check(*inventory_after.output_check,inventory_fresh,
             inventory.revision).verdict==curriculum::OutputVerdict::correct,
         "Real U2L1 MSVC failed project name, compiled source or first output");
+    // A project that omits either explicit requirement still compiles under
+    // this runner's C++23 / extensions-OFF defaults. The generated program
+    // must not be enough to unlock an authored C++20/extension exercise.
+    struct InventoryVariant {
+        std::string suffix,cmake_source;
+        bool should_pass;
+    };
+    const std::vector<InventoryVariant> variants={
+        {"defaults-only",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+)cmake",false},
+        {"feature-without-property",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+)cmake",false},
+        {"property-without-feature",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+)cmake",false},
+        {"property-overwritten",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+target_compile_features(comprobar PRIVATE cxx_std_20)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)
+set_target_properties(comprobar PROPERTIES CXX_EXTENSIONS ON)
+)cmake",false},
+        {"equivalent-target-properties",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+add_executable(comprobar inventario.cpp)
+set_target_properties(comprobar PROPERTIES CXX_STANDARD 20)
+set_property(TARGET comprobar PROPERTY CXX_EXTENSIONS OFF)
+)cmake",true},
+        {"expanded-target-feature",R"cmake(cmake_minimum_required(VERSION 3.20)
+project(InventarioLocal LANGUAGES CXX)
+set(elegido comprobar)
+add_executable(comprobar inventario.cpp)
+target_compile_features(${elegido} PRIVATE cxx_std_20)
+set_property(TARGET ${elegido} PROPERTY CXX_EXTENSIONS OFF)
+)cmake",true}
+    };
+    std::uint64_t variant_id=1460;
+    for(const auto& variant:variants) {
+        auto candidate=inventory;
+        candidate.request_id=variant_id;
+        candidate.revision=variant_id++;
+        candidate.project_key+="/"+variant.suffix;
+        bool changed=false;
+        for(auto& file:candidate.project_files)
+            if(file.first=="CMakeLists.txt") {
+                file.second=variant.cmake_source;
+                changed=true;
+            }
+        check(changed,"The original U2L1 CMake file vanished");
+        const auto output=run_cpp(candidate);
+        ran(output);
+        const auto observed=capture_cpp_execution(candidate,output);
+        check(output.execution.stdout_bytes=="0:1:1"&&
+            output.execution.stderr_bytes.empty()&&
+            evaluate_cpp_output_check(*inventory_after.output_check,observed,
+                candidate.revision).verdict==curriculum::OutputVerdict::correct&&
+            observed.cmake_graph_correct==variant.should_pass,
+            "Authored CMake language rules earned wrong first-case evidence: "+
+                variant.suffix);
+    }
     // A previous valid stdout-only achievement remains historical. It must
     // not silently complete the newly authenticated construction goal.
     auto inventory_legacy=inventory;
