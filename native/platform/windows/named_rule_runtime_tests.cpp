@@ -307,6 +307,9 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     owner.named_rule_source_check=NamedRuleSourceCheck{"",{
         NamedRuleRequirement{"precio_total",7,{"precio","costo","tarifa"},1},
         NamedRuleRequirement{"alcanza_minimo",5,{"minimo","cantidad","umbral"},1}}};
+    owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+        "","",{{"precio_total",11,77},{"precio_total",5,35},
+               {"alcanza_minimo",4,0},{"alcanza_minimo",5,1}}};
     auto passing=request_of(owner);
     passing.request_id=901;passing.revision=301;
     passing.projects_directory=projects;
@@ -328,6 +331,8 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "MSVC did not execute the real repaired U3 student program: "+
         real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
     const auto captured=capture_cpp_execution(passing,real);
+    require(real.named_rule_probe&&captured.named_rule_probe_correct,
+        "A valid MSVC single-file program failed the independent function probe");
     require(evaluate_cpp_output_check(*owner.output_check,captured,passing.revision).verdict==
         OutputVerdict::correct,
         "The repaired program did not preserve the actual five-case authored output");
@@ -352,6 +357,32 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     require(evaluate_cpp_output_check(*owner.output_check,bad_capture,shortcut.revision).verdict==
         OutputVerdict::correct,
         "The control shortcut does not actually produce identical visible results");
+    // A student may forge a five-case report by omitting the eleventh-item
+    // defect. The separate test driver must call the functions directly.
+    auto forged=passing;
+    forged.request_id=903;forged.revision=303;
+    forged.source_utf8=replace_unique(std::move(forged.source_utf8),
+        "return articulos * precio_unitario;",
+        "return articulos * precio_unitario + (articulos == 11 ? 1 : 0);");
+    require(compiler_runtime_request_allowed(owner,forged),
+        "Independent probes must not substitute for source-based checks");
+    const auto forged_run=run_cpp(forged);
+    require(forged_run.error_utf8.empty()&&forged_run.compilation.succeeded()&&
+        forged_run.execution.succeeded(),
+        "The forged five-case output control did not compile or run");
+    const auto forged_capture=capture_cpp_execution(forged,forged_run);
+    require(evaluate_cpp_output_check(*owner.output_check,forged_capture,forged.revision).verdict==
+        OutputVerdict::correct&&!forged_capture.named_rule_probe_correct,
+        "A function with correct visible output passed an independent 11-item check");
+    require(!record_compiler_puzzle_case(saved,lesson,owner,forged,forged_capture,
+        "forged visible output")&&!compiler_puzzle_completed(saved,lesson,owner),
+        "An incorrect function earned credit from a forged printed report");
+    auto tampered=real;
+    require(tampered.named_rule_probe.has_value(),
+        "The independent single-file probe did not record its source digest");
+    tampered.named_rule_probe->project_sha256="0";
+    require(!capture_cpp_execution(passing,tampered).named_rule_probe_correct,
+        "A result from other submitted source bytes was credited");
     require(!record_compiler_puzzle_case(saved,lesson,owner,shortcut,bad_capture,"wrong")&&
         !compiler_puzzle_completed(saved,lesson,owner),
         "Identical MSVC output incorrectly earned a source-aware completion receipt");
