@@ -24,7 +24,9 @@ def declaration() -> list[dict]:
         {"activity": "block_0002_0004", "path": "componente/src/cajas.cpp", "rules": [
             {"function": "cajas_para", "value": 4,
              "purposeWords": ["capacidad", "plaza", "cupo"], "minUses": 2}]},
-        {"activity": "block_0005_0006", "path": "componente/src/cajas.cpp", "rules": [
+        {"activity": "block_0005_0006", "path": "componente/src/cajas.cpp",
+         "editablePaths": ["componente/publico/envio/cajas.h", "pruebas/cajas_casos.cpp"],
+         "rules": [
             {"function": "cajas_para", "value": 6,
              "purposeWords": ["capacidad", "plaza", "cupo"], "minUses": 2},
             {"function": "llega_a_tiempo", "value": 4,
@@ -63,6 +65,12 @@ class NamedRuleAuthoringTest(unittest.TestCase):
             lambda v: v["compilerNamedRuleChecks"][0].update(activity="block_0000_0000"),
             lambda v: v["compilerNamedRuleChecks"][0].update(path="CMakeLists.txt"),
             lambda v: v["compilerNamedRuleChecks"][2].update(path="main.cpp"),
+            lambda v: v["compilerNamedRuleChecks"][0].update(
+                editablePaths=["pruebas/cajas_casos.cpp", "pruebas/cajas_casos.cpp"]),
+            lambda v: v["compilerNamedRuleChecks"][0].update(
+                editablePaths=["../otro_proyecto.cpp"]),
+            lambda v: v["compilerNamedRuleChecks"][2].update(
+                editablePaths=["main.cpp"]),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(value=True),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(minUses=0),
             lambda v: v["compilerNamedRuleChecks"][0]["rules"][0].update(
