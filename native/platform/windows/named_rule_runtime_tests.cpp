@@ -275,6 +275,121 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
     std::cout<<"PASS real U3 named-rule MSVC: identical output rejected without code evidence\n";
 }
 
+void real_independent_cmake_probe(const Lesson& lesson,
+        const std::filesystem::path& projects) {
+    const auto& original=lesson.pages.at(5).blocks.at(6);
+    require(original.stable_id=="block_0005_0006"&&original.cmake&&
+        original.output_check&&original.output_check->cases.size()==1,
+        "The original U3 two-agreement CMake objective is unavailable");
+    auto owner=original;
+    owner.named_rule_source_check=NamedRuleSourceCheck{
+        "componente/src/cajas.cpp",{
+            NamedRuleRequirement{"cajas_para",6,{"capacidad","plaza","cupo"},2},
+            NamedRuleRequirement{"llega_a_tiempo",4,{"plazo","tiempo","dias"},1}
+        }};
+    owner.named_rule_source_check->editable_paths={
+        "componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"};
+    owner.named_rule_source_check->execution_probe=NamedRuleExecutionProbe{
+        "pruebas/cajas_casos.cpp","envio/cajas.h",{
+            {"cajas_para",0,0},{"cajas_para",6,1},
+            {"cajas_para",7,2},{"cajas_para",19,4},
+            {"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}
+        }};
+    auto correct=request_of(owner);
+    correct.request_id=1101;correct.revision=410;
+    correct.project_key=draft_key("programming",lesson,original);
+    correct.projects_directory=projects;
+    correct.compile_timeout=std::chrono::seconds(100);
+    correct.execution_timeout=std::chrono::seconds(8);
+    change_project(correct,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    const int capacidad{6};
+    return (piezas + capacidad - 1) / capacidad;
+}
+bool llega_a_tiempo(int dias) {
+    const int plazo{4};
+    return dias <= plazo;
+}
+)cpp");
+    for(auto& file:correct.project_files) {
+        if(file.first=="componente/publico/envio/cajas.h") {
+            file.second=replace_unique(std::move(file.second),
+                "cajas de 4 plazas","cajas de 6 plazas");
+        }else if(file.first=="pruebas/cajas_casos.cpp") {
+            file.second=replace_unique(std::move(file.second),
+                "comprobar(20, 5)","comprobar(20, 4)");
+            file.second=replace_unique(std::move(file.second),
+                "comprobar(5, 2)","comprobar(5, 1)");
+            file.second=replace_unique(std::move(file.second),
+                "comprobar(17, 5)","comprobar(17, 3)");
+            file.second=replace_unique(std::move(file.second),
+                "    if (!comprobar(17, 3)) { correcto = false; }\n",
+                "    if (!comprobar(17, 3)) { correcto = false; }\n"
+                "    if (!comprobar(6, 1)) { correcto = false; }\n"
+                "    if (!comprobar(7, 2)) { correcto = false; }\n");
+        }
+    }
+    require(compiler_runtime_request_allowed(owner,correct),
+        "A student's valid source/battery edits did not pass authored file permissions");
+    const auto real=run_cpp(correct);
+    require(real.error_utf8.empty()&&real.compilation.succeeded()&&
+        real.execution.succeeded(),
+        "Real MSVC CMake could not build or run the amended U3 battery: "+
+        real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
+    const auto fresh=capture_cpp_execution(correct,real);
+    require(fresh.named_rule_probe_correct&&
+        real.named_rule_probe&&real.named_rule_probe->execution.succeeded(),
+        "The correct student functions did not pass the independent CMake harness");
+    require(evaluate_cpp_output_check(*owner.output_check,fresh,correct.revision).verdict
+        ==OutputVerdict::correct,
+        "The valid amended CMake battery did not produce all published comparisons");
+
+    // The editable harness can print the expected text directly. It is not
+    // evidence of the functions: the independent executable must catch the
+    // deliberately defective but correctly named 19-piece case.
+    auto forged=correct;
+    forged.request_id=1102;forged.revision=411;
+    std::string source;
+    for(const auto& file:forged.project_files)
+        if(file.first=="componente/src/cajas.cpp")source=file.second;
+    require(!source.empty(),"The named-rule CMake file disappeared");
+    source=replace_unique(std::move(source),
+        "    return (piezas + capacidad - 1) / capacidad;",
+        "    if (piezas == 19) return 1;\n"
+        "    return (piezas + capacidad - 1) / capacidad;");
+    change_project(forged,"componente/src/cajas.cpp",std::move(source));
+    const auto expected=owner.output_check->cases.front().outputs.front();
+    const auto forged_test="#include <iostream>\nint main(){std::cout << R\"LGAED("+
+        expected+")LGAED\";return 0;}\n";
+    change_project(forged,"pruebas/cajas_casos.cpp",forged_test);
+    require(compiler_runtime_request_allowed(owner,forged),
+        "The independent probe test must isolate runtime behavior, not reject source");
+    const auto fake=run_cpp(forged);
+    require(fake.error_utf8.empty()&&fake.compilation.succeeded()&&
+        fake.execution.succeeded(),
+        "The negative forged-harness control failed to compile or execute");
+    const auto fake_capture=capture_cpp_execution(forged,fake);
+    require(evaluate_cpp_output_check(*owner.output_check,fake_capture,forged.revision).verdict
+        ==OutputVerdict::correct,
+        "The negative control did not actually reproduce the visible expected stdout");
+    require(!fake_capture.named_rule_probe_correct,
+        "An altered, faulty CMake function passed the independent test driver");
+    state::StateData saved;
+    state::prepare_lesson_state(saved,lesson);
+    require(!record_compiler_puzzle_case(saved,lesson,owner,forged,fake_capture,
+             "fake matches visible stdout")&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "A fake, student-editable harness earned a curriculum receipt");
+    require(record_compiler_puzzle_case(saved,lesson,owner,correct,fresh,"correct")&&
+        compiler_puzzle_completed(saved,lesson,owner),
+        "The first real case with verified independent probes did not grant progress");
+    const auto reopened=state::decode(state::encode(saved));
+    require(compiler_puzzle_completed(reopened,lesson,owner)&&
+        compiler_puzzle_case_count(reopened,lesson,owner)==1,
+        "Independent CMake progress was not kept across reopening");
+    std::cout<<"PASS original U3 CMake: forged matching stdout rejected by independent function tests\n";
+}
+
 void single_file_examples(const Lesson& lesson) {
     const NamedRuleSourceCheck rules{"",{
         NamedRuleRequirement{"precio_total",7,{"precio","costo","tarifa","credito"},1},
@@ -342,6 +457,8 @@ int main(int argc,char** argv) {
         initialize_profile_directories(environment.paths);
         actual_named_rule_msvc(lesson,
             environment.paths.projects/L"U3 named rules real MSVC");
+        real_independent_cmake_probe(lesson,
+            environment.paths.projects/L"U3 CMake independent function probe");
         std::cout<<"PASS original named-rule editors: source constraints, historic receipt and draft isolation\n";
         return 0;
     }catch(const std::exception& error){
