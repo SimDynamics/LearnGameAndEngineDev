@@ -123,6 +123,23 @@ int main(int argc,char** argv) {
         },"A forged full previous block bypassed the response signature");
         rejected_change(reviewed_file,[](JsonObject root) {
             root.GetNamedObject(L"stateLayout")
+                .GetNamedArray(L"choiceRevisions").GetObjectAt(0)
+                .GetNamedObject(L"semanticBefore").Insert(L"sourceSha256",
+                    JsonValue::CreateStringValue(L"0000000000000000000000000000000000000000000000000000000000000000"));
+        },"A forged previous semantic SHA was accepted");
+        rejected_change(reviewed_file,[](JsonObject root) {
+            root.GetNamedObject(L"stateLayout")
+                .GetNamedArray(L"choiceRevisions").GetObjectAt(0)
+                .GetNamedObject(L"semanticBefore").GetNamedArray(L"spans")
+                .Append(JsonObject::Parse(L"{\"start\":0,\"end\":2,\"text\":\"La\",\"role\":\"prose\"}"));
+        },"A rewritten previous text span was accepted");
+        rejected_change(reviewed_file,[](JsonObject root) {
+            root.GetNamedObject(L"stateLayout")
+                .GetNamedArray(L"choiceRevisions").GetObjectAt(0)
+                .Remove(L"semanticBefore");
+        },"The prior semantic archive was deleted");
+        rejected_change(reviewed_file,[](JsonObject root) {
+            root.GetNamedObject(L"stateLayout")
                 .GetNamedArray(L"choiceRevisions").Clear();
         },"A reviewed option lost its previous history archive");
         rejected_change(reviewed_file,[](JsonObject root) {
