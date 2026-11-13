@@ -491,6 +491,14 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
         if(!configuration.HasKey(L"targets"))continue;
         const auto references=configuration.GetNamedArray(L"targets");
         const auto directories=configuration.GetNamedArray(L"directories");
+        // Codemodel v2 reports the minimum from the top-level CMake
+        // directory, independently of the runner's newer toolchain defaults.
+        if(directories.Size()) {
+            const auto top=directories.GetObjectAt(0);
+            if(top.HasKey(L"minimumCMakeVersion"))
+                graph.minimum_cmake_version=json_text(
+                    top.GetNamedObject(L"minimumCMakeVersion"),L"string");
+        }
         std::map<std::string,std::string> names;
         for(const auto& reference:references) {
             const auto item=reference.GetObject();
@@ -928,6 +936,14 @@ CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
     if(!required.project_name.empty()&&
        graph.project_name!=required.project_name)
         return fail("El nombre de proyecto generado por CMake no coincide.");
+    if(!required.minimum_cmake_version.empty()) {
+        const auto expected=curriculum::cmake_numeric_version(
+            required.minimum_cmake_version);
+        const auto actual=curriculum::cmake_numeric_version(
+            graph.minimum_cmake_version);
+        if(!expected||!actual||*expected!=*actual)
+            return fail("La versión mínima de CMake declarada en el proyecto no coincide.");
+    }
     if(required.targets.empty())
         return fail("No hay objetivos de construcción declarados para comprobar.");
     std::vector<std::string> seen;
