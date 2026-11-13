@@ -314,6 +314,9 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
             if(found==request.project_files.end())return false;
             source=found->second;
         }
+        if(named.execution_probe&&
+           !curriculum::named_rule_detail::probe_source_no_early_exit(source))
+            return false;
         if(!curriculum::analyze_named_rule_sources(source,named.requirements).source_evidence)
             return false;
     }
