@@ -272,6 +272,34 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     };
     bool declared=false;
     for(auto i=bounds.open+1;i<bounds.close;++i) {
+        // A return guarded by a compile-time false condition cannot
+        // establish source evidence, even though the lexer can see it.
+        // Preserve the following else branch and later live statements.
+        if(id(t[i],"if")) {
+            auto condition=i+1;
+            if(condition<bounds.close&&id(t[condition],"constexpr"))
+                ++condition;
+            if(condition<bounds.close&&op(t[condition],"(")) {
+                const auto close=closing(t,condition,"(",")");
+                if(close&&*close+2<bounds.close&&
+                   *close==condition+2&&
+                   (id(t[condition+1],"false")||
+                    t[condition+1]=="number:0")) {
+                    const auto statement=*close+1;
+                    if(op(t[statement],"{")) {
+                        const auto end=closing(t,statement,"{","}");
+                        if(!end||*end>=bounds.close)return 0;
+                        i=*end;
+                    }else{
+                        auto end=statement;
+                        while(end<bounds.close&&!op(t[end],";"))++end;
+                        if(end>=bounds.close)return 0;
+                        i=end;
+                    }
+                    continue;
+                }
+            }
+        }
         if(id(t[i],"return")) {
             auto last=i+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
