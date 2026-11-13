@@ -143,6 +143,7 @@ class FirstProjectGraphChecksTest(unittest.TestCase):
         self.after["compilerCmakeGraphChecks"] = [{
             "activity": "block_0009_0003",
             "project": "InventarioLocal",
+            "minimumCmakeVersion": "3.20",
             "targets": [{
                 "name": "comprobar",
                 "type": "EXECUTABLE",
@@ -176,6 +177,28 @@ class FirstProjectGraphChecksTest(unittest.TestCase):
             with self.subTest(change=change.__name__):
                 with self.assertRaises(state.LayoutError):
                     state.validate(candidate)
+
+    def test_minimum_version_has_bounded_numeric_components(self):
+        for version in ("3", "3..20", "3.20-rc1", "3.20.0.0.0",
+                        "4294967296.20", "3.x", ""):
+            candidate = deepcopy(self.after)
+            candidate["compilerCmakeGraphChecks"][0]["minimumCmakeVersion"] = (
+                version)
+            with self.subTest(version=version):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(candidate)
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][0]["minimumCmakeVersion"] = 320
+        with self.assertRaises(state.LayoutError):
+            state.validate(candidate)
+        # Equivalent numeric spelling can be a new declaration, but never
+        # silently mutate a requirement already authenticated and published.
+        candidate = deepcopy(self.after)
+        candidate["compilerCmakeGraphChecks"][0]["minimumCmakeVersion"] = (
+            "3.20.0")
+        state.validate(candidate)
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, candidate)
 
     def test_published_first_graph_cannot_be_replaced_or_removed(self):
         updated = deepcopy(self.after)
