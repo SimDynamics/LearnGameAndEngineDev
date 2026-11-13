@@ -31,6 +31,8 @@ CppRunRequest request_of(const Block& owner) {
     request.project_files=owner.project_files;
     request.source_files=owner.source_files;
     request.cmake=owner.cmake;
+    if(owner.named_rule_source_check)
+        request.named_rule_probe=owner.named_rule_source_check->execution_probe;
     request.action=CppRunRequest::Action::compile_run;
     return request;
 }
@@ -45,10 +47,24 @@ void authored_root_roundtrip(const Lesson& original) {
     // published curriculum files or stored student progress are rewritten.
     constexpr auto declarations=R"json([
         {"activity":"block_0002_0004","path":"componente/src/cajas.cpp",
+         "executionProbe":{"harness":"pruebas/cajas_casos.cpp","header":"envio/cajas.h",
+           "cases":[{"function":"cajas_para","input":0,"expected":0},
+                    {"function":"cajas_para","input":1,"expected":1},
+                    {"function":"cajas_para","input":4,"expected":1},
+                    {"function":"cajas_para","input":19,"expected":5},
+                    {"function":"cajas_para","input":20,"expected":5}]},
          "rules":[{"function":"cajas_para","value":4,
                    "purposeWords":["capacidad","plaza","cupo"],"minUses":2}]},
         {"activity":"block_0005_0006","path":"componente/src/cajas.cpp",
          "editablePaths":["componente/publico/envio/cajas.h","pruebas/cajas_casos.cpp"],
+         "executionProbe":{"harness":"pruebas/cajas_casos.cpp","header":"envio/cajas.h",
+           "cases":[{"function":"cajas_para","input":0,"expected":0},
+                    {"function":"cajas_para","input":6,"expected":1},
+                    {"function":"cajas_para","input":7,"expected":2},
+                    {"function":"cajas_para","input":19,"expected":4},
+                    {"function":"cajas_para","input":20,"expected":4},
+                    {"function":"llega_a_tiempo","input":4,"expected":1},
+                    {"function":"llega_a_tiempo","input":5,"expected":0}]},
          "rules":[{"function":"cajas_para","value":6,
                    "purposeWords":["capacidad","plaza","cupo"],"minUses":2},
                   {"function":"llega_a_tiempo","value":4,
@@ -84,6 +100,7 @@ void authored_root_roundtrip(const Lesson& original) {
             read_only.named_rule_source_check&&
             current.named_rule_source_check->requirements.size()==
                 read_only.named_rule_source_check->requirements.size()&&
+            current.named_rule_source_check==read_only.named_rule_source_check&&
             current.stable_id==old.stable_id&&
             exercise_key(original,old)==exercise_key(after,current)&&
             draft_key("programming",original,old)==
