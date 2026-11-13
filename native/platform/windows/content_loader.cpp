@@ -2647,6 +2647,15 @@ void read_compiler_named_rule_checks(const JsonObject& root,Lesson& lesson) {
                 "Every named function needs independent, unambiguous executable cases");
             check.execution_probe=std::move(probe);
         }
+        // An editable C++ driver can print a forged report. Never activate
+        // such a rubric unless the runner will build a separate trusted driver.
+        const bool editable_cpp=std::ranges::any_of(check.editable_paths,
+            [](std::string_view path){return is_cpp_source_file(path);});
+        require(!editable_cpp||(check.execution_probe&&
+                std::ranges::find(check.editable_paths,
+                    check.execution_probe->harness_path)!=
+                    check.editable_paths.end()),
+            "Editable CMake test executable requires an independent function probe");
         owner->named_rule_source_check=std::move(check);
     }
 }
