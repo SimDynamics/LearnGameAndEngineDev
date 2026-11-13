@@ -2205,7 +2205,7 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         minimum = entry.get("minimumCmakeVersion")
         if minimum is not None:
             require(type(minimum) is str and len(minimum) <= 40 and
-                    re.fullmatch(r"[0-9]+(?:\\.[0-9]+){1,3}", minimum) and
+                    re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", minimum) and
                     all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")),
                     "CMake minimum must be a numeric major.minor version")
         targets = entry["targets"]
