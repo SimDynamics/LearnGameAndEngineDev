@@ -1104,14 +1104,36 @@ struct LessonView {
                 std::erase_if(archived.regions,[&](const auto& region){return region.block_index==index
                     &&(region.feedback||region.target==find_item(control_id(index,40)));});
                 for(auto& region:archived.regions)if(region.block_index==index){
-                    region.text_semantics.reset();
+                    // Closed historical revisions retain their old reader
+                    // behavior. In a generic one-option editorial review the
+                    // original semantic spans were separately authenticated:
+                    // reconstruct the old source, not the new spoken wording.
+                    const bool generic=revision.general_option_index.has_value();
+                    if(!generic)region.text_semantics.reset();
                     region.solved=solved;region.correct=false;reading_context(region,original);
-                    if(region.target==find_item(control_id(index,0)))region.source_text=original.question;
+                    if(region.target==find_item(control_id(index,0)))
+                        region.source_text=original.question;
                     for(std::size_t option=0;option<original.options.size();++option)
                         if(region.target==find_item(control_id(index,21+static_cast<int>(option)*2))){
-                            if(region.source_text!=original.options[option])archived.revised_regions.push_back(region.key);
+                            if(region.source_text!=original.options[option])
+                                archived.revised_regions.push_back(region.key);
                             region.source_text=original.options[option];
+                            if(generic){
+                                const auto path="/options/"+std::to_string(option);
+                                const auto annotated=current.text_semantics.find(path);
+                                if(annotated==current.text_semantics.end())
+                                    region.text_semantics.reset();
+                                else{
+                                    auto historic=annotated->second;
+                                    historic.source=region.source_text;
+                                    curriculum::validate_text_semantics(historic);
+                                    region.text_semantics=std::move(historic);
+                                }
+                            }
                         }
+                    if(generic&&region.text_semantics&&
+                       region.text_semantics->source!=region.source_text)
+                        region.text_semantics.reset();
                 }
                 if(!old_feedback.empty()){
                     const auto last=std::find_if(archived.regions.rbegin(),archived.regions.rend(),[&](const auto& region){return region.block_index==index;});
