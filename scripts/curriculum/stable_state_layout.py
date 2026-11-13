@@ -1997,25 +1997,32 @@ def _validate_compiler_named_rule_checks(document: dict) -> None:
                     "Named-rule purpose vocabulary must be bounded and unique")
         if "executionProbe" in record:
             probe = record["executionProbe"]
-            require(bool(files) and type(block.get("cmake")) is dict and
-                    type(probe) is dict and set(probe) == {"harness", "header", "cases"},
-                    "Independent named-rule probes require original CMake projects")
+            require(type(probe) is dict and set(probe) == {"harness", "header", "cases"},
+                    "Independent named-rule probes require harness, header and cases")
             harness, header = probe["harness"], probe["header"]
-            existing = {entry.get("path") for entry in files if type(entry) is dict}
-            require(type(harness) is str and harness.endswith(".cpp") and
-                    harness in existing and harness != source,
-                    "Independent probe must replace a different original C++ file")
-            require(type(header) is str and len(header) <= 256 and
-                    re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_./-]*", header) and
-                    ".." not in header,
-                    "Independent probe include path must be a safe relative name")
-            main_cmake = next((entry.get("initialCode", "")
-                               for entry in files if type(entry) is dict
-                               and entry.get("path") == "CMakeLists.txt"), "")
-            target = block["cmake"].get("target")
-            require(type(target) is str and
-                    f"add_executable({target} {harness})" in main_cmake,
-                    "The independent probe must replace the selected executable source")
+            single_file = not bool(files)
+            if single_file:
+                require(harness == "" and header == "" and not block.get("cmake")
+                        and source == "",
+                        "Single-file probes require empty harness and header paths")
+            else:
+                require(type(block.get("cmake")) is dict,
+                        "Project named-rule probes require an original CMake editor")
+                existing = {entry.get("path") for entry in files if type(entry) is dict}
+                require(type(harness) is str and harness.endswith(".cpp") and
+                        harness in existing and harness != source,
+                        "Independent probe must replace a different original C++ file")
+                require(type(header) is str and len(header) <= 256 and
+                        re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_./-]*", header) and
+                        ".." not in header,
+                        "Independent probe include path must be a safe relative name")
+                main_cmake = next((entry.get("initialCode", "")
+                                   for entry in files if type(entry) is dict
+                                   and entry.get("path") == "CMakeLists.txt"), "")
+                target = block["cmake"].get("target")
+                require(type(target) is str and
+                        f"add_executable({target} {harness})" in main_cmake,
+                        "The independent probe must replace the selected executable source")
             comparisons = probe["cases"]
             require(type(comparisons) is list and 1 <= len(comparisons) <= 32,
                     "Independent source probe needs 1..32 comparisons")
