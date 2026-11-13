@@ -338,11 +338,29 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     };
     bool declared=false;
     std::size_t nesting=0;
-    std::optional<std::size_t> conditional_return;
+    // A conditional branch that computes a nontrivial result is part of
+    // the function's contract even when a later unconditional return uses
+    // the named constant correctly. Keep the weakest live return path.
+    std::optional<std::size_t> prior_nontrivial_uses;
+    const auto include_prior=[&](std::size_t count) {
+        return prior_nontrivial_uses?
+            std::min(*prior_nontrivial_uses,count):count;
+    };
     const auto return_uses=[&](std::size_t keyword) {
         auto last=keyword+1;
         while(last<bounds.close&&!op(t[last],";"))++last;
         return uses(keyword+1,last);
+    };
+    // An early zero/false return is a normal domain guard. It contributes
+    // no calculated result; the remaining path must still use the rule.
+    const auto trivial_guard_return=[&](std::size_t keyword) {
+        if(keyword>=bounds.close||!id(t[keyword],"return"))return false;
+        auto last=keyword+1;
+        while(last<bounds.close&&!op(t[last],";"))++last;
+        if(last>=bounds.close||last==keyword+1)return false;
+        if(last==keyword+2&&id(t[keyword+1],"false"))return true;
+        const auto value=arithmetic_constant(t,keyword+1,last);
+        return value&&*value==0;
     };
     // Only a full direct return or a brace-enclosed single return is
     // understood. Other branches are conservatively left uncredited.
@@ -415,20 +433,39 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                         i=skipped;
                         continue;
                     }
-                    // An exhaustive if/else is credited only when both
-                    // return paths meaningfully use the named rule.
+                    // Nontrivial conditional results must use the rule;
+                    // a later correct fallthrough cannot excuse a shortcut.
                     if(always) {
                         if(const auto branch=direct_return(statement))
-                            return branch->first;
+                            return include_prior(branch->first);
                     }else if(const auto branch=direct_return(statement)) {
+                        const auto first_return=
+                            id(t[statement],"return")?statement:statement+1;
                         const auto else_position=branch->second+1;
-                        if(else_position+1<bounds.close&&
+                        if(else_position<bounds.close&&
                            id(t[else_position],"else")) {
-                            if(const auto other=direct_return(else_position+1))
-                                return std::min(branch->first,other->first);
+                            const auto other=direct_return(else_position+1);
+                            if(!other)return 0;
+                            const auto other_statement=else_position+1;
+                            const auto second_return=
+                                id(t[other_statement],"return")?
+                                    other_statement:other_statement+1;
+                            const auto first_is_guard=
+                                trivial_guard_return(first_return);
+                            const auto second_is_guard=
+                                trivial_guard_return(second_return);
+                            const auto count=first_is_guard?
+                                other->first:
+                                second_is_guard?branch->first:
+                                    std::min(branch->first,other->first);
+                            return include_prior(count);
                         }
-                        if(id(t[statement],"return"))
-                            conditional_return=statement;
+                        if(!trivial_guard_return(first_return))
+                            prior_nontrivial_uses=include_prior(branch->first);
+                        // Skip the recognized return, including braces,
+                        // rather than crediting it a second time.
+                        i=branch->second;
+                        continue;
                     }
                 }
             }
@@ -437,10 +474,8 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
             auto last=i+1;
             while(last<bounds.close&&!op(t[last],";"))++last;
             const auto result_uses=uses(i+1,last);
-            const bool guarded=conditional_return&&*conditional_return==i;
-            conditional_return.reset();
-            if(!nesting&&!guarded)return result_uses;
-            // A conditional return does not independently establish the goal.
+            if(!nesting)return include_prior(result_uses);
+            // An unrecognized nested return does not establish a source rule.
             i=last;
             continue;
         }
