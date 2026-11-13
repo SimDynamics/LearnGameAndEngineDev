@@ -800,11 +800,33 @@ def _choice_revisions(document: dict) -> dict[str, dict]:
     return {item["id"]: item["block"] for item in document.get("stateLayout", {}).get("choiceRevisions", [])}
 
 
+def _general_choice_revision(document: dict, identity: str) -> dict | None:
+    return next((item for item in document.get("stateLayout", {}).get("choiceRevisions", [])
+                 if item["id"] == identity and "optionIndex" in item), None)
+
+
+def _general_choice_projection(item: dict, block: dict) -> dict:
+    """Only the declared option text may differ from the exact archived choice.
+
+    The complete predecessor, response position and other options remain
+    immutable. No arbitrary choice/answer contract is normalized.
+    """
+    original = item["block"]
+    expected = deepcopy(original)
+    index = item["optionIndex"]
+    expected["options"][index] = item["replacement"]
+    require(block == original or block == expected,
+            "General choice review changed another option, answer or authored field")
+    return deepcopy(original)
+
+
 def _historical_choice_contract(document: dict, identity: str, block: dict) -> dict:
     # Only callers that have validated the complete document/transition use
     # this projection. Keep current prose/guidance for its ordinary validator.
     if identity not in _choice_revisions(document):
         return block
+    if (general := _general_choice_revision(document, identity)) is not None:
+        return _general_choice_projection(general, block)
     result = historical_choice_payload(block)
     spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
     if spec is not None and "paired_explanation" in spec:
@@ -1057,23 +1079,48 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
             raise LayoutError(f"Unsafe source formatting for {identity}: {exc}") from exc
         formatted[identity] = original
     choice_revisions = meta.get("choiceRevisions", [])
-    require(type(choice_revisions) is list and len(choice_revisions) <= len(CHOICE_OPTION_REVISIONS),
+    require(type(choice_revisions) is list and len(choice_revisions) <= len(CHOICE_OPTION_REVISIONS) + 64,
             "Malformed reviewed choice archive")
     require(not choice_revisions or meta["locale"] == "es", "Choice revisions are authorized only for Spanish")
     choices = {}
+    general_choices = {}
     for item in choice_revisions:
-        require(type(item) is dict and set(item) == {"id", "block"}, "A choice revision needs its identity and complete original block")
+        require(type(item) is dict and {"id", "block"} <= set(item),
+                "A choice revision needs its identity and complete original block")
         identity = _identity(item["id"])
-        require(identity in storage and identity not in choices, "Unknown or repeated choice revision identity")
+        require(identity in storage and identity not in choices and identity not in general_choices,
+                "Unknown or repeated choice revision identity")
         spec = CHOICE_OPTION_REVISIONS.get((document.get("id"), identity))
-        require(spec is not None, "This choice revision belongs to its reviewed Spanish lesson and identity")
         original = item["block"]
-        require(type(original) is dict and original.get("type") == "multiple_choice"
-                and fingerprint(original) == spec["full_before"]
-                and fingerprint(_choice_payload(original)) == spec["protected_before"],
-                "The choice archive must preserve its exact complete published block")
-        require(state_fingerprint(original) == digests[identity], "The choice snapshot does not match its immutable response contract")
-        choices[identity] = spec
+        if set(item) == {"id", "block"}:
+            require(spec is not None, "This closed choice revision belongs to its reviewed Spanish owner")
+            require(type(original) is dict and original.get("type") == "multiple_choice"
+                    and fingerprint(original) == spec["full_before"]
+                    and fingerprint(_choice_payload(original)) == spec["protected_before"],
+                    "The choice archive must preserve its exact complete published block")
+            require(state_fingerprint(original) == digests[identity],
+                    "The choice snapshot does not match its immutable response contract")
+            choices[identity] = spec
+        else:
+            require(set(item) == {"id", "block", "optionIndex", "replacement"} and spec is None,
+                    "A general choice review needs its original, option index and replacement only")
+            require(type(original) is dict and original.get("type") == "multiple_choice"
+                    and type(original.get("options")) is list
+                    and all(type(option) is str for option in original["options"])
+                    and type(original.get("correctIndex")) is int,
+                    "General choice review needs a complete original choice block")
+            index = item["optionIndex"]
+            require(type(index) is int and 0 <= index < len(original["options"])
+                    and type(item["replacement"]) is str and bool(item["replacement"].strip())
+                    and original["options"][index] != item["replacement"],
+                    "General choice review needs exactly one real nonblank text revision")
+            require(state_fingerprint(original) == digests[identity],
+                    "General choice archive must match this owner's original response contract")
+            active = active_blocks.get(identity)
+            require(type(active) is dict,
+                    "General choice review must keep its original activity active")
+            _general_choice_projection(item, active)
+            general_choices[identity] = item
     compiler_revisions = meta.get("compilerRevisions", [])
     require(type(compiler_revisions) is list and len(compiler_revisions) <= len(COMPILER_CASE_REVISIONS),
             "Malformed reviewed compiler archive")
@@ -1150,6 +1197,8 @@ def _validate_v2(document: dict) -> dict[tuple[int, int], tuple[int, int]]:
                         and compiler_references[identity] == reference_reviewed,
                         "A revised compiler reference requires its matching expanded compiler and archive")
             projected = order_contract_projection(source, refined[identity]) if identity in refined else source
+            if identity in general_choices:
+                projected = _general_choice_projection(general_choices[identity], projected)
             require(state_fingerprint(projected) == digests[identity],
                     "A response/code contract changed or belongs to another identity")
             seen_blocks.append(identity)
