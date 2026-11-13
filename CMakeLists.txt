@@ -1210,8 +1210,19 @@ if(BUILD_TESTING)
             "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
         COMMENT "Authenticating U9 editorial choice review without changing published lessons"
         VERBATIM)
+    set(LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED
+        "${CMAKE_CURRENT_BINARY_DIR}/test-fixtures/general-choice-editorial/u9-reviewed-marked.json")
+    add_custom_command(OUTPUT "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
+        COMMAND "${Python3_EXECUTABLE}" -B "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
+            --write-reviewed-marked "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}"
+        DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_SOURCE}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
+            "${CMAKE_SOURCE_DIR}/scripts/curriculum/stable_state_layout.py"
+        COMMENT "Verifying a genuine UTF-16 highlight in archived U9 choice reading"
+        VERBATIM)
     add_custom_target(lgaed_general_choice_editorial_fixture
-        DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}")
+        DEPENDS "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}"
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}")
     add_executable(lgaed_general_choice_editorial_tests
         native/platform/windows/general_choice_editorial_tests.cpp)
     target_link_libraries(lgaed_general_choice_editorial_tests PRIVATE lgaed_curricular_windows)
@@ -1222,6 +1233,17 @@ if(BUILD_TESTING)
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_ORIGINAL}"
             "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_REVISED}")
     set_tests_properties(native.general_choice_editorial PROPERTIES TIMEOUT 100)
+    add_executable(lgaed_general_choice_editorial_view_tests
+        native/presentation/windows/general_choice_editorial_view_tests.cpp)
+    target_link_libraries(lgaed_general_choice_editorial_view_tests
+        PRIVATE lgaed_presentation_windows)
+    add_dependencies(lgaed_general_choice_editorial_view_tests
+        lgaed_general_choice_editorial_fixture)
+    add_test(NAME native.general_choice_editorial_reader
+        COMMAND lgaed_general_choice_editorial_view_tests
+            "${LGAED_GENERAL_CHOICE_EDITORIAL_QA_MARKED}")
+    set_tests_properties(native.general_choice_editorial_reader
+        PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
     add_executable(lgaed_compile_diagnostic_view_tests native/presentation/windows/compile_diagnostic_view_tests.cpp)
     target_link_libraries(lgaed_compile_diagnostic_view_tests PRIVATE lgaed_presentation_windows)
     add_test(NAME native.compile_diagnostic_view COMMAND lgaed_compile_diagnostic_view_tests)
