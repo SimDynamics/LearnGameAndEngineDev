@@ -126,11 +126,27 @@ struct CppNamedRuleProbe {
 // a successful configure nor a matching stdout grants a curricular achievement.
 struct CppCmakeTargetEvidence {
     std::string name, type, source_directory;
-    std::vector<std::string> compiled_sources, build_dependencies, link_libraries;
+    std::vector<std::string> compiled_sources, build_dependencies, link_libraries, artifacts;
 };
 struct CppCmakeGraphEvidence {
     std::string project_fingerprint, configuration_fingerprint, project_name;
     std::vector<CppCmakeTargetEvidence> targets;
+};
+// A future curricular author may require generated targets and specific
+// structural relationships. Empty sets mean no requirement in that category;
+// the expected project name is optional. This is not a new lesson JSON field.
+struct CppCmakeRequiredTarget {
+    std::string name, type;
+    std::vector<std::string> sources, links_to;
+    bool exact_sources = false;
+};
+struct CppCmakeGraphRequirement {
+    std::string project_name;
+    std::vector<CppCmakeRequiredTarget> targets;
+};
+struct CppCmakeGraphVerdict {
+    bool correct = false;
+    std::string reason;
 };
 struct CppRunResult {
     std::uint64_t request_id = 0;
@@ -155,6 +171,12 @@ struct CppProjectAvailability {
     std::string project_fingerprint,configuration_fingerprint,target_type;
     std::filesystem::path workspace,artifact;
 };
+// Structural evidence must belong to the same fresh compiled + executed
+// revision and generated CMake configuration, never an old File API reply.
+// It does not by itself grant a saved curriculum achievement.
+[[nodiscard]] CppCmakeGraphVerdict evaluate_cmake_graph(
+    const CppRunRequest&, const CppRunResult&, const CppCmakeGraphRequirement&);
+
 // Read-only inspection. Never configures, builds, executes or rewrites a draft.
 [[nodiscard]] CppProjectAvailability inspect_cpp_project(const CppRunRequest&);
 

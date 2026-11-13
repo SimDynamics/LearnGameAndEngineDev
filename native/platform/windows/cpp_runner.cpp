@@ -523,6 +523,9 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
                     if(source.HasKey(L"compileGroupIndex"))
                         fact.compiled_sources.push_back(json_text(source,L"path"));
                 }
+            if(target.HasKey(L"artifacts"))
+                for(const auto& artifact:target.GetNamedArray(L"artifacts"))
+                    fact.artifacts.push_back(json_text(artifact.GetObject(),L"path"));
             if(target.HasKey(L"dependencies"))
                 for(const auto& dependency:target.GetNamedArray(L"dependencies")) {
                     const auto id=json_text(dependency.GetObject(),L"id");
@@ -879,6 +882,95 @@ bool expected_project_diagnostic(const CppRunRequest& request,const CppRunResult
 }
 
 } // namespace
+
+namespace {
+// A File API libraries fragment is a native linker fragment, not a target
+// name. Match the full generated archive basename at a token boundary,
+// avoiding false matches such as otherparts.lib or parts.lib.old.
+bool link_mentions_artifact(std::string_view fragment,std::string_view artifact) {
+    const auto slash=artifact.find_last_of("/\\");
+    const auto basename=artifact.substr(slash==artifact.npos?0:slash+1);
+    if(basename.empty())return false;
+    const auto edge=[](char c) {
+        return c==32||c==9||c==13||c==10||c==34||
+            c==39||c==47||c==92;
+    };
+    for(auto at=fragment.find(basename);at!=fragment.npos;
+            at=fragment.find(basename,at+1)) {
+        const auto end=at+basename.size();
+        if((at==0||edge(fragment[at-1]))&&
+           (end==fragment.size()||edge(fragment[end])))return true;
+    }
+    return false;
+}
+}
+CppCmakeGraphVerdict evaluate_cmake_graph(const CppRunRequest& request,
+        const CppRunResult& result,const CppCmakeGraphRequirement& required) {
+    const auto fail=[](std::string why) {
+        return CppCmakeGraphVerdict{false,std::move(why)};
+    };
+    if(!request.cmake||request.backend!=CppRunRequest::Backend::native_msvc||
+       request.action!=CppRunRequest::Action::compile_run||
+       request.request_id!=result.request_id||
+       request.revision!=result.revision||!result.error_utf8.empty()||
+       !result.compilation.succeeded()||
+       result.execution.status!=CppPhaseStatus::completed||
+       !result.cmake_graph||result.target_type!="EXECUTABLE"||
+       result.executable!=request.cmake->target)
+        return fail("Falta una construcción y ejecución nativas de esta revisión.");
+    const auto& graph=*result.cmake_graph;
+    if(result.project_fingerprint!=fingerprint(request)||
+       result.configuration_fingerprint!=fingerprint(request,true)||
+       graph.project_fingerprint!=result.project_fingerprint||
+       graph.configuration_fingerprint!=result.configuration_fingerprint)
+        return fail("La estructura de CMake pertenece a otra revisión del proyecto.");
+    if(!required.project_name.empty()&&
+       graph.project_name!=required.project_name)
+        return fail("El nombre de proyecto generado por CMake no coincide.");
+    if(required.targets.empty())
+        return fail("No hay objetivos de construcción declarados para comprobar.");
+    std::vector<std::string> seen;
+    for(const auto& item:required.targets) {
+        if(item.name.empty()||item.type.empty()||
+           std::ranges::find(seen,item.name)!=seen.end())
+            return fail("Hay un requisito CMake vacío o duplicado.");
+        seen.push_back(item.name);
+        const auto found=std::ranges::find_if(graph.targets,
+            [&](const auto& candidate){return candidate.name==item.name;});
+        if(found==graph.targets.end()||found->type!=item.type)
+            return fail("Falta el objetivo o tipo solicitado: "+item.name);
+        for(const auto& source:item.sources)
+            if(std::ranges::find(found->compiled_sources,source)==
+                found->compiled_sources.end())
+                return fail("El objetivo no compila la fuente: "+source);
+        if(item.exact_sources&&
+           (found->compiled_sources.size()!=item.sources.size()||
+            !std::ranges::all_of(found->compiled_sources,[&](const auto& source) {
+                return std::ranges::find(item.sources,source)!=item.sources.end();
+            })))
+            return fail("El objetivo compila fuentes adicionales o repetidas: "+
+                item.name);
+        for(const auto& name:item.links_to) {
+            const auto library=std::ranges::find_if(graph.targets,
+                [&](const auto& candidate){return candidate.name==name;});
+            if(library==graph.targets.end()||
+               library->artifacts.empty()||
+               std::ranges::find(found->build_dependencies,name)==
+                   found->build_dependencies.end())
+                return fail("Falta la dependencia de biblioteca: "+name);
+            const bool actual_link=std::ranges::any_of(library->artifacts,
+                [&](const auto& artifact) {
+                    return std::ranges::any_of(found->link_libraries,
+                        [&](const auto& fragment) {
+                            return link_mentions_artifact(fragment,artifact);
+                        });
+                });
+            if(!actual_link)
+                return fail("El objetivo no enlaza la biblioteca solicitada: "+name);
+        }
+    }
+    return {true,{}};
+}
 
 std::string cpp_launch_failure_message(std::uint32_t error,std::string_view executable_utf8,bool build_tool) {
     auto message="CreateProcessW (Windows error "+std::to_string(error)+") while starting "

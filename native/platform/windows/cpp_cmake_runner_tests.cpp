@@ -266,6 +266,59 @@ target_link_libraries(first PRIVATE parts)
         links(linked_first,"parts.lib")&&
         find_target(*linked_result.cmake_graph,"parts").type=="STATIC_LIBRARY",
         "The generated library link graph did not differ from direct-source compilation");
+    const CppCmakeGraphRequirement expected_graph{
+        "GraphLinked",{
+            {"first","EXECUTABLE",{"src/main.cpp"},{"parts"},true},
+            {"parts","STATIC_LIBRARY",{"src/value.cpp"},{},true}
+        }};
+    const auto accepted=evaluate_cmake_graph(linked,linked_result,expected_graph);
+    check(accepted.correct,"A real source-bound linked CMake project failed its graph criteria: "+accepted.reason);
+    const auto late_id=linked_result;
+    auto wrong_request=linked;
+    ++wrong_request.revision;
+    check(!evaluate_cmake_graph(wrong_request,late_id,expected_graph).correct,
+        "A File API graph from an older revision earned a new execution receipt");
+    wrong_request=linked;
+    wrong_request.project_files[0].second+="\n# changed source revision\n";
+    check(!evaluate_cmake_graph(wrong_request,linked_result,expected_graph).correct,
+        "The structure of a different project source earned current graph credit");
+    auto wrong_type=expected_graph;
+    wrong_type.targets[1].type="SHARED_LIBRARY";
+    check(!evaluate_cmake_graph(linked,linked_result,wrong_type).correct,
+        "A static library was accepted as the wrong kind of target");
+    auto wrong_source=expected_graph;
+    wrong_source.targets[0].sources={"src/value.cpp"};
+    check(!evaluate_cmake_graph(linked,linked_result,wrong_source).correct,
+        "A wrong compiled translation unit earned credit");
+    auto ordering=linked;
+    ordering.project_key+="/order-only-not-link";
+    ordering.request_id=1202;
+    ordering.project_files[0].second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(GraphLinked LANGUAGES CXX)
+add_library(parts STATIC src/value.cpp)
+target_include_directories(parts PRIVATE include)
+add_executable(first src/main.cpp src/value.cpp)
+target_include_directories(first PRIVATE include)
+target_compile_definitions(first PRIVATE CHOSEN=42)
+add_dependencies(first parts)
+)cmake";
+    const auto order_run=run_cpp(ordering);
+    ran(order_run);
+    check(order_run.execution.stdout_bytes=="42"&&order_run.cmake_graph,
+        "The independent build-order-only example did not execute correctly");
+    const auto& order_first=find_target(*order_run.cmake_graph,"first");
+    check(contains(order_first.build_dependencies,"parts")&&
+        !links(order_first,"parts.lib"),
+        "The negative CMake graph does not have a real dependency without linking");
+    auto relaxed=expected_graph;
+    relaxed.targets[0].exact_sources=false;
+    const auto rejected=evaluate_cmake_graph(ordering,order_run,relaxed);
+    check(!rejected.correct&&rejected.reason.find("enlaza")!=std::string::npos,
+        "An add_dependencies ordering edge was misrepresented as a library link");
+    auto config_only=linked;
+    config_only.action=CppRunRequest::Action::configure;
+    check(!evaluate_cmake_graph(config_only,linked_result,expected_graph).correct,
+        "An earlier CMake configure was treated as a compiled and executed objective");
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
