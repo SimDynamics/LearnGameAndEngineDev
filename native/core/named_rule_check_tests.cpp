@@ -115,9 +115,35 @@ void price_and_minimum() {
         )cpp",rules,false,"Hardcoded minimum");
 }
 }
+void independently_generated_probe() {
+    const NamedRuleExecutionProbe valid{"pruebas/cajas_casos.cpp","envio/cajas.h",{
+        {"cajas_para",0,0},{"cajas_para",6,1},{"cajas_para",7,2},
+        {"cajas_para",19,4},{"llega_a_tiempo",4,1},{"llega_a_tiempo",5,0}
+    }};
+    const auto source=named_rule_probe_source(valid);
+    if(!source||source->find("#include \"envio/cajas.h\"")==source->npos||
+       source->find("static_cast<int>(cajas_para(19)) != 4")==source->npos||
+       source->find("static_cast<int>(llega_a_tiempo(5)) != 0")==source->npos)
+        throw std::runtime_error("The independent probe was not derived from authored facts");
+    const auto invalid=[&](NamedRuleExecutionProbe value,const char* description) {
+        if(named_rule_probe_source(value))
+            throw std::runtime_error(description);
+    };
+    auto changed=valid;
+    changed.header="../../outside.h";
+    invalid(changed,"A parent traversal became an include");
+    changed=valid;changed.header="envio/\"; evil.h";
+    invalid(changed,"A C++ quote injection became an include");
+    changed=valid;changed.cases.push_back(changed.cases.front());
+    invalid(changed,"Duplicated probe facts were accepted");
+    changed=valid;changed.cases.front().function="cajas_para(3), exit(0)";
+    invalid(changed,"Raw C++ was injected through a function name");
+    changed=valid;changed.cases.clear();
+    invalid(changed,"A vacuous independent probe was accepted");
+}
 int main() {
     try {
-        capacity();separate_rules();price_and_minimum();
+        capacity();separate_rules();price_and_minimum();independently_generated_probe();
         std::cout<<"PASS local named rules: roles, values, uses and rejected shortcuts\n";
         return 0;
     }catch(const std::exception& e){
