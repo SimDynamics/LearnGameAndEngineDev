@@ -194,6 +194,22 @@ void capacity() {
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
+            if (piezas < 0) return (piezas + capacidad - 1) / capacidad;
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "Named uses only in a conditional guard cannot certify the main result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (piezas < 0) {
+                return (piezas + capacidad - 1) / capacidad;
+            }
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "A braced conditional return cannot hide a hardcoded ordinary result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
             const int ajuste = capacidad - 1;
             const int resultado = (piezas + ajuste) / capacidad;
             return resultado;
