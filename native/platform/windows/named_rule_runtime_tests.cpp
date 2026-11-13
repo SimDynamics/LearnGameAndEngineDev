@@ -1,8 +1,11 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
+#include "platform/windows/environment.hpp"
 #include "core/lesson.hpp"
 
 #include <filesystem>
+#include <windows.h>
+#include <chrono>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Data.Json.h>
 #include <iostream>
@@ -162,6 +165,83 @@ bool llega_a_tiempo(int dias) {
     require(compiler_runtime_request_allowed(owner,submitted),
         "Independent six-place capacity and four-day deadline were rejected");
 }
+std::string replace_unique(std::string source,std::string_view before,
+        std::string_view after) {
+    const auto at=source.find(before);
+    require(at!=source.npos&&source.find(before,at+before.size())==source.npos,
+        "The original named-rule editor source no longer matches its reviewed fixture");
+    source.replace(at,before.size(),after);
+    return source;
+}
+void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& projects) {
+    // The original student's complete five-case program is a stronger
+    // end-to-end check than a mocked stdout transcript.
+    const auto& original=lesson.pages.at(8).blocks.at(7);
+    require(original.stable_id=="block_0008_0007"&&original.output_check&&
+        original.output_check->cases.size()==1,
+        "The original U3 named-rule five-case objective changed");
+    auto owner=original;
+    owner.named_rule_source_check=NamedRuleSourceCheck{"",{
+        NamedRuleRequirement{"precio_total",7,{"precio","costo","tarifa"},1},
+        NamedRuleRequirement{"alcanza_minimo",5,{"minimo","cantidad","umbral"},1}}};
+    auto passing=request_of(owner);
+    passing.request_id=901;passing.revision=301;
+    passing.projects_directory=projects;
+    passing.compile_timeout=std::chrono::seconds(60);
+    passing.execution_timeout=std::chrono::seconds(8);
+    passing.source_utf8=replace_unique(std::move(passing.source_utf8),
+        "const int acuerdo{7};\n\n","");
+    passing.source_utf8=replace_unique(std::move(passing.source_utf8),
+        "return articulos * acuerdo;",
+        "const int precio_unitario{7};\n    return articulos * precio_unitario;");
+    passing.source_utf8=replace_unique(std::move(passing.source_utf8),
+        "return articulos >= acuerdo;",
+        "const int minimo_articulos{5};\n    return articulos >= minimo_articulos;");
+    require(compiler_runtime_request_allowed(owner,passing),
+        "A repaired, purpose-named student source failed the rubric");
+    const auto real=run_cpp(passing);
+    require(real.error_utf8.empty()&&real.compilation.succeeded()&&
+        real.execution.succeeded(),
+        "MSVC did not execute the real repaired U3 student program: "+
+        real.error_utf8+real.compilation.stderr_bytes+real.execution.stderr_bytes);
+    const auto captured=capture_cpp_execution(passing,real);
+    require(evaluate_cpp_output_check(*owner.output_check,captured,passing.revision).verdict==
+        OutputVerdict::correct,
+        "The repaired program did not preserve the actual five-case authored output");
+    state::StateData saved;
+    state::prepare_lesson_state(saved,lesson);
+    require(!compiler_puzzle_completed(saved,lesson,owner),
+        "A new source-aware objective inherited completion from a blank profile");
+    // Compile a genuinely wrong source: its stdout still agrees with the
+    // five-case target, but the declared minimum has no useful source use.
+    auto shortcut=passing;
+    shortcut.request_id=902;shortcut.revision=302;
+    shortcut.source_utf8=replace_unique(std::move(shortcut.source_utf8),
+        "return articulos >= minimo_articulos;","return articulos >= 5;");
+    require(!compiler_runtime_request_allowed(owner,shortcut),
+        "An unused named constant was awarded source credit");
+    const auto bad=run_cpp(shortcut);
+    require(bad.error_utf8.empty()&&bad.compilation.succeeded()&&
+        bad.execution.succeeded(),
+        "The shortcut control failed to execute: "+bad.error_utf8+
+        bad.compilation.stderr_bytes);
+    const auto bad_capture=capture_cpp_execution(shortcut,bad);
+    require(evaluate_cpp_output_check(*owner.output_check,bad_capture,shortcut.revision).verdict==
+        OutputVerdict::correct,
+        "The control shortcut does not actually produce identical visible results");
+    require(!record_compiler_puzzle_case(saved,lesson,owner,shortcut,bad_capture,"wrong")&&
+        !compiler_puzzle_completed(saved,lesson,owner),
+        "Identical MSVC output incorrectly earned a source-aware completion receipt");
+    require(record_compiler_puzzle_case(saved,lesson,owner,passing,captured,"correct")&&
+        compiler_puzzle_completed(saved,lesson,owner),
+        "The first compiled valid case failed to unlock the authentic exercise");
+    const auto reopened=state::decode(state::encode(saved));
+    require(compiler_puzzle_completed(reopened,lesson,owner)&&
+        compiler_puzzle_case_count(reopened,lesson,owner)==1,
+        "Source-aware completion was not preserved after the state roundtrip");
+    std::cout<<"PASS real U3 named-rule MSVC: identical output rejected without code evidence\n";
+}
+
 void single_file_examples(const Lesson& lesson) {
     const NamedRuleSourceCheck rules{"",{
         NamedRuleRequirement{"precio_total",7,{"precio","costo","tarifa","credito"},1},
@@ -222,6 +302,13 @@ int main(int argc,char** argv) {
         authored_root_roundtrip(lesson);
         project_examples(lesson);
         single_file_examples(lesson);
+        const LaunchOptions options{ProfileId::Codex,
+            L"named-rule-"+std::to_wstring(GetCurrentProcessId())+
+            L"-"+std::to_wstring(GetTickCount64()),false};
+        const auto environment=resolve_windows_environment(options);
+        initialize_profile_directories(environment.paths);
+        actual_named_rule_msvc(lesson,
+            environment.paths.projects/L"U3 named rules real MSVC");
         std::cout<<"PASS original named-rule editors: source constraints, historic receipt and draft isolation\n";
         return 0;
     }catch(const std::exception& error){
