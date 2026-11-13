@@ -478,14 +478,16 @@ CppCmakeGraphEvidence snapshot_cmake_graph(
     CppCmakeGraphEvidence graph;
     graph.project_fingerprint=std::string(project_fingerprint);
     graph.configuration_fingerprint=std::string(configuration_fingerprint);
-    if(model->HasKey(L"projects")&&model->GetNamedArray(L"projects").Size())
-        graph.project_name=json_text(model->GetNamedArray(L"projects").GetObjectAt(0),L"name");
     bool matched=false;
     for(const auto& record:model->GetNamedArray(L"configurations")) {
         const auto configuration=record.GetObject();
         if(json_text(configuration,L"name")!=request.cmake->build_type)continue;
         if(matched)throw std::runtime_error("CMake returned repeated configurations");
         matched=true;
+        if(configuration.HasKey(L"projects")&&
+           configuration.GetNamedArray(L"projects").Size())
+            graph.project_name=json_text(
+                configuration.GetNamedArray(L"projects").GetObjectAt(0),L"name");
         if(!configuration.HasKey(L"targets"))continue;
         const auto references=configuration.GetNamedArray(L"targets");
         const auto directories=configuration.GetNamedArray(L"directories");
