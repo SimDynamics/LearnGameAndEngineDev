@@ -291,12 +291,15 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
                 ++condition;
             if(condition<bounds.close&&op(t[condition],"(")) {
                 const auto close=closing(t,condition,"(",")");
-                if(close&&*close+2<bounds.close&&*close==condition+2) {
+                if(close&&*close+1<bounds.close) {
                     const auto statement=*close+1;
-                    const bool never=id(t[condition+1],"false")||
-                        t[condition+1]=="number:0";
-                    const bool always=id(t[condition+1],"true")||
-                        t[condition+1]=="number:1";
+                    const bool literal=*close==condition+2;
+                    const bool never=literal&&
+                        (id(t[condition+1],"false")||
+                         t[condition+1]=="number:0");
+                    const bool always=literal&&
+                        (id(t[condition+1],"true")||
+                         t[condition+1]=="number:1");
                     if(never) {
                         if(op(t[statement],"{")) {
                             const auto end=closing(t,statement,"{","}");
