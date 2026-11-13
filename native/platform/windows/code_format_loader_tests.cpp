@@ -2,6 +2,7 @@
 #include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <fstream>
@@ -118,12 +119,32 @@ void verify_real_curricular_pilot(const std::filesystem::path& fixtures) {
         after.state_layout.source_format_revisions.size()==2,
         "Real lesson formatting changed stable historical ownership");
 
+    // A later unrelated editorial change makes it impossible to create an
+    // authentic complete pre-format lesson from the current publication.
+    // Both fixture files must remain loadable; the previous source comes
+    // from the same authenticated format archive that protects progress.
+    const bool archived_before=before.state_layout.source_format_revisions.size()==2;
+    check(archived_before||before.state_layout.source_format_revisions.empty(),
+        "The pilot's prior document has an unexpected format history");
     const std::array<std::pair<std::size_t,std::size_t>,2> samples{{{3,2},{5,2}}};
     for(const auto [page,index]:samples) {
         const auto& old=before.pages[page].blocks[index];
         const auto& changed=after.pages[page].blocks[index];
+        std::string original_code=old.code;
+        if(archived_before) {
+            const auto& revisions=after.state_layout.source_format_revisions;
+            const auto found=std::find_if(revisions.begin(),revisions.end(),
+                [&](const auto& revision){return revision.id==changed.stable_id;});
+            check(found!=revisions.end(),"The U4 code archive lost its original owner");
+            const auto archived=winrt::Windows::Data::Json::JsonObject::Parse(
+                winrt::to_hstring(found->raw_json));
+            original_code=winrt::to_string(archived.GetNamedString(L"code"));
+            check(old.code==changed.code,
+                "A comparison-only historic reading was passed off as loadable JSON");
+        }
         check(old.type==curriculum::BlockType::code&&changed.type==old.type&&
-            old.code!=changed.code&&changed.code.find("\n\n    if (")!=std::string::npos&&
+            original_code!=changed.code&&
+            changed.code.find("\n\n    if (")!=std::string::npos&&
             changed.code.find("\n\n    return 0;")!=std::string::npos&&
             old.stable_id==changed.stable_id&&
             curriculum::exercise_key(before,old)==curriculum::exercise_key(after,changed),
@@ -385,6 +406,7 @@ int main(int argc,char** argv) {
         for(const auto locale:{"es","en","fr"})verify_locale(dir,locale);
         verify_visual_separators_keep_order_and_history(dir);
         verify_real_curricular_pilot(std::filesystem::path(argv[2]));
+        verify_real_curricular_pilot(std::filesystem::path(argv[2])/"after-editorial");
         verify_real_u6_compiler_diagnostics(std::filesystem::path(argv[3]));
         for(const auto name:{"u6.forged-goal.json","u6.forged-archive.json",
                              "u6.forged-source.json"})
