@@ -701,7 +701,12 @@ un `return` posterior a otro que termina definitivamente esa vía.
 En condiciones constantes como `if (true)` o `if (1)` se comprueba
 el retorno inmediato ejecutado; una guarda condicional de entrada
 (por ejemplo, `if (piezas <= 0) return 0;`) no impide analizar el
-cálculo posterior en la vía ordinaria. Esta detección es acotada:
+cálculo posterior en la vía ordinaria. Cuando `if/else` devuelve
+directamente en ambas ramas, las dos deben satisfacer `minUses`;
+no basta con escribir la constante en una rama y dejar cifras fijas en
+la otra. Si sólo hay retornos condicionales cuya cobertura no puede
+probar este analizador acotado, no se acredita el requisito de fuente.
+Esta detección es acotada:
 no reemplaza la compilación, la ejecución ni las sondas independientes
 que correspondan a cada actividad.
 
