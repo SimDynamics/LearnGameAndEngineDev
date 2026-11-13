@@ -117,6 +117,13 @@ void authored_root_roundtrip(const Lesson& original) {
     try {(void)parse_lesson_json(winrt::to_string(root.Stringify()),"es");}
     catch(const std::exception&) {rejected=true;}
     require(rejected,"The Windows loader accepted duplicate named-rule owners");
+    auto no_probe=JsonObject::Parse(winrt::to_hstring(reviewed));
+    no_probe.GetNamedArray(L"compilerNamedRuleChecks").GetObjectAt(1)
+        .Remove(L"executionProbe");
+    rejected=false;
+    try {(void)parse_lesson_json(winrt::to_string(no_probe.Stringify()),"es");}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected,"The loader accepted an editable CMake harness without a probe");
 }
 
 void project_examples(const Lesson& lesson) {
