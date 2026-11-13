@@ -10,22 +10,24 @@
         },
         {
           "type": "paragraph",
-          "text": "int puede representar -1 y 11; eso no los convierte en cantidades válidas para el microtaller que acepta de 0 a 10 piezas. El tipo comprueba qué clase de valor se utiliza, pero no expresa por sí solo todas las condiciones del problema (Stroustrup, 2024).\n\nLa validación comprueba ese dominio antes de las operaciones que lo requieren. Una condición escrita después de una división, un acceso o una modificación no protege la operación que ya ocurrió.",
+          "text": "El microtaller acepta pedidos de 0 a 10 piezas, incluidos ambos extremos. Un int puede contener -1 o 11, pero esos valores no son pedidos aceptables. Elegir un tipo entero no basta para expresar el intervalo permitido por el problema (Stroustrup, 2024).\n\nValidar consiste en comprobar que el dato cumple esas condiciones antes de utilizarlo. En el programa siguiente, la condición rechaza las cantidades menores que cero o mayores que diez. Sólo para los pedidos aceptados se calcula el tiempo. Una comprobación escrita después de una operación no puede impedir que esa operación ya se haya ejecutado.",
           "emphasis": [
             {
-              "text": "validación",
-              "style": "bold"
+              "text": "Validar",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "antes de las operaciones",
-              "style": "bold"
+              "text": "antes de utilizarlo",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Pedido invalido\";\n    } else if (piezas == 0) {\n        std::cout << 0;\n    } else {\n        std::cout << 3 + 2 * piezas;\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Pedido invalido\";\n    } else if (piezas == 0) {\n        std::cout << 0;\n    } else {\n        std::cout << 3 + 2 * piezas;\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
@@ -36,7 +38,7 @@
           "answers": [
             "Aceptado"
           ],
-          "explanation": "El dominio incluye 10. Las comparaciones estrictas sólo rechazan fuera del intervalo."
+          "explanation": "El valor 10 pertenece al intervalo permitido. No es menor que 0 ni mayor que 10, de modo que se ejecuta la alternativa y aparece Aceptado."
         },
         {
           "type": "output_prediction",
@@ -47,7 +49,7 @@
           "answers": [
             "Invalido"
           ],
-          "explanation": "-1 incumple la frontera inferior aunque tenga tipo int."
+          "explanation": "El valor -1 es menor que 0. Basta ese incumplimiento para entrar en la primera rama y mostrar Invalido. Que el dato tenga tipo int no lo convierte en un pedido permitido."
         }
       ]
     },
@@ -59,19 +61,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Validar una cantidad no garantiza que cualquier transformación posterior conserve el dominio. Por ejemplo, cinco pendientes es un estado válido; restarle siete produciría un estado que incumple la regla de pendientes no negativos.\n\nAntes de la resta, comprueba que la cantidad completada esté entre cero y la cantidad pendiente. Así el rechazo puede conservar el estado original. La función debe recibir datos que satisfagan su propio contrato, no sólo datos que eran válidos en una etapa anterior (Stroustrup, 2024).",
+          "text": "Un dato válido puede dejar de cumplir las condiciones del problema al modificarlo. Por ejemplo, hay cinco piezas pendientes y se propone completar siete. La resta daría menos dos piezas pendientes, un resultado que no representa el trabajo que queda.\n\nAntes de restar, hay que comprobar ambas condiciones:\nLa cantidad completada no es negativa.\nLa cantidad completada no supera la cantidad pendiente.\n\nSi alguna falla, se informa el rechazo y se conserva la cantidad pendiente. Si ambas se cumplen, se realiza la resta. Así se valida la relación entre los datos que participan en la modificación; no basta con comprobar que el estado anterior era válido (Stroustrup, 2024).\n\nLos tipos enteros sin signo, indicados con unsigned, representan cero y valores positivos dentro de un rango limitado (Köppe et al., 2023). Esa propiedad no comprueba que la cantidad completada sea menor o igual que la pendiente. Cambiar el tipo no sustituye esa comprobación.",
           "emphasis": [
             {
-              "text": "conserve el dominio",
-              "style": "bold"
+              "text": "Antes de restar",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "Antes de la resta",
-              "style": "bold"
-            },
-            {
-              "text": "conservar el estado original",
-              "style": "bold"
+              "text": "se conserva la cantidad pendiente",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -96,7 +96,7 @@
           "answers": [
             "Rechazado:5"
           ],
-          "explanation": "Se decide antes de modificar. El estado original sigue válido al informar el rechazo."
+          "explanation": "Se proponen 7 piezas completadas cuando sólo hay 5 pendientes. La condición detecta que se supera lo disponible, muestra Rechazado: y evita la resta. pendientes conserva el valor 5, por lo que la salida completa es Rechazado:5."
         },
         {
           "type": "output_prediction",
@@ -107,7 +107,7 @@
           "answers": [
             "3"
           ],
-          "explanation": "La cantidad aceptada puede restarse sin violar la regla de pendientes."
+          "explanation": "Las 2 piezas completadas están entre 0 y las 5 pendientes. No se entra en la rama de rechazo: la resta deja 3 piezas pendientes y se imprime 3."
         }
       ]
     },
@@ -119,19 +119,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Una función puede utilizar un valor especial para informar un error, siempre que ese valor no represente también un resultado válido y cada llamador lo compruebe. Este mecanismo tiene un límite: no todas las funciones disponen de un valor libre que pueda servir de señal (Stroustrup, 2024).\n\nPara los minutos no negativos del microtaller, -1 puede representar un pedido inválido. Cero no sirve para distinguirlo: ya representa el pedido vacío válido. Documentar la señal define su significado, pero no obliga automáticamente al llamador a tratarla correctamente.",
+          "text": "Una función puede reservar un valor de retorno para comunicar un error. El llamador, es decir, el código que invoca la función, debe reconocer esa señal antes de utilizar el resultado. El valor elegido no debe confundirse con ningún resultado válido (Stroustrup, 2024).\n\nEn el microtaller se utiliza este acuerdo:\nLos tiempos válidos son minutos no negativos.\nEl resultado -1 señala un pedido inválido; no es un tiempo que deba sumarse.\nEl resultado cero representa un pedido vacío válido.\n\nPor eso cero no puede representar también el error: el llamador recibiría el mismo valor para dos situaciones distintas. Escribir el acuerdo no añade una comprobación al programa; hay que programarla. Si todos los valores de retorno fueran resultados válidos, no quedaría uno disponible para señalar el error.",
           "emphasis": [
             {
-              "text": "valor especial",
-              "style": "bold"
+              "text": "valor de retorno",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "cada llamador lo compruebe",
-              "style": "bold"
+              "text": "debe reconocer esa señal",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "Cero no sirve para distinguirlo",
-              "style": "bold"
+              "text": "dos situaciones distintas",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -144,7 +147,7 @@
           "answers": [
             "Pedido invalido"
           ],
-          "explanation": "El llamador reconoce la señal antes de usarla como minutos."
+          "explanation": "El pedido de 12 piezas queda fuera del intervalo aceptado, así que estimar devuelve -1. El llamador comprueba esa señal antes de tratar el resultado como minutos y muestra Pedido invalido."
         },
         {
           "type": "multiple_choice",
@@ -180,19 +183,22 @@
         },
         {
           "type": "paragraph",
-          "text": "Detectar un dato inválido y decidir qué hacer con él son responsabilidades distintas. La función que conoce el dominio puede detectar el problema; el llamador conoce el contexto y decide si presenta un mensaje, rechaza ese pedido o procesa el siguiente (Stroustrup, 2024).\n\nEn estas actividades, estimar devuelve minutos o la señal -1 y el procesamiento decide qué mostrar. Mezclar la presentación con el cálculo puede limitar su reutilización o repetir mensajes. La unidad siguiente desarrollará las excepciones como otra forma de comunicar el fallo; aquí se practica la comprobación explícita del resultado.",
+          "text": "Detectar un dato inválido y decidir cómo responder son dos tareas distintas. La función de cálculo conoce las cantidades que acepta y puede detectar el incumplimiento. El código que la llama conoce el uso del resultado y puede decidir qué mensaje presentar o si debe continuar con otro pedido (Stroustrup, 2024).\n\nEn estas actividades se reparten así:\nestimar calcula los minutos y devuelve -1 si el pedido es inválido. No imprime mensajes.\nprocesar llama a estimar para cada pedido. Si recibe la señal, muestra Invalido sin sumarla; si recibe un tiempo válido, lo muestra y lo añade al total.\n\nEsta separación permite reutilizar el cálculo sin que aparezcan mensajes impuestos por él. Más adelante aprenderás a comunicar un fallo interrumpiendo el cálculo y trasladando su tratamiento a otro punto del programa; ese mecanismo se llama excepción. Aquí se comprueba explícitamente el valor devuelto.",
           "emphasis": [
             {
               "text": "Detectar un dato inválido",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "decidir qué hacer con él",
-              "style": "bold"
+              "text": "decidir cómo responder",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "comprobación explícita del resultado",
-              "style": "bold"
+              "text": "se comprueba explícitamente el valor devuelto",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -201,7 +207,7 @@
           "id": "rechazo_fuera_dominio",
           "question": "Completa sólo el operador lógico: basta que cualquiera de las dos fronteras se incumpla para rechazar.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int piezas{4};\n    if (piezas < 0 ___ piezas > 10) {\n        std::cout << \"Invalido\";\n    } else {\n        std::cout << \"Valido\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{4};\n\n    if (piezas < 0 ___ piezas > 10) {\n        std::cout << \"Invalido\";\n    } else {\n        std::cout << \"Valido\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "||",
             "or"
@@ -210,25 +216,28 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye `estimar` con la señal -1 para datos fuera de 0 a 10 y la regla ya conocida para los válidos. Construye también `procesar(const std::vector<int>& pedidos)`: empieza un total en cero, recorre la colección y muestra `Piezas=dato:` seguido de Invalido o de los minutos, en una línea por dato. Suma únicamente resultados válidos. Al terminar muestra `Total=valor` y un salto de línea.\n\nLlama desde main primero con `{0,2,11,-1,5}` y después con una colección vacía. La salida debe ser:\n\nPiezas=0:0\nPiezas=2:7\nPiezas=11:Invalido\nPiezas=-1:Invalido\nPiezas=5:13\nTotal=20\nTotal=0\n\nCada línea, incluida la última, termina con un salto. Pulsa Compilar, ejecutar y comprobar. La misma construcción comprueba la señal de error y el caso vacío sin cambiar los datos entre ejecuciones.",
+          "text": "Construye las dos funciones del procesamiento:\nestimar recibe una cantidad de piezas. Devuelve -1 si queda fuera de 0 a 10, cero si el pedido está vacío y el tiempo de preparación más el de las piezas en los demás casos válidos.\nprocesar(const std::vector<int>& pedidos) comienza un total en cero y recorre la colección. Para cada dato muestra Piezas=dato: seguido de Invalido o de los minutos calculados. Suma únicamente los tiempos válidos. Al terminar muestra Total=valor.\n\nDesde main, llama a procesar primero con {0,2,11,-1,5} y después con una colección vacía. Son dos sesiones; cada llamada debe comenzar su propio total. La salida requerida es:\n\nPiezas=0:0\nPiezas=2:7\nPiezas=11:Invalido\nPiezas=-1:Invalido\nPiezas=5:13\nTotal=20\nTotal=0\n\nCada línea termina con un salto, incluida la última. En el editor siguiente, pulsa «Compilar, ejecutar y comprobar». Si el informe no coincide, corrige tus funciones y vuelve a ejecutarlo.",
           "emphasis": [
             {
-              "text": "Suma únicamente resultados válidos.",
-              "style": "bold"
+              "text": "Suma únicamente los tiempos válidos.",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "Cada línea, incluida la última, termina con un salto.",
-              "style": "bold"
+              "text": "Cada línea termina con un salto, incluida la última.",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "Compilar, ejecutar y comprobar",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Piezas=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n\n    for (int piezas : pedidos) {\n        std::cout << \"Piezas=\" << piezas << \"\\n\";\n    }\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -247,15 +256,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera las definiciones completas de estimar y procesar, junto con las funciones auxiliares que utilice tu solución anterior. Sustituye las dos declaraciones sin cuerpo por las definiciones correspondientes y añade las auxiliares necesarias. Conserva las inclusiones y el main proporcionado, que contiene las nuevas llamadas; no añadas otro main.\n\nLa primera colección es {-1,0,1,10,11}: reúne los extremos aceptados, los primeros valores rechazados a ambos lados y el primer pedido no vacío. La segunda llamada procesa una colección vacía. Los cálculos y la comprobación de la señal deben seguir en tus funciones.\n\nPulsa «Compilar, ejecutar y comprobar». Debe aparecer este informe completo, con un salto al final de cada línea, incluida la última. Mantén el mismo programa entre las llamadas y corrige las funciones si una línea no coincide.",
+          "text": "Usa en el editor siguiente las funciones que acabas de construir. Sustituye las declaraciones sin cuerpo de estimar y procesar por sus definiciones completas; añade también las funciones auxiliares que utilice tu solución. Conserva las inclusiones y el main proporcionado; no añadas otro main.\n\nLas llamadas preparadas procesan estas sesiones:\nPrimera colección: {-1,0,1,10,11}. Reúne los extremos aceptados, sus vecinos rechazados y el primer pedido no vacío.\nSegunda colección: vacía. No debe heredar el total de la primera sesión.\n\nPulsa «Compilar, ejecutar y comprobar». El informe requerido aparece debajo, con un salto al final de cada línea, incluida la última. Si una línea difiere, localiza qué decisión o cálculo de tus funciones la produce y corrige su causa.",
           "emphasis": [
             {
-              "text": "Recupera las definiciones completas",
-              "style": "bold"
+              "text": "Sustituye las declaraciones sin cuerpo",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "este informe completo",
-              "style": "bold"
+              "text": "El informe requerido aparece debajo",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -265,7 +276,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye estas declaraciones por las definiciones completas de tus funciones.\nint estimar(int piezas);\nvoid procesar(const std::vector<int>& pedidos);\n\nint main() {\n    procesar({-1, 0, 1, 10, 11});\n    procesar({});\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye estas declaraciones por las definiciones completas de tus funciones.\nint estimar(int piezas);\nvoid procesar(const std::vector<int>& pedidos);\n\nint main() {\n    procesar({-1, 0, 1, 10, 11});\n    procesar({});\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -290,15 +301,17 @@
         },
         {
           "type": "paragraph",
-          "text": "La colección del primer editor no contenía diez piezas. Rechazar por error con piezas >= 10 podía conservar aquel informe: los pedidos de once y menos uno seguirían rechazados, y los de cero, dos y cinco seguirían aceptados. La predicción de la primera página mostraba el límite correcto, pero utilizaba otro programa.\n\nLa nueva llamada exige aceptar diez piezas. Su tiempo es 3 + 2 * 10 = 23 minutos. El pedido de una pieza requiere 5 y el pedido vacío requiere 0; por eso esta sesión suma 28. Las señales de error no se suman. Después, la sesión vacía muestra Total=0 porque su total comienza de nuevo en cero.",
+          "text": "La primera construcción no incluía un pedido de diez piezas. Con aquellos datos, rechazar por error mediante piezas >= 10 todavía podía producir el informe solicitado:\nLos pedidos de once y menos uno seguían rechazados.\nLos pedidos de cero, dos y cinco seguían aceptados.\nNo había un pedido de diez que mostrase el rechazo indebido.\n\nLa nueva colección sí contiene ese extremo permitido. Sus tiempos válidos son:\nCero piezas: 0 minutos.\nUna pieza: 5 minutos.\nDiez piezas: 23 minutos, porque 3 + 2 * 10 = 23.\n\nEl total es 28 minutos. Los pedidos inválidos no aportan minutos. Si se rechazaran las diez piezas, faltaría su tiempo y el total sería sólo 5. Después, la llamada con una colección vacía debe mostrar Total=0: el total de cada sesión comienza de nuevo en cero.",
           "emphasis": [
             {
-              "text": "utilizaba otro programa",
-              "style": "bold"
+              "text": "No había un pedido de diez",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "exige aceptar diez piezas",
-              "style": "bold"
+              "text": "sí contiene ese extremo permitido",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         }
@@ -312,42 +325,42 @@
         },
         {
           "type": "note",
-          "text": "La primera aísla el tratamiento de los pedidos; la referencia conjunta siguiente también separa las dos sesiones. Otras implementaciones son válidas si cumplen los mismos contratos y formatos."
+          "text": "Los programas siguientes muestran dos maneras de organizar el procesamiento. El primero reúne el cálculo y la presentación de una colección en main. El segundo extrae ese procesamiento a una función y reúne las dos sesiones pedidas en el editor. Otras implementaciones son válidas si respetan los mismos contratos y formatos."
         },
         {
           "type": "paragraph",
-          "text": "estimar devuelve -1 para datos fuera de 0 a 10, 0 para cero y 3+2*piezas para los demás datos válidos. En la colección {0,2,11,-1,5}, los resultados válidos son 0, 7 y 13: el total es 20 minutos. Las cantidades 11 y -1 se informan como Invalido y no se suman.\n\nEl primer programa muestra una sola colección y el total sin salto final. La referencia conjunta posterior corresponde al objetivo completo del primer editor: procesar esa colección y una vacía en llamadas separadas, terminando cada línea con un salto. El total local de la colección vacía permanece en cero.",
+          "text": "estimar devuelve -1 para un pedido fuera del intervalo permitido. Dentro del intervalo, devuelve cero para un pedido vacío y calcula 3+2*piezas para los demás pedidos.\n\nEn la colección {0,2,11,-1,5}, los tiempos válidos son 0, 7 y 13; su total es 20 minutos. Las cantidades 11 y -1 se presentan como Invalido y no aportan tiempo.\n\nEste primer programa muestra una sola colección y no termina su última línea con un salto. Sirve para estudiar cómo se comprueba la señal antes de sumar. La referencia conjunta posterior sí reproduce el objetivo completo del primer editor, incluidas la sesión vacía y la terminación de cada línea.",
           "emphasis": [
             {
-              "text": "no se suman",
-              "style": "bold"
+              "text": "no aportan tiempo",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "objetivo completo del primer editor",
-              "style": "bold"
-            },
-            {
-              "text": "llamadas separadas",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Piezas=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    int total{0};\n\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n\n        std::cout << \"Piezas=\" << piezas << \":\";\n\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n\n    std::cout << \"Total=\" << total;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "estimar detecta el dato inválido y procesar decide cómo presentarlo. Ninguna señal -1 se interpreta como tiempo. La referencia siguiente reúne las dos sesiones en llamadas independientes: el total local de una sesión no se arrastra a la siguiente.",
+          "text": "estimar comprueba la cantidad y devuelve un tiempo válido o la señal -1. procesar examina ese resultado antes de sumarlo. Si es la señal, informa el rechazo y conserva el total; si es un tiempo válido, lo añade. La referencia siguiente coloca el total dentro de procesar, de modo que cada llamada comienza con su propio total.",
           "emphasis": [
             {
-              "text": "Ninguna señal -1 se interpreta como tiempo",
-              "style": "bold"
+              "text": "examina ese resultado antes de sumarlo",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "no se arrastra a la siguiente",
-              "style": "bold"
+              "text": "cada llamada comienza con su propio total",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -358,11 +371,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Piezas=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 2, 11, -1, 5});\n    procesar({});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int total{0};\n\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n\n        std::cout << \"Piezas=\" << piezas << \":\";\n\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n\n    std::cout << \"Total=\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 2, 11, -1, 5});\n    procesar({});\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La referencia conjunta conserva los datos del primer editor. Para reproducir el informe de fronteras a partir de ella, sustituye únicamente su main por el main ya proporcionado en el editor complementario. Conserva las inclusiones y las definiciones de estimar y procesar.\n\nLa estimación acepta el intervalo completo, incluido diez; el procesamiento comprueba la señal antes de sumar y crea un total local para cada sesión. El cliente cambia las colecciones, mientras estas responsabilidades se conservan."
+          "text": "Para reproducir el informe de fronteras con esta referencia, cambia únicamente su main por el que aparece en el editor complementario. Conserva las inclusiones y las definiciones de estimar y procesar.\n\nEl cambio afecta a las colecciones que se entregan, mientras las funciones mantienen sus responsabilidades:\nestimar acepta todo el intervalo permitido, incluido el pedido de diez piezas.\nprocesar comprueba la señal antes de sumar y comienza un total local en cada llamada."
         }
       ]
     }
@@ -1081,6 +1094,218 @@
         "id": "block_0004_0002",
         "beforeSha256": "41fcfe7cb571b020fa7bc415f61c35f3fa6de41f453c783ab6175bf9adbeaa24",
         "afterSha256": "3dcee6a62a15219e4b4a983d516f62f3aa1404bd8cef2c0ce0cc42262b7a0927"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "0e4c70b64e1999c4975da944c3fc67637c051b8862e373f63e2e1bc03e9f5779",
+        "afterSha256": "e8ae7d1ad69a21b4f8196a2b30edcde7f03e99cd827e9693af9fca743a945592"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4b22b7001bf7297f9284d702a9c1457a611944b2fd56fa2efcc2153689054559",
+        "afterSha256": "e122681a17a0311eb639a04833c83ae7c89e67de7a840e3a23639821472a18e8"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "5515625f5045ef62accb4e0497c06c93257ce186d9b33ad94ceeacdf6ca4a397",
+        "afterSha256": "c8ad5fe71e61340f73f460ab9141667dd4bd41dadb0c5cd802a95282be500f22"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "f21000bb5a46d92d7d2eb4066fd5ebfdb8af90aeb0dd54d01b9ee9728e0e022f",
+        "afterSha256": "6b325c45c8f8afe5bb10d8b52c695fa3b1fd793eefdbf4cf7841a1fe597f67a2"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "70fead6490849c9617ae8dfc275b846ee99111952112202e19709c2ea3c79cd5",
+        "afterSha256": "89f4f6adcc01f5d1496913939276b0a3147eae32ae2a0d784321a351ae0d1d0f"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "d9f789f1ba343d2e5730bcc8057d75316847369072b55b72c3036e71149907e3",
+        "afterSha256": "0c23dc380b1c6c44d4a6bc5bb0f26848144eaa7b13b12bbc7863aebc1c8ed03b"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "920a135878037203366c19c087d9f7675ae252a52dc0fba31222ff6893554905",
+        "afterSha256": "43633766aac3f2f438d35089d640ded1e09e8b90a5c996188a2694f46b26a867"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "730461e3a19be43186e2e84e32c0c8f82d0fc55a477a91b71205065361114dfe",
+        "afterSha256": "0b5c2d16bbb427dc6bef9e78895302ce1382ef82eb751c599fbacc39136008f5"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "c7eeed0d2bcf06db1a2533e3adbe5da3da0938d40c50d0f72fed3d0c8a0ffe87",
+        "afterSha256": "957e5ef7f7e66703636d713accaaf35234515ad3287c7f7f60fd9aa188761f8f"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "4e6ccac869f058bea2c09f8c41f01e2bf9f1deeea7b7cb55ef843470cf50dbff",
+        "afterSha256": "d986f791d0f0a9e2482796c0a43e8ce1f9338490e77b8ebdcb8d9f48d5b8bf45"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "3b64af0452e6a7cbf495f47efff7eae57ac8fd31dfbbc1f51f7a82c28cc04739",
+        "afterSha256": "640d5a2007d19565ff3797c053f6d57ad195c4cf0886e6d0f950e168c983c5a3"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "d75a6f5caf744370991f51ed88fc5e5dc1c9b05e34df9b20913b426b07843647",
+        "afterSha256": "26773b0e9b3b95bf5982d9a264f3f460743d03b59576c42d496b2579753c5f32"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "d8139588fd28f4eebd8fa4139bae5355d5d2f8504b066f05d9c159033cebdf58",
+        "afterSha256": "88fecfdd94975ecc1ffe018fe2f2ec676e21e375ad101682505eaff3ff6aa0d9"
+      },
+      {
+        "id": "reporte_fronteras_consigna",
+        "beforeSha256": "fec19290b6beb0cd7641aee4ef126c501dd61ea9865a97b881bac541773a6b79",
+        "afterSha256": "c482f5dea03fb36f375b5cb87a80014893d06420da8fb5530c6a378d6aca29b5"
+      },
+      {
+        "id": "reporte_fronteras_compilador",
+        "beforeSha256": "3ced11564ce84fe5435f92267c78358e30e996c2450b742c5496cec2b14fe030",
+        "afterSha256": "bca8c9763c213ace5b88cf1c7e0927919abf7986dba11363fb8c5746fe5b7573"
+      },
+      {
+        "id": "reporte_fronteras_comparacion",
+        "beforeSha256": "9e41b2a384649d6151091162b56acac1e1f42ed61a62045b0bb36e28a8669630",
+        "afterSha256": "d9b253144367f9e6f96078264f8254aa8c32cf5339b620576cbbe5a837584879"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "97961d2fb36b8f993dc6eba4d9f153bdfc062417c0988e9ac201ac4decff6bfd",
+        "afterSha256": "69e15034316a0d9948a415fe024666972a18c040812af165fcba42f50020b5f6"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "3dcee6a62a15219e4b4a983d516f62f3aa1404bd8cef2c0ce0cc42262b7a0927",
+        "afterSha256": "e42bd53fb4b076f0a5bfe9059537d8b8eb018ccf5084b5f94ef283cffb0a8021"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "fc41aab9193ed6c935bdb1de4356d15a4d480e4496986551ad66d5659da48da8",
+        "afterSha256": "e0b36cf816aa4d69fba69b397b35d3439d8ec1569c626b9796dfcdb3c83d41ad"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "3ea3f3fa409b269c0f0d0705aaed0da265215a119ed64d25c2adf50b85671590",
+        "afterSha256": "57b260bd9e9fa9a46bb3a63b33217e58e81d947566192d6fef43837e9487f1e2"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "6529a93329dae18bfa29530576c0c63b69b34d64b0e558d0692038c5c4a26256",
+        "afterSha256": "a2fd6095aa7b698b5b9377534cc58b21b7ab637ce4bbd82b8d92a98d088b88de"
+      },
+      {
+        "id": "reporte_fronteras_referencia",
+        "beforeSha256": "e27b7695911143c3d059b683f086516ee842130319371be7822733f0dc4ef9ad",
+        "afterSha256": "bc58f3104b8eebb5e478a563571ca70865fec2b97172bafe33582ccb64c973f0"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "89f4f6adcc01f5d1496913939276b0a3147eae32ae2a0d784321a351ae0d1d0f",
+        "afterSha256": "e6b64cbc2c093f26c63539d9917c08ab502e974fbcbf1cfa1ab3c656cda1e69e"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "e0b36cf816aa4d69fba69b397b35d3439d8ec1569c626b9796dfcdb3c83d41ad",
+        "afterSha256": "bb0d7f04335b302caec4bcdcf56e74d015079baac9fde0068ec72f25df546394"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "a2fd6095aa7b698b5b9377534cc58b21b7ab637ce4bbd82b8d92a98d088b88de",
+        "afterSha256": "76b5e072ad402886f4a8723d06bc960e501a3fdff50853db47fe46b68d2d8174"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Pedido invalido\";\n    } else if (piezas == 0) {\n        std::cout << 0;\n    } else {\n        std::cout << 3 + 2 * piezas;\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "fill_code",
+          "id": "rechazo_fuera_dominio",
+          "question": "Completa sólo el operador lógico: basta que cualquiera de las dos fronteras se incumpla para rechazar.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{4};\n    if (piezas < 0 ___ piezas > 10) {\n        std::cout << \"Invalido\";\n    } else {\n        std::cout << \"Valido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "||",
+            "or"
+          ],
+          "explanation": "El rechazo es menor que cero o mayor que diez. Usar && exigiría dos desigualdades incompatibles."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Piezas=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=0:0\nPiezas=2:7\nPiezas=11:Invalido\nPiezas=-1:Invalido\nPiezas=5:13\nTotal=20\nTotal=0\n"
+                ],
+                "explanation": "La señal -1 se trata antes de sumar. La sesión vacía crea su propio total cero y no produce líneas de pedidos."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "reporte_fronteras_compilador",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye estas declaraciones por las definiciones completas de tus funciones.\nint estimar(int piezas);\nvoid procesar(const std::vector<int>& pedidos);\n\nint main() {\n    procesar({-1, 0, 1, 10, 11});\n    procesar({});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Piezas=-1:Invalido\nPiezas=0:0\nPiezas=1:5\nPiezas=10:23\nPiezas=11:Invalido\nTotal=28\nTotal=0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe acepta los dos extremos del dominio, 0 y 10, y trata -1 y 11 como pedidos inválidos. Los minutos válidos son 0, 5 y 23; su total es 28. La sesión vacía siguiente muestra Total=0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Piezas=-1:Invalido\nPiezas=0:0\nPiezas=1:5\nPiezas=10:Invalido\nPiezas=11:Invalido\nTotal=5\nTotal=0\n"
+                    ],
+                    "text": "Este informe coincide con el rechazo indebido del extremo superior admitido. Diez piezas todavía pertenecen al dominio: deben producir 23 minutos. Al tratarlas como inválidas, sólo se suman los 5 minutos del pedido de una pieza. Revisa la comparación del límite superior y conserva el rechazo de once piezas."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Piezas=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nvoid procesar(const std::vector<int>& pedidos) {\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Piezas=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total << \"\\n\";\n}\n\nint main() {\n    procesar({0, 2, 11, -1, 5});\n    procesar({});\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1113,79 +1338,142 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "5ecfccceaf4c026d95e1437ff50def06662d3f3246dfabae53aaf20641eea142",
+        "sourceSha256": "ac66429ddb508066754307a7161b1ce96a038543fbcf19990dab7ba4ed22de42",
         "spans": [
           {
-            "start": 0,
-            "end": 3,
+            "start": 33,
+            "end": 34,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 39,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 80,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 22,
-            "end": 29,
-            "text": "-1 y 11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 108,
-            "end": 114,
-            "text": "0 a 10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 235,
-            "end": 253,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0003",
-        "path": "/question",
-        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
-        "spans": []
-      },
-      {
-        "block": "block_0000_0003",
-        "path": "/explanation",
-        "sourceSha256": "67a018f776835bbc191d3e79ecaa77fdf9a54b173e2480d506ebcf91d8c3429b",
-        "spans": [
-          {
-            "start": 19,
-            "end": 21,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0004",
-        "path": "/question",
-        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
-        "spans": []
-      },
-      {
-        "block": "block_0000_0004",
-        "path": "/explanation",
-        "sourceSha256": "895e7ac43931d6ce876a1561e8977ae0115d4c03e303a52d555d2130bd14579c",
-        "spans": [
-          {
-            "start": 0,
-            "end": 2,
+            "start": 96,
+            "end": 98,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 51,
-            "end": 54,
+            "start": 101,
+            "end": 103,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 252,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 416,
+            "end": 420,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 435,
+            "end": 439,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0003",
+        "path": "/explanation",
+        "sourceSha256": "8c2b12ac12892ecbfa9c92c322c767ff46634c201448e66327aaa58ad329c87c",
+        "spans": [
+          {
+            "start": 9,
+            "end": 11,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 63,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 79,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 137,
+            "text": "Aceptado",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/question",
+        "sourceSha256": "3638937432b20b4f5abfb43577546535559b388a08df26f1f072b2da51546d85",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/explanation",
+        "sourceSha256": "5a14fc886ecb72a96043fff0f3dfbefc1680e726f3b825e5ad4f805656b86d36",
+        "spans": [
+          {
+            "start": 9,
+            "end": 11,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 102,
+            "text": "Invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 130,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -1201,33 +1489,54 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "720c7a24d05b500d7181872cdf404c18323034b76e3b3e6b0f5b860f0c9e0ac3",
+        "sourceSha256": "1ed36a7f5c5b87e36a4ee20d606bf33773e078afa8fe4ce5ae8b3537a8598816",
         "spans": [
           {
-            "start": 107,
-            "end": 112,
+            "start": 100,
+            "end": 105,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 154,
-            "end": 159,
+            "start": 147,
+            "end": 152,
             "text": "siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 299,
-            "end": 303,
+            "start": 169,
+            "end": 178,
+            "text": "menos dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 654,
+            "end": 672,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 718,
+            "end": 726,
+            "text": "unsigned",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 740,
+            "end": 744,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 498,
-            "end": 516,
-            "text": "(Stroustrup, 2024)",
+            "start": 793,
+            "end": 813,
+            "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           }
@@ -1339,8 +1648,51 @@
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "9af80f152e1daf937092ea3e7e7775a133617202318bc8bacfc361bff5ecbd75",
-        "spans": []
+        "sourceSha256": "8b5847d949ec73f2757417365c324c41fa53589834baaaf3c3bc0bfc517aa8d5",
+        "spans": [
+          {
+            "start": 12,
+            "end": 13,
+            "text": "7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 131,
+            "text": "Rechazado:",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 150,
+            "end": 160,
+            "text": "pendientes",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 179,
+            "end": 180,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 226,
+            "text": "Rechazado:5",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1351,8 +1703,44 @@
       {
         "block": "block_0001_0004",
         "path": "/explanation",
-        "sourceSha256": "60fb854ddee47bea3bd5942daba5df4606b815c4b14d232218818e129a684bc6",
-        "spans": []
+        "sourceSha256": "577d07511b4f3e54b15631bd69f47bf3f4736e0dc34fce7f0067685d04c9b92e",
+        "spans": [
+          {
+            "start": 4,
+            "end": 5,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 46,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 109,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 142,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0000",
@@ -1363,27 +1751,27 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "f813fd84d604e1268d1e16a8c95629f596b24d0c137bea330e2c3cf8fc557b74",
+        "sourceSha256": "2d7f7a1ecb2df999519e305b0483ad5b6094eda7cf8acd0c405d96edf01a7d22",
         "spans": [
           {
-            "start": 271,
-            "end": 289,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 339,
-            "end": 341,
+            "start": 373,
+            "end": 375,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 380,
-            "end": 384,
-            "text": "Cero",
-            "role": "data",
+            "start": 450,
+            "end": 454,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 499,
+            "end": 503,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1397,8 +1785,37 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "5ce5e649b43234fd6537649b47b7ae8258156a56c6e3288b7cedd748b012b1e9",
-        "spans": []
+        "sourceSha256": "864828acdaa9242c88db73510880f2146c525d782e3b9b442b0a97720686ce22",
+        "spans": [
+          {
+            "start": 13,
+            "end": 15,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 74,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 84,
+            "end": 86,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 187,
+            "text": "Pedido invalido",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0003",
@@ -1462,7 +1879,7 @@
             "start": 15,
             "end": 17,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1489,7 +1906,7 @@
             "start": 23,
             "end": 25,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1503,7 +1920,7 @@
             "start": 59,
             "end": 61,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1523,27 +1940,48 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "fd89a4338680bd75db723b5c41d949fa40f1f9971490ef392a0561748bc6cd83",
+        "sourceSha256": "fc3f389a1d1bf467b7e2980189739fafee6a624e4272677e2d1dcfd6ecda92ce",
         "spans": [
           {
-            "start": 253,
-            "end": 271,
+            "start": 293,
+            "end": 311,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 296,
-            "end": 303,
+            "start": 352,
+            "end": 359,
             "text": "estimar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 332,
-            "end": 334,
+            "start": 391,
+            "end": 393,
             "text": "-1",
-            "role": "data",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 441,
+            "end": 449,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 458,
+            "end": 465,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 512,
+            "end": 520,
+            "text": "Invalido",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1585,81 +2023,102 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "21b54fe5baaec532769f1528190de7ac2babce45e2f43271f2024373eb63c8fc",
+        "sourceSha256": "72aa2126d6cf23c776c36ded79555438d4034f0ae90a5ad086e07ce03a2ac7c2",
         "spans": [
           {
-            "start": 11,
-            "end": 18,
+            "start": 47,
+            "end": 54,
             "text": "estimar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 33,
-            "end": 35,
+            "start": 95,
+            "end": 97,
             "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 56,
-            "end": 62,
-            "text": "0 a 10",
+            "start": 120,
+            "end": 122,
+            "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 123,
-            "end": 164,
+            "start": 124,
+            "end": 128,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 229,
+            "end": 270,
             "text": "procesar(const std::vector<int>& pedidos)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 187,
-            "end": 191,
+            "start": 292,
+            "end": 296,
             "text": "cero",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 225,
-            "end": 237,
+            "start": 344,
+            "end": 356,
             "text": "Piezas=dato:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 250,
-            "end": 258,
+            "start": 368,
+            "end": 376,
             "text": "Invalido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 357,
-            "end": 368,
+            "start": 463,
+            "end": 474,
             "text": "Total=valor",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 404,
-            "end": 408,
+            "start": 483,
+            "end": 487,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 422,
-            "end": 435,
+            "start": 497,
+            "end": 505,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 518,
+            "end": 531,
             "text": "{0,2,11,-1,5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 493,
-            "end": 581,
+            "start": 654,
+            "end": 742,
             "text": "Piezas=0:0\nPiezas=2:7\nPiezas=11:Invalido\nPiezas=-1:Invalido\nPiezas=5:13\nTotal=20\nTotal=0",
             "role": "output",
             "reading": "natural"
@@ -1675,7 +2134,7 @@
             "start": 9,
             "end": 11,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1696,13 +2155,21 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "bc4308fdad59528e566c80194d3d02a154bc7e97a713913d1b606d3fc255b28c",
-        "spans": []
+        "sourceSha256": "272bed13b4f390fc4c5fe70796c2eb5ebf420152b03a8153979e72dbc9d4198c",
+        "spans": [
+          {
+            "start": 143,
+            "end": 147,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "70f304ebf21a1c9daff7e7c7ea56d3a4c864a60a21d40727b5adc30b19f3d100",
+        "sourceSha256": "3a8a56d8b3ec5707a6e5c905e1d171b835a62d1e5a6269c30e30529477d37452",
         "spans": [
           {
             "start": 0,
@@ -1715,76 +2182,76 @@
             "start": 17,
             "end": 19,
             "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 40,
-            "end": 46,
-            "text": "0 a 10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 49,
-            "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 55,
-            "end": 59,
+            "start": 97,
+            "end": 101,
             "text": "cero",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 62,
-            "end": 72,
+            "start": 133,
+            "end": 143,
             "text": "3+2*piezas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 119,
-            "end": 132,
+            "start": 185,
+            "end": 198,
             "text": "{0,2,11,-1,5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 161,
-            "end": 170,
-            "text": "0, 7 y 13",
+            "start": 224,
+            "end": 225,
+            "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 186,
+            "start": 227,
+            "end": 228,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 231,
+            "end": 233,
+            "text": "13",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 249,
             "text": "20",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 211,
-            "end": 218,
-            "text": "11 y -1",
+            "start": 274,
+            "end": 276,
+            "text": "11",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 236,
-            "end": 244,
-            "text": "Invalido",
-            "role": "output",
+            "start": 279,
+            "end": 281,
+            "text": "-1",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 564,
-            "end": 568,
-            "text": "cero",
+            "start": 300,
+            "end": 308,
+            "text": "Invalido",
             "role": "output",
             "reading": "natural"
           }
@@ -1793,7 +2260,7 @@
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "35aeefe87949f09b8ffbca25ed902f34bb573e71d4b6d96bee2b9f64ebc2b869",
+        "sourceSha256": "614356c124b5b5fa629abf17993bd7de8cd9c4e52f543b832dccf9ee17645fa5",
         "spans": [
           {
             "start": 0,
@@ -1803,18 +2270,25 @@
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 43,
+            "start": 69,
+            "end": 71,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 81,
             "text": "procesar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 83,
-            "end": 85,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
+            "start": 262,
+            "end": 270,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1833,39 +2307,39 @@
       {
         "block": "reporte_fronteras_consigna",
         "path": "/text",
-        "sourceSha256": "aeaa13268043152711fa3d082099c658bd5d5ba3f27d68c882104d5dfabf803c",
+        "sourceSha256": "f47837c7388fd2ec80d6701395af6d779be9d6964b52e9e43fd133df2f8bcb53",
         "spans": [
           {
-            "start": 39,
-            "end": 46,
+            "start": 108,
+            "end": 115,
             "text": "estimar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 49,
-            "end": 57,
+            "start": 118,
+            "end": 126,
             "text": "procesar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 274,
-            "end": 278,
+            "start": 253,
+            "end": 257,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 343,
-            "end": 347,
+            "start": 288,
+            "end": 292,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 374,
-            "end": 388,
+            "start": 363,
+            "end": 377,
             "text": "{-1,0,1,10,11}",
             "role": "data",
             "reading": "natural"
@@ -1893,22 +2367,50 @@
         "spans": [
           {
             "start": 48,
+            "end": 49,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
             "end": 54,
-            "text": "0 y 10",
+            "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 64,
+            "end": 66,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
             "end": 71,
-            "text": "-1 y 11",
+            "text": "11",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 120,
+            "end": 121,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 124,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
             "end": 129,
-            "text": "0, 5 y 23",
+            "text": "23",
             "role": "output",
             "reading": "natural"
           },
@@ -1966,81 +2468,144 @@
       {
         "block": "reporte_fronteras_comparacion",
         "path": "/text",
-        "sourceSha256": "09fe55c1e5de9d90cc54b3c764de955208d34d8cd164f441d9d12490f55f454b",
+        "sourceSha256": "783da94a100084e307af7ae4e7f92117df4b6a974227251ad4b39b4dc94f2309",
         "spans": [
           {
-            "start": 43,
-            "end": 47,
+            "start": 48,
+            "end": 52,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 91,
+            "start": 109,
+            "end": 121,
             "text": "piezas >= 10",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 138,
-            "end": 154,
-            "text": "once y menos uno",
+            "start": 183,
+            "end": 187,
+            "text": "once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 186,
-            "end": 203,
-            "text": "cero, dos y cinco",
+            "start": 190,
+            "end": 199,
+            "text": "menos uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 351,
-            "end": 355,
+            "start": 235,
+            "end": 239,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 244,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 247,
+            "end": 252,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 298,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 392,
-            "text": "3 + 2 * 10 = 23",
-            "role": "math",
+            "start": 413,
+            "end": 417,
+            "text": "Cero",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 434,
-            "end": 435,
-            "text": "5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 463,
-            "end": 464,
+            "start": 426,
+            "end": 427,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
+            "start": 437,
+            "end": 440,
+            "text": "Una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 449,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 459,
+            "end": 463,
+            "text": "Diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 472,
+            "end": 482,
+            "text": "23 minutos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 491,
-            "end": 493,
+            "end": 506,
+            "text": "3 + 2 * 10 = 23",
+            "role": "math",
+            "reading": "natural"
+          },
+          {
+            "start": 521,
+            "end": 523,
             "text": "28",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 562,
-            "end": 569,
+            "start": 596,
+            "end": 600,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 650,
+            "end": 651,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 710,
+            "end": 717,
             "text": "Total=0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 607,
-            "end": 611,
+            "start": 764,
+            "end": 768,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -2050,42 +2615,49 @@
       {
         "block": "reporte_fronteras_referencia",
         "path": "/text",
-        "sourceSha256": "89a319d4cd3f348cf2b28607bfa01262d9d2240426d99739de8b84f981015f59",
+        "sourceSha256": "766349b501cbe0f700074eea0d6cc905d796d64851f8ff34bf8e7aa5f9132227",
         "spans": [
           {
-            "start": 143,
-            "end": 147,
+            "start": 82,
+            "end": 86,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 155,
-            "end": 159,
-            "text": "main",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 253,
-            "end": 260,
+            "start": 182,
+            "end": 189,
             "text": "estimar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 263,
-            "end": 271,
+            "start": 192,
+            "end": 200,
             "text": "procesar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 327,
-            "end": 331,
+            "start": 311,
+            "end": 318,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 377,
+            "end": 381,
             "text": "diez",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 398,
+            "text": "procesar",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

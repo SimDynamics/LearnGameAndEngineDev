@@ -45,7 +45,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  sol  luna \"};\n    std::string primera;\n    std::string segunda;\n    if (entrada >> primera >> segunda) {\n        std::cout << \"<\" << primera << \">|<\" << segunda << \">\";\n    } else {\n        std::cout << \"Faltan palabras\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  sol  luna \"};\n    std::string primera;\n    std::string segunda;\n\n    if (entrada >> primera >> segunda) {\n        std::cout << \"<\" << primera << \">|<\" << segunda << \">\";\n    } else {\n        std::cout << \"Faltan palabras\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -73,7 +73,7 @@
           "type": "output_prediction",
           "question": "Predice la salida completa. Los escapes `\\t` y `\\n` de la cadena representan un tabulador y un salto de línea.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\tbrisa\\npuente camino\"};\n    std::string palabra;\n    if (entrada >> palabra) {\n        std::cout << \"1:<\" << palabra << \">\\n\";\n    }\n    if (entrada >> palabra) {\n        std::cout << \"2:<\" << palabra << \">\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\tbrisa\\npuente camino\"};\n    std::string palabra;\n\n    if (entrada >> palabra) {\n        std::cout << \"1:<\" << palabra << \">\\n\";\n    }\n\n    if (entrada >> palabra) {\n        std::cout << \"2:<\" << palabra << \">\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "1:<brisa>\n2:<puente>"
           ],
@@ -112,7 +112,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una cadena de lecturas no es una transacción"
+          "text": "El fallo de una lectura no deshace la anterior"
         },
         {
           "type": "paragraph",
@@ -132,7 +132,7 @@
           "type": "output_prediction",
           "question": "¿Qué imprime este programa cuando sólo hay una palabra?",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"cauce\"};\n    std::string origen;\n    std::string destino;\n    if (entrada >> origen >> destino) {\n        std::cout << origen << \" -> \" << destino;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"cauce\"};\n    std::string origen;\n    std::string destino;\n\n    if (entrada >> origen >> destino) {\n        std::cout << origen << \" -> \" << destino;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Par incompleto"
           ],
@@ -143,7 +143,7 @@
           "type": "fill_code",
           "question": "Práctica guiada: completa únicamente el operador que obtiene izquierda antes de continuar con la extracción de derecha.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"norte sur\"};\n    std::string izquierda;\n    std::string derecha;\n    if (entrada ___ izquierda >> derecha) {\n        std::cout << izquierda << \" / \" << derecha;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"norte sur\"};\n    std::string izquierda;\n    std::string derecha;\n\n    if (entrada ___ izquierda >> derecha) {\n        std::cout << izquierda << \" / \" << derecha;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             ">>"
           ],
@@ -171,7 +171,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  cobre\\tplata\\noro \"};\n    std::string palabra;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  cobre\\tplata\\noro \"};\n    std::string palabra;\n\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -209,10 +209,18 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye `probar(const std::string& texto)`. En cada llamada, crea un `std::istringstream` local a partir de `texto` y recorre sus palabras en orden. Escribe cada palabra en su propia línea, entre `<` y `>`. Después muestra `Palabras:` seguido de un espacio y de la cantidad obtenida. No añadas una palabra por los espacios sobrantes.\n\nEl texto de cada prueba contendrá como máximo ocho palabras, de hasta veinte caracteres ASCII cada una; un contador `int` de cero a ocho es suficiente. `main` debe llamar a `probar` con `\"  eco\\tmar\\nsol  \"`, `\"\"`, `\"   \"`, `\"una dos\"`, `\"unodos\"` y `\"  ola  \"`, en ese orden. Los escapes `\\t` y `\\n` dentro del literal producen un tabulador y un salto de línea reales.\n\nTermina también el resumen de cada llamada con un salto de línea, sin títulos ni líneas vacías entre informes. Resuelve la selección siguiente y construye una sola batería con las seis llamadas en el editor de código. Pulsa Compilar, ejecutar y comprobar: no es necesario cambiar de versión entre casos.",
+          "text": "Construye probar(const std::string& texto). En cada llamada, crea un std::istringstream local a partir de texto y recorre sus palabras en orden. Muestra cada palabra en su propia línea, entre < y >. Después escribe Palabras: seguido de un espacio y de la cantidad obtenida. Los espacios sobrantes no añaden palabras.\n\nEl texto de cada prueba contendrá como máximo ocho palabras, de hasta veinte caracteres ASCII cada una. ASCII es un conjunto de caracteres que incluye letras latinas sin acentos, cifras y signos, además de controles como el tabulador y el salto de línea. En esta lectura, esos dos controles separan palabras. Un contador int de cero a ocho es suficiente.\n\nEn main reúne las seis llamadas a probar en el orden indicado. Cada entrada se presenta como un literal de C++; debajo aparece el informe que debe mostrar esa llamada:\n\n\"  eco\\tmar\\nsol  \"\n<eco>\n<mar>\n<sol>\nPalabras: 3\n\n\"\"\nPalabras: 0\n\n\"   \"\nPalabras: 0\n\n\"una dos\"\n<una>\n<dos>\nPalabras: 2\n\n\"unodos\"\n<unodos>\nPalabras: 1\n\n\"  ola  \"\n<ola>\nPalabras: 1\n\nLos escapes \\t y \\n dentro del literal representan un tabulador y un salto de línea reales. Termina también el resumen de cada llamada con un salto de línea, sin títulos ni líneas vacías entre los informes.\n\nResuelve la selección siguiente y construye el programa en el editor. Pulsa Compilar, ejecutar y comprobar. Obtén las palabras y sus cantidades mediante las lecturas; no imprimas los informes como texto fijo.",
           "emphasis": [
             {
-              "text": "una sola batería",
+              "text": "sus palabras en orden",
+              "style": "bold"
+            },
+            {
+              "text": "seis llamadas",
+              "style": "bold"
+            },
+            {
+              "text": "sin títulos ni líneas vacías",
               "style": "bold"
             },
             {
@@ -240,7 +248,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  eco\\tmar\\nsol  \"};\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  eco\\tmar\\nsol  \"};\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -255,7 +263,7 @@
         },
         {
           "type": "note",
-          "text": "La comprobación de stdout contrasta los seis informes. Además de coincidir con ese texto, el programa debe obtener las palabras mediante lecturas que hagan avanzar el flujo. La condición debe impedir procesar un destino sin un dato nuevo: imprimir un informe fijo no practica ese procedimiento. La referencia muestra después una implementación que cumple ambos criterios.",
+          "text": "La comprobación de la salida contrasta los seis informes. Además de coincidir con ese texto, el programa debe obtener las palabras mediante lecturas que hagan avanzar el flujo. La condición debe impedir procesar un destino sin un dato nuevo: imprimir un informe fijo no practica ese procedimiento. La referencia muestra después una implementación que cumple ambos criterios.",
           "emphasis": [
             {
               "text": "imprimir un informe fijo no practica ese procedimiento",
@@ -288,11 +296,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  rio\\tmonte\\nvalle  \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n    std::cout << \"Palabras: \" << cantidad;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  rio\\tmonte\\nvalle  \"};\n    std::string palabra;\n    int cantidad = 0;\n\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n\n    std::cout << \"Palabras: \" << cantidad;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Con una cadena vacía, el cuerpo no se ejecuta y `cantidad` conserva cero. Los separadores consecutivos no producen palabras vacías porque la extracción a `std::string` los omite. El espacio inicial y el final de `\"  ola  \"` tampoco agregan una palabra (Stroustrup, 2024, sección 9.10.3, p. 279).",
+          "text": "Con una cadena vacía, el cuerpo no se ejecuta y `cantidad` conserva cero. Los separadores consecutivos no producen palabras vacías porque la extracción a `std::string` los omite. El espacio inicial y el final de `\"  ola  \"` tampoco agregan una palabra (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "no producen palabras vacías",
@@ -304,7 +312,7 @@
           "type": "output_prediction",
           "question": "Recupera la lectura y el contador: predice la salida para estos datos distintos.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  uno\\n\\t  dos-tres \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        ++cantidad;\n        std::cout << cantidad << \":<\" << palabra << \">\\n\";\n    }\n    std::cout << \"Total: \" << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  uno\\n\\t  dos-tres \"};\n    std::string palabra;\n    int cantidad = 0;\n\n    while (entrada >> palabra) {\n        ++cantidad;\n        std::cout << cantidad << \":<\" << palabra << \">\\n\";\n    }\n\n    std::cout << \"Total: \" << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "1:<uno>\n2:<dos-tres>\nTotal: 2"
           ],
@@ -351,12 +359,12 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Referencia posterior de la batería completa"
+          "text": "Referencia de las seis llamadas"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n    std::cout << \"Palabras: \" << cantidad;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"  eco\\tmar\\nsol  \");\n    probar(\"\");\n    probar(\"   \");\n    probar(\"una dos\");\n    probar(\"unodos\");\n    probar(\"  ola  \");\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string palabra;\n    int cantidad = 0;\n\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n\n    std::cout << \"Palabras: \" << cantidad;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"  eco\\tmar\\nsol  \");\n    probar(\"\");\n    probar(\"   \");\n    probar(\"una dos\");\n    probar(\"unodos\");\n    probar(\"  ola  \");\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1316,6 +1324,184 @@
         "id": "block_0006_0001",
         "beforeSha256": "625f90522107ee439de8f24c6a5a0b7c17c41f4908154291bd3d954b2bdccbcd",
         "afterSha256": "e3fcd32a11a6606a0432b42cb46aaaf022f61655b6259c984cbd1239e1fa9a76"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "d341f85d184a8139771228b88526e4272d773fd3afa61b6f547cb6146eed8069",
+        "afterSha256": "1dbb7935d1aa30880824e80b0454721318267f03cd8ae5db4245fef9e6fed07e"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "1b315373bcd5781ff43fe692276d8abfcefd89c61b014144f7b2b36f7a797699",
+        "afterSha256": "fb2f4bb2c7eca6a3dc03177bda65d2e424378ee2456d0209007a1371989ad3d7"
+      },
+      {
+        "id": "block_0002_0000",
+        "beforeSha256": "9d0bf2dcb6b55cca8b2ecbe936c5506e60c7ce8e675467082702596fabf9ccfa",
+        "afterSha256": "ec0c567cd5c712cea1276bf96a48f89d5d492f050f50fa026d0b3f61b029c510"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "7c23b43c18b7a1244d3d47415c57bab4297990a0a9145cf48c9d669c50207e60",
+        "afterSha256": "69f99382c7f20ddb0d756067e4187eec0d8f08d44f0be0af8eff3b81d77a6561"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "8071c3719266af2f2d62cfedb3616cd38e0fbe6a02cbbd249dba3f08ab628593",
+        "afterSha256": "b4b6c435973827b7899bf4f510b060ee5548987b7e73dab4c0c8ed329f35c365"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f397bd2301dbed29f8fb2464480e6773638121f38fd015d6a7877a9e817fb13b",
+        "afterSha256": "9a7109d4c17c4e73d2ebd720937cb62b06969465ea455be67e66dfd25c8336b5"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "4b24123e3c075950ecef9d9f13647a573a88227831e2f7fcbd5357529e434b30",
+        "afterSha256": "0e9eb9bc1057ea42f535f2035fdad50a0f284afaca232b2be7674ccb7f96675e"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "4cf0d5f71bfbbb1cfb1ec6b43cc1ce22d65ff54a7eabcd0a8f1d1fff82c78281",
+        "afterSha256": "162b505b2373baae78fadcfbd6d6b5d7763e6e5b9179b30a840c7d1adb097127"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "7157ae777b1e5206162af10ea569da7b28e826722661f3c5636869f5024cf91d",
+        "afterSha256": "5705613f816bffeb4c57bc0b4a2db36cd345669020e230f9d390c6c9a7092fe1"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "9211fda9011cb7f24bcc1ccba8c860458bf9620af5b10ae961de20ea2e2f37ae",
+        "afterSha256": "190d95be1f270992b6a1458a93b16faaa21814c46e753842152ef18afb2cc7a8"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "77eb51a0979824329832923f294372308cd02f9a510669eed72b9b4baf86b9a2",
+        "afterSha256": "0e114f98e5454c8b003374302f7a21d9085f8d4a115e496984da28fb28c18fc9"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "00f426e8bc6af477d3614d6eb5da618dddcc9f8955e8b7863d561c117b11074c",
+        "afterSha256": "1a6b364123f5366b0bddf934a3560363fde6f31dbd5175ecbc7cce76ddf0a1b3"
+      },
+      {
+        "id": "block_0007_0000",
+        "beforeSha256": "5bdcef20b48f1693ea03f049774a19295857c2975eb9239e022a8715601e4dd0",
+        "afterSha256": "c5b768d9928ca77ede3e3466670a4f36d4def5862a9167f5308f2df95de2109d"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "abb4377a9ac709f9095ebcf15e1fd2099208771d57fb0d868255d1d39d3522d0",
+        "afterSha256": "79ff4b10794c651202005e2731aecbd1dd12673b3474c2f55822b9e33b35bd58"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  sol  luna \"};\n    std::string primera;\n    std::string segunda;\n    if (entrada >> primera >> segunda) {\n        std::cout << \"<\" << primera << \">|<\" << segunda << \">\";\n    } else {\n        std::cout << \"Faltan palabras\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la salida completa. Los escapes `\\t` y `\\n` de la cadena representan un tabulador y un salto de línea.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\tbrisa\\npuente camino\"};\n    std::string palabra;\n    if (entrada >> palabra) {\n        std::cout << \"1:<\" << palabra << \">\\n\";\n    }\n    if (entrada >> palabra) {\n        std::cout << \"2:<\" << palabra << \">\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1:<brisa>\n2:<puente>"
+          ],
+          "explanation": "La primera extracción omite el tabulador inicial y guarda brisa en palabra. La salida añade el número, los delimitadores y un salto, formando 1:<brisa>. La segunda extracción continúa desde allí, omite el salto de línea del origen y guarda puente; por eso muestra 2:<puente>. camino queda pendiente porque el programa sólo realiza dos extracciones.",
+          "reviewFeedback": "Sigue cada extracción desde la posición donde terminó la anterior y separa los caracteres añadidos por cout de las palabras obtenidas."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "¿Qué imprime este programa cuando sólo hay una palabra?",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"cauce\"};\n    std::string origen;\n    std::string destino;\n    if (entrada >> origen >> destino) {\n        std::cout << origen << \" -> \" << destino;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Par incompleto"
+          ],
+          "explanation": "La primera extracción obtiene cauce y lo guarda en origen. La segunda ya no encuentra otra palabra, de modo que la condición conjunta falla y se ejecuta else, que muestra Par incompleto. El programa no utiliza destino como si contuviera una segunda palabra válida. Comprobar las dos lecturas juntas tampoco deshace la primera: origen ya recibió cauce.",
+          "reviewFeedback": "Evalúa las lecturas en orden y después decide qué rama de la condición puede ejecutarse. No utilices un par que no se haya obtenido por completo."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "fill_code",
+          "question": "Práctica guiada: completa únicamente el operador que obtiene izquierda antes de continuar con la extracción de derecha.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"norte sur\"};\n    std::string izquierda;\n    std::string derecha;\n    if (entrada ___ izquierda >> derecha) {\n        std::cout << izquierda << \" / \" << derecha;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            ">>"
+          ],
+          "explanation": "Al completar >>, la primera extracción guarda norte en izquierda y devuelve el flujo. Sobre ese mismo flujo, la segunda extracción continúa hasta sur y lo guarda en derecha. Ambas tienen éxito, por lo que el cuerpo muestra norte / sur. La condición comprueba el estado después de las dos lecturas; no obtiene ni imprime una palabra por sí sola.",
+          "reviewFeedback": "El primer paso debe obtener una palabra desde entrada. Distingue la dirección de la extracción de la inserción en una salida."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  cobre\\tplata\\noro \"};\n    std::string palabra;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  eco\\tmar\\nsol  \"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "<eco>\n<mar>\n<sol>\nPalabras: 3\nPalabras: 0\nPalabras: 0\n<una>\n<dos>\nPalabras: 2\n<unodos>\nPalabras: 1\n<ola>\nPalabras: 1\n"
+                ],
+                "explanation": "Los seis informes distinguen texto vacío, sólo separadores y palabras con o sin espacios entre ellas. El contador registra únicamente las lecturas válidas de cada flujo nuevo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  rio\\tmonte\\nvalle  \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n    std::cout << \"Palabras: \" << cantidad;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Recupera la lectura y el contador: predice la salida para estos datos distintos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  uno\\n\\t  dos-tres \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        ++cantidad;\n        std::cout << cantidad << \":<\" << palabra << \">\\n\";\n    }\n    std::cout << \"Total: \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1:<uno>\n2:<dos-tres>\nTotal: 2"
+          ],
+          "explanation": "La primera lectura obtiene uno, incrementa cantidad a 1 y escribe 1:<uno> con su salto final. La siguiente omite el salto, el tabulador y los espacios del origen, y obtiene dos-tres como una sola palabra: el guion no la divide. El contador pasa a 2 y se escribe 2:<dos-tres> con otro salto. El intento final no ejecuta el cuerpo; el resumen queda Total: 2.",
+          "reviewFeedback": "Recorre las palabras delimitadas por espacio en blanco. Incrementa el contador sólo cuando la lectura permite ejecutar el cuerpo."
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n    std::cout << \"Palabras: \" << cantidad;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"  eco\\tmar\\nsol  \");\n    probar(\"\");\n    probar(\"   \");\n    probar(\"una dos\");\n    probar(\"unodos\");\n    probar(\"  ola  \");\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1334,16 +1520,32 @@
         "sourceSha256": "7a2a338a32ba984275d691fd033c3c4bfc7ac5d42af31b8d716ef3e6ba56c9e0",
         "spans": [
           {
+            "start": 13,
+            "end": 14,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 35,
             "end": 43,
             "text": "std::cin",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 227,
             "end": 238,
             "text": "\"sol  luna\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 262,
+            "end": 265,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1356,13 +1558,15 @@
             "start": 114,
             "end": 132,
             "text": "std::istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 149,
             "end": 158,
             "text": "<sstream>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 228,
@@ -1375,19 +1579,29 @@
             "start": 265,
             "end": 272,
             "text": "entrada",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 315,
             "end": 322,
             "text": "primera",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 327,
             "end": 334,
             "text": "segunda",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 400,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1400,13 +1614,15 @@
             "start": 15,
             "end": 33,
             "text": "entrada >> palabra",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 53,
             "end": 64,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 252,
@@ -1426,25 +1642,29 @@
             "start": 85,
             "end": 114,
             "text": "entrada >> primera >> segunda",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 172,
             "end": 179,
             "text": "primera",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 192,
             "end": 199,
             "text": "segunda",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 239,
             "end": 241,
             "text": "if",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 298,
@@ -1457,7 +1677,15 @@
             "start": 349,
             "end": 351,
             "text": "if",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 365,
+            "end": 368,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 429,
@@ -1497,13 +1725,15 @@
             "start": 41,
             "end": 43,
             "text": "\\t",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 48,
             "end": 50,
             "text": "\\n",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -1553,6 +1783,13 @@
             "text": "camino",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 331,
+            "end": 334,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1565,7 +1802,8 @@
             "start": 103,
             "end": 107,
             "text": "cout",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1578,7 +1816,8 @@
             "start": 12,
             "end": 19,
             "text": "palabra",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1588,22 +1827,32 @@
         "sourceSha256": "03cdddfc3b4a985bf18701e3815e1c6316daeaee773c67b7368e612fdc186999",
         "spans": [
           {
+            "start": 7,
+            "end": 10,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 16,
             "end": 27,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 34,
             "end": 51,
             "text": "\"alto-bajo+medio\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 56,
             "end": 58,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1658,7 +1907,7 @@
             "start": 5,
             "end": 9,
             "text": "alto",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1667,7 +1916,15 @@
         "block": "block_0001_0003",
         "path": "/options/1",
         "sourceSha256": "b724b9fb8e71009ba8e342178e10f330b232d64218e904ab3b519b94731828f5",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1678,7 +1935,7 @@
             "start": 10,
             "end": 25,
             "text": "alto-bajo+medio",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -1692,7 +1949,8 @@
             "start": 49,
             "end": 55,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1711,7 +1969,7 @@
       {
         "block": "block_0002_0000",
         "path": "/text",
-        "sourceSha256": "50c608fbc7edf7895344c8322c633a6bc796eb2f6674b33622f7618576f67a83",
+        "sourceSha256": "49d4910282a2d370b3a3b3705353ebf8c02081f909e548673ed23b43d8873d38",
         "spans": []
       },
       {
@@ -1719,6 +1977,20 @@
         "path": "/text",
         "sourceSha256": "faa1a0f8077d6b5f22e9172a1e19ec43356322a698d427b01955254db12f2c6c",
         "spans": [
+          {
+            "start": 16,
+            "end": 19,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
+            "end": 43,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 214,
             "end": 232,
@@ -1730,7 +2002,8 @@
             "start": 239,
             "end": 241,
             "text": "if",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1738,7 +2011,15 @@
         "block": "block_0002_0002",
         "path": "/question",
         "sourceSha256": "c414bbaa68d973583ea7c04808dab2cf954019c3284f06cf17e0f6640e34e729",
-        "spans": []
+        "spans": [
+          {
+            "start": 43,
+            "end": 46,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0002",
@@ -1781,6 +2062,13 @@
             "reading": "technical"
           },
           {
+            "start": 279,
+            "end": 282,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 327,
             "end": 333,
             "text": "origen",
@@ -1811,13 +2099,15 @@
             "start": 61,
             "end": 70,
             "text": "izquierda",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 111,
             "end": 118,
             "text": "derecha",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1867,6 +2157,13 @@
             "text": "norte / sur",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 284,
+            "end": 287,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1879,7 +2176,8 @@
             "start": 46,
             "end": 53,
             "text": "entrada",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1905,7 +2203,8 @@
             "start": 274,
             "end": 281,
             "text": "palabra",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1968,6 +2267,13 @@
             "text": "3",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 161,
+            "end": 164,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1975,7 +2281,15 @@
         "block": "block_0003_0004",
         "path": "/options/0",
         "sourceSha256": "b253775ac0adf7cee90332994ad207ad0cd03030ff1c2dcc3d744e10e69df205",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -1987,7 +2301,15 @@
         "block": "block_0003_0004",
         "path": "/options/2",
         "sourceSha256": "9c635da4080b765c021fc685511064166a535a837739991a6b972e34ec8ebd5f",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 22,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0004",
@@ -2016,112 +2338,210 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "425ace5eb8c877db48b8b5dbe41d5fdedaee4059ce83399e00b5ff47cd6563c9",
+        "sourceSha256": "affe5a2bf8ec63f2beb1236c70234f604fe81925651930bbf15e60f0b0144563",
         "spans": [
           {
-            "start": 11,
-            "end": 43,
+            "start": 10,
+            "end": 42,
             "text": "probar(const std::string& texto)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 72,
-            "end": 90,
+            "start": 69,
+            "end": 87,
             "text": "std::istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 111,
-            "end": 116,
+            "start": 106,
+            "end": 111,
             "text": "texto",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 199,
-            "end": 200,
+            "start": 192,
+            "end": 193,
             "text": "<",
             "role": "output",
             "reading": "characters"
           },
           {
-            "start": 205,
-            "end": 206,
+            "start": 196,
+            "end": 197,
             "text": ">",
             "role": "output",
             "reading": "characters"
           },
           {
-            "start": 226,
-            "end": 235,
+            "start": 215,
+            "end": 224,
             "text": "Palabras:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 454,
-            "end": 457,
+            "start": 364,
+            "end": 368,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 388,
+            "end": 394,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 595,
+            "end": 598,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 639,
+            "end": 642,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 490,
-            "end": 494,
+            "start": 646,
+            "end": 650,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 653,
+            "end": 657,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 677,
+            "end": 681,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 511,
-            "end": 517,
+            "start": 692,
+            "end": 696,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 708,
+            "end": 714,
             "text": "probar",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 524,
-            "end": 543,
+            "start": 843,
+            "end": 862,
             "text": "\"  eco\\tmar\\nsol  \"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 547,
-            "end": 549,
+            "start": 863,
+            "end": 892,
+            "text": "<eco>\n<mar>\n<sol>\nPalabras: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 894,
+            "end": 896,
             "text": "\"\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 553,
-            "end": 558,
+            "start": 897,
+            "end": 908,
+            "text": "Palabras: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 910,
+            "end": 915,
             "text": "\"   \"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 562,
-            "end": 571,
+            "start": 916,
+            "end": 927,
+            "text": "Palabras: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 929,
+            "end": 938,
             "text": "\"una dos\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 575,
-            "end": 583,
+            "start": 939,
+            "end": 962,
+            "text": "<una>\n<dos>\nPalabras: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 964,
+            "end": 972,
             "text": "\"unodos\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 588,
-            "end": 597,
+            "start": 973,
+            "end": 993,
+            "text": "<unodos>\nPalabras: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 995,
+            "end": 1004,
             "text": "\"  ola  \"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 627,
-            "end": 629,
+            "start": 1005,
+            "end": 1022,
+            "text": "<ola>\nPalabras: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1036,
+            "end": 1038,
             "text": "\\t",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 634,
-            "end": 636,
+            "start": 1041,
+            "end": 1043,
             "text": "\\n",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -2134,19 +2554,22 @@
             "start": 17,
             "end": 23,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 40,
             "end": 49,
             "text": "\"una dos\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 53,
             "end": 61,
             "text": "\"unodos\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -2184,6 +2607,13 @@
             "reading": "technical"
           },
           {
+            "start": 192,
+            "end": 195,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 220,
             "end": 226,
             "text": "unodos",
@@ -2196,13 +2626,50 @@
         "block": "block_0004_0002",
         "path": "/options/0",
         "sourceSha256": "469f352758b30653ed0790cd2a380b370bb627142048ab08ab35e6b8393c88ac",
-        "spans": []
+        "spans": [
+          {
+            "start": 20,
+            "end": 23,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 49,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
         "path": "/options/1",
         "sourceSha256": "fb429f743e6ed4d3813aafb8bd39f667b65d29e56562c2a214d6dbbbd18dde53",
-        "spans": []
+        "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 18,
+            "end": 21,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 62,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -2210,10 +2677,18 @@
         "sourceSha256": "f3d79b4d0c3e20b1b3e05b94558d290124008a8746a77b655f3043f8d5ac9ffe",
         "spans": [
           {
+            "start": 20,
+            "end": 23,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 67,
             "end": 73,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2239,13 +2714,29 @@
         "block": "block_0004_0003",
         "path": "/outputCheck/cases/0/explanation",
         "sourceSha256": "d80d68aceae2ddfbd77e8e11ed84f3215dbb798b19bdd7a9357dfc58e8a56703",
-        "spans": []
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0004",
         "path": "/text",
-        "sourceSha256": "234e2db18d3d886d66521cc231087254642e4fb9f1d46252889f9f4877454b2f",
-        "spans": []
+        "sourceSha256": "5930a4818eff87b505b4440b3a0ad7a016e661e14d851200c8b079478ce7f363",
+        "spans": [
+          {
+            "start": 43,
+            "end": 47,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -2278,36 +2769,67 @@
             "text": "valle",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 54,
+            "end": 56,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 236,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 315,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "fdf9091cefa6dd7d79b259fa60edb5fa8c741101c7bccbd7553a5ec1d92d832a",
+        "sourceSha256": "5f63525ab01c8d5871b84692ad96eae724c95bf7f02fb9750708ab537a10f3ca",
         "spans": [
           {
             "start": 49,
             "end": 57,
             "text": "cantidad",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 72,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 155,
             "end": 166,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 213,
             "end": 222,
             "text": "\"  ola  \"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 252,
-            "end": 294,
-            "text": "(Stroustrup, 2024, sección 9.10.3, p. 279)",
+            "end": 270,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2360,6 +2882,13 @@
             "reading": "natural"
           },
           {
+            "start": 187,
+            "end": 190,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 247,
             "end": 248,
             "text": "2",
@@ -2407,16 +2936,25 @@
             "reading": "natural"
           },
           {
+            "start": 119,
+            "end": 122,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 142,
             "end": 148,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 153,
             "end": 155,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2454,6 +2992,13 @@
             "reading": "natural"
           },
           {
+            "start": 259,
+            "end": 262,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 288,
             "end": 290,
             "text": ">>",
@@ -2484,7 +3029,7 @@
             "start": 13,
             "end": 19,
             "text": "Taller",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2530,8 +3075,16 @@
       {
         "block": "block_0007_0000",
         "path": "/text",
-        "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
-        "spans": []
+        "sourceSha256": "7a293b364237c2821dc3cf071a043960382516e20990dcaf01ebdb7540372300",
+        "spans": [
+          {
+            "start": 18,
+            "end": 22,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       }
     ],
     "rootFields": [

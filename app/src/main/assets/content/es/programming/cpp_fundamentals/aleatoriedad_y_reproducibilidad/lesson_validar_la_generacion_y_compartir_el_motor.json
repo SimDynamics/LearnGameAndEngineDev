@@ -98,7 +98,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{127};\n    const std::mt19937 guardado = motor;\n    try {\n        const int dato = obtener(motor, 6, 2);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazado:\" << (motor == guardado);\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n        || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{127};\n    const std::mt19937 guardado = motor;\n\n    try {\n        const int dato = obtener(motor, 6, 2);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazado:\" << (motor == guardado);\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -125,7 +125,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{149};\n    const std::mt19937 anterior = motor;\n    try {\n        const int dato = obtener(motor, -13, 0);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Fuera del dominio:\" << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n        || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{149};\n    const std::mt19937 anterior = motor;\n\n    try {\n        const int dato = obtener(motor, -13, 0);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Fuera del dominio:\" << (motor == anterior);\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Fuera del dominio:1"
           ],
@@ -164,7 +164,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n    std::cout << \"Conservado:\" << (motor == anterior) << '\\n';\n    std::cout << \"Coinciden:\" << (primero == segundo);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n        || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n    std::cout << \"Conservado:\" << (motor == anterior) << '\\n';\n    std::cout << \"Coinciden:\" << (primero == segundo);\n\n    return 0;\n}\n",
           "answers": [
             "Conservado:1\nCoinciden:1"
           ],
@@ -219,7 +219,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Configuracion invalida\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Configuracion invalida\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n\n    return 0;\n}\n",
           "answers": [
             "0:1"
           ],
@@ -256,32 +256,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye probar(cantidad, minimo, maximo). Cada llamada prepara un motor con semilla 191 y conserva una copia de su estado antes de utilizar generar.\n\nSi la configuración es válida, obtiene la primera muestra con esos argumentos. Copia el motor alcanzado y obtiene dos continuaciones de tres datos: una desde el motor original y otra desde la copia, con los mismos límites. Continuacion:B debe comprobar que los vectores de continuación coinciden y que los dos motores comparan iguales después de producirlos. Comprueba también el tamaño de la primera muestra y el rango de los datos obtenidos.\n\nDespués solicita cero datos con límites válidos y comprueba tamaño cero y conservación del motor actual. Prueba también el rechazo del intervalo 5..2 antes de usar el motor; no construyas una distribución con esos límites invertidos.\n\nPara una configuración válida muestra Cantidad:N;Rango:B;Continuacion:B;Vacio:N:B;Rechazo:B en una sola línea. Cantidad consulta el tamaño de la primera muestra; Rango comprueba los datos de la primera muestra y de la continuación obtenida desde el motor original. La otra continuación se compara con ésta en Continuacion. Vacio presenta el tamaño de esa muestra y si conserva el motor; Rechazo indica si el intento con límites invertidos conserva su estado.\n\nSi los argumentos iniciales son inválidos, captura el rechazo antes de producir datos y muestra Configuracion rechazada:B, comparando el motor con su copia previa. Termina cada prueba con un salto.\n\nEn main reúne estas once configuraciones, en este orden: (4,-2,5), (0,-12,12), (1,-12,12), (20,-12,12), (3,-12,-12), (3,12,12), (3,5,2), (3,-13,12), (3,-12,13), (-1,-12,12) y (21,-12,12). Las seis primeras son válidas y las cinco últimas se rechazan. Todos los bools de las propiedades comprobadas deben ser uno. Pulsa Compilar, ejecutar y comprobar para verificar la batería en una sola ejecución.",
+          "text": "Construye probar(cantidad, minimo, maximo). Cada llamada prepara un motor con semilla 191 y conserva una copia de su estado antes de utilizar generar.\n\nSi la configuración es válida, realiza estas comprobaciones en este orden:\n\nObtén la primera muestra con la cantidad y los límites recibidos.\nCopia el estado que alcanzó el motor después de esa muestra.\nObtén una continuación de tres datos desde el motor original y otra desde la copia, con los mismos límites. Compara los dos vectores y los dos motores alcanzados.\nSolicita cero datos con límites válidos. Comprueba el tamaño cero del vector y compara el motor con una copia guardada justo antes de esa solicitud.\nSolicita después el intervalo 5..2 y comprueba que el rechazo conserve el estado que tenía el motor antes del intento. No construyas una distribución con esos límites invertidos.\n\nPara cada configuración válida muestra una sola línea con este formato:\nCantidad:N;Rango:B;Continuacion:B;Vacio:N:B;Rechazo:B\n\nCada campo comprueba una propiedad concreta:\n\nCantidad utiliza el tamaño de la primera muestra.\nRango comprueba que todos los datos de la primera muestra y de la continuación del motor original pertenecen al intervalo.\nContinuacion exige que las dos continuaciones sean iguales y que sus motores comparen iguales después de producirlas. La continuación de la copia se compara con la del motor original.\nVacio presenta el tamaño de la muestra de cero datos y la comparación del motor con su estado anterior a esa solicitud.\nRechazo presenta la comparación del motor antes y después del intento con límites invertidos.\n\nSi la configuración inicial es inválida, captura el rechazo antes de producir datos y muestra Configuracion rechazada:B. La comparación debe utilizar el motor y la copia guardada al entrar en probar.\n\nEn main reúne estas once configuraciones, en el orden indicado. Cada llamada tiene sus propios objetos; conserva juntas las comprobaciones que se realizan sobre el motor de esa llamada. Debajo de cada configuración aparece su línea requerida:\n\nprobar(4, -2, 5)\nCantidad:4;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\n\nprobar(0, -12, 12)\nCantidad:0;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\n\nprobar(1, -12, 12)\nCantidad:1;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\n\nprobar(20, -12, 12)\nCantidad:20;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\n\nprobar(3, -12, -12)\nCantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\n\nprobar(3, 12, 12)\nCantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1\n\nprobar(3, 5, 2)\nConfiguracion rechazada:1\n\nprobar(3, -13, 12)\nConfiguracion rechazada:1\n\nprobar(3, -12, 13)\nConfiguracion rechazada:1\n\nprobar(-1, -12, 12)\nConfiguracion rechazada:1\n\nprobar(21, -12, 12)\nConfiguracion rechazada:1\n\nLas seis primeras configuraciones son válidas y las cinco últimas se rechazan. Todos los resultados bool de las propiedades comprobadas deben mostrarse como uno. Termina cada línea con un salto y pulsa Compilar, ejecutar y comprobar.",
           "emphasis": [
             {
-              "text": "los vectores de continuación coinciden",
-              "style": "bold",
-              "occurrence": 1
+              "text": "antes de utilizar generar",
+              "style": "bold"
             },
             {
-              "text": "los dos motores comparan iguales",
-              "style": "bold",
-              "occurrence": 1
+              "text": "en este orden",
+              "style": "bold"
             },
             {
-              "text": "motor actual",
-              "style": "bold",
-              "occurrence": 1
+              "text": "Compara los dos vectores y los dos motores",
+              "style": "bold"
+            },
+            {
+              "text": "una propiedad concreta",
+              "style": "bold"
             },
             {
               "text": "once configuraciones",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
-              "text": "una sola ejecución",
-              "style": "bold",
-              "occurrence": 1
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -311,31 +310,27 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n    std::cout << \"Continuacion:\" << (primero.size() == 4 && segundo == repetido) << '\\n';\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n    std::cout << \"Vacio:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = por_lotes;\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Aceptado:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (por_lotes == antes_error);\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n    std::cout << \"Continuacion:\"\n              << (primero.size() == 4 && segundo == repetido) << '\\n';\n\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n    std::cout << \"Vacio:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n\n    const std::mt19937 antes_error = por_lotes;\n\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Aceptado:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (por_lotes == antes_error);\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Este primer programa muestra una comprobación parcial: Continuacion:1, Vacio:0:1 y Rechazo:1, en líneas distintas. La primera línea comprueba el tamaño cuatro de la muestra inicial y la igualdad de las dos continuaciones. El ejemplo no presenta todavía las once configuraciones ni todos los campos de la batería.\n\nLos dos lotes de continuación parten de motores copiados del mismo punto. Cada llamada a generar construye una distribución nueva con los mismos parámetros. La reproducción conserva también esa decisión: aquí no se está afirmando que reconstruir una distribución equivalga siempre a conservar el estado que pudiera tener otra.\n\nLa referencia completa que sigue reúne todas las configuraciones y sus informes. Su campo Continuacion compara tanto los vectores como los motores alcanzados; las otras comprobaciones distinguen cantidad, rango, vacío y rechazo previo.",
+          "text": "Este primer programa muestra una comprobación parcial, con estas líneas:\n\nContinuacion:1\nVacio:0:1\nRechazo:1\n\nLa primera línea comprueba el tamaño cuatro de la muestra inicial y la igualdad de las dos continuaciones. El ejemplo no presenta todavía las once configuraciones ni todos los campos de la actividad. No añade un salto después de la última línea.\n\nLos dos lotes de continuación parten de motores copiados del mismo punto. Cada llamada a generar construye una distribución nueva con los mismos parámetros. La reproducción conserva también esa decisión: aquí no se está afirmando que reconstruir una distribución equivalga siempre a conservar el estado que pudiera tener otra.\n\nLa referencia completa siguiente reúne todas las configuraciones y sus informes. Su campo Continuacion compara tanto los vectores como los motores alcanzados; las otras comprobaciones distinguen cantidad, rango, vacío y rechazo previo.",
           "emphasis": [
             {
               "text": "comprobación parcial",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "mismo punto",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "referencia completa",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "tanto los vectores como los motores",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             }
           ]
         },
@@ -367,7 +362,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar(int cantidad,int minimo,int maximo) {\n    std::mt19937 motor{191};\n    const std::mt19937 antes=motor;\n    try {\n        const std::vector<int> primero=generar(motor,cantidad,minimo,maximo);\n        std::mt19937 copia=motor;\n        const std::vector<int> segundo=generar(motor,3,minimo,maximo);\n        const std::vector<int> repetido=generar(copia,3,minimo,maximo);\n        bool rango=true;\n        for(int dato:primero) { rango=rango && dato>=minimo && dato<=maximo; }\n        for(int dato:segundo) { rango=rango && dato>=minimo && dato<=maximo; }\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=generar(motor,0,minimo,maximo);\n        std::cout<<\"Cantidad:\"<<primero.size()<<\";Rango:\"<<rango\n                 <<\";Continuacion:\"<<(segundo==repetido && motor==copia)\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalido=generar(motor,3,5,2);\n            std::cout<<\";Aceptado:\"<<invalido.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==antes)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar(4,-2,5);\n    probar(0,-12,12);\n    probar(1,-12,12);\n    probar(20,-12,12);\n    probar(3,-12,-12);\n    probar(3,12,12);\n    probar(3,5,2);\n    probar(3,-13,12);\n    probar(3,-12,13);\n    probar(-1,-12,12);\n    probar(21,-12,12);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nvoid probar(int cantidad, int minimo, int maximo) {\n    std::mt19937 motor{191};\n    const std::mt19937 antes = motor;\n\n    try {\n        const std::vector<int> primero = generar(motor, cantidad, minimo, maximo);\n\n        std::mt19937 copia = motor;\n        const std::vector<int> segundo = generar(motor, 3, minimo, maximo);\n        const std::vector<int> repetido = generar(copia, 3, minimo, maximo);\n\n        bool rango = true;\n        for (int dato : primero) {\n            rango = rango && dato >= minimo && dato <= maximo;\n        }\n        for (int dato : segundo) {\n            rango = rango && dato >= minimo && dato <= maximo;\n        }\n\n        const std::mt19937 antes_vacio = motor;\n        const std::vector<int> vacio = generar(motor, 0, minimo, maximo);\n        std::cout << \"Cantidad:\" << primero.size() << \";Rango:\" << rango\n                  << \";Continuacion:\" << (segundo == repetido && motor == copia)\n                  << \";Vacio:\" << vacio.size() << \":\" << (motor == antes_vacio);\n\n        const std::mt19937 antes_error = motor;\n        try {\n            const std::vector<int> invalido = generar(motor, 3, 5, 2);\n            std::cout << \";Aceptado:\" << invalido.size();\n        } catch (const std::invalid_argument&) {\n            std::cout << \";Rechazo:\" << (motor == antes_error);\n        }\n        std::cout << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada:\" << (motor == antes) << \"\\n\";\n    }\n}\n\nint main() {\n    probar(4, -2, 5);\n    probar(0, -12, 12);\n    probar(1, -12, 12);\n    probar(20, -12, 12);\n    probar(3, -12, -12);\n    probar(3, 12, 12);\n    probar(3, 5, 2);\n    probar(3, -13, 12);\n    probar(3, -12, 13);\n    probar(-1, -12, 12);\n    probar(21, -12, 12);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -492,33 +487,33 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente programa comprueba las muestras y también el motor que conserva el llamador. Antes de generar datos, crea un motor testigo como copia del mismo punto inicial. El testigo obtiene sus datos mediante los bucles de main: no utiliza la función generar que se está comprobando. Cada tramo prepara su propia distribución, igual que una llamada a generar.\n\nCorrige únicamente la forma en que generar recibe el motor y conserva todo el resto del programa. El objetivo es que la función utilice el motor del llamador y lo deje en el mismo punto que el testigo después de cada tramo. Pulsa Compilar, ejecutar y comprobar: Muestra, Motor, Continuacion y Motor final deben mostrar uno, cada rótulo en su línea y con salto final.",
+          "text": "El siguiente programa comprueba las muestras y también el motor que conserva el llamador. Antes de generar datos, crea un motor testigo como copia del mismo punto inicial. El testigo obtiene sus datos mediante los bucles de main: no utiliza la función generar que se está comprobando. Cada tramo prepara su propia distribución, igual que una llamada a generar.\n\nCorrige únicamente la forma en que generar recibe el motor y conserva todo el resto del programa. La función debe utilizar el motor del llamador y dejarlo en el mismo punto que el testigo después de cada tramo.\n\nPulsa Compilar, ejecutar y comprobar. La consola debe mostrar estas cuatro líneas, todas con salto final:\n\nMuestra:1\nMotor:1\nContinuacion:1\nMotor final:1",
           "emphasis": [
             {
               "text": "motor que conserva el llamador",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "no utiliza la función generar",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "únicamente la forma en que generar recibe el motor",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "mismo punto que el testigo",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937 motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\" << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937 motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\"\n              << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -555,7 +550,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\" << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\"\n              << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -563,28 +558,25 @@
         },
         {
           "type": "paragraph",
-          "text": "El siguiente editor conserva el contrato de generar, pero su implementación tiene un defecto al solicitar cero datos. Repara únicamente esa función; conserva probar_vacio, main y todas sus llamadas. Una muestra vacía válida debe aceptarse, mientras que los límites invertidos o fuera del dominio deben provocar std::invalid_argument, sin utilizar el motor.\n\nAntes de las comprobaciones, main obtiene una muestra válida de tres datos y descarta ese vector. Así se comprueba la conservación del estado alcanzado después de una generación. No se exige ninguna lista de valores concreta.\n\nCada llamada a probar_vacio guarda una copia del motor y solicita cantidad cero. Si recibe un vector, muestra su tamaño y la comparación de los motores; si captura el rechazo, muestra esa misma comparación. Los cuatro intervalos son -12..12, 5..2, -13..12 y -12..13, en ese orden.\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe contener estas cuatro líneas, todas con salto final:\n\nIntervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Rechazo:1\nIntervalo:-12:13;Rechazo:1",
+          "text": "El siguiente editor conserva el contrato de generar, pero su implementación tiene un defecto al solicitar cero datos. Repara únicamente esa función; conserva probar_vacio, main y todas sus llamadas. Una muestra vacía válida debe aceptarse, mientras que los límites invertidos o fuera del dominio deben provocar std::invalid_argument, sin utilizar el motor.\n\nAntes de las comprobaciones, main obtiene una muestra válida de tres datos y descarta ese vector. Así se comprueba la conservación del estado alcanzado después de una generación. No se exige ninguna lista de valores concreta.\n\nCada llamada a probar_vacio guarda una copia del motor y solicita cantidad cero. Si recibe un vector, muestra su tamaño y la comparación de los motores; si captura el rechazo, muestra esa misma comparación. Prueba estos cuatro intervalos, en este orden:\n\n-12..12\n5..2\n-13..12\n-12..13\n\nPulsa «Compilar, ejecutar y comprobar». La consola debe contener estas cuatro líneas, todas con salto final:\n\nIntervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Rechazo:1\nIntervalo:-12:13;Rechazo:1",
           "emphasis": [
             {
               "text": "Repara únicamente esa función",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "conservación del estado alcanzado",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "cantidad cero",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad == 0) { return {}; }\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size() << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad == 0) {\n        return {};\n    }\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size()\n                  << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -619,29 +611,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Si generar devuelve un vector vacío en cuanto encuentra cantidad cero, la solicitud 5..2 termina sin examinar que el mínimo supera al máximo. El vector está vacío y el motor se conserva, pero el servicio aceptó una configuración que debía rechazar. La prueba de vacío válido de la batería anterior no distinguía ese defecto.\n\nComprobar sólo el orden tampoco basta: -13..12 y -12..13 están ordenados, pero uno de sus extremos queda fuera del dominio. Los casos elegidos comprueban esas condiciones por separado. El intervalo -12..12 asegura además que no se rechacen todas las solicitudes vacías.\n\nLa referencia aplica la validación completa antes del recorrido. Con cantidad cero y límites válidos, el recorrido no obtiene ningún valor. Con límites inválidos, la excepción se lanza antes de construir la distribución. En ambos caminos se conserva el estado actual del motor; no se necesita reiniciar su semilla.",
+          "text": "Si generar devuelve un vector vacío en cuanto encuentra cantidad cero, la solicitud 5..2 termina sin examinar que el mínimo supera al máximo. El vector está vacío y el motor se conserva, pero el servicio aceptó una configuración que debía rechazar. La prueba de vacío válido de la batería anterior no distinguía ese defecto.\n\nComprobar sólo el orden tampoco basta: -13..12 y -12..13 están ordenados, pero uno de sus extremos queda fuera del dominio. Los casos elegidos comprueban esas condiciones por separado. El intervalo -12..12 asegura además que no se rechacen todas las solicitudes vacías.\n\nLa referencia aplica la validación completa antes del recorrido. Con cantidad cero y límites válidos, el recorrido no obtiene ningún valor. Con límites inválidos, la excepción se lanza antes de construir la distribución. En ambos caminos se conserva el estado actual del motor; no se necesita reiniciar su semilla.\n\nEn la referencia, probar_vacio escribe el prefijo Intervalo:5:2 antes del try de esa comprobación. Cuando generar rechaza los límites, el catch añade ;Rechazo:1 a la misma línea. El rechazo no borra el prefijo que ya se había mostrado.",
           "emphasis": [
             {
               "text": "el servicio aceptó una configuración que debía rechazar",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "Comprobar sólo el orden tampoco basta",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "validación completa",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size() << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                        int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n        || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size()\n                  << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1571,6 +1560,214 @@
         "id": "block_0006_0001",
         "beforeSha256": "3123bc57e4d0e8ac1a92e1458645dd52d39928277f8796c1ef7ee19f1cff6c7d",
         "afterSha256": "3737c26218f6b55d99cae0af9f9b283afa6ab7cabbfe1f0e01d6a2bbd7243e41"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "25a3b3682e049c88dee370ae59f0e1bf905ed74eba6d66099a91c6a78cf2bf83",
+        "afterSha256": "7ee9cfb26f41f326ad2e19146e71a36d1b4201a594c1716110909ff780d7e033"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "212d57cdd846b5c0d8337e857614e4c5035446fd5ef500816146c183aa177f4f",
+        "afterSha256": "5848ff5d0f05a6751381f68a1a8f81a070e149b39c7523c36326828d43e1d7f9"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "d621a06c4c42a8587298b598618f70bf59fb9f498fcd45d3ccc27d9e3119be7e",
+        "afterSha256": "513ee0ac250a848ff7a24ec160c6ce14c237084fbaab7f0aa8533459a14773ad"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "56fb41934a1d8636dae8580e89c37dad5e5286ff6e0c315e14d758d19a7a8a16",
+        "afterSha256": "070ce483c07685e7f6ef662547b5daae4549510edd8f58b5298388b8c2d6e91d"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "8bad6cdc4c32071afb7f588d18eeed9ad0e482e0fd5d3f2b7968a06b10729b7c",
+        "afterSha256": "f8ed52f389e90605893b0221f5c57de72a1ff7494cf9349b17a492d2341db9df"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "8546b9995763b047d5f41843b618795b1225424645dd56388404dd01d8ddfa2d",
+        "afterSha256": "ccc0224491c8dc37ffc0800aae1c530df723b97be27c46443517c4800a5cb456"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "9fe1fa05942d2de773cf1599b31aa509512aca4154a8b7ce7490145667887bbc",
+        "afterSha256": "a1c4694f654663836a3adae601a1860bdaaf151a1ad6e165d21e901592ce60dc"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "cf232c6fa5a8bea709b6f92e284828e37e0f329dcebd7b33cc21b34d06b7865e",
+        "afterSha256": "f3e710fc3962b29984df8add30dce275a3c0e09ddce945ba66566b178d847084"
+      },
+      {
+        "id": "consigna_reparar_motor_compartido",
+        "beforeSha256": "eb815e7fae212a7bcecd178ae691bdfae357a27e129c88d13dc26e161f1ec887",
+        "afterSha256": "9b1d3e7ba0570dd731498c26feab6e4b9d53655d0bc26c7ebb65a7fb2b92c2a3"
+      },
+      {
+        "id": "reparar_motor_compartido",
+        "beforeSha256": "eea6b43adb28162081297d3eb7397b25a6a2166bf87f1551c1503976bfc38b00",
+        "afterSha256": "3ac5608bad33de1cf180fb812aec57d881ec561871bd4990e1d91ebac302a14a"
+      },
+      {
+        "id": "referencia_motor_compartido",
+        "beforeSha256": "790fde1c6a782d46cae8661f302ec9c79167ca3b505bca5fb93598f63bc8d5d8",
+        "afterSha256": "bd01362f1f0513ca8f31c35d6878addcf517987600c4eb5f3d1b091868af7ca4"
+      },
+      {
+        "id": "u10_configuracion_vacia_consigna",
+        "beforeSha256": "676462fa4fed4a1bee679be2e25b286bea71da3c35040fe8d90f60773dcfceb3",
+        "afterSha256": "90bb80a4cca39dd8a79c43333d9f84a39021c3124ab0d9d217a3d6fe22997a78"
+      },
+      {
+        "id": "u10_configuracion_vacia_comprobacion",
+        "beforeSha256": "8f1ea96b8aa09cf49f9775b65533023b5fa3742b33e45e79bb67106068300b8e",
+        "afterSha256": "096c8bb46a3c1909244f9798dbce2b6aa224f84f28e0e5a53476376f4efbb5df"
+      },
+      {
+        "id": "u10_configuracion_vacia_referencia_razonamiento",
+        "beforeSha256": "fbbb33dc80e6186184129f22fd88f4f18d6aee54f58d4ba6c68b4b9c90b92e86",
+        "afterSha256": "4b07febe5020a9d3f8046e66390f7422b72a553aa7e4f8a9236e587e3042395e"
+      },
+      {
+        "id": "u10_configuracion_vacia_referencia",
+        "beforeSha256": "53d34b41333bc1f8164574d367b778ca2010dfc288e02b1ff5fe5f765797cecf",
+        "afterSha256": "956b7585f6e7509371ce99117e0559558abf98687ac3c5fe1f390369f3be7cdc"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{127};\n    const std::mt19937 guardado = motor;\n    try {\n        const int dato = obtener(motor, 6, 2);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazado:\" << (motor == guardado);\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{149};\n    const std::mt19937 anterior = motor;\n    try {\n        const int dato = obtener(motor, -13, 0);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Fuera del dominio:\" << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fuera del dominio:1"
+          ],
+          "explanation": "El mínimo -13 queda por debajo del límite permitido, -12, aunque sea menor que el máximo 0. obtener lanza std::invalid_argument en la validación y no llega a solicitar datos. El catch compara el motor con anterior: siguen iguales, por lo que la salida es Fuera del dominio:1."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n    std::cout << \"Conservado:\" << (motor == anterior) << '\\n';\n    std::cout << \"Coinciden:\" << (primero == segundo);\n    return 0;\n}\n",
+          "answers": [
+            "Conservado:1\nCoinciden:1"
+          ],
+          "explanation": "Las dos llamadas a obtener_copia reciben por valor el mismo estado del motor de main. Cada llamada utiliza una copia propia y una distribución nueva con límites 0 y 9; ninguna modifica el motor original. Por eso motor == anterior resulta verdadero y ambas obtenciones coinciden. Se muestran Conservado:1 y Coinciden:1 en líneas distintas, sin necesitar conocer el entero obtenido."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Configuracion invalida\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "Los límites 3 y 3 están ordenados y pertenecen al dominio permitido. La cantidad es 0, por lo que la primera comprobación i < cantidad ya es falsa y no se ejecuta elegir(motor). El vector conserva tamaño 0 y el motor sigue igual a anterior, comparación mostrada como 1. La salida es 0:1; construir la distribución por sí solo no obtiene valores del motor."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n    std::cout << \"Continuacion:\" << (primero.size() == 4 && segundo == repetido) << '\\n';\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n    std::cout << \"Vacio:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = por_lotes;\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Aceptado:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (por_lotes == antes_error);\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar(int cantidad,int minimo,int maximo) {\n    std::mt19937 motor{191};\n    const std::mt19937 antes=motor;\n    try {\n        const std::vector<int> primero=generar(motor,cantidad,minimo,maximo);\n        std::mt19937 copia=motor;\n        const std::vector<int> segundo=generar(motor,3,minimo,maximo);\n        const std::vector<int> repetido=generar(copia,3,minimo,maximo);\n        bool rango=true;\n        for(int dato:primero) { rango=rango && dato>=minimo && dato<=maximo; }\n        for(int dato:segundo) { rango=rango && dato>=minimo && dato<=maximo; }\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=generar(motor,0,minimo,maximo);\n        std::cout<<\"Cantidad:\"<<primero.size()<<\";Rango:\"<<rango\n                 <<\";Continuacion:\"<<(segundo==repetido && motor==copia)\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalido=generar(motor,3,5,2);\n            std::cout<<\";Aceptado:\"<<invalido.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==antes)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar(4,-2,5);\n    probar(0,-12,12);\n    probar(1,-12,12);\n    probar(20,-12,12);\n    probar(3,-12,-12);\n    probar(3,12,12);\n    probar(3,5,2);\n    probar(3,-13,12);\n    probar(3,-12,13);\n    probar(-1,-12,12);\n    probar(21,-12,12);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "reparar_motor_compartido",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937 motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\" << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Muestra:1\nMotor:1\nContinuacion:1\nMotor final:1\n"
+                ],
+                "explanation": "La función y el testigo parten de la misma preparación y siguen el mismo procedimiento. Las muestras coinciden y el motor del llamador queda en el punto que alcanzó el testigo después de cada tramo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "referencia_motor_compartido",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 motor{223};\n    std::mt19937 testigo = motor;\n\n    const std::vector<int> primera = generar(motor, 4, -3, 6);\n    std::uniform_int_distribution<int> reparto_primero{-3, 6};\n    std::vector<int> primera_testigo;\n    for (int i{0}; i < 4; ++i) {\n        primera_testigo.push_back(reparto_primero(testigo));\n    }\n    std::cout << \"Muestra:\" << (primera == primera_testigo) << '\\n';\n    std::cout << \"Motor:\" << (motor == testigo) << '\\n';\n\n    const std::vector<int> continuacion = generar(motor, 3, -3, 6);\n    std::uniform_int_distribution<int> reparto_segundo{-3, 6};\n    std::vector<int> continuacion_testigo;\n    for (int i{0}; i < 3; ++i) {\n        continuacion_testigo.push_back(reparto_segundo(testigo));\n    }\n    std::cout << \"Continuacion:\" << (continuacion == continuacion_testigo) << '\\n';\n    std::cout << \"Motor final:\" << (motor == testigo) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u10_configuracion_vacia_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad == 0) { return {}; }\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size() << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Rechazo:1\nIntervalo:-12:13;Rechazo:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La solicitud con límites -12 y 12 devuelve un vector vacío. Las otras tres se rechazan: 5 supera a 2, -13 queda bajo el dominio y 13 queda sobre él. En las cuatro llamadas el motor conserva el estado que tenía justo antes, comprobado como 1.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Vacio:0;Motor:1\nIntervalo:-13:12;Vacio:0;Motor:1\nIntervalo:-12:13;Vacio:0;Motor:1\n"
+                    ],
+                    "text": "Las cuatro llamadas han devuelto un vector vacío. Comprueba si la función termina al encontrar cantidad cero sin examinar los límites: 5..2, -13..12 y -12..13 deben rechazarse. Conservar el motor no basta para demostrar que una configuración es válida."
+                  },
+                  {
+                    "outputs": [
+                      "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Vacio:0;Motor:1\nIntervalo:-12:13;Vacio:0;Motor:1\n"
+                    ],
+                    "text": "El intervalo 5..2 ya se rechaza, pero -13..12 y -12..13 siguen aceptándose. Ambos están ordenados; sus extremos incumplen el dominio -12..12. La cantidad cero no elimina esas comprobaciones."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u10_configuracion_vacia_referencia",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nvoid probar_vacio(std::mt19937& motor, int minimo, int maximo) {\n    const std::mt19937 antes = motor;\n    std::cout << \"Intervalo:\" << minimo << ':' << maximo;\n    try {\n        const std::vector<int> datos = generar(motor, 0, minimo, maximo);\n        std::cout << \";Vacio:\" << datos.size() << \";Motor:\" << (motor == antes);\n    } catch (const std::invalid_argument&) {\n        std::cout << \";Rechazo:\" << (motor == antes);\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{191};\n    generar(motor, 3, -2, 5);\n    probar_vacio(motor, -12, 12);\n    probar_vacio(motor, 5, 2);\n    probar_vacio(motor, -13, 12);\n    probar_vacio(motor, -12, 13);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1662,8 +1859,15 @@
         "spans": [
           {
             "start": 58,
+            "end": 61,
+            "text": "-12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 64,
             "end": 66,
-            "text": "-12 y 12",
+            "text": "12",
             "role": "data",
             "reading": "natural"
           },
@@ -1837,6 +2041,13 @@
             "reading": "technical"
           },
           {
+            "start": 262,
+            "end": 265,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 357,
             "end": 377,
             "text": "(Köppe et al., 2023)",
@@ -2001,6 +2212,13 @@
         "path": "/explanation",
         "sourceSha256": "2bde4d4e3ecb76f60d309d724fa720597373c1a88ca458506f0e8f001a79e861",
         "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 19,
             "end": 32,
@@ -2212,8 +2430,15 @@
           },
           {
             "start": 70,
+            "end": 74,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
             "end": 83,
-            "text": "cero y veinte",
+            "text": "veinte",
             "role": "data",
             "reading": "natural"
           },
@@ -2385,15 +2610,29 @@
           },
           {
             "start": 144,
+            "end": 148,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 151,
             "end": 157,
-            "text": "cero y veinte",
+            "text": "veinte",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 179,
+            "end": 182,
+            "text": "-12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 185,
             "end": 187,
-            "text": "-12 y 12",
+            "text": "12",
             "role": "data",
             "reading": "natural"
           },
@@ -2430,7 +2669,7 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "e33d193da739560f1a5a9e20fe3b4ae01317963349c1970ad2c099b291d30b1d",
+        "sourceSha256": "07e539cbcdb335ec90476e9aa1a0727e2fe9d883f7acbd0140934ceda25c12da",
         "spans": [
           {
             "start": 10,
@@ -2454,127 +2693,309 @@
             "reading": "technical"
           },
           {
-            "start": 288,
-            "end": 292,
+            "start": 381,
+            "end": 385,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 375,
-            "end": 389,
-            "text": "Continuacion:B",
-            "role": "output",
+            "start": 475,
+            "end": 478,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 614,
-            "end": 618,
+            "start": 494,
+            "end": 497,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 531,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 664,
-            "end": 668,
+            "start": 579,
+            "end": 583,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 742,
-            "end": 746,
+            "start": 697,
+            "end": 701,
             "text": "5..2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 870,
-            "end": 923,
+            "start": 919,
+            "end": 972,
             "text": "Cantidad:N;Rango:B;Continuacion:B;Vacio:N:B;Rechazo:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 943,
-            "end": 951,
+            "start": 1020,
+            "end": 1028,
             "text": "Cantidad",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 994,
-            "end": 999,
+            "start": 1070,
+            "end": 1075,
             "text": "Rango",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1141,
-            "end": 1153,
+            "start": 1193,
+            "end": 1205,
             "text": "Continuacion",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1155,
-            "end": 1160,
+            "start": 1220,
+            "end": 1223,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1377,
+            "end": 1382,
             "text": "Vacio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1219,
-            "end": 1226,
+            "start": 1419,
+            "end": 1423,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1497,
+            "end": 1504,
             "text": "Rechazo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1388,
-            "end": 1413,
+            "start": 1686,
+            "end": 1711,
             "text": "Configuracion rechazada:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1494,
-            "end": 1498,
+            "start": 1784,
+            "end": 1790,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1796,
+            "end": 1800,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1511,
-            "end": 1515,
+            "start": 1813,
+            "end": 1817,
             "text": "once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1548,
-            "end": 1677,
-            "text": "(4,-2,5), (0,-12,12), (1,-12,12), (20,-12,12), (3,-12,-12), (3,12,12), (3,5,2), (3,-13,12), (3,-12,13), (-1,-12,12) y (21,-12,12)",
-            "role": "data",
+            "start": 2037,
+            "end": 2053,
+            "text": "probar(4, -2, 5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2054,
+            "end": 2107,
+            "text": "Cantidad:4;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1683,
-            "end": 1687,
+            "start": 2109,
+            "end": 2127,
+            "text": "probar(0, -12, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2128,
+            "end": 2181,
+            "text": "Cantidad:0;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2183,
+            "end": 2201,
+            "text": "probar(1, -12, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2202,
+            "end": 2255,
+            "text": "Cantidad:1;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2257,
+            "end": 2276,
+            "text": "probar(20, -12, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2277,
+            "end": 2331,
+            "text": "Cantidad:20;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2333,
+            "end": 2352,
+            "text": "probar(3, -12, -12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2353,
+            "end": 2406,
+            "text": "Cantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2408,
+            "end": 2425,
+            "text": "probar(3, 12, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2426,
+            "end": 2479,
+            "text": "Cantidad:3;Rango:1;Continuacion:1;Vacio:0:1;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2481,
+            "end": 2496,
+            "text": "probar(3, 5, 2)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2497,
+            "end": 2522,
+            "text": "Configuracion rechazada:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2524,
+            "end": 2542,
+            "text": "probar(3, -13, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2543,
+            "end": 2568,
+            "text": "Configuracion rechazada:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2570,
+            "end": 2588,
+            "text": "probar(3, -12, 13)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2589,
+            "end": 2614,
+            "text": "Configuracion rechazada:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2616,
+            "end": 2635,
+            "text": "probar(-1, -12, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2636,
+            "end": 2661,
+            "text": "Configuracion rechazada:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2663,
+            "end": 2682,
+            "text": "probar(21, -12, 12)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2683,
+            "end": 2708,
+            "text": "Configuracion rechazada:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 2714,
+            "end": 2718,
             "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1715,
-            "end": 1720,
+            "start": 2762,
+            "end": 2767,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 1799,
-            "end": 1802,
+            "start": 2810,
+            "end": 2814,
+            "text": "bool",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 2867,
+            "end": 2870,
             "text": "uno",
             "role": "output",
             "reading": "natural"
@@ -2596,53 +3017,67 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "07bc5398dba63ab425c7c6ba3c78a79baeed58cc2b7a00876ed6df0ba93a7062",
+        "sourceSha256": "3d76cab10aae74462feeaa247384914a8f25f5da96668755e1b3470d41430c95",
         "spans": [
           {
-            "start": 55,
-            "end": 69,
+            "start": 74,
+            "end": 88,
             "text": "Continuacion:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 80,
+            "start": 89,
+            "end": 98,
             "text": "Vacio:0:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 83,
-            "end": 92,
+            "start": 99,
+            "end": 108,
             "text": "Rechazo:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 152,
-            "end": 158,
+            "start": 147,
+            "end": 153,
             "text": "cuatro",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 257,
-            "end": 261,
+            "start": 197,
+            "end": 200,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 252,
+            "end": 256,
             "text": "once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 403,
-            "end": 410,
+            "start": 361,
+            "end": 364,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 446,
+            "end": 453,
             "text": "generar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 732,
-            "end": 744,
+            "start": 775,
+            "end": 787,
             "text": "Continuacion",
             "role": "output",
             "reading": "natural"
@@ -2656,15 +3091,36 @@
         "spans": [
           {
             "start": 33,
+            "end": 36,
+            "text": "-12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
             "end": 41,
-            "text": "-12 y 12",
+            "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 84,
+            "end": 88,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 90,
+            "end": 93,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
             "end": 102,
-            "text": "cero, uno y veinte",
+            "text": "veinte",
             "role": "data",
             "reading": "natural"
           },
@@ -2898,7 +3354,7 @@
       {
         "block": "consigna_reparar_motor_compartido",
         "path": "/text",
-        "sourceSha256": "d71d9e5ef043d1eb61aff1dfce96dcb7fa35156eaf23ffec44d40f897a5d312b",
+        "sourceSha256": "e9df5c3d8d7a2515f82f194742622c6fb50e9cb7ff343c018bd76e4a125a9e2e",
         "spans": [
           {
             "start": 224,
@@ -2929,37 +3385,37 @@
             "reading": "technical"
           },
           {
-            "start": 624,
-            "end": 631,
-            "text": "Muestra",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 633,
-            "end": 638,
-            "text": "Motor",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 640,
-            "end": 652,
-            "text": "Continuacion",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 655,
-            "end": 666,
-            "text": "Motor final",
-            "role": "output",
+            "start": 642,
+            "end": 648,
+            "text": "cuatro",
+            "role": "data",
             "reading": "natural"
           },
           {
             "start": 681,
-            "end": 684,
-            "text": "uno",
+            "end": 690,
+            "text": "Muestra:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 691,
+            "end": 698,
+            "text": "Motor:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 699,
+            "end": 713,
+            "text": "Continuacion:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 714,
+            "end": 727,
+            "text": "Motor final:1",
             "role": "output",
             "reading": "natural"
           }
@@ -3001,7 +3457,7 @@
       {
         "block": "u10_configuracion_vacia_consigna",
         "path": "/text",
-        "sourceSha256": "b18b9b5402313ea4b4c67ad32af845cd527a787df76ae049c337d001269fdddd",
+        "sourceSha256": "617c26fbd29407cfe31bb6067026030698b08719fe562b383015db29a8bac30e",
         "spans": [
           {
             "start": 44,
@@ -3067,37 +3523,72 @@
             "reading": "natural"
           },
           {
-            "start": 818,
-            "end": 825,
+            "start": 805,
+            "end": 811,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 840,
+            "end": 847,
             "text": "-12..12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 827,
-            "end": 831,
+            "start": 848,
+            "end": 852,
             "text": "5..2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 833,
-            "end": 840,
+            "start": 853,
+            "end": 860,
             "text": "-13..12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 843,
-            "end": 850,
+            "start": 861,
+            "end": 868,
             "text": "-12..13",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 977,
-            "end": 1087,
-            "text": "Intervalo:-12:12;Vacio:0;Motor:1\nIntervalo:5:2;Rechazo:1\nIntervalo:-13:12;Rechazo:1\nIntervalo:-12:13;Rechazo:1",
+            "start": 941,
+            "end": 947,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 980,
+            "end": 1012,
+            "text": "Intervalo:-12:12;Vacio:0;Motor:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1013,
+            "end": 1036,
+            "text": "Intervalo:5:2;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1037,
+            "end": 1063,
+            "text": "Intervalo:-13:12;Rechazo:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1064,
+            "end": 1090,
+            "text": "Intervalo:-12:13;Rechazo:1",
             "role": "output",
             "reading": "natural"
           }
@@ -3119,6 +3610,13 @@
             "start": 31,
             "end": 33,
             "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 74,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
@@ -3151,6 +3649,13 @@
             "reading": "natural"
           },
           {
+            "start": 156,
+            "end": 162,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 239,
             "end": 240,
             "text": "1",
@@ -3164,6 +3669,13 @@
         "path": "/outputCheck/cases/0/reviewFeedback/0/text",
         "sourceSha256": "07b2aa6836f1e7f31fb5924d99af65f698d9338a5eb87c67b252dfbd5a208cef",
         "spans": [
+          {
+            "start": 4,
+            "end": 10,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 104,
             "end": 108,
@@ -3245,7 +3757,7 @@
       {
         "block": "u10_configuracion_vacia_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "3596b8f7eb1e984848710a50800446c270d25ca6ddffd04ff2b733871a0d726d",
+        "sourceSha256": "5715533f23d7b1e0df094acac39a020c614477c1f5e6b9d0cdda91777ec8d93b",
         "spans": [
           {
             "start": 3,
@@ -3294,6 +3806,48 @@
             "end": 679,
             "text": "cero",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 931,
+            "end": 943,
+            "text": "probar_vacio",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 963,
+            "end": 976,
+            "text": "Intervalo:5:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 987,
+            "end": 990,
+            "text": "try",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1019,
+            "end": 1026,
+            "text": "generar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1051,
+            "end": 1056,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1063,
+            "end": 1073,
+            "text": ";Rechazo:1",
+            "role": "output",
             "reading": "natural"
           }
         ]

@@ -26,7 +26,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre: ambos argumentos estan entre 0 y 10.\nconstexpr int total_fichas(int bloques, int por_bloque) {\n    return bloques * por_bloque;\n}\n\nint main() {\n    constexpr int modelo = total_fichas(3, 4);\n    int bloques{5};\n    int calculado = total_fichas(bloques, 2);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre: ambos argumentos estan entre 0 y 10.\nconstexpr int total_fichas(int bloques, int por_bloque) {\n    return bloques * por_bloque;\n}\n\nint main() {\n    constexpr int modelo = total_fichas(3, 4);\n\n    int bloques{5};\n    int calculado = total_fichas(bloques, 2);\n\n    std::cout << modelo << ':' << calculado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -65,7 +65,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint obtener_cantidad() {\n    return 4;\n}\n\nint main() {\n    const int cantidad = obtener_cantidad();\n    std::cout << cantidad;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint obtener_cantidad() {\n    return 4;\n}\n\nint main() {\n    const int cantidad = obtener_cantidad();\n\n    std::cout << cantidad;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -114,7 +114,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nconstexpr int doble(int dato) {\n    return dato * 2;\n}\n\nstatic_assert(doble(3) == 6);\n\nint main() {\n    std::cout << \"Programa aceptado\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nconstexpr int doble(int dato) {\n    return dato * 2;\n}\n\nstatic_assert(doble(3) == 6);\n\nint main() {\n    std::cout << \"Programa aceptado\";\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -170,7 +170,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Añade static_assert para comprobar cero → cero y cuatro → diez. En main, inicializa un objeto constexpr con suma_hasta(5) y llama también con una variable ordinaria que contiene tres. Muestra los dos resultados separados por dos puntos: 15:6.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. La primera actividad consiste en construir la función y utilizarla en ambos contextos; después se comprobarán otros argumentos en actividades independientes.",
+          "text": "Antes de main, añade dos comprobaciones con static_assert:\n\nsuma_hasta(0) debe devolver cero.\nsuma_hasta(4) debe devolver diez.\n\nEn main, inicializa un objeto constexpr con suma_hasta(5). Llama también a la misma función con una variable ordinaria que contiene tres. Muestra ambos resultados en una línea, separados por dos puntos: 15:6.\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. Esta primera actividad construye la función y la utiliza en ambos contextos; los otros argumentos tienen ensayos posteriores.",
           "emphasis": [
             {
               "text": "static_assert",
@@ -212,11 +212,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye de nuevo suma_hasta desde el editor mínimo. Recibe ultimo de tipo int por valor, con precondición entre cero y diez incluidos, y devuelve int con la suma de los enteros desde uno hasta ultimo. Con cero devuelve cero. Usa un acumulador local y un bucle; la función no imprime ni modifica objetos del llamador. Declárala constexpr para poder utilizar el mismo cálculo en los dos contextos solicitados.\n\nAntes de main, añade static_assert para comprobar que suma_hasta(0) vale cero y suma_hasta(4) vale diez. En main inicializa un objeto constexpr con suma_hasta(5). Después lee desde Entrada otro argumento entero del dominio, guárdalo en una variable ordinaria y llama también a suma_hasta con esa variable. El dato está escrito válidamente y pertenece al dominio; esta actividad no solicita interpretar ni rechazar entradas diferentes."
+          "text": "Reconstruye suma_hasta desde el editor mínimo. Conserva este contrato:\n\nRecibe ultimo de tipo int por valor, entre cero y diez incluidos.\nDevuelve un int con la suma de los enteros desde uno hasta ultimo.\nCon el argumento cero devuelve cero.\nUtiliza un acumulador local y un bucle.\nNo imprime ni modifica objetos del llamador.\nSe declara constexpr para poder utilizar el mismo cálculo en los dos contextos solicitados.\n\nAntes de main, añade static_assert para comprobar suma_hasta(0) igual a cero y suma_hasta(4) igual a diez.\n\nEn main, inicializa un objeto constexpr con suma_hasta(5). Después lee desde Entrada otro argumento entero del dominio, guárdalo en una variable ordinaria y llama también a suma_hasta con esa variable. El dato está escrito válidamente y pertenece al dominio; esta actividad no solicita interpretar ni rechazar entradas diferentes."
         },
         {
           "type": "paragraph",
-          "text": "Muestra los dos resultados en una sola línea, separados por dos puntos y sin espacios. El formato es 15:S: el primer valor procede del objeto constante y S es la suma devuelta para el argumento leído. El salto de línea final es opcional. Estas son las entradas y salidas exactas de los once casos."
+          "text": "Muestra los dos resultados en una sola línea, separados por dos puntos y sin espacios. El formato es 15:S: el primer valor procede del objeto constante y S es la suma devuelta para el argumento leído. El salto de línea final es opcional.\n\nEl único caso obligatorio para avanzar es el inicial:\nEntrada: 0 → Salida: 15:0\n\nLos diez casos restantes son ensayos optativos. Sus entradas y salidas exactas aparecen por separado a continuación; puedes elegirlos para contrastar la misma función con otros argumentos."
         },
         {
           "type": "paragraph",
@@ -264,7 +264,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Pulsa «Compilar, ejecutar y comprobar». Conserva la misma función y la misma lectura al cambiar Entrada entre los once argumentos. Mantén el bucle, las variables locales, las aserciones y el objeto constexpr solicitados; los resultados deben proceder de las llamadas y no de una lista de respuestas constantes."
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Un acierto con el primer caso permite avanzar. Para realizar un ensayo optativo, cambia sólo Entrada y conserva el mismo programa.\n\nMantén el bucle, las variables locales, las aserciones y el objeto constexpr solicitados. Los resultados deben proceder de las llamadas, no de una lista de respuestas constantes."
         },
         {
           "type": "cpp_compiler",
@@ -462,11 +462,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{3};\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n\n    int caso{3};\n    int calculado = suma_hasta(caso);\n\n    std::cout << modelo << ':' << calculado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La función debe devolver la suma correcta en todo el dominio 0..10, terminar su bucle y dejar la presentación del resultado a main. Las aserciones constantes comprueban dos casos antes de ejecutar. La llamada ordinaria conserva la misma regla de cálculo.\n\nLas variables locales de cada llamada representan ese cálculo particular: total empieza en cero cada vez y no conserva la suma de una llamada anterior (Stroustrup, 2024).",
+          "text": "La función debe cumplir estas responsabilidades:\n\nDevolver la suma correcta en todo el dominio 0..10.\nTerminar su bucle.\nDejar la presentación del resultado a main.\n\nLas aserciones constantes comprueban dos casos antes de ejecutar. La llamada ordinaria conserva la misma regla de cálculo.\n\nLas variables locales de cada llamada representan ese cálculo particular: total empieza en cero cada vez y no conserva la suma de una llamada anterior (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "todo el dominio 0..10",
@@ -480,10 +480,10 @@
         },
         {
           "type": "paragraph",
-          "text": "Una static_assert de un solo caso no demuestra que los demás resultados sean correctos. Primero, el siguiente editor permite comparar una llamada ordinaria con los argumentos 3 y 10. Después, otra actividad recorre los once valores del dominio y comprueba su traza completa.\n\nLos valores fuera de 0..10 no forman parte del contrato de suma_hasta; no se les atribuye una garantía que no se ha definido.",
+          "text": "Una static_assert de un solo caso no demuestra que los demás resultados sean correctos. El siguiente editor conserva una llamada ordinaria y ofrece estos ensayos:\n\nArgumento tres: resultado 15:6, caso inicial obligatorio.\nArgumento diez: resultado 15:55, ensayo optativo.\n\nDespués construirás un recorrido que genera las once filas del dominio en una sola ejecución. Esa actividad practica cómo elegir cada argumento y mostrar su resultado desde el propio programa.\n\nLos valores fuera de 0..10 no forman parte del contrato de suma_hasta; no se les atribuye una garantía que no se ha definido.",
           "emphasis": [
             {
-              "text": "los once valores del dominio",
+              "text": "once filas del dominio",
               "style": "bold"
             }
           ]
@@ -499,7 +499,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{0};\n    std::cin >> caso;\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n\n    int caso{0};\n\n    std::cin >> caso;\n\n    int calculado = suma_hasta(caso);\n\n    std::cout << modelo << ':' << calculado;\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -507,14 +507,14 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa conserva el objeto constante calculado con cinco y lee otro argumento entre cero y diez. Comprueba 3 → 15:6 y 10 → 15:55. Ese argumento procede de una lectura durante la ejecución; no se exige que sea una expresión constante.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los dos casos. El salto después del mensaje es opcional.",
+          "text": "El programa conserva el objeto constante calculado con cinco y lee otro argumento entre cero y diez. Ese argumento procede de una lectura durante la ejecución; no se exige que sea una expresión constante.\n\nCaso inicial obligatorio\nEntrada: 3 → Salida: 15:6\n\nEnsayo optativo\nEntrada: 10 → Salida: 15:55\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada. El salto después del mensaje es opcional.",
           "emphasis": [
             {
-              "text": "3 → 15:6",
+              "text": "Entrada: 3 → Salida: 15:6",
               "style": "bold"
             },
             {
-              "text": "10 → 15:55",
+              "text": "Entrada: 10 → Salida: 15:55",
               "style": "bold"
             },
             {
@@ -525,7 +525,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{0};\n    std::cin >> caso;\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n\n    int caso{0};\n\n    std::cin >> caso;\n\n    int calculado = suma_hasta(caso);\n\n    std::cout << modelo << ':' << calculado;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -553,7 +553,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La función suma_hasta ya está disponible en este editor. Completa main con un recorrido que llame a la función una vez para cada entero desde 0 hasta 10, incluidos. No cambies su definición. En cada vuelta muestra el argumento, dos puntos y la suma devuelta, sin espacios. Separa las once filas con saltos de línea.\n\nLa primera fila debe ser 0:0 y la última 10:55. Las filas intermedias deben contener la suma correspondiente a su propio argumento. Pulsa «Compilar, ejecutar y comprobar» para contrastar la traza completa; el salto después de la última fila es opcional.",
+          "text": "La función suma_hasta ya está disponible en este editor. Completa main con un recorrido que llame a la función una vez para cada entero desde 0 hasta 10, incluidos. No cambies su definición. En cada vuelta muestra el argumento, dos puntos y la suma devuelta, sin espacios. Separa las once filas con saltos de línea.\n\nEl programa debe generar la traza completa en una sola ejecución:\nPrimera fila: 0:0.\nÚltima fila: 10:55.\nCada fila intermedia contiene la suma correspondiente a su propio argumento.\n\nPulsa «Compilar, ejecutar y comprobar». El salto después de la última fila es opcional.",
           "emphasis": [
             {
               "text": "desde 0 hasta 10, incluidos",
@@ -571,7 +571,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nint main() {\n    // Recorre los once argumentos y presenta una fila por llamada.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n\n    return total;\n}\n\nint main() {\n    // Recorre los once argumentos y presenta una fila por llamada.\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -620,7 +620,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nint main() {\n    for (int ultimo = 0; ultimo <= 10; ++ultimo) {\n        int calculado = suma_hasta(ultimo);\n        std::cout << ultimo << ':' << calculado << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n\n    return total;\n}\n\nint main() {\n    for (int ultimo = 0; ultimo <= 10; ++ultimo) {\n        int calculado = suma_hasta(ultimo);\n\n        std::cout << ultimo << ':' << calculado << '\\n';\n    }\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -633,7 +633,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nconsteval int doble_obligatorio(int dato) {\n    return dato * 2;\n}\n\nint main() {\n    int resultado = doble_obligatorio(4);\n    std::cout << resultado;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nconsteval int doble_obligatorio(int dato) {\n    return dato * 2;\n}\n\nint main() {\n    int resultado = doble_obligatorio(4);\n\n    std::cout << resultado;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1723,6 +1723,196 @@
         "id": "block_0003_0004",
         "beforeSha256": "3aac46b35776cf00f4bb3e005543e19f8d1153bc3bd5d5b6554fc79d7d6d1910",
         "afterSha256": "ce43817e8787800a488d215e82622c0c472a8e6f08aea3737e17c6ac957e93a7"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "895dc4e704f7231f67d2ea3baa157a29e394defd3cba322647ea7d4e95684ce2",
+        "afterSha256": "5cb5f145f3ac66952d3fae8925a28dbad525fde060ecbd2e46bf1db2b9c821cc"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "69e44fc6dcda3aee126b966704dc4d64f99c16713226239ade563bbbf42e4c31",
+        "afterSha256": "1d20f47b89525aca00343e38754eecc32d22d81d6ebb864107be3832e8878c56"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "b7c289d15fb99de81b610fad3e2b457f039d79bb782866fd53ac1e813cc7a24c",
+        "afterSha256": "51fc7e93e5d92768a9341c3f008ca1cffdffc9f528227eac6b9a942197d05780"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "e25ff812eb4ff6db7598a58a55e75356939cf3e5e8c250ad12e0dfc4467d8784",
+        "afterSha256": "00fd2e33bc4a9e6ef314346c9b3335b4532f3d47630b85f4303b3b210b1a34da"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_consigna",
+        "beforeSha256": "fb80348d398902331fb8a98f7b194156db16ec75f6de7fe4c434030bad74327a",
+        "afterSha256": "8f76dbb1dabb1ba4c0118ffb6c984f06604fbb33e5dbfc7c9fde895447207740"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_formato",
+        "beforeSha256": "1eaa7a122d6d8c98138cb6874dd8e26e462a20020818670635052250829e80b5",
+        "afterSha256": "9c723231ad101a4915023da2dacfdb47583a8895e7e0b72b443e40bec4d5da15"
+      },
+      {
+        "id": "suma_constante_construccion_multicaso_comprobacion",
+        "beforeSha256": "4e3df6884e379efc4b666a4f36ae6de097733ac7bdbd04bd3eb4edc0dcd7b4be",
+        "afterSha256": "30e6588f8fa4ab374b60c11702b2a4e2fbfa82b1be34f0c2ec0529ef84cdd686"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "6e8fa846626cd67cc5610e41d7157e0a5a799cc8784daf9d0c3d1ddc3b70ea5e",
+        "afterSha256": "8a01a9c8c3fb2869279958450c520a54ed03040f1382a373255fbfab18137c47"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "62f6fb18dc34b1dcf98af625a0ad4667e724b8ec49e949fc3fe85eafcbc4223c",
+        "afterSha256": "00d88b5e4e507e550da61def9117dab8e1ba674866c152cb9ba108c8f4ef55b4"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "ca35c087ff585f390a9e71661d1598bacfa1884e384acb4ec5396af74bf173eb",
+        "afterSha256": "cd3e718dd4ab1a95d20499435e8ba4de12b72daab3f8d4bd4ba3e8d81f50a4ed"
+      },
+      {
+        "id": "suma_constante_lectura_referencia_codigo",
+        "beforeSha256": "edd587710e77e8bd860f78b515cfb6f6d246839aa79a0509943e3b9868b5d9de",
+        "afterSha256": "94c55fd5eaf30375a547df7303e7836209518ad1640e01f4d45b740c5ceff7cc"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "74ae965e1d9e238364a46ec1388a397c4fe6fb5191a8771922e97c9bd778c95c",
+        "afterSha256": "dff2d9fdc21bb77d2f09a923514f499c485ecc6d19663a75f4a6692524952428"
+      },
+      {
+        "id": "block_0004_0006",
+        "beforeSha256": "a9319d2ba17fb1d1f822466bca59705b5f74ab2fc1721a3c00aa4e03014242f7",
+        "afterSha256": "f09b9a57ed1e8cabdd5a7ad40dcd02be71573ec674648ac7e2ab63fb33a173cf"
+      },
+      {
+        "id": "dominio_once_consigna",
+        "beforeSha256": "6f6bd7682c1ce75c1749c8673dda6e21a60a605e870e3c0b77af455c4b3872f2",
+        "afterSha256": "87ebacd5244f53be9aa27f68ecdd7c88b35a488333bf52f31baf85b53d07b79f"
+      },
+      {
+        "id": "dominio_once_editor",
+        "beforeSha256": "7eb7aea053047c9a9e62bd6ba0bbfde46ee2a8d29293f8ef6c46ba1fe3ed545a",
+        "afterSha256": "b96bd42ce6d8a8098fe67f3fcc88992416edc091339fd12ee1d22aeb313af614"
+      },
+      {
+        "id": "dominio_once_referencia_codigo",
+        "beforeSha256": "7203e46f2b67dd865e2f67fb0da496139f51df86c8534291aee12315e3488514",
+        "afterSha256": "6e7240bd51b7afceabad45e786288a9ffb8fccbfa6f033089058facc4e4f6321"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "93b80b26b240be91108456c0d2a5f9957d368b0ade96c407ace099a0dfa3c634",
+        "afterSha256": "a6a920948d12d8e0df7eaa077c40bba6fc6c55358e2f40749c393001b7c910fe"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: ambos argumentos estan entre 0 y 10.\nconstexpr int total_fichas(int bloques, int por_bloque) {\n    return bloques * por_bloque;\n}\n\nint main() {\n    constexpr int modelo = total_fichas(3, 4);\n    int bloques{5};\n    int calculado = total_fichas(bloques, 2);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint obtener_cantidad() {\n    return 4;\n}\n\nint main() {\n    const int cantidad = obtener_cantidad();\n    std::cout << cantidad;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nconstexpr int doble(int dato) {\n    return dato * 2;\n}\n\nstatic_assert(doble(3) == 6);\n\nint main() {\n    std::cout << \"Programa aceptado\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{3};\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "suma_constante_lectura_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{0};\n    std::cin >> caso;\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{0};\n    std::cin >> caso;\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "3",
+                "outputs": [
+                  "15:6",
+                  "15:6\n"
+                ]
+              },
+              {
+                "standardInput": "10",
+                "outputs": [
+                  "15:55",
+                  "15:55\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "3"
+        }
+      },
+      {
+        "id": "dominio_once_editor",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nint main() {\n    // Recorre los once argumentos y presenta una fila por llamada.\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:0\n1:1\n2:3\n3:6\n4:10\n5:15\n6:21\n7:28\n8:36\n9:45\n10:55",
+                  "0:0\n1:1\n2:3\n3:6\n4:10\n5:15\n6:21\n7:28\n8:36\n9:45\n10:55\n"
+                ],
+                "explanation": "Las once filas recorren todo el dominio declarado. Cada llamada comienza su propia suma en cero; el recorrido de main elige los argumentos y presenta los resultados."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "dominio_once_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: ultimo esta entre 0 y 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nint main() {\n    for (int ultimo = 0; ultimo <= 10; ++ultimo) {\n        int calculado = suma_hasta(ultimo);\n        std::cout << ultimo << ':' << calculado << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nconsteval int doble_obligatorio(int dato) {\n    return dato * 2;\n}\n\nint main() {\n    int resultado = doble_obligatorio(4);\n    std::cout << resultado;\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2347,81 +2537,88 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "ca538b6fc63d85e41709c4e711f8da9fa68c094dc67142322b56b7a8e4b47550",
+        "sourceSha256": "4882e8c6c3b61c4622de7c56546154243f7355f4d2ff17829cdc0bb6454c51d4",
         "spans": [
           {
-            "start": 6,
-            "end": 19,
-            "text": "static_assert",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 35,
-            "end": 39,
-            "text": "cero",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 42,
-            "end": 46,
-            "text": "cero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 49,
-            "end": 55,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 58,
-            "end": 62,
-            "text": "diez",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 67,
-            "end": 71,
+            "start": 9,
+            "end": 13,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 94,
-            "end": 103,
-            "text": "constexpr",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 108,
-            "end": 121,
-            "text": "suma_hasta(5)",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 178,
-            "end": 182,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 196,
-            "end": 199,
+            "start": 21,
+            "end": 24,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 237,
-            "end": 241,
+            "start": 44,
+            "end": 57,
+            "text": "static_assert",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 60,
+            "end": 73,
+            "text": "suma_hasta(0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 107,
+            "text": "suma_hasta(4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "diez",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 136,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 168,
+            "text": "constexpr",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 173,
+            "end": 186,
+            "text": "suma_hasta(5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 261,
+            "end": 265,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 336,
             "text": "15:6",
             "role": "output",
             "reading": "natural"
@@ -2443,46 +2640,46 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "2195216e675c29e96f120039f8964009ccad7deb787416493a5b01877944b7d9",
+        "sourceSha256": "49a4af711b5e95911b1b5b748d5139127bea7ac92b65cc136e519cb659e1ce41",
         "spans": [
           {
-            "start": 61,
-            "end": 66,
+            "start": 95,
+            "end": 100,
             "text": "0..10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 126,
-            "end": 130,
+            "start": 159,
+            "end": 163,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 172,
+            "start": 203,
+            "end": 206,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 330,
-            "end": 335,
+            "start": 364,
+            "end": 369,
             "text": "total",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 347,
-            "end": 351,
+            "start": 381,
+            "end": 385,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 407,
-            "end": 425,
+            "start": 441,
+            "end": 459,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -2492,7 +2689,7 @@
       {
         "block": "block_0004_0003",
         "path": "/text",
-        "sourceSha256": "fcf27718d5be7e7c7fb395438e728d9f1b25e309824347aba417ee6f9345e2b1",
+        "sourceSha256": "8404113632be4fa5de61f8a7a472c37b2c027574e8625310ec8c4d08feee5998",
         "spans": [
           {
             "start": 4,
@@ -2502,36 +2699,50 @@
             "reading": "technical"
           },
           {
-            "start": 175,
-            "end": 176,
-            "text": "3",
+            "start": 174,
+            "end": 178,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 181,
-            "text": "10",
+            "start": 190,
+            "end": 194,
+            "text": "15:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 232,
+            "end": 236,
+            "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 219,
-            "end": 223,
+            "start": 248,
+            "end": 253,
+            "text": "15:55",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 325,
             "text": "once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 297,
-            "end": 302,
+            "start": 488,
+            "end": 493,
             "text": "0..10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 335,
-            "end": 345,
+            "start": 526,
+            "end": 536,
             "text": "suma_hasta",
             "role": "cpp",
             "reading": "technical"
@@ -2547,7 +2758,7 @@
       {
         "block": "block_0004_0005",
         "path": "/text",
-        "sourceSha256": "6645b512efe5851378274075b5f4aca05980fd51f5f1da6bbdce2d71e9f7334e",
+        "sourceSha256": "3dc7549f5cb137a1fe3acd3303d845a457883fa8c88048a281b52c1e87beb290",
         "spans": [
           {
             "start": 55,
@@ -2571,38 +2782,31 @@
             "reading": "natural"
           },
           {
-            "start": 111,
-            "end": 112,
+            "start": 240,
+            "end": 241,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 115,
-            "end": 119,
+            "start": 252,
+            "end": 256,
             "text": "15:6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 122,
-            "end": 124,
+            "start": 283,
+            "end": 285,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 132,
+            "start": 296,
+            "end": 301,
             "text": "15:55",
             "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 333,
-            "end": 336,
-            "text": "dos",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2624,7 +2828,7 @@
       {
         "block": "dominio_once_consigna",
         "path": "/text",
-        "sourceSha256": "6b6719337e4b281ea3f29453327acb8e7cd148927e8c6d060c6bf528f2fdb358",
+        "sourceSha256": "dabc5914e533fc952436722b777c9db43a2bd499ff3bbab3e75220635c9db631",
         "spans": [
           {
             "start": 11,
@@ -2639,13 +2843,6 @@
             "text": "main",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 111,
-            "end": 114,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
           },
           {
             "start": 142,
@@ -2669,15 +2866,15 @@
             "reading": "natural"
           },
           {
-            "start": 342,
-            "end": 345,
+            "start": 397,
+            "end": 400,
             "text": "0:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 358,
-            "end": 363,
+            "start": 415,
+            "end": 420,
             "text": "10:55",
             "role": "output",
             "reading": "natural"
@@ -3134,158 +3331,158 @@
       {
         "block": "suma_constante_construccion_multicaso_consigna",
         "path": "/text",
-        "sourceSha256": "b8366916da8a060f02726122aa3bfff33e3a43898f24b5fb69579a3886814b02",
+        "sourceSha256": "6cc58db1778470b7e70bbabacb64cd04a470710770bca2ee01a2a7992e9b2f8d",
         "spans": [
           {
-            "start": 19,
-            "end": 29,
+            "start": 12,
+            "end": 22,
             "text": "suma_hasta",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 61,
-            "end": 67,
+            "start": 79,
+            "end": 85,
             "text": "ultimo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 76,
-            "end": 79,
+            "start": 94,
+            "end": 97,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 114,
-            "end": 118,
+            "start": 115,
+            "end": 119,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 121,
-            "end": 125,
+            "start": 122,
+            "end": 126,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 148,
-            "end": 151,
+            "start": 150,
+            "end": 153,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 188,
+            "start": 187,
+            "end": 190,
             "text": "uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 195,
-            "end": 201,
+            "start": 197,
+            "end": 203,
             "text": "ultimo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 211,
+            "start": 222,
+            "end": 226,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 221,
-            "end": 225,
+            "start": 236,
+            "end": 240,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 329,
-            "end": 338,
+            "start": 338,
+            "end": 347,
             "text": "constexpr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 383,
-            "end": 386,
+            "start": 392,
+            "end": 395,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 420,
-            "end": 424,
+            "start": 429,
+            "end": 433,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 432,
-            "end": 445,
+            "start": 441,
+            "end": 454,
             "text": "static_assert",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 465,
-            "end": 478,
+            "start": 470,
+            "end": 483,
             "text": "suma_hasta(0)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 484,
-            "end": 488,
+            "start": 492,
+            "end": 496,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 491,
-            "end": 504,
+            "start": 499,
+            "end": 512,
             "text": "suma_hasta(4)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 510,
-            "end": 514,
+            "start": 521,
+            "end": 525,
             "text": "diez",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 519,
-            "end": 523,
+            "start": 531,
+            "end": 535,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 545,
-            "end": 554,
+            "start": 558,
+            "end": 567,
             "text": "constexpr",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 559,
-            "end": 572,
+            "start": 572,
+            "end": 585,
             "text": "suma_hasta(5)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 688,
-            "end": 698,
+            "start": 701,
+            "end": 711,
             "text": "suma_hasta",
             "role": "cpp",
             "reading": "technical"
@@ -3295,7 +3492,7 @@
       {
         "block": "suma_constante_construccion_multicaso_formato",
         "path": "/text",
-        "sourceSha256": "c26dd91adfdd5578c1ce999d87656685c67ff251a904739d9ad62b5202c8d580",
+        "sourceSha256": "2b5e94043fa669b4abc30ec7e0ca1871c2fc529c1c56ba7af3374f5b5798e774",
         "spans": [
           {
             "start": 12,
@@ -3319,9 +3516,23 @@
             "reading": "natural"
           },
           {
-            "start": 286,
-            "end": 290,
-            "text": "once",
+            "start": 302,
+            "end": 303,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 314,
+            "end": 318,
+            "text": "15:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 328,
+            "text": "diez",
             "role": "data",
             "reading": "natural"
           }
@@ -3638,18 +3849,11 @@
       {
         "block": "suma_constante_construccion_multicaso_comprobacion",
         "path": "/text",
-        "sourceSha256": "2f910992fea259f78fc141c762ed904b937c5869df4db0245c9569b608fcc701",
+        "sourceSha256": "54fcb422c226af9a212950b0619aa959d5835d5ff47760cfc74d1e3dad776e5c",
         "spans": [
           {
-            "start": 114,
-            "end": 118,
-            "text": "once",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 198,
-            "end": 207,
+            "start": 239,
+            "end": 248,
             "text": "constexpr",
             "role": "cpp",
             "reading": "technical"

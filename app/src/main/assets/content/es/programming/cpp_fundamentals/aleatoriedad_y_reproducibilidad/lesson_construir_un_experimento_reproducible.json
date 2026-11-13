@@ -77,7 +77,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan vacio{0, 0, 2, 7};\n    const Plan invertido{0, 0, 7, 2};\n    std::cout << plan_valido(vacio) << ':' << plan_valido(invertido);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan vacio{0, 0, 2, 7};\n    const Plan invertido{0, 0, 7, 2};\n    std::cout << plan_valido(vacio) << ':' << plan_valido(invertido);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -104,7 +104,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan uno{317, 1, 9, 9};\n    const Plan otro{1001, 1, 0, 9};\n    std::cout << plan_valido(uno) << ':' << plan_valido(otro);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan uno{317, 1, 9, 9};\n    const Plan otro{1001, 1, 0, 9};\n    std::cout << plan_valido(uno) << ':' << plan_valido(otro);\n\n    return 0;\n}\n",
           "answers": [
             "1:0"
           ],
@@ -209,22 +209,23 @@
         },
         {
           "type": "paragraph",
-          "text": "En main reúne una sola batería con estos planes, en este orden: Plan{271,12,1,7}, {0,0,2,7}, {317,1,9,9}, {1000,6,4,4}, {-1,3,0,9}, {1001,3,0,9}, {271,-1,0,9}, {271,21,0,9}, {271,3,-1,9}, {271,3,0,10} y {271,0,7,2}.\n\nPulsa Compilar, ejecutar y comprobar. Las cuatro primeras pruebas muestran cantidades 12, 0, 1 y 6, con sus tres indicadores verdaderos; las siete restantes se rechazan. También debe rechazarse el plan de cantidad cero con límites invertidos.\n\nEl objetivo no exige una lista concreta de números generados. Comprueba los dominios y las relaciones solicitadas con el mismo programa para toda la batería.",
+          "text": "En main utiliza estos planes en el orden indicado. Cada plan se pasa a probar y tiene su propia línea de salida:\n\nPlan{271, 12, 1, 7}\nCantidad:12;Rango:1;Conteo:1;Repeticion:1\n\nPlan{0, 0, 2, 7}\nCantidad:0;Rango:1;Conteo:1;Repeticion:1\n\nPlan{317, 1, 9, 9}\nCantidad:1;Rango:1;Conteo:1;Repeticion:1\n\nPlan{1000, 6, 4, 4}\nCantidad:6;Rango:1;Conteo:1;Repeticion:1\n\nPlan{-1, 3, 0, 9}\nConfiguracion rechazada\n\nPlan{1001, 3, 0, 9}\nConfiguracion rechazada\n\nPlan{271, -1, 0, 9}\nConfiguracion rechazada\n\nPlan{271, 21, 0, 9}\nConfiguracion rechazada\n\nPlan{271, 3, -1, 9}\nConfiguracion rechazada\n\nPlan{271, 3, 0, 10}\nConfiguracion rechazada\n\nPlan{271, 0, 7, 2}\nConfiguracion rechazada\n\nLas cuatro primeras configuraciones son válidas. Sus cantidades son doce, cero, uno y seis, y sus tres indicadores deben mostrarse como verdaderos. Las siete configuraciones restantes se rechazan; entre ellas está la de cantidad cero con límites invertidos.\n\nPulsa Compilar, ejecutar y comprobar. Termina cada línea con un salto y utiliza el mismo programa para todos los planes.\n\nEl objetivo no exige una lista concreta de números generados. Comprueba los dominios y las relaciones solicitadas sin sustituir los indicadores por constantes que imiten los resultados.",
           "emphasis": [
             {
-              "text": "una sola batería",
-              "style": "bold",
-              "occurrence": 1
+              "text": "Cada plan",
+              "style": "bold"
             },
             {
-              "text": "tres indicadores verdaderos",
-              "style": "bold",
-              "occurrence": 1
+              "text": "tres indicadores",
+              "style": "bold"
             },
             {
               "text": "el mismo programa",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -254,31 +255,27 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{271, 12, 1, 7};\n    try {\n        const std::vector<int> primera = preparar(plan);\n        const std::vector<int> segunda = preparar(plan);\n        const Informe informe = resumir(primera, plan.minimo, plan.maximo, 4);\n        std::cout << \"Cantidad:\" << informe.cantidad << '\\n';\n        std::cout << \"Rango:\" << informe.en_rango << '\\n';\n        std::cout << \"Conteo:\" << (informe.menores + informe.desde == informe.cantidad) << '\\n';\n        std::cout << \"Repeticion:\" << (primera == segunda);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n               int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n        || maximo < 0 || maximo > 9 || minimo > maximo\n        || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) {\n            ++menores;\n        } else {\n            ++desde;\n        }\n    }\n\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{271, 12, 1, 7};\n\n    try {\n        const std::vector<int> primera = preparar(plan);\n        const std::vector<int> segunda = preparar(plan);\n        const Informe informe = resumir(primera, plan.minimo, plan.maximo, 4);\n        std::cout << \"Cantidad:\" << informe.cantidad << '\\n';\n        std::cout << \"Rango:\" << informe.en_rango << '\\n';\n        std::cout << \"Conteo:\" << (informe.menores + informe.desde == informe.cantidad) << '\\n';\n        std::cout << \"Repeticion:\" << (primera == segunda);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El primer programa muestra una sola configuración válida: Plan{271,12,1,7}. Presenta Cantidad:12, Rango:1, Conteo:1 y Repeticion:1, en líneas separadas y sin salto final.\n\nLa referencia completa que sigue reúne los once planes de la actividad, con el formato de una línea por caso y su salto final. Comprueba las cuatro configuraciones válidas y los siete rechazos elegidos; no se presenta como un recorrido exhaustivo de todos los planes posibles.\n\nEn la muestra vacía no hay observaciones fuera del intervalo ni elementos que queden sin clasificar. Comparar las dos muestras comprueba la repetición dentro del mismo entorno; no certifica frecuencias uniformes.",
+          "text": "El primer programa utiliza sólo Plan{271, 12, 1, 7} y muestra estas líneas, sin salto después de la última:\n\nCantidad:12\nRango:1\nConteo:1\nRepeticion:1\n\nLa referencia completa que sigue reúne los once planes de la actividad, con el formato de una línea por caso y su salto final. Comprueba las cuatro configuraciones válidas y los siete rechazos elegidos; no se presenta como un recorrido exhaustivo de todos los planes posibles.\n\nEn la muestra vacía no hay observaciones fuera del intervalo ni elementos que queden sin clasificar. Comparar las dos muestras comprueba la repetición dentro del mismo entorno; no certifica frecuencias uniformes.",
           "emphasis": [
             {
-              "text": "una sola configuración válida",
-              "style": "bold",
-              "occurrence": 1
+              "text": "sólo",
+              "style": "bold"
             },
             {
               "text": "referencia completa",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "once planes",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "no se presenta como un recorrido exhaustivo",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             }
           ]
         },
@@ -310,7 +307,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nvoid probar(const Plan& plan) {\n    try {\n        const std::vector<int> primera=preparar(plan);\n        const std::vector<int> segunda=preparar(plan);\n        const Informe informe=resumir(primera,plan.minimo,plan.maximo,4);\n        std::cout<<\"Cantidad:\"<<informe.cantidad<<\";Rango:\"<<informe.en_rango\n                 <<\";Conteo:\"<<(informe.menores+informe.desde==informe.cantidad)\n                 <<\";Repeticion:\"<<(primera==segunda)<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada\\n\";\n    }\n}\n\nint main() {\n    probar({271,12,1,7});\n    probar({0,0,2,7});\n    probar({317,1,9,9});\n    probar({1000,6,4,4});\n    probar({-1,3,0,9});\n    probar({1001,3,0,9});\n    probar({271,-1,0,9});\n    probar({271,21,0,9});\n    probar({271,3,-1,9});\n    probar({271,3,0,10});\n    probar({271,0,7,2});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n               int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n        || maximo < 0 || maximo > 9 || minimo > maximo\n        || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) {\n            ++menores;\n        } else {\n            ++desde;\n        }\n    }\n\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nvoid probar(const Plan& plan) {\n\n    try {\n        const std::vector<int> primera = preparar(plan);\n        const std::vector<int> segunda = preparar(plan);\n        const Informe informe = resumir(primera, plan.minimo, plan.maximo, 4);\n        std::cout << \"Cantidad:\" << informe.cantidad << \";Rango:\" << informe.en_rango\n                 << \";Conteo:\" << (informe.menores+informe.desde == informe.cantidad)\n                 << \";Repeticion:\" << (primera == segunda) << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada\\n\";\n    }\n}\n\nint main() {\n    probar({271, 12, 1, 7});\n    probar({0, 0, 2, 7});\n    probar({317, 1, 9, 9});\n    probar({1000, 6, 4, 4});\n    probar({-1, 3, 0, 9});\n    probar({1001, 3, 0, 9});\n    probar({271, -1, 0, 9});\n    probar({271, 21, 0, 9});\n    probar({271, 3, -1, 9});\n    probar({271, 3, 0, 10});\n    probar({271, 0, 7, 2});\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -324,7 +321,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{353, 6, 4, 4};\n    const std::vector<int> datos = preparar(plan);\n    const Informe informe = resumir(datos, 4, 4, 4);\n    std::cout << informe.cantidad << ':' << informe.menores << ':';\n    std::cout << informe.desde << ':' << informe.en_rango;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n               int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n        || maximo < 0 || maximo > 9 || minimo > maximo\n        || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) {\n            ++menores;\n        } else {\n            ++desde;\n        }\n    }\n\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{353, 6, 4, 4};\n    const std::vector<int> datos = preparar(plan);\n    const Informe informe = resumir(datos, 4, 4, 4);\n    std::cout << informe.cantidad << ':' << informe.menores << ':';\n    std::cout << informe.desde << ':' << informe.en_rango;\n\n    return 0;\n}\n",
           "answers": [
             "6:0:6:1"
           ],
@@ -334,7 +331,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const std::vector<int> datos{2, 8};\n    const Informe informe = resumir(datos, 2, 6, 4);\n    std::cout << \"Rango:\" << informe.en_rango << \";Conteo:\";\n    std::cout << (informe.menores + informe.desde == informe.cantidad);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n               int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n        || maximo < 0 || maximo > 9 || minimo > maximo\n        || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) {\n            ++menores;\n        } else {\n            ++desde;\n        }\n    }\n\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const std::vector<int> datos{2, 8};\n    const Informe informe = resumir(datos, 2, 6, 4);\n    std::cout << \"Rango:\" << informe.en_rango << \";Conteo:\";\n    std::cout << (informe.menores + informe.desde == informe.cantidad);\n\n    return 0;\n}\n",
           "answers": [
             "Rango:0;Conteo:1"
           ],
@@ -397,32 +394,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye frecuencias(const vector<int>& datos). Acepta hasta veinte datos entre cero y nueve, rechaza los demás argumentos con std::invalid_argument y devuelve un vector con diez conteos. Valida los datos antes de usarlos como índices.\n\nConstruye probar(datos) y conserva una copia original del vector. Si acepta, muestra Conteos: seguido de VALOR:CANTIDAD; por cada conteo no nulo, en orden creciente de valor. Añade Total:N;Conservado:B. N se obtiene sumando los diez conteos y B compara datos con su copia. Si rechaza, muestra Datos rechazados;Conservado:B. Termina cada prueba con un salto.\n\nEn main reúne {2,0,2,9}, el vector vacío, {0}, {9}, {3,3,3}, {-1}, {10} y veintiún ceros, en ese orden. Las cinco primeras pruebas deben mostrar totales 4, 0, 1, 1 y 3; las tres últimas se rechazan sin modificar los datos. El rótulo Conteos: permanece aunque no haya conteos no nulos.\n\nResuelve el puzzle siguiente y después pulsa Compilar, ejecutar y comprobar para comprobar toda la batería en un solo programa.",
+          "text": "Construye frecuencias(const vector<int>& datos). Acepta hasta veinte datos entre cero y nueve y devuelve un vector con diez conteos. Rechaza los demás argumentos con std::invalid_argument. Valida los datos antes de usarlos como índices.\n\nConstruye probar(datos) y conserva una copia del vector recibido. Para una muestra válida, muestra Conteos: y después VALOR:CANTIDAD; por cada conteo no nulo, en orden creciente de valor. Añade Total:N;Conservado:B. Obtén N sumando los diez conteos y B comparando los datos con su copia.\n\nSi la función rechaza la muestra, muestra Datos rechazados;Conservado:B. Conservado comprueba también en ese caso que los datos recibidos no hayan cambiado.\n\nEn main reúne estas ocho muestras, en el orden indicado. Debajo de cada entrada aparece su línea requerida:\n\n{2, 0, 2, 9}\nConteos:0:1;2:2;9:1;Total:4;Conservado:1\n\nVector vacío\nConteos:Total:0;Conservado:1\n\n{0}\nConteos:0:1;Total:1;Conservado:1\n\n{9}\nConteos:9:1;Total:1;Conservado:1\n\n{3, 3, 3}\nConteos:3:3;Total:3;Conservado:1\n\n{-1}\nDatos rechazados;Conservado:1\n\n{10}\nDatos rechazados;Conservado:1\n\nVeintiún ceros\nDatos rechazados;Conservado:1\n\nEl rótulo Conteos: permanece también para el vector vacío, aunque no haya conteos no nulos. Termina cada prueba con un salto de línea.\n\nResuelve el puzzle siguiente y después pulsa Compilar, ejecutar y comprobar. Calcula los conteos y el total a partir de los datos, sin modificar la muestra.",
           "emphasis": [
             {
               "text": "antes de usarlos como índices",
-              "style": "bold",
-              "occurrence": 1
-            },
-            {
-              "text": "diez conteos",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "en orden creciente de valor",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
-              "text": "sin modificar los datos",
-              "style": "bold",
-              "occurrence": 1
+              "text": "ocho muestras",
+              "style": "bold"
             },
             {
-              "text": "el puzzle siguiente",
-              "style": "bold",
-              "occurrence": 1
+              "text": "sin modificar la muestra",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -464,27 +456,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Integra preparar y frecuencias en este editor, con su propio programa y objetivo. Conserva los contratos que se han construido: validar el plan antes de generar, obtener la muestra desde su configuración y contar las observaciones válidas sin modificarlas.\n\nUsa Plan{313,20,0,9}, conserva una copia de la muestra y construye su histograma. Muestra Casillas:10 a partir del tamaño de la tabla, Total:20 sumando sus conteos y Conservado:1 comparando datos con su copia previa. Cada resultado ocupa una línea y termina con un salto. Pulsa Compilar, ejecutar y comprobar.\n\nNo se exige una frecuencia particular por valor. El algoritmo de la distribución puede variar entre bibliotecas (Köppe et al., 2023), mientras estas tres propiedades siguen siendo las que debe comprobar el programa.",
+          "text": "Integra preparar y frecuencias en este editor, con su propio programa y objetivo. Conserva los contratos estudiados: validar el plan antes de generar, obtener la muestra desde su configuración y contar las observaciones válidas sin modificarlas.\n\nUsa Plan{313, 20, 0, 9}, conserva una copia de la muestra y construye su histograma. Muestra estas tres líneas, todas con salto final:\n\nCasillas:10\nTotal:20\nConservado:1\n\nObtén Casillas del tamaño de la tabla, Total de la suma de sus conteos y Conservado de comparar los datos con su copia previa. Pulsa Compilar, ejecutar y comprobar.\n\nNo se exige una frecuencia particular por valor. El algoritmo de la distribución puede variar entre bibliotecas (Köppe et al., 2023), mientras estas tres propiedades siguen siendo las que debe comprobar el programa.",
           "emphasis": [
             {
               "text": "su propio programa y objetivo",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
-              "text": "a partir del tamaño de la tabla",
-              "style": "bold",
-              "occurrence": 1
+              "text": "tres líneas",
+              "style": "bold"
             },
             {
-              "text": "sumando sus conteos",
-              "style": "bold",
-              "occurrence": 1
+              "text": "tamaño de la tabla",
+              "style": "bold"
             },
             {
-              "text": "estas tres propiedades",
-              "style": "bold",
-              "occurrence": 1
+              "text": "suma de sus conteos",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -514,31 +506,27 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nint main() {\n    const std::vector<int> datos{2, 0, 2, 9};\n    const std::vector<int> original = datos;\n    try {\n        const std::vector<int> tabla = frecuencias(datos);\n        int total{0};\n        for (int i{0}; i < 10; ++i) {\n            total += tabla[i];\n            if (tabla[i] != 0) {\n                std::cout << i << ':' << tabla[i] << '\\n';\n            }\n        }\n        std::cout << \"Total:\" << total << '\\n';\n        std::cout << \"Conservado:\" << (datos == original);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Datos rechazados\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n\n    return tabla;\n}\n\nint main() {\n    const std::vector<int> datos{2, 0, 2, 9};\n    const std::vector<int> original = datos;\n\n    try {\n        const std::vector<int> tabla = frecuencias(datos);\n        int total{0};\n        for (int i{0}; i < 10; ++i) {\n            total += tabla[i];\n            if (tabla[i] != 0) {\n                std::cout << i << ':' << tabla[i] << '\\n';\n            }\n        }\n        std::cout << \"Total:\" << total << '\\n';\n        std::cout << \"Conservado:\" << (datos == original);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Datos rechazados\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo inicial utiliza sólo la muestra fija {2,0,2,9}. Presenta los conteos 0:1, 2:2 y 9:1, después Total:4 y Conservado:1, cada rótulo en su línea y sin salto final.\n\nLa referencia de la batería reúne los ocho casos del objetivo, con una línea por caso y su salto final. En {3,3,3}, las tres observaciones aumentan la casilla del valor tres hasta dejarla en tres. Los casos {0} y {9} comprueban los extremos válidos; {-1}, {10} y las veintiuna observaciones deben rechazarse.\n\nLa referencia de la transferencia añade después el plan de generación y sus tres propiedades. Cada referencia corresponde al editor que pidió construir ese programa.",
+          "text": "El ejemplo inicial utiliza sólo la muestra fija {2, 0, 2, 9} y muestra estas líneas, sin salto después de la última:\n\n0:1\n2:2\n9:1\nTotal:4\nConservado:1\n\nLa referencia de la batería reúne los ocho casos del objetivo, con una línea por caso y su salto final. En {3,3,3}, las tres observaciones aumentan la casilla del valor tres hasta dejarla en tres. Los casos {0} y {9} comprueban los extremos válidos; {-1}, {10} y las veintiuna observaciones deben rechazarse.\n\nLa referencia de la transferencia añade después el plan de generación y sus tres propiedades. Cada referencia corresponde al editor que pidió construir ese programa.",
           "emphasis": [
             {
               "text": "sólo la muestra fija",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "la batería",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "tres observaciones",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "al editor que pidió construir",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             }
           ]
         },
@@ -575,7 +563,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nvoid probar(const std::vector<int>& datos) {\n    const std::vector<int> original=datos;\n    try {\n        const std::vector<int> tabla=frecuencias(datos);\n        int total{0};\n        std::cout<<\"Conteos:\";\n        for(int i{0};i<10;++i) {\n            total+=tabla.at(i);\n            if(tabla.at(i)!=0) { std::cout<<i<<\":\"<<tabla.at(i)<<\";\"; }\n        }\n        std::cout<<\"Total:\"<<total<<\";Conservado:\"<<(datos==original)<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Datos rechazados;Conservado:\"<<(datos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({2,0,2,9});\n    probar({});\n    probar({0});\n    probar({9});\n    probar({3,3,3});\n    probar({-1});\n    probar({10});\n    probar({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n\n    return tabla;\n}\n\nvoid probar(const std::vector<int>& datos) {\n    const std::vector<int> original = datos;\n\n    try {\n        const std::vector<int> tabla = frecuencias(datos);\n        int total{0};\n        std::cout << \"Conteos:\";\n        for (int i{0}; i < 10; ++i) {\n            total += tabla.at(i);\n            if (tabla.at(i) != 0) {\n                std::cout << i << \":\" << tabla.at(i) << \";\";\n            }\n        }\n        std::cout << \"Total:\" << total << \";Conservado:\" << (datos == original) << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Datos rechazados;Conservado:\" << (datos == original) << \"\\n\";\n    }\n}\n\nint main() {\n    probar({2, 0, 2, 9});\n    probar({});\n    probar({0});\n    probar({9});\n    probar({3, 3, 3});\n    probar({-1});\n    probar({10});\n    probar({\n        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,\n        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,\n        0\n    });\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -584,7 +572,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nint main() {\n    const Plan plan{313,20,0,9};\n    const std::vector<int> datos=preparar(plan);\n    const std::vector<int> original=datos;\n    const std::vector<int> tabla=frecuencias(datos);\n    int total{0};\n    for(int conteo:tabla) { total+=conteo; }\n    std::cout<<\"Casillas:\"<<tabla.size()<<\"\\nTotal:\"<<total\n             <<\"\\nConservado:\"<<(datos==original)<<\"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n               int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n        || maximo < 0 || maximo > 9 || minimo > maximo\n        || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) {\n            ++menores;\n        } else {\n            ++desde;\n        }\n    }\n\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n\n    return tabla;\n}\n\nint main() {\n    const Plan plan{313, 20, 0, 9};\n    const std::vector<int> datos = preparar(plan);\n    const std::vector<int> original = datos;\n    const std::vector<int> tabla = frecuencias(datos);\n    int total{0};\n    for (int conteo : tabla) {\n        total += conteo;\n    }\n    std::cout << \"Casillas:\" << tabla.size() << \"\\nTotal:\" << total\n             << \"\\nConservado:\" << (datos == original) << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -654,32 +642,27 @@
         },
         {
           "type": "paragraph",
-          "text": "En este editor reconstruye Plan, preparar e Informe con resumir. Construye también continuar(std::mt19937& motor, int cantidad, int minimo, int maximo), que devuelve un vector<int> con la cantidad solicitada y utiliza el motor recibido sin reiniciarlo.\n\ncontinuar admite cantidad entre cero y veinte y ambos límites entre cero y nueve, con minimo <= maximo. Rechaza los argumentos inválidos con std::invalid_argument antes de generar datos.\n\nCon Plan{83,6,2,6}, compara dos llamadas a preparar y muestra Reinicio:B. Después prepara otro motor con semilla 83. Obtiene dos datos en 2..6, copia el motor desde ese punto y obtiene cuatro datos desde el motor y cuatro desde su copia. Muestra Continuacion:B comprobando el tamaño dos del primer lote, la igualdad de los vectores de continuación y la igualdad final de los motores.\n\nResume la muestra fija {0,2,4,7,9} con límites 2..7 y umbral cuatro. Muestra Fijo:cantidad:menores:desde:en_rango. Los datos fuera del intervalo hacen que en_rango sea false, pero siguen formando parte del conteo.\n\nTermina cada línea con un salto y pulsa Compilar, ejecutar y comprobar. Los resultados requeridos son Reinicio:1, Continuacion:1 y Fijo:5:2:3:0. Cada indicador debe calcularse desde los objetos correspondientes.",
+          "text": "En este editor reconstruye Plan, preparar e Informe con resumir. Construye también continuar(std::mt19937& motor, int cantidad, int minimo, int maximo). Debe devolver un vector<int> con la cantidad solicitada y utilizar el motor recibido sin reiniciarlo.\n\ncontinuar admite cantidad entre cero y veinte y ambos límites entre cero y nueve, con minimo <= maximo. Rechaza los argumentos inválidos con std::invalid_argument antes de generar datos.\n\nReinicio\nUsa Plan{83, 6, 2, 6} en dos llamadas a preparar. Compara los vectores completos y muestra Reinicio:1 si coinciden.\n\nContinuación\nPrepara otro motor con semilla 83.\nObtén dos datos en 2..6 y conserva ese primer lote.\nCopia el motor desde el punto que alcanzó después de esas obtenciones.\nObtén cuatro datos desde el motor original y cuatro desde su copia, con esos mismos límites.\nMuestra Continuacion:1 sólo si el primer lote tiene tamaño dos, los dos vectores de continuación coinciden y los motores finales comparan iguales.\n\nCaso fijo\nResume {0, 2, 4, 7, 9} con límites 2..7 y umbral cuatro. El resultado se presenta como Fijo:cantidad:menores:desde:en_rango. Los datos fuera del intervalo hacen que en_rango sea false, pero siguen formando parte de los conteos.\n\nLa consola debe mostrar estas líneas, todas con salto final:\n\nReinicio:1\nContinuacion:1\nFijo:5:2:3:0\n\nPulsa Compilar, ejecutar y comprobar. Cada indicador debe calcularse a partir de los objetos correspondientes.",
           "emphasis": [
             {
               "text": "sin reiniciarlo",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "antes de generar datos",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
-              "text": "desde ese punto",
-              "style": "bold",
-              "occurrence": 1
+              "text": "desde el punto que alcanzó",
+              "style": "bold"
             },
             {
-              "text": "siguen formando parte del conteo",
-              "style": "bold",
-              "occurrence": 1
+              "text": "siguen formando parte de los conteos",
+              "style": "bold"
             },
             {
-              "text": "desde los objetos correspondientes",
-              "style": "bold",
-              "occurrence": 1
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
@@ -704,18 +687,26 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia en este editor el Informe, resumir y continuar que acabas de construir, antes del cliente preparado. Conserva sus contratos. El cliente compara la continuación con un cálculo que llama directamente a la distribución, sin utilizar continuar para fabricar el resultado esperado.\n\nEl motor se crea con semilla 617 y recibe dos llamadas directas a motor(). Cada una pide un valor bruto al motor y deja alcanzado otro estado, aunque ese valor no se imprima. Desde allí se comprueban lotes de 3 datos en 1..8, de 4 en 2..6 y de 0 en 7..7, conservando el motor entre lotes. Antes de cada lote, testigo copia ese estado. Su distribución usa los mismos límites y realiza la cantidad solicitada de obtenciones. Se comparan el vector completo y el estado final, no un número supuesto de avances internos.\n\nPara resumir, la colección {8,2} usa límites 2..6 y umbral 4. El cliente añade el vacío válido y {0,9} con intervalo 0..9 y umbrales 0 y 9, para comprobar los dos extremos admitidos. Después prueba límites invertidos, umbrales -1 y 10, un mínimo negativo, un máximo mayor que 9 y 21 observaciones. Conserva todas las llamadas del cliente y los datos originales. Pulsa «Compilar, ejecutar y comprobar»; corrige tus funciones si alguna comprobación difiere.",
+          "text": "Copia en este editor Informe, resumir y continuar, antes del cliente preparado. Conserva sus contratos. El cliente calcula los lotes esperados llamando directamente a una distribución; no utiliza continuar para fabricar esos resultados.\n\nPrimero se crea un motor con semilla 617 y se realizan dos llamadas directas a motor(). Cada llamada pide un valor bruto al motor y avanza su estado, aunque el valor no se imprima. Desde el punto alcanzado se solicitan estos lotes, en este orden, conservando el motor entre ellos:\n\nTres datos en 1..8.\nCuatro datos en 2..6.\nCero datos en 7..7.\n\nAntes de cada lote, testigo copia el estado actual. Su distribución utiliza los mismos límites y realiza la cantidad solicitada de obtenciones. Se comparan el vector completo y los motores finales; no se supone cuántos avances internos necesita la distribución para cada dato.\n\nEl cliente también utiliza comprobar_resumen para llamar a resumir, mostrar los miembros del Informe o el rechazo y comprobar que los datos originales se conservan. Las llamadas son:\n\ncomprobar_resumen({8, 2}, 2, 6, 4)\ncomprobar_resumen({}, 2, 6, 4)\ncomprobar_resumen({0, 9}, 0, 9, 0)\ncomprobar_resumen({0, 9}, 0, 9, 9)\ncomprobar_resumen({}, 7, 2, 4)\ncomprobar_resumen({}, 2, 6, -1)\ncomprobar_resumen({}, 2, 6, 10)\ncomprobar_resumen({}, -1, 6, 4)\ncomprobar_resumen({}, 2, 10, 4)\ncomprobar_resumen(std::vector<int>(21, 4), 2, 6, 4)\n\nEn std::vector<int>(21, 4), los paréntesis reciben la cantidad y el valor inicial de cada elemento: se crea un vector de veintiún elementos con valor cuatro (Köppe et al., 2023). Ese caso debe rechazarse por superar el tamaño permitido para resumir.\n\nConserva todas las llamadas del cliente y los datos originales. Pulsa Compilar, ejecutar y comprobar; corrige tus funciones si alguna comprobación difiere de la salida indicada a continuación.",
           "emphasis": [
             {
-              "text": "llama directamente a la distribución",
+              "text": "llamando directamente a una distribución",
               "style": "bold"
             },
             {
-              "text": "el vector completo y el estado final",
+              "text": "conservando el motor entre ellos",
+              "style": "bold"
+            },
+            {
+              "text": "el vector completo y los motores finales",
               "style": "bold"
             },
             {
               "text": "Conserva todas las llamadas",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
               "style": "bold"
             }
           ]
@@ -726,7 +717,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui Informe, resumir y continuar, conservando sus contratos.\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                       int umbral) {\n    const std::vector<int> original = datos;\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui Informe, resumir y continuar, conservando sus contratos.\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                      int umbral) {\n    const std::vector<int> original = datos;\n\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -778,7 +769,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nint main() {\n    const Plan plan{83,6,2,6};\n    const std::vector<int> primera=preparar(plan);\n    const std::vector<int> reiniciada=preparar(plan);\n    std::cout<<\"Reinicio:\"<<(primera==reiniciada)<<\"\\n\";\n    std::mt19937 motor{83};\n    const std::vector<int> primer_lote=continuar(motor,2,2,6);\n    std::mt19937 copia=motor;\n    const std::vector<int> siguiente=continuar(motor,4,2,6);\n    const std::vector<int> reproducida=continuar(copia,4,2,6);\n    std::cout<<\"Continuacion:\"<<(primer_lote.size()==2 && siguiente==reproducida && motor==copia)<<\"\\n\";\n    const Informe fijo=resumir({0,2,4,7,9},2,7,4);\n    std::cout<<\"Fijo:\"<<fijo.cantidad<<\":\"<<fijo.menores<<\":\"<<fijo.desde<<\":\"<<fijo.en_rango<<\"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n               int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n        || maximo < 0 || maximo > 9 || minimo > maximo\n        || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) {\n            ++menores;\n        } else {\n            ++desde;\n        }\n    }\n\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < 0 || maximo > 9 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::vector<int> datos;\n    if (cantidad == 0) {\n        return datos;\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nint main() {\n    const Plan plan{83, 6, 2, 6};\n    const std::vector<int> primera = preparar(plan);\n    const std::vector<int> reiniciada = preparar(plan);\n    std::cout << \"Reinicio:\" << (primera == reiniciada) << \"\\n\";\n\n    std::mt19937 motor{83};\n    const std::vector<int> primer_lote = continuar(motor, 2, 2, 6);\n    std::mt19937 copia = motor;\n    const std::vector<int> siguiente = continuar(motor, 4, 2, 6);\n    const std::vector<int> reproducida = continuar(copia, 4, 2, 6);\n    std::cout << \"Continuacion:\"\n              << (primer_lote.size() == 2 && siguiente == reproducida && motor == copia) << \"\\n\";\n\n    const Informe fijo = resumir({0, 2, 4, 7, 9}, 2, 7, 4);\n    std::cout << \"Fijo:\" << fijo.cantidad << \":\" << fijo.menores << \":\" << fijo.desde << \":\"\n              << fijo.en_rango << \"\\n\";\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -791,7 +782,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                       int umbral) {\n    const std::vector<int> original = datos;\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n               int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n        || maximo < 0 || maximo > 9 || minimo > maximo\n        || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) {\n            ++menores;\n        } else {\n            ++desde;\n        }\n    }\n\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < 0 || maximo > 9 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n\n    std::vector<int> datos;\n    if (cantidad == 0) {\n        return datos;\n    }\n\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    return datos;\n}\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                      int umbral) {\n    const std::vector<int> original = datos;\n\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1990,6 +1981,252 @@
         "id": "block_0007_0002",
         "beforeSha256": "6c2b4d1feff9e6d834fccd9fecc4938c08afb231bff13aeea7af7ced01390f72",
         "afterSha256": "8cd435b5cc40bf71af6f8505ce2f559e3cad85381c06edf76671eb7c9fce4bbb"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "83f9d5319cd5648933bcff9e221a9129dedd787a5b9f716f4db68ecf0ff50bad",
+        "afterSha256": "39b3290ea012ea63d4d5b1c95599d464d8399b92079afb441f5c320628d7e121"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "0fa27b79c19d9488745989a3c73cc76c0b2c908b96b58e31ca9972577e882920",
+        "afterSha256": "c88e9b883b5442e04f137448c9c360f7ea8373f163226c95c2f3cc3b0f858c57"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1ae54b41be279f8c37c26a13208dbaace790793ead89a6015e7d59287d7597ee",
+        "afterSha256": "61ae4978d56eebe5a059ec8deaedc11e9e69457b20c677615f861d3af2417317"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "fac3ea050bd7f729e1042327e2bd73cf31e7e7bbcbd2fd5016f21e3e6278f4b1",
+        "afterSha256": "c563d727150aad9cd2898ab0a6ba4ff0f8fb67092b3b5d2e193c1f40cb6fc20e"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "185d5a81c1fbb3d3df9e920d4adce99325820bbca89b94140313fba86271f3c6",
+        "afterSha256": "cb16e32e882b2cbaaf1f15c071b927b413df7fc6ad57009c515f194353e7f924"
+      },
+      {
+        "id": "block_0003_0005",
+        "beforeSha256": "63052f35ffdc92f248decbbec06ecff07131130d6b0ebc93233b13faed0f72be",
+        "afterSha256": "e01e035e581bcd1bd24f2915e6fa1e82a9b337a88f2a4f6f257e4b4462567140"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "4ec42d4a4a0a06192ddc28be9bb4b36d672614597b9605d17dfae7e84ae5efa3",
+        "afterSha256": "cefee6a356e1c11b92d49b95ad0b6306507352bd30096843477fbff58a1cd2d0"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "4d11b73dac49079d0c7d8ad205ee4d9a702c67911c63526e854353e60dd54660",
+        "afterSha256": "1990dd0fb4a7c975223d7d504c781a4100ace8156fbd0b8e44e1630a51eb8100"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "f04a31458e1847b7993bf8a4a64b067f829c5bb62695b9bd485a09fa9afb6b0e",
+        "afterSha256": "cd945d8b04e34134bd64dab25f714df8a3d3cf2140d008a91942911fb2ef77c4"
+      },
+      {
+        "id": "block_0005_0006",
+        "beforeSha256": "b37259ab07ba158d50820cfa2d2adefe22db4c6efaf1a497b82f154095432e97",
+        "afterSha256": "f1cffe15e7b1d020ee38534cdd8670bfda943ec6ea103f108eb34c03288c87f0"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "f3ea315b185c05bca82e98b36e2acf45d633072590592168cb58865398d0efe7",
+        "afterSha256": "d08b5b7cf5d89a9723d2c16569a975ef9b052dbab600155464c4c974fc3be16b"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "86ff4b199305c996c9f0f832b42528d11231a670bbfe782280b4c7773860d692",
+        "afterSha256": "ddd748cd098ebf4e45d6cc22fc5ba87774f774def2f2c9a875dc4e1c9820f0c2"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "bba987f940ae325403a34089d73cb3524b15dd0697f3b6410cba5a9f98b3c119",
+        "afterSha256": "e42f0d531170e957fedd4ee8dfd615598ed6cc9c711c22012520a870beae4034"
+      },
+      {
+        "id": "block_0006_0007",
+        "beforeSha256": "9572a450c6dad7ac01ed9e931956724ef8921f7293a6a85db675fe44d13775f5",
+        "afterSha256": "3dd1e55ba83ac88ba0e26a2fce658e14604fe0d0f2b55f75ae156388a2a9f7ec"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "04cd7d7ddbe62f47c53bdabcfb22dfa924a5958e2f643fe7ec17017b79a740ac",
+        "afterSha256": "b73cdd680d4cffcc9d64ed4cc09d626c020f2cd6bf494a1289ba146147fa5c3e"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_consigna",
+        "beforeSha256": "f42226a234573a1146213e7fe2830123ce869f72b4714784f53554b70dec5c59",
+        "afterSha256": "59408f63cdae643bf73088dd4b71ff31244576670135981f0aa9b97f951eb1b9"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_comprobacion",
+        "beforeSha256": "299e7cb22df8a6a899a5e7d16421398ff9470aaae1c8facd23265cad813f09c6",
+        "afterSha256": "311cad5fc6b6691dfae98e7368467faaac2004b2ca37be99b26e932a37b17e6f"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "3b029e9824c333853e1029282f6d6c1d2b697fb76c45fc0a10c9ba24ed7129d5",
+        "afterSha256": "d82c412308d5920a8e450dc88100b8137c01aa33c6b56206c68e5f7bdb923f4a"
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_referencia_programa",
+        "beforeSha256": "39f49aac7fda3502c88fa990ef8f0c3a0c00a49488264c9a74cecf20b8c017c1",
+        "afterSha256": "697fd2ca9808396677a4dc68199093512a7595d37b3d738416f81ac7d6549ca7"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0001_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan vacio{0, 0, 2, 7};\n    const Plan invertido{0, 0, 7, 2};\n    std::cout << plan_valido(vacio) << ':' << plan_valido(invertido);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan uno{317, 1, 9, 9};\n    const Plan otro{1001, 1, 0, 9};\n    std::cout << plan_valido(uno) << ':' << plan_valido(otro);\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "En uno, la semilla 317 y la cantidad 1 están dentro de sus dominios; los límites 9 y 9 también son válidos y cumplen minimo <= maximo. Por eso plan_valido(uno) devuelve true. En otro, la semilla 1001 supera el máximo 1000, aunque sus demás miembros sean válidos: la segunda llamada devuelve false. La consola representa esos resultados como 1:0. Este programa comprueba los planes; todavía no construye un motor ni genera una muestra."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{271, 12, 1, 7};\n    try {\n        const std::vector<int> primera = preparar(plan);\n        const std::vector<int> segunda = preparar(plan);\n        const Informe informe = resumir(primera, plan.minimo, plan.maximo, 4);\n        std::cout << \"Cantidad:\" << informe.cantidad << '\\n';\n        std::cout << \"Rango:\" << informe.en_rango << '\\n';\n        std::cout << \"Conteo:\" << (informe.menores + informe.desde == informe.cantidad) << '\\n';\n        std::cout << \"Repeticion:\" << (primera == segunda);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nvoid probar(const Plan& plan) {\n    try {\n        const std::vector<int> primera=preparar(plan);\n        const std::vector<int> segunda=preparar(plan);\n        const Informe informe=resumir(primera,plan.minimo,plan.maximo,4);\n        std::cout<<\"Cantidad:\"<<informe.cantidad<<\";Rango:\"<<informe.en_rango\n                 <<\";Conteo:\"<<(informe.menores+informe.desde==informe.cantidad)\n                 <<\";Repeticion:\"<<(primera==segunda)<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada\\n\";\n    }\n}\n\nint main() {\n    probar({271,12,1,7});\n    probar({0,0,2,7});\n    probar({317,1,9,9});\n    probar({1000,6,4,4});\n    probar({-1,3,0,9});\n    probar({1001,3,0,9});\n    probar({271,-1,0,9});\n    probar({271,21,0,9});\n    probar({271,3,-1,9});\n    probar({271,3,0,10});\n    probar({271,0,7,2});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{353, 6, 4, 4};\n    const std::vector<int> datos = preparar(plan);\n    const Informe informe = resumir(datos, 4, 4, 4);\n    std::cout << informe.cantidad << ':' << informe.menores << ':';\n    std::cout << informe.desde << ':' << informe.en_rango;\n    return 0;\n}\n",
+          "answers": [
+            "6:0:6:1"
+          ],
+          "explanation": "El plan solicita 6 datos en el intervalo 4..4, cuyo único valor posible es 4. Al resumir, cada dato está dentro del intervalo, pero ninguno cumple dato < umbral porque el umbral también es 4. Las seis observaciones aumentan desde, que incluye la igualdad. El informe contiene cantidad 6, menores 0, desde 6 y rango verdadero: la salida es 6:0:6:1."
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const std::vector<int> datos{2, 8};\n    const Informe informe = resumir(datos, 2, 6, 4);\n    std::cout << \"Rango:\" << informe.en_rango << \";Conteo:\";\n    std::cout << (informe.menores + informe.desde == informe.cantidad);\n    return 0;\n}\n",
+          "answers": [
+            "Rango:0;Conteo:1"
+          ],
+          "explanation": "El dato 2 pertenece al intervalo 2..6 y es menor que el umbral 4. El dato 8 está fuera del intervalo y no es menor que el umbral. Ambos se cuentan: uno en menores y otro en desde, de modo que menores + desde == cantidad resulta verdadero. El informe de rango es falso por el 8 y la salida queda Rango:0;Conteo:1. Clasificar todas las observaciones no demuestra que todas estén dentro del intervalo."
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nint main() {\n    const std::vector<int> datos{2, 0, 2, 9};\n    const std::vector<int> original = datos;\n    try {\n        const std::vector<int> tabla = frecuencias(datos);\n        int total{0};\n        for (int i{0}; i < 10; ++i) {\n            total += tabla[i];\n            if (tabla[i] != 0) {\n                std::cout << i << ':' << tabla[i] << '\\n';\n            }\n        }\n        std::cout << \"Total:\" << total << '\\n';\n        std::cout << \"Conservado:\" << (datos == original);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Datos rechazados\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nvoid probar(const std::vector<int>& datos) {\n    const std::vector<int> original=datos;\n    try {\n        const std::vector<int> tabla=frecuencias(datos);\n        int total{0};\n        std::cout<<\"Conteos:\";\n        for(int i{0};i<10;++i) {\n            total+=tabla.at(i);\n            if(tabla.at(i)!=0) { std::cout<<i<<\":\"<<tabla.at(i)<<\";\"; }\n        }\n        std::cout<<\"Total:\"<<total<<\";Conservado:\"<<(datos==original)<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Datos rechazados;Conservado:\"<<(datos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({2,0,2,9});\n    probar({});\n    probar({0});\n    probar({9});\n    probar({3,3,3});\n    probar({-1});\n    probar({10});\n    probar({0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Demasiados datos\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Dato fuera de rango\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nint main() {\n    const Plan plan{313,20,0,9};\n    const std::vector<int> datos=preparar(plan);\n    const std::vector<int> original=datos;\n    const std::vector<int> tabla=frecuencias(datos);\n    int total{0};\n    for(int conteo:tabla) { total+=conteo; }\n    std::cout<<\"Casillas:\"<<tabla.size()<<\"\\nTotal:\"<<total\n             <<\"\\nConservado:\"<<(datos==original)<<\"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui Informe, resumir y continuar, conservando sus contratos.\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                       int umbral) {\n    const std::vector<int> original = datos;\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El cliente obtiene el lote esperado desde una copia del punto alcanzado y contrasta también el estado final del motor. En {8,2}, el 8 deja el rango falso y el 2 posterior no puede restaurarlo; ambos datos se clasifican. El vacío válido produce 0:0:0:1. Con {0,9}, el umbral 0 deja ambos datos en desde y el umbral 9 deja uno en cada categoría. Los argumentos de resumen inválidos se rechazan antes del recorrido.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:0\nLote:1;Motor:0\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                    ],
+                    "text": "Los valores coinciden, pero Motor:0 muestra que el motor recibido no alcanzó el estado del testigo. Revisa si continuar consume una copia local o recibe el motor por valor. El cliente necesita continuar el objeto recibido por referencia."
+                  },
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                    ],
+                    "text": "Para {8,2} con intervalo 2..6, el primer dato ya está fuera del rango. El 2 posterior no anula ese fallo. Revisa si estás sustituyendo en_rango por el resultado del último dato en vez de conservar cualquier incumplimiento anterior."
+                  },
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:0:0:0:1;Original:1\nResumen:21:0:21:1;Original:1\n"
+                    ],
+                    "text": "Los seis resúmenes inválidos están siendo aceptados. Antes de recorrer, comprueba tamaño máximo, dominio de ambos límites, su orden y dominio del umbral. Una colección vacía no elimina esas condiciones."
+                  },
+                  {
+                    "outputs": [
+                      "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen:0:0:0:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\n"
+                    ],
+                    "text": "El umbral 10 supera el máximo admitido 9, aunque el vector esté vacío. Revisa que la validación compruebe ambos extremos del dominio del umbral. Los casos con umbrales 0 y 9 deben seguir aceptándose."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nint main() {\n    const Plan plan{83,6,2,6};\n    const std::vector<int> primera=preparar(plan);\n    const std::vector<int> reiniciada=preparar(plan);\n    std::cout<<\"Reinicio:\"<<(primera==reiniciada)<<\"\\n\";\n    std::mt19937 motor{83};\n    const std::vector<int> primer_lote=continuar(motor,2,2,6);\n    std::mt19937 copia=motor;\n    const std::vector<int> siguiente=continuar(motor,4,2,6);\n    const std::vector<int> reproducida=continuar(copia,4,2,6);\n    std::cout<<\"Continuacion:\"<<(primer_lote.size()==2 && siguiente==reproducida && motor==copia)<<\"\\n\";\n    const Informe fijo=resumir({0,2,4,7,9},2,7,4);\n    std::cout<<\"Fijo:\"<<fijo.cantidad<<\":\"<<fijo.menores<<\":\"<<fijo.desde<<\":\"<<fijo.en_rango<<\"\\n\";\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u10_experimento_testigo_y_resumen_referencia_programa",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Plan invalido\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Resumen invalido\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nstd::vector<int> continuar(std::mt19937& motor,int cantidad,int minimo,int maximo) {\n    if(cantidad<0 || cantidad>20 || minimo<0 || maximo>9 || minimo>maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::vector<int> datos;\n    if(cantidad==0) { return datos; }\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    for(int i{0};i<cantidad;++i) { datos.push_back(elegir(motor)); }\n    return datos;\n}\n\nvoid comprobar_lote(std::mt19937& motor, int cantidad, int minimo, int maximo) {\n    std::mt19937 testigo = motor;\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> esperados;\n    for (int i = 0; i < cantidad; ++i) {\n        esperados.push_back(elegir(testigo));\n    }\n    const std::vector<int> obtenidos = continuar(motor, cantidad, minimo, maximo);\n    std::cout << \"Lote:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo) << '\\n';\n}\n\nvoid comprobar_resumen(const std::vector<int>& datos, int minimo, int maximo,\n                       int umbral) {\n    const std::vector<int> original = datos;\n    try {\n        const Informe informe = resumir(datos, minimo, maximo, umbral);\n        std::cout << \"Resumen:\" << informe.cantidad << ':' << informe.menores\n                  << ':' << informe.desde << ':' << informe.en_rango;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Resumen rechazado\";\n    }\n    std::cout << \";Original:\" << (datos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{617};\n    motor();\n    motor();\n    comprobar_lote(motor, 3, 1, 8);\n    comprobar_lote(motor, 4, 2, 6);\n    comprobar_lote(motor, 0, 7, 7);\n    comprobar_resumen({8, 2}, 2, 6, 4);\n    comprobar_resumen({}, 2, 6, 4);\n    comprobar_resumen({0, 9}, 0, 9, 0);\n    comprobar_resumen({0, 9}, 0, 9, 9);\n    comprobar_resumen({}, 7, 2, 4);\n    comprobar_resumen({}, 2, 6, -1);\n    comprobar_resumen({}, 2, 6, 10);\n    comprobar_resumen({}, -1, 6, 4);\n    comprobar_resumen({}, 2, 10, 4);\n    comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2096,6 +2333,13 @@
             "text": "Plan",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 247,
+            "end": 253,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2181,6 +2425,13 @@
         "path": "/question",
         "sourceSha256": "0453a39d54ebb6cd1ba1530f4fe308ad53b68f2fc1321bb0f0584cd21a40dd5e",
         "spans": [
+          {
+            "start": 7,
+            "end": 10,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 19,
             "end": 27,
@@ -2468,6 +2719,20 @@
             "reading": "technical"
           },
           {
+            "start": 172,
+            "end": 175,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 197,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 246,
             "end": 254,
             "text": "en_rango",
@@ -2649,6 +2914,13 @@
             "reading": "technical"
           },
           {
+            "start": 59,
+            "end": 62,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 102,
             "end": 110,
             "text": "preparar",
@@ -2712,6 +2984,13 @@
             "reading": "natural"
           },
           {
+            "start": 372,
+            "end": 375,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 425,
             "end": 430,
             "text": "catch",
@@ -2737,7 +3016,7 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "74764b80e6121ef9430527a0dcb1a91cabdbfe941a49bf6ec3a5cfa4138a883a",
+        "sourceSha256": "64554209b4d31067bc2bbfa79195d5ce904f85a846d5dcd45072012da4f20912",
         "spans": [
           {
             "start": 3,
@@ -2747,92 +3026,218 @@
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 80,
-            "text": "Plan{271,12,1,7}",
+            "start": 71,
+            "end": 77,
+            "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 91,
-            "text": "{0,0,2,7}",
-            "role": "data",
-            "reading": "natural"
+            "start": 114,
+            "end": 133,
+            "text": "Plan{271, 12, 1, 7}",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 93,
-            "end": 104,
-            "text": "{317,1,9,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 106,
-            "end": 118,
-            "text": "{1000,6,4,4}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 120,
-            "end": 130,
-            "text": "{-1,3,0,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 132,
-            "end": 144,
-            "text": "{1001,3,0,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 146,
-            "end": 158,
-            "text": "{271,-1,0,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 160,
-            "end": 172,
-            "text": "{271,21,0,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 174,
-            "end": 186,
-            "text": "{271,3,-1,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 188,
-            "end": 200,
-            "text": "{271,3,0,10}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 203,
-            "end": 214,
-            "text": "{271,0,7,2}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 303,
-            "end": 315,
-            "text": "12, 0, 1 y 6",
+            "start": 134,
+            "end": 175,
+            "text": "Cantidad:12;Rango:1;Conteo:1;Repeticion:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 431,
-            "end": 435,
+            "start": 177,
+            "end": 193,
+            "text": "Plan{0, 0, 2, 7}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 194,
+            "end": 234,
+            "text": "Cantidad:0;Rango:1;Conteo:1;Repeticion:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 254,
+            "text": "Plan{317, 1, 9, 9}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 255,
+            "end": 295,
+            "text": "Cantidad:1;Rango:1;Conteo:1;Repeticion:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 316,
+            "text": "Plan{1000, 6, 4, 4}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 317,
+            "end": 357,
+            "text": "Cantidad:6;Rango:1;Conteo:1;Repeticion:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 376,
+            "text": "Plan{-1, 3, 0, 9}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 377,
+            "end": 400,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 421,
+            "text": "Plan{1001, 3, 0, 9}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 422,
+            "end": 445,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 447,
+            "end": 466,
+            "text": "Plan{271, -1, 0, 9}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 467,
+            "end": 490,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 492,
+            "end": 511,
+            "text": "Plan{271, 21, 0, 9}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 512,
+            "end": 535,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 537,
+            "end": 556,
+            "text": "Plan{271, 3, -1, 9}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 557,
+            "end": 580,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 582,
+            "end": 601,
+            "text": "Plan{271, 3, 0, 10}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 602,
+            "end": 625,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 627,
+            "end": 645,
+            "text": "Plan{271, 0, 7, 2}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 646,
+            "end": 669,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 675,
+            "end": 681,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 739,
+            "end": 743,
+            "text": "doce",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 745,
+            "end": 749,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 751,
+            "end": 754,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 757,
+            "end": 761,
+            "text": "seis",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 769,
+            "end": 773,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 823,
+            "end": 828,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 900,
+            "end": 904,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -2854,41 +3259,69 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "bc049a344fba540d6d8db184a5242061a01c73dd5a84bc7702cf25cb62624a71",
+        "sourceSha256": "91147c4781846cbaa2d08c96670d33679d7dfd8021988d2394f7e58250fb053c",
         "spans": [
           {
-            "start": 58,
-            "end": 74,
-            "text": "Plan{271,12,1,7}",
+            "start": 32,
+            "end": 51,
+            "text": "Plan{271, 12, 1, 7}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 85,
-            "end": 96,
+            "start": 109,
+            "end": 120,
             "text": "Cantidad:12",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 98,
-            "end": 105,
+            "start": 121,
+            "end": 128,
             "text": "Rango:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 107,
-            "end": 115,
+            "start": 129,
+            "end": 137,
             "text": "Conteo:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 118,
-            "end": 130,
+            "start": 138,
+            "end": 150,
             "text": "Repeticion:1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 199,
+            "text": "once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 299,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 547,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2983,6 +3416,13 @@
             "start": 189,
             "end": 190,
             "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 200,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },
@@ -3146,6 +3586,13 @@
             "reading": "natural"
           },
           {
+            "start": 74,
+            "end": 77,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 112,
             "end": 122,
             "text": "Repeticion",
@@ -3163,6 +3610,13 @@
             "start": 312,
             "end": 316,
             "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 323,
+            "end": 327,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           }
@@ -3293,6 +3747,13 @@
             "reading": "technical"
           },
           {
+            "start": 403,
+            "end": 405,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 429,
             "end": 433,
             "text": "diez",
@@ -3332,7 +3793,7 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "920077a1bc5f378e3d41cbf3e9d4143625f405589af108149d75627a36b97447",
+        "sourceSha256": "dbbde8f99a101424616736a0cc897c337a12866c7a5d77b67e78c3ea495bec01",
         "spans": [
           {
             "start": 10,
@@ -3363,18 +3824,18 @@
             "reading": "natural"
           },
           {
-            "start": 128,
-            "end": 149,
-            "text": "std::invalid_argument",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 175,
-            "end": 179,
+            "start": 119,
+            "end": 123,
             "text": "diez",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 166,
+            "end": 187,
+            "text": "std::invalid_argument",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 248,
@@ -3384,127 +3845,183 @@
             "reading": "technical"
           },
           {
-            "start": 323,
-            "end": 331,
+            "start": 337,
+            "end": 345,
             "text": "Conteos:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 343,
-            "end": 358,
+            "start": 356,
+            "end": 371,
             "text": "VALOR:CANTIDAD;",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 419,
-            "end": 439,
+            "start": 432,
+            "end": 452,
             "text": "Total:N;Conservado:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 441,
-            "end": 442,
+            "start": 460,
+            "end": 461,
             "text": "N",
             "role": "output",
-            "reading": "natural"
+            "reading": "characters"
           },
           {
-            "start": 466,
-            "end": 470,
+            "start": 474,
+            "end": 478,
             "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 481,
-            "end": 482,
-            "text": "B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 491,
-            "end": 496,
-            "text": "datos",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 489,
+            "end": 490,
+            "text": "B",
+            "role": "output",
+            "reading": "characters"
           },
           {
-            "start": 531,
-            "end": 560,
+            "start": 569,
+            "end": 598,
             "text": "Datos rechazados;Conservado:B",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 600,
-            "end": 604,
+            "end": 610,
+            "text": "Conservado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 688,
+            "end": 692,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 611,
-            "end": 620,
-            "text": "{2,0,2,9}",
+            "start": 705,
+            "end": 709,
+            "text": "ocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 639,
-            "end": 642,
+            "start": 794,
+            "end": 806,
+            "text": "{2, 0, 2, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 807,
+            "end": 847,
+            "text": "Conteos:0:1;2:2;9:1;Total:4;Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 862,
+            "end": 890,
+            "text": "Conteos:Total:0;Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 892,
+            "end": 895,
             "text": "{0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 644,
-            "end": 647,
+            "start": 896,
+            "end": 928,
+            "text": "Conteos:0:1;Total:1;Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 930,
+            "end": 933,
             "text": "{9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 649,
-            "end": 656,
-            "text": "{3,3,3}",
+            "start": 934,
+            "end": 966,
+            "text": "Conteos:9:1;Total:1;Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 968,
+            "end": 977,
+            "text": "{3, 3, 3}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 658,
-            "end": 662,
+            "start": 978,
+            "end": 1010,
+            "text": "Conteos:3:3;Total:3;Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1012,
+            "end": 1016,
             "text": "{-1}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 664,
-            "end": 668,
+            "start": 1017,
+            "end": 1046,
+            "text": "Datos rechazados;Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1048,
+            "end": 1052,
             "text": "{10}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 671,
-            "end": 685,
-            "text": "veintiún ceros",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 750,
-            "end": 764,
-            "text": "4, 0, 1, 1 y 3",
+            "start": 1053,
+            "end": 1082,
+            "text": "Datos rechazados;Conservado:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 830,
-            "end": 838,
+            "start": 1084,
+            "end": 1098,
+            "text": "Veintiún ceros",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1099,
+            "end": 1128,
+            "text": "Datos rechazados;Conservado:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1140,
+            "end": 1148,
             "text": "Conteos:",
             "role": "output",
             "reading": "natural"
@@ -3648,6 +4165,13 @@
             "text": "0..9",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -3727,7 +4251,7 @@
       {
         "block": "block_0005_0006",
         "path": "/text",
-        "sourceSha256": "582d581f2223b74ed53e7b176a1af9305cd842b6d6748159b4a6bb70dfd0baa8",
+        "sourceSha256": "ac410c829fa88841a925ae101da154ff3f6279138497483c8f2efcae55ed2caf",
         "spans": [
           {
             "start": 8,
@@ -3744,45 +4268,73 @@
             "reading": "technical"
           },
           {
-            "start": 262,
-            "end": 278,
-            "text": "Plan{313,20,0,9}",
+            "start": 251,
+            "end": 270,
+            "text": "Plan{313, 20, 0, 9}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 348,
-            "end": 359,
+            "start": 346,
+            "end": 350,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 394,
             "text": "Casillas:10",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 393,
-            "end": 401,
+            "start": 395,
+            "end": 403,
             "text": "Total:20",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 424,
-            "end": 436,
+            "start": 404,
+            "end": 416,
             "text": "Conservado:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 448,
-            "end": 453,
-            "text": "datos",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 424,
+            "end": 432,
+            "text": "Casillas",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 681,
-            "end": 701,
+            "start": 457,
+            "end": 462,
+            "text": "Total",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 491,
+            "end": 501,
+            "text": "Conservado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 696,
+            "end": 716,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 733,
+            "end": 737,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -3817,110 +4369,124 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "5105f9b78ed8aeb9d95fba636f7238baf7b3f4d11411eb1df82b7ea5ed03d2c3",
+        "sourceSha256": "7729d0aa46e660e2d70fbacdccd08a5179e3c11f0d3dc387581ad6df715b707b",
         "spans": [
           {
             "start": 48,
-            "end": 57,
-            "text": "{2,0,2,9}",
+            "end": 60,
+            "text": "{2, 0, 2, 9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 80,
-            "end": 83,
+            "start": 118,
+            "end": 121,
             "text": "0:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 85,
-            "end": 88,
+            "start": 122,
+            "end": 125,
             "text": "2:2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 91,
-            "end": 94,
+            "start": 126,
+            "end": 129,
             "text": "9:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 104,
-            "end": 111,
+            "start": 130,
+            "end": 137,
             "text": "Total:4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 126,
+            "start": 138,
+            "end": 150,
             "text": "Conservado:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 279,
-            "end": 286,
+            "start": 190,
+            "end": 194,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 259,
+            "end": 266,
             "text": "{3,3,3}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 292,
-            "end": 296,
+            "start": 272,
+            "end": 276,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 341,
-            "end": 345,
+            "start": 321,
+            "end": 325,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 363,
-            "end": 367,
+            "start": 343,
+            "end": 347,
             "text": "tres",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 379,
-            "end": 382,
+            "start": 359,
+            "end": 362,
             "text": "{0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 385,
-            "end": 388,
+            "start": 365,
+            "end": 368,
             "text": "{9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 422,
-            "end": 426,
+            "start": 402,
+            "end": 406,
             "text": "{-1}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 428,
-            "end": 432,
+            "start": 408,
+            "end": 412,
             "text": "{10}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 439,
-            "end": 448,
+            "start": 419,
+            "end": 428,
             "text": "veintiuna",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 542,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           }
@@ -4146,6 +4712,13 @@
             "text": "8",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 388,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -4213,6 +4786,13 @@
             "reading": "natural"
           },
           {
+            "start": 350,
+            "end": 353,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 419,
             "end": 439,
             "text": "(Köppe et al., 2023)",
@@ -4225,12 +4805,20 @@
         "block": "block_0007_0004",
         "path": "/text",
         "sourceSha256": "7f6f883eb2132a541ffd6bd8c437e1c5ddb930369e771a6d9113e623ad63d69e",
-        "spans": []
+        "spans": [
+          {
+            "start": 29,
+            "end": 33,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "48435375f8e6737e157ac2e755f75bbebcf9ecd93979d8e8c6abb39d7b76842e",
+        "sourceSha256": "2a9c72cda06453e4c384ddac3b5e7f4efc654cc65c976713c9378c9ca2a319b3",
         "spans": [
           {
             "start": 27,
@@ -4268,190 +4856,204 @@
             "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 180,
+            "start": 170,
+            "end": 181,
             "text": "vector<int>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 254,
-            "end": 263,
+            "start": 256,
+            "end": 265,
             "text": "continuar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 286,
-            "end": 290,
+            "start": 288,
+            "end": 292,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 293,
-            "end": 299,
+            "start": 295,
+            "end": 301,
             "text": "veinte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 322,
-            "end": 326,
+            "start": 324,
+            "end": 328,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 329,
-            "end": 334,
+            "start": 331,
+            "end": 336,
             "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 340,
-            "end": 356,
+            "start": 342,
+            "end": 358,
             "text": "minimo <= maximo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 395,
-            "end": 416,
+            "start": 397,
+            "end": 418,
             "text": "std::invalid_argument",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 446,
-            "end": 460,
-            "text": "Plan{83,6,2,6}",
+            "start": 457,
+            "end": 474,
+            "text": "Plan{83, 6, 2, 6}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 485,
-            "end": 493,
+            "start": 478,
+            "end": 481,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 493,
+            "end": 501,
             "text": "preparar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 504,
-            "end": 514,
-            "text": "Reinicio:B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 555,
-            "end": 557,
-            "text": "83",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 567,
-            "end": 570,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 580,
-            "end": 584,
-            "text": "2..6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 627,
-            "end": 633,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 657,
-            "end": 663,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 688,
-            "end": 702,
-            "text": "Continuacion:B",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 725,
-            "end": 728,
-            "text": "dos",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 850,
-            "end": 861,
-            "text": "{0,2,4,7,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 874,
-            "end": 878,
-            "text": "2..7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 888,
-            "end": 894,
-            "text": "cuatro",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 904,
-            "end": 940,
-            "text": "Fijo:cantidad:menores:desde:en_rango",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 982,
-            "end": 990,
-            "text": "en_rango",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 995,
-            "end": 1000,
-            "text": "false",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 1144,
-            "end": 1154,
+            "start": 544,
+            "end": 554,
             "text": "Reinicio:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1156,
-            "end": 1170,
+            "start": 614,
+            "end": 616,
+            "text": "83",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 624,
+            "end": 627,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 637,
+            "end": 641,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 747,
+            "end": 753,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 786,
+            "end": 792,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 842,
+            "end": 856,
             "text": "Continuacion:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 1173,
-            "end": 1185,
+            "start": 893,
+            "end": 896,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 902,
+            "end": 905,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 999,
+            "end": 1014,
+            "text": "{0, 2, 4, 7, 9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1027,
+            "end": 1031,
+            "text": "2..7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1041,
+            "end": 1047,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1079,
+            "end": 1115,
+            "text": "Fijo:cantidad:menores:desde:en_rango",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1157,
+            "end": 1165,
+            "text": "en_rango",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1170,
+            "end": 1175,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1283,
+            "end": 1293,
+            "text": "Reinicio:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1294,
+            "end": 1308,
+            "text": "Continuacion:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1309,
+            "end": 1321,
             "text": "Fijo:5:2:3:0",
             "role": "output",
             "reading": "natural"
@@ -4501,12 +5103,6 @@
         ]
       },
       {
-        "block": "block_0008_0000",
-        "path": "/text",
-        "sourceSha256": "dd13fe3df9a2165af006ca0063e5206f8ee7d8b2750931738751a4c15293b2f8",
-        "spans": []
-      },
-      {
         "block": "u10_experimento_testigo_y_resumen_titulo",
         "path": "/text",
         "sourceSha256": "55bb337070852ea14e82e2206ca11b2c044fbd9de79a3fb51f280928e6758189",
@@ -4515,182 +5111,231 @@
       {
         "block": "u10_experimento_testigo_y_resumen_consigna",
         "path": "/text",
-        "sourceSha256": "0553b9656fb5dac5af0d0e40f3b449b09f04a4836f226efe262d38684b81f104",
+        "sourceSha256": "c4f220e72ef013ad6f9c76de0535d3c3574bc1a733333a9bb93c36a20b8abe1f",
         "spans": [
           {
-            "start": 24,
-            "end": 31,
+            "start": 21,
+            "end": 28,
             "text": "Informe",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 33,
-            "end": 40,
+            "start": 30,
+            "end": 37,
             "text": "resumir",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 43,
-            "end": 52,
+            "start": 40,
+            "end": 49,
             "text": "continuar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 236,
-            "end": 245,
+            "start": 196,
+            "end": 205,
             "text": "continuar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 313,
-            "end": 316,
+            "start": 275,
+            "end": 278,
             "text": "617",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 350,
-            "end": 357,
+            "start": 293,
+            "end": 296,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 317,
+            "end": 324,
             "text": "motor()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 493,
-            "end": 494,
-            "text": "3",
+            "start": 520,
+            "end": 524,
+            "text": "Tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 504,
-            "end": 508,
+            "start": 534,
+            "end": 538,
             "text": "1..8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 513,
-            "end": 514,
-            "text": "4",
+            "start": 540,
+            "end": 546,
+            "text": "Cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 518,
-            "end": 522,
+            "start": 556,
+            "end": 560,
             "text": "2..6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 528,
-            "end": 529,
-            "text": "0",
+            "start": 562,
+            "end": 566,
+            "text": "Cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 533,
-            "end": 537,
+            "start": 576,
+            "end": 580,
             "text": "7..7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 593,
-            "end": 600,
+            "start": 603,
+            "end": 610,
             "text": "testigo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 806,
-            "end": 813,
+            "start": 888,
+            "end": 905,
+            "text": "comprobar_resumen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 920,
+            "end": 927,
             "text": "resumir",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 828,
-            "end": 833,
-            "text": "{8,2}",
+            "start": 954,
+            "end": 961,
+            "text": "Informe",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1045,
+            "end": 1079,
+            "text": "comprobar_resumen({8, 2}, 2, 6, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1080,
+            "end": 1110,
+            "text": "comprobar_resumen({}, 2, 6, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1111,
+            "end": 1145,
+            "text": "comprobar_resumen({0, 9}, 0, 9, 0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1146,
+            "end": 1180,
+            "text": "comprobar_resumen({0, 9}, 0, 9, 9)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1181,
+            "end": 1211,
+            "text": "comprobar_resumen({}, 7, 2, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1212,
+            "end": 1243,
+            "text": "comprobar_resumen({}, 2, 6, -1)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1244,
+            "end": 1275,
+            "text": "comprobar_resumen({}, 2, 6, 10)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1276,
+            "end": 1307,
+            "text": "comprobar_resumen({}, -1, 6, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1308,
+            "end": 1339,
+            "text": "comprobar_resumen({}, 2, 10, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1340,
+            "end": 1391,
+            "text": "comprobar_resumen(std::vector<int>(21, 4), 2, 6, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1396,
+            "end": 1419,
+            "text": "std::vector<int>(21, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1514,
+            "end": 1522,
+            "text": "veintiún",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 846,
-            "end": 850,
-            "text": "2..6",
+            "start": 1543,
+            "end": 1549,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 860,
-            "end": 861,
-            "text": "4",
-            "role": "data",
+            "start": 1550,
+            "end": 1570,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 898,
-            "end": 903,
-            "text": "{0,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 918,
-            "end": 922,
-            "text": "0..9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 934,
-            "end": 935,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 938,
-            "end": 939,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1028,
-            "end": 1030,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1033,
-            "end": 1035,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1077,
-            "end": 1078,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 1081,
-            "end": 1083,
-            "text": "21",
-            "role": "data",
-            "reading": "natural"
+            "start": 1634,
+            "end": 1641,
+            "text": "resumir",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -4704,103 +5349,6 @@
             "end": 359,
             "text": "Lote:1;Motor:1\nLote:1;Motor:1\nLote:1;Motor:1\nResumen:2:1:1:0;Original:1\nResumen:0:0:0:1;Original:1\nResumen:2:0:2:1;Original:1\nResumen:2:1:1:1;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1\nResumen rechazado;Original:1",
             "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "u10_experimento_testigo_y_resumen_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
-        "sourceSha256": "7ed2bd5366b2e53f3a9a7ca7f8c85697063a4cb241f8e8d2dce53d7cebf91bb7",
-        "spans": [
-          {
-            "start": 28,
-            "end": 35,
-            "text": "Motor:0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 110,
-            "end": 119,
-            "text": "continuar",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
-        "block": "u10_experimento_testigo_y_resumen_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
-        "sourceSha256": "8550f81cb4b74cc644422fd6a9887e0a6dd335b0b4099d03b067d34b4794f6c9",
-        "spans": [
-          {
-            "start": 5,
-            "end": 10,
-            "text": "{8,2}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 25,
-            "end": 29,
-            "text": "2..6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 74,
-            "end": 75,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 135,
-            "end": 143,
-            "text": "en_rango",
-            "role": "cpp",
-            "reading": "technical"
-          }
-        ]
-      },
-      {
-        "block": "u10_experimento_testigo_y_resumen_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
-        "sourceSha256": "754afbf092033d1aa5ebfce3e6eb8d45699667e14dadaa148df4352392211144",
-        "spans": []
-      },
-      {
-        "block": "u10_experimento_testigo_y_resumen_comprobacion",
-        "path": "/outputCheck/cases/0/reviewFeedback/3/text",
-        "sourceSha256": "31c34a0bba919122495c87e7e79297b7a5a8d10607ce7b865256e6adc24e9f9a",
-        "spans": [
-          {
-            "start": 10,
-            "end": 12,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 39,
-            "end": 40,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 168,
-            "end": 169,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 172,
-            "end": 173,
-            "text": "9",
-            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4869,6 +5417,117 @@
         ]
       },
       {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/0/text",
+        "sourceSha256": "7ed2bd5366b2e53f3a9a7ca7f8c85697063a4cb241f8e8d2dce53d7cebf91bb7",
+        "spans": [
+          {
+            "start": 28,
+            "end": 35,
+            "text": "Motor:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 110,
+            "end": 119,
+            "text": "continuar",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/1/text",
+        "sourceSha256": "8550f81cb4b74cc644422fd6a9887e0a6dd335b0b4099d03b067d34b4794f6c9",
+        "spans": [
+          {
+            "start": 5,
+            "end": 10,
+            "text": "{8,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 29,
+            "text": "2..6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 143,
+            "text": "en_rango",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/2/text",
+        "sourceSha256": "754afbf092033d1aa5ebfce3e6eb8d45699667e14dadaa148df4352392211144",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "u10_experimento_testigo_y_resumen_comprobacion",
+        "path": "/outputCheck/cases/0/reviewFeedback/3/text",
+        "sourceSha256": "31c34a0bba919122495c87e7e79297b7a5a8d10607ce7b865256e6adc24e9f9a",
+        "spans": [
+          {
+            "start": 10,
+            "end": 12,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
+            "end": 40,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 169,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 173,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0008_0000",
+        "path": "/text",
+        "sourceSha256": "dd13fe3df9a2165af006ca0063e5206f8ee7d8b2750931738751a4c15293b2f8",
+        "spans": []
+      },
+      {
         "block": "u10_experimento_testigo_y_resumen_referencia_titulo",
         "path": "/text",
         "sourceSha256": "c0eb4687c9bc47e0e144c0b49bab6ae37377fd6e8932763d1c08414b4dcbb988",
@@ -4887,11 +5546,32 @@
             "reading": "technical"
           },
           {
+            "start": 41,
+            "end": 44,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 141,
+            "end": 144,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 226,
             "end": 233,
             "text": "testigo",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 444,
+            "end": 447,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 469,
@@ -4982,6 +5662,20 @@
             "end": 995,
             "text": "2:1:1:1",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1041,
+            "end": 1045,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1081,
+            "end": 1086,
+            "text": "cinco",
+            "role": "data",
             "reading": "natural"
           },
           {

@@ -10,22 +10,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Refactorizar consiste en reorganizar el programa conservando el comportamiento establecido. Una mejora puede separar una acción reconocible en una función y hacer más clara su intención; después deben repetirse las pruebas para detectar cambios accidentales (Stroustrup, 2024).\n\nAquí se extrae la comprobación de piezas a una función bool. Cambiar al mismo tiempo la frontera, el significado del cero o la señal de error sería también cambiar el requisito, no sólo reorganizar el programa.",
+          "text": "En el programa anterior, estimar comprobaba directamente si la cantidad pertenecía al intervalo permitido. Podemos separar esa decisión del resto del cálculo: movemos la comprobación a piezas_validas, una función que recibe la cantidad y devuelve un bool. Después, estimar llama a piezas_validas para decidir si debe rechazar el pedido. Ese traslado de una parte reconocible del código a una función es una extracción.\n\nLa nueva organización debe conservar el comportamiento establecido: las mismas cantidades se aceptan o se rechazan y los pedidos válidos mantienen sus minutos. Refactorizar consiste en reorganizar el programa sin cambiar ese comportamiento. Hay que repetir las pruebas para detectar alteraciones accidentales (Stroustrup, 2024).\n\nCambiar también la frontera, el significado del cero o la señal de error sería cambiar el requisito. La reorganización y esa ampliación deben distinguirse.",
           "emphasis": [
             {
-              "text": "conservando el comportamiento establecido",
-              "style": "bold"
+              "text": "extracción",
+              "style": "bold",
+              "occurrence": 1
+            },
+            {
+              "text": "conservar el comportamiento establecido",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "cambiar el requisito",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(3) << \":\" << estimar(11);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(3) << \":\" << estimar(11);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -46,7 +53,7 @@
           "id": "reglas_extraidas_conservadas",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(10);\n\n    return 0;\n}\n",
           "answers": [
             "-1:5:23"
           ],
@@ -134,7 +141,7 @@
           "id": "frontera_preservada",
           "question": "Extraes la comprobación de dominio. Completa sólo el operador de comparación para aceptar piezas de cero a diez, incluidas ambas fronteras, y rechazar los demás enteros.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas ___ 10;\n}\n\nint main() {\n    std::cout << piezas_validas(10);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas ___ 10;\n}\n\nint main() {\n    std::cout << piezas_validas(10);\n\n    return 0;\n}\n",
           "answers": [
             "<="
           ],
@@ -153,7 +160,7 @@
           "id": "version_limpiada_con_defecto",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas < 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(9) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas < 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(9) << \":\" << estimar(10);\n\n    return 0;\n}\n",
           "answers": [
             "21:-1"
           ],
@@ -178,25 +185,28 @@
         },
         {
           "type": "paragraph",
-          "text": "Extrae `piezas_validas` y úsala dentro de `estimar`, sin cambiar tiempos, dominio 0..10 ni señal -1. En main conserva las cuatro llamadas originales y añade en una segunda línea las pruebas -1, 1 y 11. Separa los resultados de cada línea con dos puntos; no añadas espacios ni un salto después de la última.\n\nPulsa Compilar, ejecutar y comprobar. La primera línea debe ser `0:7:23:-1` y la segunda, `-1:5:-1`. La salida comprueba esos casos; además revisa en tu código que la función extraída exprese sólo la validez y que la estimación y la presentación conserven sus responsabilidades. La ampliación a 12 corresponde al editor independiente que sigue, no a otro cambio en este borrador.",
+          "text": "Extrae la comprobación de validez a piezas_validas y úsala dentro de estimar. La reorganización debe conservar estas reglas:\nSe admiten de 0 a 10 piezas, incluidos los extremos.\nEl pedido vacío tarda 0 minutos.\nUn pedido no vacío necesita 3 minutos de preparación y 2 minutos por pieza.\nLa señal de pedido inválido sigue siendo -1.\n\nEn main, conserva las cuatro llamadas originales y añade la segunda línea de comprobaciones. La correspondencia es:\nPedidos 0, 2, 10 y 11: primera línea, 0:7:23:-1.\nPedidos -1, 1 y 11: segunda línea, -1:5:-1.\n\nSepara los resultados con dos puntos, sin espacios. Entre las dos líneas hay un salto; no añadas otro después de la última.\n\nPulsa «Compilar, ejecutar y comprobar». La comparación revisa la salida de esas llamadas. En tu código, comprueba además que piezas_validas sólo decide la validez, estimar calcula los minutos y main los presenta. La ampliación del dominio a 12 piezas tiene su propio editor; no la introduzcas en esta extracción.",
           "emphasis": [
             {
-              "text": "Extrae",
-              "style": "bold"
+              "text": "conservar estas reglas",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "sin cambiar tiempos, dominio 0..10 ni señal -1",
-              "style": "bold"
+              "text": "La comparación revisa la salida",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "Compilar, ejecutar y comprobar",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -215,19 +225,17 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor la versión con piezas_validas que admite de 0 a 12. Conserva el caso vacío, los tiempos y la señal -1. Muestra en una primera línea los resultados para 0, 2, 10 y 11; en otra, los de -1, 1 y 11; y en una tercera, los de 12 y 13. Usa dos puntos entre resultados, sin espacios ni salto después de la última línea.\n\nPulsa Compilar, ejecutar y comprobar. Las líneas deben ser 0:7:23:25, -1:5:25 y 27:-1. El cambio de 11 y la aceptación de 12 pertenecen a la ampliación; no se atribuyen a reorganizar las funciones. El editor anterior mantiene el requisito de 0 a 10.",
+          "text": "Construye una versión distinta con piezas_validas que admita de 0 a 12 piezas. Conserva el pedido vacío, los tiempos y la señal -1. Mantén separadas la comprobación, la estimación y la presentación.\n\nLas llamadas y sus resultados se distribuyen así:\nPedidos 0, 2, 10 y 11: primera línea, 0:7:23:25.\nPedidos -1, 1 y 11: segunda línea, -1:5:25.\nPedidos 12 y 13: tercera línea, 27:-1.\n\nUsa dos puntos entre resultados, sin espacios. Escribe un salto entre líneas y ninguno después de la última. Pulsa «Compilar, ejecutar y comprobar».\n\nAhora se aceptan también los pedidos de 11 y 12 piezas; el de 13 continúa rechazado. Esto es una ampliación explícita del requisito, distinta de reorganizar las funciones. El editor anterior conserva el intervalo de 0 a 10.",
           "emphasis": [
             {
-              "text": "de 0 a 12",
-              "style": "bold"
-            },
-            {
-              "text": "no se atribuyen a reorganizar las funciones",
-              "style": "bold"
+              "text": "ampliación explícita del requisito",
+              "style": "bold",
+              "occurrence": 1
             },
             {
               "text": "Compilar, ejecutar y comprobar",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -241,7 +249,7 @@
                 "outputs": [
                   "0:7:23:25\n-1:5:25\n27:-1"
                 ],
-                "explanation": "La frontera cambió de forma explícita. Los tiempos de los pedidos anteriores se conservan y 13 sigue fuera del dominio."
+                "explanation": "La ampliación conserva los tiempos de los pedidos que ya eran válidos. Ahora 11 piezas producen 25 minutos y 12 producen 27; 13 queda fuera del dominio y devuelve -1. El cambio de esos pedidos pertenece al nuevo requisito."
               }
             ]
           }
@@ -260,22 +268,24 @@
         },
         {
           "type": "paragraph",
-          "text": "La extracción conserva 0:7:23:-1 para los argumentos 0, 2, 10 y 11. Las pruebas añadidas -1, 1 y 11 producen -1:5:-1. La función de estimación mantiene las mismas unidades, tiempos, dominio 0..10 y señal -1.\n\nEl primer programa siguiente muestra las cuatro llamadas originales. La referencia posterior de la extracción reúne también la segunda línea solicitada. La ampliación a doce tiene su propia referencia y conserva su objetivo independiente.",
+          "text": "La extracción conserva el cálculo y la decisión de validez del dominio original:\nLos argumentos 0, 2, 10 y 11 producen 0:7:23:-1.\nLos argumentos adicionales -1, 1 y 11 producen -1:5:-1.\n\nNo han cambiado las unidades, los tiempos, el intervalo de 0 a 10 ni la señal -1. El primer programa muestra las cuatro llamadas originales. La referencia posterior de la extracción incluye también la segunda línea pedida. La ampliación a doce piezas tiene una referencia propia porque cambia un requisito.",
           "emphasis": [
             {
-              "text": "mantiene las mismas unidades, tiempos, dominio 0..10 y señal -1",
-              "style": "bold"
+              "text": "No han cambiado",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "segunda línea solicitada",
-              "style": "bold"
+              "text": "cambia un requisito",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -298,7 +308,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11);\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -307,7 +317,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 12;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(12) << \":\" << estimar(13);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 12;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) {\n        return -1;\n    }\n\n    if (piezas == 0) {\n        return 0;\n    }\n\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(12) << \":\" << estimar(13);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -319,37 +329,33 @@
         },
         {
           "type": "paragraph",
-          "text": "Un informe procesa lecturas enteras ya disponibles en una colección. Una lectura válida está entre -4 y 9, ambos incluidos. Las válidas negativas reciben la etiqueta Fria; el cero recibe Neutra; las positivas reciben Calida. Cualquier lectura fuera de ese intervalo recibe Fuera y no entra en la suma ni en el número de válidas. Cada dato se procesa una vez, en el orden original, incluso si su valor se repite.",
+          "text": "Un informe procesa lecturas enteras que ya están disponibles en una colección. Se acepta el intervalo de -4 a 9, incluidos los extremos. La etiqueta de cada lectura se decide así:\nUna lectura válida negativa recibe Fria.\nEl cero recibe Neutra.\nUna lectura válida positiva recibe Calida.\nUna lectura fuera del intervalo recibe Fuera.\n\nSólo las lecturas válidas se incluyen en la suma y en el número de válidas. Cada dato se procesa una vez, en el orden original. Si un valor aparece repetido, cada aparición conserva su línea y aporta lo que le corresponde al resumen.",
           "emphasis": [
             {
-              "text": "entre -4 y 9",
-              "style": "bold"
+              "text": "Sólo las lecturas válidas",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "no entra en la suma ni en el número de válidas",
-              "style": "bold"
-            },
-            {
-              "text": "incluso si su valor se repite",
-              "style": "bold"
+              "text": "cada aparición conserva su línea",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "El comportamiento observable incluye una línea Dato=valor:etiqueta por lectura y, al final, Resumen=validas:rechazadas:suma. La suma incluye únicamente lecturas válidas, con su signo original. La colección vacía no produce líneas de datos y conserva los tres contadores en cero. Mantén como máximo seis lecturas en estas pruebas: la suma válida queda entre -24 y 54, dentro del rango de int.",
+          "text": "El formato del informe es:\nUna línea Dato=valor:etiqueta por cada lectura.\nUna línea final Resumen=validas:rechazadas:suma.\n\nLa suma conserva el signo de cada lectura válida. Con una colección vacía no hay líneas Dato y el resumen es Resumen=0:0:0, porque no se ha contado ni sumado ningún dato.\n\nEn estas pruebas se utilizan como máximo seis lecturas. La suma más baja posible es -24, al reunir seis valores -4; la más alta es 54, al reunir seis valores 9. Estos resultados caben en int.",
           "emphasis": [
             {
-              "text": "únicamente lecturas válidas",
-              "style": "bold"
+              "text": "conserva el signo",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "tres contadores en cero",
-              "style": "bold"
-            },
-            {
-              "text": "entre -24 y 54",
-              "style": "bold"
+              "text": "como máximo seis lecturas",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -384,21 +390,23 @@
         },
         {
           "type": "paragraph",
-          "text": "Reorganiza el programa inicial conservando su contrato. Extrae una decisión del dominio a una función que no imprima ni cambie la colección. Reúne el procesamiento de una sesión en `procesar(const std::vector<int>& lecturas)`, con contadores nuevos por llamada. Cada dato conserva una línea `Dato=valor:etiqueta`; el resumen es `Resumen=validas:rechazadas:suma`. Añade un salto de línea después de cada resumen para separar las sesiones.",
+          "text": "Reorganiza el programa inicial sin cambiar las lecturas que admite, sus etiquetas ni su informe. Extrae una decisión del problema a una función que no imprima ni modifique la colección. Puedes separar, por ejemplo, la decisión de validez o la elección de la etiqueta de una lectura ya validada.\n\nReúne el procesamiento de una sesión en procesar(const std::vector<int>& lecturas). Cada llamada debe comenzar sus propios contadores y su propia suma. Mantén el formato:\nDato=valor:etiqueta para cada lectura.\nResumen=validas:rechazadas:suma al terminar la sesión.\n\nAñade un salto al final de cada línea, también después de cada resumen. Así, una nueva sesión empieza en una línea distinta.",
           "emphasis": [
             {
-              "text": "Extrae una decisión del dominio",
-              "style": "bold"
+              "text": "sin cambiar",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "contadores nuevos por llamada",
-              "style": "bold"
+              "text": "Cada llamada debe comenzar sus propios contadores",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "En main llama a procesar con estas siete colecciones, en este orden: `{-4,0,7,10,-5}`, `{}`, `{-5,-4,-3}`, `{8,9,10}`, `{-1,0,1}`, `{-5,10}` y `{9,9,-4,0}`. Comprueban el caso original, ausencia de datos, ambas fronteras, las tres etiquetas válidas, sólo rechazos y valores repetidos. Mantén el formato Dato=valor:etiqueta y Resumen=validas:rechazadas:suma sin espacios. La salida incluye cada aparición en el orden original, además del resumen de cada sesión."
+          "text": "En main llama a procesar con estas colecciones, en este orden:\n{-4,0,7,10,-5}: reproduce la sesión inicial.\n{}: comprueba una sesión sin datos.\n{-5,-4,-3}: reúne una lectura rechazada y dos válidas junto al límite inferior.\n{8,9,10}: reúne dos válidas y una rechazada junto al límite superior.\n{-1,0,1}: comprueba las tres etiquetas de lecturas válidas.\n{-5,10}: comprueba una sesión con sólo rechazos.\n{9,9,-4,0}: comprueba valores repetidos y conserva cada aparición.\n\nUsa Dato=valor:etiqueta y Resumen=validas:rechazadas:suma, sin espacios añadidos. Conserva el orden de cada colección y muestra su resumen antes de empezar la siguiente. No arrastres los contadores ni la suma de una llamada a otra."
         },
         {
           "type": "paragraph",
@@ -416,7 +424,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            if (lectura < 0) {\n                std::cout << \"Fria\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutra\\n\";\n            } else {\n                std::cout << \"Calida\\n\";\n            }\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n\n            if (lectura < 0) {\n                std::cout << \"Fria\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutra\\n\";\n            } else {\n                std::cout << \"Calida\\n\";\n            }\n        }\n    }\n\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -443,34 +451,38 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección: con {-4,0,7,10,-5}, el resumen sigue siendo 3:2:3 y cada etiqueta conserva su significado. Los resúmenes para {}, {-5,-4,-3}, {8,9,10}, {-1,0,1}, {-5,10} y {9,9,-4,0} son, respectivamente, 0:0:0, 2:1:-7, 2:1:17, 3:0:0, 0:2:0 y 4:0:14. Estos totales no bastan por sí solos: verifica también todas las líneas Dato=valor:etiqueta, los saltos de línea y el orden, incluidos ambos registros de 9.",
+          "text": "Los resúmenes esperados para las sesiones de la construcción son:\n{-4,0,7,10,-5} → Resumen=3:2:3\n{} → Resumen=0:0:0\n{-5,-4,-3} → Resumen=2:1:-7\n{8,9,10} → Resumen=2:1:17\n{-1,0,1} → Resumen=3:0:0\n{-5,10} → Resumen=0:2:0\n{9,9,-4,0} → Resumen=4:0:14\n\nUn resumen correcto no basta para comprobar todo el informe. Revisa también cada línea Dato=valor:etiqueta, su posición y su salto de línea. Por ejemplo, las dos apariciones de 9 de la última colección necesitan dos líneas propias; reunirlas en una sola línea cambiaría el comportamiento solicitado aunque se conservara la suma.",
           "emphasis": [
             {
-              "text": "no bastan por sí solos",
-              "style": "bold"
+              "text": "Un resumen correcto no basta",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "incluidos ambos registros de 9",
-              "style": "bold"
+              "text": "dos líneas propias",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Fria\"; }\n    if (lectura == 0) { return \"Neutra\"; }\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{9, -5, -1, 0};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) {\n        return \"Fria\";\n    }\n\n    if (lectura == 0) {\n        return \"Neutra\";\n    }\n\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{9, -5, -1, 0};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Esta implementación extrae la clasificación de una lectura válida. La función recibe un int por valor y devuelve una cadena; no imprime ni actualiza el resumen. Su contrato exige una lectura entre -4 y 9, por lo que el procesamiento comprueba el intervalo antes de llamarla.\n\nEl primer ejemplo utiliza {9,-5,-1,0}: las etiquetas son Calida, Fuera, Fria y Neutra, y el resumen es 3:1:8. El programa posterior reúne las siete sesiones solicitadas con contadores nuevos para cada una.",
+          "text": "Esta implementación extrae la elección de la etiqueta de una lectura válida. La función recibe un int por valor y devuelve una cadena; no imprime ni actualiza el resumen. Su contrato exige una lectura entre -4 y 9. Por eso el procesamiento comprueba el intervalo antes de llamarla.\n\nEl primer programa utiliza {9,-5,-1,0}:\nLa lectura 9 recibe Calida.\nLa lectura -5 queda fuera del intervalo y recibe Fuera sin llamar a la función de clasificación.\nLa lectura -1 recibe Fria.\nLa lectura 0 recibe Neutra.\n\nHay tres lecturas válidas y una rechazada. La suma de las válidas es 8, de modo que el resumen es Resumen=3:1:8. La referencia posterior reúne las siete sesiones solicitadas, con contadores nuevos en cada llamada.",
           "emphasis": [
             {
               "text": "comprueba el intervalo antes de llamarla",
-              "style": "bold"
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "contadores nuevos para cada una",
-              "style": "bold"
+              "text": "contadores nuevos en cada llamada",
+              "style": "bold",
+              "occurrence": 1
             }
           ]
         },
@@ -481,7 +493,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Fria\"; }\n    if (lectura == 0) { return \"Neutra\"; }\n    return \"Calida\";\n}\n\nvoid procesar(const std::vector<int>& lecturas) {\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma << \"\\n\";\n}\n\nint main() {\n    procesar({-4, 0, 7, 10, -5});\n    procesar({});\n    procesar({-5, -4, -3});\n    procesar({8, 9, 10});\n    procesar({-1, 0, 1});\n    procesar({-5, 10});\n    procesar({9, 9, -4, 0});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) {\n        return \"Fria\";\n    }\n\n    if (lectura == 0) {\n        return \"Neutra\";\n    }\n\n    return \"Calida\";\n}\n\nvoid procesar(const std::vector<int>& lecturas) {\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma << \"\\n\";\n}\n\nint main() {\n    procesar({-4, 0, 7, 10, -5});\n    procesar({});\n    procesar({-5, -4, -3});\n    procesar({8, 9, 10});\n    procesar({-1, 0, 1});\n    procesar({-5, 10});\n    procesar({9, 9, -4, 0});\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -510,7 +522,7 @@
           "id": "u7_refactor_transferencia_etiquetas_y_resumen",
           "question": "Predice la salida completa. Conserva los saltos de línea internos; no escribas comillas.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura <= 0) { return \"Fria\"; }\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{0, 2, -2};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura <= 0) {\n        return \"Fria\";\n    }\n\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{0, 2, -2};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n\n    return 0;\n}\n",
           "answers": [
             "Dato=0:Fria\nDato=2:Calida\nDato=-2:Fria\nResumen=3:0:0"
           ],
@@ -1679,6 +1691,263 @@
         "id": "block_0006_0001",
         "beforeSha256": "88362c98f0f1a4bcea2d4622bf066209a2baa83005333b46cd1ce7a63b92d97b",
         "afterSha256": "60bc0258bcc90fd2db1f35fbdda31aa5c51f1ffff32ba9dab2975b5bda75a5ce"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "adb9d62d0892cbc06fc7b8c1dff4fb3034ae7cf5b497313ed71002a92a41cdb7",
+        "afterSha256": "3e581ac0916d3ca3a8f53375ba085486776e325592da30c9228950698e0e59a4"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "06fe51b108a9f163389ab2ce3c970dc231572b7cb2b52d0a9c19bd4dd90110a5",
+        "afterSha256": "c9a80065ed36a37b1a723f8c3ba6397a7085cba417722a219a26f0fa8490e495"
+      },
+      {
+        "id": "block_0000_0004",
+        "beforeSha256": "b26ab64a9da7bf4767240f9efe0e735f4926864809af765e5000971f642fe2b0",
+        "afterSha256": "8323cc1f3693b15c3c3f9bcae8c9bd31694f6a6a95d2174d7940e8e04f6c759f"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "a6f2c26058cf70733a3780a6e5e6287f0c8ed8a75899e9573421d51476e83cb2",
+        "afterSha256": "951a4b14b0b3345d4a7fc418bae0d6fec1d787f980df5ebce28939a19cee7527"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "5167c3909c8046f3b0e0f9405e47402d2d38ad1ac09af0eb151deade6bd95d93",
+        "afterSha256": "fc63af4dbb813e38c1965ce37b96c3eb8303d69e663436b73fcc54e013af5827"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "ef9cefdd30e15b664ff847fee01a5d890a6b43bf9382d9f3fb364971386bd9e0",
+        "afterSha256": "e99988b2914c4524eeb450e0e24bbce2ed9fd2009c54835d30dab5a9424cd31c"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "19a29a11f222d36336ae27c7639fa80d28c9410f4113102b1f7868d0c12673f0",
+        "afterSha256": "67c52c6f3ba502bc7c381462c03b3f2eb4cf231366477e1379881dcaa859a34c"
+      },
+      {
+        "id": "block_0002_0006",
+        "beforeSha256": "0772cf34255e5891b04664baac67627471b221b9798992572428383bd2a2eeb1",
+        "afterSha256": "d798850db5c396d2bae00f21d5fac75359d3e33a7679fce6723f29b07aa65f73"
+      },
+      {
+        "id": "block_0002_0007",
+        "beforeSha256": "7e97cca0535f10b26392d92325e02b5cdf3e396b379cbed30d0cd5d6b99f6f15",
+        "afterSha256": "f86f8e6f0e4cf6a57705e93095968972500be366bebd5932e2518f90e4995432"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "7131fbcc66995dba344243c8bf6fa865907a7f03622a44be8a8cd77b2a065e59",
+        "afterSha256": "57c9111f8089a37fbfcbd9fcaf48ee8a3bcbf7d256d094ab44a521f12e23a92a"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "4c768905060cd5e7d71abd0540b1b1d85477ce12a8a4bc9060b523ff640fec48",
+        "afterSha256": "d0b2c42e33703d2398e2a480ec63a2b75c0f762f6f19421183c3b7e701e7738c"
+      },
+      {
+        "id": "block_0003_0006",
+        "beforeSha256": "059cb60caddb07dffedf4597d3761953b860ec6e180016e1ccc96ddbcb79d754",
+        "afterSha256": "016e6780bdbb50ae77523b66591a4afe418feed8560055fb7ecf8c982b7cc103"
+      },
+      {
+        "id": "block_0003_0008",
+        "beforeSha256": "b1d1c1a0b3766491587c77951fa3181edf76c6c97cfc47798506b6d372897a05",
+        "afterSha256": "bc2f4e73eb7884b2cc562b50d3fd575974d43dc3014bb685fb4ef2e28287f8c6"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "06d5bf0a7fb79f9bd2b4f56ba945057f2d46d6ddc54cc7a28d3fd4603005ae2d",
+        "afterSha256": "389aca4b4022d830004ecce7404bb78ad88cf58d1ca87827bd959d26d77f6c1f"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "1095bf5469c4fb81a2850f94410e5014de60f692b0a5936cabb67943b0bbd7d5",
+        "afterSha256": "d194dd244607a8e53f913f57c959b84218db756c2bc976413c6e7ba0fb17e5d1"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "d507223778f0af1594f638efc452bab5374ac0e101279cb91435d6576f670dd2",
+        "afterSha256": "68919f5a8ba9ae6ec662be199c3342934a9db16d522d5bbe52393ab003ad5744"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "72c34aca76762f96808b6f78e1a60b3fb7eed1e16ee6a65b5db29842b64a1010",
+        "afterSha256": "1b25a4b3a5ce94ee06791f27f987225d367d4f6855e344790667feb561feba10"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "c9d261347c0b489173f5f4c5974f176d4e0e64246b4aec70603f948755c1de20",
+        "afterSha256": "32b8c003b38ae541888b2af793040d9834dea34152dae0e63a34e7be49348145"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "dfbc6ff1404530511054f13d8f2e05c52f101f4ff77c9a06b36c22cf5974cc3c",
+        "afterSha256": "1b7bb32cbd9f2f87883cac067ca27a9d4bfc3701338978d7ddc2ec61700748df"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "a1cc58f8d13809a1278209b647823b37ec0121cdac3226cd07d79a5eb5685f7e",
+        "afterSha256": "e8f8e4abdda4e87652d358f162eafa5da396743e2da0f0280b3e104bec0ebb30"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "09fd7260b15c27233d2dfd044197862159003a37c14f6d77409d87e83d9c2973",
+        "afterSha256": "471cce4b63b2fbe455896de338c674b245120087cb100114eb30d3e8013f83ab"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "3ba73e231dd6ce8593a08ea6b18e3c67a49f8e49cebece4e68fdee7dc64cc17c",
+        "afterSha256": "0e0337eb27f96a3ba25f04c730b18af336e27276d99e3f50beb6b7098b0032c7"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "ba56488a7a2987b3ce507dfa76749906c4829b693ff27ecaa74bb6a9b733ec8e",
+        "afterSha256": "23b8b5f2a61e73fc3e2c7b6efd99a99ea4dbc2a2dfd9666f3c1a9c5f8b3906eb"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(3) << \":\" << estimar(11);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0000_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "reglas_extraidas_conservadas",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "-1:5:23"
+          ],
+          "explanation": "La nueva organización conserva rechazo, primer pedido y frontera superior."
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "fill_code",
+          "id": "frontera_preservada",
+          "question": "Extraes la comprobación de dominio. Completa sólo el operador de comparación para aceptar piezas de cero a diez, incluidas ambas fronteras, y rechazar los demás enteros.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas ___ 10;\n}\n\nint main() {\n    std::cout << piezas_validas(10);\n    return 0;\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "La frontera original incluye 10. La extracción debe conservar ese caso."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "id": "version_limpiada_con_defecto",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas < 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(9) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "21:-1"
+          ],
+          "explanation": "La nueva comparación excluye 10. El caso interior pasa, pero la frontera revela el cambio no solicitado."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0:7:23:-1\n-1:5:-1"
+                ],
+                "explanation": "La extracción conserva las reglas observables del dominio original. Las pruebas añadidas incluyen un rechazo inferior, el primer pedido real y un rechazo superior."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0008",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 12;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(11) << \"\\n\";\n    std::cout << estimar(12) << \":\" << estimar(13);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            if (lectura < 0) {\n                std::cout << \"Fria\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutra\\n\";\n            } else {\n                std::cout << \"Calida\\n\";\n            }\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dato=-4:Fria\nDato=0:Neutra\nDato=7:Calida\nDato=10:Fuera\nDato=-5:Fuera\nResumen=3:2:3\nResumen=0:0:0\nDato=-5:Fuera\nDato=-4:Fria\nDato=-3:Fria\nResumen=2:1:-7\nDato=8:Calida\nDato=9:Calida\nDato=10:Fuera\nResumen=2:1:17\nDato=-1:Fria\nDato=0:Neutra\nDato=1:Calida\nResumen=3:0:0\nDato=-5:Fuera\nDato=10:Fuera\nResumen=0:2:0\nDato=9:Calida\nDato=9:Calida\nDato=-4:Fria\nDato=0:Neutra\nResumen=4:0:14\n"
+                ],
+                "explanation": "Las etiquetas, el orden y los resúmenes se conservan en las siete sesiones. Repetidos, cero y fronteras mantienen su significado tras la extracción."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Fria\"; }\n    if (lectura == 0) { return \"Neutra\"; }\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{9, -5, -1, 0};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Fria\"; }\n    if (lectura == 0) { return \"Neutra\"; }\n    return \"Calida\";\n}\n\nvoid procesar(const std::vector<int>& lecturas) {\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma << \"\\n\";\n}\n\nint main() {\n    procesar({-4, 0, 7, 10, -5});\n    procesar({});\n    procesar({-5, -4, -3});\n    procesar({8, 9, 10});\n    procesar({-1, 0, 1});\n    procesar({-5, 10});\n    procesar({9, 9, -4, 0});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "u7_refactor_transferencia_etiquetas_y_resumen",
+          "question": "Predice la salida completa. Conserva los saltos de línea internos; no escribas comillas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura <= 0) { return \"Fria\"; }\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{0, 2, -2};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "Dato=0:Fria\nDato=2:Calida\nDato=-2:Fria\nResumen=3:0:0"
+          ],
+          "explanation": "El cero entra en lectura<=0 y recibe Fria. Eso viola la etiqueta Neutra exigida para cero, aunque los tres datos válidos y su suma producen un resumen correcto. Comparar sólo la última línea ocultaría este cambio de comportamiento."
+        }
       }
     ]
   },
@@ -1742,25 +2011,53 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "b1d827898f97d9565ec62b3a37a8628234ce5e091dea6beb58619d5bfff3e5fe",
+        "sourceSha256": "efaef2d2cea681201be31d40f69f5b78b8b4ab2fd05056a6c3ed2d0d28a3adf3",
         "spans": [
           {
-            "start": 258,
-            "end": 276,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
+            "start": 25,
+            "end": 32,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 334,
-            "end": 338,
+            "start": 185,
+            "end": 199,
+            "text": "piezas_validas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 250,
+            "end": 254,
             "text": "bool",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 396,
-            "end": 400,
+            "start": 265,
+            "end": 272,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 281,
+            "end": 295,
+            "text": "piezas_validas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 729,
+            "end": 747,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 798,
+            "end": 802,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -1790,7 +2087,7 @@
             "start": 127,
             "end": 129,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -1925,6 +2222,13 @@
             "reading": "natural"
           },
           {
+            "start": 342,
+            "end": 345,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 355,
             "end": 357,
             "text": "+2",
@@ -1933,8 +2237,15 @@
           },
           {
             "start": 417,
+            "end": 418,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 421,
             "end": 423,
-            "text": "0 a 10",
+            "text": "10",
             "role": "data",
             "reading": "natural"
           },
@@ -1954,8 +2265,15 @@
         "spans": [
           {
             "start": 40,
+            "end": 41,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 44,
             "end": 46,
-            "text": "0 a 10",
+            "text": "10",
             "role": "data",
             "reading": "natural"
           }
@@ -1990,7 +2308,7 @@
             "start": 37,
             "end": 39,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2004,13 +2322,20 @@
             "start": 18,
             "end": 20,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 46,
+            "end": 47,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
             "end": 52,
-            "text": "0 a 10",
+            "text": "10",
             "role": "data",
             "reading": "natural"
           }
@@ -2104,8 +2429,15 @@
         "spans": [
           {
             "start": 100,
+            "end": 104,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
             "end": 111,
-            "text": "cero a diez",
+            "text": "diez",
             "role": "data",
             "reading": "natural"
           }
@@ -2202,67 +2534,165 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "d04ada716675daa7148b7feb1f448132ba2c0a7ca363356fed8df2ad15158c66",
+        "sourceSha256": "1e4e927660e6da60db4122d84ad048a30c38fadd3b4130ccff5ae6dd399d0034",
         "spans": [
           {
-            "start": 8,
-            "end": 22,
+            "start": 36,
+            "end": 50,
             "text": "piezas_validas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 43,
-            "end": 50,
+            "start": 69,
+            "end": 76,
             "text": "estimar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 87,
-            "text": "0..10",
+            "start": 139,
+            "end": 140,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 97,
-            "end": 99,
+            "start": 143,
+            "end": 145,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 201,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 240,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 266,
+            "end": 267,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 330,
             "text": "-1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 104,
-            "end": 108,
+            "start": 336,
+            "end": 340,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 190,
-            "end": 200,
-            "text": "-1, 1 y 11",
+            "start": 355,
+            "end": 361,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 373,
-            "end": 382,
+            "start": 457,
+            "end": 458,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 461,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 465,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 468,
+            "end": 470,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 487,
+            "end": 496,
             "text": "0:7:23:-1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 399,
-            "end": 406,
+            "start": 506,
+            "end": 508,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 510,
+            "end": 511,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 516,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 533,
+            "end": 540,
             "text": "-1:5:-1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 603,
-            "end": 605,
+            "start": 793,
+            "end": 807,
+            "text": "piezas_validas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 832,
+            "end": 839,
+            "text": "estimar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 862,
+            "end": 866,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 909,
+            "end": 911,
             "text": "12",
             "role": "data",
             "reading": "natural"
@@ -2284,75 +2714,152 @@
       {
         "block": "block_0002_0006",
         "path": "/text",
-        "sourceSha256": "80028e3aa6422270055e22b25fc93fe7319a10830cf9318f8823470577450d92",
+        "sourceSha256": "d95df85af7664f7c3dfdd2f3fff12340f8a8a8be98e8fefd45b866eae71e2b79",
         "spans": [
           {
-            "start": 40,
-            "end": 54,
+            "start": 35,
+            "end": 49,
             "text": "piezas_validas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 69,
-            "end": 75,
-            "text": "0 a 12",
+            "start": 64,
+            "end": 65,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 124,
-            "end": 126,
-            "text": "-1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 177,
-            "end": 190,
-            "text": "0, 2, 10 y 11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 208,
-            "end": 218,
-            "text": "-1, 1 y 11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 245,
-            "end": 252,
-            "text": "12 y 13",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 397,
-            "end": 423,
-            "text": "0:7:23:25, -1:5:25 y 27:-1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 438,
-            "end": 440,
-            "text": "11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 460,
-            "end": 462,
+            "start": 68,
+            "end": 70,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 580,
-            "end": 586,
-            "text": "0 a 10",
+            "start": 128,
+            "end": 130,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 258,
+            "end": 259,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 262,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 266,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 269,
+            "end": 271,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 297,
+            "text": "0:7:23:25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 307,
+            "end": 309,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 311,
+            "end": 312,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 315,
+            "end": 317,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 341,
+            "text": "-1:5:25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 351,
+            "end": 353,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 356,
+            "end": 358,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 375,
+            "end": 380,
+            "text": "27:-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 573,
+            "end": 575,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 578,
+            "end": 580,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 595,
+            "end": 597,
+            "text": "13",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 749,
+            "end": 750,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 753,
+            "end": 755,
+            "text": "10",
             "role": "data",
             "reading": "natural"
           }
@@ -2361,13 +2868,48 @@
       {
         "block": "block_0002_0007",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "0cb127001fea41221f5fbd7ed0386ce9d89e67377eac70fc4b3e3e4e9e4aac8c",
+        "sourceSha256": "0723189923b55716019560517d508b1f6e65a589b170a11221d5a8961a175ac3",
         "spans": [
           {
-            "start": 92,
-            "end": 94,
+            "start": 77,
+            "end": 79,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 98,
+            "text": "25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 111,
+            "text": "12",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 123,
+            "text": "27",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 127,
             "text": "13",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 163,
+            "end": 165,
+            "text": "-1",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2387,53 +2929,102 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "c8e7840f9429f2e9adfa33dd570b7da91d5d9f5970837da572bf5d4aa8956f88",
+        "sourceSha256": "ba3e9e9d94c3c15fea6140f4e08f357b10c75d1f3b5e961e09f20bb498e80811",
         "spans": [
           {
-            "start": 23,
-            "end": 32,
+            "start": 96,
+            "end": 97,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 102,
+            "end": 104,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 109,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 128,
             "text": "0:7:23:-1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 53,
-            "end": 66,
-            "text": "0, 2, 10 y 11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 89,
-            "end": 99,
-            "text": "-1, 1 y 11",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 109,
-            "end": 116,
-            "text": "-1:5:-1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 190,
-            "end": 195,
-            "text": "0..10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 204,
-            "end": 206,
+            "start": 157,
+            "end": 159,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 378,
-            "end": 382,
+            "start": 161,
+            "end": 162,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 165,
+            "end": 167,
+            "text": "11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 184,
+            "text": "-1:5:-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 247,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 252,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 265,
+            "end": 267,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 306,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 426,
+            "end": 430,
             "text": "doce",
             "role": "data",
             "reading": "natural"
@@ -2482,46 +3073,53 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "3cc47e2e9974e36da6b5f82941d5f120b00c028b6d16b9034a193b1a6d0b0eb7",
+        "sourceSha256": "e83ed440b35836e112a1d248f371375db8286a13c36cd2f6a6adfe2f1e215f54",
         "spans": [
           {
-            "start": 99,
-            "end": 105,
-            "text": "-4 y 9",
+            "start": 105,
+            "end": 107,
+            "text": "-4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 166,
-            "end": 170,
+            "start": 110,
+            "end": 111,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 215,
+            "end": 219,
             "text": "Fria",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 175,
-            "end": 179,
+            "start": 224,
+            "end": 228,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 187,
-            "end": 193,
+            "start": 236,
+            "end": 242,
             "text": "Neutra",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 217,
-            "end": 223,
+            "start": 279,
+            "end": 285,
             "text": "Calida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 278,
+            "start": 326,
+            "end": 331,
             "text": "Fuera",
             "role": "output",
             "reading": "natural"
@@ -2531,53 +3129,88 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "a6106788eda9ec2bd1b919ed837680e7a31c81cb316a6fdeb2f713bfebd67176",
+        "sourceSha256": "acb851a828c4aa97e79eb199431ec15b896a99298f29186c8c5bfe3edd23a61a",
         "spans": [
           {
-            "start": 47,
-            "end": 66,
+            "start": 37,
+            "end": 56,
             "text": "Dato=valor:etiqueta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 92,
-            "end": 123,
+            "start": 91,
+            "end": 122,
             "text": "Resumen=validas:rechazadas:suma",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 254,
-            "end": 258,
-            "text": "tres",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 273,
-            "end": 277,
-            "text": "cero",
+            "start": 213,
+            "end": 217,
+            "text": "Dato",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 298,
-            "end": 302,
+            "start": 234,
+            "end": 247,
+            "text": "Resumen=0:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 338,
+            "end": 342,
             "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 357,
-            "end": 365,
-            "text": "-24 y 54",
+            "start": 381,
+            "end": 384,
+            "text": "-24",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 396,
+            "end": 400,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 387,
-            "end": 390,
+            "start": 409,
+            "end": 411,
+            "text": "-4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 428,
+            "end": 430,
+            "text": "54",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 442,
+            "end": 446,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 455,
+            "end": 456,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 484,
+            "end": 487,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -2670,25 +3303,25 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "c54ed3968348a5c49dce6f19f523a73a3c15d9326b791e13b5fd8be4a9a81a1c",
+        "sourceSha256": "0f3f86df52f1a67162d93f8d47f480e714ab9a5c83708e17dc42871f6ccd8668",
         "spans": [
           {
-            "start": 182,
-            "end": 224,
+            "start": 336,
+            "end": 378,
             "text": "procesar(const std::vector<int>& lecturas)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 292,
-            "end": 311,
+            "start": 467,
+            "end": 486,
             "text": "Dato=valor:etiqueta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 329,
-            "end": 360,
+            "start": 506,
+            "end": 537,
             "text": "Resumen=validas:rechazadas:suma",
             "role": "output",
             "reading": "natural"
@@ -2698,7 +3331,7 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "0d7bac0c14ab283a4c7153214ad0157c42638d946717cb7789517107b538e878",
+        "sourceSha256": "d7e4b65ac53ebc113bb62bbc78a3484ce4b732c6c339aeba6b2a40c21877c421",
         "spans": [
           {
             "start": 3,
@@ -2715,71 +3348,85 @@
             "reading": "technical"
           },
           {
-            "start": 35,
-            "end": 40,
-            "text": "siete",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 70,
-            "end": 84,
+            "start": 63,
+            "end": 77,
             "text": "{-4,0,7,10,-5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 88,
-            "end": 90,
-            "text": "{}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 94,
-            "end": 104,
-            "text": "{-5,-4,-3}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
             "start": 108,
-            "end": 116,
-            "text": "{8,9,10}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 120,
-            "end": 128,
-            "text": "{-1,0,1}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 132,
-            "end": 139,
-            "text": "{-5,10}",
+            "end": 110,
+            "text": "{}",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 144,
             "end": 154,
+            "text": "{-5,-4,-3}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 224,
+            "end": 232,
+            "text": "{8,9,10}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 240,
+            "end": 243,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 294,
+            "end": 302,
+            "text": "{-1,0,1}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 318,
+            "end": 322,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 361,
+            "text": "{-5,10}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 413,
             "text": "{9,9,-4,0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 303,
-            "end": 322,
+            "start": 475,
+            "end": 494,
             "text": "Dato=valor:etiqueta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 325,
-            "end": 356,
+            "start": 497,
+            "end": 528,
             "text": "Resumen=validas:rechazadas:suma",
             "role": "output",
             "reading": "natural"
@@ -2828,82 +3475,138 @@
       {
         "block": "block_0006_0002",
         "path": "/text",
-        "sourceSha256": "611a3663925740e621f25c67f6a572a2b287b141df1ca41f6b6966e06986b4f4",
+        "sourceSha256": "7acbf20345471a0caf17e519cf8f70f4e0b3638d2d2a5dcdb2892588fe44b74a",
         "spans": [
           {
-            "start": 29,
-            "end": 43,
+            "start": 66,
+            "end": 80,
             "text": "{-4,0,7,10,-5}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 69,
-            "end": 74,
-            "text": "3:2:3",
+            "start": 83,
+            "end": 96,
+            "text": "Resumen=3:2:3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 137,
+            "start": 97,
+            "end": 99,
             "text": "{}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 139,
-            "end": 149,
+            "start": 102,
+            "end": 115,
+            "text": "Resumen=0:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 126,
             "text": "{-5,-4,-3}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 151,
-            "end": 159,
+            "start": 129,
+            "end": 143,
+            "text": "Resumen=2:1:-7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 152,
             "text": "{8,9,10}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 161,
+            "start": 155,
             "end": 169,
+            "text": "Resumen=2:1:17",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 170,
+            "end": 178,
             "text": "{-1,0,1}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 171,
-            "end": 178,
+            "start": 181,
+            "end": 194,
+            "text": "Resumen=3:0:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 202,
             "text": "{-5,10}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 181,
-            "end": 191,
+            "start": 205,
+            "end": 218,
+            "text": "Resumen=0:2:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 219,
+            "end": 229,
             "text": "{9,9,-4,0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 214,
-            "end": 258,
-            "text": "0:0:0, 2:1:-7, 2:1:17, 3:0:0, 0:2:0 y 4:0:14",
+            "start": 232,
+            "end": 246,
+            "text": "Resumen=4:0:14",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 332,
-            "end": 351,
+            "start": 335,
+            "end": 354,
             "text": "Dato=valor:etiqueta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 414,
-            "end": 415,
+            "start": 406,
+            "end": 409,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 425,
+            "end": 426,
             "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 460,
+            "end": 463,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 493,
+            "end": 496,
+            "text": "una",
             "role": "data",
             "reading": "natural"
           }
@@ -2912,67 +3615,123 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "dcf4c201c9a47018f08ebd2d103fbd564df851f7584404607d411d25507f8b7d",
+        "sourceSha256": "e08e0158de10f2a931e53af87d13fdeb4ae3ffc6842e788ff0973b7607860a71",
         "spans": [
           {
-            "start": 88,
-            "end": 91,
+            "start": 98,
+            "end": 101,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 197,
-            "end": 203,
-            "text": "-4 y 9",
+            "start": 207,
+            "end": 209,
+            "text": "-4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 302,
-            "end": 313,
+            "start": 212,
+            "end": 213,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 321,
             "text": "{9,-5,-1,0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 333,
-            "end": 339,
+            "start": 334,
+            "end": 335,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 343,
+            "end": 349,
             "text": "Calida",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 341,
-            "end": 346,
+            "start": 362,
+            "end": 364,
+            "text": "-5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 405,
             "text": "Fuera",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 348,
-            "end": 352,
+            "start": 459,
+            "end": 461,
+            "text": "-1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 469,
+            "end": 473,
             "text": "Fria",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 355,
-            "end": 361,
+            "start": 486,
+            "end": 487,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 495,
+            "end": 501,
             "text": "Neutra",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 379,
-            "end": 384,
-            "text": "3:1:8",
+            "start": 508,
+            "end": 512,
+            "text": "tres",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 418,
-            "end": 423,
+            "start": 532,
+            "end": 535,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 573,
+            "end": 574,
+            "text": "8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 602,
+            "end": 615,
+            "text": "Resumen=3:1:8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 651,
+            "end": 656,
             "text": "siete",
             "role": "data",
             "reading": "natural"

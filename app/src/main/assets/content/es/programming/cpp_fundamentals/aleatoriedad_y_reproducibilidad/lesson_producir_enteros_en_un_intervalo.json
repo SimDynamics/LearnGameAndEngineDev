@@ -31,12 +31,11 @@
         },
         {
           "type": "paragraph",
-          "text": "La cabecera <random> ofrece motores y distribuciones. El motor proporciona los valores de una secuencia; la distribución los transforma para obtener datos del tipo y del intervalo que pide el programa (Stroustrup, 2024). Son dos objetos con funciones distintas.\n\nstd::mt19937 motor{31}; construye un motor cuyo estado inicial se prepara a partir de 31. Ese número se llama semilla (Köppe et al., 2023). No es el límite de los datos que se desean obtener.\n\nstd::uniform_int_distribution<int> reparto{2, 5}; construye una distribución de resultados int entre dos y cinco, incluidos ambos extremos (Köppe et al., 2023). En el ejemplo siguiente, la semilla configura el comienzo del motor y los límites configuran la distribución.",
+          "text": "La cabecera <random> ofrece motores y distribuciones. El motor proporciona los valores de una secuencia; la distribución los transforma para obtener datos del tipo y del intervalo que pide el programa (Stroustrup, 2024). Son dos objetos con funciones distintas.\n\nstd::mt19937 motor{31}; construye un motor cuyo estado inicial se prepara a partir de 31. Ese número se llama semilla (Köppe et al., 2023). No es el límite de los datos que se desean obtener.\n\nstd::uniform_int_distribution<int> reparto{2, 5}; construye una distribución de resultados int entre dos y cinco, incluidos ambos extremos (Köppe et al., 2023). La semilla configura el comienzo del motor y los límites configuran la distribución.\n\nPara repetir los datos de un programa sin modificar su configuración, mantendremos también la misma implementación de la biblioteca y el mismo orden de llamadas. Fijar sólo la semilla no garantiza una lista idéntica de resultados distribuidos entre bibliotecas diferentes, porque sus algoritmos de distribución pueden variar (Köppe et al., 2023).",
           "emphasis": [
             {
               "text": "dos objetos con funciones distintas",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "semilla",
@@ -45,15 +44,18 @@
             },
             {
               "text": "incluidos ambos extremos",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
+            },
+            {
+              "text": "la misma implementación de la biblioteca",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{31};\n    std::uniform_int_distribution<int> reparto{2, 5};\n    int dato = reparto(motor);\n    std::cout << \"En rango: \" << (dato >= 2 && dato <= 5);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{31};\n    std::uniform_int_distribution<int> reparto{2, 5};\n\n    int dato = reparto(motor);\n\n    std::cout << \"En rango: \" << (dato >= 2 && dato <= 5);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -120,7 +122,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el nombre del motor ya declarado.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{47};\n    std::uniform_int_distribution<int> reparto{1, 3};\n    int dato = reparto(___);\n    std::cout << (dato >= 1 && dato <= 3);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{47};\n    std::uniform_int_distribution<int> reparto{1, 3};\n\n    int dato = reparto(___);\n\n    std::cout << (dato >= 1 && dato <= 3);\n\n    return 0;\n}\n",
           "answers": [
             "motor"
           ],
@@ -130,7 +132,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 fuente{73};\n    std::uniform_int_distribution<int> elegir{-3, 2};\n    bool dentro = true;\n    for (int i{0}; i < 12; ++i) {\n        const int valor = elegir(fuente);\n        dentro = dentro && valor >= -3 && valor <= 2;\n    }\n    std::cout << \"Datos:12;Dentro:\" << dentro;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 fuente{73};\n    std::uniform_int_distribution<int> elegir{-3, 2};\n\n    bool dentro = true;\n    for (int i{0}; i < 12; ++i) {\n        const int valor = elegir(fuente);\n        dentro = dentro && valor >= -3 && valor <= 2;\n    }\n\n    std::cout << \"Datos:12;Dentro:\" << dentro;\n\n    return 0;\n}\n",
           "answers": [
             "Datos:12;Dentro:1"
           ],
@@ -183,17 +185,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Los límites deben estar ordenados y pueden ser iguales. uniform_int_distribution<int>{4, 4} tiene un único resultado posible: cuatro (Köppe et al., 2023).\n\nLa distribución sigue teniendo una interfaz válida. Saber cuál es su único resultado no permite deducir cuántas obtenciones internas realiza del motor.",
+          "text": "El límite inferior no debe superar al superior; pueden ser iguales. uniform_int_distribution<int>{4, 4} tiene un único resultado posible: cuatro (Köppe et al., 2023).\n\nLa distribución sigue teniendo una interfaz válida. Saber cuál es su único resultado no permite deducir cuántas obtenciones internas realiza del motor.",
           "emphasis": [
             {
               "text": "pueden ser iguales",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "un único resultado posible",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             }
           ]
         },
@@ -201,7 +201,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{89};\n    std::uniform_int_distribution<int> elegir{7, 7};\n    for (int i{0}; i < 3; ++i) {\n        std::cout << '[' << elegir(motor) << ']';\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{89};\n    std::uniform_int_distribution<int> elegir{7, 7};\n    for (int i{0}; i < 3; ++i) {\n        std::cout << '[' << elegir(motor) << ']';\n    }\n\n    return 0;\n}\n",
           "answers": [
             "[7][7][7]"
           ],
@@ -278,27 +278,31 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye probar(int cantidad, int minimo, int maximo). Cada llamada crea un motor con semilla 59 y una distribución entera para el intervalo indicado. Obtiene cantidad datos y los conserva en un vector, en el orden en que se producen.\n\nMuestra Cantidad:N a partir del tamaño del vector y En rango:B a partir de la comprobación de que todos sus elementos están en el intervalo. Termina ambas líneas con un salto. En estas pruebas, minimo <= maximo y cantidad está entre cero y dieciséis.\n\nEn main reúne estas cinco llamadas, en este orden: (16,-2,4), (0,-2,4), (1,-2,4), (10,5,5) y (7,-4,-1). Pulsa Compilar, ejecutar y comprobar. Las cantidades deben ser 16, 0, 1, 10 y 7; cada línea En rango debe mostrar uno. Obtén esos valores del vector y de su comprobación, no de constantes que imiten la salida.\n\nEl objetivo verifica cantidades y límites. Los algoritmos de las distribuciones pueden variar entre implementaciones (Köppe et al., 2023); una lista obtenida con otra biblioteca no se convierte en la respuesta obligatoria de esta actividad.",
+          "text": "Construye probar(int cantidad, int minimo, int maximo). Cada llamada debe crear su propio motor con semilla 59, una distribución entera para el intervalo indicado y un vector donde guardar los datos.\n\nObtén tantos resultados de la distribución como indique cantidad. Conserva cada resultado en el vector, en el orden en que se produce.\n\nMuestra dos líneas por llamada:\n\nCantidad:N, donde N se obtiene del tamaño del vector.\nEn rango:B, donde B indica si todos los elementos pertenecen al intervalo solicitado.\n\nTermina ambas líneas con un salto. En estas pruebas, minimo <= maximo y cantidad está entre cero y dieciséis. No se solicita tratar configuraciones que queden fuera de esas condiciones.\n\nEn main reúne estas cinco llamadas independientes, en este orden. Cada una crea sus propios objetos y produce su par de líneas:\n\nprobar(16, -2, 4)\nCantidad:16\nEn rango:1\n\nprobar(0, -2, 4)\nCantidad:0\nEn rango:1\n\nprobar(1, -2, 4)\nCantidad:1\nEn rango:1\n\nprobar(10, 5, 5)\nCantidad:10\nEn rango:1\n\nprobar(7, -4, -1)\nCantidad:7\nEn rango:1\n\nPulsa Compilar, ejecutar y comprobar. Obtén lo que muestras a partir del vector y de su comprobación; escribir constantes que imiten esas líneas no comprueba los datos generados.\n\nEl objetivo verifica cantidades y límites. Los algoritmos de las distribuciones pueden variar entre implementaciones (Köppe et al., 2023); una lista obtenida con otra biblioteca no se convierte en la respuesta obligatoria de esta actividad.",
           "emphasis": [
             {
-              "text": "en el orden en que se producen",
-              "style": "bold",
-              "occurrence": 1
+              "text": "su propio motor",
+              "style": "bold"
             },
             {
-              "text": "todos sus elementos",
-              "style": "bold",
-              "occurrence": 1
+              "text": "en el orden en que se produce",
+              "style": "bold"
             },
             {
-              "text": "cinco llamadas",
-              "style": "bold",
-              "occurrence": 1
+              "text": "todos los elementos",
+              "style": "bold"
+            },
+            {
+              "text": "cinco llamadas independientes",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             },
             {
               "text": "cantidades y límites",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             }
           ]
         },
@@ -345,26 +349,23 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{-2, 4};\n    std::vector<int> datos;\n    for (int i{0}; i < 16; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= -2 && dato <= 4;\n    }\n    std::cout << \"Cantidad:\" << datos.size() << '\\n';\n    std::cout << \"En rango:\" << dentro;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{-2, 4};\n\n    std::vector<int> datos;\n\n    for (int i{0}; i < 16; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= -2 && dato <= 4;\n    }\n\n    std::cout << \"Cantidad:\" << datos.size() << '\\n';\n    std::cout << \"En rango:\" << dentro;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Este primer programa construye únicamente la muestra de dieciséis datos entre -2 y 4. Muestra Cantidad:16 y En rango:1. No añade un salto de línea después de ese último uno. Permite observar cómo se guarda cada resultado y cómo se recorre el vector para comprobar la propiedad.\n\nLa referencia completa que sigue define probar y reúne las cinco muestras del objetivo, con el salto al final de cada línea. Incluye la colección vacía, una sola observación, el intervalo 5..5 y el intervalo negativo.",
+          "text": "Este primer programa construye únicamente la muestra de dieciséis datos entre -2 y 4. Muestra estas dos líneas:\n\nCantidad:16\nEn rango:1\n\nNo añade un salto de línea después de ese último uno. Permite observar cómo se guarda cada resultado y cómo se recorre el vector para comprobar el intervalo.\n\nLa referencia completa siguiente define probar y reúne las cinco llamadas del objetivo, con el salto al final de cada línea. Además de la muestra anterior, incluye:\n\nLa colección vacía.\nUna muestra de un dato.\nEl intervalo 5..5, con un único resultado posible.\nEl intervalo negativo.\n\nCada llamada construye su propio vector y obtiene de él la cantidad y el resultado de comprobar el rango.",
           "emphasis": [
             {
               "text": "únicamente la muestra de dieciséis datos",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
               "text": "referencia completa",
-              "style": "bold",
-              "occurrence": 1
+              "style": "bold"
             },
             {
-              "text": "cinco muestras del objetivo",
-              "style": "bold",
-              "occurrence": 1
+              "text": "su propio vector",
+              "style": "bold"
             }
           ]
         },
@@ -396,7 +397,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nvoid probar(int cantidad, int minimo, int maximo) {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    std::vector<int> datos;\n    for (int i=0; i<cantidad; ++i) { datos.push_back(elegir(motor)); }\n    bool dentro=true;\n    for (int dato:datos) { dentro=dentro && dato>=minimo && dato<=maximo; }\n    std::cout<<\"Cantidad:\"<<datos.size()<<\"\\nEn rango:\"<<dentro<<\"\\n\";\n}\n\nint main() {\n    probar(16,-2,4);\n    probar(0,-2,4);\n    probar(1,-2,4);\n    probar(10,5,5);\n    probar(7,-4,-1);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nvoid probar(int cantidad, int minimo, int maximo) {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n\n    std::vector<int> datos;\n\n    for (int i = 0; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= minimo && dato <= maximo;\n    }\n\n    std::cout << \"Cantidad:\" << datos.size()\n              << \"\\nEn rango:\" << dentro << \"\\n\";\n}\n\nint main() {\n    probar(16, -2, 4);\n    probar(0, -2, 4);\n    probar(1, -2, 4);\n    probar(10, 5, 5);\n    probar(7, -4, -1);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -410,7 +411,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{101};\n    std::uniform_int_distribution<int> elegir{0, 9};\n    std::vector<int> datos;\n    for (int i{0}; i < 0; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= 0 && dato <= 9;\n    }\n    std::cout << datos.size() << ':' << dentro;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{101};\n    std::uniform_int_distribution<int> elegir{0, 9};\n\n    std::vector<int> datos;\n\n    for (int i{0}; i < 0; ++i) {\n        datos.push_back(elegir(motor));\n    }\n\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= 0 && dato <= 9;\n    }\n\n    std::cout << datos.size() << ':' << dentro;\n\n    return 0;\n}\n",
           "answers": [
             "0:1"
           ],
@@ -1349,6 +1350,139 @@
         "id": "block_0006_0002",
         "beforeSha256": "2d1d56fd81a63252e977307d6ab42d9ce20dda547552bc6f823081f133e3a785",
         "afterSha256": "cb97229a0953739a3e603f3e2759f2aabba5e0a06c701ec3cd730dc03284374d"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "de73fff5502b72d671bf019af5e7452ce288d26e15cb8e03cd183d01acaf1c83",
+        "afterSha256": "b2dc65ea68e781b619eaf9da9185c5893320ec8588d71a9fd0792ba198f5aea1"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "6471c3e83e6ab02d355eace68927cc3a47c4b0cde29d6474372bb29effdbd043",
+        "afterSha256": "48848c06d4c0ad6405e0f434413cb0778a5a5ca86052cc6a67f95a5e8bcaf93d"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "40e125b39519687c26c33440531f04fcd4f2c62404186e4c646fce5579cea767",
+        "afterSha256": "b197816e76c2e018a52bd2f271d57adb56856e48598756ee7e0832fa4c94fc75"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "8719d0bab529fad1f071b7d8046e5fab0fc27897dca04a98a989aae80e594eac",
+        "afterSha256": "3038a9a6fb057f20bc6da16c7f1950599ef1a279cf65dbf40dcc1dfabd0a274c"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "95a18701193d74c7f18706eaea87c3009740b5ccb9641a172b3ce3dd7aa75602",
+        "afterSha256": "81a5a1ad1e646b1acadcf51ce4f98d4387e913c089b50bcb9eb799506e0942a4"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "7d5b4ab26e02d658519ca2e46a9699a88d2ca83553869e29c4861aa2d02a2665",
+        "afterSha256": "a6e16f7e2ce58c2fbc8211105c29e9a3586630d9e1339ce0e855dc62f500ee14"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "943f56a3f52b0ec4e4a6d7ac5dfdbec88adbbef4f8126551fbfdc7f858e2925f",
+        "afterSha256": "910caee793cc89c38b6e50f07dc48e9a6c8daae8479918b5aa4ac6022f8e2e71"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "f6865e5fb1943f19a651ce67106efc9c1e7a3ddfe535c9a9cdc57f93304f34a8",
+        "afterSha256": "f78c8f059e8c789fc402ebe1e8b0e947519f041a0e6c79b55ffade1104bdf022"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "d5795ea840f8cd6c8e4ce80e4266c7f24f1e9c904c144c1d779b08f82016050c",
+        "afterSha256": "d128b989fd008a260dffd1efc74f8b7ba2a674a21174ef6bb6f4c29f4a1eb6ef"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "0dd10d25b509f1e9be38593aa0191c8449219afa85a5ab90ce7dfb5571e44689",
+        "afterSha256": "d478f1937e7a4ddaf5b8089ae2fcec4aa414b081a33f23ef9c4de03248780af9"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "825673a2edc97f94f134658da63f1c15ddff68ee063e590b438e00ba9eee9549",
+        "afterSha256": "93cb641451c9aa42d0dc3a203b0df5868ff95289c38b6390588fc54e00788d37"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{31};\n    std::uniform_int_distribution<int> reparto{2, 5};\n    int dato = reparto(motor);\n    std::cout << \"En rango: \" << (dato >= 2 && dato <= 5);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del motor ya declarado.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{47};\n    std::uniform_int_distribution<int> reparto{1, 3};\n    int dato = reparto(___);\n    std::cout << (dato >= 1 && dato <= 3);\n    return 0;\n}\n",
+          "answers": [
+            "motor"
+          ],
+          "explanation": "La declaración anterior crea motor con semilla 47. Al completar reparto(motor), la distribución utiliza ese objeto y devuelve un entero entre 1 y 3, que se guarda en dato. Por eso la comprobación de los límites muestra 1. Los paréntesis invocan la operación del objeto reparto; el argumento identifica qué motor debe utilizar."
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 fuente{73};\n    std::uniform_int_distribution<int> elegir{-3, 2};\n    bool dentro = true;\n    for (int i{0}; i < 12; ++i) {\n        const int valor = elegir(fuente);\n        dentro = dentro && valor >= -3 && valor <= 2;\n    }\n    std::cout << \"Datos:12;Dentro:\" << dentro;\n    return 0;\n}\n",
+          "answers": [
+            "Datos:12;Dentro:1"
+          ],
+          "explanation": "El bucle solicita doce resultados a elegir, configurada entre -3 y 2, incluidos. Para cada valor, las dos comparaciones del intervalo son verdaderas. dentro empieza en true y ninguna vuelta lo cambia a falso, por lo que su valor final se imprime como 1. El rótulo y ese valor forman Datos:12;Dentro:1, sin necesitar conocer los doce enteros concretos."
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{89};\n    std::uniform_int_distribution<int> elegir{7, 7};\n    for (int i{0}; i < 3; ++i) {\n        std::cout << '[' << elegir(motor) << ']';\n    }\n    return 0;\n}\n",
+          "answers": [
+            "[7][7][7]"
+          ],
+          "explanation": "Los dos límites son 7, de modo que cada llamada a elegir(motor) devuelve 7. El bucle se ejecuta tres veces y en cada vuelta imprime un corchete de apertura, el resultado y un corchete de cierre. Así se concatenan [7][7][7], sin espacios ni saltos. Este resultado no permite contar cuántas llamadas internas realizó la distribución al motor."
+        }
+      },
+      {
+        "id": "block_0005_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{-2, 4};\n    std::vector<int> datos;\n    for (int i{0}; i < 16; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= -2 && dato <= 4;\n    }\n    std::cout << \"Cantidad:\" << datos.size() << '\\n';\n    std::cout << \"En rango:\" << dentro;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nvoid probar(int cantidad, int minimo, int maximo) {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{minimo,maximo};\n    std::vector<int> datos;\n    for (int i=0; i<cantidad; ++i) { datos.push_back(elegir(motor)); }\n    bool dentro=true;\n    for (int dato:datos) { dentro=dentro && dato>=minimo && dato<=maximo; }\n    std::cout<<\"Cantidad:\"<<datos.size()<<\"\\nEn rango:\"<<dentro<<\"\\n\";\n}\n\nint main() {\n    probar(16,-2,4);\n    probar(0,-2,4);\n    probar(1,-2,4);\n    probar(10,5,5);\n    probar(7,-4,-1);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{101};\n    std::uniform_int_distribution<int> elegir{0, 9};\n    std::vector<int> datos;\n    for (int i{0}; i < 0; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= 0 && dato <= 9;\n    }\n    std::cout << datos.size() << ':' << dentro;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "El primer bucle empieza con i igual a 0 y comprueba i < 0, que ya es falso. No llama a elegir ni añade elementos: datos.size() da 0. El segundo recorrido tampoco ejecuta su cuerpo, así que dentro conserva el valor true y se imprime como 1. El carácter separador produce la salida completa 0:1."
+        }
       }
     ]
   },
@@ -1378,7 +1512,7 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "bdc62ad16971b7328f74ad5feb11a8492c76d24e68fbcf007b8b0691b4486ea1",
+        "sourceSha256": "8536c25c7d429a1fa725d4c6416d5add2f31e332b052f70634b4360a8c096764",
         "spans": [
           {
             "start": 12,
@@ -1392,6 +1526,13 @@
             "end": 219,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 225,
+            "end": 228,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1431,14 +1572,28 @@
           },
           {
             "start": 557,
+            "end": 560,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 563,
             "end": 568,
-            "text": "dos y cinco",
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 595,
             "end": 615,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 1028,
+            "end": 1048,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -1459,8 +1614,15 @@
           },
           {
             "start": 92,
+            "end": 95,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 98,
             "end": 103,
-            "text": "dos y cinco",
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
@@ -1480,8 +1642,15 @@
         "spans": [
           {
             "start": 30,
+            "end": 36,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 39,
             "end": 43,
-            "text": "cuatro a ocho",
+            "text": "ocho",
             "role": "data",
             "reading": "natural"
           }
@@ -1522,8 +1691,36 @@
           },
           {
             "start": 174,
+            "end": 175,
+            "text": "4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 177,
+            "end": 178,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 180,
+            "end": 181,
+            "text": "6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 184,
+            "text": "7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 187,
             "end": 188,
-            "text": "4, 5, 6, 7 y 8",
+            "text": "8",
             "role": "output",
             "reading": "natural"
           },
@@ -1564,8 +1761,15 @@
           },
           {
             "start": 68,
+            "end": 69,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
             "end": 73,
-            "text": "4 y 8",
+            "text": "8",
             "role": "data",
             "reading": "natural"
           }
@@ -1585,8 +1789,15 @@
           },
           {
             "start": 38,
+            "end": 39,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 42,
             "end": 43,
-            "text": "4 y 7",
+            "text": "7",
             "role": "data",
             "reading": "natural"
           }
@@ -1599,8 +1810,15 @@
         "spans": [
           {
             "start": 24,
+            "end": 25,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 28,
             "end": 29,
-            "text": "4 y 8",
+            "text": "8",
             "role": "data",
             "reading": "natural"
           }
@@ -1669,6 +1887,13 @@
             "text": "reparto",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 376,
+            "end": 379,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 434,
@@ -1760,6 +1985,13 @@
         "sourceSha256": "a42a30a449c0d9e69c2864c8967facd470d8dc5e065402eb13dcf5878bbf76b2",
         "spans": [
           {
+            "start": 18,
+            "end": 22,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 36,
             "end": 42,
             "text": "elegir",
@@ -1781,11 +2013,11 @@
             "reading": "natural"
           },
           {
-            "start": 91,
-            "end": 96,
-            "text": "valor",
-            "role": "cpp",
-            "reading": "technical"
+            "start": 102,
+            "end": 105,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 150,
@@ -1814,6 +2046,13 @@
             "text": "Datos:12;Dentro:1",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 328,
+            "end": 332,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1828,6 +2067,13 @@
         "path": "/text",
         "sourceSha256": "c0ed7cd099106289ab422ee766cd79eb090fca9c8ddd9aeb1f0cb0a1cb89aecf",
         "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 19,
             "end": 48,
@@ -1844,8 +2090,15 @@
           },
           {
             "start": 109,
+            "end": 111,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
             "end": 115,
-            "text": "-2 y 2",
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
@@ -1858,8 +2111,36 @@
           },
           {
             "start": 144,
+            "end": 146,
+            "text": "-2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 148,
+            "end": 150,
+            "text": "-1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 153,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 155,
+            "end": 156,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
             "end": 160,
-            "text": "-2, -1, 0, 1 y 2",
+            "text": "2",
             "role": "output",
             "reading": "natural"
           },
@@ -1991,25 +2272,25 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "9dcdeb7d3b9883223e7950e8c47c9c3396b8cb6dabea66f9b856df9fda88f74f",
+        "sourceSha256": "3c72ad90ba7acf838db4d9e53d1f3182504d2e9411323bcef46b46cc62ac9377",
         "spans": [
           {
-            "start": 56,
-            "end": 91,
+            "start": 68,
+            "end": 103,
             "text": "uniform_int_distribution<int>{4, 4}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 126,
-            "end": 132,
+            "start": 138,
+            "end": 144,
             "text": "cuatro",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 133,
-            "end": 153,
+            "start": 145,
+            "end": 165,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2027,6 +2308,13 @@
         "path": "/explanation",
         "sourceSha256": "8312baa85a69d40fb99b50a68fa8776651d30366a4b7f0cbdc6aacd76076343f",
         "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 20,
             "end": 21,
@@ -2046,6 +2334,13 @@
             "end": 74,
             "text": "7",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 100,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -2137,6 +2432,27 @@
             "text": "2",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 147,
+            "end": 150,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 152,
+            "end": 156,
+            "text": "Seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 185,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -2191,7 +2507,7 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "1c1c25cbcd6943d9b22ba70f61f8c1af3a3406e745d8073c3bc5275e49a24284",
+        "sourceSha256": "d424b0011c8077b15ae673e209412c302e58dc3e9bc09e7a84ec5dc216bf0061",
         "spans": [
           {
             "start": 10,
@@ -2201,99 +2517,204 @@
             "reading": "technical"
           },
           {
-            "start": 95,
-            "end": 97,
+            "start": 108,
+            "end": 110,
             "text": "59",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 160,
-            "end": 168,
+            "start": 257,
+            "end": 265,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 245,
-            "end": 255,
+            "start": 345,
+            "end": 348,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 370,
+            "end": 380,
             "text": "Cantidad:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 289,
-            "end": 299,
+            "start": 388,
+            "end": 389,
+            "text": "N",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 424,
+            "end": 434,
             "text": "En rango:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 431,
-            "end": 447,
+            "start": 442,
+            "end": 443,
+            "text": "B",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 564,
+            "end": 580,
             "text": "minimo <= maximo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 450,
-            "end": 458,
+            "start": 583,
+            "end": 591,
             "text": "cantidad",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 470,
-            "end": 486,
-            "text": "cero y dieciséis",
+            "start": 603,
+            "end": 607,
+            "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 492,
-            "end": 496,
+            "start": 610,
+            "end": 619,
+            "text": "dieciséis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 701,
+            "end": 705,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 509,
-            "end": 514,
+            "start": 718,
+            "end": 723,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 540,
-            "end": 591,
-            "text": "(16,-2,4), (0,-2,4), (1,-2,4), (10,5,5) y (7,-4,-1)",
-            "role": "data",
-            "reading": "natural"
+            "start": 827,
+            "end": 844,
+            "text": "probar(16, -2, 4)",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 656,
-            "end": 672,
-            "text": "16, 0, 1, 10 y 7",
+            "start": 845,
+            "end": 856,
+            "text": "Cantidad:16",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 685,
-            "end": 693,
-            "text": "En rango",
+            "start": 857,
+            "end": 867,
+            "text": "En rango:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 707,
-            "end": 710,
-            "text": "uno",
+            "start": 869,
+            "end": 885,
+            "text": "probar(0, -2, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 886,
+            "end": 896,
+            "text": "Cantidad:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 921,
-            "end": 941,
+            "start": 897,
+            "end": 907,
+            "text": "En rango:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 909,
+            "end": 925,
+            "text": "probar(1, -2, 4)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 926,
+            "end": 936,
+            "text": "Cantidad:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 937,
+            "end": 947,
+            "text": "En rango:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 949,
+            "end": 965,
+            "text": "probar(10, 5, 5)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 966,
+            "end": 977,
+            "text": "Cantidad:10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 978,
+            "end": 988,
+            "text": "En rango:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 990,
+            "end": 1007,
+            "text": "probar(7, -4, -1)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1008,
+            "end": 1018,
+            "text": "Cantidad:7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1019,
+            "end": 1029,
+            "text": "En rango:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1328,
+            "end": 1348,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
@@ -2307,8 +2728,15 @@
         "spans": [
           {
             "start": 53,
+            "end": 55,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
             "end": 59,
-            "text": "-2 y 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -2370,8 +2798,15 @@
         "spans": [
           {
             "start": 12,
+            "end": 14,
+            "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 17,
             "end": 18,
-            "text": "-2 y 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -2422,7 +2857,7 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "2e012d3b83adb09fa6e3874275619dd3ba45e7a1f7e1cccb363a1355742671be",
+        "sourceSha256": "3ae56e25ab08929293273894290d18b744444bd0aca4b8bba54c2c67ef6cd25b",
         "spans": [
           {
             "start": 56,
@@ -2433,49 +2868,70 @@
           },
           {
             "start": 78,
-            "end": 84,
-            "text": "-2 y 4",
+            "end": 80,
+            "text": "-2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 94,
-            "end": 105,
+            "start": 83,
+            "end": 84,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 103,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
+            "end": 124,
             "text": "Cantidad:16",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 108,
-            "end": 118,
+            "start": 125,
+            "end": 135,
             "text": "En rango:1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 169,
-            "end": 172,
+            "start": 186,
+            "end": 189,
             "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 319,
-            "end": 325,
+            "start": 336,
+            "end": 342,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 338,
-            "end": 343,
+            "start": 355,
+            "end": 360,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 467,
-            "end": 471,
+            "start": 497,
+            "end": 499,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 519,
+            "end": 523,
             "text": "5..5",
             "role": "data",
             "reading": "natural"
@@ -2731,6 +3187,13 @@
             "reading": "natural"
           },
           {
+            "start": 134,
+            "end": 137,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 189,
             "end": 191,
             "text": "59",
@@ -2780,6 +3243,13 @@
         "path": "/text",
         "sourceSha256": "168c45ef21071d311154d56ce85613a906822fd83cc6a5201aa925368e155550",
         "spans": [
+          {
+            "start": 89,
+            "end": 92,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 137,
             "end": 157,

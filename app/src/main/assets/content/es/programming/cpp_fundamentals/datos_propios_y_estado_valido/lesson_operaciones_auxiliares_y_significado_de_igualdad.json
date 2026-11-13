@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La interfaz pública de Pedido permite consultar su código, cantidad y estado. Una función auxiliar puede reunir esas consultas para responder otra pregunta sin acceder directamente a los miembros privados (Stroustrup, 2024).\n\nEn este modelo se define mismo_valor para comprobar que los tres datos coincidan. Es una función libre: se declara fuera de la clase y recibe los dos pedidos que compara. No necesita abrir la representación ni añadir una función miembro para cada consulta derivada.",
+          "text": "La interfaz pública de Pedido permite consultar su código mediante codigo(), su cantidad mediante unidades() y su estado mediante estado(). Queremos comprobar si dos pedidos coinciden en esos tres datos. Una función auxiliar puede combinar las consultas públicas para responder esa pregunta sin acceder directamente a los miembros privados (Stroustrup, 2024).\n\nEn este modelo se define mismo_valor para realizar esa comparación. Es una función libre: se declara fuera de la clase y recibe los dos pedidos que compara. Esta consulta se deriva de las consultas existentes; no necesita hacer públicos los datos privados ni añadir otra función miembro.",
           "emphasis": [
             {
               "text": "función auxiliar"
@@ -23,17 +23,18 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nint main() {\n    Pedido a{\"A\", 3};\n    Pedido b{\"A\", 3};\n    std::cout << mismo_valor(a, b);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo()\n        && a.unidades() == b.unidades()\n        && a.estado() == b.estado();\n}\n\nint main() {\n    Pedido a{\"A\", 3};\n    Pedido b{\"A\", 3};\n\n    std::cout << mismo_valor(a, b);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Los parámetros const Pedido& reciben los pedidos por referencia, sin crear copias de esos objetos para pasarlos a la función, y no permiten modificarlos por esa vía (Stroustrup, 2024). Las consultas utilizadas están declaradas const.\n\nLa expresión une tres comparaciones mediante &&. Para este mismo_valor deben coincidir el código, las unidades y el estado. Que coincida sólo uno de ellos no basta.",
+          "text": "Los parámetros const Pedido& reciben los pedidos por referencia, sin crear copias de esos objetos para pasarlos a la función, y no permiten modificarlos por esa vía (Stroustrup, 2024). Las consultas utilizadas están declaradas const.\n\nLa expresión une tres comparaciones mediante &&. Cada una comprueba un dato del modelo:\n\na.codigo() == b.codigo() comprueba si coinciden los códigos.\n\na.unidades() == b.unidades() comprueba si coinciden las cantidades.\n\na.estado() == b.estado() comprueba si coinciden los estados.\n\nmismo_valor devuelve true sólo si se cumplen las tres comparaciones. Si cualquier dato es distinto, devuelve false; no basta con que coincida sólo el código.",
           "emphasis": [
             {
               "text": "sin crear copias de esos objetos"
             },
             {
-              "text": "tres comparaciones"
+              "text": "tres comparaciones",
+              "occurrence": 1
             }
           ]
         }
@@ -53,11 +54,11 @@
           "answers": [
             "1 0"
           ],
-          "explanation": "Los códigos coinciden, pero las cantidades son distintas. El valor completo no coincide."
+          "explanation": "Los códigos de ambos pedidos son K, por lo que a.codigo() == b.codigo() devuelve true y se muestra 1. Las cantidades, dos y ocho, son distintas: mismo_valor(a, b) devuelve false y se muestra 0. Aunque ambos estén preparados, no coinciden todos los datos. La salida completa es 1 0."
         },
         {
           "type": "paragraph",
-          "text": "Este tipo no exige que el código sea único entre todos los objetos. Dos pedidos pueden conservar la misma etiqueta y tener cantidades o estados diferentes.\n\nComparar sólo codigo() responde si sus códigos coinciden. mismo_valor responde si coinciden los tres datos que aquí forman el valor completo. Es necesario decidir qué pregunta se quiere contestar antes de elegir la comparación.",
+          "text": "Este tipo no exige que el código sea único entre todos los objetos. Dos pedidos pueden conservar la misma etiqueta y tener cantidades o estados diferentes.\n\nComparar sólo codigo() responde si sus códigos coinciden. mismo_valor responde si coinciden los tres datos que aquí forman el valor completo. Por ejemplo, compartir el código K no hace iguales las cantidades dos y ocho.\n\nIgualdad de valor tampoco significa que se trate del mismo objeto. En Pedido b = a;, se crea otro objeto copiando los miembros de a (Köppe et al., 2023). Los valores completos empiezan iguales, pero después cada pedido conserva sus propios miembros. Es necesario decidir qué pregunta se quiere contestar antes de elegir la comparación.",
           "emphasis": [
             {
               "text": "sus códigos coinciden"
@@ -76,7 +77,7 @@
             "Sus valores son distintos por el estado."
           ],
           "correctIndex": 2,
-          "explanation": "El estado forma parte explícita de la definición de valor.",
+          "explanation": "El código y la cantidad coinciden, pero el estado enviado difiere del estado preparado. La comparación de estados devuelve false. Como mismo_valor exige que coincidan los tres datos, los valores completos son distintos.",
           "reviewFeedback": [
             "Esta elección utiliza el código como único criterio. Recupera qué datos reúne mismo_valor en la comparación de este modelo.",
             "Esta elección compara código y cantidad. Revisa si el estado también forma parte del valor que se definió.",
@@ -93,7 +94,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La sobrecarga de operadores permite dar a una operación conocida una definición para un tipo propio (Stroustrup, 2024). En bool operator==(const Pedido& a, const Pedido& b), operator== identifica la función que implementa la comparación y bool es su tipo de resultado.\n\nEn este ejemplo, escribir a == b utiliza esa función con los dos pedidos como operandos; su cuerpo devuelve mismo_valor(a, b) (Köppe et al., 2023). La escritura es más breve, pero conserva la regla de comparar código, unidades y estado. Definirla con el significado esperado de igualdad ayuda a leer el programa (Stroustrup, 2024).",
+          "text": "La sobrecarga de operadores permite dar a una operación conocida una definición para un tipo propio (Stroustrup, 2024). En bool operator==(const Pedido& a, const Pedido& b), operator== identifica la función que implementa la comparación y bool es su tipo de resultado.\n\nEn este ejemplo, escribir a == b utiliza esa función con los dos pedidos como operandos; su cuerpo devuelve mismo_valor(a, b) (Köppe et al., 2023). La escritura es más breve, pero conserva la regla de comparar código, unidades y estado. Definirla con el significado esperado de igualdad ayuda a leer el programa (Stroustrup, 2024).\n\nEl programa también define operator!= como comparación complementaria: su resultado es verdadero cuando no se cumple la igualdad completa. Así, == y != responden preguntas contrarias sobre los mismos valores (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "sobrecarga de operadores"
@@ -111,7 +112,7 @@
           "answers": [
             "1 0 1"
           ],
-          "explanation": "La copia empieza con el mismo valor completo. Cambiar el estado de b rompe la igualdad; != devuelve la negación de ==."
+          "explanation": "Pedido b = a; crea una copia con el mismo código M, cuatro unidades y estado preparado. Por eso la primera igualdad se muestra como 1. Después, b.enviar() cambia sólo el estado de b a enviado; a sigue preparado. La igualdad completa pasa a false y la desigualdad devuelve true. Se muestra 1 0 1."
         },
         {
           "type": "paragraph",
@@ -129,7 +130,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el operador de negación que hace != coherente con ==.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return ___(a == b); }\n\nint main() {\n    Pedido a{\"A\", 1};\n    Pedido b{\"B\", 1};\n    std::cout << (a != b);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado,\n    enviado,\n    cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n\n    std::string codigo() const {\n        return codigo_;\n    }\n\n    int unidades() const {\n        return unidades_;\n    }\n\n    Estado estado() const {\n        return estado_;\n    }\n\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) {\n            return false;\n        }\n\n        unidades_ = nuevas;\n        return true;\n    }\n\n    bool enviar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::enviado;\n        return true;\n    }\n\n    bool cancelar() {\n        if (estado_ != Estado::preparado) {\n            return false;\n        }\n\n        estado_ = Estado::cancelado;\n        return true;\n    }\n\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo()\n        && a.unidades() == b.unidades()\n        && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) {\n    return mismo_valor(a, b);\n}\n\nbool operator!=(const Pedido& a, const Pedido& b) {\n    return ___(a == b);\n}\n\nint main() {\n    Pedido a{\"A\", 1};\n    Pedido b{\"B\", 1};\n\n    std::cout << (a != b);\n\n    return 0;\n}\n",
           "answers": [
             "!",
             "not"
@@ -147,7 +148,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las funciones libres operator== y operator!= mostradas reciben dos parámetros. Al menos uno debe ser de una clase o enumeración, o una referencia a ellas. Pedido cumple esa condición; no se puede redefinir así la suma incorporada de dos int (Köppe et al., 2023).\n\nEstas comparaciones conservan sus dos operandos, su prioridad y su agrupación. Definir == no cambia cómo se combina con && ni permite crear símbolos nuevos (Köppe et al., 2023).\n\nElegir una operación con el significado esperado es una decisión de diseño, además de respetar la sintaxis. Que una acción pueda asociarse a un símbolo no hace que ese símbolo explique bien su propósito (Stroustrup, 2024).",
+          "text": "Las funciones libres operator== y operator!= mostradas reciben dos parámetros. Al menos uno debe ser de una clase o enumeración, o una referencia a ellas. Pedido cumple esa condición; no se puede redefinir así la suma incorporada de dos int (Köppe et al., 2023).\n\nLa sintaxis de == y != sigue teniendo dos operandos: el situado a la izquierda y el situado a la derecha del operador. Definir esas funciones no cambia la prioridad ni la agrupación de las expresiones, ni permite crear símbolos nuevos. Por ejemplo, la prioridad de == respecto de && se conserva (Köppe et al., 2023).\n\nConservar esa sintaxis es distinto de conservar el contenido de los objetos. En este modelo, las funciones reciben referencias constantes y utilizan consultas para comparar los pedidos sin modificarlos.\n\nElegir una operación con el significado esperado es una decisión de diseño, además de respetar la sintaxis. La comparación pregunta si dos valores coinciden; enviar() solicita un cambio de estado. Un nombre de acción expresa ese segundo propósito con más claridad que un símbolo de igualdad (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "dos parámetros",
@@ -172,7 +173,7 @@
             "Permite redefinir la suma de dos int sin ningún tipo propio."
           ],
           "correctIndex": 1,
-          "explanation": "Las sobrecargas no crean una nueva prioridad ni permiten reemplazar operaciones únicamente entre tipos incorporados.",
+          "explanation": "operator== define cómo comparar los dos pedidos, pero la expresión sigue teniendo dos operandos. La sobrecarga no puede cambiar la prioridad de == respecto de &&. Tampoco permite redefinir la suma entre dos int: la función libre debe recibir al menos un tipo de clase o enumeración, o una referencia a ellos.",
           "reviewFeedback": [
             "Distingue definir el comportamiento de una operación para un tipo de cambiar las reglas sintácticas con las que se agrupan las expresiones.",
             "Comprueba que la función corresponda al tipo propio y conserve los dos operandos de la comparación.",
@@ -188,7 +189,7 @@
             "enviar(), porque es una transición con su propio contrato."
           ],
           "correctIndex": 2,
-          "explanation": "Un nombre de acción comunica su intención y no sugiere una relación algebraica que el modelo no tiene.",
+          "explanation": "enviar() comprueba si el pedido está preparado y, si acepta la solicitud, cambia su estado a enviado. Por eso expresa una acción con su propio contrato. En cambio, == y != observan los valores de dos pedidos y devuelven una respuesta lógica sin cambiarlos.",
           "reviewFeedback": [
             "Esta expresión consulta una relación entre dos valores. Reconsidera qué significa aplicar una transición a un pedido y qué recibe cada operación.",
             "Esta expresión niega una comparación entre valores. Distingue esa pregunta de una solicitud que cambia el estado de un objeto.",
@@ -211,7 +212,7 @@
           "answers": [
             "2"
           ],
-          "explanation": "Dos elementos completos coinciden. El recorrido no modifica los objetos ni elimina repeticiones."
+          "explanation": "El primer elemento A con 2 coincide con el pedido buscado; el segundo, B con 5, no coincide. El tercer elemento vuelve a ser A con 2 y también se cuenta. Así, cantidad llega a dos y se muestra 2. La repetición sigue siendo otro elemento del vector: el recorrido no la elimina ni modifica los pedidos."
         },
         {
           "type": "paragraph",
@@ -235,7 +236,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Define struct Medida con los miembros públicos etiqueta, de tipo std::string, y cantidad, de tipo int. Esta asociación no impone otra restricción sobre las cantidades. Construye mismo_valor y los operadores == y != para comparar ambos miembros de forma coherente. Las comparaciones no deben modificar las medidas.\n\nEn main compara una medida con etiqueta A y cantidad 2 con estas tres medidas, en orden: A con 2, A con 3 y B con 2. Por cada pareja muestra igualdad:desigualdad, con los resultados bool como 0 o 1. Las tres primeras líneas deben ser 1:0, 0:1 y 0:1; cada una termina con un salto.\n\nDespués recorre las medidas A con 2, A con 3, A con 2 y B con 2. Cuenta cuántas tienen el mismo valor completo que A con 2, sin modificar ni eliminar elementos. Muestra Coincidencias:2 en una cuarta línea, sin salto final. Pulsa Compilar, ejecutar y comprobar. El mismo programa reúne las tres comparaciones y el conteo.",
+          "text": "Define struct Medida con estos miembros públicos:\n\netiqueta, de tipo std::string, guarda el texto.\n\ncantidad, de tipo int, guarda el número.\n\nEsta asociación no impone otra restricción sobre las cantidades. Construye mismo_valor y los operadores == y != para comparar ambos miembros de forma coherente. Las comparaciones no deben modificar las medidas.\n\nEn main compara una medida de etiqueta A y cantidad 2 con estas tres medidas, en este orden. Para cada pareja muestra igualdad:desigualdad, con los resultados bool como 0 o 1:\n\nEtiqueta A y cantidad 2: debe mostrar 1:0.\nEtiqueta A y cantidad 3: debe mostrar 0:1.\nEtiqueta B y cantidad 2: debe mostrar 0:1.\n\nCada una de esas tres líneas termina con un salto.\n\nDespués recorre una colección formada por estas medidas, en este orden:\n\nEtiqueta A y cantidad 2.\nEtiqueta A y cantidad 3.\nEtiqueta A y cantidad 2.\nEtiqueta B y cantidad 2.\n\nCuenta cuántas tienen el mismo valor completo que la medida buscada, A con 2, sin modificar ni eliminar elementos. Muestra Coincidencias:2 en una cuarta línea, sin salto final. Pulsa Compilar, ejecutar y comprobar. El mismo programa reúne las tres comparaciones y el conteo.",
           "emphasis": [
             {
               "text": "miembros públicos"
@@ -283,7 +284,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    const Medida buscada{\"A\", 2};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) { if (medida == buscada) { ++cantidad; } }\n    std::cout << cantidad << \" \" << (Medida{\"A\", 2} != Medida{\"A\", 3});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida {\n    std::string etiqueta;\n    int cantidad;\n};\n\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\n\nbool operator==(const Medida& a, const Medida& b) {\n    return mismo_valor(a, b);\n}\n\nbool operator!=(const Medida& a, const Medida& b) {\n    return !(a == b);\n}\n\nint main() {\n    std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    const Medida buscada{\"A\", 2};\n    std::size_t cantidad = 0;\n\n    for (const auto& medida : medidas) {\n        if (medida == buscada) {\n            ++cantidad;\n        }\n    }\n\n    std::cout << cantidad << \" \" << (Medida{\"A\", 2} != Medida{\"A\", 3});\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -401,7 +402,7 @@
           "answers": [
             "1"
           ],
-          "explanation": "La solicitud de cero unidades falla sin cambiar b; los valores completos siguen iguales."
+          "explanation": "Al copiar a en b, ambos quedan con código Z, tres unidades y estado preparado. b.cambiar_unidades(0) rechaza cero porque la cantidad mínima es una unidad. La llamada termina sin asignar, de modo que b conserva sus tres miembros. Los valores completos siguen iguales y la comparación se muestra como 1."
         },
         {
           "type": "heading",
@@ -410,7 +411,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    const Medida buscada{\"A\", 2};\n    const std::vector<Medida> pares{{\"A\", 2}, {\"A\", 3}, {\"B\", 2}};\n    for (const auto& otra : pares) {\n        std::cout << (buscada == otra) << \":\" << (buscada != otra) << \"\\n\";\n    }\n    const std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) {\n        if (medida == buscada) { ++cantidad; }\n    }\n    std::cout << \"Coincidencias:\" << cantidad;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida {\n    std::string etiqueta;\n    int cantidad;\n};\n\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\n\nbool operator==(const Medida& a, const Medida& b) {\n    return mismo_valor(a, b);\n}\n\nbool operator!=(const Medida& a, const Medida& b) {\n    return !(a == b);\n}\n\nint main() {\n    const Medida buscada{\"A\", 2};\n    const std::vector<Medida> pares{{\"A\", 2}, {\"A\", 3}, {\"B\", 2}};\n\n    for (const auto& otra : pares) {\n        std::cout << (buscada == otra) << \":\" << (buscada != otra) << \"\\n\";\n    }\n\n    const std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    std::size_t cantidad = 0;\n\n    for (const auto& medida : medidas) {\n        if (medida == buscada) {\n            ++cantidad;\n        }\n    }\n\n    std::cout << \"Coincidencias:\" << cantidad;\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1196,6 +1197,132 @@
         "id": "block_0003_0002",
         "beforeSha256": "0d0df3e15f2093699d11165918b76a01cc0698e937d985340b769a81392f1843",
         "afterSha256": "f1c6337d19c59d5e1373b3140851a537156e95586a3b036fc514eec42e9a6b55"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "99c7d6d9469435e9bdcb8f13a18d16b4b9941540ab2419287fc22d9d9a10fab8",
+        "afterSha256": "325b569080caa21950e47bfc6fcd107b054ad85861796677547262d8914a4297"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "abc234fa84ecc977d72193e0612aa5f6f5524d7896c212c0b9111766218deb2e",
+        "afterSha256": "fd7f3cc46712f8806e57cf5cc3f8e116d9132ad3e01e2ec3a065a790bd72cea8"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8d5253a4bc99fec89b55e0878e4e9d74a11a01b16b3b947d34e49942a5d5ea62",
+        "afterSha256": "71b28343697681064b259e730920fe493b4b2767d8c4527f1fe05d68bc7bbf20"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "fcc653776883ef4d8dbfc65422492778ec4a4c9f3a6133c76158420f9083a7a4",
+        "afterSha256": "091c577cbbfbc44e6dec71cdb16cd8b5cf919c99c0f0232ff16c0634f0b355b9"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "ddb4d8ee6ca5082c30c2fe6fafb30d7cfd6564a3a0c6a290d769d84734f93cc6",
+        "afterSha256": "4a5f9104872d1724039fda449b5be8888dbdcedfa715c56a989d6f7b7b673155"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "262c34ad752078e443cc6361e829dd1222af52201424afbb3acbf8dd0aa6110a",
+        "afterSha256": "ec397c734da66d6b67dae8f85a1d5067723cec562e67171ec519e5b31a3a23e9"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "2a0d4690015ca813ed4fa00872decab8d28c4824b7f452bdc6cf57d68a87fe97",
+        "afterSha256": "5ade154075f4823dfeb9f48dfaf057ee62b561b3ff44dfde58cb05279360e957"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "7d6ab0a11cd85756d1a859247d5d747b3a544363254b10edfdde324c056345c4",
+        "afterSha256": "adbf072178b0bb82a6584e1a10aa18446a155c30d82de02fd56d621d36c5315c"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "3d1e751572a8d0a5ff867f4c6c88b5957ba8d1eb1d756b9571efe691990e3170",
+        "afterSha256": "a89ffea042687f3751ce307454b1f518baaf0f7c58f62fbdec62b210b42f5e36"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f1c6337d19c59d5e1373b3140851a537156e95586a3b036fc514eec42e9a6b55",
+        "afterSha256": "5c1fd4d67c8ce1e89b1da7dba24f49e7bcad55572ed2b99e9ce69b07685d206b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "8a8800b423add248966032f90ab5974d6c7afcbfb6ebd5d0ac40dee32224a3ee",
+        "afterSha256": "eba4e9d239f945aa01c350b63ef886c34bd93b1d055a0068076e2646b65eda99"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "9bd45eebb788eddead452da11614d217683b0043c939f46d7df6837625f9a0ac",
+        "afterSha256": "826754fa7690cc552f6c22ab31047cdb25c492e3bf8dd2bdbf5f14400b605646"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "e8ebf8923dc0e4a3654923432cdc09e0fa6a79a186f228932d7961978d8b1a30",
+        "afterSha256": "e2478fbbdf782ae283f8b8bc6d30caca0eb06d397a744adf7b3966e89f2a994e"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "7f2ccc844a5b8035463f4df75696ab703f56632ab8c03b8f3f66aa3f165ea413",
+        "afterSha256": "ff2d517aa24bd146829105c93d8173962a66a1b0d3fba26e5b07a5d106c3f2ae"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "177f72f161506be3b7f30e68758d4a3fec7150e009ba6824f42be9a0f562c048",
+        "afterSha256": "d9c2a47f9d41793810981ae94b11931e35d41c7acffb25685060845f7467786c"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "943b0f61b00c38bbfb5a45c333b6ae7693716026e2e77f4c6adffcd71a6abc58",
+        "afterSha256": "9101c48583ed957aec13edef04dfd6f49d625835479ea7e95a48b6ab15363fff"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "bbfc0fd4c1469a69fcd8062c1ac7ce1e2dd99208f4fa19fdc872ae8b8e9cb777",
+        "afterSha256": "128dd6a35f6c352afee5a9bcf30df771c8da124875d48a440e63bd783ce3bcf3"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nint main() {\n    Pedido a{\"A\", 3};\n    Pedido b{\"A\", 3};\n    std::cout << mismo_valor(a, b);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el operador de negación que hace != coherente con ==.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return ___(a == b); }\n\nint main() {\n    Pedido a{\"A\", 1};\n    Pedido b{\"B\", 1};\n    std::cout << (a != b);\n    return 0;\n}\n",
+          "answers": [
+            "!",
+            "not"
+          ],
+          "explanation": "Diferentes significa que no se cumple la igualdad completa. ! y su escritura alternativa not niegan el mismo resultado bool; ambas mantienen coherencia con ==.",
+          "reviewFeedback": "Identifica qué resultado tiene primero la comparación entre paréntesis y qué operación lógica permite expresar su contrario. No cambies los criterios de igualdad."
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    const Medida buscada{\"A\", 2};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) { if (medida == buscada) { ++cantidad; } }\n    std::cout << cantidad << \" \" << (Medida{\"A\", 2} != Medida{\"A\", 3});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    const Medida buscada{\"A\", 2};\n    const std::vector<Medida> pares{{\"A\", 2}, {\"A\", 3}, {\"B\", 2}};\n    for (const auto& otra : pares) {\n        std::cout << (buscada == otra) << \":\" << (buscada != otra) << \"\\n\";\n    }\n    const std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) {\n        if (medida == buscada) { ++cantidad; }\n    }\n    std::cout << \"Coincidencias:\" << cantidad;\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1232,39 +1359,84 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "046f880a3b884c49142a6f83242df4c7564d0cdfd9ef5e232abf4297d4717ffa",
+        "sourceSha256": "d38543e18de7852954c13631cc043c4178280cc32c2b0331fc8d52be86df4d9b",
         "spans": [
           {
             "start": 23,
             "end": 29,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 205,
-            "end": 223,
+            "start": 67,
+            "end": 75,
+            "text": "codigo()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 98,
+            "end": 108,
+            "text": "unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 130,
+            "end": 138,
+            "text": "estado()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 165,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 192,
+            "end": 196,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 340,
+            "end": 358,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 251,
-            "end": 262,
+            "start": 386,
+            "end": 397,
             "text": "mismo_valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 493,
+            "end": 496,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "24bac61434ccc57466a4b398b419a861fe7d1a1468079d191302c937b52d9698",
+        "sourceSha256": "a1dc71d5be6c5410042b3a586ea3e7041a742bbe27e3fd5f305ad70538f43252",
         "spans": [
           {
             "start": 15,
             "end": 28,
             "text": "const Pedido&",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 165,
@@ -1274,16 +1446,74 @@
             "reading": "natural"
           },
           {
+            "start": 227,
+            "end": 232,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 256,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 280,
             "end": 282,
             "text": "&&",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 294,
-            "end": 305,
+            "start": 324,
+            "end": 348,
+            "text": "a.codigo() == b.codigo()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 386,
+            "end": 414,
+            "text": "a.unidades() == b.unidades()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 455,
+            "end": 479,
+            "text": "a.estado() == b.estado()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 517,
+            "end": 528,
             "text": "mismo_valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 538,
+            "end": 542,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 566,
+            "end": 570,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 626,
+            "end": 631,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1302,25 +1532,154 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "ad63941c603c5f624e3cc943d75248a9fafd05755cc195c53070c0f2e5f400fe",
-        "spans": []
+        "sourceSha256": "96ea103dff0a37a8fa36b49169724a7f9976f7e931793ae2940f8da45b5b07a9",
+        "spans": [
+          {
+            "start": 33,
+            "end": 34,
+            "text": "K",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 47,
+            "end": 71,
+            "text": "a.codigo() == b.codigo()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 85,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 118,
+            "end": 121,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 124,
+            "end": 128,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 162,
+            "text": "mismo_valor(a, b)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 172,
+            "end": 177,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 192,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 277,
+            "end": 280,
+            "text": "1 0",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0002",
         "path": "/text",
-        "sourceSha256": "874bfc65c87aeca331f2e29db19a6ac66ed4a25b41244df19c3b7e376b92fe4d",
+        "sourceSha256": "01c73ec57502ccb3041300781b9f7cf751d3da3b8bf4eb67747c88eddc6c3cc3",
         "spans": [
+          {
+            "start": 68,
+            "end": 71,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 171,
             "end": 179,
             "text": "codigo()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 215,
             "end": 226,
             "text": "mismo_valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 253,
+            "end": 257,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 333,
+            "text": "K",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 368,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 375,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 461,
+            "text": "Pedido b = a;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 508,
+            "end": 509,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 510,
+            "end": 530,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1328,13 +1687,43 @@
         "block": "block_0001_0003",
         "path": "/question",
         "sourceSha256": "89ac83f00d8797560543e0f97a805ebbb982e46e8229d10f906c91e76973f8de",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
         "path": "/explanation",
-        "sourceSha256": "1073a696ec71f333be2f603e05c6ba0830c340443d23406b794dfcdb0c5605a6",
-        "spans": []
+        "sourceSha256": "0625dbe602b35a169cbf5331b57c451b6325c6d539fefe2c69c94fbb235b33de",
+        "spans": [
+          {
+            "start": 123,
+            "end": 128,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 135,
+            "end": 146,
+            "text": "mismo_valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 171,
+            "end": 175,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1363,7 +1752,8 @@
             "start": 78,
             "end": 89,
             "text": "mismo_valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1382,7 +1772,8 @@
             "start": 63,
             "end": 74,
             "text": "mismo_valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1395,14 +1786,15 @@
             "start": 6,
             "end": 8,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "1b8ccbcb9fd37c8a780780a163605af2a2f9017974cb65ee38201f4abc91e50f",
+        "sourceSha256": "ac1f575d767046ffa1dff228500545e10100b6fc1c591fb8f3292f48fb027818",
         "spans": [
           {
             "start": 100,
@@ -1415,31 +1807,43 @@
             "start": 123,
             "end": 172,
             "text": "bool operator==(const Pedido& a, const Pedido& b)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 174,
             "end": 184,
             "text": "operator==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 239,
             "end": 243,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 296,
             "end": 302,
             "text": "a == b",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 331,
+            "end": 334,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 378,
             "end": 395,
             "text": "mismo_valor(a, b)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 396,
@@ -1451,6 +1855,34 @@
           {
             "start": 582,
             "end": 600,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 630,
+            "end": 640,
+            "text": "operator!=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 747,
+            "end": 749,
+            "text": "==",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 752,
+            "end": 754,
+            "text": "!=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 811,
+            "end": 829,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1466,25 +1898,77 @@
       {
         "block": "block_0002_0002",
         "path": "/explanation",
-        "sourceSha256": "82ff80a19439097728aeb902a6c4c290458ef4115a2951a6e78e43150609849b",
+        "sourceSha256": "d405f9a6735a6ef0a96b41a2af67c6547d3203f69516f206e0574c3c16b4fc1f",
         "spans": [
           {
-            "start": 67,
-            "end": 68,
+            "start": 0,
+            "end": 13,
+            "text": "Pedido b = a;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "text": "M",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
+            "end": 58,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 154,
+            "text": "b.enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 180,
+            "end": 181,
             "text": "b",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 88,
-            "end": 90,
-            "text": "!=",
-            "role": "cpp"
+            "start": 193,
+            "end": 194,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 115,
-            "end": 117,
-            "text": "==",
-            "role": "cpp"
+            "start": 240,
+            "end": 245,
+            "text": "false",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 276,
+            "text": "true",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 289,
+            "end": 294,
+            "text": "1 0 1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1497,13 +1981,15 @@
             "start": 31,
             "end": 41,
             "text": "operator!=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 51,
             "end": 60,
             "text": "!(a == b)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 183,
@@ -1516,13 +2002,15 @@
             "start": 213,
             "end": 214,
             "text": "!",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "characters"
           },
           {
             "start": 238,
             "end": 242,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1535,13 +2023,15 @@
             "start": 47,
             "end": 49,
             "text": "!=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 64,
             "end": 66,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1554,25 +2044,29 @@
             "start": 60,
             "end": 61,
             "text": "!",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "characters"
           },
           {
             "start": 89,
             "end": 92,
             "text": "not",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 119,
             "end": 123,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 156,
             "end": 158,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1591,31 +2085,56 @@
       {
         "block": "block_0003_0002",
         "path": "/text",
-        "sourceSha256": "36c3c919eef695137012b8c15ab0db1f175fe33247676383c61e6f35690fcd47",
+        "sourceSha256": "47e660dfee32ff6819d5e3e7839e6dfbecd308beefc3700747914959e06e0a53",
         "spans": [
           {
             "start": 21,
             "end": 31,
             "text": "operator==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 34,
             "end": 44,
             "text": "operator!=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 91,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 155,
             "end": 161,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 233,
+            "end": 236,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 237,
             "end": 240,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 241,
@@ -1625,27 +2144,64 @@
             "reading": "natural"
           },
           {
-            "start": 351,
-            "end": 353,
+            "start": 279,
+            "end": 281,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 384,
-            "end": 386,
+            "start": 284,
+            "end": 286,
+            "text": "!=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 302,
+            "end": 305,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 529,
+            "end": 531,
+            "text": "==",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 544,
+            "end": 546,
             "text": "&&",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 420,
-            "end": 440,
+            "start": 559,
+            "end": 579,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 646,
-            "end": 664,
+            "start": 921,
+            "end": 924,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 944,
+            "end": 952,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 1077,
+            "end": 1095,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -1661,21 +2217,73 @@
             "start": 11,
             "end": 13,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 19,
             "end": 25,
             "text": "Pedido",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0003_0001",
         "path": "/explanation",
-        "sourceSha256": "c33d931c60b3125281371c40402b6fa4e03ade95d91bd3024a9800727335e8ae",
-        "spans": []
+        "sourceSha256": "dcad270f46651c9a0d1d045bc929b10e3a3e22cbf047a651a6f3da995df14df2",
+        "spans": [
+          {
+            "start": 0,
+            "end": 10,
+            "text": "operator==",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 39,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 82,
+            "end": 85,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 144,
+            "end": 146,
+            "text": "==",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 159,
+            "end": 161,
+            "text": "&&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 203,
+            "end": 206,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 207,
+            "end": 210,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
@@ -1686,13 +2294,15 @@
             "start": 23,
             "end": 25,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 38,
             "end": 40,
             "text": "&&",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1700,7 +2310,15 @@
         "block": "block_0003_0001",
         "path": "/options/1",
         "sourceSha256": "48bcf8d57d3db8b7c541d5357950f54a8f3a042c001fbcf9e6babaa0cd66c895",
-        "spans": []
+        "spans": [
+          {
+            "start": 73,
+            "end": 76,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
@@ -1708,10 +2326,18 @@
         "sourceSha256": "c4dfeb0e19d2e00cf583ad59be93f4289872ff98dbcefa0e8ffff3333df2194a",
         "spans": [
           {
+            "start": 29,
+            "end": 32,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 33,
             "end": 36,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1725,7 +2351,15 @@
         "block": "block_0003_0001",
         "path": "/reviewFeedback/1",
         "sourceSha256": "9aa2a0598b2bfa85ea43586fec432c8405546a33304af55426766d5e94cd1820",
-        "spans": []
+        "spans": [
+          {
+            "start": 67,
+            "end": 70,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0001",
@@ -1742,8 +2376,37 @@
       {
         "block": "block_0003_0003",
         "path": "/explanation",
-        "sourceSha256": "a93a85e574bdf6a4c8eb7888ac9043d3bbf1974c9c09a2e265e403e96cff3b4b",
-        "spans": []
+        "sourceSha256": "55341c56fa0a8db9d0d0b7cc69cd9248255146868f0a98f53e148d0b9d477f5f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 8,
+            "text": "enviar()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 164,
+            "end": 166,
+            "text": "==",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 171,
+            "text": "!=",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 199,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -1754,7 +2417,8 @@
             "start": 0,
             "end": 2,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1767,7 +2431,8 @@
             "start": 0,
             "end": 2,
             "text": "!=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1780,7 +2445,8 @@
             "start": 0,
             "end": 8,
             "text": "enviar()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1788,7 +2454,15 @@
         "block": "block_0003_0003",
         "path": "/reviewFeedback/0",
         "sourceSha256": "4543a76307cda920d3d75f38217e96dcfac5e95966ff9f9fa78ee68f87d911f3",
-        "spans": []
+        "spans": [
+          {
+            "start": 43,
+            "end": 46,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0003",
@@ -1817,8 +2491,72 @@
       {
         "block": "block_0004_0001",
         "path": "/explanation",
-        "sourceSha256": "c0dfb96690c95e4586f2e174590daccf8ba93e3afd4aa3c8a9073eeea0751a02",
-        "spans": []
+        "sourceSha256": "c96f670f33220f375d411469e4ed1a9f5b9befc0d7e96879e9a4671e3daf1941",
+        "spans": [
+          {
+            "start": 19,
+            "end": 20,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 72,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 126,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 132,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 159,
+            "end": 167,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 193,
+            "end": 194,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -1835,253 +2573,272 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "a1cce76d2bd39d55f10548a5e1a159176474e1dc8d3aea77f5341842137540e8",
+        "sourceSha256": "82189cdf6030533d72d04cb9675825afee8f32a95f46c7cd5fa080b5e386844d",
         "spans": [
           {
             "start": 7,
             "end": 20,
             "text": "struct Medida",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 47,
-            "end": 55,
+            "start": 51,
+            "end": 59,
             "text": "etiqueta",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 65,
-            "end": 76,
+            "start": 69,
+            "end": 80,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 80,
-            "end": 88,
+            "start": 100,
+            "end": 108,
             "text": "cantidad",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 98,
-            "end": 101,
+            "start": 118,
+            "end": 121,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 178,
-            "end": 189,
+            "start": 217,
+            "end": 228,
             "text": "mismo_valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 209,
+            "start": 246,
+            "end": 248,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 212,
-            "end": 214,
+            "start": 251,
+            "end": 253,
             "text": "!=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 318,
-            "end": 322,
+            "start": 357,
+            "end": 361,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 346,
-            "end": 354,
-            "text": "etiqueta",
-            "role": "cpp"
-          },
-          {
-            "start": 355,
-            "end": 356,
+            "start": 393,
+            "end": 394,
             "text": "A",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 359,
-            "end": 367,
-            "text": "cantidad",
-            "role": "cpp"
-          },
-          {
-            "start": 368,
-            "end": 369,
+            "start": 406,
+            "end": 407,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 404,
-            "end": 405,
-            "text": "A",
+            "start": 418,
+            "end": 422,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 410,
-            "end": 411,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 413,
-            "end": 414,
-            "text": "A",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 419,
-            "end": 420,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 423,
-            "end": 424,
-            "text": "B",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 429,
-            "end": 430,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 456,
-            "end": 476,
+            "start": 472,
+            "end": 492,
             "text": "igualdad:desigualdad",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 497,
-            "end": 501,
+            "start": 513,
+            "end": 517,
             "text": "bool",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 507,
-            "end": 508,
+            "start": 523,
+            "end": 524,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 511,
-            "end": 512,
+            "start": 527,
+            "end": 528,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 549,
-            "end": 552,
+            "start": 540,
+            "end": 541,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 553,
+            "end": 554,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 569,
+            "end": 572,
             "text": "1:0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 554,
-            "end": 557,
-            "text": "0:1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 560,
-            "end": 563,
-            "text": "0:1",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 625,
-            "end": 626,
+            "start": 583,
+            "end": 584,
             "text": "A",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 631,
-            "end": 632,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 634,
-            "end": 635,
-            "text": "A",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 640,
-            "end": 641,
+            "start": 596,
+            "end": 597,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 643,
-            "end": 644,
-            "text": "A",
-            "role": "data",
+            "start": 612,
+            "end": 615,
+            "text": "0:1",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 649,
-            "end": 650,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 653,
-            "end": 654,
+            "start": 626,
+            "end": 627,
             "text": "B",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 659,
-            "end": 660,
+            "start": 639,
+            "end": 640,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 712,
-            "end": 713,
+            "start": 655,
+            "end": 658,
+            "text": "0:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 678,
+            "end": 682,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 795,
+            "end": 796,
             "text": "A",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 718,
-            "end": 719,
+            "start": 808,
+            "end": 809,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 766,
-            "end": 781,
+            "start": 820,
+            "end": 821,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 833,
+            "end": 834,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 845,
+            "end": 846,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 858,
+            "end": 859,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 870,
+            "end": 871,
+            "text": "B",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 883,
+            "end": 884,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 956,
+            "end": 957,
+            "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 962,
+            "end": 963,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1010,
+            "end": 1025,
             "text": "Coincidencias:2",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1130,
+            "end": 1134,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2096,7 +2853,15 @@
         "block": "block_0005_0003",
         "path": "/text",
         "sourceSha256": "65ff315512a880d1548f762050bc974c179c9389eebbb0ea8ee32d0c17d9d8ed",
-        "spans": []
+        "spans": [
+          {
+            "start": 44,
+            "end": 47,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0000",
@@ -2110,16 +2875,32 @@
         "sourceSha256": "b7f638ee24f271c035eee9e312e51040ca04562cabe777f940b6259777baaf6c",
         "spans": [
           {
+            "start": 160,
+            "end": 164,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 236,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 266,
             "end": 268,
             "text": "==",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 315,
             "end": 317,
             "text": "!=",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2178,6 +2959,13 @@
             "reading": "natural"
           },
           {
+            "start": 141,
+            "end": 145,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 156,
             "end": 157,
             "text": "R",
@@ -2211,6 +2999,13 @@
         "sourceSha256": "2564250e065c31bf7d12a4495108a7d991ecdaa24a17d05c6aadbc7c61348ae1",
         "spans": [
           {
+            "start": 0,
+            "end": 2,
+            "text": "Un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 19,
             "text": "(R, 7)",
@@ -2225,6 +3020,13 @@
         "sourceSha256": "6ab156cdab6e6fd81d8098d953611aba36fcc009cd0ac809a9a35adc1112ea10",
         "spans": [
           {
+            "start": 0,
+            "end": 2,
+            "text": "Un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 19,
             "text": "(R, 8)",
@@ -2238,6 +3040,13 @@
         "path": "/responses/0/fields/3/label",
         "sourceSha256": "6b311fb0aca072fa6688a720bd29a95fa232beb7752aac136b7cff63535867fd",
         "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "Cinco",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 17,
             "end": 23,
@@ -2299,6 +3108,13 @@
         "sourceSha256": "2564250e065c31bf7d12a4495108a7d991ecdaa24a17d05c6aadbc7c61348ae1",
         "spans": [
           {
+            "start": 0,
+            "end": 2,
+            "text": "Un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 19,
             "text": "(R, 7)",
@@ -2313,6 +3129,13 @@
         "sourceSha256": "6ab156cdab6e6fd81d8098d953611aba36fcc009cd0ac809a9a35adc1112ea10",
         "spans": [
           {
+            "start": 0,
+            "end": 2,
+            "text": "Un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 13,
             "end": 19,
             "text": "(R, 8)",
@@ -2326,6 +3149,13 @@
         "path": "/responses/0/rows/3/0",
         "sourceSha256": "6b311fb0aca072fa6688a720bd29a95fa232beb7752aac136b7cff63535867fd",
         "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "Cinco",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 17,
             "end": 23,
@@ -2372,13 +3202,77 @@
       {
         "block": "block_0006_0003",
         "path": "/explanation",
-        "sourceSha256": "0d4be4c248afbf96b492100f7d8506d6e66819a9589476ff7ae94107dc341c5d",
+        "sourceSha256": "5fb09e7ac75d57eb18c014a62230db1d084e6fda0840a64566c3c2cf6f288594",
         "spans": [
           {
-            "start": 48,
-            "end": 49,
+            "start": 10,
+            "end": 11,
+            "text": "a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 15,
+            "end": 16,
             "text": "b",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "text": "Z",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 45,
+            "end": 49,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 100,
+            "text": "b.cambiar_unidades(0)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 143,
+            "end": 146,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 199,
+            "end": 200,
+            "text": "b",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 214,
+            "end": 218,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 299,
+            "end": 300,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },

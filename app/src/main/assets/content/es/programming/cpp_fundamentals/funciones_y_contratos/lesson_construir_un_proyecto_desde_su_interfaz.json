@@ -2,7 +2,10 @@
   "id": "cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz",
   "title": "Construir un proyecto desde su interfaz",
   "orderVisualSeparators": [
-    {"activity": "orden_validar_antes_de_calcular", "count": 2}
+    {
+      "activity": "orden_validar_antes_de_calcular",
+      "count": 2
+    }
   ],
   "pages": [
     {
@@ -13,7 +16,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Vas a construir un programa para describir la ocupación de un estante. Cada caja pequeña ocupa 2 espacios y cada caja grande ocupa 5. Las cantidades son números enteros entre 0 y 10, ambos incluidos. El programa se repartirá en una cabecera y tres archivos fuente. El editor contiene la estructura de los archivos, pero tú escribirás las declaraciones, las definiciones y main."
+          "text": "Vas a construir un programa para describir la ocupación de un estante. Las cajas utilizan estos espacios:\n\nCada caja pequeña ocupa 2 espacios.\nCada caja grande ocupa 5 espacios.\nLa cantidad de cada tamaño es un entero entre 0 y 10, ambos incluidos.\n\nEl programa se repartirá en una cabecera y tres archivos fuente. El editor contiene su estructura; tú escribirás las declaraciones, las definiciones y main."
         },
         {
           "type": "paragraph",
@@ -79,7 +82,7 @@
         },
         {
           "type": "paragraph",
-          "text": "descripcion_carga recibe los mismos dos int y devuelve std::string. También exige cantidades válidas. Devuelve Vacio cuando no se ocupa ningún espacio; Ligero cuando se ocupa al menos uno y como máximo 20; Pesado cuando se ocupan más de 20. Debe obtener la ocupación llamando a espacios_ocupados, para que la regla de cálculo tenga una sola definición.",
+          "text": "descripcion_carga recibe los mismos dos int y devuelve std::string. También exige cantidades válidas. El texto devuelto depende de la ocupación:\n\nVacio: no se ocupa ningún espacio.\nLigero: se ocupa al menos un espacio y como máximo 20.\nPesado: se ocupan más de 20.\n\nDebe obtener la ocupación llamando a espacios_ocupados, para que la regla de cálculo tenga una sola definición.",
           "emphasis": [
             {
               "text": "descripcion_carga",
@@ -93,7 +96,7 @@
         },
         {
           "type": "paragraph",
-          "text": "main debe consultar primero cantidades_validas. Si el resultado es false, muestra únicamente Cantidades invalidas y termina. Si es true, muestra dos líneas: Espacios: seguido de un espacio y el número ocupado; Carga: seguido de un espacio y la descripción. No se permiten llamadas a los dos cálculos con cantidades rechazadas.",
+          "text": "main debe consultar primero cantidades_validas.\n\nSi el resultado es false, muestra únicamente Cantidades invalidas y termina.\n\nSi el resultado es true, muestra dos líneas:\nEspacios: seguido de un espacio y el número de espacios ocupados.\nCarga: seguido de un espacio y la descripción.\n\nNo se permiten llamadas a los dos cálculos con cantidades rechazadas.",
           "emphasis": [
             {
               "text": "consultar primero cantidades_validas",
@@ -119,7 +122,7 @@
         },
         {
           "type": "paragraph",
-          "text": "estante.h contiene la guarda, el include de <string> y las tres declaraciones. conteo.cpp incluye esa cabecera y define cantidades_validas y espacios_ocupados. estado.cpp incluye la misma cabecera y define descripcion_carga. main.cpp incluye la interfaz y <iostream>, y contiene main.\n\nCompartir las declaraciones y contrastarlas con sus definiciones evita mantener copias manuales distintas de la interfaz (Stroustrup, 2024).",
+          "text": "Cada archivo tiene una responsabilidad:\n\nestante.h contiene la guarda, el include de <string> y las tres declaraciones.\nconteo.cpp incluye esa cabecera y define cantidades_validas y espacios_ocupados.\nestado.cpp incluye la misma cabecera y define descripcion_carga.\nmain.cpp incluye la interfaz y <iostream>, y contiene main.\n\nCompartir las declaraciones y contrastarlas con sus definiciones evita mantener copias manuales distintas de la interfaz (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "tres declaraciones",
@@ -277,7 +280,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye el proyecto para cuatro cajas pequeñas y tres grandes. Completa la cabecera, las funciones en sus archivos y `main` desde la estructura entregada. El objetivo es `Espacios: 23` y `Carga: Pesado`, en dos líneas.\n\nPulsa «Compilar, ejecutar y comprobar», con salto final opcional. El esqueleto todavía no contiene una solución ejecutable; una construcción fallida conserva sus diagnósticos y no es una salida incorrecta evaluable."
+          "text": "Construye el proyecto para cuatro cajas pequeñas y tres grandes. Completa la cabecera, las funciones en sus archivos y main desde la estructura entregada.\n\nLa salida tiene dos líneas:\nEspacios: 23\nCarga: Pesado\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. El esqueleto todavía no contiene una solución ejecutable; una construcción fallida conserva sus diagnósticos y no es una salida incorrecta evaluable."
         },
         {
           "type": "cpp_compiler",
@@ -324,7 +327,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios del proyecto: cabecera con sus dependencias, definiciones concordantes, un cuerpo por función ordinaria, descripción que reutiliza el cálculo y validación antes de calcular. Selecciona las tres fuentes .cpp.\n\nPara las cantidades (4,3), se ocupan 23 espacios y corresponde Pesado. La comprobación siguiente contrasta también el vacío, los límites y el rechazo de cada cantidad.",
+          "text": "Criterios del proyecto:\n\nLa cabecera incluye las dependencias de los nombres que utiliza.\nLas definiciones concuerdan con las declaraciones compartidas.\nCada función ordinaria tiene un solo cuerpo en el programa.\nLa descripción reutiliza el cálculo de espacios.\nEl cliente realiza la validación antes de calcular.\nLas tres fuentes .cpp están seleccionadas.\n\nPara las cantidades (4,3), se ocupan 23 espacios y corresponde Pesado. La comprobación siguiente contrasta también el vacío, los límites y el rechazo de cada cantidad.",
           "emphasis": [
             {
               "text": "validación antes de calcular",
@@ -358,7 +361,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "estante.h",
@@ -374,7 +377,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n"
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -420,9 +423,17 @@
           ]
         },
         {
+          "type": "paragraph",
+          "text": "Las líneas siguientes suponen una consola con g++ disponible y situada en la carpeta que contiene estante.h y los tres archivos .cpp. Aquí sirven para leer las etapas; el Laboratorio realiza la construcción con su propio compilador.\n\ng++ dirige la construcción de C++. En las tres primeras órdenes:\n\n-std=c++23 selecciona el modo C++23.\n-Wall activa un conjunto de advertencias.\n-Wextra añade otro conjunto de advertencias.\n-pedantic solicita diagnósticos de conformidad con el estándar elegido.\n-c produce un archivo objeto sin enlazar.\n-o nombre indica dónde guardar el resultado (Stallman & GCC Developer Community, 2025)."
+        },
+        {
           "type": "code",
           "language": "text",
           "code": "g++ -std=c++23 -Wall -Wextra -pedantic -c conteo.cpp -o conteo.o\ng++ -std=c++23 -Wall -Wextra -pedantic -c estado.cpp -o estado.o\ng++ -std=c++23 -Wall -Wextra -pedantic -c main.cpp -o main.o\ng++ conteo.o estado.o main.o -o estante\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las tres primeras órdenes producen estos archivos objeto:\n\nconteo.cpp → conteo.o\nestado.cpp → estado.o\nmain.cpp → main.o\n\nLa cuarta orden reúne esos tres objetos mediante el enlace. -o estante nombra el resultado ejecutable; su sufijo físico puede depender de las herramientas y del destino. Estas órdenes construyen el programa, pero no lo ejecutan (Stallman & GCC Developer Community, 2025).\n\nSi falla la compilación de una fuente o el enlace, revisa el diagnóstico y corrige antes de intentar ejecutar una construcción nueva."
         },
         {
           "type": "multiple_choice",
@@ -461,7 +472,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
         },
         {
           "type": "paragraph",
@@ -487,7 +498,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n\n    return \"Pesado\";\n}\n"
         },
         {
           "type": "paragraph",
@@ -496,11 +507,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El caso inicial (4,3) ocupa 23 espacios: 2 × 4 + 5 × 3 = 23. Mostrar siempre ese número acertaría aquel caso y fallaría los demás. Las llamadas con (1,0) y (0,1) aíslan los pesos: sus resultados deben ser 2 y 5, respectivamente.\n\nLos pares (7,1), (0,4) y (8,1) producen 19, 20 y 21. La igualdad todavía pertenece a Ligero; el siguiente valor pertenece a Pesado. El vacío se distingue con (0,0), que debe producir 0 Vacio.\n\nLos pares (10,0), (0,10) y (10,10) conservan el extremo admitido de cada cantidad. Los cuatro rechazos cambian un solo argumento cada vez: un valor negativo o superior al límite debe impedir el cálculo aunque el otro argumento sea válido. Pasar las pruebas con tus funciones y ejecutar después esta referencia son comprobaciones de programas distintos."
+          "text": "El caso inicial (4,3) ocupa 23 espacios: 2 × 4 + 5 × 3 = 23. Mostrar siempre ese número acertaría aquel caso y fallaría los demás. Las llamadas siguientes permiten distinguir sus causas.\n\nLos pares con cajas de un solo tamaño aíslan los pesos:\n(1,0) → 2 espacios.\n(0,1) → 5 espacios.\n\nLas ocupaciones próximas al límite permiten comprobar las categorías:\n(7,1) → 19, Ligero.\n(0,4) → 20, Ligero.\n(8,1) → 21, Pesado.\n\nLa igualdad en 20 todavía pertenece a Ligero; el siguiente valor pertenece a Pesado. El par (0,0) comprueba el vacío: debe producir 0 Vacio.\n\nLos pares (10,0), (0,10) y (10,10) conservan el extremo admitido de cada cantidad. Los cuatro rechazos cambian un solo argumento cada vez: un valor negativo o superior al límite debe impedir el cálculo aunque el otro argumento sea válido. Pasar las pruebas con tus funciones y ejecutar después esta referencia son comprobaciones de programas distintos."
         }
       ]
     },
@@ -540,15 +551,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva las reglas originales y lee pequeñas y grandes. Comprueba `0 0`, `0 4`, `3 3`, `10 10`, `-1 2`, `2 -1`, `11 0` y `0 11`. Pulsa «Compilar, ejecutar y comprobar» conservando las fuentes; el salto final es opcional. Los inválidos deben producir únicamente `Cantidades invalidas`, antes del cálculo."
+          "text": "Este proyecto conserva las reglas originales y lee las cantidades de cajas pequeñas y grandes. Para avanzar, basta con comprobar correctamente el caso inicial.\n\nCaso inicial obligatorio\nEntrada: 0 0\nSalida:\nEspacios: 0\nCarga: Vacio\n\n\nEnsayos optativos\nEntrada: 0 4\nSalida:\nEspacios: 20\nCarga: Ligero\n\nEntrada: 3 3\nSalida:\nEspacios: 21\nCarga: Pesado\n\nEntrada: 10 10\nSalida:\nEspacios: 70\nCarga: Pesado\n\nEntrada: -1 2\nSalida:\nCantidades invalidas\n\nEntrada: 2 -1\nSalida:\nCantidades invalidas\n\nEntrada: 11 0\nSalida:\nCantidades invalidas\n\nEntrada: 0 11\nSalida:\nCantidades invalidas\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar», conservando las fuentes. El salto final es opcional. Los datos inválidos deben mostrar únicamente Cantidades invalidas, antes del cálculo."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n\n    std::cin >> pequenas >> grandes;\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "estante.h",
-              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
             },
             {
               "path": "conteo.cpp",
@@ -556,11 +567,11 @@
             },
             {
               "path": "estado.cpp",
-              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n\n    return \"Pesado\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n\n    std::cin >> pequenas >> grandes;\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -672,7 +683,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye una segunda versión desde su propio editor, sin regresar al proyecto anterior. Conserva la interfaz, los límites 0..10 y las responsabilidades. Cada caja pequeña ocupa ahora 3 espacios y cada grande 4.\n\nVacio conserva su significado; Ligero admite una ocupación positiva de hasta 24, inclusive; Pesado corresponde a más de 24. La validación y los rechazos conservan su contrato.",
+          "text": "Construye una segunda versión desde su propio editor. Conserva la interfaz, los límites 0..10 y las responsabilidades. La regla nueva utiliza estos pesos:\n\nCada caja pequeña ocupa 3 espacios.\nCada caja grande ocupa 4 espacios.\n\nVacio conserva su significado.\nLigero admite una ocupación positiva de hasta 24, inclusive.\nPesado corresponde a más de 24.\n\nLa validación y los rechazos conservan su contrato. No es necesario regresar al proyecto anterior.",
           "emphasis": [
             {
               "text": "3 espacios",
@@ -690,7 +701,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El caso inicial de este editor contiene cero cajas pequeñas y seis grandes. Pulsa «Compilar, ejecutar y comprobar»: deben aparecer Espacios: 24 y Carga: Ligero, con salto final opcional. Después contrastarás tus mismas funciones con un cliente que incluye también cajas pequeñas y las fronteras de la política nueva.",
+          "text": "El caso inicial de este editor contiene cero cajas pequeñas y seis grandes. Pulsa «Compilar, ejecutar y comprobar». La salida tiene dos líneas:\n\nEspacios: 24\nCarga: Ligero\n\nEl salto final es opcional. Después contrastarás tus mismas funciones con un cliente que incluye también cajas pequeñas y las fronteras de la política nueva.",
           "emphasis": [
             {
               "text": "cero cajas pequeñas y seis grandes",
@@ -739,7 +750,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: mismas firmas y permisos, regla de ocupación escrita una vez, descripción que reutiliza ese cálculo, validación antes de calcular y salidas correctas para ambas fronteras. Cambiar la clasificación sin cambiar los pesos no cumple esta segunda versión."
+          "text": "Criterios de esta segunda versión:\n\nLas funciones conservan sus tipos y sus precondiciones.\nLa regla de ocupación se escribe una vez, en espacios_ocupados.\nLa descripción llama a ese cálculo.\nEl cliente valida las cantidades antes de calcular.\nLas categorías incluyen correctamente la igualdad en el límite y distinguen el valor siguiente.\n\nCambiar la clasificación sin cambiar los pesos no cumple esta segunda versión."
         },
         {
           "type": "heading",
@@ -755,7 +766,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n    mostrar_caso(10, 0);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n\n    mostrar_caso(10, 0);\n\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "estante.h",
@@ -771,7 +782,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n    mostrar_caso(10, 0);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n"
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n\n    mostrar_caso(10, 0);\n\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -827,16 +838,16 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n\n    return \"Pesado\";\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Este main muestra Espacios: 24 y Carga: Ligero, en dos líneas, para (0,6). Como la cantidad de cajas pequeñas es cero, este caso no distingue entre el peso antiguo y el nuevo de esas cajas: su contribución al total es cero en ambos cálculos.\n\nEl informe de tu construcción añade (1,0), cuya ocupación debe ser 3, y (8,0), cuya ocupación es 24. Si se conserva el peso pequeño de 2, se obtienen 2 y 16, aunque el caso inicial siga pasando. Los pares (5,2) y (7,1) producen 23 Ligero y 25 Pesado: junto con la igualdad en 24, permiten comprobar la frontera.\n\nLa actividad posterior utiliza un cliente con Entrada para explorar la referencia con otros pares. Ese proyecto trae las funciones completas; la comprobación de la construcción propia ya se hizo con las auxiliares que escribiste."
+          "text": "Este main presenta dos líneas para (0,6):\nEspacios: 24\nCarga: Ligero\n\nComo la cantidad de cajas pequeñas es cero, ese caso no distingue entre el peso antiguo y el nuevo de esas cajas: su contribución al total es cero en ambos cálculos.\n\nEl informe de tu construcción añade casos que sí los distinguen:\n(1,0) debe ocupar 3 espacios; con el peso antiguo de 2 se obtendrían 2.\n(8,0) debe ocupar 24 espacios; con ese peso antiguo se obtendrían 16.\n\nTambién contrasta ambos lados de la frontera:\n(5,2) → 23, Ligero.\n(7,1) → 25, Pesado.\n\nLa igualdad en 24 sigue siendo ligera. La actividad posterior utiliza un cliente con Entrada para explorar la referencia con otros pares. Ese proyecto trae las funciones completas; la comprobación de la construcción propia ya se hizo con las auxiliares que escribiste."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{0};\n    const int grandes{6};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{0};\n    const int grandes{6};\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -844,15 +855,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto lee pequeñas y grandes y conserva pesos tres y cuatro y carga ligera hasta veinticuatro. Comprueba `7 1`, `0 0`, `10 10`, los cuatro rechazos del primer proyecto y `2 3`. Pulsa «Compilar, ejecutar y comprobar» sin cambiar la política; el salto final es opcional. Los casos válidos deben obtenerse de las funciones, no de mensajes fijados para cada entrada."
+          "text": "Este proyecto lee las cantidades de cajas pequeñas y grandes y conserva los pesos tres y cuatro y la carga ligera hasta veinticuatro. Para avanzar, basta con comprobar correctamente el caso inicial.\n\nCaso inicial obligatorio\nEntrada: 7 1\nSalida:\nEspacios: 25\nCarga: Pesado\n\n\nEnsayos optativos\nEntrada: 0 0\nSalida:\nEspacios: 0\nCarga: Vacio\n\nEntrada: 10 10\nSalida:\nEspacios: 70\nCarga: Pesado\n\nEntrada: -1 2\nSalida:\nCantidades invalidas\n\nEntrada: 2 -1\nSalida:\nCantidades invalidas\n\nEntrada: 11 0\nSalida:\nCantidades invalidas\n\nEntrada: 0 11\nSalida:\nCantidades invalidas\n\nEntrada: 2 3\nSalida:\nEspacios: 18\nCarga: Ligero\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar», sin cambiar la política. El salto final es opcional. Los resultados deben proceder de las funciones, no de mensajes fijados para cada entrada."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n\n    std::cin >> pequenas >> grandes;\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "estante.h",
-              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
             },
             {
               "path": "conteo.cpp",
@@ -860,11 +871,11 @@
             },
             {
               "path": "estado.cpp",
-              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n\n    return \"Pesado\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n\n    std::cin >> pequenas >> grandes;\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -956,7 +967,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La actividad siguiente recupera la organización desde archivos mínimos. Conserva interfaz, responsabilidades y el orden validar, calcular y mostrar, aplicando la política nueva. Su cliente lee los datos y comprueba varios pares con el mismo programa.",
+          "text": "La actividad siguiente recupera la organización desde archivos mínimos. Conserva la interfaz y las responsabilidades, aplicando la política nueva.\n\nEl cliente debe seguir este orden: validar, calcular y mostrar. Lee un par desde Entrada en cada ejecución; los ensayos opcionales permiten probar otros pares con el mismo programa.",
           "emphasis": [
             {
               "text": "validar, calcular y mostrar",
@@ -984,7 +995,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye desde estos archivos mínimos el proyecto de pesos tres y cuatro y frontera ligera veinticuatro. El cliente debe leer pequeñas y grandes y validar antes de llamar. Comprueba `0 6`, `7 1`, `2 3` y `-1 2` mediante «Compilar, ejecutar y comprobar». El salto final es opcional. Las funciones deben conservar las firmas de la interfaz y la descripción debe reutilizar el cálculo de espacios."
+          "text": "Construye desde estos archivos mínimos el proyecto de pesos tres y cuatro y frontera ligera veinticuatro. El cliente debe leer las cantidades de cajas pequeñas y grandes y validar antes de llamar. Para avanzar, basta con comprobar correctamente el caso inicial.\n\nCaso inicial obligatorio\nEntrada: 0 6\nSalida:\nEspacios: 24\nCarga: Ligero\n\n\nEnsayos optativos\nEntrada: 7 1\nSalida:\nEspacios: 25\nCarga: Pesado\n\nEntrada: 2 3\nSalida:\nEspacios: 18\nCarga: Ligero\n\nEntrada: -1 2\nSalida:\nCantidades invalidas\n\nPulsa «Compilar, ejecutar y comprobar». El salto final es opcional. Las funciones conservan las firmas de la interfaz y la descripción reutiliza el cálculo de espacios."
         },
         {
           "type": "cpp_compiler",
@@ -1064,7 +1075,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
         },
         {
           "type": "code",
@@ -1074,12 +1085,12 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n\n    return \"Pesado\";\n}\n"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n\n    std::cin >> pequenas >> grandes;\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -1095,11 +1106,11 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include \"estante.h\"\n#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include \"estante.h\"\n#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "estante.h",
-              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
             },
             {
               "path": "conteo.cpp",
@@ -1107,11 +1118,11 @@
             },
             {
               "path": "estado.cpp",
-              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n\n    return \"Pesado\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"estante.h\"\n#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+              "initialCode": "#include \"estante.h\"\n#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -1693,7 +1704,9 @@
         "blocks": [
           "block_0004_0000",
           "block_0004_0001",
+          "gpp_lectura_de_parametros",
           "block_0004_0002",
+          "gpp_resultados_de_las_etapas",
           "block_0004_0003",
           "block_0004_0004"
         ]
@@ -3025,6 +3038,24 @@
           "block": 19
         },
         "progressPage": "page_0012"
+      },
+      {
+        "id": "gpp_resultados_de_las_etapas",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 16,
+          "block": 1
+        },
+        "progressPage": "page_0004"
+      },
+      {
+        "id": "gpp_lectura_de_parametros",
+        "sha256": "1cfe2875698dd4010559f715fe17ef8ef9aa5a7b532dd7697727408285eb56e5",
+        "storage": {
+          "page": 16,
+          "block": 0
+        },
+        "progressPage": "page_0004"
       }
     ],
     "editorial": [
@@ -3187,6 +3218,146 @@
         "id": "block_0012_0001",
         "beforeSha256": "b1bbbec4a5817c5cd1c378df9ab93ef8680ed9de7e419ca159624c1726c17001",
         "afterSha256": "bc01f93f79d461721186900c0d5f507f4f12af5fed42d31bf3c37c679d0f3c10"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "3dddb491459c74b3f88b3397a56b15528ff0103655901545f8fc76f06d944164",
+        "afterSha256": "3c71308007458bb7373d9e652b78e14086869de205584bef59050647c9fa3a7c"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "daa8bc51c1cd6d67a325d94857bb05578804a1ed3a23cdee68e568dca6008811",
+        "afterSha256": "1cf8cd6e641e738be2ee4b79eb254e00398658c7945da1f99ddc5a99a919832e"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "e4d148305968ea776e1ae23998e472a9866d0d987dfb3276e2034af8d36511b1",
+        "afterSha256": "c0d9df528c66088b180a139e9cd981eb7203bb4a3cb46dba601580d86e88082d"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "e650163956421088fb560cec2c11d1029dbd2cb746cfb120fc9428ea52ff19ab",
+        "afterSha256": "edd91ee0d2d5afef805ce393a08d0bccf6f30e1b2f3968ae550e77994591d59c"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "8c23405e1843167f1b7d953a5687716164bbc176688b7b3e6276cfaa58308a44",
+        "afterSha256": "7c0bd2bb78f3df4a43e05fa8252a1fb0bb56f30643c8baf06887c5c9b7e0e953"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "2d3e75705f974d208d2aa5bf7bae9d6fd6da6a5734e370f0a28ebc4a9a531771",
+        "afterSha256": "d9d95e67552896674f011c2afb8aa211a3091e0da987591ebaf808ba1ce6a355"
+      },
+      {
+        "id": "estante_base_comprobacion_propia",
+        "beforeSha256": "e514422660c2114a5a38af22be40bc4b663945627fb9f90da33e4440d68ebc52",
+        "afterSha256": "6b0bdf0da78397b2ea65dffbeb2c8af7a9373d1c8d8dcf774ae3f417e2f2d0ad"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "7ef3db03149da1a899172dea15797a458014e2f586389d85aaad97ab73a1ce27",
+        "afterSha256": "9457fd48ce101e4e138f9a6f8903ced1e36c42a37048e8cf7037bf9094f31f4e"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "b3f86e18bac48f794f6beac166d1dd0a5cd3147ad07df3d6b3e120bf6df38d7a",
+        "afterSha256": "dfb03d33269d24254231ea952dd56c6a0faf6988548db218ec706ce531a3ddbf"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "b30caf015a1c8d05415c42643330147fe6685590f43e253befe1476f44232fbc",
+        "afterSha256": "357fa31b1087eb2575d1d526fec0fdb2266f01afbdaf3c0d11bfcc1c3e42e8d8"
+      },
+      {
+        "id": "block_0006_0005",
+        "beforeSha256": "93ab6df1d9ea145440406bb99c49a8ec4f3a82bf27620ac69847e7b2233abc56",
+        "afterSha256": "4c220ed345c8f7c8aca24f23a89cc2004916623f32f12e6f87eeb93792b6d4d8"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "5ed76124bc8aaeb91c8e5b656e7eac4ba200ac6403a1e9f4395e9e1f3cc59cd3",
+        "afterSha256": "2dc5779977f3fa7db2557f02cace8f8f00f0ead7ef24990ec34d9736ee488bea"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "0cf7d4732fcf853d663fb2fe042a3194671552b664c7ebe67ca2a8b0f4cceed1",
+        "afterSha256": "cf9523a52d5794771ed40554a0b848f569744d2680f6e3391bac42644301c3ec"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "48cebdb1278affcab5495e87ba4797ebbe7428085c80d6add9b2b14a4c181a1e",
+        "afterSha256": "16a89275953a3f008779b2d524e145ed18a633d887bf48a58b79773b66653913"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "1a3814901e324733b3ef938d221c4e7f5b65b73e12b3638ae0a6a8849f230af8",
+        "afterSha256": "425a7d7bd61db8f6a85295f66358e2a7b00477151fa651618b39de2be44815d4"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "25196800ba8d6885d3bf5cb8d3e3070010c2906daa5d81caf973fdf633b38c2e",
+        "afterSha256": "f2a289100b546432ee0b5fe60b4f80266c0eb6a5b2ef81add091808f577a957e"
+      },
+      {
+        "id": "estante_variante_comprobacion_propia",
+        "beforeSha256": "4d9df693c798126ead995b7ad1acefe78e43c583e104699cf5f83d194dfcfaa1",
+        "afterSha256": "332c57688e58ad88dc8c3bc669530c771bcfb353e03c864d22bd6335d04bcedc"
+      },
+      {
+        "id": "block_0010_0004",
+        "beforeSha256": "c065378e3dfd11eae9d3ee6d615ef201ad36416284734a4691c782d29a232ec8",
+        "afterSha256": "7aac3eec61b2cb8d23b177aa807cd43b173d79e08df3460a432addfc9dfc0cca"
+      },
+      {
+        "id": "block_0010_0005",
+        "beforeSha256": "74945c8beae72f9b4b5262b711c19e1d45225a81d9a45d35868ac27cb5f614e1",
+        "afterSha256": "780e8abde77ac9c56fbdc56f38311346d397f365aff96dcf068be6af84c99046"
+      },
+      {
+        "id": "block_0010_0006",
+        "beforeSha256": "c726fe6992369a4ee70451e77eb5eee9e40cbc48be6bc73e7ea6241ce956524c",
+        "afterSha256": "7e92e252f99e00c21aca58410f4d04cddc9433a90f0f9321ca19fce6172a6502"
+      },
+      {
+        "id": "block_0010_0008",
+        "beforeSha256": "320e5fbaf2e45f73c9d12f440c7387b5594162ff930cdd2e9565bc5a9d6b4b8c",
+        "afterSha256": "a48801ffaaef947eb49f626aed925e4a9876dc88541012e0c3468049c34ad9d4"
+      },
+      {
+        "id": "block_0010_0009",
+        "beforeSha256": "332eab8f9551299ac15983b62903eb9946fb97619589758edfb5e0c5fc0c712c",
+        "afterSha256": "e971f2fc3adbd631d44f9eccd627c9618b4cfa5c3152d0659858aaa9042d0c91"
+      },
+      {
+        "id": "block_0011_0002",
+        "beforeSha256": "db155f97cb07d192c71352fb2875dbe86871491e1c0bb81df327615a4f55e369",
+        "afterSha256": "3396b1be457122f23de7ea3332d864e380a501c0689e3cf773d5483b1fc2b472"
+      },
+      {
+        "id": "block_0011_0005",
+        "beforeSha256": "dffe15efdcf592f8c043649e221f65f67b1f81dd0fec42c429dbc0403f5e6b04",
+        "afterSha256": "4c754efd7db7a0d5c985283daede2881002a5d0a77ab1996eb0139dbdf8df5c3"
+      },
+      {
+        "id": "recuperacion_proyecto_referencia_cabecera",
+        "beforeSha256": "7ef3db03149da1a899172dea15797a458014e2f586389d85aaad97ab73a1ce27",
+        "afterSha256": "9457fd48ce101e4e138f9a6f8903ced1e36c42a37048e8cf7037bf9094f31f4e"
+      },
+      {
+        "id": "recuperacion_proyecto_referencia_estado",
+        "beforeSha256": "c065378e3dfd11eae9d3ee6d615ef201ad36416284734a4691c782d29a232ec8",
+        "afterSha256": "7aac3eec61b2cb8d23b177aa807cd43b173d79e08df3460a432addfc9dfc0cca"
+      },
+      {
+        "id": "recuperacion_proyecto_referencia_cliente",
+        "beforeSha256": "9311c4d40c2b7f7bada2fb21a43a8b4c3d00cedfe5357ea9bc090422000eab84",
+        "afterSha256": "8bf9e28895c024529f3a1b6a1019f71fcc2ad8cc57c925c48bdaf49512c7b9d1"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "6f6a9fc3670fd1551fe4d69cc44c5519a6a58c947b0fec41e9be4c0d9afb60a8",
+        "afterSha256": "1a7615011024179767827a6ddfe26d5bbb27449c1ec1f730c22787492a305e61"
       }
     ],
     "orderRefinements": [
@@ -3209,6 +3380,395 @@
           ],
           "explanation": "Las cantidades deben existir antes de usarse. La rama de rechazo termina main mediante return, de modo que una entrada inválida no llega a los cálculos. Sólo el recorrido válido presenta la ocupación y su descripción.",
           "reviewFeedback": "Sigue el recorrido de una cantidad rechazada: busca si podría llegar a un cálculo antes de comprobar su dominio. Comprueba también que cada nombre esté declarado antes de usarse."
+        }
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "estante_base_comprobacion_propia",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Recupera las tres declaraciones de tu interfaz.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tus definiciones de cantidades_validas y espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tu definicion de descripcion_carga.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(7, 1);\n    mostrar_caso(0, 4);\n    mostrar_caso(10, 0);\n    mostrar_caso(8, 1);\n    mostrar_caso(4, 3);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 5 Ligero\n7 1: 19 Ligero\n0 4: 20 Ligero\n10 0: 20 Ligero\n8 1: 21 Pesado\n4 3: 23 Pesado\n0 10: 50 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+                  "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 5 Ligero\n7 1: 19 Ligero\n0 4: 20 Ligero\n10 0: 20 Ligero\n8 1: 21 Pesado\n4 3: 23 Pesado\n0 10: 50 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe completo coincide: distingue 0 Vacio, los pesos aislados 2 y 5, los resultados 19, 20 y 21 alrededor de la frontera, los extremos admitidos y los cuatro rechazos. El cliente ejecutó todos los pares con las mismas funciones."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0006",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\nbool cantidades_validas(int pequenas, int grandes) {\n    return pequenas >= 0 && pequenas <= 10\n        && grandes >= 0 && grandes <= 10;\n}\n\nint espacios_ocupados(int pequenas, int grandes) {\n    return 2 * pequenas + 5 * grandes;\n}\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 0",
+                "outputs": [
+                  "Espacios: 0\nCarga: Vacio",
+                  "Espacios: 0\nCarga: Vacio\n"
+                ]
+              },
+              {
+                "standardInput": "0 4",
+                "outputs": [
+                  "Espacios: 20\nCarga: Ligero",
+                  "Espacios: 20\nCarga: Ligero\n"
+                ]
+              },
+              {
+                "standardInput": "3 3",
+                "outputs": [
+                  "Espacios: 21\nCarga: Pesado",
+                  "Espacios: 21\nCarga: Pesado\n"
+                ]
+              },
+              {
+                "standardInput": "10 10",
+                "outputs": [
+                  "Espacios: 70\nCarga: Pesado",
+                  "Espacios: 70\nCarga: Pesado\n"
+                ]
+              },
+              {
+                "standardInput": "-1 2",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "2 -1",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "11 0",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "0 11",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 0"
+        }
+      },
+      {
+        "id": "estante_variante_comprobacion_propia",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n    mostrar_caso(10, 0);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Recupera las tres declaraciones de tu interfaz.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tus definiciones de cantidades_validas y espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Recupera tu definicion de descripcion_carga.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nvoid mostrar_caso(int pequenas, int grandes) {\n    std::cout << pequenas << ' ' << grandes << \": \";\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return;\n    }\n    std::cout << espacios_ocupados(pequenas, grandes) << ' '\n              << descripcion_carga(pequenas, grandes) << '\\n';\n}\n\nint main() {\n    mostrar_caso(0, 0);\n    mostrar_caso(1, 0);\n    mostrar_caso(0, 1);\n    mostrar_caso(5, 2);\n    mostrar_caso(0, 6);\n    mostrar_caso(8, 0);\n    mostrar_caso(7, 1);\n    mostrar_caso(2, 3);\n    mostrar_caso(10, 0);\n    mostrar_caso(0, 10);\n    mostrar_caso(10, 10);\n    mostrar_caso(-1, 2);\n    mostrar_caso(2, -1);\n    mostrar_caso(11, 0);\n    mostrar_caso(0, 11);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "0 0: 0 Vacio\n1 0: 3 Ligero\n0 1: 4 Ligero\n5 2: 23 Ligero\n0 6: 24 Ligero\n8 0: 24 Ligero\n7 1: 25 Pesado\n2 3: 18 Ligero\n10 0: 30 Pesado\n0 10: 40 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+                  "0 0: 0 Vacio\n1 0: 3 Ligero\n0 1: 4 Ligero\n5 2: 23 Ligero\n0 6: 24 Ligero\n8 0: 24 Ligero\n7 1: 25 Pesado\n2 3: 18 Ligero\n10 0: 30 Pesado\n0 10: 40 Pesado\n10 10: 70 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Las mismas funciones producen el informe completo de la política nueva. Los casos (1,0) y (0,1) comprueban los pesos por separado; 23 Ligero, 24 Ligero y 25 Pesado distinguen la frontera. El vacío y los cuatro rechazos conservan sus propios resultados.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 4 Ligero\n5 2: 18 Ligero\n0 6: 24 Ligero\n8 0: 16 Ligero\n7 1: 18 Ligero\n2 3: 16 Ligero\n10 0: 20 Ligero\n0 10: 40 Pesado\n10 10: 60 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas",
+                      "0 0: 0 Vacio\n1 0: 2 Ligero\n0 1: 4 Ligero\n5 2: 18 Ligero\n0 6: 24 Ligero\n8 0: 16 Ligero\n7 1: 18 Ligero\n2 3: 16 Ligero\n10 0: 20 Ligero\n0 10: 40 Pesado\n10 10: 60 Pesado\n-1 2: Cantidades invalidas\n2 -1: Cantidades invalidas\n11 0: Cantidades invalidas\n0 11: Cantidades invalidas\n"
+                    ],
+                    "text": "Revisa el peso de las cajas pequeñas en espacios_ocupados. Para (1,0), el informe debe mostrar 3 Ligero; la salida 2 Ligero conserva el peso anterior. El caso (0,6) no lo detecta porque no contiene ninguna caja pequeña."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0010_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0006",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{0};\n    const int grandes{6};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0009",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\nbool cantidades_validas(int pequenas, int grandes) {\n    return pequenas >= 0 && pequenas <= 10\n        && grandes >= 0 && grandes <= 10;\n}\n\nint espacios_ocupados(int pequenas, int grandes) {\n    return 3 * pequenas + 4 * grandes;\n}\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "7 1",
+                "outputs": [
+                  "Espacios: 25\nCarga: Pesado",
+                  "Espacios: 25\nCarga: Pesado\n"
+                ]
+              },
+              {
+                "standardInput": "0 0",
+                "outputs": [
+                  "Espacios: 0\nCarga: Vacio",
+                  "Espacios: 0\nCarga: Vacio\n"
+                ]
+              },
+              {
+                "standardInput": "10 10",
+                "outputs": [
+                  "Espacios: 70\nCarga: Pesado",
+                  "Espacios: 70\nCarga: Pesado\n"
+                ]
+              },
+              {
+                "standardInput": "-1 2",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "2 -1",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "11 0",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "0 11",
+                "outputs": [
+                  "Cantidades invalidas",
+                  "Cantidades invalidas\n"
+                ]
+              },
+              {
+                "standardInput": "2 3",
+                "outputs": [
+                  "Espacios: 18\nCarga: Ligero",
+                  "Espacios: 18\nCarga: Ligero\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "7 1"
+        }
+      },
+      {
+        "id": "recuperacion_proyecto_referencia_cabecera",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+        }
+      },
+      {
+        "id": "recuperacion_proyecto_referencia_estado",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 24) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+        }
+      },
+      {
+        "id": "recuperacion_proyecto_referencia_cliente",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    int pequenas{0};\n    int grandes{0};\n    std::cin >> pequenas >> grandes;\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Cantidades admitidas: cada una entre 0 y 10, ambos incluidos.\nbool cantidades_validas(int pequenas, int grandes);\n// Requieren cantidades validas.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\nbool cantidades_validas(int pequenas, int grandes) {\n    return pequenas >= 0 && pequenas <= 10\n        && grandes >= 0 && grandes <= 10;\n}\n\nint espacios_ocupados(int pequenas, int grandes) {\n    return 2 * pequenas + 5 * grandes;\n}\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vacio\";\n    }\n    if (espacios <= 20) {\n        return \"Ligero\";\n    }\n    return \"Pesado\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Cantidades invalidas\\n\";\n        return 0;\n    }\n    std::cout << \"Espacios: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Carga: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Espacios: 23\nCarga: Pesado",
+                  "Espacios: 23\nCarga: Pesado\n"
+                ]
+              }
+            ]
+          }
         }
       }
     ]
@@ -3308,53 +3868,46 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "146006b2032c173cb21fc8f54d5cf916b735ee5b1e6b9683610b29dddf280268",
+        "sourceSha256": "b40b7c1d2a8b2d53669cdb90801886e888d22adc17bb036df786a6b3ed9ac96c",
         "spans": [
           {
-            "start": 95,
-            "end": 96,
+            "start": 131,
+            "end": 132,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 131,
-            "end": 132,
+            "start": 166,
+            "end": 167,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 175,
-            "end": 176,
+            "start": 224,
+            "end": 225,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 181,
+            "start": 228,
+            "end": 230,
             "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 228,
-            "end": 231,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 243,
-            "end": 247,
+            "start": 293,
+            "end": 297,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 372,
-            "end": 376,
+            "start": 401,
+            "end": 405,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
@@ -3560,7 +4113,7 @@
       {
         "block": "block_0001_0003",
         "path": "/text",
-        "sourceSha256": "4cbee08eef3c9a80b4c75c5bd0d714cbd6788f27840146b4fdb646794cae4c86",
+        "sourceSha256": "5dfe47d35cfa6b8f086e62ca005a895585ea2072465a2b60cbac2dffbea07650",
         "spans": [
           {
             "start": 0,
@@ -3591,67 +4144,53 @@
             "reading": "technical"
           },
           {
-            "start": 111,
-            "end": 116,
+            "start": 146,
+            "end": 151,
             "text": "Vacio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 152,
-            "end": 158,
+            "start": 181,
+            "end": 187,
             "text": "Ligero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 187,
-            "text": "uno",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 202,
-            "end": 204,
+            "start": 232,
+            "end": 234,
             "text": "20",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 206,
-            "end": 212,
+            "start": 236,
+            "end": 242,
             "text": "Pesado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 237,
-            "end": 239,
+            "start": 261,
+            "end": 263,
             "text": "20",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 278,
-            "end": 295,
+            "start": 303,
+            "end": 320,
             "text": "espacios_ocupados",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 332,
-            "end": 335,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "13602e20f5d3fdab71a95d89d5a43e9c4d54719641b336ba7868a7b4b914069a",
+        "sourceSha256": "66cf7c07fa2562297672ac7dced8963509e5bb1653f56d4293107c93b7437659",
         "spans": [
           {
             "start": 0,
@@ -3668,64 +4207,50 @@
             "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 72,
+            "start": 68,
+            "end": 73,
             "text": "false",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 93,
-            "end": 113,
+            "start": 94,
+            "end": 114,
             "text": "Cantidades invalidas",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 131,
-            "end": 135,
+            "start": 146,
+            "end": 150,
             "text": "true",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 145,
-            "end": 148,
+            "start": 160,
+            "end": 163,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 166,
+            "start": 172,
+            "end": 181,
             "text": "Espacios:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 178,
-            "end": 180,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 210,
-            "end": 216,
+            "start": 238,
+            "end": 244,
             "text": "Carga:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 228,
-            "end": 230,
-            "text": "un",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 287,
-            "end": 290,
+            "start": 316,
+            "end": 319,
             "text": "dos",
             "role": "data",
             "reading": "natural"
@@ -3747,95 +4272,95 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "45051bce1dd73ace75727fa122bbd04a4f2c0c472f71e45b70a67cbc72a3a871",
+        "sourceSha256": "ae53c0f9f316160ab659328559ede20b203df635a9203c34863ebdc72563f791",
         "spans": [
           {
-            "start": 0,
-            "end": 9,
+            "start": 41,
+            "end": 50,
             "text": "estante.h",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 33,
-            "end": 40,
+            "start": 74,
+            "end": 81,
             "text": "include",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 44,
-            "end": 52,
+            "start": 85,
+            "end": 93,
             "text": "<string>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 59,
-            "end": 63,
+            "start": 100,
+            "end": 104,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 79,
-            "end": 89,
+            "start": 120,
+            "end": 130,
             "text": "conteo.cpp",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 120,
-            "end": 138,
+            "start": 161,
+            "end": 179,
             "text": "cantidades_validas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 141,
-            "end": 158,
+            "start": 182,
+            "end": 199,
             "text": "espacios_ocupados",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 160,
-            "end": 170,
+            "start": 201,
+            "end": 211,
             "text": "estado.cpp",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 206,
-            "end": 223,
+            "start": 247,
+            "end": 264,
             "text": "descripcion_carga",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 225,
-            "end": 233,
+            "start": 266,
+            "end": 274,
             "text": "main.cpp",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 266,
+            "start": 297,
+            "end": 307,
             "text": "<iostream>",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 279,
-            "end": 283,
+            "start": 320,
+            "end": 324,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 407,
-            "end": 425,
+            "start": 448,
+            "end": 466,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
@@ -4155,7 +4680,7 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "24d282069431ad7fd80b6e814677dfc4afde6744046c427c4bc9a7849329c2da",
+        "sourceSha256": "fdd382db059967b90aae0fcef070bc0030ec2451ac99161971be630c4b92e435",
         "spans": [
           {
             "start": 27,
@@ -4172,31 +4697,24 @@
             "reading": "natural"
           },
           {
-            "start": 120,
-            "end": 124,
+            "start": 119,
+            "end": 123,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 173,
-            "end": 185,
-            "text": "Espacios: 23",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 190,
-            "end": 203,
-            "text": "Carga: Pesado",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 209,
-            "end": 212,
+            "start": 172,
+            "end": 175,
             "text": "dos",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 184,
+            "end": 210,
+            "text": "Espacios: 23\nCarga: Pesado",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4210,39 +4728,39 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "e6b839550039e8224213b42df8d31dae1da664f321e717098388a538268ff97c",
+        "sourceSha256": "35d59bdd2e37ff9ce97ef72f8208265644dc6e44055607d728148b8da5cf0d79",
         "spans": [
           {
-            "start": 199,
-            "end": 203,
+            "start": 318,
+            "end": 322,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 212,
-            "end": 216,
+            "start": 331,
+            "end": 335,
             "text": ".cpp",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 239,
-            "end": 244,
+            "start": 378,
+            "end": 383,
             "text": "(4,3)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 256,
-            "end": 267,
-            "text": "23 espacios",
+            "start": 395,
+            "end": 397,
+            "text": "23",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 282,
-            "end": 288,
+            "start": 421,
+            "end": 427,
             "text": "Pesado",
             "role": "output",
             "reading": "natural"
@@ -4582,7 +5100,7 @@
       {
         "block": "block_0006_0005",
         "path": "/text",
-        "sourceSha256": "05c663fe5f9c167e640a6768e3e13c57bae9eca579b72038a9cd58f28be0a8b7",
+        "sourceSha256": "d1251fd2cc3dc7ba527a57e5ee8fd2470f8e029e4e00c7e70c71140467195c1f",
         "spans": [
           {
             "start": 16,
@@ -4602,125 +5120,159 @@
             "start": 41,
             "end": 59,
             "text": "2 × 4 + 5 × 3 = 23",
-            "role": "math",
-            "reading": "technical"
+            "role": "math"
           },
           {
-            "start": 148,
-            "end": 153,
+            "start": 244,
+            "end": 249,
             "text": "(1,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 156,
-            "end": 161,
-            "text": "(0,1)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 205,
-            "end": 206,
+            "start": 252,
+            "end": 253,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 209,
-            "end": 210,
+            "start": 264,
+            "end": 269,
+            "text": "(0,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 273,
             "text": "5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 240,
-            "end": 245,
+            "start": 355,
+            "end": 360,
             "text": "(7,1)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 247,
-            "end": 252,
-            "text": "(0,4)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 255,
-            "end": 260,
-            "text": "(8,1)",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 270,
-            "end": 272,
+            "start": 363,
+            "end": 365,
             "text": "19",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 274,
-            "end": 276,
-            "text": "20",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 279,
-            "end": 281,
-            "text": "21",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 315,
-            "end": 321,
+            "start": 367,
+            "end": 373,
             "text": "Ligero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 354,
-            "end": 360,
+            "start": 375,
+            "end": 380,
+            "text": "(0,4)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 385,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 387,
+            "end": 393,
+            "text": "Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 395,
+            "end": 400,
+            "text": "(8,1)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 403,
+            "end": 405,
+            "text": "21",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 413,
             "text": "Pesado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 388,
-            "end": 393,
+            "start": 431,
+            "end": 433,
+            "text": "20",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 460,
+            "text": "Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 493,
+            "end": 499,
+            "text": "Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 508,
+            "end": 513,
             "text": "(0,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 413,
-            "end": 420,
+            "start": 548,
+            "end": 555,
             "text": "0 Vacio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 433,
-            "end": 439,
+            "start": 568,
+            "end": 574,
             "text": "(10,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 441,
-            "end": 447,
+            "start": 576,
+            "end": 582,
             "text": "(0,10)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 450,
-            "end": 457,
+            "start": 585,
+            "end": 592,
             "text": "(10,10)",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 645,
+            "end": 651,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           }
@@ -4902,67 +5454,123 @@
       {
         "block": "block_0007_0005",
         "path": "/text",
-        "sourceSha256": "70b2f78dd10cd35ba03dc9ec7c11e29e899769512c861ce4964961fb4620c1e6",
+        "sourceSha256": "1137f98b588ec2d60d7b69008326dc91ead1023feaf36bef4302fbe96723628c",
         "spans": [
           {
-            "start": 82,
-            "end": 85,
+            "start": 195,
+            "end": 198,
             "text": "0 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 92,
+            "start": 207,
+            "end": 231,
+            "text": "Espacios: 0\nCarga: Vacio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 261,
+            "end": 264,
             "text": "0 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 96,
-            "end": 99,
+            "start": 273,
+            "end": 299,
+            "text": "Espacios: 20\nCarga: Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 310,
+            "end": 313,
             "text": "3 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 103,
-            "end": 108,
+            "start": 322,
+            "end": 348,
+            "text": "Espacios: 21\nCarga: Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 364,
             "text": "10 10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 116,
+            "start": 373,
+            "end": 399,
+            "text": "Espacios: 70\nCarga: Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 410,
+            "end": 414,
             "text": "-1 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 120,
-            "end": 124,
+            "start": 423,
+            "end": 443,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 458,
             "text": "2 -1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 128,
-            "end": 132,
+            "start": 467,
+            "end": 487,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 498,
+            "end": 502,
             "text": "11 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 137,
-            "end": 141,
+            "start": 511,
+            "end": 531,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
+            "end": 546,
             "text": "0 11",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 277,
-            "end": 297,
+            "start": 555,
+            "end": 575,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 737,
+            "end": 757,
             "text": "Cantidades invalidas",
             "role": "output",
             "reading": "natural"
@@ -5150,69 +5758,62 @@
       {
         "block": "block_0009_0001",
         "path": "/text",
-        "sourceSha256": "01184aa1cfcce1d2b184d0a6e98f2aba261084af57e18e9f07968b503ee07adb",
+        "sourceSha256": "33371d04ba9fdf6426eec4617d4715be89ddb9c7baeb760122f1f31c8b22bc8c",
         "spans": [
           {
-            "start": 14,
-            "end": 21,
-            "text": "segunda",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 123,
-            "end": 128,
+            "start": 88,
+            "end": 93,
             "text": "0..10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 185,
+            "start": 180,
+            "end": 181,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 209,
-            "end": 210,
+            "start": 215,
+            "end": 216,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 213,
-            "end": 218,
+            "start": 228,
+            "end": 233,
             "text": "Vacio",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 244,
-            "end": 250,
+            "start": 259,
+            "end": 265,
             "text": "Ligero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 290,
-            "end": 292,
+            "start": 305,
+            "end": 307,
             "text": "24",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 305,
-            "end": 311,
+            "start": 320,
+            "end": 326,
             "text": "Pesado",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 333,
-            "end": 335,
+            "start": 348,
+            "end": 350,
             "text": "24",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -5226,19 +5827,33 @@
       {
         "block": "block_0009_0004",
         "path": "/text",
-        "sourceSha256": "a097625c77d9acd6c1e514c3d3a74d2547e004c81eefae2566c6d560669eab4c",
+        "sourceSha256": "82bf7168950f1daf20d61077ceeef6ef31ce745986c5f3e66f909c044d34ea39",
         "spans": [
           {
-            "start": 131,
-            "end": 143,
-            "text": "Espacios: 24",
-            "role": "output",
+            "start": 40,
+            "end": 44,
+            "text": "cero",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 146,
-            "end": 159,
-            "text": "Carga: Ligero",
+            "start": 62,
+            "end": 66,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 132,
+            "end": 135,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 145,
+            "end": 171,
+            "text": "Espacios: 24\nCarga: Ligero",
             "role": "output",
             "reading": "natural"
           }
@@ -5247,21 +5862,14 @@
       {
         "block": "block_0009_0005",
         "path": "/text",
-        "sourceSha256": "823bee7fbf4cd4998c3395f1df28de0388b9befaf2617dd0254e8e5fbd625be2",
+        "sourceSha256": "b10d771d6ad5615cf5e6fcb7db01645723e6f01f7fe76223d8f923b878842cce",
         "spans": [
           {
-            "start": 64,
-            "end": 67,
-            "text": "una",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 245,
-            "end": 252,
-            "text": "segunda",
-            "role": "data",
-            "reading": "natural"
+            "start": 137,
+            "end": 154,
+            "text": "espacios_ocupados",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -5316,7 +5924,7 @@
       {
         "block": "block_0010_0005",
         "path": "/text",
-        "sourceSha256": "f3ef8a8379296ebc77c7af11c31f6b7341c5d1618bb1d8ab73afa99ac798fceb",
+        "sourceSha256": "c68f1840dc5ff31d58938d8d3c98ef114fe1050387b4bf07ede2b0eee6d673e1",
         "spans": [
           {
             "start": 5,
@@ -5326,120 +5934,134 @@
             "reading": "technical"
           },
           {
-            "start": 18,
-            "end": 30,
-            "text": "Espacios: 24",
-            "role": "output",
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 33,
-            "end": 46,
-            "text": "Carga: Ligero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 68,
-            "end": 73,
+            "start": 35,
+            "end": 40,
             "text": "(0,6)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 113,
-            "end": 117,
+            "start": 42,
+            "end": 68,
+            "text": "Espacios: 24\nCarga: Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 108,
+            "end": 112,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 218,
-            "end": 222,
+            "start": 212,
+            "end": 216,
             "text": "cero",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 279,
-            "end": 284,
+            "start": 302,
+            "end": 307,
             "text": "(1,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 310,
-            "end": 311,
+            "start": 320,
+            "end": 321,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 315,
-            "end": 320,
+            "start": 355,
+            "end": 356,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 372,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 374,
+            "end": 379,
             "text": "(8,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 340,
-            "end": 342,
+            "start": 392,
+            "end": 394,
             "text": "24",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 378,
-            "end": 379,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 393,
-            "end": 394,
-            "text": "2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 397,
-            "end": 399,
+            "start": 440,
+            "end": 442,
             "text": "16",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 448,
-            "end": 453,
-            "text": "(5,2)",
-            "role": "data",
+            "start": 494,
+            "end": 495,
+            "text": "2",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 456,
-            "end": 461,
+            "start": 499,
+            "end": 501,
+            "text": "23",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 503,
+            "end": 509,
+            "text": "Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 511,
+            "end": 516,
             "text": "(7,1)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 471,
-            "end": 480,
-            "text": "23 Ligero",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 483,
-            "end": 492,
-            "text": "25 Pesado",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
             "start": 519,
             "end": 521,
+            "text": "25",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 523,
+            "end": 529,
+            "text": "Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 547,
+            "end": 549,
             "text": "24",
             "role": "output",
             "reading": "natural"
@@ -5455,62 +6077,139 @@
       {
         "block": "block_0010_0008",
         "path": "/text",
-        "sourceSha256": "d1430496abd9f80ed9f96e56c5be78c49361cbe552d6dd0e058f468a19fad02d",
+        "sourceSha256": "11c26c078ca22fa34a23a6a20534c1b1f27475976e986d3e193b08984ccee886",
         "spans": [
           {
-            "start": 54,
-            "end": 58,
+            "start": 82,
+            "end": 86,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 61,
-            "end": 67,
+            "start": 89,
+            "end": 95,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 89,
-            "end": 101,
+            "start": 120,
+            "end": 132,
             "text": "veinticuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 117,
+            "start": 234,
+            "end": 237,
             "text": "7 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 121,
-            "end": 124,
+            "start": 246,
+            "end": 272,
+            "text": "Espacios: 25\nCarga: Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 305,
             "text": "0 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 128,
-            "end": 133,
+            "start": 314,
+            "end": 338,
+            "text": "Espacios: 0\nCarga: Vacio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 349,
+            "end": 354,
             "text": "10 10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 140,
-            "end": 146,
-            "text": "cuatro",
+            "start": 363,
+            "end": 389,
+            "text": "Espacios: 70\nCarga: Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 400,
+            "end": 404,
+            "text": "-1 2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 179,
-            "end": 182,
+            "start": 413,
+            "end": 433,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 444,
+            "end": 448,
+            "text": "2 -1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 457,
+            "end": 477,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 492,
+            "text": "11 0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 501,
+            "end": 521,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 532,
+            "end": 536,
+            "text": "0 11",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 545,
+            "end": 565,
+            "text": "Cantidades invalidas",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 576,
+            "end": 579,
             "text": "2 3",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 588,
+            "end": 614,
+            "text": "Espacios: 18\nCarga: Ligero",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5599,7 +6298,7 @@
       {
         "block": "block_0011_0002",
         "path": "/text",
-        "sourceSha256": "ea6d8ac47a067be22be157c8a071f952e0b12eb7f4203149049d05fb6d8064e8",
+        "sourceSha256": "34a2fcb3d8fe4c907b9c7372990b691acda0e9fde33fdb4bbfd84409e92b25a0",
         "spans": []
       },
       {
@@ -5625,7 +6324,7 @@
       {
         "block": "block_0011_0005",
         "path": "/text",
-        "sourceSha256": "9749f475ce50425d9afa38af4e29ac73d00d55be2de66f5ca330ec86e68b504f",
+        "sourceSha256": "a394779ac8e9d51bf9e0cbdb00dda4724a75f9b561c87e4c4b5ccf231620c7d6",
         "spans": [
           {
             "start": 60,
@@ -5649,31 +6348,59 @@
             "reading": "natural"
           },
           {
-            "start": 184,
-            "end": 187,
+            "start": 297,
+            "end": 300,
             "text": "0 6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 191,
-            "end": 194,
+            "start": 309,
+            "end": 335,
+            "text": "Espacios: 24\nCarga: Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 365,
+            "end": 368,
             "text": "7 1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 198,
-            "end": 201,
+            "start": 377,
+            "end": 403,
+            "text": "Espacios: 25\nCarga: Pesado",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 414,
+            "end": 417,
             "text": "2 3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 206,
-            "end": 210,
+            "start": 426,
+            "end": 452,
+            "text": "Espacios: 18\nCarga: Ligero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 463,
+            "end": 467,
             "text": "-1 2",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 476,
+            "end": 496,
+            "text": "Cantidades invalidas",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -6490,6 +7217,209 @@
             "start": 388,
             "end": 426,
             "text": "(Köppe et al., 2023; Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "gpp_lectura_de_parametros",
+        "path": "/text",
+        "sourceSha256": "833c244de9dc50b32d6fade6784231568f14d29d43e572ec8d0ae02c32bab670",
+        "spans": [
+          {
+            "start": 46,
+            "end": 49,
+            "text": "g++",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 98,
+            "end": 107,
+            "text": "estante.h",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 118,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 128,
+            "end": 132,
+            "text": ".cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 234,
+            "end": 237,
+            "text": "g++",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 276,
+            "end": 280,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 300,
+            "end": 310,
+            "text": "-std=c++23",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 330,
+            "end": 335,
+            "text": "C++23",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 342,
+            "text": "-Wall",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 379,
+            "end": 386,
+            "text": "-Wextra",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 424,
+            "end": 433,
+            "text": "-pedantic",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 496,
+            "end": 498,
+            "text": "-c",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 538,
+            "end": 540,
+            "text": "-o",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 541,
+            "end": 547,
+            "text": "nombre",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 582,
+            "end": 624,
+            "text": "(Stallman & GCC Developer Community, 2025)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "gpp_resultados_de_las_etapas",
+        "path": "/text",
+        "sourceSha256": "9c7e01c98c574496fc2f855b93eb0c4159aae35ed0d457005b22d63aa08e87d9",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 59,
+            "end": 69,
+            "text": "conteo.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 80,
+            "text": "conteo.o",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 81,
+            "end": 91,
+            "text": "estado.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 94,
+            "end": 102,
+            "text": "estado.o",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 111,
+            "text": "main.cpp",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 114,
+            "end": 120,
+            "text": "main.o",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 131,
+            "text": "cuarta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 153,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 182,
+            "end": 184,
+            "text": "-o",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 185,
+            "end": 192,
+            "text": "estante",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 350,
+            "end": 392,
+            "text": "(Stallman & GCC Developer Community, 2025)",
             "role": "citation",
             "reading": "natural"
           }

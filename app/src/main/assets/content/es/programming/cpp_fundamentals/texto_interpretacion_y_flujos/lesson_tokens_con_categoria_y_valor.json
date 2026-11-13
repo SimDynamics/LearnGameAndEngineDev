@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Un lector de texto puede agrupar caracteres para entregar unidades con significado, llamadas tokens. Un número o un signo de operación son ejemplos de esas unidades. Para utilizarlas después, conviene distinguir su categoría y los datos que representa cada una (Stroustrup, 2024, pp. 122–124).\n\nEl lector de esta primera versión reconoce un solo dígito por token. También reconoce por separado los signos `+`, `-`, `*`, `/`, `(`, `)` y `;`. Omite el espacio, el tabulador y el salto de línea. El punto y coma marca el final de una operación; agotar el texto es otro suceso, que necesita su propia categoría.",
+          "text": "Un lector de texto puede agrupar caracteres para entregar unidades con significado, llamadas tokens. Un número o un signo de operación son ejemplos de esas unidades. Para utilizarlas después, conviene distinguir su categoría y los datos que representa cada una (Stroustrup, 2024).\n\nEl lector de esta primera versión reconoce un solo dígito por token. También reconoce por separado los signos `+`, `-`, `*`, `/`, `(`, `)` y `;`. Omite el espacio, el tabulador y el salto de línea. El punto y coma marca el final de una operación; agotar el texto es otro suceso, que necesita su propia categoría.",
           "emphasis": [
             {
               "text": "unidades con significado",
@@ -28,7 +28,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El tipo `Token` reúne dos miembros: `clase`, de tipo `char`, y `valor`, de tipo `int`. La inicialización como agregado, ya estudiada, permite escribir ambos datos entre llaves y en el orden de su declaración.\n\nLa categoría determina para qué sirve el dato:\n• Un número usa la etiqueta interna `'n'` y guarda su valor entre 0 y 9.\n• Un signo usa su propio carácter como categoría; su miembro `valor` se inicializa en 0 y no interviene en un cálculo.\n• El final del texto usa la etiqueta interna `'f'` y también inicializa `valor` en 0.\n\nLa asociación de categoría y valor permite conservar un dato numérico ya interpretado, en lugar de guardar únicamente los caracteres que lo escriben (Stroustrup, 2024).",
+          "text": "El tipo `Token` reúne dos miembros: `clase`, de tipo `char`, y `valor`, de tipo `int`. La inicialización como agregado, ya estudiada, permite escribir ambos datos entre llaves y en el orden de su declaración.\n\nLa categoría determina para qué sirve el dato:\n\nUn número usa la etiqueta interna `'n'` y guarda su valor entre 0 y 9.\n\nUn signo usa su propio carácter como categoría; su miembro `valor` se inicializa en 0 y no interviene en un cálculo.\n\nEl final del texto usa la etiqueta interna `'f'` y también inicializa `valor` en 0.\n\nLa asociación de categoría y valor permite conservar un dato numérico ya interpretado, en lugar de guardar únicamente los caracteres que lo escriben (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "La categoría determina para qué sirve el dato",
@@ -39,7 +39,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    const Token numero{'n', 5};\n    const Token signo{'+', 0};\n    std::cout << numero.clase << \" \" << numero.valor << \"\\n\";\n    std::cout << signo.clase;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    const Token numero{'n', 5};\n    const Token signo{'+', 0};\n\n    std::cout << numero.clase << \" \" << numero.valor << \"\\n\";\n    std::cout << signo.clase;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -98,11 +98,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        const Token primero = leer_token(entrada);\n        const Token segundo = leer_token(entrada);\n        std::cout << primero.clase << \":\" << primero.valor << \"\\n\";\n        std::cout << segundo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n\n    try {\n        const Token primero = leer_token(entrada);\n        const Token segundo = leer_token(entrada);\n        std::cout << primero.clase << \":\" << primero.valor << \"\\n\";\n        std::cout << segundo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La primera llamada reconoce el dígito 4 y devuelve su categoría y valor. La segunda reconoce el signo `+`. El resto de `\"4+2;\"` sigue pendiente en el flujo: este programa sólo pide esos dos tokens.\n\nReconocer unidades no calcula la expresión ni decide si están bien combinadas. Una gramática describe los órdenes permitidos, por ejemplo, cuándo un operador necesita otro operando. Esa comprobación se construirá después; el inspector actual sólo entrega las unidades reconocidas (Stroustrup, 2024, pp. 127–128).",
+          "text": "La primera llamada reconoce el dígito 4 y devuelve su categoría y valor. La segunda reconoce el signo `+`. El resto de `\"4+2;\"` sigue pendiente en el flujo: este programa sólo pide esos dos tokens.\n\nReconocer unidades no calcula la expresión ni decide si están bien combinadas. Una gramática describe los órdenes permitidos, por ejemplo, cuándo un operador necesita otro operando. Esa comprobación se construirá después; el inspector actual sólo entrega las unidades reconocidas (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "sigue pendiente en el flujo",
@@ -125,7 +125,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n\n    try {\n        bool continuar = true;\n\n        while (continuar) {\n            const Token token = leer_token(entrada);\n\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -145,7 +145,7 @@
           "type": "output_prediction",
           "question": "Predice todas las líneas para una entrada con espacios y paréntesis.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" 0*(9); \"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" 0*(9); \"};\n\n    try {\n        bool continuar = true;\n\n        while (continuar) {\n            const Token token = leer_token(entrada);\n\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Numero: 0\nSigno: *\nSigno: (\nNumero: 9\nSigno: )\nSigno: ;\nFin"
           ],
@@ -216,7 +216,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un inspector que conserve el contrato anterior y admita además el signo `%`. El inspector reconoce ese signo; todavía no calcula el resto de una división.\n\nEl resultado de cada llamada al lector determina el informe:\n• Un número produce `Numero: N`, sustituyendo N por su valor.\n• Un signo produce `Signo: C`, sustituyendo C por el carácter reconocido.\n• El final del texto produce `Fin` y termina ese informe.\n• Un carácter no admitido produce `Error: Caracter no admitido` y detiene ese informe, sin añadir `Fin`.\n\nCada mensaje ocupa una línea y termina con un salto de línea. No añadas títulos ni líneas vacías entre informes.\n\nLa batería completa forma un solo programa. Define `probar(const std::string& texto)` para crear un flujo nuevo y ejecutar un inspector por llamada. Desde `main`, llama a esa función con estos ocho textos, en este orden:\n1. `\"7%2;\"`\n2. `\"\"`\n3. `\" \\t\\n\"`\n4. `\"0;\"`\n5. `\"9+1;\"`\n6. `\"f\"`\n7. `\"1 2\"`\n8. `\"8-4*(2)/1;\"`\n\nEn el tercer texto, `\\t` y `\\n` representan un tabulador y un salto de línea reales, después de un espacio. Usa Compilar, ejecutar y comprobar cuando el mismo programa contenga todas las llamadas.",
+          "text": "Construye un inspector que conserve el contrato anterior y admita además el signo `%`. El inspector reconoce ese signo; todavía no calcula el resto de una división.\n\nEl resultado de cada llamada al lector determina el informe:\n\nUn número produce `Numero: N`, sustituyendo N por su valor.\nUn signo produce `Signo: C`, sustituyendo C por el carácter reconocido.\nEl final del texto produce `Fin` y termina ese informe.\nUn carácter no admitido produce `Error: Caracter no admitido` y detiene ese informe, sin añadir `Fin`.\n\nCada mensaje ocupa una línea y termina con un salto de línea. No añadas títulos ni líneas vacías entre informes.\n\nLa batería completa forma un solo programa. Define `probar(const std::string& texto)` para crear un flujo nuevo y ejecutar un inspector por llamada. Desde `main`, llama a esa función con estos ocho textos, en este orden. Debajo de cada literal aparece su informe completo:\n\nTexto `\"7%2;\"`\nNumero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\n\nTexto `\"\"`\nFin\n\nTexto `\" \\t\\n\"`\nFin\n\nTexto `\"0;\"`\nNumero: 0\nSigno: ;\nFin\n\nTexto `\"9+1;\"`\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\n\nTexto `\"f\"`\nError: Caracter no admitido\n\nTexto `\"1 2\"`\nNumero: 1\nNumero: 2\nFin\n\nTexto `\"8-4*(2)/1;\"`\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\n\nEn el tercer texto, `\\t` y `\\n` representan un tabulador y un salto de línea reales, después de un espacio. Usa Compilar, ejecutar y comprobar cuando el mismo programa contenga todas las llamadas.",
           "emphasis": [
             {
               "text": "admita además el signo",
@@ -265,7 +265,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -283,7 +283,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Copia el lector de tokens y la función probar que acabas de construir, con sus auxiliares, en el lugar indicado por este editor. Conserva el Token proporcionado y los ocho informes anteriores. El cliente llama leer_token al lector, con parámetro std::istringstream& y resultado Token; si elegiste otro nombre, adapta esa llamada sin cambiar los datos ni el orden de las comprobaciones.\n\nLa función proporcionada mostrar_token obtiene una unidad y presenta ambos miembros, separados por :. Las cuatro llamadas sobre \"0+;\" deben observar un número, dos signos y el final. Mantén el contrato: el número conserva su valor; los signos y el final llevan 0 en valor. Cada pareja termina con un salto de línea.\n\nLas otras dos comprobaciones recuperan los estados del flujo ya estudiados. setstate añade los indicadores indicados al estado que ya tiene el objeto (Köppe et al., 2023). El cliente activa failbit en un flujo que aún contiene 5. En otro activa primero badbit y después eofbit, conservando ambos. Es una preparación deliberada para comprobar el diagnóstico: ninguno debe convertirse en un final normal ni producir un número.\n\nPulsa «Compilar, ejecutar y comprobar» con el cliente completo. Una excepción se presenta como Error: Fallo del flujo, con salto final. Si aparece otra pareja o diagnóstico, corrige el lector y vuelve a comprobar todos los casos con el mismo código.",
+          "text": "Copia el lector de tokens y la función probar que acabas de construir, con sus auxiliares, en el lugar indicado por este editor. Conserva el Token proporcionado y los ocho informes anteriores. El cliente llama leer_token al lector, que recibe un parámetro std::istringstream& y devuelve Token; si elegiste otro nombre, adapta esa llamada sin cambiar los datos ni el orden de las comprobaciones.\n\nLa función proporcionada mostrar_token obtiene una unidad y presenta ambos miembros, separados por :. Las cuatro llamadas sobre \"0+;\" deben observar estas unidades, en orden:\n\nUn número.\nDos signos.\nEl final.\n\nMantén el contrato: el número conserva su valor; los signos y el final llevan 0 en valor. Cada pareja termina con un salto de línea.\n\nLas otras dos comprobaciones recuperan los estados del flujo ya estudiados. setstate añade los indicadores indicados al estado que ya tiene el objeto (Köppe et al., 2023). La preparación es distinta en cada flujo:\n\nEl cliente activa failbit en un flujo que aún contiene 5.\nEn otro activa primero badbit y después eofbit, conservando ambos.\n\nEs una preparación deliberada para comprobar el diagnóstico: ninguno debe convertirse en un final normal ni producir un número.\n\nPulsa «Compilar, ejecutar y comprobar» con el cliente completo. Una excepción se presenta como Error: Fallo del flujo, con salto final. Si aparece otra pareja o diagnóstico, corrige el lector y vuelve a comprobar todos los casos con el mismo código.",
           "emphasis": [
             {
               "text": "presenta ambos miembros",
@@ -305,7 +305,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\n// Copia aqui tu lector de tokens, probar y sus auxiliares.\n\n#include <ios>\n\nvoid mostrar_token(std::istringstream& entrada) {\n    try {\n        const Token token = leer_token(entrada);\n        std::cout << token.clase << ':' << token.valor << \"\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    probar(\"8-4*(2)/1;\");\n    std::istringstream unidades{\"0+;\"};\n    for (int i = 0; i < 4; ++i) {\n        mostrar_token(unidades);\n    }\n    std::istringstream fallido{\"5\"};\n    fallido.setstate(std::ios::failbit);\n    mostrar_token(fallido);\n    std::istringstream grave{\"5\"};\n    grave.setstate(std::ios::badbit);\n    grave.setstate(std::ios::eofbit);\n    mostrar_token(grave);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\n// Copia aqui tu lector de tokens, probar y sus auxiliares.\n\n#include <ios>\n\nvoid mostrar_token(std::istringstream& entrada) {\n    try {\n        const Token token = leer_token(entrada);\n        std::cout << token.clase << ':' << token.valor << \"\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    probar(\"8-4*(2)/1;\");\n\n    std::istringstream unidades{\"0+;\"};\n    for (int i = 0; i < 4; ++i) {\n        mostrar_token(unidades);\n    }\n\n    std::istringstream fallido{\"5\"};\n    fallido.setstate(std::ios::failbit);\n    mostrar_token(fallido);\n\n    std::istringstream grave{\"5\"};\n    grave.setstate(std::ios::badbit);\n    grave.setstate(std::ios::eofbit);\n    mostrar_token(grave);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -379,13 +379,13 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8%3;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8%3;\"};\n\n    try {\n        bool continuar = true;\n\n        while (continuar) {\n            const Token token = leer_token(entrada);\n\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "output_prediction",
           "question": "Predice las líneas obtenidas antes de un carácter inválido, usando el reconocimiento ampliado.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"6;?2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"6;?2;\"};\n\n    try {\n        bool continuar = true;\n\n        while (continuar) {\n            const Token token = leer_token(entrada);\n\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n\n    return 0;\n}\n",
           "answers": [
             "Numero: 6\nSigno: ;\nError: Caracter no admitido"
           ],
@@ -450,7 +450,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con \"0+;\", el lector entrega primero Token{'n', 0}, después Token{'+', 0} y Token{';', 0}, y finalmente Token{'f', 0}. El inspector original mostraba valor sólo para los números. Por eso una función que aplicara la resta de '0' también a los signos podía producir los ocho informes esperados, aunque guardara datos que incumplen su contrato. Observar ambos miembros distingue esa implementación.\n\nEn el flujo fallido, el indicador failbit impide obtener el carácter 5 sin que el origen haya señalado su final. En grave, badbit sigue activo después de añadir eofbit. Ambos requieren Fallo del flujo: devolver siempre la categoría final tras una lectura fallida ocultaría los dos errores; comprobar únicamente el indicador de fin todavía ocultaría el segundo.\n\nLa referencia completa anterior satisface también estos casos. Conserva sus inclusiones, Token, leer_token y probar. Sustituye su main por el siguiente cliente e incorpora mostrar_token, que sólo observa la unidad devuelta o el diagnóstico. Todas las llamadas utilizan la misma función lectora; la preparación de indicadores no pretende reproducir una avería física del origen.",
+          "text": "Con \"0+;\", las cuatro llamadas al lector entregan estas unidades, en orden:\n\nToken{'n', 0}\nToken{'+', 0}\nToken{';', 0}\nToken{'f', 0}\n\nEl inspector original mostraba valor sólo para los números. Por eso una función que aplicara la resta de '0' también a los signos podía producir los ocho informes esperados, aunque guardara datos que incumplen su contrato. Observar ambos miembros distingue esa implementación.\n\nEn el flujo fallido, el indicador failbit impide obtener el carácter 5 sin que el origen haya señalado su final.\n\nEn grave, badbit sigue activo después de añadir eofbit.\n\nAmbos requieren Fallo del flujo: devolver siempre la categoría final tras una lectura fallida ocultaría los dos errores; comprobar únicamente el indicador de fin todavía ocultaría el segundo.\n\nLa referencia completa anterior satisface también estos casos. Conserva sus inclusiones, Token, leer_token y probar. Sustituye su main por el siguiente cliente e incorpora mostrar_token, que sólo observa la unidad devuelta o el diagnóstico. Todas las llamadas utilizan la misma función lectora; la preparación de indicadores no pretende reproducir una avería física del origen.",
           "emphasis": [
             {
               "text": "Observar ambos miembros",
@@ -465,7 +465,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <ios>\n\nvoid mostrar_token(std::istringstream& entrada) {\n    try {\n        const Token token = leer_token(entrada);\n        std::cout << token.clase << ':' << token.valor << \"\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    probar(\"8-4*(2)/1;\");\n    std::istringstream unidades{\"0+;\"};\n    for (int i = 0; i < 4; ++i) {\n        mostrar_token(unidades);\n    }\n    std::istringstream fallido{\"5\"};\n    fallido.setstate(std::ios::failbit);\n    mostrar_token(fallido);\n    std::istringstream grave{\"5\"};\n    grave.setstate(std::ios::badbit);\n    grave.setstate(std::ios::eofbit);\n    mostrar_token(grave);\n    return 0;\n}\n"
+          "code": "#include <ios>\n\nvoid mostrar_token(std::istringstream& entrada) {\n    try {\n        const Token token = leer_token(entrada);\n        std::cout << token.clase << ':' << token.valor << \"\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    probar(\"8-4*(2)/1;\");\n\n    std::istringstream unidades{\"0+;\"};\n    for (int i = 0; i < 4; ++i) {\n        mostrar_token(unidades);\n    }\n\n    std::istringstream fallido{\"5\"};\n    fallido.setstate(std::ios::failbit);\n    mostrar_token(fallido);\n\n    std::istringstream grave{\"5\"};\n    grave.setstate(std::ios::badbit);\n    grave.setstate(std::ios::eofbit);\n    mostrar_token(grave);\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1486,6 +1486,81 @@
         "id": "block_0006_0001",
         "beforeSha256": "123f9105afc6bd9cab76c21cde2af2d83b4004a89ec91e8593573ae8fe4dd4e1",
         "afterSha256": "214ead0b9c17e56d01da1866c3e0d83c9fe9dd9e212df696f6b898229e4542ff"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "39a55a5c697268632ccb92d7a1a976e3197099fac3938cbda6b4e97362ccf03f",
+        "afterSha256": "333dc17fc0425877f6e8d4077df09a8d3e0536ce6376fb00ef204964aa0eb126"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "4087aad70f6b76aaf33abfa791b0d9f0138c2fbefebc35984fc9afe6649482f9",
+        "afterSha256": "7f69d798f60c3da63cfeaa0ba75ccf276d407a18bedaaf6b6ac1bdc5cc20741d"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "0dc9b0b5017b2b876525659d035afbe513220a887fe283e7dd755c8dc178193a",
+        "afterSha256": "4d78182d16d71e9b473d3b421cef8116f50f9b693a00214de06e9200486dd736"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "999c33a156e94e162e7c9e2f7c0ecba0e35c45aa3a3c2177331b9dcce2c1e8bd",
+        "afterSha256": "28d5120175afbb5ac0789ae6a49bb7b278c0beb2a42d7de96dd1bb223dfebc0a"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "82f3d3a392bdfee1a893ec8267098c3b15c6e6af0f91ba35e5d6b4de6721c264",
+        "afterSha256": "795fb49bdfbe1ccb6d801278e1b76d17b226d13d3d11853ac04d26c90c9815ca"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "167ba6d9ff085524b5d8e09c0b184d61eb29a74b70a67a9d304c2e2a34a14005",
+        "afterSha256": "5003c3be28e75d94303436db3d0891da0a6febd9712584a86fa7495403177549"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "239ba15397f9b114a71f74edb2678d8c014211c0f2d0d53ff2c27ce2d00b3da3",
+        "afterSha256": "d24154db5ab3bc29ad5962ef9c192a2025008df18bc0d65463a3123b8071bbd4"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "7c0412b448a13cf40682f96dbd7d10f8297ff48ea345a06347a4848c09e1a0ce",
+        "afterSha256": "e602badb9bd423aa863eef9ef5144e4513a3de0321d7edb9084cd325213bdf99"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "0800175e415321a20eb95403a67778d11549225a67ba9732cc9358a031138629",
+        "afterSha256": "7ad01a75ad97ac808867956df4278643e85f811487f7ff16486dc54733217f12"
+      },
+      {
+        "id": "u11_tokens_valores_y_fallos_del_flujo_consigna",
+        "beforeSha256": "b1a4b262a6c65c05a1ad29b2b51a89e1209c0113f6deed7559029f7414e4b6d9",
+        "afterSha256": "219aca26e9fcf023de4f23663b4449f2e7d7a1201c1a304d3b17ccffb2b5fde5"
+      },
+      {
+        "id": "u11_tokens_valores_y_fallos_del_flujo_comprobacion",
+        "beforeSha256": "4082d2d54a5d316e89de3ac0c217f0ac5964d5275ac26a11e3b5d2b73ad6ebce",
+        "afterSha256": "76554a1e82dbef75ba3339f205d6cc66aebe3de88c0d1f42fccad59be9086157"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "32338d2a0c0259a69f6e02f9ec8fc5ff3fa3c238fcf3ea31e61f2c2fcc44d3a2",
+        "afterSha256": "7df1a5b3db831573c83b609b2845a6e2053b84bb786b9a2fcb060573f1852e59"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "44d31a344f1a382f0fda281f545abdadc1660465e0cc35b40ae133e9fa3b7aef",
+        "afterSha256": "213aecf6989a1901c9abbabac44af43f0d98e9f60220309cfb4ec031e0db3624"
+      },
+      {
+        "id": "u11_tokens_valores_y_fallos_del_flujo_referencia_razonamiento",
+        "beforeSha256": "41884ae66a1cfca63fa0052a2c4e62f20fd35e86185d294dd16b6e050571d068",
+        "afterSha256": "d495f810ac3a94b360b42ae476c784665e9621b04f3b48515dc1f053be408b52"
+      },
+      {
+        "id": "u11_tokens_valores_y_fallos_del_flujo_referencia_cliente",
+        "beforeSha256": "47f4a5da1ff06d44b40b9db84890f5e64eb96373a7f26376fcadf8a4dc40c087",
+        "afterSha256": "20a3637321d0ccf5b93e50a8f62790dc8cc0b16a5afcc44d3e247d282e72d530"
       }
     ],
     "choiceRevisions": [
@@ -1557,6 +1632,133 @@
           }
         ]
       }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    const Token numero{'n', 5};\n    const Token signo{'+', 0};\n    std::cout << numero.clase << \" \" << numero.valor << \"\\n\";\n    std::cout << signo.clase;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        const Token primero = leer_token(entrada);\n        const Token segundo = leer_token(entrada);\n        std::cout << primero.clase << \":\" << primero.valor << \"\\n\";\n        std::cout << segundo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice todas las líneas para una entrada con espacios y paréntesis.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" 0*(9); \"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Numero: 0\nSigno: *\nSigno: (\nNumero: 9\nSigno: )\nSigno: ;\nFin"
+          ],
+          "explanation": "La primera llamada omite el espacio inicial y obtiene el dígito 0, cuyo token permite presentar Numero: 0. Las llamadas siguientes entregan, en orden, *, (, el número 9, ) y ;. El inspector presenta cada número o signo en su propia línea.\n\nEl punto y coma también es un signo reconocido: no agota por sí mismo el texto. Otra llamada omite el espacio final, encuentra el fin del origen y devuelve la categoría 'f'. Sólo entonces se escribe Fin y termina el recorrido.",
+          "reviewFeedback": "Sigue una llamada por unidad reconocida y distingue los separadores omitidos de los signos que sí se presentan. Comprueba también qué llamada detecta el final del texto."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "u11_tokens_valores_y_fallos_del_flujo_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\n// Copia aqui tu lector de tokens, probar y sus auxiliares.\n\n#include <ios>\n\nvoid mostrar_token(std::istringstream& entrada) {\n    try {\n        const Token token = leer_token(entrada);\n        std::cout << token.clase << ':' << token.valor << \"\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    probar(\"8-4*(2)/1;\");\n    std::istringstream unidades{\"0+;\"};\n    for (int i = 0; i < 4; ++i) {\n        mostrar_token(unidades);\n    }\n    std::istringstream fallido{\"5\"};\n    fallido.setstate(std::ios::failbit);\n    mostrar_token(fallido);\n    std::istringstream grave{\"5\"};\n    grave.setstate(std::ios::badbit);\n    grave.setstate(std::ios::eofbit);\n    mostrar_token(grave);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\nn:0\n+:0\n;:0\nf:0\nError: Fallo del flujo\nError: Fallo del flujo\n"
+                ],
+                "exitCode": 0,
+                "explanation": "Los ocho informes iniciales se conservan. Las cuatro observaciones directas son n:0, +:0, ;:0 y f:0: el valor del número es 0, y los signos y el final también inicializan ese miembro en 0. Después, el flujo con failbit y el que reúne badbit con eofbit deben producir cada uno Error: Fallo del flujo. Encontrar un indicador de fin no elimina el fallo grave que también está activo.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\nn:0\n+:-5\n;:11\nf:0\nError: Fallo del flujo\nError: Fallo del flujo\n"
+                    ],
+                    "text": "Las parejas del signo más y del punto y coma contienen valores distintos de 0. Revisa si aplicaste actual - '0' también a los signos. Esa conversión obtiene el valor de un dígito después de reconocerlo; para los signos, el contrato pide inicializar valor en 0. El inspector anterior sólo presentaba su categoría y no observaba ese miembro."
+                  },
+                  {
+                    "outputs": [
+                      "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\nn:0\n+:0\n;:0\nf:0\nf:0\nf:0\n"
+                    ],
+                    "text": "Las dos comprobaciones de fallo presentan f:0. Una extracción que no obtiene un carácter no acredita por sí sola el final normal. En el primer flujo está activo failbit sin fin; en el segundo está activo badbit, aunque también tenga eofbit. Revisa la distinción entre el diagnóstico Fallo del flujo y la categoría final antes de devolver un token."
+                  },
+                  {
+                    "outputs": [
+                      "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\nn:0\n+:0\n;:0\nf:0\nError: Fallo del flujo\nf:0\n"
+                    ],
+                    "text": "El primer fallo se diagnostica, pero el flujo que tiene simultáneamente badbit y eofbit produce f:0. El indicador de fin no anula el fallo grave. Revisa si aceptas el final mirando sólo eof() y dejas de comprobar bad(); este segundo caso también exige Error: Fallo del flujo."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8%3;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0003",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice las líneas obtenidas antes de un carácter inválido, usando el reconocimiento ampliado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"6;?2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Numero: 6\nSigno: ;\nError: Caracter no admitido"
+          ],
+          "explanation": "La primera llamada reconoce 6 y el inspector escribe Numero: 6. La siguiente reconoce el punto y coma y escribe Signo: ;; ese signo no detiene este recorrido de tokens.\n\nLa tercera llamada obtiene ?, que no pertenece al repertorio, y lanza la excepción. El control pasa al catch exterior, que escribe Error: Caracter no admitido. No se vuelve al bucle: 2; queda sin inspeccionar y tampoco se escribe Fin.",
+          "reviewFeedback": "Sigue la secuencia hasta el primer carácter que el lector no admite. Revisa a qué catch pasa el control y si el inspector puede continuar después de ese salto."
+        }
+      },
+      {
+        "id": "u11_tokens_valores_y_fallos_del_flujo_referencia_cliente",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <ios>\n\nvoid mostrar_token(std::istringstream& entrada) {\n    try {\n        const Token token = leer_token(entrada);\n        std::cout << token.clase << ':' << token.valor << \"\\n\";\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n}\n\nint main() {\n    probar(\"7%2;\");\n    probar(\"\");\n    probar(\" \\t\\n\");\n    probar(\"0;\");\n    probar(\"9+1;\");\n    probar(\"f\");\n    probar(\"1 2\");\n    probar(\"8-4*(2)/1;\");\n    std::istringstream unidades{\"0+;\"};\n    for (int i = 0; i < 4; ++i) {\n        mostrar_token(unidades);\n    }\n    std::istringstream fallido{\"5\"};\n    fallido.setstate(std::ios::failbit);\n    mostrar_token(fallido);\n    std::istringstream grave{\"5\"};\n    grave.setstate(std::ios::badbit);\n    grave.setstate(std::ios::eofbit);\n    mostrar_token(grave);\n    return 0;\n}\n"
+        }
+      }
     ]
   },
   "compilerPuzzlesRequired": true,
@@ -1594,6 +1796,277 @@
   "textSemantics": {
     "version": 1,
     "fields": [
+      {
+        "block": "block_0000_0000",
+        "path": "/text",
+        "sourceSha256": "7e8597852a370f5c05747b5bc9f5c5b74a94d58fe7e69fea7efe40514a056d32",
+        "spans": []
+      },
+      {
+        "block": "block_0000_0001",
+        "path": "/text",
+        "sourceSha256": "d390694bfbf8b391c6e809869a99819bed6a2ca7fbd65440884f968df217cac6",
+        "spans": [
+          {
+            "start": 261,
+            "end": 279,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 393,
+            "end": 394,
+            "text": "+",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 398,
+            "end": 399,
+            "text": "-",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 403,
+            "end": 404,
+            "text": "*",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 408,
+            "end": 409,
+            "text": "/",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 413,
+            "end": 414,
+            "text": "(",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 418,
+            "end": 419,
+            "text": ")",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 424,
+            "end": 425,
+            "text": ";",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0002",
+        "path": "/text",
+        "sourceSha256": "00ce9cd75301072957aed9fc4467bec5939859c34a239543049b2520393125f8",
+        "spans": [
+          {
+            "start": 9,
+            "end": 14,
+            "text": "Token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 22,
+            "end": 25,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 42,
+            "text": "clase",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 54,
+            "end": 58,
+            "text": "char",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 81,
+            "end": 84,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 296,
+            "text": "'n'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 323,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 327,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 395,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 414,
+            "end": 415,
+            "text": "0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 492,
+            "end": 495,
+            "text": "'f'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 519,
+            "end": 524,
+            "text": "valor",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 529,
+            "end": 530,
+            "text": "0",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 682,
+            "end": 700,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0000_0004",
+        "path": "/text",
+        "sourceSha256": "b0c74dcd7b5c7b38899548dfe2fd4dbd245e175bdb944df89a58cf03a84e0cb9",
+        "spans": [
+          {
+            "start": 16,
+            "end": 22,
+            "text": "numero",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 67,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 70,
+            "end": 75,
+            "text": "signo",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 103,
+            "text": "'+'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 113,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 168,
+            "end": 172,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 233,
+            "end": 236,
+            "text": "'n'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 241,
+            "end": 244,
+            "text": "'f'",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 306,
+            "end": 307,
+            "text": "n",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 313,
+            "end": 314,
+            "text": "f",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 358,
+            "end": 364,
+            "text": "struct",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0001_0000",
+        "path": "/text",
+        "sourceSha256": "9473f6296a4a44cb7eb4411ac72ffe04950d19f95ad54c1110a6f878fc79b623",
+        "spans": []
+      },
       {
         "block": "block_0001_0001",
         "path": "/text",
@@ -1729,257 +2202,22 @@
             "start": 341,
             "end": 363,
             "text": "\"Caracter no admitido\"",
-            "role": "output",
-            "reading": "natural"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 609,
             "end": 626,
             "text": "\"Fallo del flujo\"",
-            "role": "output",
-            "reading": "natural"
+            "role": "string",
+            "reading": "technical"
           }
         ]
-      },
-      {
-        "block": "block_0000_0000",
-        "path": "/text",
-        "sourceSha256": "7e8597852a370f5c05747b5bc9f5c5b74a94d58fe7e69fea7efe40514a056d32",
-        "spans": []
-      },
-      {
-        "block": "block_0000_0001",
-        "path": "/text",
-        "sourceSha256": "7b1e973588e5721b9abab8b38db4e462c10a21c18e32d0c017e1c518fb057998",
-        "spans": [
-          {
-            "start": 261,
-            "end": 292,
-            "text": "(Stroustrup, 2024, pp. 122–124)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 406,
-            "end": 407,
-            "text": "+",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 411,
-            "end": 412,
-            "text": "-",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 416,
-            "end": 417,
-            "text": "*",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 421,
-            "end": 422,
-            "text": "/",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 426,
-            "end": 427,
-            "text": "(",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 431,
-            "end": 432,
-            "text": ")",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 437,
-            "end": 438,
-            "text": ";",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0002",
-        "path": "/text",
-        "sourceSha256": "c917e2ac842f55633b11ed36a9af2308fa914c68b97e3a1fcef38c12968e6330",
-        "spans": [
-          {
-            "start": 9,
-            "end": 14,
-            "text": "Token",
-            "role": "cpp"
-          },
-          {
-            "start": 37,
-            "end": 42,
-            "text": "clase",
-            "role": "cpp"
-          },
-          {
-            "start": 54,
-            "end": 58,
-            "text": "char",
-            "role": "cpp"
-          },
-          {
-            "start": 64,
-            "end": 69,
-            "text": "valor",
-            "role": "cpp"
-          },
-          {
-            "start": 81,
-            "end": 84,
-            "text": "int",
-            "role": "cpp"
-          },
-          {
-            "start": 294,
-            "end": 297,
-            "text": "'n'",
-            "role": "string"
-          },
-          {
-            "start": 323,
-            "end": 324,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 327,
-            "end": 328,
-            "text": "9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 392,
-            "end": 397,
-            "text": "valor",
-            "role": "cpp"
-          },
-          {
-            "start": 416,
-            "end": 417,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 495,
-            "end": 498,
-            "text": "'f'",
-            "role": "string"
-          },
-          {
-            "start": 522,
-            "end": 527,
-            "text": "valor",
-            "role": "cpp"
-          },
-          {
-            "start": 532,
-            "end": 533,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 685,
-            "end": 703,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0000_0004",
-        "path": "/text",
-        "sourceSha256": "b0c74dcd7b5c7b38899548dfe2fd4dbd245e175bdb944df89a58cf03a84e0cb9",
-        "spans": [
-          {
-            "start": 16,
-            "end": 22,
-            "text": "numero",
-            "role": "cpp"
-          },
-          {
-            "start": 66,
-            "end": 67,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 70,
-            "end": 75,
-            "text": "signo",
-            "role": "cpp"
-          },
-          {
-            "start": 100,
-            "end": 103,
-            "text": "'+'",
-            "role": "string"
-          },
-          {
-            "start": 233,
-            "end": 236,
-            "text": "'n'",
-            "role": "string"
-          },
-          {
-            "start": 241,
-            "end": 244,
-            "text": "'f'",
-            "role": "string"
-          },
-          {
-            "start": 306,
-            "end": 307,
-            "text": "n",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 313,
-            "end": 314,
-            "text": "f",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 358,
-            "end": 364,
-            "text": "struct",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0001_0000",
-        "path": "/text",
-        "sourceSha256": "9473f6296a4a44cb7eb4411ac72ffe04950d19f95ad54c1110a6f878fc79b623",
-        "spans": []
       },
       {
         "block": "block_0001_0004",
         "path": "/text",
-        "sourceSha256": "222a367447f0e7e6fff362856689b0dc1fc922ecf3dbaef4d0baf0dcc3361734",
+        "sourceSha256": "97d44e7b13ad7fd03567a9d9a6f266eba6e564d582a10cec6dfde2bac5d8fbb8",
         "spans": [
           {
             "start": 38,
@@ -1999,12 +2237,20 @@
             "start": 120,
             "end": 126,
             "text": "\"4+2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 479,
-            "end": 510,
-            "text": "(Stroustrup, 2024, pp. 127–128)",
+            "end": 497,
+            "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           }
@@ -2025,19 +2271,22 @@
             "start": 96,
             "end": 101,
             "text": "valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 129,
             "end": 134,
             "text": "clase",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 149,
             "end": 152,
             "text": "'f'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 164,
@@ -2050,7 +2299,8 @@
             "start": 561,
             "end": 566,
             "text": "catch",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 707,
@@ -2159,7 +2409,7 @@
             "end": 16,
             "text": "\"2**3;\"",
             "role": "data",
-            "reading": "natural"
+            "reading": "characters"
           }
         ]
       },
@@ -2172,6 +2422,13 @@
             "start": 28,
             "end": 29,
             "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 31,
+            "end": 34,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -2296,17 +2553,24 @@
         "sourceSha256": "f043d93972612fd0797f05c7474d91696275c81df0feec38aa5ddde78cbc8183",
         "spans": [
           {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 34,
             "end": 35,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
             "start": 38,
             "end": 39,
             "text": "8",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2317,10 +2581,17 @@
         "sourceSha256": "718475cebd97c8ed202dbf59878e1def9cb288066de834a6a0def8f421a82d8f",
         "spans": [
           {
+            "start": 0,
+            "end": 2,
+            "text": "Un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 28,
             "end": 30,
             "text": "18",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2331,10 +2602,17 @@
         "sourceSha256": "e06faffd70378c6fd93871bd25355710aecaeb0a6650fd98375829dd40567cbf",
         "spans": [
           {
+            "start": 0,
+            "end": 2,
+            "text": "Un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 27,
             "end": 28,
             "text": "1",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -2354,7 +2632,8 @@
             "start": 19,
             "end": 22,
             "text": "get",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2379,7 +2658,7 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "d2eca677f722a7ae539b8e02a48616ba248d1d8687475d5ae38c2bd08a2d527b",
+        "sourceSha256": "13e9e5d06c1ac795222275b6674497e218d91267a5181ba515e4bfd20472f6fe",
         "spans": [
           {
             "start": 83,
@@ -2389,125 +2668,431 @@
             "reading": "characters"
           },
           {
-            "start": 248,
-            "end": 257,
+            "start": 247,
+            "end": 256,
             "text": "Numero: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 273,
-            "end": 274,
+            "start": 272,
+            "end": 273,
             "text": "N",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 309,
-            "end": 317,
+            "start": 306,
+            "end": 314,
             "text": "Signo: C",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 333,
-            "end": 334,
+            "start": 330,
+            "end": 331,
             "text": "C",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 393,
-            "end": 396,
+            "start": 388,
+            "end": 391,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 456,
-            "end": 483,
+            "start": 449,
+            "end": 476,
             "text": "Error: Caracter no admitido",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 520,
-            "end": 523,
+            "start": 513,
+            "end": 516,
             "text": "Fin",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 693,
-            "end": 725,
+            "start": 686,
+            "end": 718,
             "text": "probar(const std::string& texto)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 797,
-            "end": 801,
+            "start": 790,
+            "end": 794,
             "text": "main",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 866,
-            "end": 872,
+            "start": 827,
+            "end": 831,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 915,
+            "end": 921,
             "text": "\"7%2;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
-            "start": 878,
-            "end": 880,
+            "start": 923,
+            "end": 932,
+            "text": "Numero: 7",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 933,
+            "end": 940,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 940,
+            "end": 941,
+            "text": "%",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 942,
+            "end": 951,
+            "text": "Numero: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 952,
+            "end": 959,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 959,
+            "end": 960,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 961,
+            "end": 964,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 973,
+            "end": 975,
             "text": "\"\"",
-            "role": "string"
-          },
-          {
-            "start": 886,
-            "end": 893,
-            "text": "\" \\t\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 899,
-            "end": 903,
-            "text": "\"0;\"",
-            "role": "string"
-          },
-          {
-            "start": 909,
-            "end": 915,
-            "text": "\"9+1;\"",
-            "role": "string"
-          },
-          {
-            "start": 921,
-            "end": 924,
-            "text": "\"f\"",
-            "role": "string"
-          },
-          {
-            "start": 930,
-            "end": 935,
-            "text": "\"1 2\"",
-            "role": "string"
-          },
-          {
-            "start": 941,
-            "end": 953,
-            "text": "\"8-4*(2)/1;\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 977,
-            "end": 979,
-            "text": "\\t",
-            "role": "string"
+            "end": 980,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
           },
           {
-            "start": 984,
-            "end": 986,
+            "start": 989,
+            "end": 996,
+            "text": "\" \\t\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 998,
+            "end": 1001,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1010,
+            "end": 1014,
+            "text": "\"0;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1016,
+            "end": 1025,
+            "text": "Numero: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1026,
+            "end": 1033,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1033,
+            "end": 1034,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1035,
+            "end": 1038,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1047,
+            "end": 1053,
+            "text": "\"9+1;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1055,
+            "end": 1064,
+            "text": "Numero: 9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1065,
+            "end": 1072,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1072,
+            "end": 1073,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1074,
+            "end": 1083,
+            "text": "Numero: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1084,
+            "end": 1091,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1091,
+            "end": 1092,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1093,
+            "end": 1096,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1105,
+            "end": 1108,
+            "text": "\"f\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1110,
+            "end": 1137,
+            "text": "Error: Caracter no admitido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1146,
+            "end": 1151,
+            "text": "\"1 2\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1153,
+            "end": 1162,
+            "text": "Numero: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1163,
+            "end": 1172,
+            "text": "Numero: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1173,
+            "end": 1176,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1185,
+            "end": 1197,
+            "text": "\"8-4*(2)/1;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1199,
+            "end": 1208,
+            "text": "Numero: 8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1209,
+            "end": 1216,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1216,
+            "end": 1217,
+            "text": "-",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1218,
+            "end": 1227,
+            "text": "Numero: 4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1228,
+            "end": 1235,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1235,
+            "end": 1236,
+            "text": "*",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1237,
+            "end": 1244,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1244,
+            "end": 1245,
+            "text": "(",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1246,
+            "end": 1255,
+            "text": "Numero: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1256,
+            "end": 1263,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1263,
+            "end": 1264,
+            "text": ")",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1265,
+            "end": 1272,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1272,
+            "end": 1273,
+            "text": "/",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1274,
+            "end": 1283,
+            "text": "Numero: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1284,
+            "end": 1291,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1291,
+            "end": 1292,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1293,
+            "end": 1296,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1319,
+            "end": 1321,
+            "text": "\\t",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1326,
+            "end": 1328,
             "text": "\\n",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -2520,31 +3105,43 @@
             "start": 13,
             "end": 19,
             "text": "struct",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 121,
             "end": 126,
             "text": "Token",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 177,
             "end": 180,
             "text": "'n'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 195,
             "end": 198,
             "text": "'f'",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 213,
             "end": 218,
             "text": "valor",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 355,
@@ -2629,7 +3226,15 @@
         "block": "block_0004_0003",
         "path": "/options/1",
         "sourceSha256": "763cef223740d08cb04d9ff062fc42d823b9420557e873fa78a5a1d0a4840ecd",
-        "spans": []
+        "spans": [
+          {
+            "start": 19,
+            "end": 23,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2671,323 +3276,6 @@
         "spans": []
       },
       {
-        "block": "block_0004_0005",
-        "path": "/text",
-        "sourceSha256": "b33477edd8e11f5eca4ca4e705cfc585356ad5477278b5b3dc2be8dd050562af",
-        "spans": [
-          {
-            "start": 122,
-            "end": 123,
-            "text": "-",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 127,
-            "end": 128,
-            "text": "*",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 132,
-            "end": 133,
-            "text": "/",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 137,
-            "end": 138,
-            "text": "(",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 143,
-            "end": 144,
-            "text": ")",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
-        "block": "block_0005_0000",
-        "path": "/text",
-        "sourceSha256": "dd122dbcf687d928da24bb947596d95b6d4b85f2482fe3b3f49c0e6b6e850645",
-        "spans": []
-      },
-      {
-        "block": "block_0005_0001",
-        "path": "/text",
-        "sourceSha256": "4908f51596b950e51731719c0861043f9fddf838d555a4245d48db4a654d677d",
-        "spans": [
-          {
-            "start": 29,
-            "end": 35,
-            "text": "\"8%3;\"",
-            "role": "string"
-          },
-          {
-            "start": 63,
-            "end": 64,
-            "text": "%",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 121,
-            "end": 126,
-            "text": "Token",
-            "role": "cpp"
-          },
-          {
-            "start": 291,
-            "end": 292,
-            "text": "f",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
-        "block": "block_0005_0003",
-        "path": "/question",
-        "sourceSha256": "096dbb53ce3c333392065a4674830fc6bdf24526c83be013b480542ce0225fdd",
-        "spans": []
-      },
-      {
-        "block": "block_0005_0003",
-        "path": "/explanation",
-        "sourceSha256": "1969af4bb9e050427b870ac19191756e7bc59f5dd4094bf0af7d3a4c3abd8810",
-        "spans": [
-          {
-            "start": 28,
-            "end": 29,
-            "text": "6",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 53,
-            "end": 62,
-            "text": "Numero: 6",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 112,
-            "end": 120,
-            "text": "Signo: ;",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 197,
-            "end": 198,
-            "text": "?",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 273,
-            "end": 278,
-            "text": "catch",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 301,
-            "end": 328,
-            "text": "Error: Caracter no admitido",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 353,
-            "end": 355,
-            "text": "2;",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 400,
-            "end": 403,
-            "text": "Fin",
-            "role": "output",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0005_0003",
-        "path": "/reviewFeedback",
-        "sourceSha256": "ed118f048d041e5aa72aff5c016b1aaaa9c6fac100b4890bf0cae255c4fc353c",
-        "spans": [
-          {
-            "start": 82,
-            "end": 87,
-            "text": "catch",
-            "role": "cpp"
-          }
-        ]
-      },
-      {
-        "block": "block_0006_0000",
-        "path": "/text",
-        "sourceSha256": "62eceb25af3e918987952a6168a575f4d78cbb4ff3f5916f1b247da6bd336490",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/question",
-        "sourceSha256": "b49cf0bd34fcedeac3fe2f972a726173224b1547a7b17061dd73a2bda2e205de",
-        "spans": [
-          {
-            "start": 24,
-            "end": 26,
-            "text": "?;",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 27,
-            "end": 32,
-            "text": "2**3;",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 35,
-            "end": 39,
-            "text": "4/0;",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/explanation",
-        "sourceSha256": "b5b53e62dad42b7d9038cc86e42570576d90919c64cefe76847dba96d948dbba",
-        "spans": [
-          {
-            "start": 20,
-            "end": 21,
-            "text": "?",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 276,
-            "end": 277,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 303,
-            "end": 304,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/options/0",
-        "sourceSha256": "a3ff07b3b7fa8cf46d84e4e5e88101b3810cea33891887115fc251bd6c8105fe",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/options/1",
-        "sourceSha256": "f1979e2e935413973ff9f1dcf286a31db283f1f55b1ac052d83ca12386512a59",
-        "spans": [
-          {
-            "start": 0,
-            "end": 1,
-            "text": "?",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 22,
-            "end": 26,
-            "text": "2**3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 51,
-            "text": "4/0",
-            "role": "data",
-            "reading": "natural"
-          }
-        ]
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/options/2",
-        "sourceSha256": "5dd0cb64722e54437b50057c352cc3cb156bf97a03cd1f0246d2780ef684d3d8",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/reviewFeedback/0",
-        "sourceSha256": "e25f37c93bc9f82dd74a3d87d307fcb8a714c776e145117c7d4099a8c4d269cb",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/reviewFeedback/1",
-        "sourceSha256": "a58021730c950a078065e7f03de1a887ba6da5733fcedd1f1bf99e443e7a83a0",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0001",
-        "path": "/reviewFeedback/2",
-        "sourceSha256": "7ec4b82b9b855a5f196a81693a4ee5a0ed74da07418eb42e184f605e6cd94855",
-        "spans": []
-      },
-      {
-        "block": "block_0006_0002",
-        "path": "/text",
-        "sourceSha256": "d53a05c4a5aa600b266982a9a0003aaadf5b94191d110c9a1afee386a92442c7",
-        "spans": [
-          {
-            "start": 147,
-            "end": 165,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 189,
-            "end": 190,
-            "text": "/",
-            "role": "data",
-            "reading": "characters"
-          },
-          {
-            "start": 195,
-            "end": 196,
-            "text": "%",
-            "role": "data",
-            "reading": "characters"
-          }
-        ]
-      },
-      {
-        "block": "block_0007_0000",
-        "path": "/text",
-        "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
-        "spans": []
-      },
-      {
         "block": "u11_tokens_valores_y_fallos_del_flujo_titulo",
         "path": "/text",
         "sourceSha256": "334d86a73c38b7cfd7730210b0ea11fbdad873669d83507164f9c9654363e9e8",
@@ -2996,7 +3284,7 @@
       {
         "block": "u11_tokens_valores_y_fallos_del_flujo_consigna",
         "path": "/text",
-        "sourceSha256": "6d231d00ebc4bff224792a9d705d9ee43a8930dcb61f13c96b5c6e522448133a",
+        "sourceSha256": "434856a9c049086beb74e4051024082ab205e052937b192b21ce970f97e5a4ac",
         "spans": [
           {
             "start": 39,
@@ -3013,6 +3301,13 @@
             "reading": "technical"
           },
           {
+            "start": 167,
+            "end": 171,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 210,
             "end": 220,
             "text": "leer_token",
@@ -3020,99 +3315,127 @@
             "reading": "technical"
           },
           {
-            "start": 246,
-            "end": 265,
+            "start": 256,
+            "end": 275,
             "text": "std::istringstream&",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 278,
-            "end": 283,
+            "start": 287,
+            "end": 292,
             "text": "Token",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 412,
-            "end": 425,
+            "start": 421,
+            "end": 434,
             "text": "mostrar_token",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 486,
-            "end": 487,
+            "start": 495,
+            "end": 496,
             "text": ":",
-            "role": "data",
+            "role": "output",
             "reading": "characters"
           },
           {
-            "start": 515,
-            "end": 520,
+            "start": 502,
+            "end": 508,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 524,
+            "end": 529,
             "text": "\"0+;\"",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 648,
-            "end": 649,
-            "text": "0",
-            "role": "data",
+            "start": 572,
+            "end": 574,
+            "text": "Un",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 653,
-            "end": 658,
+            "start": 583,
+            "end": 586,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 684,
+            "end": 685,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 689,
+            "end": 694,
             "text": "valor",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 780,
-            "end": 788,
+            "start": 750,
+            "end": 753,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 816,
+            "end": 824,
             "text": "setstate",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 854,
-            "end": 874,
+            "start": 890,
+            "end": 910,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 894,
-            "end": 901,
+            "start": 973,
+            "end": 980,
             "text": "failbit",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 931,
-            "end": 932,
+            "start": 1010,
+            "end": 1011,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 957,
-            "end": 963,
+            "start": 1036,
+            "end": 1042,
             "text": "badbit",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 974,
-            "end": 980,
+            "start": 1053,
+            "end": 1059,
             "text": "eofbit",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 1225,
-            "end": 1247,
+            "start": 1305,
+            "end": 1327,
             "text": "Error: Fallo del flujo",
             "role": "output",
             "reading": "natural"
@@ -3126,8 +3449,190 @@
         "spans": [
           {
             "start": 33,
+            "end": 50,
+            "text": "Numero: 7\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "%",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 51,
+            "end": 69,
+            "text": "\nNumero: 2\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 69,
+            "end": 70,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 70,
+            "end": 100,
+            "text": "\nFin\nFin\nFin\nNumero: 0\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 100,
+            "end": 101,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 101,
+            "end": 123,
+            "text": "\nFin\nNumero: 9\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 123,
+            "end": 124,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 124,
+            "end": 142,
+            "text": "\nNumero: 1\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 142,
+            "end": 143,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 143,
+            "end": 217,
+            "text": "\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 218,
+            "text": "-",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 218,
+            "end": 236,
+            "text": "\nNumero: 4\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 236,
+            "end": 237,
+            "text": "*",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 237,
+            "end": 245,
+            "text": "\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 246,
+            "text": "(",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 246,
+            "end": 264,
+            "text": "\nNumero: 2\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
+            "end": 265,
+            "text": ")",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 265,
+            "end": 273,
+            "text": "\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 273,
+            "end": 274,
+            "text": "/",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 274,
+            "end": 292,
+            "text": "\nNumero: 1\nSigno: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 292,
+            "end": 293,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 293,
+            "end": 302,
+            "text": "\nFin\nn:0\n",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 302,
+            "end": 303,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 303,
+            "end": 306,
+            "text": ":0\n",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 307,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 307,
             "end": 359,
-            "text": "Numero: 7\nSigno: %\nNumero: 2\nSigno: ;\nFin\nFin\nFin\nNumero: 0\nSigno: ;\nFin\nNumero: 9\nSigno: +\nNumero: 1\nSigno: ;\nFin\nError: Caracter no admitido\nNumero: 1\nNumero: 2\nFin\nNumero: 8\nSigno: -\nNumero: 4\nSigno: *\nSigno: (\nNumero: 2\nSigno: )\nSigno: /\nNumero: 1\nSigno: ;\nFin\nn:0\n+:0\n;:0\nf:0\nError: Fallo del flujo\nError: Fallo del flujo",
+            "text": ":0\nf:0\nError: Fallo del flujo\nError: Fallo del flujo",
             "role": "output",
             "reading": "natural"
           }
@@ -3139,6 +3644,20 @@
         "sourceSha256": "b520ba1d40d7475a3a4c26ee74a0e35df305503ae1fd8f884f8be5d9ac6fd49e",
         "spans": [
           {
+            "start": 4,
+            "end": 8,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 46,
+            "end": 52,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 80,
             "end": 83,
             "text": "n:0",
@@ -3147,15 +3666,29 @@
           },
           {
             "start": 85,
+            "end": 86,
+            "text": "+",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 86,
             "end": 88,
-            "text": "+:0",
+            "text": ":0",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 90,
+            "end": 91,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 91,
             "end": 93,
-            "text": ";:0",
+            "text": ":0",
             "role": "output",
             "reading": "natural"
           },
@@ -3219,7 +3752,7 @@
             "start": 76,
             "end": 77,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           },
           {
@@ -3240,7 +3773,7 @@
             "start": 258,
             "end": 259,
             "text": "0",
-            "role": "data",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3250,6 +3783,13 @@
         "path": "/outputCheck/cases/0/reviewFeedback/1/text",
         "sourceSha256": "9a0766ea46b998585ef5a797b0c10e74df46ecc055344c42f2f36e7833525cea",
         "spans": [
+          {
+            "start": 4,
+            "end": 7,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 42,
             "end": 45,
@@ -3337,6 +3877,384 @@
         ]
       },
       {
+        "block": "block_0004_0005",
+        "path": "/text",
+        "sourceSha256": "b33477edd8e11f5eca4ca4e705cfc585356ad5477278b5b3dc2be8dd050562af",
+        "spans": [
+          {
+            "start": 30,
+            "end": 34,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 123,
+            "text": "-",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 127,
+            "end": 128,
+            "text": "*",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 132,
+            "end": 133,
+            "text": "/",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 137,
+            "end": 138,
+            "text": "(",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 143,
+            "end": 144,
+            "text": ")",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0000",
+        "path": "/text",
+        "sourceSha256": "dd122dbcf687d928da24bb947596d95b6d4b85f2482fe3b3f49c0e6b6e850645",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0001",
+        "path": "/text",
+        "sourceSha256": "4908f51596b950e51731719c0861043f9fddf838d555a4245d48db4a654d677d",
+        "spans": [
+          {
+            "start": 29,
+            "end": 35,
+            "text": "\"8%3;\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 63,
+            "end": 64,
+            "text": "%",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 104,
+            "end": 107,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 126,
+            "text": "Token",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 291,
+            "end": 292,
+            "text": "f",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/question",
+        "sourceSha256": "096dbb53ce3c333392065a4674830fc6bdf24526c83be013b480542ce0225fdd",
+        "spans": []
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/explanation",
+        "sourceSha256": "1969af4bb9e050427b870ac19191756e7bc59f5dd4094bf0af7d3a4c3abd8810",
+        "spans": [
+          {
+            "start": 28,
+            "end": 29,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 62,
+            "text": "Numero: 6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 119,
+            "text": "Signo: ",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 119,
+            "end": 120,
+            "text": ";",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 197,
+            "end": 198,
+            "text": "?",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 273,
+            "end": 278,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 301,
+            "end": 328,
+            "text": "Error: Caracter no admitido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 355,
+            "text": "2;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 400,
+            "end": 403,
+            "text": "Fin",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0005_0003",
+        "path": "/reviewFeedback",
+        "sourceSha256": "ed118f048d041e5aa72aff5c016b1aaaa9c6fac100b4890bf0cae255c4fc353c",
+        "spans": [
+          {
+            "start": 82,
+            "end": 87,
+            "text": "catch",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0000",
+        "path": "/text",
+        "sourceSha256": "62eceb25af3e918987952a6168a575f4d78cbb4ff3f5916f1b247da6bd336490",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/question",
+        "sourceSha256": "b49cf0bd34fcedeac3fe2f972a726173224b1547a7b17061dd73a2bda2e205de",
+        "spans": [
+          {
+            "start": 24,
+            "end": 26,
+            "text": "?;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 27,
+            "end": 32,
+            "text": "2**3;",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 35,
+            "end": 39,
+            "text": "4/0;",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/explanation",
+        "sourceSha256": "b5b53e62dad42b7d9038cc86e42570576d90919c64cefe76847dba96d948dbba",
+        "spans": [
+          {
+            "start": 20,
+            "end": 21,
+            "text": "?",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 276,
+            "end": 277,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 304,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 375,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 518,
+            "end": 521,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/options/0",
+        "sourceSha256": "a3ff07b3b7fa8cf46d84e4e5e88101b3810cea33891887115fc251bd6c8105fe",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/options/1",
+        "sourceSha256": "f1979e2e935413973ff9f1dcf286a31db283f1f55b1ac052d83ca12386512a59",
+        "spans": [
+          {
+            "start": 0,
+            "end": 1,
+            "text": "?",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 22,
+            "end": 26,
+            "text": "2**3",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 48,
+            "end": 51,
+            "text": "4/0",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 67,
+            "end": 71,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/options/2",
+        "sourceSha256": "5dd0cb64722e54437b50057c352cc3cb156bf97a03cd1f0246d2780ef684d3d8",
+        "spans": [
+          {
+            "start": 4,
+            "end": 8,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/reviewFeedback/0",
+        "sourceSha256": "e25f37c93bc9f82dd74a3d87d307fcb8a714c776e145117c7d4099a8c4d269cb",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/reviewFeedback/1",
+        "sourceSha256": "a58021730c950a078065e7f03de1a887ba6da5733fcedd1f1bf99e443e7a83a0",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0001",
+        "path": "/reviewFeedback/2",
+        "sourceSha256": "7ec4b82b9b855a5f196a81693a4ee5a0ed74da07418eb42e184f605e6cd94855",
+        "spans": []
+      },
+      {
+        "block": "block_0006_0002",
+        "path": "/text",
+        "sourceSha256": "d53a05c4a5aa600b266982a9a0003aaadf5b94191d110c9a1afee386a92442c7",
+        "spans": [
+          {
+            "start": 147,
+            "end": 165,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 189,
+            "end": 190,
+            "text": "/",
+            "role": "data",
+            "reading": "characters"
+          },
+          {
+            "start": 195,
+            "end": 196,
+            "text": "%",
+            "role": "data",
+            "reading": "characters"
+          }
+        ]
+      },
+      {
+        "block": "block_0007_0000",
+        "path": "/text",
+        "sourceSha256": "f312ba8f8aa1e3f19b60cbc22009e93760ac7c844229ad811b1bca8d7b8414e5",
+        "spans": []
+      },
+      {
         "block": "u11_tokens_valores_y_fallos_del_flujo_referencia_titulo",
         "path": "/text",
         "sourceSha256": "7f3b7480e23c9ab16bfcff794d5a40f130f4201a60d35588e4c145fe1b1243d0",
@@ -3345,7 +4263,7 @@
       {
         "block": "u11_tokens_valores_y_fallos_del_flujo_referencia_razonamiento",
         "path": "/text",
-        "sourceSha256": "7144d13eb769c2db484c201a7bda530548b8ef854e4754214341a83f79d04d80",
+        "sourceSha256": "aaa0fe6ac586b57fdb6a6a8599bfecea07c3d081b477c5e33d7eb038175f674f",
         "spans": [
           {
             "start": 4,
@@ -3355,127 +4273,148 @@
             "reading": "technical"
           },
           {
-            "start": 37,
-            "end": 50,
+            "start": 15,
+            "end": 21,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 77,
+            "end": 90,
             "text": "Token{'n', 0}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 60,
-            "end": 73,
+            "start": 91,
+            "end": 104,
             "text": "Token{'+', 0}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 76,
-            "end": 89,
+            "start": 105,
+            "end": 118,
             "text": "Token{';', 0}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 104,
-            "end": 117,
+            "start": 119,
+            "end": 132,
             "text": "Token{'f', 0}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 155,
+            "start": 165,
+            "end": 170,
             "text": "valor",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 224,
-            "end": 227,
+            "start": 239,
+            "end": 242,
             "text": "'0'",
             "role": "string",
             "reading": "technical"
           },
           {
-            "start": 409,
-            "end": 416,
+            "start": 283,
+            "end": 287,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 424,
+            "end": 431,
             "text": "fallido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 431,
-            "end": 438,
+            "start": 446,
+            "end": 453,
             "text": "failbit",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 466,
-            "end": 467,
+            "start": 481,
+            "end": 482,
             "text": "5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 513,
-            "end": 518,
+            "start": 529,
+            "end": 534,
             "text": "grave",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 520,
-            "end": 526,
+            "start": 536,
+            "end": 542,
             "text": "badbit",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 558,
-            "end": 564,
+            "start": 574,
+            "end": 580,
             "text": "eofbit",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 582,
-            "end": 597,
+            "start": 599,
+            "end": 614,
             "text": "Fallo del flujo",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 848,
-            "end": 853,
+            "start": 691,
+            "end": 694,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 865,
+            "end": 870,
             "text": "Token",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 855,
-            "end": 865,
+            "start": 872,
+            "end": 882,
             "text": "leer_token",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 868,
-            "end": 874,
+            "start": 885,
+            "end": 891,
             "text": "probar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 889,
-            "end": 893,
+            "start": 906,
+            "end": 910,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 931,
-            "end": 944,
+            "start": 948,
+            "end": 961,
             "text": "mostrar_token",
             "role": "cpp",
             "reading": "technical"

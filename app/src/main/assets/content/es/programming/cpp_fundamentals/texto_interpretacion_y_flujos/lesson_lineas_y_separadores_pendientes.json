@@ -24,7 +24,7 @@
         },
         {
           "type": "paragraph",
-          "text": "`std::getline` recibe primero el flujo y después el destino. Devuelve el flujo para que se pueda comprobar la lectura mediante una condición (Köppe et al., 2023).\n\nLa función se declara en `<string>`. El `std::istringstream` que lee el texto preparado sigue necesitando `<sstream>`. En estos programas, el origen es la cadena con la que se construye ese flujo.",
+          "text": "`std::getline` recibe primero el flujo y después el destino. En `std::getline(entrada, linea)`, `entrada` proporciona los caracteres y `linea` es la cadena donde se guardan los de la línea obtenida. La función devuelve el flujo para que se pueda comprobar la lectura mediante una condición (Köppe et al., 2023).\n\nLa función se declara en `<string>`. El `std::istringstream` que lee el texto preparado sigue necesitando `<sstream>`. En estos programas, el origen es la cadena con la que se construye ese flujo.",
           "emphasis": [
             {
               "text": "primero el flujo y después el destino",
@@ -35,7 +35,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  Patio norte  \\nSala azul\"};\n    std::string linea;\n    while (std::getline(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  Patio norte  \\nSala azul\"};\n    std::string linea;\n\n    while (std::getline(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -77,7 +77,7 @@
           "type": "output_prediction",
           "question": "Predice la salida, conservando las líneas y los espacios que aparecen entre < y >.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Puerta 4\\n\\n  Rampa\"};\n    std::string linea;\n    int numero = 0;\n    while (std::getline(entrada, linea)) {\n        ++numero;\n        std::cout << numero << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Total: \" << numero;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Puerta 4\\n\\n  Rampa\"};\n    std::string linea;\n    int numero = 0;\n\n    while (std::getline(entrada, linea)) {\n        ++numero;\n        std::cout << numero << \":<\" << linea << \">\\n\";\n    }\n\n    std::cout << \"Total: \" << numero;\n\n    return 0;\n}\n",
           "answers": [
             "1:<Puerta 4>\n2:<>\n3:<  Rampa>\nTotal: 3"
           ],
@@ -126,7 +126,7 @@
           "type": "output_prediction",
           "question": "Predice la cantidad que imprime el programa: cuenta las líneas que obtiene de la entrada, no las líneas de su salida.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"A\\nB\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"A\\nB\\n\"};\n    std::string linea;\n    int cantidad = 0;\n\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n    }\n\n    std::cout << cantidad;\n\n    return 0;\n}\n",
           "answers": [
             "2"
           ],
@@ -151,7 +151,7 @@
           "type": "fill_code",
           "question": "Práctica guiada: completa únicamente el nombre de la función de std que conserva frases y líneas vacías en esta lectura.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Paso alto\\n\\nPaso bajo\"};\n    std::string linea;\n    while (std::___(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Paso alto\\n\\nPaso bajo\"};\n    std::string linea;\n\n    while (std::___(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n\n    return 0;\n}\n",
           "answers": [
             "getline"
           ],
@@ -183,7 +183,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"inicio\\nTaller verde\\n\"};\n    std::string orden;\n    std::string resto;\n    std::string etiqueta;\n    if (entrada >> orden && std::getline(entrada, resto)\n            && std::getline(entrada, etiqueta)) {\n        std::cout << \"Orden:<\" << orden << \">\\n\";\n        std::cout << \"Resto:<\" << resto << \">\\n\";\n        std::cout << \"Etiqueta:<\" << etiqueta << \">\";\n    } else {\n        std::cout << \"Formato incompleto\";\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"inicio\\nTaller verde\\n\"};\n    std::string orden;\n    std::string resto;\n    std::string etiqueta;\n\n    if (entrada >> orden && std::getline(entrada, resto)\n            && std::getline(entrada, etiqueta)) {\n        std::cout << \"Orden:<\" << orden << \">\\n\";\n        std::cout << \"Resto:<\" << resto << \">\\n\";\n        std::cout << \"Etiqueta:<\" << etiqueta << \">\";\n    } else {\n        std::cout << \"Formato incompleto\";\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -221,7 +221,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye `probar(const std::string& texto)` para informar sobre las líneas del texto recibido. Cada llamada debe crear un flujo y contadores nuevos. Numera cada línea obtenida desde uno y preséntala como número:<contenido>, conservando sus caracteres. Después muestra dos líneas: Lineas: con la cantidad total y Vacias: con la cantidad cuyo contenido tiene cero caracteres. Usa un espacio después de cada etiqueta.\n\nEl dominio es de hasta seis líneas de hasta cuarenta caracteres ASCII cada una; ambos contadores caben en `int`. `main` debe llamar a `probar` con `\"Patio norte\\n\\n  Muelle\\n\"`, `\"\"`, `\"\\n\"`, `\"  \"`, `\"A\\n\"` y `\"A\\n\\n\"`, en ese orden. Cada escape `\\n` del literal produce un carácter de salto de línea, llamado LF.\n\nCada línea de contenido y ambos resúmenes deben terminar con un salto, sin títulos ni líneas vacías añadidas entre informes. Resuelve la selección siguiente y construye esta única batería de seis casos en el editor de código. Pulsa Compilar, ejecutar y comprobar para contrastar el informe completo.",
+          "text": "Construye `probar(const std::string& texto)` para informar sobre las líneas del texto recibido. Cada llamada debe crear un flujo y contadores nuevos. Numera cada línea obtenida desde uno y preséntala como número:<contenido>, conservando sus caracteres. Después muestra dos líneas de resumen:\n\nLineas: seguido de un espacio y la cantidad total de líneas obtenidas.\nVacias: seguido de un espacio y la cantidad cuyo contenido tiene cero caracteres.\n\nEl dominio es de hasta seis líneas de hasta cuarenta caracteres ASCII cada una; ambos contadores caben en `int`. ASCII es un conjunto de caracteres que incluye letras latinas sin acentos, cifras, signos y caracteres de control como la tabulación y el salto de línea. Cada escape `\\n` de un literal representa un carácter de salto de línea, llamado LF.\n\nReúne en `main` estas seis llamadas a `probar`, en el orden indicado. Los textos se muestran como literales de C++; debajo de cada uno aparecen todas sus líneas de salida:\n\nTexto `\"Patio norte\\n\\n  Muelle\\n\"`\n1:<Patio norte>\n2:<>\n3:<  Muelle>\nLineas: 3\nVacias: 1\n\nTexto `\"\"`\nLineas: 0\nVacias: 0\n\nTexto `\"\\n\"`\n1:<>\nLineas: 1\nVacias: 1\n\nTexto `\"  \"`, que contiene dos espacios\n1:<  >\nLineas: 1\nVacias: 0\n\nTexto `\"A\\n\"`\n1:<A>\nLineas: 1\nVacias: 0\n\nTexto `\"A\\n\\n\"`\n1:<A>\n2:<>\nLineas: 2\nVacias: 1\n\nCada línea de contenido y ambos resúmenes deben terminar con un salto, sin títulos ni líneas vacías añadidas entre informes. Resuelve la selección siguiente y construye los seis casos en el editor de código. La comprobación actual compara juntos los seis informes. Pulsa Compilar, ejecutar y comprobar para contrastar esa salida completa.",
           "emphasis": [
             {
               "text": "Cada llamada debe crear un flujo y contadores nuevos",
@@ -260,7 +260,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Patio norte\\n\\n  Muelle\\n\"};\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Patio norte\\n\\n  Muelle\\n\"};\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -296,7 +296,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia usa Zona este como primera línea. Muestra un informe para observar dos decisiones: incrementar el total por cada lectura válida y aumentar `vacias` sólo si la línea obtenida tiene cero caracteres. Ambas decisiones se toman dentro del cuerpo, donde existe una línea nueva.\n\nLa referencia final de la lección reúne las seis llamadas de la actividad e incluye los saltos que cierran cada resumen. No es necesario reemplazar una solución que ya cumpla esos mismos criterios.",
+          "text": "Esta referencia usa Zona este como primera línea. Muestra un informe para observar dos decisiones:\n\nIncrementar el total por cada lectura válida.\nAumentar `vacias` sólo si la línea obtenida tiene cero caracteres.\n\nAmbas decisiones se toman dentro del cuerpo, donde existe una línea nueva.\n\nLa referencia final de la lección reúne las seis llamadas de la actividad e incluye los saltos que cierran cada resumen. No es necesario reemplazar una solución que ya cumpla esos mismos criterios.",
           "emphasis": [
             {
               "text": "sólo si la línea obtenida tiene cero caracteres",
@@ -311,7 +311,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Zona este\\n\\n  Muelle\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Zona este\\n\\n  Muelle\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n\n        if (linea.empty()) {\n            ++vacias;\n        }\n\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -334,7 +334,7 @@
           "type": "output_prediction",
           "question": "Recupera la lectura y las condiciones para estos datos diferentes.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\n \\nFin\"};\n    std::string linea;\n    int total = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++total;\n        if (linea.empty()) {\n            ++vacias;\n        }\n    }\n    std::cout << \"Lineas: \" << total << \"\\nVacias: \" << vacias;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\n \\nFin\"};\n    std::string linea;\n    int total = 0;\n    int vacias = 0;\n\n    while (std::getline(entrada, linea)) {\n        ++total;\n\n        if (linea.empty()) {\n            ++vacias;\n        }\n    }\n\n    std::cout << \"Lineas: \" << total << \"\\nVacias: \" << vacias;\n\n    return 0;\n}\n",
           "answers": [
             "Lineas: 3\nVacias: 1"
           ],
@@ -390,7 +390,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"Patio norte\\n\\n  Muelle\\n\");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"  \");\n    probar(\"A\\n\");\n    probar(\"A\\n\\n\");\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n\n        if (linea.empty()) {\n            ++vacias;\n        }\n\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"Patio norte\\n\\n  Muelle\\n\");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"  \");\n    probar(\"A\\n\");\n    probar(\"A\\n\\n\");\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1354,6 +1354,173 @@
         "id": "block_0006_0002",
         "beforeSha256": "f1f2c475f3f9fdf6af294dae78c8232efa6c06cfe8fc7298422615902c1b7ccf",
         "afterSha256": "b7a8f42a16a0e36331b71b6f5bfe0593e06b4762ddbabc246c51c862dabefc92"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "1c6c4d9bf92cf14c582d8dfdaeedd6f349da97480f95b87ad00a2801e99a9a7f",
+        "afterSha256": "7cf77bad0ea132a07aa6aab1429be8f5d898479616339d568eb3d92509a901da"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "8210268cd504a151f935fbe3da0941a347b172cb512df3ec68442fb13d01ca03",
+        "afterSha256": "9fa3e9076e5a3aac04259a36cd635b2c94e6a73f3f7ffb41751ba337c428b702"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "03a553e00e3a4c95fcbef1f5b63668c26ef6ad9058ddcecd7799d6f6b1e5de48",
+        "afterSha256": "e69454e7602a0d1a54404e6dcb38fbd2c41a13a45e977e14b8ac45bc75b68e74"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "abb1e6ad9e4c47933561148a917b5edb285881fbaefe809a6420586e3bbdc1c7",
+        "afterSha256": "11b442984f77a4307a361d965d4f2ca7de7ff14689d061d58ff6e4c7f5f9c688"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "d9c5644b2e418157d43aa151b47acd78a5f4d133adf2bc7b50903ff4645eb261",
+        "afterSha256": "00061b18ead2ed48498ff5c28d9766e642392590e05782cff5a42bca728893af"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "66a643a6af7936c630931b095341869cc7f3cf2e890f56f792d3f606854433a3",
+        "afterSha256": "df3db0c9af08d18e87f87b6e006c1fc84d1f78b03edcfce1b40fb2b9cb6217d0"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "ca2f5324676b298666522cb4812a6a9c9d13a78b62e897b7a1144c4996d4bd60",
+        "afterSha256": "019317a3856d23a3506191515e1d85ddd2b8574e397b6df85179686e860906df"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "fef7d866d8d46bcd4fd4d29f50e11a2c42e236c6de8aedb2c14ba4aa57ab83e7",
+        "afterSha256": "4ed8e98ee019872170241a8dff7181025f15f4e71c34240417e75627efc90e37"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "c022d31f4ce8e0c4add9d95621fed63253592a113cbf5721fd0c0cf1746fc350",
+        "afterSha256": "c9046c887a7e03fb7295df6d0f077f61a94f6ab05e4f6581a3dbb91678326b65"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "85dfc7290c551d049022d3e8744fc2e709e65846f08135ec849dd538357b35ee",
+        "afterSha256": "5b4937404e1a86bf10d26d3880e1c944098b978b0a23fdce28c29dc8c269ac18"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "a1afe8fd6e69704d52f3d30151036496e0281fd6bb062028bb4bbaaaf7cbebaa",
+        "afterSha256": "cbebff38a6022a052d9993e3137fd617e50d57b8c446bb475d03c4592dd7d382"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "fdfd5b589840bf950d19d47acf2259f5433c797e40fcc5b95af534143d46ca20",
+        "afterSha256": "4a18d1155e58106a8d5ce66aa21d12b5c8efc0669cd7426a003dca451579aaed"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  Patio norte  \\nSala azul\"};\n    std::string linea;\n    while (std::getline(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la salida, conservando las líneas y los espacios que aparecen entre < y >.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Puerta 4\\n\\n  Rampa\"};\n    std::string linea;\n    int numero = 0;\n    while (std::getline(entrada, linea)) {\n        ++numero;\n        std::cout << numero << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Total: \" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "1:<Puerta 4>\n2:<>\n3:<  Rampa>\nTotal: 3"
+          ],
+          "explanation": "La primera llamada obtiene Puerta 4 y consume su salto de línea. La segunda encuentra inmediatamente otro salto: lo consume y obtiene una cadena vacía, que se presenta como 2:<>. La tercera conserva los dos espacios antes de Rampa y obtiene la última línea aunque no termine con otro salto; su salida es 3:<  Rampa>. Las tres lecturas ejecutan el cuerpo y el resumen muestra Total: 3.",
+          "reviewFeedback": "Sigue cada delimitador en orden. Distingue la línea de longitud cero de la que conserva espacios y cuenta únicamente las lecturas válidas."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice la cantidad que imprime el programa: cuenta las líneas que obtiene de la entrada, no las líneas de su salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"A\\nB\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "La primera lectura obtiene A, consume su salto y aumenta cantidad a 1. La segunda obtiene B, consume el siguiente salto y aumenta el contador a 2. El intento posterior ya no puede consumir caracteres ni un delimitador, de modo que no ejecuta el cuerpo. Por eso se imprime 2; el salto que cerró B no crea por sí mismo otra lectura válida.",
+          "reviewFeedback": "Distingue los delimitadores consumidos de los caracteres que quedan después del último salto. El contador aumenta dentro del cuerpo de cada lectura válida."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "fill_code",
+          "question": "Práctica guiada: completa únicamente el nombre de la función de std que conserva frases y líneas vacías en esta lectura.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Paso alto\\n\\nPaso bajo\"};\n    std::string linea;\n    while (std::___(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "getline"
+          ],
+          "explanation": "La llamada std::getline(entrada, linea) obtiene primero Paso alto, conservando el espacio interno. El salto inmediato siguiente permite una segunda lectura válida de una línea vacía, y la última llamada válida obtiene Paso bajo aunque no haya un salto al final. El cuerpo escribe <Paso alto>, <> y <Paso bajo>, cada uno en su propia línea. Una extracción de palabra no conservaría esas tres unidades.",
+          "reviewFeedback": "Busca la función de lectura completa ya utilizada con este flujo y este destino. Debe conservar los espacios que pertenecen a la línea."
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"inicio\\nTaller verde\\n\"};\n    std::string orden;\n    std::string resto;\n    std::string etiqueta;\n    if (entrada >> orden && std::getline(entrada, resto)\n            && std::getline(entrada, etiqueta)) {\n        std::cout << \"Orden:<\" << orden << \">\\n\";\n        std::cout << \"Resto:<\" << resto << \">\\n\";\n        std::cout << \"Etiqueta:<\" << etiqueta << \">\";\n    } else {\n        std::cout << \"Formato incompleto\";\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Patio norte\\n\\n  Muelle\\n\"};\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "1:<Patio norte>\n2:<>\n3:<  Muelle>\nLineas: 3\nVacias: 1\nLineas: 0\nVacias: 0\n1:<>\nLineas: 1\nVacias: 1\n1:<  >\nLineas: 1\nVacias: 0\n1:<A>\nLineas: 1\nVacias: 0\n1:<A>\n2:<>\nLineas: 2\nVacias: 1\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Zona este\\n\\n  Muelle\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Recupera la lectura y las condiciones para estos datos diferentes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\n \\nFin\"};\n    std::string linea;\n    int total = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++total;\n        if (linea.empty()) {\n            ++vacias;\n        }\n    }\n    std::cout << \"Lineas: \" << total << \"\\nVacias: \" << vacias;\n    return 0;\n}\n",
+          "answers": [
+            "Lineas: 3\nVacias: 1"
+          ],
+          "explanation": "El primer salto permite una lectura válida de una cadena vacía: total pasa a 1 y vacias a 1. La segunda línea contiene un espacio, así que aumenta el total a 2 pero no el contador de vacías. La tercera obtiene Fin sin necesitar un salto final y deja el total en 3. Los resúmenes son Lineas: 3 y Vacias: 1, en líneas separadas.",
+          "reviewFeedback": "Sigue por separado el total de lecturas válidas y la condición sobre la longitud del destino. Un espacio también es un carácter."
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    std::cout << \"\\n\";\n}\n\nint main() {\n    probar(\"Patio norte\\n\\n  Muelle\\n\");\n    probar(\"\");\n    probar(\"\\n\");\n    probar(\"  \");\n    probar(\"A\\n\");\n    probar(\"A\\n\\n\");\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1379,6 +1546,13 @@
             "reading": "natural"
           },
           {
+            "start": 69,
+            "end": 72,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 186,
             "end": 204,
             "text": "(Stroustrup, 2024)",
@@ -1389,13 +1563,15 @@
             "start": 208,
             "end": 236,
             "text": "std::getline(entrada, linea)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 253,
             "end": 264,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 511,
@@ -1409,38 +1585,63 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "f02d50951b6a663a97fcc110b1eacc8b1109783b1bd19cbd4014ccdd401b1584",
+        "sourceSha256": "1915039b5fbdead789e2c2dc8456e8a5e9b4ba54a6cad8f0a326fc4a300b4f16",
         "spans": [
           {
             "start": 1,
             "end": 13,
             "text": "std::getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 141,
-            "end": 161,
+            "start": 65,
+            "end": 93,
+            "text": "std::getline(entrada, linea)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 97,
+            "end": 104,
+            "text": "entrada",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 136,
+            "end": 141,
+            "text": "linea",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 290,
+            "end": 310,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 190,
-            "end": 198,
+            "start": 339,
+            "end": 347,
             "text": "<string>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 205,
-            "end": 223,
+            "start": 354,
+            "end": 372,
             "text": "std::istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 271,
-            "end": 280,
+            "start": 420,
+            "end": 429,
             "text": "<sstream>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1448,7 +1649,22 @@
         "block": "block_0000_0004",
         "path": "/text",
         "sourceSha256": "fbcb785ac1ee3db74760860aba2ce049f4434cb407d9b352e129b76718cee65a",
-        "spans": []
+        "spans": [
+          {
+            "start": 42,
+            "end": 45,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0000",
@@ -1465,7 +1681,8 @@
             "start": 48,
             "end": 60,
             "text": "std::getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 283,
@@ -1506,7 +1723,7 @@
             "start": 27,
             "end": 35,
             "text": "Puerta 4",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1514,6 +1731,13 @@
             "end": 177,
             "text": "2:<>",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 203,
+            "end": 206,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1531,6 +1755,13 @@
             "reading": "natural"
           },
           {
+            "start": 321,
+            "end": 325,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 375,
             "end": 383,
             "text": "Total: 3",
@@ -1543,7 +1774,15 @@
         "block": "block_0001_0002",
         "path": "/reviewFeedback",
         "sourceSha256": "b818f0a39e33adcee5643ec5cc92a6c6d0e4b85dfa3a143bef31c2c636c76886",
-        "spans": []
+        "spans": [
+          {
+            "start": 64,
+            "end": 68,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1554,7 +1793,8 @@
             "start": 1,
             "end": 14,
             "text": "linea.empty()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 26,
@@ -1564,10 +1804,31 @@
             "reading": "natural"
           },
           {
+            "start": 54,
+            "end": 58,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 70,
             "end": 90,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 172,
+            "end": 175,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 191,
+            "end": 194,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1583,6 +1844,13 @@
             "text": ">",
             "role": "output",
             "reading": "characters"
+          },
+          {
+            "start": 304,
+            "end": 307,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1595,13 +1863,15 @@
             "start": 22,
             "end": 26,
             "text": "\"\\n\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 55,
             "end": 91,
             "text": "while (std::getline(entrada, linea))",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1611,11 +1881,32 @@
         "sourceSha256": "2f424c42ca3452780ca463e078effb55a3f5c16cbef56641a8f9c9f113016caf",
         "spans": [
           {
+            "start": 18,
+            "end": 20,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 75,
             "end": 87,
             "text": "std::getline",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 122,
+            "end": 126,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "text": "una",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1623,25 +1914,57 @@
         "block": "block_0001_0004",
         "path": "/options/0",
         "sourceSha256": "eb6053065c4f862edf934bcb7fd4cf7d08468fd63464f0dc8eba5338c04e7d56",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 7,
+            "text": "Ninguna",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
         "path": "/options/1",
         "sourceSha256": "f8c8c3b01b1a75d3754417873f62add549f6fb132eeb321c4038a40fe88aa1fe",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
         "path": "/options/2",
         "sourceSha256": "2e270bc9ef150cfbb66a29eace6c35145fca8015b633a6f0d54f6dadbeeff812",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
         "path": "/reviewFeedback/0",
         "sourceSha256": "92ace3e09ce2bc00e1790e271f5db5f10c2307189ce756fb15614475d0b9f897",
-        "spans": []
+        "spans": [
+          {
+            "start": 33,
+            "end": 37,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0001_0004",
@@ -1676,7 +1999,7 @@
             "start": 27,
             "end": 28,
             "text": "A",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1697,7 +2020,7 @@
             "start": 90,
             "end": 91,
             "text": "B",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1738,7 +2061,15 @@
             "start": 36,
             "end": 46,
             "text": "\"A\\nB\\n\\n\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 426,
+            "end": 430,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
           }
         ]
       },
@@ -1751,7 +2082,8 @@
             "start": 64,
             "end": 67,
             "text": "std",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1771,14 +2103,14 @@
             "start": 56,
             "end": 65,
             "text": "Paso alto",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
             "start": 218,
             "end": 227,
             "text": "Paso bajo",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -1799,6 +2131,13 @@
             "start": 298,
             "end": 309,
             "text": "<Paso bajo>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 390,
+            "text": "tres",
             "role": "output",
             "reading": "natural"
           }
@@ -1825,13 +2164,15 @@
             "start": 19,
             "end": 21,
             "text": ">>",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 26,
             "end": 37,
             "text": "std::string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 119,
@@ -1844,7 +2185,8 @@
             "start": 166,
             "end": 178,
             "text": "std::getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1857,7 +2199,8 @@
             "start": 39,
             "end": 51,
             "text": "std::getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 101,
@@ -1877,7 +2220,8 @@
             "start": 183,
             "end": 211,
             "text": "\"inicio aviso\\nTaller verde\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 256,
@@ -1897,7 +2241,8 @@
             "start": 150,
             "end": 157,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -1960,13 +2305,21 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "27f569c824bc71728dd71e1624afcc4909b8aa8fd19d0b99b44b2e1b15e07767",
+        "sourceSha256": "71db375028a23af8a75b3a4bccc3e5a2cc5f6de491af107d34a1564c1744e68f",
         "spans": [
           {
             "start": 11,
             "end": 43,
             "text": "probar(const std::string& texto)",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 186,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
           },
           {
             "start": 205,
@@ -1976,78 +2329,305 @@
             "reading": "natural"
           },
           {
-            "start": 281,
-            "end": 288,
+            "start": 269,
+            "end": 272,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 300,
             "text": "Lineas:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 313,
-            "end": 320,
+            "start": 312,
+            "end": 314,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 371,
             "text": "Vacias:",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 524,
-            "end": 527,
+            "start": 383,
+            "end": 385,
+            "text": "un",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 433,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 470,
+            "end": 474,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 491,
+            "end": 499,
+            "text": "cuarenta",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 554,
+            "end": 557,
             "text": "int",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 531,
-            "end": 535,
-            "text": "main",
-            "role": "cpp"
-          },
-          {
-            "start": 552,
-            "end": 558,
-            "text": "probar",
-            "role": "cpp"
-          },
-          {
-            "start": 565,
-            "end": 592,
-            "text": "\"Patio norte\\n\\n  Muelle\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 596,
-            "end": 598,
-            "text": "\"\"",
-            "role": "string"
-          },
-          {
-            "start": 602,
-            "end": 606,
-            "text": "\"\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 610,
-            "end": 614,
-            "text": "\"  \"",
-            "role": "string"
-          },
-          {
-            "start": 618,
-            "end": 623,
-            "text": "\"A\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 628,
-            "end": 635,
-            "text": "\"A\\n\\n\"",
-            "role": "string"
-          },
-          {
-            "start": 665,
-            "end": 667,
+            "start": 727,
+            "end": 729,
             "text": "\\n",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 756,
+            "end": 758,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 810,
+            "end": 814,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 822,
+            "end": 826,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 839,
+            "end": 845,
+            "text": "probar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 980,
+            "end": 1007,
+            "text": "\"Patio norte\\n\\n  Muelle\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1009,
+            "end": 1024,
+            "text": "1:<Patio norte>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1025,
+            "end": 1029,
+            "text": "2:<>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1030,
+            "end": 1042,
+            "text": "3:<  Muelle>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1043,
+            "end": 1052,
+            "text": "Lineas: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1053,
+            "end": 1062,
+            "text": "Vacias: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1071,
+            "end": 1073,
+            "text": "\"\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1075,
+            "end": 1084,
+            "text": "Lineas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1085,
+            "end": 1094,
+            "text": "Vacias: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1103,
+            "end": 1107,
+            "text": "\"\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1109,
+            "end": 1113,
+            "text": "1:<>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1114,
+            "end": 1123,
+            "text": "Lineas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1124,
+            "end": 1133,
+            "text": "Vacias: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1142,
+            "end": 1146,
+            "text": "\"  \"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1162,
+            "end": 1165,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1175,
+            "end": 1181,
+            "text": "1:<  >",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1182,
+            "end": 1191,
+            "text": "Lineas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1192,
+            "end": 1201,
+            "text": "Vacias: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1210,
+            "end": 1215,
+            "text": "\"A\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1217,
+            "end": 1222,
+            "text": "1:<A>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1223,
+            "end": 1232,
+            "text": "Lineas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1233,
+            "end": 1242,
+            "text": "Vacias: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1251,
+            "end": 1258,
+            "text": "\"A\\n\\n\"",
+            "role": "string",
+            "reading": "technical"
+          },
+          {
+            "start": 1260,
+            "end": 1265,
+            "text": "1:<A>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1266,
+            "end": 1270,
+            "text": "2:<>",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1271,
+            "end": 1280,
+            "text": "Lineas: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1281,
+            "end": 1290,
+            "text": "Vacias: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1465,
+            "end": 1469,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 1542,
+            "end": 1546,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2060,19 +2640,22 @@
             "start": 32,
             "end": 39,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 52,
             "end": 59,
             "text": "\"A\\n\\n\"",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           },
           {
             "start": 66,
             "end": 68,
             "text": "\\n",
-            "role": "string"
+            "role": "string",
+            "reading": "technical"
           }
         ]
       },
@@ -2092,6 +2675,13 @@
             "start": 47,
             "end": 48,
             "text": "A",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 194,
+            "end": 197,
+            "text": "dos",
             "role": "output",
             "reading": "natural"
           },
@@ -2117,6 +2707,13 @@
         "sourceSha256": "b491c2f06bd352196bb55ad4d39914bb4cf616ca4dab42fc7f56ffde8e179f7e",
         "spans": [
           {
+            "start": 0,
+            "end": 3,
+            "text": "Una",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 23,
             "end": 24,
             "text": "A",
@@ -2129,13 +2726,28 @@
         "block": "block_0004_0002",
         "path": "/options/1",
         "sourceSha256": "b80aa64422f50330fb9b6085223eab82d8022afbe4b37e3a4f5e79b9a30f3ff0",
-        "spans": []
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "Tres",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
         "path": "/options/2",
         "sourceSha256": "0cbf0845ff5f1226c693345e63bd4bf2250ba602332d7746831c4e7b2a37bd6d",
         "spans": [
+          {
+            "start": 0,
+            "end": 3,
+            "text": "Dos",
+            "role": "output",
+            "reading": "natural"
+          },
           {
             "start": 12,
             "end": 13,
@@ -2180,7 +2792,22 @@
             "start": 47,
             "end": 54,
             "text": "empty()",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 109,
+            "end": 112,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 254,
+            "end": 258,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2193,7 +2820,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "ae51bd3a6ab0dcf0985cfe15cced778aeaf041d94f3f7af7549ff9a454bbef34",
+        "sourceSha256": "9da3cbcaad684c178e6fc3c18dcc386408a4fa5a459402646407a6b9a84207ae",
         "spans": [
           {
             "start": 20,
@@ -2203,10 +2830,32 @@
             "reading": "natural"
           },
           {
+            "start": 83,
+            "end": 86,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 156,
             "end": 162,
             "text": "vacias",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 200,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 338,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2215,6 +2864,13 @@
         "path": "/question",
         "sourceSha256": "9bf40d1553991e8a296e4c17d9faf0787a4d3d8f1f9d80a9d74e88abfcacc8a5",
         "spans": [
+          {
+            "start": 33,
+            "end": 36,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 55,
             "end": 61,
@@ -2229,6 +2885,13 @@
         "path": "/explanation",
         "sourceSha256": "390285fc4c71fbfd30a2cfb42009ee3d4ef808b8c76fcb130e03273c95a64da4",
         "spans": [
+          {
+            "start": 54,
+            "end": 57,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 79,
             "end": 85,
@@ -2261,7 +2924,8 @@
             "start": 7,
             "end": 14,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2269,7 +2933,15 @@
         "block": "block_0005_0003",
         "path": "/options/1",
         "sourceSha256": "909184dcbbb915f52ae17e9b1b6b13e2e9e31b9f1f883d8a71c9cb8fdf1ec503",
-        "spans": []
+        "spans": [
+          {
+            "start": 37,
+            "end": 40,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2280,7 +2952,8 @@
             "start": 23,
             "end": 29,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2305,13 +2978,15 @@
             "start": 53,
             "end": 59,
             "text": "string",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 86,
             "end": 93,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2355,6 +3030,13 @@
             "reading": "natural"
           },
           {
+            "start": 119,
+            "end": 121,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 158,
             "end": 159,
             "text": "2",
@@ -2365,7 +3047,7 @@
             "start": 210,
             "end": 213,
             "text": "Fin",
-            "role": "output",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -2419,7 +3101,8 @@
             "start": 114,
             "end": 126,
             "text": "std::getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 328,
@@ -2429,10 +3112,18 @@
             "reading": "natural"
           },
           {
+            "start": 401,
+            "end": 405,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 511,
             "end": 529,
             "text": "std::istringstream",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2478,7 +3169,8 @@
             "start": 55,
             "end": 62,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2509,7 +3201,8 @@
             "start": 34,
             "end": 41,
             "text": "getline",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },

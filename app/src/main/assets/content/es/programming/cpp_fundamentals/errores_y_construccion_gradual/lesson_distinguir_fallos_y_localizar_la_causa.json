@@ -64,7 +64,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El compilador informa una ubicación y un contexto, pero un problema de estructura puede provocar varios diagnósticos posteriores. Conviene empezar por el primer diagnóstico relevante y revisar también el código que lo precede: un punto y coma ausente puede hacerse visible al analizar la instrucción siguiente (Stroustrup, 2024).\n\nUn nombre no declarado requiere comprobar su escritura, las declaraciones disponibles y el ámbito donde se usa. Si se pretendía utilizar un objeto ya existente, añadir otro objeto con el nombre de la errata podría ocultar la intención equivocada. La ubicación informada es una pista para investigar, no la certeza de que la causa esté en esa columna.",
+          "text": "El compilador informa una ubicación y un contexto, pero un problema de estructura puede provocar varios diagnósticos posteriores. Conviene empezar por el primer diagnóstico relevante y revisar también el código que lo precede: un punto y coma ausente puede hacerse visible al analizar la instrucción siguiente (Stroustrup, 2024).\n\nUn nombre no declarado requiere comprobar su escritura, las declaraciones disponibles y el ámbito donde se usa. Si se pretendía utilizar un objeto ya existente, añadir otro objeto con el nombre de la errata dejaría el programa utilizando un objeto distinto del previsto. La ubicación informada es una pista para investigar, no la certeza de que la causa esté en esa columna.",
           "emphasis": [
             {
               "text": "primer diagnóstico relevante",
@@ -114,7 +114,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para investigar un resultado incorrecto, elige un caso pequeño que lo reproduzca y fija lo que exige el requisito. Después sigue las instrucciones desde un estado conocido y contrasta lo que realmente hacen con lo que se esperaba de ellas (Stroustrup, 2024).\n\nLos dos puzzles siguientes permiten seguir una sustitución del total y recuperar la operación que lo acumula. Si el resultado final coincide sólo con el último aporte, es una evidencia que debe explicarse antes de cambiar otras reglas.",
+          "text": "Para investigar un resultado incorrecto, elige un caso pequeño que lo reproduzca y fija lo que exige el requisito. Después sigue las instrucciones desde un estado conocido y contrasta lo que realmente hacen con lo que se esperaba de ellas (Stroustrup, 2024).\n\nEn el primer puzzle seguirás los cambios del total para averiguar qué valor guarda después de cada asignación. En el segundo completarás la operación que debe acumular los aportes. Si el resultado final coincide sólo con el último aporte, comprueba qué hace cada asignación antes de cambiar otras reglas.",
           "emphasis": [
             {
               "text": "caso pequeño",
@@ -135,7 +135,7 @@
           "id": "total_reiniciado_en_cada_vuelta",
           "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n        std::cout << total << \";\";\n    }\n    std::cout << \"Final=\" << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n        std::cout << total << \";\";\n    }\n\n    std::cout << \"Final=\" << total;\n\n    return 0;\n}\n",
           "answers": [
             "2;3;4;Final=4"
           ],
@@ -146,7 +146,7 @@
           "id": "reparacion_respaldada",
           "question": "La intención es reunir aportes 2,3,4. Completa sólo el operador de asignación compuesta que conserva el total anterior.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total ___ aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total ___ aporte;\n    }\n\n    std::cout << total;\n\n    return 0;\n}\n",
           "answers": [
             "+="
           ],
@@ -174,7 +174,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La reparación debe superar el caso que reveló el fallo y conservar los resultados de los casos que ya funcionaban. La selección de pruebas y su contraste con expectativas forman parte de una comprobación sistemática (Stroustrup, 2024).\n\nLos límites necesitan además una intención concreta: incluir el extremo de un intervalo de valores no es lo mismo que visitar índices. En un vector, el tamaño es el primer índice que queda fuera. El siguiente puzzle comprueba esa diferencia sin ejecutar ningún acceso inválido.",
+          "text": "La reparación debe superar el caso que reveló el fallo y conservar los resultados de los casos que ya funcionaban. La selección de pruebas y su contraste con expectativas forman parte de una comprobación sistemática (Stroustrup, 2024).\n\nLa comparación depende de qué representan los límites: incluir el extremo de un intervalo de valores no es lo mismo que visitar índices. En un vector, los índices empiezan en cero y el tamaño es el primer índice que queda fuera. El siguiente puzzle comprueba esa diferencia sin ejecutar ningún acceso inválido.",
           "emphasis": [
             {
               "text": "conservar los resultados",
@@ -204,7 +204,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El código inicial recorre 2, 3 y 4, pero reemplaza el total en vez de conservar lo acumulado. La predicción y el relleno anteriores ya permitieron investigar esa causa.\n\nConstruye sumar(int primero, int ultimo): empieza el total en cero, recorre los enteros desde primero hasta ultimo, incluidos, y devuelve la suma. Si primero supera a ultimo, el cuerpo del recorrido no se ejecuta. Trabaja con los casos pequeños indicados.\n\nEn main muestra sumar(2,4), sumar(3,3) y sumar(2,1), separadas por dos puntos. Pulsa «Compilar, ejecutar y comprobar». La salida debe ser 9:3:0, sin espacios ni salto final. Las tres llamadas comprueban acumulación, un solo aporte y ausencia de aportes dentro de una misma construcción.",
+          "text": "El código inicial recorre 2, 3 y 4, pero reemplaza el total en vez de conservar lo acumulado. La predicción y el relleno anteriores ya permitieron investigar esa causa.\n\nConstruye sumar(int primero, int ultimo): empieza el total en cero, recorre los enteros desde primero hasta ultimo, incluidos, y devuelve la suma. Si primero supera a ultimo, el cuerpo del recorrido no se ejecuta. Trabaja con los casos pequeños indicados.\n\nEn main reúne estas tres llamadas en una misma ejecución:\nsumar(2,4) debe devolver 9: comprueba la acumulación de los aportes.\nsumar(3,3) debe devolver 3: comprueba un solo aporte.\nsumar(2,1) debe devolver 0: comprueba la ausencia de aportes.\n\nMuestra los resultados en ese orden, separados por dos puntos. Pulsa «Compilar, ejecutar y comprobar». La salida debe ser 9:3:0, sin espacios ni salto final.",
           "emphasis": [
             {
               "text": "Construye sumar(int primero, int ultimo)",
@@ -226,7 +226,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n\n    std::cout << total;\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -253,7 +253,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo defectuoso termina mostrando 4 porque cada asignación reemplaza el total. La suma requerida de 2, 3 y 4 es 9. La reparación conserva el acumulado anterior al añadir cada aporte.\n\nLa construcción reúne tres pruebas: el intervalo 2..4 devuelve 9; el intervalo 3..3 aporta sólo 3; y 2..1 no aporta valores, por lo que devuelve el cero inicial. No es necesario modificar entre ellas la condición, las cantidades y la actualización.",
+          "text": "El ejemplo defectuoso termina mostrando 4 porque cada asignación reemplaza el total. La suma requerida de 2, 3 y 4 es 9. La reparación conserva el acumulado anterior al añadir cada aporte.\n\nLa construcción reúne tres pruebas:\nEl intervalo 2..4 devuelve 9.\nEl intervalo 3..3 devuelve 3, porque contiene un solo aporte.\nEl intervalo 2..1 devuelve el cero inicial, porque no aporta valores.\n\nLa misma función resuelve las tres llamadas: sus argumentos determinan el comienzo y el final del recorrido. No hay que cambiar su condición ni su actualización para cada caso.",
           "emphasis": [
             {
               "text": "conserva el acumulado anterior",
@@ -268,7 +268,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total += aporte;\n    }\n\n    std::cout << total;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -277,7 +277,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nint sumar(int primero, int ultimo) {\n    int total{0};\n    for (int aporte{primero}; aporte <= ultimo; ++aporte) {\n        total += aporte;\n    }\n    return total;\n}\n\nint main() {\n    std::cout << sumar(2, 4) << \":\" << sumar(3, 3) << \":\" << sumar(2, 1);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nint sumar(int primero, int ultimo) {\n    int total{0};\n\n    for (int aporte{primero}; aporte <= ultimo; ++aporte) {\n        total += aporte;\n    }\n\n    return total;\n}\n\nint main() {\n    std::cout << sumar(2, 4) << \":\" << sumar(3, 3) << \":\" << sumar(2, 1);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -289,7 +289,7 @@
         },
         {
           "type": "paragraph",
-          "text": "El encargo consiste en contar cuántos elementos pertenecen a un intervalo cerrado de valores: se incluyen tanto inferior como superior. Cada aparición cuenta por separado, aunque haya valores repetidos. La colección admite hasta ocho enteros de 0 a 10; los límites también están entre 0 y 10 y cumplen inferior <= superior. La colección vacía cuenta cero.\n\ncontar_en_intervalo recibe los datos para leerlos y devuelve el contador, sin cambiar la colección ni imprimir. Todas las pruebas de esta actividad respetan esas precondiciones.",
+          "text": "El encargo consiste en contar cuántos elementos pertenecen a un intervalo cerrado de valores: se incluyen tanto inferior como superior. Cada aparición cuenta por separado, aunque haya valores repetidos.\n\nLos datos y límites de esta actividad cumplen estas precondiciones:\nLa colección contiene hasta ocho enteros; cada uno está entre 0 y 10.\nLos límites también están entre 0 y 10 y cumplen inferior <= superior.\nLa colección puede estar vacía; en ese caso el contador debe ser cero.\n\ncontar_en_intervalo recibe los datos para leerlos y devuelve el contador, sin cambiar la colección ni imprimir. Todas las pruebas de esta actividad respetan esas precondiciones.",
           "emphasis": [
             {
               "text": "intervalo cerrado",
@@ -307,7 +307,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La fuente inicial contiene un fallo lógico: termina dentro del dominio, pero no cumple todo el requisito. La colección inicial es `{2,4,6,8,9,4}`, con intervalo cerrado 3..8. La tabla siguiente registra la traza de la condición escrita y la expectativa del requisito antes de reparar.\n\nDespués repara contar_en_intervalo y reúne estas ocho pruebas en una misma ejecución: la colección inicial, `{8}`, `{}`, `{3}`, `{3,8}`, `{8,8}`, `{2,9}` y `{4,6}`, siempre con límites 3 y 8. Para cada prueba muestra `Dentro:C;Datos:N` y un salto de línea, donde C es el contador devuelto y N el tamaño original. El criterio es incluir ambos extremos, contar cada aparición y conservar los datos. Pulsa Compilar, ejecutar y comprobar. Si difiere, corrige esa misma construcción y repite la batería; no cambies el requisito ni los casos para justificar el resultado.",
+          "text": "La fuente inicial contiene un fallo lógico: se ejecuta con datos que cumplen las precondiciones y termina, pero no satisface todo el requisito. La colección inicial es {2,4,6,8,9,4}, con intervalo cerrado 3..8. La tabla siguiente registra la traza de la condición escrita y la expectativa del requisito antes de reparar.\n\nDespués repara contar_en_intervalo y reúne las ocho pruebas siguientes en una misma ejecución. Todas utilizan límites 3 y 8; a cada colección le corresponde una línea de salida:\n{2,4,6,8,9,4} debe mostrar Dentro:4;Datos:6\n{8} debe mostrar Dentro:1;Datos:1\n{} debe mostrar Dentro:0;Datos:0\n{3} debe mostrar Dentro:1;Datos:1\n{3,8} debe mostrar Dentro:2;Datos:2\n{8,8} debe mostrar Dentro:2;Datos:2\n{2,9} debe mostrar Dentro:0;Datos:2\n{4,6} debe mostrar Dentro:2;Datos:2\n\nCada línea, incluida la última, termina con un salto de línea. En el formato Dentro:C;Datos:N, C es el contador devuelto y N el tamaño original. El criterio es incluir ambos extremos, contar cada aparición y conservar los datos.\n\nPulsa Compilar, ejecutar y comprobar. Si la salida difiere, corrige esa misma construcción y repite la batería; no cambies el requisito ni los casos para justificar el resultado.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar"
@@ -487,7 +487,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\n// EXPECTATIVA antes de ejecutar:\n// CONTRAEJEMPLO reducido y resultado esperado:\n// HIPOTESIS antes de editar:\n// TRAZA: valor | condicion | contador antes | contador despues\n//\n//\n//\n// CAMBIO propuesto y evidencia que lo respalda:\n// REGRESION: caso | esperado | observado antes | observado despues\n//\n//\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// EXPECTATIVA antes de ejecutar:\n// CONTRAEJEMPLO reducido y resultado esperado:\n// HIPOTESIS antes de editar:\n// TRAZA: valor | condicion | contador antes | contador despues\n//\n//\n//\n// CAMBIO propuesto y evidencia que lo respalda:\n// REGRESION: caso | esperado | observado antes | observado despues\n//\n//\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -519,15 +519,15 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{3, 5, 8, 8, 10};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{3, 5, 8, 8, 10};\n    const int inferior = 3;\n    const int superior = 8;\n\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "La muestra de referencia produce Dentro:4;Datos:5: cuenta 3,5 y las dos apariciones de 8. Para la colección inicial, el requisito exige Dentro:4;Datos:6, pero la fuente defectuosa produce Dentro:3;Datos:6. Cambiar la colección de la referencia no sustituye volver a comprobar ese primer caso."
+          "text": "La muestra de referencia cuenta 3, 5 y las dos apariciones de 8. Como su colección contiene cinco elementos, produce Dentro:4;Datos:5.\n\nPara la colección inicial, compara estos informes:\nEl requisito exige Dentro:4;Datos:6.\nLa fuente defectuosa produce Dentro:3;Datos:6.\n\nCambiar la colección de la referencia no sustituye volver a comprobar ese primer caso: la reparación debe contar los elementos de la colección que se le proporcione."
         },
         {
           "type": "paragraph",
-          "text": "Un contraejemplo mínimo es {8}, con límites 3..8: el requisito cuenta uno, pero el programa inicial cuenta cero. La colección vacía no reproduce la diferencia: ambas versiones cuentan cero.\n\nLa tabla anterior conserva la traza del código inicial. Sus filas valor;condición;contador antes→después son:\n2;false;0→0\n4;true;0→1\n6;true;1→2\n8;false;2→2\n9;false;2→2\n4;true;2→3\n\nLa fila de ocho contrasta la condición escrita con la pertenencia que exige el requisito.",
+          "text": "Un contraejemplo mínimo es {8}, con límites 3..8: el requisito cuenta uno, pero el programa inicial cuenta cero. La colección vacía no reproduce la diferencia: ambas versiones cuentan cero.\n\nLa tabla anterior conserva la traza del código inicial. Sus filas valor;condición;contador antes→después son:\n2;false;0→0\n4;true;0→1\n6;true;1→2\n8;false;2→2\n9;false;2→2\n4;true;2→3\n\nEn la fila de ocho, la condición escrita da false y el contador permanece en dos. Sin embargo, ocho coincide con el extremo superior del intervalo cerrado y debe contarse: al llegar a ese elemento, el contador debería pasar de dos a tres. Esa diferencia señala qué comparación hay que investigar.",
           "emphasis": [
             {
               "text": "contraejemplo mínimo",
@@ -559,12 +559,12 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: incluir ambos extremos del intervalo y excluir los valores exteriores; contar cada aparición una vez; vacío devuelve cero; resultado entre cero y el tamaño de la colección; datos conservados y cálculo separado de la salida; llamadas dentro de las precondiciones. La tabla conserva la traza y la hipótesis; la batería comprueba la reparación. Una expresión equivalente también es válida si resuelve la discrepancia y mantiene las demás promesas."
+          "text": "La reparación debe cumplir todos estos criterios:\nIncluir ambos extremos del intervalo y excluir los valores exteriores.\nContar cada aparición una vez, también cuando el valor se repite.\nDevolver cero cuando la colección está vacía.\nDevolver un resultado entre cero y el tamaño de la colección.\nConservar los datos y mantener el cálculo separado de la salida.\nUtilizar llamadas que respeten las precondiciones.\n\nLa tabla permite revisar los pasos del programa inicial y la hipótesis elegida. La batería comprueba la reparación con los distintos datos. Una expresión equivalente también es válida si resuelve la discrepancia y mantiene los demás requisitos."
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({2, 4, 6, 8, 9, 4}, 3, 8);\n    probar({8}, 3, 8);\n    probar({}, 3, 8);\n    probar({3}, 3, 8);\n    probar({3, 8}, 3, 8);\n    probar({8, 8}, 3, 8);\n    probar({2, 9}, 3, 8);\n    probar({4, 6}, 3, 8);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({2, 4, 6, 8, 9, 4}, 3, 8);\n    probar({8}, 3, 8);\n    probar({}, 3, 8);\n    probar({3}, 3, 8);\n    probar({3, 8}, 3, 8);\n    probar({8, 8}, 3, 8);\n    probar({2, 9}, 3, 8);\n    probar({4, 6}, 3, 8);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -576,7 +576,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con límites 3..8, la batería conserva estas expectativas: {} cuenta 0; {3} y {8} cuentan 1; {3,8} y {8,8} cuentan 2; {2,9} cuenta 0; y {4,6} cuenta 2.\n\nLos casos {3} y {4,6} ya funcionaban antes; {8} revela la frontera omitida. La colección vacía detectaría además una supuesta reparación que añadiera siempre una unidad al resultado. Las pruebas distinguen así el cambio necesario de otro que sólo oculta la discrepancia inicial.",
+          "text": "Con límites 3..8, la batería conserva estas expectativas:\n{} cuenta 0.\n{3} cuenta 1.\n{8} cuenta 1.\n{3,8} cuenta 2.\n{8,8} cuenta 2.\n{2,9} cuenta 0.\n{4,6} cuenta 2.\n\nLos casos {3} y {4,6} ya funcionaban antes; {8} revela la frontera omitida. La colección vacía detectaría además una supuesta reparación que añadiera siempre una unidad al resultado: devolvería uno cuando debería devolver cero. Así se comprueba tanto el caso que fallaba como otros que una modificación incorrecta podría estropear.",
           "emphasis": [
             {
               "text": "frontera omitida",
@@ -593,7 +593,7 @@
           "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__intervalo_de_un_solo_valor",
           "language": "cpp",
           "question": "Predice la salida con los dos límites iguales. La precondición permite esa igualdad.",
-          "code": "#include <iostream>\n#include <vector>\n\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{4, 5, 5, 6};\n    const int inferior = 5;\n    const int superior = 5;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{4, 5, 5, 6};\n    const int inferior = 5;\n    const int superior = 5;\n\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n\n    return 0;\n}\n",
           "answers": [
             "Dentro:2;Datos:4"
           ],
@@ -689,7 +689,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye en este editor independiente el conteo para las cinco colecciones `{7}`, `{5}`, `{3,8}`, `{7,7}` y `{}`, con intervalo cerrado 4..7. Conserva contar_en_intervalo sin imprimir ni modificar datos; main puede coordinar una función de prueba para mostrar Dentro:C;Datos:N y un salto de línea por colección.\n\nPulsa Compilar, ejecutar y comprobar. Los contadores deben ser 1, 1, 0, 2 y 0; los tamaños originales, 1, 1, 2, 2 y 0. No cambies los casos entre ejecuciones. Las correcciones y reintentos pertenecen a esta misma comprobación; el editor anterior conserva sus pruebas 3..8.",
+          "text": "Construye en este editor independiente el conteo para cinco colecciones con intervalo cerrado 4..7. Conserva contar_en_intervalo sin imprimir ni modificar datos; main puede coordinar una función de prueba para mostrar una línea por colección.\n\nReúne estas pruebas en una misma ejecución, en este orden:\n{7} debe mostrar Dentro:1;Datos:1\n{5} debe mostrar Dentro:1;Datos:1\n{3,8} debe mostrar Dentro:0;Datos:2\n{7,7} debe mostrar Dentro:2;Datos:2\n{} debe mostrar Dentro:0;Datos:0\n\nCada línea, incluida la última, termina con un salto de línea. En Dentro:C;Datos:N, C es el contador y N el tamaño original de la colección.\n\nPulsa Compilar, ejecutar y comprobar. No cambies los casos entre ejecuciones. Las correcciones y reintentos pertenecen a esta misma comprobación; el editor anterior conserva sus pruebas 3..8.",
           "emphasis": [
             {
               "text": "Compilar, ejecutar y comprobar"
@@ -717,7 +717,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Recupera la definición completa de contar_en_intervalo y las funciones auxiliares de las que dependa tu solución anterior. Sustituye la declaración sin cuerpo por la definición de esa función y añade las auxiliares necesarias. Conserva las inclusiones, probar y main ya entregados. Una definición incluye la firma y el cuerpo entre llaves; no copies otro programa completo.\n\nEl cliente comprueba {4} y {3,8} con límites 4..7, y después {4,5,5,6} y una colección vacía con límites 5..5. El contrato permite límites iguales: ese intervalo contiene un único valor, cinco, y cada aparición cuenta por separado. Todos los datos y límites cumplen las precondiciones ya establecidas.\n\nPulsa «Compilar, ejecutar y comprobar» para obtener el informe completo siguiente. Cada línea, incluida la última, termina con un salto. Si necesitas corregir la función, vuelve a ejecutar todos los casos conservando el cliente.",
+          "text": "Recupera la definición completa de contar_en_intervalo y las funciones auxiliares de las que dependa tu solución anterior. Sustituye la declaración sin cuerpo por la definición de esa función y añade las auxiliares necesarias. Conserva las inclusiones, probar y main ya entregados. Una definición incluye la firma y el cuerpo entre llaves; no copies otro programa completo.\n\nEl cliente reúne estas cuatro pruebas, en este orden:\n{4}, con límites 4..7.\n{3,8}, con límites 4..7.\n{4,5,5,6}, con límites 5..5.\nUna colección vacía, con límites 5..5.\n\nEl contrato permite límites iguales: el intervalo 5..5 contiene un único valor, cinco, y cada aparición cuenta por separado. Todos los datos y límites cumplen las precondiciones ya establecidas.\n\nPulsa «Compilar, ejecutar y comprobar» para obtener el informe completo siguiente. Cada línea, incluida la última, termina con un salto. Si necesitas corregir la función, vuelve a ejecutar todos los casos conservando el cliente.",
           "emphasis": [
             {
               "text": "Recupera la definición completa",
@@ -735,7 +735,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye esta declaracion por la definicion completa de tu funcion.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior);\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({4}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({4, 5, 5, 6}, 5, 5);\n    probar({}, 5, 5);\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye esta declaracion por la definicion completa de tu funcion.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior);\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({4}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({4, 5, 5, 6}, 5, 5);\n    probar({}, 5, 5);\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -787,7 +787,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({7}, 4, 7);\n    probar({5}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({7, 7}, 4, 7);\n    probar({}, 4, 7);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({7}, 4, 7);\n    probar({5}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({7, 7}, 4, 7);\n    probar({}, 4, 7);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -1949,6 +1949,274 @@
         "id": "block_0008_0001",
         "beforeSha256": "c1371a8734d6f5001480aec741c9441ad3580a8996778b95fb8ce8156ed18f91",
         "afterSha256": "b2cca9c8f72402108abe0986988dc1357edb717dafeea539a8be6e4cc680a7c3"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "c5d4e022accecab0c04de3c85534d84289f915a729520a0bc8715c3bcbeaa5d1",
+        "afterSha256": "82b9d12a3693a9030a7d87eb6ba4e3b49089850c5520de6bf12ff1897eb14267"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "3e5dc3fc7ef04a8f4dac61cf76c48dbfa99cc8cc253223e67a616cf3ef9da7a0",
+        "afterSha256": "c82978f665a6f1fff69866882a80dccb5335305cc4a354a7905eca2ff472d6ad"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "8461e99b69415cde67af40f93903ee5b62d1e81241e9eb6af6f9ff85bae8ee4b",
+        "afterSha256": "9df803769b7029c572a627c7acfc6175602b1ee555269ded4de3ea072fc9e588"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "9817e3155e86038916e95849b59e76c2c4d53a31a57916a0f998369d4cfb5e33",
+        "afterSha256": "2147da3e6ce4dbc31cdcaafff089c270f5bcddb3fc68aa795d5ecea9c2c6a4e0"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "4641c230b931c9bc378a64c1f79d2d2f65e23193262ec78bb413fb00683db1c2",
+        "afterSha256": "44f76213351cf5f44d65e8f55144a4a6febaa50bb135cdbdaf757860c5e0dc9b"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "7f3b42967bc8df1b2a2410214ae9d347939e7adb965bdef1b0b05154817dfb49",
+        "afterSha256": "c187ed956f8febb71f72f09c20042869cb9391c7ce68d6e8d4c55340f32446d4"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "e9a29f80a6d58f4f0e8a386aec1559a03876b577345fc90636c7d03aeb368d6d",
+        "afterSha256": "297b84e50185918b85038b8aed96adc8e0230df264db315cdf389883deb99d64"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "473e192e491c8b9d1c829850a401a7b94be77a7c2131db4380be86c4158bdbdd",
+        "afterSha256": "ca8bb1b7af070ccdf79bbce7d361c2059f07e5fba422f9e984d1c3d2c048e1f7"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "959af56373655dbfcb5df84b7f592540f248d92a81fa9325a6b770d960f0c2dc",
+        "afterSha256": "c971bc34dfcc62971a3c65a7bdc0913403eea679ac97481ed06bdf187f317b20"
+      },
+      {
+        "id": "block_0004_0005",
+        "beforeSha256": "660a486ad2994c89cfcf532f6a842616736d5c3821161a11f68e083c7eba59c2",
+        "afterSha256": "cee8d948b0de6675bde1333d2fb5391bc4f9c4e207fac2c4f53b0e424405cb51"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "ff002ea7bf205fc73f3847b4f67961bbfdacd69889c32188f2e0ce3ed0b69d8f",
+        "afterSha256": "8dc056f516baf6fbc35322c8c256444ef6f369926c70cb73783128620e8170b5"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "c02752b7d55a520c03bc7df467a5821895fd42a7db7bd5fb6639b0d4f0fe22c3",
+        "afterSha256": "a5ee488634e8e1c9eacf93aae80478885253e13a89313f7cb2e95403b3176420"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "00f29bd86729c392d04e1b274b94a8e6b32adcafaa2db51f73fc71c11c3f6a8e",
+        "afterSha256": "59bc561cd1655d8c5a7deca2ec32e529ac65df44030b3c6327963049b45adf39"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "1853641b52220909fa86843b7b1d89ac22662889e0bd022bd100acc71cd0a494",
+        "afterSha256": "3066e619f54e8b977ff6afea8a134205e02b8a64a54b52122315e4366c97532d"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "a5ceb919ab63dbc0342600ab113cf210dd9ee2f014110a1bd4f1ff2e99483cce",
+        "afterSha256": "df626cf069adf7a1c63519f38f7765a80120291ac20189164bf0fc2cdb9daa56"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "a2b32fa0ec37c64a79e78c5300a4e97d4c9ca3ed9006b39c45cb37e0638b4818",
+        "afterSha256": "ae6cc6f7f7cc049d454ed06e3c0b595fc857e390bc18d841bea07e16ae7ca9c8"
+      },
+      {
+        "id": "block_0006_0006",
+        "beforeSha256": "2a17b0f94aec0856de08c5261e0732aa2b5f72e85dc3ffdd0cdd9ddb660ef082",
+        "afterSha256": "cf08ff31c6d7e470b500702d67eea7eb6e0fc7d2bc4fa44c2e02a0d9619a33f9"
+      },
+      {
+        "id": "block_0006_0007",
+        "beforeSha256": "e39cc85cb8bbd31f4f756918b47b1ae330bb3c601113e93af7fa704c2ff8ee7e",
+        "afterSha256": "64a7436a4a695a94d79c195123c77cfce3a1c5414b6f7bfb9db361cf127bb47b"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "d54afbefff60f56d6885277172afa1cc4eb95695fa268abd2e3d870c70e44338",
+        "afterSha256": "131898b77467fbc188aff3f456547894b9d3f554d2539d786e51290d02e47df0"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "e9535138371dca36e81da17ea08b38a956f70ebf97d144ee4d8ed87ba6395389",
+        "afterSha256": "c9cc1a651c901ff73a7f81fbf2028faf68ba24592e70d80fe6d27f36b3602eed"
+      },
+      {
+        "id": "block_0007_0006",
+        "beforeSha256": "77ebdd39cf621524e39c2da9bb108d351c5d440ff39afa2bb623e416d0565388",
+        "afterSha256": "a65404a418db697959b65bdd89fec0cc1e2ec1f996e48feaf4b03390af569297"
+      },
+      {
+        "id": "intervalo_fronteras_iguales_consigna",
+        "beforeSha256": "8039918459a51d4d4f36b5f064518d71df03b5c4638b933482ec1067019bc812",
+        "afterSha256": "c1f1ea6a053f367679df88a3161524547d5a9c770a963ee0bdfcc1c0bf980858"
+      },
+      {
+        "id": "intervalo_fronteras_iguales_compilador",
+        "beforeSha256": "63ed49fe5206992204fa796ea351655a2ff2afe2d1664cf55f2328e82b1c60a5",
+        "afterSha256": "4a48dd7f9bf4ba6dfd7589129bb8bb289c057e103484b9baa1e7bf58aff1d15b"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "ea682f2a1574e278456a06dd589da1933f0fd80f6793905b3a4766972577e204",
+        "afterSha256": "4349481d3005a117ad7edac30c00809bee0acb0932e84f50f38885056d668807"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "total_reiniciado_en_cada_vuelta",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n        std::cout << total << \";\";\n    }\n    std::cout << \"Final=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;Final=4"
+          ],
+          "explanation": "La traza confirma reemplazos, no una suma acumulada. La salida final responde al último aporte."
+        }
+      },
+      {
+        "id": "block_0002_0003",
+        "block": {
+          "type": "fill_code",
+          "id": "reparacion_respaldada",
+          "question": "La intención es reunir aportes 2,3,4. Completa sólo el operador de asignación compuesta que conserva el total anterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total ___ aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= añade cada aporte al total anterior; el resultado esperado es 9."
+        }
+      },
+      {
+        "id": "block_0003_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "9:3:0"
+                ],
+                "explanation": "Acumular conserva el total anterior. Sin aportes, el cuerpo no se ejecuta y el resultado conserva su cero inicial."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0004_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint sumar(int primero, int ultimo) {\n    int total{0};\n    for (int aporte{primero}; aporte <= ultimo; ++aporte) {\n        total += aporte;\n    }\n    return total;\n}\n\nint main() {\n    std::cout << sumar(2, 4) << \":\" << sumar(3, 3) << \":\" << sumar(2, 1);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0004",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// EXPECTATIVA antes de ejecutar:\n// CONTRAEJEMPLO reducido y resultado esperado:\n// HIPOTESIS antes de editar:\n// TRAZA: valor | condicion | contador antes | contador despues\n//\n//\n//\n// CAMBIO propuesto y evidencia que lo respalda:\n// REGRESION: caso | esperado | observado antes | observado despues\n//\n//\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dentro:4;Datos:6\nDentro:1;Datos:1\nDentro:0;Datos:0\nDentro:1;Datos:1\nDentro:2;Datos:2\nDentro:2;Datos:2\nDentro:0;Datos:2\nDentro:2;Datos:2\n"
+                ],
+                "explanation": "La reparación incluye los dos extremos sin alterar contadores, repeticiones ni tamaño de las colecciones. Los casos anteriormente correctos conservan su respuesta."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{3, 5, 8, 8, 10};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0007",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({2, 4, 6, 8, 9, 4}, 3, 8);\n    probar({8}, 3, 8);\n    probar({}, 3, 8);\n    probar({3}, 3, 8);\n    probar({3, 8}, 3, 8);\n    probar({8, 8}, 3, 8);\n    probar({2, 9}, 3, 8);\n    probar({4, 6}, 3, 8);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__intervalo_de_un_solo_valor",
+          "language": "cpp",
+          "question": "Predice la salida con los dos límites iguales. La precondición permite esa igualdad.",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{4, 5, 5, 6};\n    const int inferior = 5;\n    const int superior = 5;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "Dentro:2;Datos:4"
+          ],
+          "explanation": "El intervalo cerrado 5..5 admite exactamente el valor cinco. Sus dos apariciones cuentan; cuatro y seis quedan fuera. La colección conserva sus cuatro elementos."
+        }
+      },
+      {
+        "id": "intervalo_fronteras_iguales_compilador",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// Sustituye esta declaracion por la definicion completa de tu funcion.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior);\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({4}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({4, 5, 5, 6}, 5, 5);\n    probar({}, 5, 5);\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Dentro:1;Datos:1\nDentro:0;Datos:2\nDentro:2;Datos:4\nDentro:0;Datos:0\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El informe obtiene 1, 0, 2 y 0 con las mismas funciones. El valor situado en el extremo inferior cuenta, los valores exteriores no cuentan y el intervalo 5..5 admite las dos apariciones de cinco. La colección vacía conserva el resultado 0.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Dentro:0;Datos:1\nDentro:0;Datos:2\nDentro:0;Datos:4\nDentro:0;Datos:0\n"
+                    ],
+                    "text": "Este informe coincide con un conteo que excluye la igualdad con el extremo inferior. En el intervalo 4..7, la colección {4} debe contar 1. Cuando los dos límites valen 5, cada aparición de cinco también debe contar. Revisa la condición sin cambiar los datos ni excluir la igualdad del contrato."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0008_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nvoid probar(const std::vector<int>& datos, int inferior, int superior) {\n    std::cout << \"Dentro:\" << contar_en_intervalo(datos, inferior, superior)\n              << \";Datos:\" << datos.size() << \"\\n\";\n}\n\nint main() {\n    probar({7}, 4, 7);\n    probar({5}, 4, 7);\n    probar({3, 8}, 4, 7);\n    probar({7, 7}, 4, 7);\n    probar({}, 4, 7);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2170,7 +2438,7 @@
       {
         "block": "block_0001_0001",
         "path": "/text",
-        "sourceSha256": "c66351c496fc74d5d9f20ec8df62dd137c5893e2ddb6cb7ba491418a0cc12165",
+        "sourceSha256": "0c358fbf6eede3773f9ce2a1826468e30c0e5162e2e0c4fd597d757f07eb4a38",
         "spans": [
           {
             "start": 310,
@@ -2303,7 +2571,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "0438bf6a1934e6f2717d4388dbc342c8e0ccf7f8f802a13e8591d211152cc3ff",
+        "sourceSha256": "b9e91e6e6fb4f963a428a8c98cbc5a3292d25678926d8732ea130aef116b71e4",
         "spans": [
           {
             "start": 239,
@@ -2333,8 +2601,22 @@
         "spans": [
           {
             "start": 31,
+            "end": 32,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 34,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 35,
             "end": 36,
-            "text": "2,3,4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -2400,13 +2682,20 @@
       {
         "block": "block_0003_0001",
         "path": "/text",
-        "sourceSha256": "5ec899f78be56c77842bc107c2fc4b453b5e0b8719e0b10a62b02af80edc560d",
+        "sourceSha256": "7eb362a30683c8cff8eec5aae673af44ebd832234ce6d7ee3874be322d555ec0",
         "spans": [
           {
             "start": 216,
             "end": 234,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 412,
+            "end": 416,
+            "text": "cero",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2432,8 +2721,22 @@
           },
           {
             "start": 36,
+            "end": 37,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 39,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 40,
             "end": 41,
-            "text": "0,1,2",
+            "text": "2",
             "role": "data",
             "reading": "natural"
           },
@@ -2497,12 +2800,26 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "6e1f91285f48ae09834cb05248d107b1730269a907efa69816c9717ca9d837c0",
+        "sourceSha256": "9c9ad899c78120333b7b314bc0882aacf779e109b082635ed6f20c596e08b4ff",
         "spans": [
           {
             "start": 26,
+            "end": 27,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
             "end": 34,
-            "text": "2, 3 y 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
@@ -2556,29 +2873,57 @@
             "reading": "technical"
           },
           {
-            "start": 443,
-            "end": 453,
+            "start": 447,
+            "end": 451,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 485,
+            "end": 495,
             "text": "sumar(2,4)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 455,
-            "end": 465,
+            "start": 510,
+            "end": 511,
+            "text": "9",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 554,
+            "end": 564,
             "text": "sumar(3,3)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 468,
-            "end": 478,
+            "start": 579,
+            "end": 580,
+            "text": "3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 608,
+            "end": 618,
             "text": "sumar(2,1)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 565,
-            "end": 570,
+            "start": 633,
+            "end": 634,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 793,
+            "end": 798,
             "text": "9:3:0",
             "role": "output",
             "reading": "natural"
@@ -2614,7 +2959,7 @@
       {
         "block": "block_0004_0002",
         "path": "/text",
-        "sourceSha256": "2cf73eec0f89ca29ea697eb68c00ecd324aa9e927acd2e45eb83b9d4426371f9",
+        "sourceSha256": "abff25b4819f23cb696e21e542a584eb692f397b539405fef136e9f79a386165",
         "spans": [
           {
             "start": 40,
@@ -2625,8 +2970,22 @@
           },
           {
             "start": 106,
+            "end": 107,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 109,
+            "end": 110,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 113,
             "end": 114,
-            "text": "2, 3 y 4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           },
@@ -2635,6 +2994,13 @@
             "end": 119,
             "text": "9",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 212,
+            "end": 216,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           },
           {
@@ -2659,24 +3025,31 @@
             "reading": "natural"
           },
           {
-            "start": 286,
-            "end": 287,
+            "start": 283,
+            "end": 284,
             "text": "3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 291,
-            "end": 295,
+            "start": 331,
+            "end": 335,
             "text": "2..1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 338,
-            "end": 342,
+            "start": 348,
+            "end": 352,
             "text": "cero",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 419,
+            "end": 423,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2711,7 +3084,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "261634947e77cecafcdc590b4e1e75c13ee900a1913b2d7a33abea11035336e0",
+        "sourceSha256": "fa3cf766ccb612dd63669afae85f081e62a3c0861e7b839377effa45218755e5",
         "spans": [
           {
             "start": 112,
@@ -2728,43 +3101,57 @@
             "reading": "technical"
           },
           {
-            "start": 229,
-            "end": 233,
+            "start": 300,
+            "end": 304,
             "text": "ocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 245,
-            "end": 251,
-            "text": "0 a 10",
+            "start": 334,
+            "end": 335,
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 285,
-            "end": 291,
-            "text": "0 y 10",
+            "start": 338,
+            "end": 340,
+            "text": "10",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 302,
-            "end": 322,
+            "start": 374,
+            "end": 375,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 378,
+            "end": 380,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 391,
+            "end": 411,
             "text": "inferior <= superior",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 350,
-            "end": 354,
+            "start": 478,
+            "end": 482,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 357,
-            "end": 376,
+            "start": 485,
+            "end": 504,
             "text": "contar_en_intervalo",
             "role": "cpp",
             "reading": "technical"
@@ -2774,109 +3161,179 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "f6b91ef187a259fffa132c84762e4d6a7956519e2237c322dc4f2ccf49c95b8f",
+        "sourceSha256": "3fa742c40e4386de0bc7b616c0a85e85c079932f7c527d7d45458b1842c1ca15",
         "spans": [
           {
-            "start": 131,
-            "end": 144,
+            "start": 168,
+            "end": 181,
             "text": "{2,4,6,8,9,4}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 169,
-            "end": 173,
+            "start": 205,
+            "end": 209,
             "text": "3..8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 301,
-            "end": 320,
+            "start": 337,
+            "end": 356,
             "text": "contar_en_intervalo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 335,
-            "end": 339,
+            "start": 369,
+            "end": 373,
             "text": "ocho",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 395,
-            "end": 398,
+            "start": 440,
+            "end": 441,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 444,
+            "end": 445,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 500,
+            "end": 513,
+            "text": "{2,4,6,8,9,4}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 543,
+            "text": "Dentro:4;Datos:6",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 544,
+            "end": 547,
             "text": "{8}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 402,
-            "end": 404,
+            "start": 561,
+            "end": 577,
+            "text": "Dentro:1;Datos:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 578,
+            "end": 580,
             "text": "{}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 408,
-            "end": 411,
+            "start": 594,
+            "end": 610,
+            "text": "Dentro:0;Datos:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 611,
+            "end": 614,
             "text": "{3}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 415,
-            "end": 420,
+            "start": 628,
+            "end": 644,
+            "text": "Dentro:1;Datos:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 645,
+            "end": 650,
             "text": "{3,8}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 424,
-            "end": 429,
+            "start": 664,
+            "end": 680,
+            "text": "Dentro:2;Datos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 681,
+            "end": 686,
             "text": "{8,8}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 433,
-            "end": 438,
+            "start": 700,
+            "end": 716,
+            "text": "Dentro:2;Datos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 717,
+            "end": 722,
             "text": "{2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 443,
-            "end": 448,
+            "start": 736,
+            "end": 752,
+            "text": "Dentro:0;Datos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 753,
+            "end": 758,
             "text": "{4,6}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 471,
-            "end": 476,
-            "text": "3 y 8",
-            "role": "data",
+            "start": 772,
+            "end": 788,
+            "text": "Dentro:2;Datos:2",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 504,
-            "end": 520,
+            "start": 867,
+            "end": 883,
             "text": "Dentro:C;Datos:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 549,
-            "end": 550,
+            "start": 885,
+            "end": 886,
             "text": "C",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 577,
-            "end": 578,
+            "start": 913,
+            "end": 914,
             "text": "N",
             "role": "output",
             "reading": "natural"
@@ -2925,8 +3382,43 @@
           },
           {
             "start": 165,
+            "end": 166,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 167,
+            "end": 168,
+            "text": "4",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 169,
+            "end": 170,
+            "text": "6",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 171,
+            "end": 172,
+            "text": "8",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 173,
+            "end": 174,
+            "text": "9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
             "end": 176,
-            "text": "2,4,6,8,9,4",
+            "text": "4",
             "role": "data",
             "reading": "natural"
           }
@@ -3313,46 +3805,60 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "28331aeaeb39db2adae017758b02bcab62d096915cc4d52b4b17521253100d22",
+        "sourceSha256": "b098282de76a3ac4af4b129f0d6b186767ff72c4537d58f661bab353f4ed048a",
         "spans": [
           {
-            "start": 33,
-            "end": 49,
-            "text": "Dentro:4;Datos:5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 58,
-            "end": 61,
-            "text": "3,5",
+            "start": 32,
+            "end": 33,
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 68,
-            "end": 71,
+            "start": 35,
+            "end": 36,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 46,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 87,
-            "end": 88,
+            "start": 62,
+            "end": 63,
             "text": "8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 136,
-            "end": 152,
+            "start": 92,
+            "end": 97,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 117,
+            "end": 133,
+            "text": "Dentro:4;Datos:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 206,
+            "end": 222,
             "text": "Dentro:4;Datos:6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 188,
-            "end": 204,
+            "start": 253,
+            "end": 269,
             "text": "Dentro:3;Datos:6",
             "role": "output",
             "reading": "natural"
@@ -3362,7 +3868,7 @@
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "cd43670c6e6407f69c5c929bf1b0cf88618f6145f087fe291d712c05b478e80d",
+        "sourceSha256": "d40843b1ec4fc6bf36e4cba023c5d2045cb2b2d34da502ed0672b2fb0fa4ad7b",
         "spans": [
           {
             "start": 27,
@@ -3408,15 +3914,85 @@
           },
           {
             "start": 301,
-            "end": 369,
-            "text": "2;false;0→0\n4;true;0→1\n6;true;1→2\n8;false;2→2\n9;false;2→2\n4;true;2→3",
+            "end": 312,
+            "text": "2;false;0→0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 382,
-            "end": 386,
+            "start": 313,
+            "end": 323,
+            "text": "4;true;0→1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 324,
+            "end": 334,
+            "text": "6;true;1→2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 335,
+            "end": 346,
+            "text": "8;false;2→2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 358,
+            "text": "9;false;2→2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 359,
+            "end": 369,
+            "text": "4;true;2→3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 389,
             "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 415,
+            "end": 420,
+            "text": "false",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 448,
+            "end": 451,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 466,
+            "end": 470,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 598,
+            "end": 601,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 604,
+            "end": 608,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           }
@@ -3453,18 +4029,18 @@
       {
         "block": "block_0006_0006",
         "path": "/text",
-        "sourceSha256": "1787099031d12e98a42de9ca1d0af173dd80d652c9ad1c13bb1edcf4a682f009",
+        "sourceSha256": "911a109ab966047677a8167b9a3d858cd0a5e4d7aa34b21744b6770bff51ffa9",
         "spans": [
           {
-            "start": 128,
-            "end": 132,
+            "start": 196,
+            "end": 200,
             "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 154,
+            "start": 261,
+            "end": 265,
             "text": "cero",
             "role": "output",
             "reading": "natural"
@@ -3480,7 +4056,7 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "20413bfad021afd5f3d647c61a3addae8811ad612574a9609e3f4536a9b8b23a",
+        "sourceSha256": "7fc02f911e8df32abfde4e7dcbd4cf01ea9bb10ac66a688ceda853a179f984c3",
         "spans": [
           {
             "start": 12,
@@ -3511,87 +4087,122 @@
             "reading": "natural"
           },
           {
-            "start": 77,
-            "end": 80,
-            "text": "{8}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 89,
-            "end": 90,
+            "start": 82,
+            "end": 83,
             "text": "1",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 92,
+            "start": 85,
+            "end": 88,
+            "text": "{8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
             "end": 97,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 99,
+            "end": 104,
             "text": "{3,8}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 100,
-            "end": 105,
+            "start": 112,
+            "end": 113,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 115,
+            "end": 120,
             "text": "{8,8}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 114,
-            "end": 115,
+            "start": 128,
+            "end": 129,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 117,
-            "end": 122,
+            "start": 131,
+            "end": 136,
             "text": "{2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 130,
-            "end": 131,
+            "start": 144,
+            "end": 145,
             "text": "0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 140,
+            "start": 147,
+            "end": 152,
             "text": "{4,6}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 148,
-            "end": 149,
+            "start": 160,
+            "end": 161,
             "text": "2",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 162,
-            "end": 165,
+            "start": 174,
+            "end": 177,
             "text": "{3}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 168,
-            "end": 173,
+            "start": 180,
+            "end": 185,
             "text": "{4,6}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 196,
-            "end": 199,
+            "start": 208,
+            "end": 211,
             "text": "{8}",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 325,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 358,
+            "end": 361,
+            "text": "uno",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 390,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -3665,8 +4276,29 @@
           },
           {
             "start": 46,
+            "end": 47,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 50,
+            "end": 51,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 52,
             "end": 53,
-            "text": "0,1,2,3",
+            "text": "3",
             "role": "data",
             "reading": "natural"
           },
@@ -3693,8 +4325,15 @@
           },
           {
             "start": 169,
+            "end": 172,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 176,
             "end": 179,
-            "text": "uno en uno",
+            "text": "uno",
             "role": "data",
             "reading": "natural"
           }
@@ -3958,95 +4597,130 @@
       {
         "block": "block_0007_0006",
         "path": "/text",
-        "sourceSha256": "465feb5d6bc5d3219638fbe98ba02ee3f1419f5a73a64098c59df3a6e9ec6c18",
+        "sourceSha256": "a41735ec1929cacadd021eb7b5d136968ba70db37d1db32e82879fdd2d147443",
         "spans": [
           {
-            "start": 58,
-            "end": 63,
+            "start": 54,
+            "end": 59,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 77,
-            "end": 80,
-            "text": "{7}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 84,
-            "end": 87,
-            "text": "{5}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 91,
-            "end": 96,
-            "text": "{3,8}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 100,
-            "end": 105,
-            "text": "{7,7}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 110,
-            "end": 112,
-            "text": "{}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 137,
-            "end": 141,
+            "start": 94,
+            "end": 98,
             "text": "4..7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 152,
-            "end": 171,
+            "start": 109,
+            "end": 128,
             "text": "contar_en_intervalo",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 205,
-            "end": 209,
+            "start": 162,
+            "end": 166,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 261,
-            "end": 277,
+            "start": 303,
+            "end": 306,
+            "text": "{7}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 320,
+            "end": 336,
+            "text": "Dentro:1;Datos:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 337,
+            "end": 340,
+            "text": "{5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 370,
+            "text": "Dentro:1;Datos:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 371,
+            "end": 376,
+            "text": "{3,8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 390,
+            "end": 406,
+            "text": "Dentro:0;Datos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 412,
+            "text": "{7,7}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 426,
+            "end": 442,
+            "text": "Dentro:2;Datos:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 443,
+            "end": 445,
+            "text": "{}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 459,
+            "end": 475,
+            "text": "Dentro:0;Datos:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 543,
+            "end": 559,
             "text": "Dentro:C;Datos:N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 391,
-            "text": "1, 1, 0, 2 y 0",
+            "start": 561,
+            "end": 562,
+            "text": "C",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 417,
-            "end": 431,
-            "text": "1, 1, 2, 2 y 0",
-            "role": "data",
+            "start": 580,
+            "end": 581,
+            "text": "N",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 581,
-            "end": 585,
+            "start": 805,
+            "end": 809,
             "text": "3..8",
             "role": "data",
             "reading": "natural"
@@ -4088,7 +4762,7 @@
       {
         "block": "intervalo_fronteras_iguales_consigna",
         "path": "/text",
-        "sourceSha256": "f1f7afcb7572a2512514e871d2cca17f5bbcedf2685694f79ca87c112b640254",
+        "sourceSha256": "e6eb1903f8d5c169d0779dc0348bc70b792d49978ead0b9230980375b07df51d",
         "spans": [
           {
             "start": 35,
@@ -4112,43 +4786,71 @@
             "reading": "technical"
           },
           {
-            "start": 396,
-            "end": 399,
+            "start": 398,
+            "end": 404,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 429,
+            "end": 432,
             "text": "{4}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 402,
-            "end": 407,
-            "text": "{3,8}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 420,
-            "end": 424,
+            "start": 446,
+            "end": 450,
             "text": "4..7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 436,
-            "end": 445,
+            "start": 452,
+            "end": 457,
+            "text": "{3,8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 471,
+            "end": 475,
+            "text": "4..7",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 477,
+            "end": 486,
             "text": "{4,5,5,6}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 480,
-            "end": 484,
+            "start": 500,
+            "end": 504,
             "text": "5..5",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 562,
-            "end": 567,
+            "start": 539,
+            "end": 543,
+            "text": "5..5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 596,
+            "end": 600,
+            "text": "5..5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 626,
+            "end": 631,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
@@ -4176,8 +4878,29 @@
         "spans": [
           {
             "start": 19,
+            "end": 20,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 25,
+            "end": 26,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 29,
             "end": 30,
-            "text": "1, 0, 2 y 0",
+            "text": "0",
             "role": "output",
             "reading": "natural"
           },
@@ -4323,8 +5046,15 @@
           },
           {
             "start": 455,
+            "end": 461,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 464,
             "end": 468,
-            "text": "cuatro y seis",
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },

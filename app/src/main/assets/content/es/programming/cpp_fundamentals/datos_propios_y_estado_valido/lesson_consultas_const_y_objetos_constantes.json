@@ -10,10 +10,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El Punto de este ejemplo guarda dos coordenadas. Consultarlas permite observar su estado; moverlo cambia esas coordenadas. Distinguir las operaciones que observan de las que modifican permite usar también objetos que deben conservar su valor (Stroustrup, 2024).\n\nEn int x() const, const aparece después de los parámetros. Declara que esa función miembro puede llamarse sobre un objeto constante. En esta clase, el compilador impide que su cuerpo modifique x_ o y_. La consulta puede aplicarse tanto a un Punto modificable como a un const Punto; mover_a es una operación modificadora y no se declara const (Stroustrup, 2024).",
+          "text": "El Punto de este ejemplo guarda dos coordenadas. Las consultas observan su estado; las operaciones que modifican el punto cambian esas coordenadas. Un objeto constante debe conservar el valor con el que se inicializa. Queremos poder consultar sus coordenadas sin permitir que se cambien (Stroustrup, 2024).\n\nEn int x() const, const aparece después de los parámetros, a continuación del paréntesis de cierre. Así se declara una función miembro const. Esta consulta puede llamarse tanto sobre un Punto modificable como sobre un const Punto. En esta clase, el compilador impide que su cuerpo modifique x_ o y_ (Stroustrup, 2024).\n\nLas funciones x() e y() observan las coordenadas. mover_a es una operación modificadora: asigna las nuevas coordenadas a los miembros y no se declara const.",
           "emphasis": [
             {
-              "text": "observan"
+              "text": "observan",
+              "occurrence": 1
             },
             {
               "text": "modifican"
@@ -26,14 +27,15 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 5};\n    const Punto referencia{1, 3};\n    std::cout << punto.x() << \" \" << referencia.x();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n\n    int x() const {\n        return x_;\n    }\n\n    int y() const {\n        return y_;\n    }\n\n    void mover_a(int x, int y) {\n        x_ = x;\n        y_ = y;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 5};\n    const Punto referencia{1, 3};\n\n    std::cout << punto.x() << \" \" << referencia.x();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "const en la declaración del objeto y const después de los parámetros de una función miembro tienen papeles relacionados, pero distintos. const Punto referencia{1,3}; crea un objeto que no debe modificarse después de su inicialización. int x() const declara una operación disponible para observar también ese tipo de objeto (Stroustrup, 2024).\n\nNo basta con que el cuerpo de una función se limite a devolver un dato. La declaración debe indicar que la función miembro es const para poder llamarla sobre un const Punto. Así, el código usuario puede conocer esa posibilidad sin examinar su implementación.",
+          "text": "const en la declaración del objeto y const después de los parámetros de una función miembro tienen papeles relacionados, pero distintos (Stroustrup, 2024).\n\nEn la declaración del objeto, const Punto referencia{1,3}; crea un objeto que no debe modificarse después de su inicialización. Sus coordenadas iniciales son uno y tres. Aquí referencia es el nombre elegido para ese objeto constante.\n\nEn la función, int x() const declara una operación que permite consultar también un objeto constante. La posición de const después de los parámetros indica esta propiedad de la función miembro.\n\nNo basta con que el cuerpo de una función se limite a devolver un dato. La declaración debe indicar que la función miembro es const para poder llamarla sobre un const Punto. Así, el código usuario puede conocer esa posibilidad sin examinar su implementación (Stroustrup, 2024).",
           "emphasis": [
             {
-              "text": "declaración del objeto"
+              "text": "declaración del objeto",
+              "occurrence": 2
             },
             {
               "text": "función miembro es const"
@@ -57,7 +59,7 @@
             "int x() const;"
           ],
           "correctIndex": 2,
-          "explanation": "La consulta const puede aplicarse al objeto constante."
+          "explanation": "origen es un objeto constante. int x() const; declara una consulta que puede llamarse sobre ese objeto. int x(); no comunica esa posibilidad, aunque su cuerpo sólo devolviera la coordenada. mover_a es una operación modificadora y no sirve para esta consulta."
         },
         {
           "type": "fill_code",
@@ -67,13 +69,13 @@
           "answers": [
             "const"
           ],
-          "explanation": "La palabra aparece después de los parámetros de la función miembro."
+          "explanation": "const se escribe después de los parámetros de x(), a continuación del paréntesis de cierre. Con esa declaración, punto.x() puede consultar el objeto constante y devolver su coordenada sin cambiar x_."
         },
         {
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, 7};\n    const Punto copia = punto;\n    punto.mover_a(8, 1);\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << punto.x() << \",\" << punto.y();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n\n    int x() const {\n        return x_;\n    }\n\n    int y() const {\n        return y_;\n    }\n\n    void mover_a(int x, int y) {\n        x_ = x;\n        y_ = y;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, 7};\n    const Punto copia = punto;\n\n    punto.mover_a(8, 1);\n\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << punto.x() << \",\" << punto.y();\n\n    return 0;\n}\n",
           "answers": [
             "3,7 8,1"
           ],
@@ -90,7 +92,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    const Punto punto{1, 2};\n    punto.mover_a(3, 4); // Error intencional: se intenta modificar un objeto const.\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n\n    int x() const {\n        return x_;\n    }\n\n    int y() const {\n        return y_;\n    }\n\n    void mover_a(int x, int y) {\n        x_ = x;\n        y_ = y;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    const Punto punto{1, 2};\n\n    punto.mover_a(3, 4); // Error intencional: se intenta modificar un objeto const.\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -105,7 +107,7 @@
         },
         {
           "type": "paragraph",
-          "text": "const no elige unas coordenadas ni crea por sí solo una copia. La inicialización sigue siendo la que se escribe: const Punto copia = punto; crea otro objeto a partir de los miembros de punto (Köppe et al., 2023). Después, esa copia conserva sus propias coordenadas aunque el original se mueva.\n\nUna referencia const Punto&, en cambio, permite consultar el objeto recibido sin copiarlo y sin modificarlo a través de esa referencia (Stroustrup, 2024). Si el objeto original es modificable, puede cambiar después por otra vía permitida. La referencia no guarda una instantánea de sus coordenadas.",
+          "text": "const no elige unas coordenadas ni crea por sí solo una copia. La inicialización sigue siendo la que se escribe: const Punto copia = punto; crea otro objeto a partir de los miembros de punto (Köppe et al., 2023). Después, esa copia conserva sus propias coordenadas aunque el original se mueva.\n\nUna referencia const Punto&, en cambio, permite consultar el objeto recibido sin copiarlo y sin modificarlo a través de esa referencia. Si el objeto original es modificable, puede cambiar después por otra vía permitida; la referencia permite consultar entonces el estado actualizado (Stroustrup, 2024).\n\nEn el ejemplo posterior, en_eje_vertical recibe un parámetro const Punto& punto y consulta si punto.x() vale cero. Al llamarla con un objeto, ese parámetro se refiere al mismo objeto durante la llamada. Si el objeto se modifica antes de otra llamada, la función consulta sus nuevas coordenadas. La referencia no guarda una instantánea de sus coordenadas.",
           "emphasis": [
             {
               "text": "otro objeto"
@@ -129,7 +131,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const {\n        ++x_; // Error intencional: una consulta const intenta cambiar este miembro.\n        return x_;\n    }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 3};\n    std::cout << punto.x();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n\n    int x() const {\n        ++x_; // Error intencional: una consulta const intenta cambiar este miembro.\n        return x_;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 3};\n\n    std::cout << punto.x();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -140,7 +142,7 @@
             "Conservar const y mover el incremento antes del return."
           ],
           "correctIndex": 0,
-          "explanation": "Consultar debe observar; una modificación necesita otra operación y su contrato."
+          "explanation": "++x_ intenta aumentar la coordenada dentro de una función miembro const, por lo que se rechaza al compilar. Retirar ese incremento y conservar return x_; permite devolver el valor actual sin cambiarlo. Quitar const permitiría una operación modificadora, pero dejaría de expresar la consulta solicitada."
         }
       ]
     },
@@ -154,7 +156,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nbool en_eje_vertical(const Punto& punto) {\n    return punto.x() == 0;\n}\n\nint main() {\n    Punto punto{0, 6};\n    bool primero = en_eje_vertical(punto);\n    punto.mover_a(2, 6);\n    std::cout << primero << \" \" << en_eje_vertical(punto);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n\n    int x() const {\n        return x_;\n    }\n\n    int y() const {\n        return y_;\n    }\n\n    void mover_a(int x, int y) {\n        x_ = x;\n        y_ = y;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nbool en_eje_vertical(const Punto& punto) {\n    return punto.x() == 0;\n}\n\nint main() {\n    Punto punto{0, 6};\n    bool primero = en_eje_vertical(punto);\n\n    punto.mover_a(2, 6);\n\n    std::cout << primero << \" \" << en_eje_vertical(punto);\n\n    return 0;\n}\n",
           "answers": [
             "1 0"
           ],
@@ -169,7 +171,7 @@
             "Llamar mover_a para modificar el objeto recibido."
           ],
           "correctIndex": 1,
-          "explanation": "La referencia constante comunica lectura y la privacidad conserva la interfaz."
+          "explanation": "Mediante const Punto& se puede consultar el objeto, pero no modificarlo. x() e y() están declaradas const y pueden usarse mediante esa referencia. mover_a no es const y no puede llamarse de ese modo; escribir x_ desde la función libre también incumpliría su acceso privado."
         }
       ]
     },
@@ -187,14 +189,15 @@
           "answers": [
             "1,2;0,5;"
           ],
-          "explanation": "Las consultas const se pueden usar mediante las referencias constantes del recorrido."
+          "explanation": "El recorrido consulta primero el punto de coordenadas 1 y 2, y muestra 1,2;. Después consulta el de coordenadas 0 y 5, y muestra 0,5;. Como no se añaden espacios ni saltos, la salida es 1,2;0,5;. Las consultas están declaradas const y se pueden llamar mediante la referencia constante de cada vuelta."
         },
         {
           "type": "paragraph",
-          "text": "En for (const auto& punto : puntos), cada vuelta usa una referencia constante al elemento correspondiente. No se crea una copia de ese Punto para leerlo. Las consultas x() e y() están declaradas const y por eso se pueden llamar mediante esa referencia (Stroustrup, 2024).\n\nEl recorrido reúne dos decisiones: usar una referencia para acceder al elemento existente y ofrecer consultas que permitan observarlo sin modificarlo. No hace falta quitar const para presentar sus coordenadas.",
+          "text": "En for (const auto& punto : puntos), cada vuelta usa una referencia constante al elemento correspondiente. Aquí auto deduce el tipo Punto; & permite referirse al elemento existente y const impide modificarlo mediante esa referencia. No se crea una copia de ese Punto para leerlo (Stroustrup, 2024).\n\nLas consultas x() e y() están declaradas const y por eso se pueden llamar mediante esa referencia. En cambio, mover_a no está declarada const: no se podría usar mediante la referencia constante del recorrido (Stroustrup, 2024).\n\nEl recorrido reúne dos decisiones: usar una referencia para acceder al elemento existente y ofrecer consultas que permitan observarlo sin modificarlo. No hace falta quitar const para presentar sus coordenadas.",
           "emphasis": [
             {
-              "text": "referencia constante"
+              "text": "referencia constante",
+              "occurrence": 1
             },
             {
               "text": "No se crea una copia"
@@ -214,7 +217,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Define Dimension con constructor, miembros privados y las consultas filas() y columnas(), ambas declaradas const. Incluye cambiar_a para modificar las dos cantidades de un objeto que no sea constante. En esta actividad sólo se usan cantidades entre cero y diez.\n\nCrea const Dimension fija{2,5}. Después crea un objeto original con una fila y tres columnas. Crea otro Dimension llamado copia, decláralo const e inicialízalo a partir de original. Por último, cambia original mediante cambiar_a(4,2).\n\nMuestra 2x5 en la primera línea consultando fija. En la segunda, muestra las dimensiones de copia y de original como 1x3 4x2, con un espacio entre ambos resultados. No añadas espacios al principio o al final ni un salto después de la segunda línea.\n\nPulsa Compilar, ejecutar y comprobar. Cada resultado debe proceder de las consultas al objeto correspondiente; la copia constante conserva las cantidades que recibió al crearse.",
+          "text": "Define Dimension con constructor y miembros privados que guarden las cantidades de filas y columnas. Ofrece las consultas filas() y columnas(), ambas declaradas const, para leer esas cantidades sin cambiarlas. Incluye cambiar_a para modificar las dos cantidades de un objeto que no sea constante. En esta actividad sólo se usan cantidades entre cero y diez.\n\nEn main crea los objetos y realiza el cambio en este orden:\n\nCrea const Dimension fija{2,5}.\n\nCrea un objeto original con una fila y tres columnas.\n\nCrea otro Dimension llamado copia, decláralo const e inicialízalo a partir de original.\n\nCambia original mediante cambiar_a(4,2).\n\nMuestra las cantidades consultando cada objeto. La primera línea corresponde a fija; la segunda compara copia con original después del cambio:\n\n2x5\n1x3 4x2\n\nSepara los dos resultados de la segunda línea con un espacio. No añadas espacios al principio o al final ni un salto después de la segunda línea.\n\nPulsa Compilar, ejecutar y comprobar. Cada resultado debe proceder de las consultas al objeto correspondiente; la copia constante conserva las cantidades que recibió al crearse.",
           "emphasis": [
             {
               "text": "ambas declaradas const"
@@ -289,7 +292,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas() const { return filas_; }\n    int columnas() const { return columnas_; }\n    void cambiar_a(int filas, int columnas) { filas_ = filas; columnas_ = columnas; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint main() {\n    const Dimension fija{2, 5};\n    Dimension original{1, 3};\n    const Dimension copia = original;\n    original.cambiar_a(4, 2);\n    std::cout << fija.filas() << \"x\" << fija.columnas() << \"\\n\";\n    std::cout << copia.filas() << \"x\" << copia.columnas() << \" \" << original.filas() << \"x\" << original.columnas();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n\n    int filas() const {\n        return filas_;\n    }\n\n    int columnas() const {\n        return columnas_;\n    }\n\n    void cambiar_a(int filas, int columnas) {\n        filas_ = filas;\n        columnas_ = columnas;\n    }\n\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint main() {\n    const Dimension fija{2, 5};\n    Dimension original{1, 3};\n    const Dimension copia = original;\n\n    original.cambiar_a(4, 2);\n\n    std::cout << fija.filas() << \"x\" << fija.columnas() << \"\\n\";\n    std::cout << copia.filas() << \"x\" << copia.columnas() << \" \" << original.filas() << \"x\" << original.columnas();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -312,7 +315,7 @@
             "Que las consultas compilen sobre const y las modificadoras se rechacen."
           ],
           "correctIndex": 2,
-          "explanation": "La clasificación de operaciones es parte del contrato que debe sostener el tipo."
+          "explanation": "El programa correcto debe permitir consultar fija y copia, que son objetos constantes. La prueba de diagnóstico comprueba también la otra parte del contrato: la llamada fija.cambiar_a(4,2); debe rechazarse al compilar. Una operación modificadora no debe quedar disponible sobre el objeto constante."
         }
       ]
     }
@@ -1137,6 +1140,156 @@
         "id": "block_0004_0001",
         "beforeSha256": "af3ec616c540a48eb099ed3ee5dc9ce8c0500b2b3918b294dfe3f3779e548793",
         "afterSha256": "17918b03f966ca2f53f53614dc69f63bc6e3cfad4012cdc1f273f8aedf59b8de"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "a5f382508d53b7fd88f24fea5f57a93d6c1435677b48cc3c541f6d33ea0352de",
+        "afterSha256": "74511a0b2538d23635a34e70461a8b1dd73dd1f278252b4ed631b79b2c520ff5"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "22943a5536d94b9020124b0062bb832ed2220e13612f195e2dfbd29e2fd6c25f",
+        "afterSha256": "9e42f240534d6efef083ae184dc2e4f0b31b8030ca01d5acc96005906b3c1ab3"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "4b7002583516416f32bde885b5cda1c007639920ee904d1788c07a9ca6a737dc",
+        "afterSha256": "7e4420777115b53bb4e890fa26dec7f597ab64d4a0aecc920c54aea2385e860d"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "0a4efba09feb0147ad3182da2644242049bc4fae1a898713dcb53d273df08f81",
+        "afterSha256": "6a8b590058b82d099cb448ae92ba9517c4912036510a7d4534237d25c27c4cfb"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "b735b147d821e368d10807120e836bc888056b40cdeb4613dd4a2000408a7189",
+        "afterSha256": "183c431e4cf88cbcff48b59001984a33a9c5f26c852bb34e1cf0ce483894bbca"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "d0b5600be83e08e900c5d38f3f2dc570d909b062ff3a5523940e48571d784a38",
+        "afterSha256": "d57ad2b330d2dd0e1a246be21455ea7c0a675af75638dc060ac35f46c69ad0de"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "342e97eba4f36851a3bd1ffc6abe686ccd6e85f208a63999f2fe3401bf2dda89",
+        "afterSha256": "d280109d5f258a3754c2e2a737575c70483c5c4c8cd1cd858dd4b49935026a74"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "612778e209df217c1dfb0de6e841c0fbe3ecc5c6756c87895ade5df9aadd1fcc",
+        "afterSha256": "fc1a1db1460c4359e7c2d14f869467f21cbf2761b449e895e0e72b0160e55325"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "3041ba5981bd18051f213db4643b6a5899ae5c6f11f144712b07ae47b58b691e",
+        "afterSha256": "1bb03159a22c8eeb24a70d48c9953ab01c34c41cc72143af106a75322b34ec51"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "f78fb99644aee7b736dba1ee6996026f94c4472efc736d13a4fd7230dab6c9f9",
+        "afterSha256": "af12c1f928c9048c9e85e29eb82fce6895fd2daf7038e4f2a92a4fba4c956ea1"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "17918b03f966ca2f53f53614dc69f63bc6e3cfad4012cdc1f273f8aedf59b8de",
+        "afterSha256": "b5d552026fee8a075bf605860fc041e15fc5a00a08bb78db179e7598233c73dd"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "79d7df122213d6f8837493dda53880d99a7e77a40b53e1bbb918d75ac2645f4c",
+        "afterSha256": "2955beec370505f171f3405d1290501b4768dc583a3cf83671ada8123749e1d7"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "589792bf87bae8250140da3a5c76c4c3443cb28037b8b4a8befa9b6a36c7f072",
+        "afterSha256": "d67b93b8e31e2297413097cc65fd7c3f65ad7c3818a834a991ff26d4ed8453d2"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "1a93bd043f7b786506562951d42bb0a12dbb2ea302a355707b32338634d54623",
+        "afterSha256": "04e0804896a71a8856ec6bc98e2ba98a3f4bb14e2c3e4d908216d8417ae385ac"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "ad5cb84460ceb778dbc8ce01cdfe022be87936c3b0590962fc94e9f50972dc1a",
+        "afterSha256": "2e60acbde6cb4857f69f75602d7d6fc47f7ccd213d7bac45e04c84514fa531d4"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "0c95d0b4c8c3335e58cff477a72662a7312d41bf1ae8c4e968e0bc4c9dfd3ab2",
+        "afterSha256": "db6a64e350b332e5952b7ebed1fef0e5dde333ef281686bc2c1d1cead4251c01"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "4afae9635213f475e617d0d8b4b1792f48168a61063714d7c921ad2ef82d5720",
+        "afterSha256": "0ecaafa770f2d26df1d9c6a6a88388787b97e1419535f7d7cc502d5aedc36f10"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "7e4420777115b53bb4e890fa26dec7f597ab64d4a0aecc920c54aea2385e860d",
+        "afterSha256": "ad1c4712da624372740b069c6f57e28b9530a21e953bd9f63644f712f837e9aa"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 5};\n    const Punto referencia{1, 3};\n    std::cout << punto.x() << \" \" << referencia.x();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, 7};\n    const Punto copia = punto;\n    punto.mover_a(8, 1);\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << punto.x() << \",\" << punto.y();\n    return 0;\n}\n",
+          "answers": [
+            "3,7 8,1"
+          ],
+          "explanation": "const Punto copia = punto; crea otro objeto con las coordenadas 3 y 7. Después, punto.mover_a(8, 1) cambia sólo punto. Las consultas leen primero copia y luego punto, de modo que aparece 3,7 8,1. La independencia procede de haber creado una copia; const restringe las modificaciones de esa copia."
+        }
+      },
+      {
+        "id": "block_0002_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    const Punto punto{1, 2};\n    punto.mover_a(3, 4); // Error intencional: se intenta modificar un objeto const.\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const {\n        ++x_; // Error intencional: una consulta const intenta cambiar este miembro.\n        return x_;\n    }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 3};\n    std::cout << punto.x();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nbool en_eje_vertical(const Punto& punto) {\n    return punto.x() == 0;\n}\n\nint main() {\n    Punto punto{0, 6};\n    bool primero = en_eje_vertical(punto);\n    punto.mover_a(2, 6);\n    std::cout << primero << \" \" << en_eje_vertical(punto);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "En la primera llamada, punto.x() devuelve 0, por lo que en_eje_vertical(punto) devuelve true y ese resultado se guarda en primero. Tras mover el punto a (2,6), la segunda llamada consulta 2 y devuelve false. primero conserva su resultado anterior: al imprimir ambos valores lógicos aparece 1 0."
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas() const { return filas_; }\n    int columnas() const { return columnas_; }\n    void cambiar_a(int filas, int columnas) { filas_ = filas; columnas_ = columnas; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint main() {\n    const Dimension fija{2, 5};\n    Dimension original{1, 3};\n    const Dimension copia = original;\n    original.cambiar_a(4, 2);\n    std::cout << fija.filas() << \"x\" << fija.columnas() << \"\\n\";\n    std::cout << copia.filas() << \"x\" << copia.columnas() << \" \" << original.filas() << \"x\" << original.columnas();\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1172,7 +1325,7 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "f4f2125a84ac70efe43669a89ef96dc7174ea257a6b39d2886c01160350725f5",
+        "sourceSha256": "72d846084316f58918166b5a1b842e28df1d563194b878d39c9851bc6c47df3e",
         "spans": [
           {
             "start": 3,
@@ -1182,81 +1335,109 @@
             "reading": "technical"
           },
           {
-            "start": 242,
-            "end": 260,
+            "start": 32,
+            "end": 35,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 287,
+            "end": 305,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 279,
+            "start": 311,
+            "end": 324,
             "text": "int x() const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 281,
-            "end": 286,
+            "start": 326,
+            "end": 331,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 456,
-            "end": 458,
-            "text": "x_",
+            "start": 443,
+            "end": 448,
+            "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 461,
-            "end": 463,
-            "text": "y_",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 504,
-            "end": 509,
+            "start": 494,
+            "end": 499,
             "text": "Punto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 532,
-            "end": 543,
+            "start": 526,
+            "end": 537,
             "text": "const Punto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 545,
-            "end": 552,
+            "start": 599,
+            "end": 601,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 604,
+            "end": 606,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 607,
+            "end": 625,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 642,
+            "end": 645,
+            "text": "x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 648,
+            "end": 651,
+            "text": "y()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 678,
+            "end": 685,
             "text": "mover_a",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 599,
-            "end": 604,
+            "start": 778,
+            "end": 783,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 605,
-            "end": 623,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0000_0003",
         "path": "/text",
-        "sourceSha256": "161822c96c8074d2d1e732b08d6c8f70c5f807b2657ab9bbe831e5e658af0f2f",
+        "sourceSha256": "76b983d4f03e664fbcffb81c2d311445987c53bf6a3ace6956515d07e9452193",
         "spans": [
           {
             "start": 0,
@@ -1273,39 +1454,74 @@
             "reading": "technical"
           },
           {
-            "start": 137,
-            "end": 165,
-            "text": "const Punto referencia{1,3};",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 235,
-            "end": 248,
-            "text": "int x() const",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 323,
-            "end": 341,
+            "start": 136,
+            "end": 154,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 470,
-            "end": 475,
+            "start": 187,
+            "end": 215,
+            "text": "const Punto referencia{1,3};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 315,
+            "end": 318,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 321,
+            "end": 325,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 332,
+            "end": 342,
+            "text": "referencia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 407,
+            "end": 420,
+            "text": "int x() const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 509,
+            "end": 514,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 505,
-            "end": 516,
+            "start": 713,
+            "end": 718,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 748,
+            "end": 759,
             "text": "const Punto",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 845,
+            "end": 863,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -1332,12 +1548,33 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "d97b1f10a5846fa6caac85d3e4d35ab4da882c8aa917548bfea13903755d3409",
+        "sourceSha256": "d7d415f7305108ecf7933c182068a1039f93dcb09cb6660918c7fa15389c7c95",
         "spans": [
           {
-            "start": 12,
-            "end": 17,
-            "text": "const",
+            "start": 0,
+            "end": 6,
+            "text": "origen",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 31,
+            "end": 45,
+            "text": "int x() const;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 104,
+            "end": 112,
+            "text": "int x();",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 190,
+            "end": 197,
+            "text": "mover_a",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1394,8 +1631,37 @@
       {
         "block": "block_0001_0002",
         "path": "/explanation",
-        "sourceSha256": "e2874e2bd61ef42f942f1fb26f5911fb815e6c99d00ef2cca278207fdbe3a718",
-        "spans": []
+        "sourceSha256": "01c2efe2b47857256b077d383fca60f2ad583eb63c19e466b57240f269f23e2f",
+        "spans": [
+          {
+            "start": 0,
+            "end": 5,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 46,
+            "end": 49,
+            "text": "x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 113,
+            "end": 122,
+            "text": "punto.x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 196,
+            "end": 198,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0003",
@@ -1579,7 +1845,7 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "e5acce4c62ebf306ec74c4bd8359ad1ea090e773cd45eac5e0018f9f6bb76ceb",
+        "sourceSha256": "401c83ea1372cab9d04cf317ca94bc6fafbde05914af688eb0702cef29bcae57",
         "spans": [
           {
             "start": 0,
@@ -1617,10 +1883,38 @@
             "reading": "technical"
           },
           {
-            "start": 430,
-            "end": 448,
+            "start": 578,
+            "end": 596,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 624,
+            "end": 639,
+            "text": "en_eje_vertical",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 660,
+            "end": 678,
+            "text": "const Punto& punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 693,
+            "end": 702,
+            "text": "punto.x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 708,
+            "end": 712,
+            "text": "cero",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -1656,8 +1950,37 @@
       {
         "block": "block_0003_0002",
         "path": "/explanation",
-        "sourceSha256": "a99673aa7f87f1ede8d938f4cb14102bee9984c4979afee34523e2fbfc6257eb",
-        "spans": []
+        "sourceSha256": "574fcdf0bc43207bdf7a08db122743829bbb6cee253f9aa20c92cbc5e51231d5",
+        "spans": [
+          {
+            "start": 0,
+            "end": 4,
+            "text": "++x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 71,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 143,
+            "end": 153,
+            "text": "return x_;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 214,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0003_0002",
@@ -1813,8 +2136,58 @@
       {
         "block": "block_0004_0002",
         "path": "/explanation",
-        "sourceSha256": "3dba5bde29c3ab89d9916c0514993e7d9bd9ffca4b0478d6b0ab481782094b8d",
-        "spans": []
+        "sourceSha256": "0205a737dbfa0dbfe9c800fcf5640fa889ec91854547cacc726b00a787184f54",
+        "spans": [
+          {
+            "start": 9,
+            "end": 21,
+            "text": "const Punto&",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 73,
+            "end": 76,
+            "text": "x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 79,
+            "end": 82,
+            "text": "y()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 100,
+            "end": 105,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 147,
+            "end": 154,
+            "text": "mover_a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 161,
+            "end": 166,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 209,
+            "end": 211,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0002",
@@ -1880,11 +2253,60 @@
       {
         "block": "block_0005_0001",
         "path": "/explanation",
-        "sourceSha256": "00666513720b3830110213aba92816c37049f8b56515e85e78d4996a926a5c49",
+        "sourceSha256": "2b04e3097bb358757d91e88e54dffa350c899b257e86706d10abc92870304bb4",
         "spans": [
           {
-            "start": 14,
-            "end": 19,
+            "start": 54,
+            "end": 55,
+            "text": "1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 58,
+            "end": 59,
+            "text": "2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 71,
+            "end": 75,
+            "text": "1,2;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 112,
+            "end": 113,
+            "text": "0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 116,
+            "end": 117,
+            "text": "5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 133,
+            "text": "0,5;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 186,
+            "end": 194,
+            "text": "1,2;0,5;",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 227,
+            "end": 232,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
@@ -1894,7 +2316,7 @@
       {
         "block": "block_0005_0002",
         "path": "/text",
-        "sourceSha256": "d2db8cddb0cec25a84ca7bfa127829a536e82f3c3ca37418b1e328adae47aef0",
+        "sourceSha256": "2f44d400fb50f368e4bcd2fc988fcd0e87db87cec5193158f76e6a8305816fd8",
         "spans": [
           {
             "start": 3,
@@ -1904,43 +2326,99 @@
             "reading": "technical"
           },
           {
-            "start": 135,
-            "end": 140,
+            "start": 112,
+            "end": 116,
+            "text": "auto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 132,
+            "end": 137,
             "text": "Punto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 168,
-            "end": 171,
-            "text": "x()",
+            "start": 139,
+            "end": 140,
+            "text": "&",
             "role": "cpp",
-            "reading": "technical"
+            "reading": "characters"
           },
           {
-            "start": 174,
-            "end": 177,
-            "text": "y()",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 195,
-            "end": 200,
+            "start": 183,
+            "end": 188,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 252,
-            "end": 270,
+            "start": 261,
+            "end": 266,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 279,
+            "end": 297,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 445,
-            "end": 450,
+            "start": 314,
+            "end": 317,
+            "text": "x()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 320,
+            "end": 323,
+            "text": "y()",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 341,
+            "end": 346,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 410,
+            "end": 417,
+            "text": "mover_a",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 441,
+            "text": "const",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 508,
+            "end": 526,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 548,
+            "end": 551,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 701,
+            "end": 706,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
@@ -1956,7 +2434,7 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "27691944e8dd7ebb81dfa382dae7b1fdd11790ce070fa2b483c8039be2564c87",
+        "sourceSha256": "602bd2ab6c6d8b68b0e7418e61649b135eb97267f52118ecf3862b6a8160676b",
         "spans": [
           {
             "start": 7,
@@ -1966,150 +2444,171 @@
             "reading": "technical"
           },
           {
-            "start": 68,
-            "end": 75,
+            "start": 122,
+            "end": 129,
             "text": "filas()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 78,
-            "end": 88,
+            "start": 132,
+            "end": 142,
             "text": "columnas()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 107,
-            "end": 112,
+            "start": 161,
+            "end": 166,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 122,
-            "end": 131,
+            "start": 218,
+            "end": 227,
             "text": "cambiar_a",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 249,
-            "end": 253,
+            "start": 247,
+            "end": 250,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 349,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 256,
-            "end": 260,
+            "start": 352,
+            "end": 356,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 268,
-            "end": 293,
+            "start": 362,
+            "end": 366,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 425,
+            "end": 450,
             "text": "const Dimension fija{2,5}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 318,
-            "end": 326,
+            "start": 468,
+            "end": 476,
             "text": "original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 331,
-            "end": 334,
+            "start": 481,
+            "end": 484,
             "text": "una",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 342,
-            "end": 346,
+            "start": 492,
+            "end": 496,
             "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 367,
-            "end": 376,
+            "start": 518,
+            "end": 527,
             "text": "Dimension",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 385,
-            "end": 390,
+            "start": 536,
+            "end": 541,
             "text": "copia",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 402,
-            "end": 407,
+            "start": 553,
+            "end": 558,
             "text": "const",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 435,
-            "end": 443,
+            "start": 586,
+            "end": 594,
             "text": "original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 464,
-            "end": 472,
+            "start": 604,
+            "end": 612,
             "text": "original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 482,
-            "end": 496,
+            "start": 622,
+            "end": 636,
             "text": "cambiar_a(4,2)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 507,
-            "end": 510,
-            "text": "2x5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 543,
-            "end": 547,
+            "start": 718,
+            "end": 722,
             "text": "fija",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 591,
-            "end": 596,
+            "start": 743,
+            "end": 748,
             "text": "copia",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 602,
-            "end": 610,
+            "start": 753,
+            "end": 761,
             "text": "original",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 616,
-            "end": 623,
+            "start": 783,
+            "end": 786,
+            "text": "2x5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 787,
+            "end": 794,
             "text": "1x3 4x2",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 807,
+            "end": 810,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -2160,6 +2659,13 @@
             "text": "copia",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 323,
+            "end": 326,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2311,8 +2817,30 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "9ae63f3f9352e7a5899286a5d7a5887421fca0f7b1d7e1a191279a07843b07dd",
-        "spans": []
+        "sourceSha256": "c91de86f2d3c59ec8bc6a44b467e3548ad463530a1132c45d5caf735d583f28c",
+        "spans": [
+          {
+            "start": 45,
+            "end": 49,
+            "text": "fija",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 52,
+            "end": 57,
+            "text": "copia",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 169,
+            "end": 189,
+            "text": "fija.cambiar_a(4,2);",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",
@@ -2366,7 +2894,8 @@
             "start": 10,
             "end": 15,
             "text": "const",
-            "role": "cpp"
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       }

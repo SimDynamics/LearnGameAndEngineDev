@@ -10,32 +10,37 @@
         },
         {
           "type": "paragraph",
-          "text": "Un Punto necesita dos coordenadas desde su creación. El constructor prepara el objeto al construirlo, de modo que no sea necesario recordar después una llamada de preparación antes de consultarlo (Stroustrup, 2024).\n\nEn su declaración se escribe el nombre del tipo, Punto, seguido de los parámetros. No se escribe un tipo de retorno, ni siquiera void. En Punto punto{3, -2};, los argumentos 3 y -2 se entregan al constructor de ese nuevo objeto.",
+          "text": "Cada objeto de tipo Punto necesita dos coordenadas desde su creación. Para prepararlas definimos un constructor: una función miembro especial que se utiliza para inicializar un objeto al crearlo. Así, antes de consultar el punto, sus coordenadas ya han recibido sus valores iniciales; no dependemos de recordar después otra llamada de preparación (Stroustrup, 2024).\n\nEn la declaración Punto(int x, int y); escribimos el nombre de la clase, Punto, seguido de los parámetros. No se escribe un tipo de retorno, ni siquiera void. Los dos int que aparecen entre paréntesis indican los tipos de los parámetros, no un resultado devuelto.\n\nAl ejecutar Punto punto{3, -2};, se crea el objeto punto y se utiliza ese constructor. El argumento 3 llega al parámetro x; el argumento -2 llega al parámetro y. La lista que veremos a continuación utiliza esos parámetros para inicializar los miembros.",
           "emphasis": [
             {
-              "text": "El constructor"
+              "text": "constructor",
+              "style": "bold",
+              "occurrence": 1
             },
             {
-              "text": "No se escribe un tipo de retorno"
+              "text": "No se escribe un tipo de retorno",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "En Punto(int x, int y) : x_{x}, y_{y} {}, la parte : x_{x}, y_{y} es la lista de inicializadores de miembros. Antes de cada llave aparece el miembro que se prepara; dentro aparece el valor que se utiliza (Stroustrup, 2024). Aquí x_ e y_ son miembros, mientras que x e y son los parámetros que reciben las coordenadas. El guion bajo forma parte del nombre elegido; no es un operador.\n\nLos miembros se inicializan antes de ejecutar el cuerpo del constructor (Köppe et al., 2023). Por eso el cuerpo vacío {} no significa que las coordenadas queden sin preparar. En este modelo se admiten los valores int recibidos; todavía no se impone otra regla de validez.",
+          "text": "En Punto(int x, int y) : x_{x}, y_{y} {}, la parte : x_{x}, y_{y} es la lista de inicializadores de miembros. Cada elemento identifica el miembro que se inicializa y, entre llaves, la expresión que proporciona su valor (Stroustrup, 2024).\n\nEn x_{x}, el miembro es x_ y la expresión es el parámetro x.\nEn y_{y}, el miembro es y_ y la expresión es el parámetro y.\n\nPor tanto, para Punto punto{3, -2};, el miembro x_ comienza con el valor tres y el miembro y_ con menos dos. El guion bajo de x_ e y_ forma parte de los nombres que hemos elegido; no es un operador.\n\nLos miembros se inicializan antes de ejecutar el cuerpo del constructor (Köppe et al., 2023). El cuerpo es la parte final delimitada por {}. Que esté vacío significa que no contiene instrucciones adicionales; los miembros ya se han inicializado mediante la lista. Este modelo admite cualquier valor de tipo int recibido como coordenada; no impone otra regla de validez.",
           "emphasis": [
             {
-              "text": "lista de inicializadores de miembros"
+              "text": "lista de inicializadores de miembros",
+              "style": "bold"
             },
             {
-              "text": "antes de ejecutar el cuerpo"
+              "text": "antes de ejecutar el cuerpo",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, -2};\n    std::cout << punto.x() << \",\" << punto.y();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y)\n        : x_{x}, y_{y} {}\n\n    int x() {\n        return x_;\n    }\n\n    int y() {\n        return y_;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, -2};\n\n    std::cout << punto.x() << \",\" << punto.y();\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -43,7 +48,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Un constructor no es una función de retorno"
+          "text": "Un constructor no declara tipo de retorno"
         },
         {
           "type": "multiple_choice",
@@ -54,7 +59,7 @@
             "int Punto(int x, int y);"
           ],
           "correctIndex": 1,
-          "explanation": "El constructor tiene el nombre del tipo y no un tipo de retorno.",
+          "explanation": "La declaración Punto(int x, int y); usa el nombre de la clase y recibe sus dos coordenadas. No se escribe ningún tipo antes de Punto: un constructor inicializa el objeto que se está creando y no declara un valor de retorno. void Punto(int x, int y); e int Punto(int x, int y); no son declaraciones válidas de ese constructor.",
           "reviewFeedback": [
             "En tu elección, void introduce un tipo de retorno. Distingue una función ordinaria que no devuelve un valor de la preparación inicial de un objeto. Revisa la declaración del constructor antes de volver a elegir.",
             "Comprueba que la declaración corresponda a crear un Punto y reciba sus dos coordenadas.",
@@ -81,7 +86,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto a{6, 2};\n    Punto b{-1, 5};\n    std::cout << a.y() << \" \" << b.x();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y)\n        : x_{x}, y_{y} {}\n\n    int x() {\n        return x_;\n    }\n\n    int y() {\n        return y_;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto a{6, 2};\n    Punto b{-1, 5};\n\n    std::cout << a.y() << \" \" << b.x();\n\n    return 0;\n}\n",
           "answers": [
             "2 -1"
           ],
@@ -98,13 +103,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Inicializar un miembro establece su valor durante la construcción. Una asignación dentro del cuerpo cambia un miembro que ya existe; no sustituye la fase de inicialización anterior al cuerpo. La distinción recupera la diferencia entre declarar int x = 2; y declarar int x; para asignarle después x = 2; (Stroustrup, 2024).\n\nCon la lista, cada coordenada recibe directamente su argumento. Si un miembro int queda sin inicializar y se pretende prepararlo mediante una asignación posterior, no debe leerse antes de esa asignación.",
+          "text": "Inicializar un miembro establece su valor durante la construcción. Una asignación dentro del cuerpo actúa después, sobre un miembro que ya existe. Podemos recuperar la diferencia con las instrucciones de un entero local dentro de una función:\n\nint x = 2; define x y lo inicializa con el valor dos.\nint x; define x sin darle un valor inicial utilizable; la instrucción posterior x = 2; le asigna el valor dos (Stroustrup, 2024).\n\nEn nuestro Punto, x_{x} inicializa directamente el miembro x_ con el argumento recibido en el parámetro x. Es distinto de omitirlo en la lista y escribir x_ = x; dentro del cuerpo: esa instrucción sería una asignación posterior. Si un miembro int se deja sin inicializar para asignarle un valor después, no debe leerse antes de esa asignación.",
           "emphasis": [
             {
-              "text": "Inicializar un miembro"
+              "text": "Inicializar un miembro",
+              "style": "bold"
             },
             {
-              "text": "Una asignación dentro del cuerpo"
+              "text": "Una asignación dentro del cuerpo",
+              "style": "bold"
             }
           ]
         },
@@ -112,7 +119,7 @@
           "type": "fill_code",
           "language": "cpp",
           "question": "Completa sólo el nombre del miembro que se inicializa con x en este constructor.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : ___{x}, y_{y} {}\n    int x() { return x_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 7};\n    std::cout << punto.x();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y)\n        : ___{x}, y_{y} {}\n\n    int x() {\n        return x_;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 7};\n\n    std::cout << punto.x();\n\n    return 0;\n}\n",
           "answers": [
             "x_"
           ],
@@ -120,13 +127,15 @@
         },
         {
           "type": "paragraph",
-          "text": "El orden de declaración en la clase determina qué miembro se inicializa primero; el orden escrito en la lista no lo cambia (Köppe et al., 2023). Como Punto declara primero x_ y después y_, ese es su orden de inicialización.\n\nEscribir la lista en el mismo orden facilita leer lo que realmente ocurrirá. Si la preparación de un miembro necesita el valor de otro, ese otro debe estar ya inicializado; escribirlo antes en la lista no basta para adelantarlo.",
+          "text": "El orden de declaración de los miembros en la clase determina cuál se inicializa primero; el orden escrito en la lista no lo cambia (Köppe et al., 2023). En Punto se declara int x_; antes de int y_;. Por eso, al construir el objeto, sucede lo siguiente:\n\nSe inicializa x_ con el valor del parámetro x.\nSe inicializa y_ con el valor del parámetro y.\nDespués se ejecuta el cuerpo del constructor.\n\nPara comparar ambos órdenes, podríamos escribir la lista como : y_{y}, x_{x}. También en esa variante se inicializa primero x_ y después y_, porque las declaraciones siguen en ese orden. La variante es válida: cada miembro utiliza su parámetro, sin leer el otro miembro. Escribir la lista en el mismo orden que las declaraciones facilita seguir lo que realmente ocurre.\n\nSi la inicialización de un miembro necesitara leer el valor de otro, ese otro tendría que estar ya inicializado. Adelantar su nombre en la lista no adelantaría su inicialización.",
           "emphasis": [
             {
-              "text": "orden de declaración"
+              "text": "orden de declaración",
+              "style": "bold"
             },
             {
-              "text": "el mismo orden"
+              "text": "el mismo orden",
+              "style": "bold"
             }
           ]
         }
@@ -141,7 +150,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto; // Error intencional: esta versión exige dos coordenadas.\n    std::cout << punto.x();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y)\n        : x_{x}, y_{y} {}\n\n    int x() {\n        return x_;\n    }\n\n    int y() {\n        return y_;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto; // Error intencional: esta versión exige dos coordenadas.\n\n    std::cout << punto.x();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -156,13 +165,15 @@
         },
         {
           "type": "paragraph",
-          "text": "Esta definición declara un constructor que exige dos coordenadas. No aparece automáticamente otro que permita omitirlas (Köppe et al., 2023). Tanto Punto punto; como Punto punto{}; intentan construir sin argumentos y no sirven para esta versión.\n\nEntregar los dos argumentos al crear el objeto evita olvidar su preparación. Elegir más adelante un punto por defecto requerirá decidir qué coordenadas debe tener y cómo inicializarlas.",
+          "text": "Esta definición declara un constructor que exige dos coordenadas. No aparece automáticamente otro que permita omitirlas (Köppe et al., 2023). Ninguno de estos intentos entrega argumentos:\nPunto punto;\nPunto punto{};\n\nAmbos se rechazan al compilar esta versión de la clase. Al entregar las coordenadas al crear el objeto, éste queda preparado desde su construcción. Si queremos permitir un punto por defecto más adelante, tendremos que decidir qué coordenadas debe tener y ofrecer una forma de inicializarlas sin argumentos.",
           "emphasis": [
             {
-              "text": "exige dos coordenadas"
+              "text": "exige dos coordenadas",
+              "style": "bold"
             },
             {
-              "text": "construir sin argumentos"
+              "text": "se rechazan al compilar",
+              "style": "bold"
             }
           ]
         }
@@ -176,20 +187,22 @@
         },
         {
           "type": "paragraph",
-          "text": "La clase puede contener sólo la declaración de una función miembro y dejar su definición fuera. Así se conserva a la vista qué operaciones ofrece el tipo y se coloca su implementación después (Stroustrup, 2024).\n\nEn int Punto::x(), Punto:: identifica la clase a la que pertenece x. Escribir int x() sin esa calificación definiría una función libre distinta, que no tendría acceso automático al miembro privado x_. La definición Punto::Punto(int x, int y) también se califica con el tipo, pero sigue sin llevar tipo de retorno.",
+          "text": "La clase puede contener sólo la declaración de una función miembro y dejar su definición fuera. Así se conserva a la vista qué operaciones ofrece el tipo y se coloca su implementación después (Stroustrup, 2024).\n\nEn la declaración int x();, escrita dentro de Punto, indicamos que existe esa consulta. Al definirla fuera mediante int Punto::x(), el prefijo Punto:: indica que sigue siendo miembro de esa clase. La llamada punto.x() ejecuta esa función sobre punto; su instrucción return x_; lee el miembro de ese objeto.\n\nEscribir en cambio int x() sin la calificación definiría una función libre distinta, no la consulta declarada en Punto. Esa función no tendría acceso automático al miembro privado x_. El constructor definido fuera también se califica: Punto::Punto(int x, int y). Sigue sin llevar tipo de retorno.",
           "emphasis": [
             {
-              "text": "función miembro"
+              "text": "función miembro",
+              "style": "bold"
             },
             {
-              "text": "sin esa calificación"
+              "text": "sin la calificación",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y);\n    int x();\nprivate:\n    int x_;\n    int y_;\n};\n\nPunto::Punto(int x, int y) : x_{x}, y_{y} {}\n\nint Punto::x() {\n    return x_;\n}\n\nint main() {\n    Punto punto{8, 1};\n    std::cout << punto.x();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y);\n\n    int x();\n\nprivate:\n    int x_;\n    int y_;\n};\n\nPunto::Punto(int x, int y)\n    : x_{x}, y_{y} {}\n\nint Punto::x() {\n    return x_;\n}\n\nint main() {\n    Punto punto{8, 1};\n\n    std::cout << punto.x();\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -200,7 +213,7 @@
             "Una función libre que devuelve dos enteros."
           ],
           "correctIndex": 0,
-          "explanation": "La primera parte califica la clase; la segunda conserva el nombre del constructor."
+          "explanation": "En Punto::Punto(int x, int y), la parte Punto:: indica que la definición pertenece a la clase Punto. A continuación se escribe Punto con la lista de parámetros: la definición corresponde al constructor y sigue sin tipo de retorno. La consulta tendría otra forma, como int Punto::x()."
         }
       ]
     },
@@ -212,13 +225,19 @@
         },
         {
           "type": "paragraph",
-          "text": "Una consulta corta definida dentro de la clase puede resultar fácil de leer junto a su declaración. Colocar fuera una definición más larga ayuda a distinguir la interfaz de su implementación (Stroustrup, 2024). En estos programas pequeños, ambas organizaciones caben en el mismo archivo. La ubicación del cuerpo no garantiza que el compilador sustituya las llamadas por el código de la función (Köppe et al., 2023).\n\nTambién se conserva la diferencia entre crear y asignar. Punto copia = original; crea otro objeto con los miembros del original. En cambio, original = Punto{4, 5}; asigna un valor a un objeto que ya existe: para esta clase, reemplaza sus dos coordenadas (Köppe et al., 2023). Cambiar original no actualiza la copia creada antes.",
+          "text": "Una consulta corta definida dentro de la clase puede resultar fácil de leer junto a su declaración. Colocar fuera una definición más larga ayuda a distinguir la interfaz de su implementación (Stroustrup, 2024). En estos programas pequeños, ambas organizaciones caben en el mismo archivo. La ubicación del cuerpo no garantiza que el compilador sustituya las llamadas por el código de la función (Köppe et al., 2023).\n\nTambién se conserva la diferencia entre crear y asignar:\n\nPunto copia = original; crea un objeto nuevo. Su inicialización copia los dos miembros de original. Para esta clase, el compilador proporciona esa operación de copia aunque hayamos escrito el constructor que recibe dos enteros.\n\noriginal = Punto{4, 5}; actúa sobre original, que ya existe. Primero Punto{4, 5} construye el valor que se va a asignar. Después la asignación reemplaza las dos coordenadas del objeto original. La copia creada antes conserva sus propios miembros y no se actualiza con ese cambio (Köppe et al., 2023).",
           "emphasis": [
             {
-              "text": "crear y asignar"
+              "text": "crear y asignar",
+              "style": "bold"
             },
             {
-              "text": "un objeto que ya existe"
+              "text": "un objeto nuevo",
+              "style": "bold"
+            },
+            {
+              "text": "que ya existe",
+              "style": "bold"
             }
           ]
         },
@@ -226,7 +245,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "Predice la salida exacta.",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto original{1, 9};\n    Punto copia = original;\n    original = Punto{4, 5};\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << original.x() << \",\" << original.y();\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y)\n        : x_{x}, y_{y} {}\n\n    int x() {\n        return x_;\n    }\n\n    int y() {\n        return y_;\n    }\n\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto original{1, 9};\n    Punto copia = original;\n    original = Punto{4, 5};\n\n    std::cout << copia.x() << \",\" << copia.y()\n              << \" \" << original.x() << \",\" << original.y();\n\n    return 0;\n}\n",
           "answers": [
             "1,9 4,5"
           ],
@@ -241,7 +260,7 @@
             "Asignar sólo cambia los miembros públicos y conserva los privados."
           ],
           "correctIndex": 0,
-          "explanation": "Recupera inicialización frente a asignación, ahora con un tipo propio."
+          "explanation": "Punto original{1, 9}; crea original e inicializa sus dos miembros. Más tarde, original = Punto{4, 5}; no crea otro original: asigna nuevas coordenadas al objeto existente. Para esta clase se reemplazan ambos miembros, aunque sean privados; la asignación es una operación del propio tipo."
         }
       ]
     },
@@ -253,22 +272,29 @@
         },
         {
           "type": "paragraph",
-          "text": "Define Dimension con filas_ y columnas_ privados. Su constructor recibe dos int y prepara ambos miembros mediante la lista de inicializadores. Las consultas públicas filas() y columnas() devuelven los valores del objeto. Define al menos una de ellas fuera de la clase, con su calificación Dimension::.\n\nEn main construye tres objetos distintos: el primero con {2,4}, el segundo con {0,3} y el tercero con {1,1}. Para este modelo, las cantidades utilizadas están entre cero y diez; no se pide añadir un rechazo de valores.\n\nMuestra las consultas de cada objeto en el formato filasxcolumnas, una línea por objeto. Las tres líneas deben ser 2x4, 0x3 y 1x1, en ese orden. Cada una termina con un salto de línea, incluida la última. Pulsa Compilar, ejecutar y comprobar.",
+          "text": "Define la clase Dimension con dos miembros privados: filas_ y columnas_. Su constructor público recibe dos int e inicializa ambos miembros mediante la lista de inicializadores.\n\nDefine las consultas públicas filas() y columnas(), que devuelven los valores del objeto. Define al menos una de ellas fuera de la clase, con su calificación Dimension::.\n\nEn main, construye tres objetos distintos con estos datos, en este orden:\nPrimer objeto: dos filas y cuatro columnas.\nSegundo objeto: cero filas y tres columnas.\nTercer objeto: una fila y una columna.\n\nPara este modelo, las cantidades utilizadas están entre cero y diez; no se pide añadir un rechazo de valores.\n\nConstruye los tres objetos antes de consultar el primero. Después, consulta cada uno en el mismo orden. Así podremos comprobar que la creación del segundo y del tercero no reemplaza los datos guardados en el primero.\n\nMuestra el número de filas, la letra x y el número de columnas, sin espacios, en una línea por objeto. Las líneas deben ser:\n2x4\n0x3\n1x1\n\nCada línea termina con un salto de línea, incluida la última. Pulsa Compilar, ejecutar y comprobar.",
           "emphasis": [
             {
-              "text": "tres objetos distintos"
+              "text": "tres objetos distintos",
+              "style": "bold"
             },
             {
-              "text": "incluida la última"
+              "text": "antes de consultar el primero",
+              "style": "bold"
             },
             {
-              "text": "Compilar, ejecutar y comprobar"
+              "text": "incluida la última",
+              "style": "bold"
+            },
+            {
+              "text": "Compilar, ejecutar y comprobar",
+              "style": "bold"
             }
           ]
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n\n    return 0;\n}\n",
           "outputCheck": {
             "cases": [
               {
@@ -283,10 +309,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada consulta lee los miembros del objeto de su llamada. Construir una segunda o una tercera dimensión no sustituye las coordenadas de la primera. La salida solicitada debe obtenerse de esas consultas, no de mensajes escritos de antemano.",
+          "text": "Cada consulta lee los miembros del objeto sobre el que se llama. El primer objeto conserva dos filas y cuatro columnas después de que se hayan construido también el segundo y el tercero. Por eso su línea sigue siendo 2x4. Los otros objetos conservan sus propias dimensiones.\n\nLa salida solicitada debe obtenerse de esas consultas, no de mensajes escritos de antemano.",
           "emphasis": [
             {
-              "text": "objeto de su llamada"
+              "text": "objeto sobre el que se llama",
+              "style": "bold"
             }
           ]
         }
@@ -301,17 +328,19 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas();\n    int columnas() { return columnas_; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension dimension{2, 4};\n    std::cout << dimension.filas() << \"x\" << dimension.columnas();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas)\n        : filas_{filas}, columnas_{columnas} {}\n\n    int filas();\n\n    int columnas() {\n        return columnas_;\n    }\n\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension dimension{2, 4};\n\n    std::cout << dimension.filas() << \"x\" << dimension.columnas();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El ejemplo anterior muestra el constructor, una consulta definida fuera de la clase y el uso de un objeto. La referencia completa que sigue conserva esas definiciones y consulta los tres objetos de la actividad.\n\nLos criterios de construcción se mantienen: ambos miembros se inicializan con sus argumentos, la definición exterior usa Dimension:: y cada objeto conserva su propia pareja. No es necesario copiar la organización exacta de la referencia. Este modelo no incluye todavía el rechazo de dimensiones arbitrarias.",
+          "text": "El ejemplo anterior muestra el constructor, una consulta definida fuera de la clase y el uso de un objeto. La referencia completa conserva esas definiciones, construye los tres objetos y sólo después empieza a consultarlos.\n\nLos criterios de construcción son:\nAmbos miembros se inicializan con sus argumentos mediante la lista.\nLa definición exterior se califica con Dimension::.\nCada objeto conserva su propia pareja de filas y columnas.\n\nNo es necesario copiar la organización exacta de la referencia. Este modelo no incluye todavía el rechazo de dimensiones arbitrarias.",
           "emphasis": [
             {
-              "text": "La referencia completa"
+              "text": "La referencia completa",
+              "style": "bold"
             },
             {
-              "text": "ambos miembros se inicializan"
+              "text": "Ambos miembros se inicializan",
+              "style": "bold"
             }
           ]
         },
@@ -324,7 +353,7 @@
             "El orden de declaración de los miembros."
           ],
           "correctIndex": 2,
-          "explanation": "Alinear la escritura con ese orden evita una expectativa equivocada."
+          "explanation": "En Punto, int x_; aparece antes que int y_; en la clase. Por tanto, x_ se inicializa antes que y_ aunque escribamos : y_{y}, x_{x} en la lista del constructor. Después se ejecuta el cuerpo. Escribir los inicializadores en el mismo orden que las declaraciones hace que la lectura siga esa secuencia real."
         },
         {
           "type": "heading",
@@ -333,7 +362,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas();\n    int columnas() { return columnas_; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension primera{2, 4};\n    Dimension segunda{0, 3};\n    Dimension tercera{1, 1};\n    std::cout << primera.filas() << \"x\" << primera.columnas() << \"\\n\";\n    std::cout << segunda.filas() << \"x\" << segunda.columnas() << \"\\n\";\n    std::cout << tercera.filas() << \"x\" << tercera.columnas() << \"\\n\";\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas)\n        : filas_{filas}, columnas_{columnas} {}\n\n    int filas();\n\n    int columnas() {\n        return columnas_;\n    }\n\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension primera{2, 4};\n    Dimension segunda{0, 3};\n    Dimension tercera{1, 1};\n\n    std::cout << primera.filas() << \"x\" << primera.columnas() << \"\\n\";\n    std::cout << segunda.filas() << \"x\" << segunda.columnas() << \"\\n\";\n    std::cout << tercera.filas() << \"x\" << tercera.columnas() << \"\\n\";\n\n    return 0;\n}\n"
         }
       ]
     }
@@ -1235,6 +1264,231 @@
         "id": "block_0005_0002",
         "beforeSha256": "b12f111de6bf6b0227dd94fcbe2477bb2d88bfd9d36b4e2be768429878458282",
         "afterSha256": "009cad6f2efe4ba9836c589dbdf60d8a72ba9edb88732ec5ed334d98813f9f10"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "28cb2c2073085c85bd9770984f7240d60a72a25a0525d681d1319ecbde640a0d",
+        "afterSha256": "e63913bd83dc70d2261e0afba7d090045bd79d4b2d30a8ade05f8b39ac4083d2"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "2fa9e1cf0611c26bf647cc1ef42d865045dea0597fa06f2c168bd3168339a71d",
+        "afterSha256": "99df59afbecab809dab02b605cd8c4cacd8b95aa63bbc6ba023e57bc80b61ecb"
+      },
+      {
+        "id": "block_0000_0003",
+        "beforeSha256": "5c9d67f5cf091aaf9d41b639928c3833291732f1267d75d57b415fd26ac7e476",
+        "afterSha256": "26af220e9ae607fc07e4d8e8c9d4f54fcfd32df21df3b6990b671bf77bba2580"
+      },
+      {
+        "id": "block_0001_0000",
+        "beforeSha256": "45b55c335f12f8f27a55360554d16001f31d0e6f3f2d463345b194814710053c",
+        "afterSha256": "8ac7faa0ca401ab228b280c9348f8a9b46c6a7be5aeaf1d3303f3724bd60f989"
+      },
+      {
+        "id": "block_0001_0001",
+        "beforeSha256": "3abb05bbccda6ad9797894a884b4c4208ed53849d05dd9aadc2f454883dd0626",
+        "afterSha256": "d666f8807f4c5fbf88fc591371162159723b7f5766e1235c470c80f68455c12c"
+      },
+      {
+        "id": "block_0001_0003",
+        "beforeSha256": "5ebb31a9cd888d3c81b58765f0ca6def53f285c5fa1ce58923a7bd202fb003d0",
+        "afterSha256": "1d4720d6e218dc3572d0ba58362938e372924d0a258d5a69b5dc1088eb9a660d"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "f0f3a1b3a9f201e056e8079dd644688f3137b88ce4be8e32cb728ce60717a87c",
+        "afterSha256": "139f994df1beaa4eacc475c49a9595e0582772ae0d30167e724a52ec0cbd607d"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "319eb1e0e072af912d96ff9ef6b98b48982dada6bc500d3c259972b9fc02bf32",
+        "afterSha256": "d0ac2d55642d902ea277896637d289b9cac3519314d3ed14e71a59a7d2da6d30"
+      },
+      {
+        "id": "block_0002_0003",
+        "beforeSha256": "1b17d65700586fd2a6349af13183de7360ae4d17e79e94ecf19a0bdd8c52eddb",
+        "afterSha256": "5db54636a6750296329aaaa3050f48d45cad6e5b47d35347d8d164ba7bc8438b"
+      },
+      {
+        "id": "block_0003_0001",
+        "beforeSha256": "9ad69fe35d34ef9ab01029d903dc5bed8e6af56e69937ede079e8aefbb3abca2",
+        "afterSha256": "8a96adcab0fc85b6cdca02eb0ec1df047b48beb90149d0f2423fecc44b1e9409"
+      },
+      {
+        "id": "block_0003_0003",
+        "beforeSha256": "34da9558df33f101dd1888c8c0e6a018ea91865619467a9ef5d12413ee1cd66f",
+        "afterSha256": "a87ca62ebce94ac9052b9e57d84b7b2f6f5a09a4f031e9eea1e3384323e92b20"
+      },
+      {
+        "id": "block_0004_0001",
+        "beforeSha256": "bfc0ec86c45e953957b4a9e1724c4c9442a4e4cc4bc7231fde3558ecbbb79c31",
+        "afterSha256": "e7870a23f6e627db175046be2aaac7889185fd96a54ce352cdc3877c710dd74f"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "8202801d8ed9214d6a1ac753a9972d8c18b21dde59eb8afd7df56a4efb4fa553",
+        "afterSha256": "ba355ee0c16db44a6636842cd1d2a504e662d2566ed1307d63331652500eaf3b"
+      },
+      {
+        "id": "block_0004_0003",
+        "beforeSha256": "55999f88b34bcf67172c81908cca2de985bc2b00480f63febb0c6eb934466ba7",
+        "afterSha256": "56db719a575272c22674e9d8162b07a27a245631072fa42f2783132fa09f0dfe"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "738c16dec4b08a3e089d551fba6c190010e73862f13a30021070de35a4cb05fc",
+        "afterSha256": "4972ce27266d73f36b5e04db4a045762d788faa702d8a6869f03b22754aabb23"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "009cad6f2efe4ba9836c589dbdf60d8a72ba9edb88732ec5ed334d98813f9f10",
+        "afterSha256": "9cef5c8227f4a896b34110c9a34854f2c2235539ba5c7bc826106e087e411f6c"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "b8aa4902b429c47f9d2878ce95c780567cadd226ea9f15c5da111eff46cbca47",
+        "afterSha256": "980f3452718c723b91d669a08bcf9d44310e48eef34f54af55f1e8f5e7e6e33e"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "b33b999a57f018235d5119c5d23d5743a6f82fd189f2c03cf82ad891e6cb9bc0",
+        "afterSha256": "b325294c906190e7a9f4264ffb563b9dc46d19569f6ff677c256ba9c69528ae0"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "5e709e237052373f6f5c0c2b188759862b76fdd089937916c601ba5da1707928",
+        "afterSha256": "7393f1ffabe67e5f53880cd56624d48871716d91ffb057355f27701c3d48808c"
+      },
+      {
+        "id": "block_0006_0003",
+        "beforeSha256": "b492a2a7e6acbe21067ad57c5f99b3efb2ac3a9a788df3f345d2ca916ea7fc18",
+        "afterSha256": "bc455a887333264df8c64321a82a7c93417c946b3a5bb5f76509765dbb3d831f"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "99a96dca9c1401c84ace786e3bd4c2460d88a80b248fbd912af97b793637074d",
+        "afterSha256": "2d92fbe6fd22ff613462a160d693e7e682ffb6f449f3192a7c0dbcf483d02496"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "8bb02155e1a99bac601adf3638d9fce69f01fdd813c8999aef8d426559e21c67",
+        "afterSha256": "018fe396ab2832a25e531fd1dc5315eb692776e28c6d32b5c1b586a6f2f8fa3e"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "67d10a1aa05ac147fee15fcc7a5e867c47dfd1281986cf12414abe6e62e24201",
+        "afterSha256": "1da5d3a8e63949ac402f30e6eb20c71fc731abdcf0790dbd1e48e9c6fd3a6b52"
+      },
+      {
+        "id": "block_0007_0005",
+        "beforeSha256": "59b47ec5ca0367b0f122020abeca109ecca612773b0cdc53e8592fc4c3bb1eb1",
+        "afterSha256": "d8d724c2e196eb1dac4041e1a6d0635dab1ca1d92a0849eb47fb27a5e4d22bc8"
+      },
+      {
+        "id": "block_0002_0001",
+        "beforeSha256": "139f994df1beaa4eacc475c49a9595e0582772ae0d30167e724a52ec0cbd607d",
+        "afterSha256": "9599683d5bf516fceff9a0e7104987fe4b799c38be585410f27e061995d8f20c"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, -2};\n    std::cout << punto.x() << \",\" << punto.y();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0003",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto a{6, 2};\n    Punto b{-1, 5};\n    std::cout << a.y() << \" \" << b.x();\n    return 0;\n}\n",
+          "answers": [
+            "2 -1"
+          ],
+          "explanation": "a se construye con 6 en x_ y 2 en y_; b, con -1 en x_ y 5 en y_. Primero se consulta a.y(), que devuelve 2, y después b.x(), que devuelve -1. El espacio escrito entre ambas consultas produce 2 -1.",
+          "reviewFeedback": "Identifica el objeto situado antes de cada punto y el miembro que devuelve esa consulta. Lee sus valores iniciales respetando el orden de las dos consultas y conserva el espacio entre los resultados."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del miembro que se inicializa con x en este constructor.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : ___{x}, y_{y} {}\n    int x() { return x_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 7};\n    std::cout << punto.x();\n    return 0;\n}\n",
+          "answers": [
+            "x_"
+          ],
+          "explanation": "x_ es el miembro que debe inicializarse; x es el parámetro del constructor que recibe el primer argumento. En Punto punto{2, 7};, ese argumento es 2. La expresión x_{x} prepara x_ con ese valor, y punto.x() devuelve 2."
+        }
+      },
+      {
+        "id": "block_0003_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto; // Error intencional: esta versión exige dos coordenadas.\n    std::cout << punto.x();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y);\n    int x();\nprivate:\n    int x_;\n    int y_;\n};\n\nPunto::Punto(int x, int y) : x_{x}, y_{y} {}\n\nint Punto::x() {\n    return x_;\n}\n\nint main() {\n    Punto punto{8, 1};\n    std::cout << punto.x();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto original{1, 9};\n    Punto copia = original;\n    original = Punto{4, 5};\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << original.x() << \",\" << original.y();\n    return 0;\n}\n",
+          "answers": [
+            "1,9 4,5"
+          ],
+          "explanation": "Al crear copia, original contiene las coordenadas 1 y 9, que se copian en otro objeto. Después, original = Punto{4, 5}; reemplaza las dos coordenadas de original por 4 y 5. copia conserva las anteriores; por eso se imprime 1,9 4,5."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n",
+          "outputCheck": {
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "2x4\n0x3\n1x1\n"
+                ],
+                "explanation": "El constructor inicializa los miembros de cada objeto y las consultas leen ese objeto. La dimensión con cero se conserva como un dato permitido de este modelo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0007_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas();\n    int columnas() { return columnas_; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension dimension{2, 4};\n    std::cout << dimension.filas() << \"x\" << dimension.columnas();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0005",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas();\n    int columnas() { return columnas_; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension primera{2, 4};\n    Dimension segunda{0, 3};\n    Dimension tercera{1, 1};\n    std::cout << primera.filas() << \"x\" << primera.columnas() << \"\\n\";\n    std::cout << segunda.filas() << \"x\" << segunda.columnas() << \"\\n\";\n    std::cout << tercera.filas() << \"x\" << tercera.columnas() << \"\\n\";\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -1264,54 +1518,103 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "724b89e4572e0fcc666783e324fe1118a8490953d97a4735ffe0f7a5b01b5740",
+        "sourceSha256": "8a25d7244f9ad439b158c72d65cc468775598fefbd7e55bd76a31ae361caa461",
         "spans": [
           {
-            "start": 3,
-            "end": 8,
+            "start": 20,
+            "end": 25,
             "text": "Punto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 196,
-            "end": 214,
+            "start": 35,
+            "end": 38,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 347,
+            "end": 365,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 266,
-            "end": 271,
+            "start": 386,
+            "end": 406,
+            "text": "Punto(int x, int y);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 441,
+            "end": 446,
             "text": "Punto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 346,
-            "end": 350,
+            "start": 521,
+            "end": 525,
             "text": "void",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 355,
-            "end": 374,
+            "start": 531,
+            "end": 534,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 535,
+            "end": 538,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 645,
+            "end": 664,
             "text": "Punto punto{3, -2};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 391,
-            "end": 392,
-            "text": "3",
+            "start": 684,
+            "end": 689,
+            "text": "punto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 395,
-            "end": 397,
+            "start": 733,
+            "end": 734,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 754,
+            "end": 755,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 770,
+            "end": 772,
             "text": "-2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 792,
+            "end": 793,
+            "text": "y",
             "role": "cpp",
             "reading": "technical"
           }
@@ -1320,7 +1623,7 @@
       {
         "block": "block_0000_0002",
         "path": "/text",
-        "sourceSha256": "1e3f6a29c6da044429a557234532b3b6b3ece00147c3e7321bcf9394913b49ae",
+        "sourceSha256": "5cab7db3ba447f9322c41b11e3ca3ce76364650cb1a2da103ec3105136635cbc",
         "spans": [
           {
             "start": 3,
@@ -1337,57 +1640,120 @@
             "reading": "technical"
           },
           {
-            "start": 204,
-            "end": 222,
+            "start": 219,
+            "end": 237,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 229,
-            "end": 231,
-            "text": "x_",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 234,
-            "end": 236,
-            "text": "y_",
+            "start": 243,
+            "end": 248,
+            "text": "x_{x}",
             "role": "cpp",
             "reading": "technical"
           },
           {
             "start": 264,
-            "end": 265,
+            "end": 266,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 298,
+            "end": 299,
             "text": "x",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 268,
-            "end": 269,
+            "start": 304,
+            "end": 309,
+            "text": "y_{y}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 325,
+            "end": 327,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 359,
+            "end": 360,
             "text": "y",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 456,
-            "end": 476,
+            "start": 379,
+            "end": 398,
+            "text": "Punto punto{3, -2};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 411,
+            "end": 413,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 436,
+            "end": 440,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 454,
+            "end": 456,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 461,
+            "end": 470,
+            "text": "menos dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 489,
+            "end": 491,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 494,
+            "end": 496,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 635,
+            "end": 655,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 502,
-            "end": 504,
+            "start": 700,
+            "end": 702,
             "text": "{}",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 597,
-            "end": 600,
+            "start": 870,
+            "end": 873,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -1397,7 +1763,7 @@
       {
         "block": "block_0001_0000",
         "path": "/text",
-        "sourceSha256": "43f30ecd78b81b0d1ebbd285ac226603367ecf4036cc950cc47dc084876f4a59",
+        "sourceSha256": "e53d27db76526ce310d8d5e88aa1c68f3de64041177fd1d6c59feed7ff1820a5",
         "spans": []
       },
       {
@@ -1413,6 +1779,13 @@
             "reading": "technical"
           },
           {
+            "start": 55,
+            "end": 58,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 71,
             "end": 74,
             "text": "int",
@@ -1424,8 +1797,44 @@
       {
         "block": "block_0001_0001",
         "path": "/explanation",
-        "sourceSha256": "a84716da5bb7a93f74703d8f011b813a00ab4f16e20ec00d3aa5db204e7acb6c",
-        "spans": []
+        "sourceSha256": "e3b0a9a28b781c413b2fdbc82f30dc7c2f658f7b5558f2179cb051547c37e0df",
+        "spans": [
+          {
+            "start": 15,
+            "end": 35,
+            "text": "Punto(int x, int y);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 75,
+            "end": 78,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 127,
+            "end": 132,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 224,
+            "end": 249,
+            "text": "void Punto(int x, int y);",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 252,
+            "end": 276,
+            "text": "int Punto(int x, int y);",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0001_0001",
@@ -1494,6 +1903,13 @@
             "text": "Punto",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 71,
+            "end": 74,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1508,6 +1924,13 @@
             "text": "int",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 144,
+            "end": 147,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -1791,7 +2214,15 @@
         "block": "block_0001_0003",
         "path": "/reviewFeedback",
         "sourceSha256": "42c40c25063602a5d219fa1ecbac12fd944bf2b814b1817ef6b51375c47e9fc8",
-        "spans": []
+        "spans": [
+          {
+            "start": 142,
+            "end": 145,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0000",
@@ -1802,7 +2233,7 @@
       {
         "block": "block_0002_0001",
         "path": "/text",
-        "sourceSha256": "604541a7365602354d2211aab322f11e8fd9b94e847a32a78264e46c32d36839",
+        "sourceSha256": "0a0e32c65487eac166708c54c0752f792858d02ea297382d72d6ed1d27ed65d3",
         "spans": [
           {
             "start": 244,
@@ -1812,29 +2243,92 @@
             "reading": "technical"
           },
           {
-            "start": 266,
-            "end": 272,
+            "start": 262,
+            "end": 263,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 293,
+            "end": 296,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 298,
+            "end": 304,
             "text": "int x;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 296,
-            "end": 302,
+            "start": 312,
+            "end": 313,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 378,
+            "end": 384,
             "text": "x = 2;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 303,
-            "end": 321,
+            "start": 404,
+            "end": 407,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 426,
             "text": "(Stroustrup, 2024)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 402,
-            "end": 405,
+            "start": 440,
+            "end": 445,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 447,
+            "end": 452,
+            "text": "x_{x}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 488,
+            "end": 490,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 533,
+            "end": 534,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 583,
+            "end": 590,
+            "text": "x_ = x;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 672,
+            "end": 675,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
@@ -1921,32 +2415,81 @@
       {
         "block": "block_0002_0003",
         "path": "/text",
-        "sourceSha256": "0564c5f605458eaee97dc167759ff1d906c27254a5176f0b6652148ef241a68b",
+        "sourceSha256": "8e86910fe1eca54ab4694bbd4f5e638674b5c88ce0b7b4c388c9886146091e47",
         "spans": [
           {
-            "start": 123,
-            "end": 143,
+            "start": 132,
+            "end": 152,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 150,
-            "end": 155,
+            "start": 157,
+            "end": 162,
             "text": "Punto",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 172,
-            "end": 174,
+            "start": 174,
+            "end": 181,
+            "text": "int x_;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 191,
+            "end": 198,
+            "text": "int y_;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 269,
+            "end": 271,
             "text": "x_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 185,
-            "end": 187,
+            "start": 299,
+            "end": 300,
+            "text": "x",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 316,
+            "end": 318,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 346,
+            "end": 347,
+            "text": "y",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 458,
+            "end": 472,
+            "text": ": y_{y}, x_{x}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 520,
+            "end": 522,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 533,
+            "end": 535,
             "text": "y_",
             "role": "cpp",
             "reading": "technical"
@@ -2019,6 +2562,13 @@
             "text": "Punto punto{};",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 210,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -2067,8 +2617,15 @@
       {
         "block": "block_0003_0003",
         "path": "/text",
-        "sourceSha256": "75039b9ca72ee97be736a7dc251d04f33db479ba64e9d45e29318c20e1907e1f",
+        "sourceSha256": "e9dd8baca3ea7548c653f03078ca576fae0f3512b9054eea418250c2f71a19cd",
         "spans": [
+          {
+            "start": 49,
+            "end": 52,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 120,
             "end": 140,
@@ -2077,15 +2634,15 @@
             "reading": "natural"
           },
           {
-            "start": 148,
-            "end": 160,
+            "start": 188,
+            "end": 200,
             "text": "Punto punto;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 180,
+            "start": 201,
+            "end": 215,
             "text": "Punto punto{};",
             "role": "cpp",
             "reading": "technical"
@@ -2101,7 +2658,7 @@
       {
         "block": "block_0004_0001",
         "path": "/text",
-        "sourceSha256": "6412da3c83abd532c7266f784eb80b0be1ef43d11b2f9e645577454b4091c453",
+        "sourceSha256": "ca46bc801a7cfa1a14520b3bd82d5a55bafb37fa270bee6d861f3bb303bf2c53",
         "spans": [
           {
             "start": 192,
@@ -2111,43 +2668,78 @@
             "reading": "natural"
           },
           {
-            "start": 216,
-            "end": 230,
+            "start": 231,
+            "end": 239,
+            "text": "int x();",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 259,
+            "end": 264,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 329,
+            "end": 343,
             "text": "int Punto::x()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 232,
-            "end": 239,
+            "start": 356,
+            "end": 363,
             "text": "Punto::",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 279,
-            "end": 280,
-            "text": "x",
+            "start": 421,
+            "end": 430,
+            "text": "punto.x()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 291,
-            "end": 298,
+            "start": 457,
+            "end": 462,
+            "text": "punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 479,
+            "end": 489,
+            "text": "return x_;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 540,
+            "end": 547,
             "text": "int x()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 410,
-            "end": 412,
+            "start": 634,
+            "end": 639,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 701,
+            "end": 703,
             "text": "x_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 428,
-            "end": 454,
+            "start": 756,
+            "end": 782,
             "text": "Punto::Punto(int x, int y)",
             "role": "cpp",
             "reading": "technical"
@@ -2171,8 +2763,44 @@
       {
         "block": "block_0004_0003",
         "path": "/explanation",
-        "sourceSha256": "ac6b95f1c8e86d290ee516677dd869cc68fad22e0e0820d11f372adf4a82810f",
-        "spans": []
+        "sourceSha256": "af0d84c58ed73adc7d86b849f68ec707ce6b5a364b4f8f3146d502d84298182a",
+        "spans": [
+          {
+            "start": 3,
+            "end": 29,
+            "text": "Punto::Punto(int x, int y)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 40,
+            "end": 47,
+            "text": "Punto::",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 94,
+            "end": 99,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 127,
+            "end": 132,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 268,
+            "end": 282,
+            "text": "int Punto::x()",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -2224,7 +2852,7 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "47d794b938ccc46c012972421289b9abb174cf670033aadf47a26332ea503592",
+        "sourceSha256": "dee55ff5ca4bd4ebfe1c7060b092c4bcd3a82c30cf6424a0d2ecb1773f5c784a",
         "spans": [
           {
             "start": 191,
@@ -2241,32 +2869,74 @@
             "reading": "natural"
           },
           {
-            "start": 474,
-            "end": 497,
+            "start": 475,
+            "end": 498,
             "text": "Punto copia = original;",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 557,
-            "end": 580,
+            "start": 549,
+            "end": 552,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 565,
+            "end": 573,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 690,
+            "end": 693,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 704,
+            "end": 727,
             "text": "original = Punto{4, 5};",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 671,
-            "end": 691,
-            "text": "(Köppe et al., 2023)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 701,
-            "end": 709,
+            "start": 740,
+            "end": 748,
             "text": "original",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 773,
+            "end": 784,
+            "text": "Punto{4, 5}",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 861,
+            "end": 864,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 888,
+            "end": 896,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 983,
+            "end": 1003,
+            "text": "(Köppe et al., 2023)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -2315,6 +2985,13 @@
             "text": "original = Punto{4, 5};",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 134,
+            "end": 137,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 153,
@@ -2377,8 +3054,44 @@
       {
         "block": "block_0005_0003",
         "path": "/explanation",
-        "sourceSha256": "16a55df3c4dd2dfc59f1e74ea0066ded6d40ddf751b6063f41f6816e49eb795a",
-        "spans": []
+        "sourceSha256": "8f7d54e7b254fad2b0132c08ee02571c54746b53374f2ec0696f85ecc8dbad06",
+        "spans": [
+          {
+            "start": 0,
+            "end": 21,
+            "text": "Punto original{1, 9};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 27,
+            "end": 35,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 53,
+            "end": 56,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 78,
+            "end": 101,
+            "text": "original = Punto{4, 5};",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 115,
+            "end": 123,
+            "text": "original",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0005_0003",
@@ -2407,123 +3120,172 @@
       {
         "block": "block_0006_0001",
         "path": "/text",
-        "sourceSha256": "e1e635f8e74c2a112561dd5e803d98a25883ba165f86d3f5d120ca2bb17b2b71",
+        "sourceSha256": "f8bd9f8a3d3992095a6b3160c4704bd9c4c3324fd2badc64a6d8fe509f32c81b",
         "spans": [
           {
-            "start": 7,
-            "end": 16,
+            "start": 16,
+            "end": 25,
             "text": "Dimension",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 21,
-            "end": 27,
+            "start": 30,
+            "end": 33,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 53,
+            "end": 59,
             "text": "filas_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 30,
-            "end": 39,
+            "start": 62,
+            "end": 71,
             "text": "columnas_",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 76,
-            "end": 79,
+            "start": 103,
+            "end": 106,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 110,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 166,
-            "end": 173,
+            "start": 208,
+            "end": 215,
             "text": "filas()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 176,
-            "end": 186,
+            "start": 218,
+            "end": 228,
             "text": "columnas()",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 289,
-            "end": 300,
+            "start": 336,
+            "end": 347,
             "text": "Dimension::",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 306,
-            "end": 310,
+            "start": 353,
+            "end": 357,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 360,
-            "end": 365,
-            "text": "{2,4}",
+            "start": 369,
+            "end": 373,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 382,
-            "end": 387,
-            "text": "{0,3}",
+            "start": 439,
+            "end": 442,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 405,
-            "end": 410,
-            "text": "{1,1}",
+            "start": 451,
+            "end": 457,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 468,
-            "end": 472,
+            "start": 484,
+            "end": 488,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 475,
-            "end": 479,
+            "start": 497,
+            "end": 501,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 527,
+            "end": 530,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 538,
+            "end": 541,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 608,
+            "end": 612,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 615,
+            "end": 619,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 574,
-            "end": 588,
-            "text": "filasxcolumnas",
-            "role": "output",
+            "start": 677,
+            "end": 681,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 638,
-            "end": 641,
+            "start": 918,
+            "end": 919,
+            "text": "x",
+            "role": "output",
+            "reading": "characters"
+          },
+          {
+            "start": 1006,
+            "end": 1009,
             "text": "2x4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 643,
-            "end": 646,
+            "start": 1010,
+            "end": 1013,
             "text": "0x3",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 649,
-            "end": 652,
+            "start": 1014,
+            "end": 1017,
             "text": "1x1",
             "role": "output",
             "reading": "natural"
@@ -2547,8 +3309,30 @@
       {
         "block": "block_0006_0003",
         "path": "/text",
-        "sourceSha256": "271109b3c418216d35946e2b995b4f3c545f98269bafdc49772a17d54619fba3",
-        "spans": []
+        "sourceSha256": "45ca804fce138674fe45f74fbc562cc89e97d7189c6cccb1a4b71f588ec7661b",
+        "spans": [
+          {
+            "start": 91,
+            "end": 94,
+            "text": "dos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 103,
+            "end": 109,
+            "text": "cuatro",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 220,
+            "text": "2x4",
+            "role": "output",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0000",
@@ -2559,11 +3343,18 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "a1caabdcabc563e0da7d4b572804330301b1935c5e576ddf82d64458b362e001",
+        "sourceSha256": "ab1c74979c68579c46def9f7a9b0ed8c588e16d9a3c32ffdd7c38e0b8ea8cbab",
         "spans": [
           {
-            "start": 334,
-            "end": 345,
+            "start": 172,
+            "end": 176,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 367,
+            "end": 378,
             "text": "Dimension::",
             "role": "cpp",
             "reading": "technical"
@@ -2579,8 +3370,51 @@
       {
         "block": "block_0007_0003",
         "path": "/explanation",
-        "sourceSha256": "ba90c857bdc6fe13fc0b6032661a1cdbdc2468e6629c22598827b2bae876f7f0",
-        "spans": []
+        "sourceSha256": "1d31ebcf18f835b4fabd42aae8ae492e6cf72022f248a502c86bd476b7e750c4",
+        "spans": [
+          {
+            "start": 3,
+            "end": 8,
+            "text": "Punto",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 10,
+            "end": 17,
+            "text": "int x_;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 36,
+            "end": 43,
+            "text": "int y_;",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 68,
+            "end": 70,
+            "text": "x_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 95,
+            "end": 97,
+            "text": "y_",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 116,
+            "end": 130,
+            "text": ": y_{y}, x_{x}",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0007_0003",

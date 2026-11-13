@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Dos partes de un programa pueden necesitar una función llamada f con un parámetro int y reglas distintas. No se resuelve escribiendo dos definiciones de esa misma función libre en el mismo ámbito.\n\nUn espacio de nombres agrupa declaraciones bajo un nombre (Stroustrup, 2024). Paso::f y Eco::f identifican funciones diferentes aunque compartan el nombre corto y el tipo de parámetro.",
+          "text": "Dos partes de un programa pueden necesitar una función llamada f que reciba un int y aplique reglas distintas. Escribir dos cuerpos para f(int) en el mismo ámbito intentaría definir dos veces la misma función; el compilador rechaza esa duplicación.\n\nUn espacio de nombres agrupa declaraciones bajo un nombre. Paso::f y Eco::f identifican funciones diferentes, aunque su nombre corto sea f y ambas reciban un int (Stroustrup, 2024).",
           "emphasis": [
             {
               "text": "espacio de nombres",
@@ -25,7 +25,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Paso {\n    int f(int valor) {\n        return valor + 2;\n    }\n}\n\nnamespace Eco {\n    int f(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::f(4) << \" \" << Eco::f(4);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int f(int valor) {\n        return valor + 2;\n    }\n}\n\nnamespace Eco {\n    int f(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::f(4) << \" \" << Eco::f(4);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -87,7 +87,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(1);\n    std::cout << \" \" << Eco::avanzar(2);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(1);\n    std::cout << \" \" << Eco::avanzar(2);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -103,7 +103,7 @@
           "type": "output_prediction",
           "question": "Predice los dos resultados de estas composiciones entre espacios.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(Eco::avanzar(2));\n    std::cout << \" \" << Eco::avanzar(Paso::avanzar(1));\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(Eco::avanzar(2));\n    std::cout << \" \" << Eco::avanzar(Paso::avanzar(1));\n\n    return 0;\n}\n",
           "answers": [
             "10 9"
           ],
@@ -134,7 +134,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Escala {\n    int transformar(int valor);\n}\n\nint main() {\n    std::cout << Escala::transformar(3);\n    return 0;\n}\n\nnamespace Escala {\n    int transformar(int valor) {\n        return valor * 2 + 1;\n    }\n}\n"
+          "code": "#include <iostream>\n\nnamespace Escala {\n    int transformar(int valor);\n}\n\nint main() {\n    std::cout << Escala::transformar(3);\n\n    return 0;\n}\n\nnamespace Escala {\n    int transformar(int valor) {\n        return valor * 2 + 1;\n    }\n}\n"
         },
         {
           "type": "paragraph",
@@ -188,7 +188,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nnamespace Salto {\n    int siguiente(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using Camino::siguiente;\n    using std::cout;\n    cout << siguiente(4) << \" \" << Salto::siguiente(4);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nnamespace Salto {\n    int siguiente(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using Camino::siguiente;\n    using std::cout;\n\n    cout << siguiente(4) << \" \" << Salto::siguiente(4);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -240,7 +240,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nint main() {\n    using namespace Camino;\n    std::cout << siguiente(2) << \" \" << inicio();\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nint main() {\n    using namespace Camino;\n\n    std::cout << siguiente(2) << \" \" << inicio();\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -255,7 +255,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Norte {\n    int f(int valor) {\n        return valor + 4;\n    }\n}\n\nnamespace Sur {\n    int f(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using namespace Norte;\n    using namespace Sur;\n    std::cout << f(3);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nnamespace Norte {\n    int f(int valor) {\n        return valor + 4;\n    }\n}\n\nnamespace Sur {\n    int f(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using namespace Norte;\n    using namespace Sur;\n\n    std::cout << f(3);\n\n    return 0;\n}\n"
         },
         {
           "type": "multiple_choice",
@@ -282,7 +282,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Una directiva no obliga a que toda búsqueda elija el miembro de su espacio. En este ejemplo se encuentra el nombre local limite en el bloque de main; Lectura::limite identifica explícitamente el otro objeto (Köppe et al., 2023).\n\nLos dos son objetos de sólo lectura, pero sus nombres cualificados y valores permiten distinguirlos.",
+          "text": "En el ejemplo, main declara su propio objeto limite con valor dos. Al escribir limite dentro de ese bloque se encuentra ese objeto local. Para consultar el otro objeto, cuyo valor es seis, se escribe Lectura::limite: el nombre Lectura identifica el espacio al que pertenece (Köppe et al., 2023).\n\nAmbos objetos son constantes. La directiva using namespace Lectura no obliga a que el nombre local limite se refiera al objeto del espacio de nombres.",
           "emphasis": [
             {
               "text": "el nombre local limite",
@@ -293,7 +293,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Lectura {\n    const int limite = 6;\n}\n\nint main() {\n    using namespace Lectura;\n    const int limite = 2;\n    std::cout << limite << \":\" << Lectura::limite;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n\nnamespace Lectura {\n    const int limite = 6;\n}\n\nint main() {\n    using namespace Lectura;\n\n    const int limite = 2;\n\n    std::cout << limite << \":\" << Lectura::limite;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -318,7 +318,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Seleccionar miembros concretos reduce lo que participa en la búsqueda, pero no hace imposibles todos los conflictos (Köppe et al., 2023).\n\nPor ejemplo, using Norte::f y using Sur::f todavía dejan ambigua f(3) si ambas funciones reciben int. Comprueba el nombre, el ámbito y los parámetros; using no elige automáticamente una política por ti.",
+          "text": "Seleccionar miembros concretos reduce los nombres que se hacen disponibles, pero todavía puede haber conflictos (Köppe et al., 2023).\n\nPor ejemplo, using Norte::f y using Sur::f dejan disponibles dos funciones f(int). La llamada f(3) sigue siendo ambigua porque ninguna de ellas es una candidata mejor. Comprueba el nombre, el ámbito y los parámetros; using no decide automáticamente qué función pretendías llamar.",
           "emphasis": [
             {
               "text": "el nombre, el ámbito y los parámetros",
@@ -358,7 +358,7 @@
           "type": "output_prediction",
           "question": "Predice ambas salidas, distinguiendo la selección del nombre y la de su sobrecarga.",
           "language": "cpp",
-          "code": "#include <iostream>\n\nnamespace Ajuste {\n    int proponer(int nivel) {\n        return nivel + 1;\n    }\n\n    double proponer(double nivel) {\n        return nivel + 0.5;\n    }\n}\n\nint main() {\n    using Ajuste::proponer;\n    std::cout << proponer(4) << \" \" << proponer(4.0);\n    return 0;\n}\n",
+          "code": "#include <iostream>\n\nnamespace Ajuste {\n    int proponer(int nivel) {\n        return nivel + 1;\n    }\n\n    double proponer(double nivel) {\n        return nivel + 0.5;\n    }\n}\n\nint main() {\n    using Ajuste::proponer;\n\n    std::cout << proponer(4) << \" \" << proponer(4.0);\n\n    return 0;\n}\n",
           "answers": [
             "5 4.5"
           ],
@@ -395,7 +395,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye un plan para varios pedidos de piezas. La colección contiene hasta 6 cantidades, cada una entre 0 y 20. Antes de calcular o presentar totales, valida toda la colección mediante una función en namespace Pedido que sólo la lea.\n\nSi una cantidad o el tamaño incumple el dominio, la única salida es Pedido invalido. La colección vacía es válida. El programa conserva los elementos, el tamaño y el orden de la colección.",
+          "text": "Construye un plan para varios pedidos de piezas. La colección admite estos datos:\n\nComo máximo seis pedidos.\nEntre cero y veinte piezas en cada pedido.\nTambién se admite una colección vacía.\n\nAntes de calcular o presentar totales, valida toda la colección mediante una función en namespace Pedido que sólo la lea. Si una cantidad o el tamaño incumple el dominio, la única salida es Pedido invalido. Conserva los elementos, el tamaño y el orden de la colección.",
           "emphasis": [
             {
               "text": "valida toda la colección",
@@ -409,39 +409,27 @@
         },
         {
           "type": "paragraph",
-          "text": "Cada pedido se empaqueta por separado. namespace Estuches contiene int necesarios(int piezas): devuelve cuántos estuches de capacidad 4 hacen falta, contando uno más cuando queda un resto. namespace Cajas contiene otra int necesarios(int piezas): aplica esa regla a cajas de capacidad 7.\n\nUna cantidad 0 necesita 0 recipientes. No sumes todas las piezas antes de empaquetar: los sobrantes de pedidos distintos no comparten recipiente.",
+          "text": "Cada pedido se empaqueta por separado. Construye estas dos funciones:\n\nEn namespace Estuches, int necesarios(int piezas) calcula cuántos estuches de capacidad cuatro hacen falta.\nEn namespace Cajas, otra int necesarios(int piezas) calcula cuántas cajas de capacidad siete hacen falta.\n\nEn cada regla, cuenta otro recipiente cuando quedan piezas fuera de los recipientes completos. Un pedido sin piezas necesita cero recipientes. No sumes primero las piezas de todos los pedidos: los sobrantes de pedidos distintos no comparten recipiente.",
           "emphasis": [
             {
               "text": "Cada pedido se empaqueta por separado.",
               "style": "bold"
-            },
-            {
-              "text": "capacidad 4",
-              "style": "bold"
-            },
-            {
-              "text": "capacidad 7",
-              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Acumula las necesidades de cada pedido. Presenta Estuches: N y después Cajas: N, una etiqueta por línea con un espacio antes del número.\n\nEn main, usa una declaración using local para necesarios de una de las políticas y cualifica las llamadas de la otra. No introduzcas directivas amplias. Conserva los datos y contadores locales; las dos funciones homónimas deben pertenecer a espacios diferentes.",
+          "text": "Acumula los recipientes que necesita cada pedido. Presenta dos líneas:\n\nEstuches: N\nCajas: N\n\nSustituye cada N por el total de esa clase de recipiente y deja un espacio después de los dos puntos.\n\nEn main, escribe una declaración using local para necesarios de una de las reglas y utiliza el nombre cualificado en las llamadas de la otra. Conserva los datos y contadores locales. Las dos funciones llamadas necesarios deben pertenecer a espacios de nombres diferentes.",
           "emphasis": [
             {
               "text": "una declaración using local",
               "style": "bold"
-            },
-            {
-              "text": "espacios diferentes",
-              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "El caso inicial {1, 5, 8} debe producir Estuches: 5 y Cajas: 4, cada rótulo en su propia línea. Pulsa «Compilar, ejecutar y comprobar»; el salto final es opcional.\n\nRevisa también la pertenencia de necesarios y el using local. Obtener dos números correctos no demuestra por sí solo qué funciones se llamaron. Las actividades posteriores comparan otros pedidos.",
+          "text": "El caso inicial contiene los pedidos {1, 5, 8}. Debe mostrar:\n\nEstuches: 5\nCajas: 4\n\nPulsa «Compilar, ejecutar y comprobar». Un acierto en este caso permite avanzar; el salto final es opcional.\n\nRevisa también a qué espacio pertenece cada función necesarios y qué nombre selecciona el using local. La comprobación de salida contrasta los números, pero no demuestra por sí sola qué funciones se llamaron. Las actividades posteriores permiten probar otros pedidos.",
           "emphasis": [
             {
               "text": "Estuches: 5",
@@ -541,7 +529,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Pulsa «Compilar, ejecutar y comprobar». Mantén las mismas funciones y cambia sólo Entrada entre los diez casos. Conserva la validación en Pedido, los dos espacios con sus funciones homónimas y el using local solicitado. Revisa también que las llamadas seleccionan la política prevista y que los totales reúnen pedidos independientes."
+          "text": "Pulsa «Compilar, ejecutar y comprobar». Para avanzar, basta con acertar el primer caso:\n\nEntrada: 4 0 4 7 20\nSalida:\nEstuches: 8\nCajas: 5\n\nLos otros nueve casos son ensayos opcionales. Sus entradas y salidas están separadas arriba; cambia sólo Entrada para probar el mismo programa con cualquiera de ellos.\n\nConserva la validación en Pedido, las dos funciones necesarios en espacios diferentes y el using local solicitado. Revisa que cada llamada seleccione la regla prevista y que los totales se acumulen por pedido."
         },
         {
           "type": "cpp_compiler",
@@ -789,11 +777,11 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {0, 7, 15};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {0, 7, 15};\n\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n\n    int total_estuches = 0;\n    int total_cajas = 0;\n\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "Esta referencia produce Estuches: 6 y Cajas: 4. Debe conservar los totales por pedido, la validación anterior al cálculo, el vector original y las dos funciones homónimas en espacios distintos.\n\nUna implementación que divide y comprueba el resto puede obtener el mismo resultado que la fórmula de redondeo mostrada. La cualificación y el atajo local deben seleccionar siempre la política prevista.",
+          "text": "Esta referencia muestra dos líneas:\n\nEstuches: 6\nCajas: 4\n\nConserva el cálculo de recipientes por pedido, la validación antes de calcular, el vector original y las dos funciones necesarios en espacios distintos.\n\nPuedes calcular los recipientes mediante división y resto, o mediante la fórmula de redondeo de la referencia. En ambos casos, cada llamada debe seleccionar la regla prevista, tanto si usa el nombre cualificado como el nombre seleccionado por using.",
           "emphasis": [
             {
               "text": "Estuches: 6",
@@ -802,22 +790,12 @@
             {
               "text": "Cajas: 4",
               "style": "bold"
-            },
-            {
-              "text": "la política prevista",
-              "style": "bold"
             }
           ]
         },
         {
           "type": "paragraph",
-          "text": "Para el caso inicial los totales son 5 y 4. En {0, 4, 7, 20} son 8 y 5; en vacío, 0 y 0; para seis pedidos de 20 piezas cada uno, los totales son 30 estuches y 18 cajas. Un solo pedido con 0, 4 o 7 piezas permite revisar los casos de frontera de cada capacidad.\n\nUn dato -1 o 21, o una colección de 7 elementos, se rechaza sin presentar las líneas de totales. También es válido seleccionar localmente necesarios de Cajas y cualificar Estuches: cambia el atajo, pero se conserva la selección de cada política.",
-          "emphasis": [
-            {
-              "text": "sin presentar las líneas de totales",
-              "style": "bold"
-            }
-          ]
+          "text": "Estos ejemplos comparan los totales de estuches y cajas:\n\nPedidos {1, 5, 8}: cinco estuches y cuatro cajas.\nPedidos {0, 4, 7, 20}: ocho estuches y cinco cajas.\nColección vacía: cero estuches y cero cajas.\nSeis pedidos de veinte piezas cada uno: treinta estuches y dieciocho cajas.\n\nUn pedido con una cantidad de piezas igual a menos uno o a veintiuno, o una colección de siete pedidos, se rechaza sin mostrar totales. Los pedidos de cero, cuatro y siete piezas permiten probar las capacidades exactas y la ausencia de piezas.\n\nTambién puedes seleccionar localmente necesarios de Cajas y cualificar Estuches: cambia el nombre corto disponible, pero cada llamada debe seguir seleccionando la regla que corresponde."
         },
         {
           "type": "note",
@@ -829,25 +807,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El programa siguiente prepara la colección leyendo primero su tamaño y después sus valores. La entrada de esta actividad contiene siempre un tamaño no negativo y el número correspondiente de enteros válidamente escritos. Algunos incumplen deliberadamente el dominio del pedido.\n\nComprueba estos nueve casos mediante Entrada: 4 0 4 7 20; 0; 6 20 20 20 20 20 20; 1 0; 1 4; 1 7; 1 -1; 1 21; 7 0 0 0 0 0 0 0. Los tres últimos deben mostrar únicamente Pedido invalido.\n\nPulsa «Compilar, ejecutar y comprobar». Conserva el programa al variar sólo Entrada entre los casos; el salto final es opcional.",
-          "emphasis": [
-            {
-              "text": "estos nueve casos",
-              "style": "bold"
-            },
-            {
-              "text": "únicamente Pedido invalido",
-              "style": "bold"
-            },
-            {
-              "text": "variar sólo Entrada",
-              "style": "bold"
-            }
-          ]
+          "text": "El programa prepara la colección leyendo primero su tamaño y después sus valores. La entrada contiene siempre un tamaño no negativo y el número correspondiente de enteros válidamente escritos. Algunos datos incumplen deliberadamente el dominio del pedido.\n\nCaso inicial obligatorio\nEntrada: 4 0 4 7 20\nSalida:\nEstuches: 8\nCajas: 5\n\nEnsayos opcionales\nEntrada: 0 → Salida: Estuches: 0 y Cajas: 0\nEntrada: 6 20 20 20 20 20 20 → Salida: Estuches: 30 y Cajas: 18\nEntrada: 1 0 → Salida: Estuches: 0 y Cajas: 0\nEntrada: 1 4 → Salida: Estuches: 1 y Cajas: 1\nEntrada: 1 7 → Salida: Estuches: 2 y Cajas: 1\nEntrada: 1 -1 → Salida: Pedido invalido\nEntrada: 1 21 → Salida: Pedido invalido\nEntrada: 7 0 0 0 0 0 0 0 → Salida: Pedido invalido\n\nEn cada aceptación, Estuches y Cajas aparecen en líneas separadas, en ese orden. El rechazo ocupa una sola línea. El salto final es opcional.\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». Un acierto en el caso inicial permite avanzar; los demás ensayos no bloquean el progreso."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    std::vector<int> piezas;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        piezas.push_back(dato);\n    }\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    std::vector<int> piezas;\n    int cantidad_entrada{0};\n\n    std::cin >> cantidad_entrada;\n\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        piezas.push_back(dato);\n    }\n\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n\n    int total_estuches = 0;\n    int total_cajas = 0;\n\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "tokens",
             "cases": [
@@ -930,7 +894,7 @@
           "type": "output_prediction",
           "question": "Predice las dos líneas para pedidos distintos, conservando el empaquetado independiente.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {3, 9, 0};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {3, 9, 0};\n\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n\n    int total_estuches = 0;\n    int total_cajas = 0;\n\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n\n    return 0;\n}\n",
           "answers": [
             "Estuches: 4\nCajas: 3"
           ],
@@ -940,7 +904,7 @@
           "type": "output_prediction",
           "question": "Predice toda la salida cuando uno de los pedidos incumple el dominio.",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {2, -1, 4};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {2, -1, 4};\n\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n\n    int total_estuches = 0;\n    int total_cajas = 0;\n\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n\n    return 0;\n}\n",
           "answers": [
             "Pedido invalido"
           ],
@@ -2800,6 +2764,320 @@
         "id": "block_0009_0004",
         "beforeSha256": "56557963f0595b611d7b52b9dc6889f9f76848f5c3eda71ab7900d510a72e15c",
         "afterSha256": "3859bcde84c1d20fcbd6c94ade6e1e0f375b62162769980a008519dbf33e8c0e"
+      },
+      {
+        "id": "block_0000_0001",
+        "beforeSha256": "2e3b49ff2c718869755028e0209b0f95c4a311f8c68248d99fc484d7b6f5cb88",
+        "afterSha256": "e01cc3746bc38f9ba1f61e798d39adaf8a83df9199cb726d59055a6da847c6b9"
+      },
+      {
+        "id": "block_0000_0002",
+        "beforeSha256": "a1f7d3ecde7e5f87229943720b0db65263675047e6c948fddd62413a7e557cb6",
+        "afterSha256": "9abf2b7ee1e88a001cedc1c94a9296706107b2d56deea1c4163eeb8f9b0f14be"
+      },
+      {
+        "id": "block_0001_0002",
+        "beforeSha256": "3415494e6dafd455495b133e5977da2ac541d93c3662180f1503e42b995ea98f",
+        "afterSha256": "0e22a75e476a7bd560ce9676449b7785481e5e2adf44a1b37396083ffc595f68"
+      },
+      {
+        "id": "block_0001_0004",
+        "beforeSha256": "b1099500d9acd51271df879bd762efa9648943cedd9e49fa88cab532c7309692",
+        "afterSha256": "0b5d795f7c3e7d1cc412a58a38790aa36a6f130133287a42791190fd42387c75"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "2d708d24a8b878f98d01f1762ffc37165b936cea5a152cce35634ae3bfbd7eb0",
+        "afterSha256": "3539f3801ab11540b9d6293f81d27694335b118fbbb9569a4f8f58d62ed6d1f8"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "5fbdd0a1ef09423416ea8578c90762f0bd6107aa0ab7d7e235cdf9efa0360049",
+        "afterSha256": "0e360e2ec72ba71fa57209e903829db84cbbc8b07540ee1ace23da7239cc8044"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "d8c086a9249b358cfd3db6af99a710c37c3a3fb7ae6e1bae8ee7ff327fafb727",
+        "afterSha256": "bb1853e1f91ec97e64ee3b512d9a1ea440eb689ed83514b67def5df4c47d29eb"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "97e3a681e6ab73748f0b0f048008a3d1d5c9d214ac7e230b044fd6212e2fc60a",
+        "afterSha256": "d5adc0f83c3af16a33fbfad7eaca42527e7e1d6af33ae8ecd8aceae1fa590404"
+      },
+      {
+        "id": "block_0005_0001",
+        "beforeSha256": "2296199f6e266b755d7f5fb3914871384d48ad7a8a8a13802d7c46217a966b62",
+        "afterSha256": "96a65b6846497451a15776673733caee8d2b31841a009e25c3c6a0c842b2b831"
+      },
+      {
+        "id": "block_0005_0002",
+        "beforeSha256": "e3f70aadb08ecc3a4524c7ea6943eb2f5ad11384df69166afc95dd40263e4422",
+        "afterSha256": "aaeeadf39c76881c9c95d075dfb5aa2dd0e1b746ea74f32d1c2d9ced0cc1d383"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "7ef8936bf70ad02cfc4cc8e2ecbc00fbcd47f7fdba009f5e6c5bdca15715c713",
+        "afterSha256": "6340670ff0d043427d382743088bda2bc3c51a28c49fb65bfd615b620073d5e4"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "6bd0cf29da149362e0c971d98c26ededf9cf535fbe546c0a87d2c37e68056235",
+        "afterSha256": "e98dc322a85a5309352dcb8d012a2f14f82adeb795daad0190679a3fd5740fd9"
+      },
+      {
+        "id": "block_0007_0001",
+        "beforeSha256": "631c005ade24dcfb0ca1465de362830d43820a67cc805641e4354537c0fa6ca3",
+        "afterSha256": "6b16217f02d89939f9ddd4da857d1308dbc6729b29444e0f1e05c3e26ecdfcee"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "6d94a76350ace7e482a6bb2aa11f225400eeb9ee93f9d8844547e35bc6dfcfa8",
+        "afterSha256": "a3a2ae5cea4a7defa36621053a4d39648b6d3f51749c69fe8d4d7bd096846bfd"
+      },
+      {
+        "id": "block_0007_0003",
+        "beforeSha256": "8d96e6ac4a81b7304cd8d351a6757d520f73de6b0b7e4f6b386fd46990e2b7f6",
+        "afterSha256": "eda03a8a1b2a0973450119f3a80f881b06a5851008e7949cfba02cedb5a44107"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "fa17d61f55859c51b6424cc262c2ea3d26eab87e2fde6cc7f08331b79c667099",
+        "afterSha256": "d01ea02da279aa0d5b1513931f7a0808b6b1977922d59b02f233f5777edec89d"
+      },
+      {
+        "id": "politicas_recipientes_construccion_multicaso_comprobacion",
+        "beforeSha256": "ffa9ca3c39704a745f7e9e3113bca4d8a4923ae087938eded4da047968132ab9",
+        "afterSha256": "327b315b36736cc3c03123364084d76fe0264782907f091c263248c3b46f0366"
+      },
+      {
+        "id": "block_0009_0002",
+        "beforeSha256": "a69aed85ddf1030cf80b3436316342e34a5cb91a26cb9e0a2c75b5b66f7658f1",
+        "afterSha256": "472e383b927cdbf7014a66403d3424cad9e06903f537917b7464eb84ef0ede54"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "88dd3b9b09c4727559b60cfdc61d7a0e7f64e14da6ea8ffbbb8258793f725c33",
+        "afterSha256": "ed8caf4cc5832bcc2b8bc61d6bd63523986f19c3777071d57d29621b1e53f282"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "3859bcde84c1d20fcbd6c94ade6e1e0f375b62162769980a008519dbf33e8c0e",
+        "afterSha256": "0b3b8f874ffc6d67965d15624328cfe055bf0f06c8f7d2c544c4b038f111e6da"
+      },
+      {
+        "id": "block_0009_0007",
+        "beforeSha256": "4bb0a0d8477d302fd06f00071e7b90ef75c1dc9f8ae970d677701a344f83ffff",
+        "afterSha256": "408bce6d6577f95fbb673dc21fa6e4a566b6151267f09bfff9dc484a22f2fb78"
+      },
+      {
+        "id": "block_0009_0008",
+        "beforeSha256": "2e11ae16e74ad87be377e33bb970f8285b1fd66a42d7ab0c50c74c06f676a2a5",
+        "afterSha256": "26167b40cd1869346d0fcc2b3820c8bfef04e40023407aeccf7c3cdd1e81fcd0"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "c86d7da59df28f57ca228260f0d64e3c04eaea85aa25909e4dfd4efc1a2f1086",
+        "afterSha256": "75d989ce71eaff634e0411c9eaf9e35a026b459d32136cd19933af23ca9fc979"
+      },
+      {
+        "id": "block_0010_0002",
+        "beforeSha256": "40d736932cc408b2ee32544412d7524c629aa1aee1eb0fa3972bdc8023b9e439",
+        "afterSha256": "e57c4898849c7e5704be852b32eaa68c158950238a2fedb6f4a6bca9ef7ad4d3"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0000_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int f(int valor) {\n        return valor + 2;\n    }\n}\n\nnamespace Eco {\n    int f(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::f(4) << \" \" << Eco::f(4);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(1);\n    std::cout << \" \" << Eco::avanzar(2);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0001_0004",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice los dos resultados de estas composiciones entre espacios.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(Eco::avanzar(2));\n    std::cout << \" \" << Eco::avanzar(Paso::avanzar(1));\n    return 0;\n}\n",
+          "answers": [
+            "10 9"
+          ],
+          "explanation": "Eco::avanzar(2) produce 6; los dos avances de Paso lo llevan a 10. Paso::avanzar(1) produce 3 y Eco multiplica ese argumento por 3. La cualificación permite seguir cada regla sin confundir los nombres iguales."
+        }
+      },
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Escala {\n    int transformar(int valor);\n}\n\nint main() {\n    std::cout << Escala::transformar(3);\n    return 0;\n}\n\nnamespace Escala {\n    int transformar(int valor) {\n        return valor * 2 + 1;\n    }\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nnamespace Salto {\n    int siguiente(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using Camino::siguiente;\n    using std::cout;\n    cout << siguiente(4) << \" \" << Salto::siguiente(4);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nint main() {\n    using namespace Camino;\n    std::cout << siguiente(2) << \" \" << inicio();\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Norte {\n    int f(int valor) {\n        return valor + 4;\n    }\n}\n\nnamespace Sur {\n    int f(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using namespace Norte;\n    using namespace Sur;\n    std::cout << f(3);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0005_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Lectura {\n    const int limite = 6;\n}\n\nint main() {\n    using namespace Lectura;\n    const int limite = 2;\n    std::cout << limite << \":\" << Lectura::limite;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice ambas salidas, distinguiendo la selección del nombre y la de su sobrecarga.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Ajuste {\n    int proponer(int nivel) {\n        return nivel + 1;\n    }\n\n    double proponer(double nivel) {\n        return nivel + 0.5;\n    }\n}\n\nint main() {\n    using Ajuste::proponer;\n    std::cout << proponer(4) << \" \" << proponer(4.0);\n    return 0;\n}\n",
+          "answers": [
+            "5 4.5"
+          ],
+          "explanation": "El argumento 4 tiene tipo int y obtiene 5; 4.0 tiene tipo double y obtiene 4.5. Ambas funciones pertenecen a Ajuste y son visibles cuando se escribe la declaración using."
+        }
+      },
+      {
+        "id": "block_0009_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {0, 7, 15};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    std::vector<int> piezas;\n    int cantidad_entrada{0};\n    std::cin >> cantidad_entrada;\n    for (int entrada{0}; entrada < cantidad_entrada; ++entrada) {\n        int dato{0};\n        std::cin >> dato;\n        piezas.push_back(dato);\n    }\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "4 0 4 7 20",
+                "outputs": [
+                  "Estuches: 8\nCajas: 5",
+                  "Estuches: 8\nCajas: 5\n"
+                ]
+              },
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Estuches: 0\nCajas: 0",
+                  "Estuches: 0\nCajas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "6 20 20 20 20 20 20",
+                "outputs": [
+                  "Estuches: 30\nCajas: 18",
+                  "Estuches: 30\nCajas: 18\n"
+                ]
+              },
+              {
+                "standardInput": "1 0",
+                "outputs": [
+                  "Estuches: 0\nCajas: 0",
+                  "Estuches: 0\nCajas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "1 4",
+                "outputs": [
+                  "Estuches: 1\nCajas: 1",
+                  "Estuches: 1\nCajas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 7",
+                "outputs": [
+                  "Estuches: 2\nCajas: 1",
+                  "Estuches: 2\nCajas: 1\n"
+                ]
+              },
+              {
+                "standardInput": "1 -1",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ]
+              },
+              {
+                "standardInput": "1 21",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ]
+              },
+              {
+                "standardInput": "7 0 0 0 0 0 0 0",
+                "outputs": [
+                  "Pedido invalido",
+                  "Pedido invalido\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "4 0 4 7 20"
+        }
+      },
+      {
+        "id": "block_0010_0001",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice las dos líneas para pedidos distintos, conservando el empaquetado independiente.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {3, 9, 0};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Estuches: 4\nCajas: 3"
+          ],
+          "explanation": "Los estuches aportan 1, 3 y 0; las cajas aportan 1, 2 y 0. El orden del cálculo no cambia qué función selecciona cada nombre."
+        }
+      },
+      {
+        "id": "block_0010_0002",
+        "block": {
+          "type": "output_prediction",
+          "question": "Predice toda la salida cuando uno de los pedidos incumple el dominio.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {2, -1, 4};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Pedido invalido\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Estuches: \" << total_estuches;\n    std::cout << \"\\nCajas: \" << total_cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Pedido invalido"
+          ],
+          "explanation": "La validación examina la colección completa antes de llamar a necesarios. No se presenta un prefijo del plan para 2 ni se calcula el dato negativo."
+        }
       }
     ]
   },
@@ -2901,42 +3179,77 @@
       {
         "block": "block_0005_0001",
         "path": "/text",
-        "sourceSha256": "b28f687586ba36a827d5c4d33d1113530987ef7f17094c3b9f69ec97c6901fd8",
+        "sourceSha256": "28ec66537e5303f7639af11d3942bc89f69703643959d539a65d5c297336edff",
         "spans": [
           {
-            "start": 121,
-            "end": 127,
-            "text": "limite",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 144,
-            "end": 148,
+            "start": 15,
+            "end": 19,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 165,
+            "start": 45,
+            "end": 51,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 62,
+            "end": 65,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 85,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 187,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 215,
             "text": "Lectura::limite",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 207,
-            "end": 227,
+            "start": 227,
+            "end": 234,
+            "text": "Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 274,
+            "end": 294,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 234,
-            "end": 237,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 340,
+            "end": 363,
+            "text": "using namespace Lectura",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 396,
+            "end": 402,
+            "text": "limite",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
@@ -2992,46 +3305,46 @@
       {
         "block": "block_0005_0005",
         "path": "/text",
-        "sourceSha256": "98efce31619d044602309477ff035b2e1865d8c34e380ada4388589227d3ad52",
+        "sourceSha256": "3d84142aa8fe0f021f77f344030ef1512b85999b274cfa443a104a24b72512ec",
         "spans": [
           {
-            "start": 116,
-            "end": 136,
+            "start": 112,
+            "end": 132,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
             "reading": "natural"
           },
           {
-            "start": 152,
-            "end": 166,
+            "start": 148,
+            "end": 162,
             "text": "using Norte::f",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 169,
-            "end": 181,
+            "start": 165,
+            "end": 177,
             "text": "using Sur::f",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 204,
-            "end": 208,
+            "start": 210,
+            "end": 216,
+            "text": "f(int)",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 229,
+            "end": 233,
             "text": "f(3)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 236,
-            "end": 239,
-            "text": "int",
-            "role": "cpp",
-            "reading": "technical"
-          },
-          {
-            "start": 290,
-            "end": 295,
+            "start": 352,
+            "end": 357,
             "text": "using",
             "role": "cpp",
             "reading": "technical"
@@ -3145,15 +3458,8 @@
       {
         "block": "block_0000_0001",
         "path": "/text",
-        "sourceSha256": "83a7647996c02ea3a08e0cc48ea3313b369217ff954af8c58ae2b6b2c989b6d0",
+        "sourceSha256": "2efb200d87565d5f2b7a0a3c7ddabfe00174ceb625eaddb73c62c521a468be42",
         "spans": [
-          {
-            "start": 0,
-            "end": 3,
-            "text": "Dos",
-            "role": "data",
-            "reading": "natural"
-          },
           {
             "start": 63,
             "end": 64,
@@ -3162,39 +3468,53 @@
             "reading": "technical"
           },
           {
-            "start": 82,
-            "end": 85,
+            "start": 79,
+            "end": 82,
             "text": "int",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 133,
-            "end": 136,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 137,
+            "end": 143,
+            "text": "f(int)",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 256,
-            "end": 274,
-            "text": "(Stroustrup, 2024)",
-            "role": "citation",
-            "reading": "natural"
-          },
-          {
-            "start": 276,
-            "end": 283,
+            "start": 309,
+            "end": 316,
             "text": "Paso::f",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 286,
-            "end": 292,
+            "start": 319,
+            "end": 325,
             "text": "Eco::f",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 387,
+            "end": 388,
+            "text": "f",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 408,
+            "end": 411,
+            "text": "int",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 412,
+            "end": 430,
+            "text": "(Stroustrup, 2024)",
+            "role": "citation",
+            "reading": "natural"
           }
         ]
       },
@@ -4628,39 +4948,39 @@
       {
         "block": "block_0007_0001",
         "path": "/text",
-        "sourceSha256": "512a50fb91594fba37005e672245b5deb32d8113bdd4d316d92fbd1009ecf104",
+        "sourceSha256": "f6bcdadee03d025a2687ba7a2c7b93f6152099ed9cf45cde24a7d04e6d1a4774",
         "spans": [
           {
-            "start": 77,
-            "end": 78,
-            "text": "6",
+            "start": 95,
+            "end": 99,
+            "text": "seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 106,
-            "end": 107,
-            "text": "0",
+            "start": 115,
+            "end": 119,
+            "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 110,
-            "end": 112,
-            "text": "20",
+            "start": 122,
+            "end": 128,
+            "text": "veinte",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 202,
-            "end": 218,
+            "start": 280,
+            "end": 296,
             "text": "namespace Pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 305,
-            "end": 320,
+            "start": 382,
+            "end": 397,
             "text": "Pedido invalido",
             "role": "output",
             "reading": "natural"
@@ -4670,68 +4990,61 @@
       {
         "block": "block_0007_0002",
         "path": "/text",
-        "sourceSha256": "f47d8eb81cf19f46dc67fbed7ee23d122d93994697401009e0f2d5b65609a5f3",
+        "sourceSha256": "4bf04c9b173a78e03ae68b8aca231baf0e3b33de472af646a39fe4c690697118",
         "spans": [
           {
-            "start": 39,
-            "end": 57,
+            "start": 55,
+            "end": 58,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 74,
+            "end": 92,
             "text": "namespace Estuches",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 93,
+            "start": 94,
+            "end": 120,
             "text": "int necesarios(int piezas)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 134,
-            "end": 135,
-            "text": "4",
+            "start": 159,
+            "end": 165,
+            "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 158,
-            "end": 161,
-            "text": "uno",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 189,
-            "end": 204,
+            "start": 182,
+            "end": 197,
             "text": "namespace Cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 219,
-            "end": 245,
+            "start": 204,
+            "end": 230,
             "text": "int necesarios(int piezas)",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 285,
-            "end": 286,
-            "text": "7",
+            "start": 266,
+            "end": 271,
+            "text": "siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 302,
-            "end": 303,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 313,
-            "end": 314,
-            "text": "0",
+            "start": 411,
+            "end": 415,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           }
@@ -4740,112 +5053,112 @@
       {
         "block": "block_0007_0003",
         "path": "/text",
-        "sourceSha256": "5efe63d60c4acf0b9f0118716cd26e0126d04766af7897d5cde341098acae808",
+        "sourceSha256": "ad9aa363f9564eba3ef0f28f23e3b7bca1f52701ee70ff546aa67cef5fcc6b36",
         "spans": [
           {
-            "start": 49,
-            "end": 60,
+            "start": 59,
+            "end": 62,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 72,
+            "end": 83,
             "text": "Estuches: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 71,
-            "end": 79,
+            "start": 84,
+            "end": 92,
             "text": "Cajas: N",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 141,
-            "end": 145,
+            "start": 109,
+            "end": 110,
+            "text": "N",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 200,
+            "end": 204,
             "text": "main",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 167,
-            "end": 172,
+            "start": 230,
+            "end": 235,
             "text": "using",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 184,
-            "end": 194,
+            "start": 247,
+            "end": 257,
             "text": "necesarios",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 336,
-            "end": 339,
+            "start": 384,
+            "end": 387,
             "text": "dos",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 417,
+            "text": "necesarios",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0007_0004",
         "path": "/text",
-        "sourceSha256": "16eac9cd1d9eda93a5b8ad7e6b6caacd25ae1aece5420e32ca6937aa87d3ca58",
+        "sourceSha256": "46e96219c10ae2387db04f19b5a9fa508e856e90fb5e7d8719983659da221ce2",
         "spans": [
           {
-            "start": 17,
-            "end": 18,
-            "text": "1",
+            "start": 37,
+            "end": 46,
+            "text": "{1, 5, 8}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 20,
-            "end": 21,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 23,
-            "end": 24,
-            "text": "8",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 40,
-            "end": 51,
+            "start": 63,
+            "end": 74,
             "text": "Estuches: 5",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 54,
-            "end": 62,
+            "start": 75,
+            "end": 83,
             "text": "Cajas: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 198,
-            "end": 208,
+            "start": 247,
+            "end": 257,
             "text": "necesarios",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 214,
-            "end": 219,
+            "start": 285,
+            "end": 290,
             "text": "using",
             "role": "cpp",
             "reading": "technical"
-          },
-          {
-            "start": 235,
-            "end": 238,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
           }
         ]
       },
@@ -5407,193 +5720,200 @@
       {
         "block": "block_0009_0003",
         "path": "/text",
-        "sourceSha256": "9ddc2a1daddd0ef78b27860af67f9a9cadc662d1b87f1a1ac40eee697cb87998",
+        "sourceSha256": "0d50e01c2cb5960cc4cf0092b11bfcf36dae0dce1254b5263a4065399ff42639",
         "spans": [
           {
             "start": 24,
-            "end": 35,
+            "end": 27,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 37,
+            "end": 48,
             "text": "Estuches: 6",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 38,
-            "end": 46,
+            "start": 49,
+            "end": 57,
             "text": "Cajas: 4",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 147,
-            "end": 150,
+            "start": 164,
+            "end": 167,
             "text": "dos",
             "role": "data",
             "reading": "natural"
+          },
+          {
+            "start": 178,
+            "end": 188,
+            "text": "necesarios",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 456,
+            "end": 461,
+            "text": "using",
+            "role": "cpp",
+            "reading": "technical"
           }
         ]
       },
       {
         "block": "block_0009_0004",
         "path": "/text",
-        "sourceSha256": "95626777797e7bd3744619fcfa9772f0220e2760895d97461d0cb9fe7d9bd77a",
+        "sourceSha256": "6d28aa0da640198970daf891912c791d5bc209c8de29cf4bf65b8e53fafd43b5",
         "spans": [
           {
-            "start": 37,
-            "end": 38,
-            "text": "5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 41,
-            "end": 42,
-            "text": "4",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 48,
-            "end": 49,
-            "text": "0",
+            "start": 66,
+            "end": 75,
+            "text": "{1, 5, 8}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 51,
-            "end": 52,
-            "text": "4",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 54,
-            "end": 55,
-            "text": "7",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 57,
-            "end": 59,
-            "text": "20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 65,
-            "end": 66,
-            "text": "8",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 69,
-            "end": 70,
-            "text": "5",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 82,
-            "end": 83,
-            "text": "0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 86,
-            "end": 87,
-            "text": "0",
+            "start": 77,
+            "end": 82,
+            "text": "cinco",
             "role": "output",
             "reading": "natural"
           },
           {
             "start": 94,
-            "end": 98,
-            "text": "seis",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 110,
-            "end": 112,
-            "text": "20",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 146,
-            "end": 148,
-            "text": "30",
+            "end": 100,
+            "text": "cuatro",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 160,
-            "end": 162,
-            "text": "18",
+            "start": 116,
+            "end": 129,
+            "text": "{0, 4, 7, 20}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 131,
+            "end": 135,
+            "text": "ocho",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 189,
-            "end": 190,
-            "text": "0",
-            "role": "data",
+            "start": 147,
+            "end": 152,
+            "text": "cinco",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 192,
-            "end": 193,
-            "text": "4",
-            "role": "data",
+            "start": 177,
+            "end": 181,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 196,
+            "start": 193,
             "end": 197,
-            "text": "7",
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 205,
+            "end": 209,
+            "text": "Seis",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 271,
+            "start": 221,
+            "end": 227,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 245,
+            "end": 252,
+            "text": "treinta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 264,
             "end": 273,
-            "text": "-1",
+            "text": "dieciocho",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 327,
+            "end": 336,
+            "text": "menos uno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 276,
-            "end": 278,
-            "text": "21",
+            "start": 341,
+            "end": 350,
+            "text": "veintiuno",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 299,
-            "end": 300,
-            "text": "7",
+            "start": 371,
+            "end": 376,
+            "text": "siete",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 401,
-            "end": 411,
+            "start": 433,
+            "end": 437,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 439,
+            "end": 445,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 448,
+            "end": 453,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 565,
+            "end": 575,
             "text": "necesarios",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 415,
-            "end": 420,
+            "start": 579,
+            "end": 584,
             "text": "Cajas",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 434,
-            "end": 442,
+            "start": 598,
+            "end": 606,
             "text": "Estuches",
             "role": "cpp",
             "reading": "technical"
@@ -5638,89 +5958,187 @@
       {
         "block": "block_0009_0007",
         "path": "/text",
-        "sourceSha256": "a0bf54e37336a67f90fcf29354662ccd222f29016562daf7981441407b2e388f",
+        "sourceSha256": "246c588421b4ced29d1fa946bc01c73b6e5aa3379890e1ce864cca6d7c450280",
         "spans": [
           {
-            "start": 295,
-            "end": 300,
-            "text": "nueve",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 325,
-            "end": 335,
+            "start": 291,
+            "end": 301,
             "text": "4 0 4 7 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 337,
-            "end": 338,
+            "start": 310,
+            "end": 321,
+            "text": "Estuches: 8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 330,
+            "text": "Cajas: 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 360,
+            "end": 361,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 340,
-            "end": 359,
+            "start": 372,
+            "end": 383,
+            "text": "Estuches: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 386,
+            "end": 394,
+            "text": "Cajas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 404,
+            "end": 423,
             "text": "6 20 20 20 20 20 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 361,
-            "end": 364,
+            "start": 434,
+            "end": 446,
+            "text": "Estuches: 30",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 458,
+            "text": "Cajas: 18",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 468,
+            "end": 471,
             "text": "1 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 366,
-            "end": 369,
+            "start": 482,
+            "end": 493,
+            "text": "Estuches: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 496,
+            "end": 504,
+            "text": "Cajas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 514,
+            "end": 517,
             "text": "1 4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 371,
-            "end": 374,
+            "start": 528,
+            "end": 539,
+            "text": "Estuches: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 542,
+            "end": 550,
+            "text": "Cajas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 560,
+            "end": 563,
             "text": "1 7",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 376,
-            "end": 380,
+            "start": 574,
+            "end": 585,
+            "text": "Estuches: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 588,
+            "end": 596,
+            "text": "Cajas: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 606,
+            "end": 610,
             "text": "1 -1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 382,
-            "end": 386,
+            "start": 621,
+            "end": 636,
+            "text": "Pedido invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 646,
+            "end": 650,
             "text": "1 21",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 388,
-            "end": 403,
+            "start": 661,
+            "end": 676,
+            "text": "Pedido invalido",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 686,
+            "end": 701,
             "text": "7 0 0 0 0 0 0 0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 409,
-            "end": 413,
-            "text": "tres",
-            "role": "data",
+            "start": 712,
+            "end": 727,
+            "text": "Pedido invalido",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 447,
-            "end": 462,
-            "text": "Pedido invalido",
+            "start": 749,
+            "end": 757,
+            "text": "Estuches",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 760,
+            "end": 765,
+            "text": "Cajas",
             "role": "output",
             "reading": "natural"
           }
@@ -6565,32 +6983,53 @@
       {
         "block": "politicas_recipientes_construccion_multicaso_comprobacion",
         "path": "/text",
-        "sourceSha256": "bd3d722df04e74f7da6c2a5bd8b8146ae38143db3549e77150ec429edcfc4fa8",
+        "sourceSha256": "61f03050e3cfc959d599000e5c70085300525876c170ec61e9ba5c4aad8f55dc",
         "spans": [
           {
-            "start": 100,
-            "end": 104,
-            "text": "diez",
+            "start": 98,
+            "end": 108,
+            "text": "4 0 4 7 20",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 138,
-            "end": 144,
+            "start": 117,
+            "end": 128,
+            "text": "Estuches: 8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 129,
+            "end": 137,
+            "text": "Cajas: 5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 149,
+            "end": 154,
+            "text": "nueve",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 334,
+            "end": 340,
             "text": "Pedido",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 153,
-            "text": "dos",
-            "role": "data",
-            "reading": "natural"
+            "start": 360,
+            "end": 370,
+            "text": "necesarios",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 196,
-            "end": 201,
+            "start": 399,
+            "end": 404,
             "text": "using",
             "role": "cpp",
             "reading": "technical"

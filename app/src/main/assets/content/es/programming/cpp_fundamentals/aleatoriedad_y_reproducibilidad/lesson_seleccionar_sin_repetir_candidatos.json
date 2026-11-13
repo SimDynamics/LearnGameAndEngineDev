@@ -234,7 +234,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reúne en main estas parejas de candidatos y cantidad, en orden: {6,1,8,3,0} con 3; vacío con 0; {0} con 0 y con 1; {9,2,5} con 1 y con 3; todos los ID 0..9 con 10; {0,3,8,1,6} con 3; vacío con 1; {-1} con 0; {10} con 0; {2,2} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {9,2,5} con -1 y con 4. Pulsa Compilar, ejecutar y comprobar. Las ocho primeras configuraciones son válidas y conservan cantidades 3,0,0,1,1,3,10,3; las siete restantes se rechazan. Todos los indicadores pedidos son verdaderos. No imprimas esos indicadores como constantes ni exijas identificadores aleatorios concretos.",
+          "text": "Reúne en main estas parejas de candidatos y cantidad, en orden. Cada renglón indica los datos y el comienzo esperado de la línea de informe:\n\n{6,1,8,3,0}; cantidad 3 → Cantidad:3\nVector vacío; cantidad 0 → Cantidad:0\n{0}; cantidad 0 → Cantidad:0\n{0}; cantidad 1 → Cantidad:1\n{9,2,5}; cantidad 1 → Cantidad:1\n{9,2,5}; cantidad 3 → Cantidad:3\nLos diez ID 0..9; cantidad 10 → Cantidad:10\n{0,3,8,1,6}; cantidad 3 → Cantidad:3\nVector vacío; cantidad 1 → Configuracion rechazada\n{-1}; cantidad 0 → Configuracion rechazada\n{10}; cantidad 0 → Configuracion rechazada\n{2,2}; cantidad 0 → Configuracion rechazada\nOnce elementos {0,1,2,3,4,5,6,7,8,9,0}; cantidad 0 → Configuracion rechazada\n{9,2,5}; cantidad -1 → Configuracion rechazada\n{9,2,5}; cantidad 4 → Configuracion rechazada\n\nPulsa Compilar, ejecutar y comprobar. Las ocho primeras configuraciones son válidas; las siete siguientes se rechazan. Completa cada línea con los campos del formato anterior. Todos los indicadores pedidos son verdaderos: Vacio muestra tamaño cero y conservación del motor, y cada rechazo conserva tanto el motor como el original. No imprimas esos indicadores como constantes ni exijas identificadores aleatorios concretos.",
           "emphasis": [
             {
               "text": "Todos los indicadores pedidos son verdaderos",
@@ -256,7 +256,7 @@
                 "outputs": [
                   "Cantidad:3;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:0;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:0;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:1;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:1;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:10;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nCantidad:3;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\n"
                 ],
-                "explanation": "La batería separa cantidad y unicidad, reproduce el mismo procedimiento desde copias, conserva el original y rechaza antes de consumir el motor incluso con cantidad cero."
+                "explanation": "La primera configuración tiene cinco candidatos y pide tres: el resultado debe contener tres ID originales diferentes, manteniendo intacta la entrada. Las copias iniciales reproducen resultados y estados finales; las copias del estado alcanzado permiten contrastar la continuación. Pedir cero con candidatos válidos devuelve vacío y conserva el motor. En cambio, {2,2} se rechaza incluso al pedir cero: la validación de candidatos se realiza antes de obtener ningún dato. Las configuraciones restantes comprueban los límites indicados, sin imponer una lista de ID propia de una biblioteca."
               }
             ]
           }
@@ -289,7 +289,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui seleccionar, con su motor por referencia y su contrato completo.\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n    return 0;\n}\n",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui seleccionar, con su motor por referencia y su contrato completo.\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n\n    return 0;\n}\n",
           "outputCheck": {
             "inputComparison": "exact",
             "cases": [
@@ -351,7 +351,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nint main() {\n    const std::vector<int> candidatos{9, 4, 1, 7, 0};\n    const std::vector<int> original = candidatos;\n    std::mt19937 motor{733};\n    std::mt19937 repeticion = motor;\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 4);\n    const std::vector<int> repetidos = seleccionar(repeticion, candidatos, 4);\n    std::cout << \"Cantidad:\" << elegidos.size() << '\\n';\n    std::cout << \"Propiedades:\" << seleccion_correcta(candidatos, elegidos, 4) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n    std::cout << \"Reproduccion:\" << (elegidos == repetidos && motor == repeticion) << '\\n';\n    std::mt19937 continuacion = motor;\n    const std::vector<int> segundo = seleccionar(motor, candidatos, 2);\n    const std::vector<int> repetido = seleccionar(continuacion, candidatos, 2);\n    std::cout << \"Continuacion:\" << (segundo == repetido && motor == continuacion) << '\\n';\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<int> vacio = seleccionar(motor, candidatos, 0);\n    std::cout << \"Vacio:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<int> invalida = seleccionar(motor, {4, 4}, 0);\n        std::cout << \"Aceptada:\" << invalida.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (motor == antes_error) << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n\n    const int total = static_cast<int>(elegidos.size());\n\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) {\n                pertenece = true;\n            }\n        }\n\n        if (!pertenece) {\n            return false;\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) {\n                return false;\n            }\n        }\n    }\n\n    return true;\n}\n\nint main() {\n    const std::vector<int> candidatos{9, 4, 1, 7, 0};\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 motor{733};\n    std::mt19937 repeticion = motor;\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 4);\n    const std::vector<int> repetidos = seleccionar(repeticion, candidatos, 4);\n\n    std::cout << \"Cantidad:\" << elegidos.size() << '\\n';\n    std::cout << \"Propiedades:\" << seleccion_correcta(candidatos, elegidos, 4) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n    std::cout << \"Reproduccion:\" << (elegidos == repetidos && motor == repeticion) << '\\n';\n\n    std::mt19937 continuacion = motor;\n    const std::vector<int> segundo = seleccionar(motor, candidatos, 2);\n    const std::vector<int> repetido = seleccionar(continuacion, candidatos, 2);\n    std::cout << \"Continuacion:\" << (segundo == repetido && motor == continuacion) << '\\n';\n\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<int> vacio = seleccionar(motor, candidatos, 0);\n    std::cout << \"Vacio:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<int> invalida = seleccionar(motor, {4, 4}, 0);\n        std::cout << \"Aceptada:\" << invalida.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (motor == antes_error) << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -369,7 +369,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: validación completa antes de consumir el motor; original intacto; cantidad exacta, pertenencia y unicidad; copia del elegido anterior al reemplazo; intervalo de índices sólo dentro del prefijo positivo; ninguna obtención en el caso cero. Con cantidad igual al tamaño se eligen todos una vez, aunque el orden pueda cambiar. Con un candidato sólo puede resultar ese ID. En dos llamadas distintas se repone una copia de los candidatos: un ID puede aparecer en ambas; la unicidad prometida corresponde a cada selección.",
+          "text": "La referencia debe satisfacer estos criterios:\n\nCompletar la validación antes de consumir el motor.\nConservar el original intacto.\nObtener la cantidad exacta y comprobar pertenencia y unicidad.\nGuardar el ID elegido antes de reemplazar su posición.\nUsar un intervalo de índices sólo dentro del prefijo positivo.\nNo realizar ninguna obtención en el caso cero.\n\nCon cantidad igual al tamaño se eligen todos una vez, aunque el orden pueda cambiar. Con un candidato sólo puede resultar ese ID.\n\nEn dos llamadas distintas se repone una copia de los candidatos: un ID puede aparecer en ambas; la unicidad prometida corresponde a cada selección.",
           "emphasis": [
             {
               "text": "antes de consumir el motor",
@@ -412,7 +412,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid probar(const std::vector<int>& candidatos,int cantidad) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{701};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 repeticion=motor;\n        const std::vector<int> elegidos=seleccionar(motor,candidatos,cantidad);\n        const std::vector<int> repetidos=seleccionar(repeticion,candidatos,cantidad);\n        const bool reproducido=elegidos==repetidos && motor==repeticion;\n        std::mt19937 copia=motor;\n        const int siguientes=candidatos.size()<2 ? static_cast<int>(candidatos.size()):2;\n        const std::vector<int> segundo=seleccionar(motor,candidatos,siguientes);\n        const std::vector<int> repetido=seleccionar(copia,candidatos,siguientes);\n        const bool continuado=segundo==repetido && motor==copia;\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=seleccionar(motor,candidatos,0);\n        std::cout<<\"Cantidad:\"<<elegidos.size()\n                 <<\";Propiedades:\"<<seleccion_correcta(candidatos,elegidos,cantidad)\n                 <<\";Original:\"<<(candidatos==original)\n                 <<\";Reproduccion:\"<<reproducido<<\";Continuacion:\"<<continuado\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalida=seleccionar(motor,{2,2},0);\n            std::cout<<\";Aceptada:\"<<invalida.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({6,1,8,3,0},3);\n    probar({},0);\n    probar({0},0);\n    probar({0},1);\n    probar({9,2,5},1);\n    probar({9,2,5},3);\n    probar({0,1,2,3,4,5,6,7,8,9},10);\n    probar({0,3,8,1,6},3);\n    probar({},1);\n    probar({-1},0);\n    probar({10},0);\n    probar({2,2},0);\n    probar({0,1,2,3,4,5,6,7,8,9,0},0);\n    probar({9,2,5},-1);\n    probar({9,2,5},4);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n\n    const int total = static_cast<int>(elegidos.size());\n\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) {\n                pertenece = true;\n            }\n        }\n\n        if (!pertenece) {\n            return false;\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) {\n                return false;\n            }\n        }\n    }\n\n    return true;\n}\n\nvoid probar(const std::vector<int>& candidatos, int cantidad) {\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 motor{701};\n    const std::mt19937 inicial = motor;\n\n    try {\n        std::mt19937 repeticion = motor;\n        const std::vector<int> elegidos = seleccionar(motor, candidatos, cantidad);\n        const std::vector<int> repetidos = seleccionar(repeticion, candidatos, cantidad);\n        const bool reproducido = elegidos == repetidos && motor == repeticion;\n\n        std::mt19937 copia = motor;\n        const int siguientes = candidatos.size() < 2 ? static_cast<int>(candidatos.size()) : 2;\n        const std::vector<int> segundo = seleccionar(motor, candidatos, siguientes);\n        const std::vector<int> repetido = seleccionar(copia, candidatos, siguientes);\n        const bool continuado = segundo == repetido && motor == copia;\n\n        const std::mt19937 antes_vacio = motor;\n        const std::vector<int> vacio = seleccionar(motor, candidatos, 0);\n        std::cout << \"Cantidad:\" << elegidos.size()\n                 << \";Propiedades:\" << seleccion_correcta(candidatos, elegidos, cantidad)\n                 << \";Original:\" << (candidatos == original)\n                 << \";Reproduccion:\" << reproducido << \";Continuacion:\" << continuado\n                 << \";Vacio:\" << vacio.size() << \":\" << (motor == antes_vacio);\n        const std::mt19937 antes_error = motor;\n        try {\n            const std::vector<int> invalida = seleccionar(motor, {2,2}, 0);\n            std::cout << \";Aceptada:\" << invalida.size();\n        } catch (const std::invalid_argument&) {\n            std::cout << \";Rechazo:\" << (motor == antes_error);\n        }\n        std::cout << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada:\" << (motor == inicial)\n                 << \";Original:\" << (candidatos == original) << \"\\n\";\n    }\n}\n\nint main() {\n    probar({6,1,8,3,0},3);\n    probar({},0);\n    probar({0},0);\n    probar({0},1);\n    probar({9,2,5},1);\n    probar({9,2,5},3);\n    probar({0,1,2,3,4,5,6,7,8,9},10);\n    probar({0,3,8,1,6},3);\n    probar({},1);\n    probar({-1},0);\n    probar({10},0);\n    probar({2,2},0);\n    probar({0,1,2,3,4,5,6,7,8,9,0},0);\n    probar({9,2,5},-1);\n    probar({9,2,5},4);\n    return 0;\n}\n"
         },
         {
           "type": "heading",
@@ -425,7 +425,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n\n    const int total = static_cast<int>(elegidos.size());\n\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) {\n                pertenece = true;\n            }\n        }\n\n        if (!pertenece) {\n            return false;\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) {\n                return false;\n            }\n        }\n    }\n\n    return true;\n}\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -450,7 +450,7 @@
           "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__conservar_elegido_y_delimitar_el_prefijo",
           "language": "cpp",
           "question": "Predice las tres líneas completas, incluidos los espacios entre valores. El índice uno está preparado; sólo hay tres posiciones activas al comenzar.",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{8, 3, 6, 1};\n    int restantes = 3;\n    const int posicion = 1;\n    const int elegido = trabajo.at(posicion);\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    --restantes;\n    std::cout << \"Elegido:\" << elegido << '\\n' << \"Activos:\";\n    for (int i = 0; i < restantes; ++i) { std::cout << ' ' << trabajo.at(i); }\n    std::cout << '\\n' << \"Trabajo:\";\n    for (int dato : trabajo) { std::cout << ' ' << dato; }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{8, 3, 6, 1};\n    int restantes = 3;\n    const int posicion = 1;\n\n    const int elegido = trabajo.at(posicion);\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    --restantes;\n\n    std::cout << \"Elegido:\" << elegido << '\\n' << \"Activos:\";\n    for (int i = 0; i < restantes; ++i) {\n        std::cout << ' ' << trabajo.at(i);\n    }\n\n    std::cout << '\\n' << \"Trabajo:\";\n    for (int dato : trabajo) {\n        std::cout << ' ' << dato;\n    }\n\n    std::cout << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Elegido:3\nActivos: 8 6\nTrabajo: 8 6 6 1"
           ],
@@ -479,7 +479,7 @@
           "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__sobrescribir_antes_de_conservar_pierde_el_candidato",
           "language": "cpp",
           "question": "Esta versión defectuosa sobrescribe antes de guardar. Predice su salida real; no la reemplaces por lo que debería haber seleccionado.",
-          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{7, 0, 4, 2};\n    int restantes = 4;\n    const int posicion = 0;\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    const int guardado = trabajo.at(posicion);\n    --restantes;\n    std::cout << \"Guardado:\" << guardado << '\\n' << \"Activos:\";\n    for (int i = 0; i < restantes; ++i) { std::cout << ' ' << trabajo.at(i); }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{7, 0, 4, 2};\n    int restantes = 4;\n    const int posicion = 0;\n\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    const int guardado = trabajo.at(posicion);\n    --restantes;\n\n    std::cout << \"Guardado:\" << guardado << '\\n' << \"Activos:\";\n    for (int i = 0; i < restantes; ++i) {\n        std::cout << ' ' << trabajo.at(i);\n    }\n\n    std::cout << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Guardado:2\nActivos: 2 0 4"
           ],
@@ -545,7 +545,7 @@
                 "outputs": [
                   "Cantidad:5;Propiedades:1;Original:1;Reproduccion:1;Continuacion:1;Vacio:0:1;Rechazo:1\n"
                 ],
-                "explanation": "La configuración nueva conserva cantidad, pertenencia y unicidad. Copias del mismo estado reproducen el mismo procedimiento sin exigir una elección fija entre bibliotecas."
+                "explanation": "De los siete candidatos se piden cinco: el resultado contiene cinco ID diferentes entre sí, tomados del vector original. Ese vector conserva sus valores y su orden. Las comparaciones de reproducción usan motores copiados del mismo comienzo; las de continuación parten del estado alcanzado. Se comparan tanto los resultados como los estados finales. La llamada de cantidad cero y el rechazo de {2,2} conservan el motor, sin exigir una elección fija entre bibliotecas."
               }
             ]
           }
@@ -592,7 +592,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba pares entre cero y cinco y que no excede `total/2` antes de multiplicarlo por dos. No conviertas `size()` a `int` hasta comprobar el límite de diez. Con pares cero, `seleccionar` sigue validando candidatos y devuelve vacío sin usar el motor.\n\nLa batería de main reúne candidatos y pares en este orden: {0,5,2,8,3} con 2; vacío con 0; {0} con 0; {2,9} con 1; {8,0,5} con 1; los diez ID 0..9 con 5; {3,8,2,5,0} con 2; vacío con 1; {0} con 1; los diez ID con -1 y con 6; {-1,2} con 0; {10,2} con 0; {0,0} con 0; once elementos {0,1,2,3,4,5,6,7,8,9,0} con 0; y {2,9} con 2.",
+          "text": "Comprueba pares entre cero y cinco y que no excede `total/2` antes de multiplicarlo por dos. No conviertas `size()` a `int` hasta comprobar el límite de diez. Con pares cero, `seleccionar` sigue validando candidatos y devuelve vacío sin usar el motor.\n\nLa batería de main reúne candidatos y pares en este orden. Cada renglón indica el comienzo esperado del informe:\n\n{0,5,2,8,3}; pares 2 → Pares:2\nVector vacío; pares 0 → Pares:0\n{0}; pares 0 → Pares:0\n{2,9}; pares 1 → Pares:1\n{8,0,5}; pares 1 → Pares:1\nLos diez ID 0..9; pares 5 → Pares:5\n{3,8,2,5,0}; pares 2 → Pares:2\nVector vacío; pares 1 → Configuracion rechazada\n{0}; pares 1 → Configuracion rechazada\nLos diez ID 0..9; pares -1 → Configuracion rechazada\nLos diez ID 0..9; pares 6 → Configuracion rechazada\n{-1,2}; pares 0 → Configuracion rechazada\n{10,2}; pares 0 → Configuracion rechazada\n{0,0}; pares 0 → Configuracion rechazada\nOnce elementos {0,1,2,3,4,5,6,7,8,9,0}; pares 0 → Configuracion rechazada\n{2,9}; pares 2 → Configuracion rechazada",
           "emphasis": [
             {
               "text": "antes de multiplicarlo por dos",
@@ -606,7 +606,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye `probar(candidatos,pares)`, con motor nuevo de semilla 809 y copias iniciales de motor y datos. Si acepta, comprueba cantidad, pertenencia y unicidad global. Aplana las parejas en orden primero,segundo y compara ese vector con `seleccionar` de `2*pares` ID desde la copia inicial del motor; compara también los estados finales. Comprueba cero parejas sin consumo y una solicitud imposible de `total/2+1` parejas, que debe rechazarse sin usar el motor.\n\nMuestra una línea por prueba: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B. Si la configuración inicial se rechaza, muestra Configuracion rechazada:B;Original:B comparando estado y datos con sus copias anteriores. Termina siempre con salto. Pulsa Compilar, ejecutar y comprobar. Las siete primeras configuraciones son válidas y producen 2,0,0,1,1,5,2 parejas; las nueve restantes se rechazan. Todos los indicadores deben ser uno. El editor conserva `seleccionar` ya conocida: construye el registro `Pareja`, `formar_parejas` y las comprobaciones.",
+          "text": "Construye `probar(candidatos,pares)`, con motor nuevo de semilla 809 y copias iniciales de motor y datos. Si acepta, comprueba cantidad, pertenencia y unicidad global. Aplana las parejas en orden primero,segundo y compara ese vector con `seleccionar` de `2*pares` ID desde la copia inicial del motor; compara también los estados finales. Comprueba cero parejas sin consumo y una solicitud imposible de `total/2+1` parejas, que debe rechazarse sin usar el motor.\n\nMuestra una línea por prueba con este formato:\n\nPares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B\n\nSi la configuración inicial se rechaza, muestra Configuracion rechazada:B;Original:B comparando estado y datos con sus copias anteriores. Termina siempre con salto.\n\nPulsa Compilar, ejecutar y comprobar. Las siete primeras configuraciones son válidas y producen las cantidades de parejas indicadas en la lista; las nueve siguientes se rechazan. Todos los indicadores deben ser uno. El editor conserva `seleccionar` ya conocida: construye el registro `Pareja`, `formar_parejas` y las comprobaciones.",
           "emphasis": [
             {
               "text": "compara también los estados finales",
@@ -632,7 +632,7 @@
                 "outputs": [
                   "Pares:2;Propiedades:1;Orden:1;Original:1;Vacio:0:1;Rechazo:1\nPares:0;Propiedades:1;Orden:1;Original:1;Vacio:0:1;Rechazo:1\nPares:0;Propiedades:1;Orden:1;Original:1;Vacio:0:1;Rechazo:1\nPares:1;Propiedades:1;Orden:1;Original:1;Vacio:0:1;Rechazo:1\nPares:1;Propiedades:1;Orden:1;Original:1;Vacio:0:1;Rechazo:1\nPares:5;Propiedades:1;Orden:1;Original:1;Vacio:0:1;Rechazo:1\nPares:2;Propiedades:1;Orden:1;Original:1;Vacio:0:1;Rechazo:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\nConfiguracion rechazada:1;Original:1\n"
                 ],
-                "explanation": "Una única selección aporta todos los participantes en orden y sin reposición global. La batería conserva los datos y el motor cuando corresponde, incluso con cero parejas o configuración rechazada."
+                "explanation": "En el primer caso, dos parejas necesitan cuatro participantes distintos de los cinco candidatos. Se obtienen juntos mediante seleccionar y se agrupan en el mismo orden. Aplanar esos registros debe recuperar la selección de referencia y conservar también el estado final del motor. Pedir cero parejas con candidatos válidos devuelve vacío sin consumo; una lista repetida sigue siendo inválida aunque se pidan cero. Pedir más parejas de las que caben se rechaza antes de la selección. Cada llamada conserva los datos originales y comprueba la unicidad entre todos sus participantes."
               }
             ]
           }
@@ -676,7 +676,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n    return resultado;\n}\n\nint main() {\n    const std::vector<int> candidatos{7, 0, 9, 2, 5, 4, 1};\n    const std::vector<int> original = candidatos;\n    std::mt19937 motor{821};\n    std::mt19937 referencia = motor;\n    const std::vector<Pareja> grupos = formar_parejas(motor, candidatos, 3);\n    const std::vector<int> planos = aplanar_parejas(grupos);\n    const std::vector<int> orden = seleccionar(referencia, candidatos, 6);\n    std::cout << \"Pares:\" << grupos.size() << '\\n';\n    std::cout << \"Propiedades:\" << (grupos.size() == 3\n        && seleccion_correcta(candidatos, planos, 6)) << '\\n';\n    std::cout << \"Orden:\" << (planos == orden && motor == referencia) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<Pareja> vacio = formar_parejas(motor, candidatos, 0);\n    std::cout << \"Vacio:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<Pareja> demasiados = formar_parejas(motor, candidatos, 4);\n        std::cout << \"Aceptados:\" << demasiados.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (motor == antes_error) << '\\n';\n    }\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n\n    const int total = static_cast<int>(elegidos.size());\n\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) {\n                pertenece = true;\n            }\n        }\n\n        if (!pertenece) {\n            return false;\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) {\n                return false;\n            }\n        }\n    }\n\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n\n    return resultado;\n}\n\nint main() {\n    const std::vector<int> candidatos{7, 0, 9, 2, 5, 4, 1};\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 motor{821};\n    std::mt19937 referencia = motor;\n    const std::vector<Pareja> grupos = formar_parejas(motor, candidatos, 3);\n    const std::vector<int> planos = aplanar_parejas(grupos);\n    const std::vector<int> orden = seleccionar(referencia, candidatos, 6);\n\n    std::cout << \"Pares:\" << grupos.size() << '\\n';\n    std::cout << \"Propiedades:\" << (grupos.size() == 3\n        && seleccion_correcta(candidatos, planos, 6)) << '\\n';\n    std::cout << \"Orden:\" << (planos == orden && motor == referencia) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<Pareja> vacio = formar_parejas(motor, candidatos, 0);\n    std::cout << \"Vacio:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<Pareja> demasiados = formar_parejas(motor, candidatos, 4);\n        std::cout << \"Aceptados:\" << demasiados.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (motor == antes_error) << '\\n';\n    }\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -690,7 +690,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: validar el rango de pares y la capacidad antes de multiplicar; delegar una selección de `2*pares` candidatos distintos; formar exactamente pares registros; conservar pertenencia y unicidad global; agrupar consecutivamente sin ordenar; mantener el original intacto y no usar el motor en el caso cero ni en un rechazo previo.\n\nEl número de candidatos sin elegir es `total-2*pares`. Un total impar deja exactamente uno sólo cuando se pide el máximo de parejas. Para {} con cero hay resultado vacío; una pareja se rechaza. Con {2,9} y una pareja se usan ambos ID una vez, en el orden obtenido, sin exigir cuál va primero.",
+          "text": "La referencia debe cumplir estos criterios:\n\nValidar el rango de pares y la capacidad antes de multiplicar.\nObtener `2*pares` candidatos distintos mediante una sola llamada a seleccionar.\nFormar exactamente pares registros.\nConservar pertenencia y unicidad global.\nAgrupar consecutivamente sin ordenar.\nMantener el original intacto.\nNo usar el motor en el caso cero ni en un rechazo previo.\n\nEl número de candidatos sin elegir es `total-2*pares`. Un total impar deja exactamente uno sólo cuando se pide el máximo de parejas.\n\nPara {} con cero hay resultado vacío; una pareja se rechaza. Con {2,9} y una pareja se usan ambos ID una vez, en el orden obtenido, sin exigir cuál va primero.",
           "emphasis": [
             {
               "text": "`total-2*pares`",
@@ -733,7 +733,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n    return resultado;\n}\n\nvoid probar(const std::vector<int>& candidatos,int pares) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{809};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 referencia=motor;\n        const std::vector<Pareja> grupos=formar_parejas(motor,candidatos,pares);\n        const std::vector<int> planos=aplanar_parejas(grupos);\n        const std::vector<int> orden=seleccionar(referencia,candidatos,2*pares);\n        std::cout<<\"Pares:\"<<grupos.size()<<\";Propiedades:\"\n                 <<(static_cast<int>(grupos.size())==pares\n                    && seleccion_correcta(candidatos,planos,2*pares))\n                 <<\";Orden:\"<<(planos==orden && motor==referencia)\n                 <<\";Original:\"<<(candidatos==original);\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<Pareja> vacio=formar_parejas(motor,candidatos,0);\n        std::cout<<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const int exceso=static_cast<int>(candidatos.size())/2+1;\n            const std::vector<Pareja> demasiados=formar_parejas(motor,candidatos,exceso);\n            std::cout<<\";Aceptados:\"<<demasiados.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({0,5,2,8,3},2);\n    probar({},0);\n    probar({0},0);\n    probar({2,9},1);\n    probar({8,0,5},1);\n    probar({0,1,2,3,4,5,6,7,8,9},5);\n    probar({3,8,2,5,0},2);\n    probar({},1);\n    probar({0},1);\n    probar({0,1,2,3,4,5,6,7,8,9},-1);\n    probar({0,1,2,3,4,5,6,7,8,9},6);\n    probar({-1,2},0);\n    probar({10,2},0);\n    probar({0,0},0);\n    probar({0,1,2,3,4,5,6,7,8,9,0},0);\n    probar({2,9},2);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n\n    const int total = static_cast<int>(elegidos.size());\n\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) {\n                pertenece = true;\n            }\n        }\n\n        if (!pertenece) {\n            return false;\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) {\n                return false;\n            }\n        }\n    }\n\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n\n    return resultado;\n}\n\nvoid probar(const std::vector<int>& candidatos, int pares) {\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 motor{809};\n    const std::mt19937 inicial = motor;\n\n    try {\n        std::mt19937 referencia = motor;\n        const std::vector<Pareja> grupos = formar_parejas(motor, candidatos, pares);\n        const std::vector<int> planos = aplanar_parejas(grupos);\n        const std::vector<int> orden = seleccionar(referencia, candidatos, 2 * pares);\n        std::cout << \"Pares:\" << grupos.size() << \";Propiedades:\"\n                 << (static_cast<int>(grupos.size()) == pares\n                    && seleccion_correcta(candidatos, planos, 2 * pares))\n                 << \";Orden:\" << (planos == orden && motor == referencia)\n                 << \";Original:\" << (candidatos == original);\n        const std::mt19937 antes_vacio = motor;\n        const std::vector<Pareja> vacio = formar_parejas(motor, candidatos, 0);\n        std::cout << \";Vacio:\" << vacio.size() << \":\" << (motor == antes_vacio);\n        const std::mt19937 antes_error = motor;\n        try {\n            const int exceso = static_cast<int>(candidatos.size()) / 2 + 1;\n            const std::vector<Pareja> demasiados = formar_parejas(motor, candidatos, exceso);\n            std::cout << \";Aceptados:\" << demasiados.size();\n        } catch (const std::invalid_argument&) {\n            std::cout << \";Rechazo:\" << (motor == antes_error);\n        }\n        std::cout << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada:\" << (motor == inicial)\n                 << \";Original:\" << (candidatos == original) << \"\\n\";\n    }\n}\n\nint main() {\n    probar({0,5,2,8,3},2);\n    probar({},0);\n    probar({0},0);\n    probar({2,9},1);\n    probar({8,0,5},1);\n    probar({0,1,2,3,4,5,6,7,8,9},5);\n    probar({3,8,2,5,0},2);\n    probar({},1);\n    probar({0},1);\n    probar({0,1,2,3,4,5,6,7,8,9},-1);\n    probar({0,1,2,3,4,5,6,7,8,9},6);\n    probar({-1,2},0);\n    probar({10,2},0);\n    probar({0,0},0);\n    probar({0,1,2,3,4,5,6,7,8,9,0},0);\n    probar({2,9},2);\n    return 0;\n}\n"
         }
       ]
     },
@@ -758,7 +758,7 @@
           "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__agrupar_conserva_el_orden_y_el_cero",
           "language": "cpp",
           "question": "Predice ambas líneas. El vector de ID ya elegidos está dado y tiene cuatro elementos; no interviene un sorteo.",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<int> elegidos{9, 0, 4, 7};\n    std::vector<Pareja> parejas;\n    for (int i = 0; i < 2; ++i) {\n        parejas.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    std::vector<int> planos;\n    for (const Pareja& pareja : parejas) {\n        std::cout << '[' << pareja.primero << ':' << pareja.segundo << ']';\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n    std::cout << '\\n' << \"Orden:\" << (planos == elegidos) << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<int> elegidos{9, 0, 4, 7};\n    std::vector<Pareja> parejas;\n\n    for (int i = 0; i < 2; ++i) {\n        parejas.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n\n    std::vector<int> planos;\n\n    for (const Pareja& pareja : parejas) {\n        std::cout << '[' << pareja.primero << ':' << pareja.segundo << ']';\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n\n    std::cout << '\\n' << \"Orden:\" << (planos == elegidos) << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "[9:0][4:7]\nOrden:1"
           ],
@@ -787,7 +787,7 @@
           "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__unicidad_local_no_demuestra_unicidad_global",
           "language": "cpp",
           "question": "Predice las dos banderas. Cada pareja se comprueba primero por separado; después se comparan los cuatro ID del conjunto.",
-          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<Pareja> parejas{{4, 1}, {1, 8}};\n    bool locales = true;\n    std::vector<int> planos;\n    for (const Pareja& pareja : parejas) {\n        if (pareja.primero == pareja.segundo) { locales = false; }\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n    bool globales = true;\n    for (int i = 0; i < 4; ++i) {\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (planos.at(anterior) == planos.at(i)) { globales = false; }\n        }\n    }\n    std::cout << \"Locales:\" << locales << '\\n';\n    std::cout << \"Globales:\" << globales << '\\n';\n    return 0;\n}\n",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<Pareja> parejas{{4, 1}, {1, 8}};\n    bool locales = true;\n    std::vector<int> planos;\n\n    for (const Pareja& pareja : parejas) {\n        if (pareja.primero == pareja.segundo) {\n            locales = false;\n        }\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n\n    bool globales = true;\n\n    for (int i = 0; i < 4; ++i) {\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (planos.at(anterior) == planos.at(i)) {\n                globales = false;\n            }\n        }\n    }\n\n    std::cout << \"Locales:\" << locales << '\\n';\n    std::cout << \"Globales:\" << globales << '\\n';\n\n    return 0;\n}\n",
           "answers": [
             "Locales:1\nGlobales:0"
           ],
@@ -877,7 +877,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Reconstruye `seleccionar`, `Pareja`, `formar_parejas` y sus comprobaciones en este editor. Reúne {9,0,7,2,5,8,1,6,3} con cuatro parejas, vacío con cero, los diez ID 0..9 con cinco y {2,9} con dos. Cada prueba crea motor con semilla 809. Usa el formato de la batería: Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B; para una configuración inicial inválida muestra Configuracion rechazada:B;Original:B. Termina cada prueba con salto.\n\nComprueba cantidad, pertenencia, unicidad global, orden frente a una selección desde una copia inicial, original conservado, cero sin consumo y solicitud `total/2+1` rechazada sin consumo. Pulsa Compilar, ejecutar y comprobar. Las tres configuraciones válidas producen cuatro, cero y cinco parejas, y la última se rechaza. Los indicadores deben ser uno. Los nueve candidatos del primer caso y sus ocho personas elegidas representan cantidades diferentes.",
+          "text": "Reconstruye `seleccionar`, `Pareja`, `formar_parejas` y sus comprobaciones en este editor. Reúne estos casos, en orden:\n\n{9,0,7,2,5,8,1,6,3}; cuatro parejas → Pares:4\nVector vacío; cero parejas → Pares:0\nLos diez ID 0..9; cinco parejas → Pares:5\n{2,9}; dos parejas → Configuracion rechazada\n\nCada prueba crea motor con semilla 809. Usa el formato de la batería:\n\nPares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B\n\nPara una configuración inicial inválida muestra Configuracion rechazada:B;Original:B. Termina cada prueba con salto.\n\nComprueba cantidad, pertenencia, unicidad global, orden frente a una selección desde una copia inicial, original conservado, cero sin consumo y solicitud `total/2+1` rechazada sin consumo. Pulsa Compilar, ejecutar y comprobar. Las tres configuraciones válidas producen cuatro, cero y cinco parejas, y la última se rechaza. Los indicadores deben ser uno. Los nueve candidatos del primer caso y sus ocho personas elegidas representan cantidades diferentes.",
           "emphasis": [
             {
               "text": "Los indicadores deben ser uno",
@@ -915,7 +915,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid probar(const std::vector<int>& candidatos,int cantidad) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{701};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 repeticion=motor;\n        const std::vector<int> elegidos=seleccionar(motor,candidatos,cantidad);\n        const std::vector<int> repetidos=seleccionar(repeticion,candidatos,cantidad);\n        const bool reproducido=elegidos==repetidos && motor==repeticion;\n        std::mt19937 copia=motor;\n        const int siguientes=candidatos.size()<2 ? static_cast<int>(candidatos.size()):2;\n        const std::vector<int> segundo=seleccionar(motor,candidatos,siguientes);\n        const std::vector<int> repetido=seleccionar(copia,candidatos,siguientes);\n        const bool continuado=segundo==repetido && motor==copia;\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=seleccionar(motor,candidatos,0);\n        std::cout<<\"Cantidad:\"<<elegidos.size()\n                 <<\";Propiedades:\"<<seleccion_correcta(candidatos,elegidos,cantidad)\n                 <<\";Original:\"<<(candidatos==original)\n                 <<\";Reproduccion:\"<<reproducido<<\";Continuacion:\"<<continuado\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalida=seleccionar(motor,{2,2},0);\n            std::cout<<\";Aceptada:\"<<invalida.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({8,5,0,9,3,6,1},5);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n\n    const int total = static_cast<int>(elegidos.size());\n\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) {\n                pertenece = true;\n            }\n        }\n\n        if (!pertenece) {\n            return false;\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) {\n                return false;\n            }\n        }\n    }\n\n    return true;\n}\n\nvoid probar(const std::vector<int>& candidatos, int cantidad) {\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 motor{701};\n    const std::mt19937 inicial = motor;\n\n    try {\n        std::mt19937 repeticion = motor;\n        const std::vector<int> elegidos = seleccionar(motor, candidatos, cantidad);\n        const std::vector<int> repetidos = seleccionar(repeticion, candidatos, cantidad);\n        const bool reproducido = elegidos == repetidos && motor == repeticion;\n\n        std::mt19937 copia = motor;\n        const int siguientes = candidatos.size() < 2 ? static_cast<int>(candidatos.size()) : 2;\n        const std::vector<int> segundo = seleccionar(motor, candidatos, siguientes);\n        const std::vector<int> repetido = seleccionar(copia, candidatos, siguientes);\n        const bool continuado = segundo == repetido && motor == copia;\n\n        const std::mt19937 antes_vacio = motor;\n        const std::vector<int> vacio = seleccionar(motor, candidatos, 0);\n        std::cout << \"Cantidad:\" << elegidos.size()\n                 << \";Propiedades:\" << seleccion_correcta(candidatos, elegidos, cantidad)\n                 << \";Original:\" << (candidatos == original)\n                 << \";Reproduccion:\" << reproducido << \";Continuacion:\" << continuado\n                 << \";Vacio:\" << vacio.size() << \":\" << (motor == antes_vacio);\n        const std::mt19937 antes_error = motor;\n        try {\n            const std::vector<int> invalida = seleccionar(motor, {2,2}, 0);\n            std::cout << \";Aceptada:\" << invalida.size();\n        } catch (const std::invalid_argument&) {\n            std::cout << \";Rechazo:\" << (motor == antes_error);\n        }\n        std::cout << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada:\" << (motor == inicial)\n                 << \";Original:\" << (candidatos == original) << \"\\n\";\n    }\n}\n\nint main() {\n    probar({8,5,0,9,3,6,1},5);\n    return 0;\n}\n"
         }
       ]
     },
@@ -928,7 +928,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n    return resultado;\n}\n\nvoid probar(const std::vector<int>& candidatos,int pares) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{809};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 referencia=motor;\n        const std::vector<Pareja> grupos=formar_parejas(motor,candidatos,pares);\n        const std::vector<int> planos=aplanar_parejas(grupos);\n        const std::vector<int> orden=seleccionar(referencia,candidatos,2*pares);\n        std::cout<<\"Pares:\"<<grupos.size()<<\";Propiedades:\"\n                 <<(static_cast<int>(grupos.size())==pares\n                    && seleccion_correcta(candidatos,planos,2*pares))\n                 <<\";Orden:\"<<(planos==orden && motor==referencia)\n                 <<\";Original:\"<<(candidatos==original);\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<Pareja> vacio=formar_parejas(motor,candidatos,0);\n        std::cout<<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const int exceso=static_cast<int>(candidatos.size())/2+1;\n            const std::vector<Pareja> demasiados=formar_parejas(motor,candidatos,exceso);\n            std::cout<<\";Aceptados:\"<<demasiados.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({9,0,7,2,5,8,1,6,3},4);\n    probar({},0);\n    probar({0,1,2,3,4,5,6,7,8,9},5);\n    probar({2,9},2);\n    return 0;\n}\n"
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n\n    const int total = static_cast<int>(elegidos.size());\n\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) {\n                pertenece = true;\n            }\n        }\n\n        if (!pertenece) {\n            return false;\n        }\n\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) {\n                return false;\n            }\n        }\n    }\n\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n\n    return resultado;\n}\n\nvoid probar(const std::vector<int>& candidatos, int pares) {\n    const std::vector<int> original = candidatos;\n\n    std::mt19937 motor{809};\n    const std::mt19937 inicial = motor;\n\n    try {\n        std::mt19937 referencia = motor;\n        const std::vector<Pareja> grupos = formar_parejas(motor, candidatos, pares);\n        const std::vector<int> planos = aplanar_parejas(grupos);\n        const std::vector<int> orden = seleccionar(referencia, candidatos, 2 * pares);\n        std::cout << \"Pares:\" << grupos.size() << \";Propiedades:\"\n                 << (static_cast<int>(grupos.size()) == pares\n                    && seleccion_correcta(candidatos, planos, 2 * pares))\n                 << \";Orden:\" << (planos == orden && motor == referencia)\n                 << \";Original:\" << (candidatos == original);\n        const std::mt19937 antes_vacio = motor;\n        const std::vector<Pareja> vacio = formar_parejas(motor, candidatos, 0);\n        std::cout << \";Vacio:\" << vacio.size() << \":\" << (motor == antes_vacio);\n        const std::mt19937 antes_error = motor;\n        try {\n            const int exceso = static_cast<int>(candidatos.size()) / 2 + 1;\n            const std::vector<Pareja> demasiados = formar_parejas(motor, candidatos, exceso);\n            std::cout << \";Aceptados:\" << demasiados.size();\n        } catch (const std::invalid_argument&) {\n            std::cout << \";Rechazo:\" << (motor == antes_error);\n        }\n        std::cout << \"\\n\";\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuracion rechazada:\" << (motor == inicial)\n                 << \";Original:\" << (candidatos == original) << \"\\n\";\n    }\n}\n\nint main() {\n    probar({9,0,7,2,5,8,1,6,3},4);\n    probar({},0);\n    probar({0,1,2,3,4,5,6,7,8,9},5);\n    probar({2,9},2);\n    return 0;\n}\n"
         }
       ]
     }
@@ -2819,6 +2819,257 @@
         "id": "block_0007_0002",
         "beforeSha256": "aab88bc18538c28d4ebed012c910633f45a4802786e9e8c231542041573d45d9",
         "afterSha256": "795d5faa4f62f4134432b1a7ebf0ebc8bbb079a844c794a0da06bfabfd666fa0"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "765811e12209615b0d1b88c4d853ebb6909168fcf910f1f711dc3349ca560200",
+        "afterSha256": "63a6f2547b35fc5ac6234a460379dad9be09110928a661f8bf319425e44cd42c"
+      },
+      {
+        "id": "block_0002_0005",
+        "beforeSha256": "61274cf98b0e1a70b0808f4c8e3110d0d022f871c8cc58a8fd30f118f58f3cf1",
+        "afterSha256": "4a4435dec052d5e77885c14c3455a525be27c7eef9628ddd45536b79c354abfe"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
+        "beforeSha256": "e7387a4264f63f7576ac0cc76f2a86b2624a73bf7e0967ece5418b91ccfe8599",
+        "afterSha256": "0c9a769e74deb7563758b276fbf8ed58ff83b7c848f2cd56e3ce6164f0a38653"
+      },
+      {
+        "id": "block_0003_0002",
+        "beforeSha256": "a18d771d4da36b21c6346a8dd1482db52d013b16c663b861f394feb0e6efc832",
+        "afterSha256": "49392c1b5da252bc921a27ff49053b35e041ed0ae0adc8802c979b84f0677020"
+      },
+      {
+        "id": "block_0003_0004",
+        "beforeSha256": "b526067c4ddb0cea88eb89e0c898f52ea3e7da12fdc62390b87b89ff94c4f1c5",
+        "afterSha256": "7998437e415f16de151281fb2e6cefb48d1dc77439af947f50a0fab5b3a2bbc2"
+      },
+      {
+        "id": "block_0003_0008",
+        "beforeSha256": "d636bcd9c1df2e6076b8ef9e10afb1fbc304f17f6cf8a6e26c12506382b5cdee",
+        "afterSha256": "a2dd262a7d76a0792ea95b57face7d49724f1b4da2ba4943ca7164eba2b00cf2"
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_referencia_programa",
+        "beforeSha256": "a73cd26e0cffcc7cf83d530fd1c2a9a2cb94ed434404d7a359b10c3a7e7929c7",
+        "afterSha256": "47732b4eacb14b0c5440275cf38dd7acdd0ac1460e1c29482046f5918b21a4b3"
+      },
+      {
+        "id": "block_0004_0002",
+        "beforeSha256": "77591d357012b454b10d04475d3755ceb9435b66cb09928d3870124eae5cfeb1",
+        "afterSha256": "4106c413ce97f670eed86ca0dea1584089bb4d8d5f06a295814b96c7e60c1cbb"
+      },
+      {
+        "id": "block_0004_0004",
+        "beforeSha256": "28bfb127abbadfc5bcc27b300f219369eaf29b5490c51bf921973b3f19b5839a",
+        "afterSha256": "b9df56603bdbac5ff626b5ec98f35a9586c95fda4ab01ad32ea78b8cd2ebcb14"
+      },
+      {
+        "id": "block_0004_0009",
+        "beforeSha256": "b528b1f709de895dfe84dcf084b94719176f28a9cbd1b72fb143cb393970c20d",
+        "afterSha256": "dd9dabb7e2add716c615b6ee8aaa3a7682ee6a55f6096016a3ce4055c9554f79"
+      },
+      {
+        "id": "block_0005_0003",
+        "beforeSha256": "d277d4eb66a4702273ff24c7f5c612afd0d83985d3af2741a68d476604c0c3a9",
+        "afterSha256": "9b718ee6c7ffc6de151cc0389bf558d4b0e2e0e3340a07265e4c9794df066f4f"
+      },
+      {
+        "id": "block_0005_0004",
+        "beforeSha256": "7a32ad6e3e2c7f2ab5999f440d5ddf27ae64c7f764e92ba67a5fd9403969d952",
+        "afterSha256": "9de530c5a7fc4f62701b345e28f8e9b694e91e657084a424deac670c0bb57922"
+      },
+      {
+        "id": "block_0005_0005",
+        "beforeSha256": "8ae323bde326442bdb2d0de8c2712ba6ddb283a446eb4ef91ba4d2cf58f551fd",
+        "afterSha256": "cb2a9e66d207175a1b63ea65a2537785ddf34a55c78f8438de86cf5acc63f26a"
+      },
+      {
+        "id": "block_0006_0002",
+        "beforeSha256": "4c35fc897db80351ccd686c399b15564755224d35be1cf6761d4703245045d04",
+        "afterSha256": "86c80c58a1634a8ef73d5e697afc2e7422b2df6d7baef2d27fdf5d3d044a2629"
+      },
+      {
+        "id": "block_0006_0004",
+        "beforeSha256": "f12b312bf30fc3f5d6169e689c447d2be6857bb812c86abc749d7657fecd6e05",
+        "afterSha256": "5e24d6d98eaa1a6a1f8a3fac5a31f9f0611f8d76b4ab2de652a18adddd789f5f"
+      },
+      {
+        "id": "block_0006_0008",
+        "beforeSha256": "2aff48950689d00e67085fae3d0a478781f5f20bd561a6f35eb8c82a242d2976",
+        "afterSha256": "d490808dc5590a0e460aa95d9797bd144695e19e3dbed182bb01ddf9a1d4cc4b"
+      },
+      {
+        "id": "block_0007_0002",
+        "beforeSha256": "795d5faa4f62f4134432b1a7ebf0ebc8bbb079a844c794a0da06bfabfd666fa0",
+        "afterSha256": "fd4f8a781d554e1cc10b046044ac01457391685f8414de9b207cb8ee3c4e9a98"
+      },
+      {
+        "id": "block_0007_0004",
+        "beforeSha256": "414af75825f2054191fefa521aedc4bda259bb069b36c26ce15dae52e075d637",
+        "afterSha256": "9dbb915845f8c51efc0d32c2dbebdb7b16d268f7586bbcda16e355b990dafcf5"
+      },
+      {
+        "id": "block_0007_0008",
+        "beforeSha256": "d87bfc38adc005a4e41b6308ccb3ef8297fb39625e03b34aa0088c9f5a00dcdc",
+        "afterSha256": "e78f6bf271abb5e3e9861aacf2b33ab1a4d6c35000b57578f86bb93374724c15"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "586d2a883ff25e55fadd622f0bbe3d271d1e027e7025caf4246ac604ebc407d7",
+        "afterSha256": "990064e1a021f69318e649318152a251060a8afba40f4564f50d5af5feffa171"
+      },
+      {
+        "id": "block_0009_0001",
+        "beforeSha256": "c31403bb6f3ac45cdbfabad1cf43f6b134e6cf7ba979a20aa0df4c6187e55a24",
+        "afterSha256": "b2e4fde421fd53f09e616bc942ff8054c9d84760c3464ad1ba797e552a7454c0"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Copia aqui seleccionar, con su motor por referencia y su contrato completo.\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n    return 0;\n}\n",
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Orden:1;Motor:1;Original:1\nOrden:1;Motor:1;Original:1\n"
+                ],
+                "exitCode": 0,
+                "explanation": "El testigo realiza directamente las dos obtenciones en los intervalos que corresponden al prefijo. La segunda lectura tiene en cuenta el reemplazo del primer hueco. Los resultados deben conservar el orden, el motor recibido debe llegar al mismo estado que el testigo y los candidatos originales deben seguir intactos.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Orden:1;Motor:0;Original:1\nOrden:1;Motor:0;Original:1\n"
+                    ],
+                    "text": "Los ID coinciden, pero Motor:0 muestra que el motor del cliente no avanzó como el testigo. Revisa si la selección está usando una copia local o si su parámetro recibió el motor por valor. Repetir dos veces esa misma función defectuosa no distinguía el problema."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0003_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nint main() {\n    const std::vector<int> candidatos{9, 4, 1, 7, 0};\n    const std::vector<int> original = candidatos;\n    std::mt19937 motor{733};\n    std::mt19937 repeticion = motor;\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 4);\n    const std::vector<int> repetidos = seleccionar(repeticion, candidatos, 4);\n    std::cout << \"Cantidad:\" << elegidos.size() << '\\n';\n    std::cout << \"Propiedades:\" << seleccion_correcta(candidatos, elegidos, 4) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n    std::cout << \"Reproduccion:\" << (elegidos == repetidos && motor == repeticion) << '\\n';\n    std::mt19937 continuacion = motor;\n    const std::vector<int> segundo = seleccionar(motor, candidatos, 2);\n    const std::vector<int> repetido = seleccionar(continuacion, candidatos, 2);\n    std::cout << \"Continuacion:\" << (segundo == repetido && motor == continuacion) << '\\n';\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<int> vacio = seleccionar(motor, candidatos, 0);\n    std::cout << \"Vacio:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<int> invalida = seleccionar(motor, {4, 4}, 0);\n        std::cout << \"Aceptada:\" << invalida.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (motor == antes_error) << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0003_0008",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid probar(const std::vector<int>& candidatos,int cantidad) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{701};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 repeticion=motor;\n        const std::vector<int> elegidos=seleccionar(motor,candidatos,cantidad);\n        const std::vector<int> repetidos=seleccionar(repeticion,candidatos,cantidad);\n        const bool reproducido=elegidos==repetidos && motor==repeticion;\n        std::mt19937 copia=motor;\n        const int siguientes=candidatos.size()<2 ? static_cast<int>(candidatos.size()):2;\n        const std::vector<int> segundo=seleccionar(motor,candidatos,siguientes);\n        const std::vector<int> repetido=seleccionar(copia,candidatos,siguientes);\n        const bool continuado=segundo==repetido && motor==copia;\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=seleccionar(motor,candidatos,0);\n        std::cout<<\"Cantidad:\"<<elegidos.size()\n                 <<\";Propiedades:\"<<seleccion_correcta(candidatos,elegidos,cantidad)\n                 <<\";Original:\"<<(candidatos==original)\n                 <<\";Reproduccion:\"<<reproducido<<\";Continuacion:\"<<continuado\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalida=seleccionar(motor,{2,2},0);\n            std::cout<<\";Aceptada:\"<<invalida.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({6,1,8,3,0},3);\n    probar({},0);\n    probar({0},0);\n    probar({0},1);\n    probar({9,2,5},1);\n    probar({9,2,5},3);\n    probar({0,1,2,3,4,5,6,7,8,9},10);\n    probar({0,3,8,1,6},3);\n    probar({},1);\n    probar({-1},0);\n    probar({10},0);\n    probar({2,2},0);\n    probar({0,1,2,3,4,5,6,7,8,9,0},0);\n    probar({9,2,5},-1);\n    probar({9,2,5},4);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "u10_seleccion_testigo_de_dos_extracciones_referencia_programa",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid comprobar_dos(std::mt19937& motor, const std::vector<int>& candidatos) {\n    const std::vector<int> original = candidatos;\n    std::mt19937 testigo = motor;\n    const int total = static_cast<int>(candidatos.size());\n    std::uniform_int_distribution<int> primera_posicion{0, total - 1};\n    const int primera = primera_posicion(testigo);\n    const int primer_id = candidatos.at(primera);\n    std::uniform_int_distribution<int> segunda_posicion{0, total - 2};\n    const int segunda = segunda_posicion(testigo);\n    int segundo_id = candidatos.at(segunda);\n    if (segunda == primera) {\n        segundo_id = candidatos.at(total - 1);\n    }\n    const std::vector<int> esperados{primer_id, segundo_id};\n    const std::vector<int> obtenidos = seleccionar(motor, candidatos, 2);\n    std::cout << \"Orden:\" << (obtenidos == esperados)\n              << \";Motor:\" << (motor == testigo)\n              << \";Original:\" << (candidatos == original) << '\\n';\n}\n\nint main() {\n    std::mt19937 motor{701};\n    motor();\n    comprobar_dos(motor, {8, 0, 5, 9});\n    comprobar_dos(motor, {6, 1, 8, 3, 0});\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0004_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__conservar_elegido_y_delimitar_el_prefijo",
+          "language": "cpp",
+          "question": "Predice las tres líneas completas, incluidos los espacios entre valores. El índice uno está preparado; sólo hay tres posiciones activas al comenzar.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{8, 3, 6, 1};\n    int restantes = 3;\n    const int posicion = 1;\n    const int elegido = trabajo.at(posicion);\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    --restantes;\n    std::cout << \"Elegido:\" << elegido << '\\n' << \"Activos:\";\n    for (int i = 0; i < restantes; ++i) { std::cout << ' ' << trabajo.at(i); }\n    std::cout << '\\n' << \"Trabajo:\";\n    for (int dato : trabajo) { std::cout << ' ' << dato; }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Elegido:3\nActivos: 8 6\nTrabajo: 8 6 6 1"
+          ],
+          "explanation": "La posición 1 contiene 3, que se guarda en elegido antes de modificar el vector. El último activo es el 6 de la posición 2: se copia al hueco y restantes baja de 3 a 2. Quedan activos 8 6, mientras el almacenamiento completo es 8 6 6 1. Así se imprimen Elegido:3, Activos: 8 6 y Trabajo: 8 6 6 1, cada uno en su línea. El segundo 6 está en la cola y no sigue disponible.",
+          "reviewFeedback": "Sigue por separado el ID guardado, el contador restantes y las posiciones que aún pertenecen al prefijo. No confundas ese prefijo con todo el almacenamiento."
+        }
+      },
+      {
+        "id": "block_0004_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__sobrescribir_antes_de_conservar_pierde_el_candidato",
+          "language": "cpp",
+          "question": "Esta versión defectuosa sobrescribe antes de guardar. Predice su salida real; no la reemplaces por lo que debería haber seleccionado.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{7, 0, 4, 2};\n    int restantes = 4;\n    const int posicion = 0;\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    const int guardado = trabajo.at(posicion);\n    --restantes;\n    std::cout << \"Guardado:\" << guardado << '\\n' << \"Activos:\";\n    for (int i = 0; i < restantes; ++i) { std::cout << ' ' << trabajo.at(i); }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Guardado:2\nActivos: 2 0 4"
+          ],
+          "explanation": "La primera asignación copia el 2 de la posición 3 sobre el 7 de la posición 0. Sólo después se lee esa posición para inicializar guardado, así que se conserva 2, no el candidato anterior. Al reducir restantes a 3, el prefijo queda 2 0 4: el mismo 2 anunciado como elegido sigue disponible. La salida real es Guardado:2 y Activos: 2 0 4 en líneas separadas. Los accesos son válidos; el fallo está en guardar después del reemplazo.",
+          "reviewFeedback": "Traza las asignaciones en el orden escrito. Cuando se guarda el valor, comprueba si esa posición conserva todavía su contenido anterior."
+        }
+      },
+      {
+        "id": "block_0006_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n    return resultado;\n}\n\nint main() {\n    const std::vector<int> candidatos{7, 0, 9, 2, 5, 4, 1};\n    const std::vector<int> original = candidatos;\n    std::mt19937 motor{821};\n    std::mt19937 referencia = motor;\n    const std::vector<Pareja> grupos = formar_parejas(motor, candidatos, 3);\n    const std::vector<int> planos = aplanar_parejas(grupos);\n    const std::vector<int> orden = seleccionar(referencia, candidatos, 6);\n    std::cout << \"Pares:\" << grupos.size() << '\\n';\n    std::cout << \"Propiedades:\" << (grupos.size() == 3\n        && seleccion_correcta(candidatos, planos, 6)) << '\\n';\n    std::cout << \"Orden:\" << (planos == orden && motor == referencia) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<Pareja> vacio = formar_parejas(motor, candidatos, 0);\n    std::cout << \"Vacio:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<Pareja> demasiados = formar_parejas(motor, candidatos, 4);\n        std::cout << \"Aceptados:\" << demasiados.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (motor == antes_error) << '\\n';\n    }\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0008",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n    return resultado;\n}\n\nvoid probar(const std::vector<int>& candidatos,int pares) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{809};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 referencia=motor;\n        const std::vector<Pareja> grupos=formar_parejas(motor,candidatos,pares);\n        const std::vector<int> planos=aplanar_parejas(grupos);\n        const std::vector<int> orden=seleccionar(referencia,candidatos,2*pares);\n        std::cout<<\"Pares:\"<<grupos.size()<<\";Propiedades:\"\n                 <<(static_cast<int>(grupos.size())==pares\n                    && seleccion_correcta(candidatos,planos,2*pares))\n                 <<\";Orden:\"<<(planos==orden && motor==referencia)\n                 <<\";Original:\"<<(candidatos==original);\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<Pareja> vacio=formar_parejas(motor,candidatos,0);\n        std::cout<<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const int exceso=static_cast<int>(candidatos.size())/2+1;\n            const std::vector<Pareja> demasiados=formar_parejas(motor,candidatos,exceso);\n            std::cout<<\";Aceptados:\"<<demasiados.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({0,5,2,8,3},2);\n    probar({},0);\n    probar({0},0);\n    probar({2,9},1);\n    probar({8,0,5},1);\n    probar({0,1,2,3,4,5,6,7,8,9},5);\n    probar({3,8,2,5,0},2);\n    probar({},1);\n    probar({0},1);\n    probar({0,1,2,3,4,5,6,7,8,9},-1);\n    probar({0,1,2,3,4,5,6,7,8,9},6);\n    probar({-1,2},0);\n    probar({10,2},0);\n    probar({0,0},0);\n    probar({0,1,2,3,4,5,6,7,8,9,0},0);\n    probar({2,9},2);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0007_0002",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__agrupar_conserva_el_orden_y_el_cero",
+          "language": "cpp",
+          "question": "Predice ambas líneas. El vector de ID ya elegidos está dado y tiene cuatro elementos; no interviene un sorteo.",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<int> elegidos{9, 0, 4, 7};\n    std::vector<Pareja> parejas;\n    for (int i = 0; i < 2; ++i) {\n        parejas.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    std::vector<int> planos;\n    for (const Pareja& pareja : parejas) {\n        std::cout << '[' << pareja.primero << ':' << pareja.segundo << ']';\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n    std::cout << '\\n' << \"Orden:\" << (planos == elegidos) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "[9:0][4:7]\nOrden:1"
+          ],
+          "explanation": "Con i=0, se consultan las posiciones 0 y 1, que contienen 9 y 0. Con i=1, se consultan las posiciones 2 y 3, con 4 y 7. Los registros se imprimen como [9:0][4:7] y después se copian sus miembros primero y segundo a planos. El vector reconstruido es {9,0,4,7}, igual al original, por lo que la segunda línea es Orden:1. El cero ocupa su posición de participante.",
+          "reviewFeedback": "Forma cada registro con dos posiciones consecutivas y después recórrelo en el orden primero,segundo. Trata el cero como un ID."
+        }
+      },
+      {
+        "id": "block_0007_0004",
+        "block": {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__unicidad_local_no_demuestra_unicidad_global",
+          "language": "cpp",
+          "question": "Predice las dos banderas. Cada pareja se comprueba primero por separado; después se comparan los cuatro ID del conjunto.",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<Pareja> parejas{{4, 1}, {1, 8}};\n    bool locales = true;\n    std::vector<int> planos;\n    for (const Pareja& pareja : parejas) {\n        if (pareja.primero == pareja.segundo) { locales = false; }\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n    bool globales = true;\n    for (int i = 0; i < 4; ++i) {\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (planos.at(anterior) == planos.at(i)) { globales = false; }\n        }\n    }\n    std::cout << \"Locales:\" << locales << '\\n';\n    std::cout << \"Globales:\" << globales << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Locales:1\nGlobales:0"
+          ],
+          "explanation": "Dentro de la primera pareja, 4 y 1 son distintos; dentro de la segunda, 1 y 8 también lo son. Por eso la primera comprobación mantiene locales verdadero y muestra Locales:1. Al recorrer todos los miembros en {4,1,1,8}, se comparan los dos 1 de posiciones diferentes y globales pasa a falso. La segunda línea es Globales:0: comprobar cada pareja por separado no detectaba que una persona participaba en dos parejas.",
+          "reviewFeedback": "Separa la comparación dentro de cada pareja de la comparación entre todos los participantes del resultado."
+        }
+      },
+      {
+        "id": "block_0008_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nvoid probar(const std::vector<int>& candidatos,int cantidad) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{701};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 repeticion=motor;\n        const std::vector<int> elegidos=seleccionar(motor,candidatos,cantidad);\n        const std::vector<int> repetidos=seleccionar(repeticion,candidatos,cantidad);\n        const bool reproducido=elegidos==repetidos && motor==repeticion;\n        std::mt19937 copia=motor;\n        const int siguientes=candidatos.size()<2 ? static_cast<int>(candidatos.size()):2;\n        const std::vector<int> segundo=seleccionar(motor,candidatos,siguientes);\n        const std::vector<int> repetido=seleccionar(copia,candidatos,siguientes);\n        const bool continuado=segundo==repetido && motor==copia;\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<int> vacio=seleccionar(motor,candidatos,0);\n        std::cout<<\"Cantidad:\"<<elegidos.size()\n                 <<\";Propiedades:\"<<seleccion_correcta(candidatos,elegidos,cantidad)\n                 <<\";Original:\"<<(candidatos==original)\n                 <<\";Reproduccion:\"<<reproducido<<\";Continuacion:\"<<continuado\n                 <<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const std::vector<int> invalida=seleccionar(motor,{2,2},0);\n            std::cout<<\";Aceptada:\"<<invalida.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({8,5,0,9,3,6,1},5);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0001",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Seleccion invalida\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Seleccion invalida\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Seleccion invalida\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Parejas invalidas\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n    return resultado;\n}\n\nvoid probar(const std::vector<int>& candidatos,int pares) {\n    const std::vector<int> original=candidatos;\n    std::mt19937 motor{809};\n    const std::mt19937 inicial=motor;\n    try {\n        std::mt19937 referencia=motor;\n        const std::vector<Pareja> grupos=formar_parejas(motor,candidatos,pares);\n        const std::vector<int> planos=aplanar_parejas(grupos);\n        const std::vector<int> orden=seleccionar(referencia,candidatos,2*pares);\n        std::cout<<\"Pares:\"<<grupos.size()<<\";Propiedades:\"\n                 <<(static_cast<int>(grupos.size())==pares\n                    && seleccion_correcta(candidatos,planos,2*pares))\n                 <<\";Orden:\"<<(planos==orden && motor==referencia)\n                 <<\";Original:\"<<(candidatos==original);\n        const std::mt19937 antes_vacio=motor;\n        const std::vector<Pareja> vacio=formar_parejas(motor,candidatos,0);\n        std::cout<<\";Vacio:\"<<vacio.size()<<\":\"<<(motor==antes_vacio);\n        const std::mt19937 antes_error=motor;\n        try {\n            const int exceso=static_cast<int>(candidatos.size())/2+1;\n            const std::vector<Pareja> demasiados=formar_parejas(motor,candidatos,exceso);\n            std::cout<<\";Aceptados:\"<<demasiados.size();\n        } catch(const std::invalid_argument&) {\n            std::cout<<\";Rechazo:\"<<(motor==antes_error);\n        }\n        std::cout<<\"\\n\";\n    } catch(const std::invalid_argument&) {\n        std::cout<<\"Configuracion rechazada:\"<<(motor==inicial)\n                 <<\";Original:\"<<(candidatos==original)<<\"\\n\";\n    }\n}\n\nint main() {\n    probar({9,0,7,2,5,8,1,6,3},4);\n    probar({},0);\n    probar({0,1,2,3,4,5,6,7,8,9},5);\n    probar({2,9},2);\n    return 0;\n}\n"
+        }
       }
     ]
   },
@@ -2840,6 +3091,13 @@
             "start": 70,
             "end": 74,
             "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 140,
+            "end": 143,
+            "text": "una",
             "role": "data",
             "reading": "natural"
           },
@@ -2935,6 +3193,13 @@
         "sourceSha256": "fa8225e164e28a633fed8cf4f6298a9c54946c258199b327da6f55df626f3375",
         "spans": [
           {
+            "start": 7,
+            "end": 11,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 32,
             "end": 39,
             "text": "{6,6,1}",
@@ -2953,6 +3218,27 @@
             "end": 79,
             "text": "2",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 107,
+            "end": 111,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 301,
+            "end": 304,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 354,
+            "end": 358,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -3043,6 +3329,13 @@
             "reading": "natural"
           },
           {
+            "start": 25,
+            "end": 28,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 122,
             "end": 123,
             "text": "0",
@@ -3067,7 +3360,15 @@
         "block": "block_0000_0004",
         "path": "/options/2",
         "sourceSha256": "9116ab0d862f3ebdeaadeb6e2cabf592a30d621abda3fbc89a3983f33b2db5fb",
-        "spans": []
+        "spans": [
+          {
+            "start": 53,
+            "end": 56,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0000_0004",
@@ -3092,6 +3393,20 @@
         "path": "/text",
         "sourceSha256": "6be07256febb6334c1d00ad14d11ccb2ad8c0b35cab610a63aad99b5b7351d77",
         "spans": [
+          {
+            "start": 169,
+            "end": 172,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 293,
+            "end": 296,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 431,
             "end": 451,
@@ -3216,6 +3531,13 @@
             "text": "uniform_int_distribution<int>",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 322,
+            "end": 325,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 404,
@@ -3446,6 +3768,13 @@
             "reading": "natural"
           },
           {
+            "start": 508,
+            "end": 511,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 658,
             "end": 667,
             "text": "restantes",
@@ -3465,7 +3794,15 @@
         "block": "block_0001_0005",
         "path": "/text",
         "sourceSha256": "66b098a24453695eb66b23b3145e396dba7552318e9dccc278f385dba2e970dc",
-        "spans": []
+        "spans": [
+          {
+            "start": 100,
+            "end": 103,
+            "text": "uno",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0002_0000",
@@ -3587,13 +3924,15 @@
             "start": 18,
             "end": 47,
             "text": "extraidos < cantidad <= total",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           },
           {
             "start": 50,
             "end": 79,
             "text": "restantes = total - extraidos",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           }
         ]
       },
@@ -3622,6 +3961,13 @@
             "text": "extraidos=2",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 83,
@@ -3718,7 +4064,8 @@
             "start": 27,
             "end": 41,
             "text": "0..restantes-1",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           }
         ]
       },
@@ -3847,7 +4194,7 @@
       {
         "block": "block_0002_0004",
         "path": "/text",
-        "sourceSha256": "5a845b856a90dfb1a33a93b85e4364e39efc525facaa345c93ab14ccfc0ef12d",
+        "sourceSha256": "8883276d4d59c65586f30b73d1969afe9a32564ed3fb40a10435509f2aa293f0",
         "spans": [
           {
             "start": 9,
@@ -3857,199 +4204,353 @@
             "reading": "technical"
           },
           {
-            "start": 64,
-            "end": 75,
+            "start": 142,
+            "end": 153,
             "text": "{6,1,8,3,0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 80,
-            "end": 81,
+            "start": 164,
+            "end": 165,
             "text": "3",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 93,
-            "end": 94,
+            "start": 168,
+            "end": 178,
+            "text": "Cantidad:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 202,
+            "end": 203,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 96,
-            "end": 99,
+            "start": 206,
+            "end": 216,
+            "text": "Cantidad:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 217,
+            "end": 220,
             "text": "{0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 104,
-            "end": 105,
+            "start": 231,
+            "end": 232,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 112,
-            "end": 113,
+            "start": 235,
+            "end": 245,
+            "text": "Cantidad:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 249,
+            "text": "{0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 260,
+            "end": 261,
             "text": "1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 115,
-            "end": 122,
-            "text": "{9,2,5}",
-            "role": "data",
+            "start": 264,
+            "end": 274,
+            "text": "Cantidad:1",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 127,
-            "end": 128,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 135,
-            "end": 136,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 151,
-            "end": 155,
-            "text": "0..9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 160,
-            "end": 162,
-            "text": "10",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 164,
-            "end": 175,
-            "text": "{0,3,8,1,6}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 180,
-            "end": 181,
-            "text": "3",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 193,
-            "end": 194,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 196,
-            "end": 200,
-            "text": "{-1}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 205,
-            "end": 206,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 208,
-            "end": 212,
-            "text": "{10}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 217,
-            "end": 218,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 220,
-            "end": 225,
-            "text": "{2,2}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 230,
-            "end": 231,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 233,
-            "end": 237,
-            "text": "once",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 248,
-            "end": 271,
-            "text": "{0,1,2,3,4,5,6,7,8,9,0}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 276,
-            "end": 277,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 281,
-            "end": 288,
+            "start": 275,
+            "end": 282,
             "text": "{9,2,5}",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 293,
-            "end": 295,
+            "end": 294,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 297,
+            "end": 307,
+            "text": "Cantidad:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 308,
+            "end": 315,
+            "text": "{9,2,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 326,
+            "end": 327,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 330,
+            "end": 340,
+            "text": "Cantidad:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 349,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 353,
+            "end": 357,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 368,
+            "end": 370,
+            "text": "10",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 373,
+            "end": 384,
+            "text": "Cantidad:10",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 385,
+            "end": 396,
+            "text": "{0,3,8,1,6}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 407,
+            "end": 408,
+            "text": "3",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 411,
+            "end": 421,
+            "text": "Cantidad:3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 445,
+            "end": 446,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 472,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 473,
+            "end": 477,
+            "text": "{-1}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 488,
+            "end": 489,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 492,
+            "end": 515,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 516,
+            "end": 520,
+            "text": "{10}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 531,
+            "end": 532,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 535,
+            "end": 558,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 559,
+            "end": 564,
+            "text": "{2,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 575,
+            "end": 576,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 579,
+            "end": 602,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 603,
+            "end": 607,
+            "text": "Once",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 618,
+            "end": 641,
+            "text": "{0,1,2,3,4,5,6,7,8,9,0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 652,
+            "end": 653,
+            "text": "0",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 656,
+            "end": 679,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 680,
+            "end": 687,
+            "text": "{9,2,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 698,
+            "end": 700,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 302,
-            "end": 303,
+            "start": 703,
+            "end": 726,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 727,
+            "end": 734,
+            "text": "{9,2,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 745,
+            "end": 746,
             "text": "4",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 412,
-            "end": 428,
-            "text": "3,0,0,1,1,3,10,3",
+            "start": 749,
+            "end": 772,
+            "text": "Configuracion rechazada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 440,
-            "end": 449,
-            "text": "restantes",
-            "role": "prose",
+            "start": 816,
+            "end": 820,
+            "text": "ocho",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 863,
+            "end": 868,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 984,
+            "end": 994,
+            "text": "verdaderos",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 996,
+            "end": 1001,
+            "text": "Vacio",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1017,
+            "end": 1021,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -4057,11 +4558,46 @@
       {
         "block": "block_0002_0005",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "b3526ede4ebb12479ce9b8236cbc3e169598b6b76aa0e9702e6bd9226581bcde",
+        "sourceSha256": "623c04378518cb5fa254cdf0e72fc0900bfbd853cc9dbdf347d0a29bcc235823",
         "spans": [
           {
-            "start": 165,
-            "end": 169,
+            "start": 31,
+            "end": 36,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 55,
+            "end": 59,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "text": "tres",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 288,
+            "end": 292,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 363,
+            "end": 368,
+            "text": "{2,2}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 397,
+            "end": 401,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -4072,7 +4608,29 @@
         "block": "block_0002_0006",
         "path": "/text",
         "sourceSha256": "405485897600d99c6a1c4a88a41681cf4e3f959a1088bd191f42e66f702fa8d2",
-        "spans": []
+        "spans": [
+          {
+            "start": 108,
+            "end": 111,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 121,
+            "end": 123,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 241,
+            "end": 244,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0003_0000",
@@ -4121,6 +4679,13 @@
         "sourceSha256": "eb315116587cb65dada084adfaa8865237875f95cb2893bed5a834ff23ec2808",
         "spans": [
           {
+            "start": 27,
+            "end": 32,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 162,
             "end": 174,
             "text": "Reproduccion",
@@ -4146,12 +4711,40 @@
       {
         "block": "block_0003_0004",
         "path": "/text",
-        "sourceSha256": "8f9c2dbf36dab6efdb7a15775764bc2241d17354528fb15803ff33362eb38484",
+        "sourceSha256": "86ce9cea9977280a23fdd3e83f950ab395c468952bf9a6ecf9800b9314aa7b99",
         "spans": [
           {
-            "start": 243,
-            "end": 247,
+            "start": 353,
+            "end": 357,
             "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 364,
+            "end": 372,
+            "text": "cantidad",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 405,
+            "end": 408,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 449,
+            "end": 451,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 494,
+            "end": 497,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           }
@@ -4166,13 +4759,15 @@
             "start": 45,
             "end": 74,
             "text": "extraidos < cantidad <= total",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           },
           {
             "start": 82,
             "end": 107,
             "text": "restantes=total-extraidos",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           },
           {
             "start": 118,
@@ -4221,6 +4816,13 @@
             "end": 181,
             "text": "(Köppe et al., 2023)",
             "role": "citation",
+            "reading": "natural"
+          },
+          {
+            "start": 183,
+            "end": 186,
+            "text": "Dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -4395,7 +4997,22 @@
         "block": "block_0004_0003",
         "path": "/question",
         "sourceSha256": "40ffbcd7a72115a55dc07962406e76ff6abd270606b2a3a070bac66dc0adc3b6",
-        "spans": []
+        "spans": [
+          {
+            "start": 6,
+            "end": 8,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 43,
+            "end": 46,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -4469,7 +5086,8 @@
             "start": 10,
             "end": 22,
             "text": "0..restantes",
-            "role": "math"
+            "role": "math",
+            "reading": "auto"
           }
         ]
       },
@@ -4483,7 +5101,15 @@
         "block": "block_0004_0003",
         "path": "/reviewFeedback/0",
         "sourceSha256": "bbf929d430edbf04a0741a956ce884617de06ccb6275cf9e9a3a1fb69da077ed",
-        "spans": []
+        "spans": [
+          {
+            "start": 55,
+            "end": 57,
+            "text": "un",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0003",
@@ -4617,6 +5243,13 @@
             "text": "seleccionar",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 21,
+            "end": 24,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -4629,6 +5262,13 @@
             "start": 65,
             "end": 76,
             "text": "{6,1,8,3,0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 122,
+            "end": 127,
+            "text": "cinco",
             "role": "data",
             "reading": "natural"
           }
@@ -4656,13 +5296,29 @@
         "block": "block_0004_0006",
         "path": "/reviewFeedback/0",
         "sourceSha256": "06ad8543808474626525840a9d32fe68d21f0aa18b0bd1c33d9c2d98b9e0d475",
-        "spans": []
+        "spans": [
+          {
+            "start": 14,
+            "end": 17,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0006",
         "path": "/reviewFeedback/1",
         "sourceSha256": "fe6d2bfd44d56abea91e07f59b75417e54d125b289f2973aeb8b2dd954c8920a",
-        "spans": []
+        "spans": [
+          {
+            "start": 47,
+            "end": 50,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0004_0006",
@@ -4784,8 +5440,44 @@
       {
         "block": "block_0004_0009",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "29fea962a4c56f8553414292a6117a0f66de2d06638e0b6c32a5777b2854201c",
-        "spans": []
+        "sourceSha256": "b96a041edc3905840489d8ea0d7bc778495799339bbeda518f0a2db14c0ae01f",
+        "spans": [
+          {
+            "start": 7,
+            "end": 12,
+            "text": "siete",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 62,
+            "end": 67,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 372,
+            "end": 376,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 393,
+            "end": 398,
+            "text": "{2,2}",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0005_0000",
@@ -4918,18 +5610,32 @@
         "sourceSha256": "0b83cf8dbdc53e768e78cf753b9b10b1da20d1daea99d2ce13dce1e2fc3b6762",
         "spans": [
           {
+            "start": 28,
+            "end": 31,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 114,
             "end": 125,
             "text": "seleccionar",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 183,
+            "end": 186,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
       {
         "block": "block_0005_0003",
         "path": "/text",
-        "sourceSha256": "bef9acc1ba7c93eb26a436b9018ac3b4862cc20f43c54312b2b077a380a91a85",
+        "sourceSha256": "2da84d87cf956b997e3a256ad8e0c348ae66ec861f551cfc901fca7d57548230",
         "spans": [
           {
             "start": 10,
@@ -5016,220 +5722,353 @@
             "reading": "technical"
           },
           {
-            "start": 312,
-            "end": 323,
+            "start": 367,
+            "end": 378,
             "text": "{0,5,2,8,3}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 328,
-            "end": 329,
+            "start": 386,
+            "end": 387,
             "text": "2",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 341,
-            "end": 342,
+            "start": 390,
+            "end": 397,
+            "text": "Pares:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 418,
+            "end": 419,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 344,
-            "end": 347,
+            "start": 422,
+            "end": 429,
+            "text": "Pares:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 430,
+            "end": 433,
             "text": "{0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 352,
-            "end": 353,
-            "text": "0",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 355,
-            "end": 360,
-            "text": "{2,9}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 365,
-            "end": 366,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 368,
-            "end": 375,
-            "text": "{8,0,5}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 380,
-            "end": 381,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 387,
-            "end": 391,
-            "text": "diez",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 395,
-            "end": 399,
-            "text": "0..9",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 404,
-            "end": 405,
-            "text": "5",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 407,
-            "end": 418,
-            "text": "{3,8,2,5,0}",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 423,
-            "end": 424,
-            "text": "2",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 436,
-            "end": 437,
-            "text": "1",
-            "role": "data",
-            "reading": "natural"
-          },
-          {
-            "start": 439,
+            "start": 441,
             "end": 442,
-            "text": "{0}",
+            "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 447,
-            "end": 448,
-            "text": "1",
-            "role": "data",
+            "start": 445,
+            "end": 452,
+            "text": "Pares:0",
+            "role": "output",
             "reading": "natural"
           },
           {
-            "start": 454,
+            "start": 453,
             "end": 458,
-            "text": "diez",
+            "text": "{2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
             "start": 466,
-            "end": 468,
+            "end": 467,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 470,
+            "end": 477,
+            "text": "Pares:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 478,
+            "end": 485,
+            "text": "{8,0,5}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 493,
+            "end": 494,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 497,
+            "end": 504,
+            "text": "Pares:1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 509,
+            "end": 513,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 517,
+            "end": 521,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 529,
+            "end": 530,
+            "text": "5",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 533,
+            "end": 540,
+            "text": "Pares:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 541,
+            "end": 552,
+            "text": "{3,8,2,5,0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 560,
+            "end": 561,
+            "text": "2",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 564,
+            "end": 571,
+            "text": "Pares:2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 592,
+            "end": 593,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 596,
+            "end": 619,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 620,
+            "end": 623,
+            "text": "{0}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 631,
+            "end": 632,
+            "text": "1",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 635,
+            "end": 658,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 663,
+            "end": 667,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 671,
+            "end": 675,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 683,
+            "end": 685,
             "text": "-1",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 475,
-            "end": 476,
+            "start": 688,
+            "end": 711,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 716,
+            "end": 720,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 724,
+            "end": 728,
+            "text": "0..9",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 736,
+            "end": 737,
             "text": "6",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 478,
-            "end": 484,
+            "start": 740,
+            "end": 763,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 764,
+            "end": 770,
             "text": "{-1,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 489,
-            "end": 490,
+            "start": 778,
+            "end": 779,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 492,
-            "end": 498,
+            "start": 782,
+            "end": 805,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 806,
+            "end": 812,
             "text": "{10,2}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 503,
-            "end": 504,
+            "start": 820,
+            "end": 821,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 506,
-            "end": 511,
+            "start": 824,
+            "end": 847,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 848,
+            "end": 853,
             "text": "{0,0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 516,
-            "end": 517,
+            "start": 861,
+            "end": 862,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 519,
-            "end": 523,
-            "text": "once",
+            "start": 865,
+            "end": 888,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 889,
+            "end": 893,
+            "text": "Once",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 534,
-            "end": 557,
+            "start": 904,
+            "end": 927,
             "text": "{0,1,2,3,4,5,6,7,8,9,0}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 562,
-            "end": 563,
+            "start": 935,
+            "end": 936,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 567,
-            "end": 572,
+            "start": 939,
+            "end": 962,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 963,
+            "end": 968,
             "text": "{2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 577,
-            "end": 578,
+            "start": 976,
+            "end": 977,
             "text": "2",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 980,
+            "end": 1003,
+            "text": "Configuracion rechazada",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5237,7 +6076,7 @@
       {
         "block": "block_0005_0004",
         "path": "/text",
-        "sourceSha256": "e60ae607ad8287b9d0508b2fe1ade82ef994074a48b4522d060595eed8770836",
+        "sourceSha256": "ede6b979cfb31a4f3e653e9d5a6a649558d19d7e89ead22be5a5be22c4236ad2",
         "spans": [
           {
             "start": 11,
@@ -5296,57 +6135,57 @@
             "reading": "technical"
           },
           {
-            "start": 493,
-            "end": 553,
+            "start": 511,
+            "end": 571,
             "text": "Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 603,
-            "end": 639,
+            "start": 621,
+            "end": 657,
             "text": "Configuracion rechazada:B;Original:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 816,
-            "end": 829,
-            "text": "2,0,0,1,1,5,2",
-            "role": "output",
+            "start": 781,
+            "end": 786,
+            "text": "siete",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 849,
-            "end": 858,
-            "text": "restantes",
-            "role": "prose",
+            "start": 888,
+            "end": 893,
+            "text": "nueve",
+            "role": "data",
             "reading": "natural"
           },
           {
-            "start": 904,
-            "end": 907,
+            "start": 950,
+            "end": 953,
             "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 929,
-            "end": 940,
+            "start": 975,
+            "end": 986,
             "text": "seleccionar",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 978,
-            "end": 984,
+            "start": 1024,
+            "end": 1030,
             "text": "Pareja",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 988,
-            "end": 1002,
+            "start": 1034,
+            "end": 1048,
             "text": "formar_parejas",
             "role": "cpp",
             "reading": "technical"
@@ -5356,11 +6195,46 @@
       {
         "block": "block_0005_0005",
         "path": "/outputCheck/cases/0/explanation",
-        "sourceSha256": "a27953456f7c97746c58819ab44bdc0c5624c66d21b2fdfc31e9a8c0072e5d6f",
+        "sourceSha256": "268c0800d8e2ac55741cdb2fccd0901fcf0f8151de34ef9aa44b386014a629da",
         "spans": [
           {
-            "start": 158,
-            "end": 162,
+            "start": 19,
+            "end": 22,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 41,
+            "end": 47,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 79,
+            "end": 84,
+            "text": "cinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 125,
+            "end": 136,
+            "text": "seleccionar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 287,
+            "end": 291,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 408,
+            "end": 412,
             "text": "cero",
             "role": "data",
             "reading": "natural"
@@ -5463,6 +6337,13 @@
             "reading": "technical"
           },
           {
+            "start": 298,
+            "end": 301,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 311,
             "end": 317,
             "text": "Pareja",
@@ -5475,73 +6356,116 @@
         "block": "block_0006_0003",
         "path": "/text",
         "sourceSha256": "e57bd2c03095c01d1467dbd511ad5ae0c2fb17fdef8c2b59b1abd1b2d26d321f",
-        "spans": []
+        "spans": [
+          {
+            "start": 28,
+            "end": 32,
+            "text": "seis",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0006_0004",
         "path": "/text",
-        "sourceSha256": "09e19984d383b92c22ef3c38493e114163993c89ba2628d70b37ce7aa802cf07",
+        "sourceSha256": "b5d96f9bf91fea2556b4ea9cef65a4f63d31c16ea8a4aa44800d6c34c80da3cb",
         "spans": [
           {
-            "start": 31,
-            "end": 36,
+            "start": 65,
+            "end": 70,
             "text": "pares",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 100,
-            "end": 107,
+            "start": 117,
+            "end": 124,
             "text": "2*pares",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 150,
-            "end": 155,
+            "start": 156,
+            "end": 159,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 175,
+            "end": 186,
+            "text": "seleccionar",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 207,
+            "end": 212,
             "text": "pares",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 305,
-            "end": 309,
+            "start": 361,
+            "end": 365,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 375,
-            "end": 388,
+            "start": 431,
+            "end": 444,
             "text": "total-2*pares",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 423,
-            "end": 426,
+            "start": 479,
+            "end": 482,
             "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 474,
-            "end": 476,
+            "start": 531,
+            "end": 533,
             "text": "{}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 481,
-            "end": 485,
+            "start": 538,
+            "end": 542,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 534,
-            "end": 539,
+            "start": 564,
+            "end": 567,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 591,
+            "end": 596,
             "text": "{2,9}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 599,
+            "end": 602,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 627,
+            "end": 630,
+            "text": "una",
             "role": "data",
             "reading": "natural"
           }
@@ -5598,6 +6522,20 @@
             "start": 251,
             "end": 255,
             "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 263,
+            "end": 266,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 280,
+            "end": 282,
+            "text": "un",
             "role": "data",
             "reading": "natural"
           }
@@ -5780,6 +6718,13 @@
             "text": "Orden:1",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 322,
+            "end": 326,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -5788,6 +6733,13 @@
         "path": "/reviewFeedback",
         "sourceSha256": "d1e8e76831b549bfbe988142a56add53fa633ec637418b68a23bf34748258822",
         "spans": [
+          {
+            "start": 24,
+            "end": 27,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 84,
             "end": 91,
@@ -5873,6 +6825,13 @@
             "reading": "natural"
           },
           {
+            "start": 119,
+            "end": 122,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 158,
             "end": 159,
             "text": "0",
@@ -5931,6 +6890,13 @@
         "sourceSha256": "89189488668c8e0dd152a2bab7ff87c17425ecb0ea376236a2be91ad6a8e0dbb",
         "spans": [
           {
+            "start": 12,
+            "end": 15,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 97,
             "end": 103,
             "text": "cuatro",
@@ -5980,6 +6946,13 @@
             "reading": "technical"
           },
           {
+            "start": 143,
+            "end": 152,
+            "text": "verdadero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 163,
             "end": 172,
             "text": "Locales:1",
@@ -5990,6 +6963,13 @@
             "start": 208,
             "end": 217,
             "text": "{4,1,1,8}",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 235,
+            "end": 238,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
@@ -6008,10 +6988,31 @@
             "reading": "technical"
           },
           {
+            "start": 284,
+            "end": 289,
+            "text": "falso",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
             "start": 311,
             "end": 321,
             "text": "Globales:0",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 375,
+            "end": 378,
+            "text": "una",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 402,
+            "end": 405,
+            "text": "dos",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -6044,7 +7045,15 @@
         "block": "block_0007_0005",
         "path": "/responses/0/sources/0/label",
         "sourceSha256": "2bcafaa364e2a62f6007d602f7255b458be05b8a9126f9bae869cbe2ec6770c4",
-        "spans": []
+        "spans": [
+          {
+            "start": 36,
+            "end": 39,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "block_0007_0005",
@@ -6111,7 +7120,7 @@
       {
         "block": "block_0007_0008",
         "path": "/text",
-        "sourceSha256": "0cb24328894074c31ff628521456f6fde8c24a119895b62c3cd2938c4f8b7ff9",
+        "sourceSha256": "ba8470d9f65f85846dc8f7c64d53eda9f4d675847d64cd39b7078e43a5c29cce",
         "spans": [
           {
             "start": 13,
@@ -6135,120 +7144,169 @@
             "reading": "technical"
           },
           {
-            "start": 97,
-            "end": 116,
+            "start": 121,
+            "end": 140,
             "text": "{9,0,7,2,5,8,1,6,3}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 121,
-            "end": 127,
+            "start": 142,
+            "end": 148,
             "text": "cuatro",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 147,
-            "end": 151,
+            "start": 159,
+            "end": 166,
+            "text": "Pares:4",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 181,
+            "end": 185,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 157,
-            "end": 161,
+            "start": 196,
+            "end": 203,
+            "text": "Pares:0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 208,
+            "end": 212,
             "text": "diez",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 165,
-            "end": 169,
+            "start": 216,
+            "end": 220,
             "text": "0..9",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 174,
-            "end": 179,
+            "start": 222,
+            "end": 227,
             "text": "cinco",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 182,
-            "end": 187,
+            "start": 238,
+            "end": 245,
+            "text": "Pares:5",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 246,
+            "end": 251,
             "text": "{2,9}",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 192,
-            "end": 195,
+            "start": 253,
+            "end": 256,
             "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 232,
-            "end": 235,
+            "start": 267,
+            "end": 290,
+            "text": "Configuracion rechazada",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 327,
+            "end": 330,
             "text": "809",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 267,
-            "end": 327,
+            "start": 363,
+            "end": 423,
             "text": "Pares:N;Propiedades:B;Orden:B;Original:B;Vacio:N:B;Rechazo:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 377,
-            "end": 413,
+            "start": 473,
+            "end": 509,
             "text": "Configuracion rechazada:B;Original:B",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 572,
-            "end": 576,
+            "start": 668,
+            "end": 672,
             "text": "cero",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 602,
-            "end": 611,
+            "start": 698,
+            "end": 707,
             "text": "total/2+1",
             "role": "cpp",
             "reading": "technical"
           },
           {
-            "start": 716,
-            "end": 736,
-            "text": "cuatro, cero y cinco",
+            "start": 774,
+            "end": 778,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 812,
+            "end": 818,
+            "text": "cuatro",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 796,
-            "end": 799,
+            "start": 820,
+            "end": 824,
+            "text": "cero",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 827,
+            "end": 832,
+            "text": "cinco",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 892,
+            "end": 895,
             "text": "uno",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 805,
-            "end": 810,
+            "start": 901,
+            "end": 906,
             "text": "nueve",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 844,
-            "end": 848,
+            "start": 940,
+            "end": 944,
             "text": "ocho",
             "role": "output",
             "reading": "natural"
@@ -6292,7 +7350,15 @@
         "block": "u10_seleccion_testigo_de_dos_extracciones_titulo",
         "path": "/text",
         "sourceSha256": "f34f9a20c6bf274600bd188226cde61dccf8d2f5c8d35b1469683a37573a9c9f",
-        "spans": []
+        "spans": [
+          {
+            "start": 11,
+            "end": 14,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "u10_seleccion_testigo_de_dos_extracciones_consigna",
@@ -6305,6 +7371,13 @@
             "text": "seleccionar",
             "role": "cpp",
             "reading": "technical"
+          },
+          {
+            "start": 177,
+            "end": 180,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           },
           {
             "start": 263,
@@ -6328,6 +7401,20 @@
             "reading": "natural"
           },
           {
+            "start": 374,
+            "end": 377,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 451,
+            "end": 454,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 496,
             "end": 499,
             "text": "701",
@@ -6346,14 +7433,14 @@
             "end": 694,
             "text": "0..total-1",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 745,
             "end": 755,
             "text": "0..total-2",
             "role": "math",
-            "reading": "technical"
+            "reading": "auto"
           },
           {
             "start": 985,
@@ -6363,10 +7450,24 @@
             "reading": "technical"
           },
           {
+            "start": 1012,
+            "end": 1015,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
             "start": 1046,
             "end": 1072,
             "text": "Orden:B;Motor:B;Original:B",
             "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 1078,
+            "end": 1082,
+            "text": "tres",
+            "role": "data",
             "reading": "natural"
           }
         ]
@@ -6396,6 +7497,13 @@
             "text": "Motor:0",
             "role": "output",
             "reading": "natural"
+          },
+          {
+            "start": 196,
+            "end": 199,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
           }
         ]
       },
@@ -6403,7 +7511,15 @@
         "block": "u10_seleccion_testigo_de_dos_extracciones_comprobacion",
         "path": "/outputCheck/cases/0/explanation",
         "sourceSha256": "13cf092d81674933e621c14221490acf39d29970277f890ad5e9b81ca0ed4a53",
-        "spans": []
+        "spans": [
+          {
+            "start": 36,
+            "end": 39,
+            "text": "dos",
+            "role": "data",
+            "reading": "natural"
+          }
+        ]
       },
       {
         "block": "u10_seleccion_testigo_de_dos_extracciones_referencia_titulo",
@@ -6416,6 +7532,13 @@
         "path": "/text",
         "sourceSha256": "3ce23d2c0f917d5003d43eb3228baf6633ae0e6827cd25545c30445137a3ec17",
         "spans": [
+          {
+            "start": 25,
+            "end": 31,
+            "text": "cuatro",
+            "role": "data",
+            "reading": "natural"
+          },
           {
             "start": 92,
             "end": 96,

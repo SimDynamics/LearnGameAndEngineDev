@@ -123,7 +123,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+          "code": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n\n    return \"Varios sobres\";\n}\n"
         },
         {
           "type": "paragraph",
@@ -138,7 +138,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
@@ -348,7 +348,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El proyecto de sobres conserva sobres.h y sobres.cpp y utiliza el main.cpp mostrado. Supón compilación y enlace correctos. Predice toda la salida del ejecutable.",
-          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << descripcion_sobres(1) << \": \" << sobres_necesarios(1) << \"\\n\";\n    std::cout << descripcion_sobres(12) << \": \" << sobres_necesarios(12) << \"\\n\";\n    std::cout << descripcion_sobres(13) << \": \" << sobres_necesarios(13);\n    return 0;\n}\n",
+          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << descripcion_sobres(1) << \": \" << sobres_necesarios(1) << \"\\n\";\n    std::cout << descripcion_sobres(12) << \": \" << sobres_necesarios(12) << \"\\n\";\n    std::cout << descripcion_sobres(13) << \": \" << sobres_necesarios(13);\n\n    return 0;\n}\n",
           "answers": [
             "Un sobre: 1\nUn sobre: 1\nVarios sobres: 2"
           ],
@@ -449,11 +449,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Organiza un proyecto nuevo en serie.h, serie.cpp y main.cpp. El llamador aporta 0 <= hechas <= total <= 40. tareas_pendientes(int hechas, int total) devuelve cuántas quedan; estado_serie(int hechas, int total) devuelve Terminada cuando no queda ninguna y En curso en los demás casos del dominio. Ninguna auxiliar imprime ni modifica los datos. El cliente presenta estado, dos puntos, un espacio y cantidad pendiente."
+          "text": "Organiza un proyecto nuevo en serie.h, serie.cpp y main.cpp. El llamador aporta hechas y total, respetando 0 <= hechas <= total <= 40.\n\nLa interfaz ofrece dos funciones:\n\nint tareas_pendientes(int hechas, int total) devuelve cuántas tareas quedan.\nstd::string estado_serie(int hechas, int total) devuelve Terminada cuando no queda ninguna y En curso en los demás casos del dominio.\n\nNinguna auxiliar imprime ni modifica los datos del llamador. El cliente presenta el estado, dos puntos, un espacio y la cantidad pendiente."
         },
         {
           "type": "paragraph",
-          "text": "La construcción se realizará en el editor siguiente, que separa `serie.h`, `serie.cpp` y `main.cpp`. La cabecera debe declarar la interfaz compartida y cada auxiliar debe definirse una sola vez. El cliente presenta, en orden, los casos `(3,5)`, `(0,0)`, `(5,5)`, `(0,40)` y `(40,40)`, una línea por caso."
+          "text": "El editor siguiente separa serie.h, serie.cpp y main.cpp. La cabecera declara la interfaz compartida y cada auxiliar se define una sola vez.\n\nEl cliente debe llamar a las funciones con estos pares de datos, en este orden. En cada par aparece primero hechas y después total:\n\n(3,5)\n(0,0)\n(5,5)\n(0,40)\n(40,40)\n\nCada caso ocupa una línea del informe."
         },
         {
           "type": "fill_code",
@@ -467,7 +467,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: cabecera autosuficiente y protegida, incluida desde cliente e implementación; firmas concordantes; una definición ordinaria por función; resta dentro de cero a cuarenta; y salida separada del cálculo. Los cinco casos deben mostrar `En curso: 2`, `Terminada: 0`, `Terminada: 0`, `En curso: 40` y `Terminada: 0`, en ese orden. El salto final es opcional."
+          "text": "Criterios de la construcción:\n\nLa cabecera incluye sus dependencias y está protegida por una guarda.\nEl cliente y la implementación incluyen esa misma cabecera.\nLos tipos de las declaraciones y las definiciones coinciden.\nCada función ordinaria tiene una sola definición en el programa.\nLa resta conserva un resultado entre cero y cuarenta.\nLas auxiliares calculan; main presenta el resultado.\n\nPara los pares de datos indicados, el informe completo debe mostrar estas líneas, en este orden:\n\nEn curso: 2\nTerminada: 0\nTerminada: 0\nEn curso: 40\nTerminada: 0\n\nEl salto de línea final es opcional."
         },
         {
           "type": "note",
@@ -487,7 +487,7 @@
           "projectFiles": [
             {
               "path": "serie.h",
-              "initialCode": "#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n#include <string>\n\n// Escribe las declaraciones de las dos auxiliares.\n#endif\n"
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Escribe las declaraciones de las dos auxiliares.\n#endif\n"
             },
             {
               "path": "serie.cpp",
@@ -535,16 +535,16 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+          "code": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n\n    return \"En curso\";\n}\n"
         },
         {
           "type": "code",
           "language": "cpp",
-          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n\n    return 0;\n}\n"
         },
         {
           "type": "paragraph",
-          "text": "El cliente anterior presenta En curso: 2, Terminada: 0 y Terminada: 0 en líneas separadas. Ilustra las llamadas de tres casos. Para revisar también los dos extremos solicitados, el cliente completo que sigue añade (0,40) y (40,40). Las mismas auxiliares devuelven cuarenta y cero pendientes, respectivamente."
+          "text": "El cliente anterior utiliza tres pares de datos y muestra estas líneas:\n\nEn curso: 2\nTerminada: 0\nTerminada: 0\n\nEl cliente completo que sigue conserva esas llamadas y añade (0,40) y (40,40). Con las mismas auxiliares, esos casos devuelven cuarenta y cero tareas pendientes, respectivamente."
         },
         {
           "type": "paragraph",
@@ -563,7 +563,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    std::cout << \"\\n\" << estado_serie(0, 40) << \": \" << tareas_pendientes(0, 40) << \"\\n\";\n    std::cout << estado_serie(40, 40) << \": \" << tareas_pendientes(40, 40);\n    return 0;\n}\n"
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    std::cout << \"\\n\" << estado_serie(0, 40) << \": \" << tareas_pendientes(0, 40) << \"\\n\";\n    std::cout << estado_serie(40, 40) << \": \" << tareas_pendientes(40, 40);\n\n    return 0;\n}\n"
         }
       ]
     },
@@ -577,7 +577,7 @@
           "type": "output_prediction",
           "language": "cpp",
           "question": "El proyecto de series conserva serie.h y serie.cpp de la referencia y utiliza el main.cpp mostrado. Tras compilar y enlazar el proyecto, ¿qué salida produce?",
-          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(0, 8) << \": \" << tareas_pendientes(0, 8) << \"\\n\";\n    std::cout << estado_serie(8, 8) << \": \" << tareas_pendientes(8, 8);\n    return 0;\n}\n",
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(0, 8) << \": \" << tareas_pendientes(0, 8) << \"\\n\";\n    std::cout << estado_serie(8, 8) << \": \" << tareas_pendientes(8, 8);\n\n    return 0;\n}\n",
           "answers": [
             "En curso: 8\nTerminada: 0"
           ],
@@ -596,7 +596,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La construcción de series permite obtener la interfaz desde el uso que necesita el cliente. El relleno siguiente recupera esa relación; los proyectos de datos conservan los cuerpos y el cambio de capacidad utiliza otra actividad con la misma firma. Compilación, enlace y ejecución comprueban responsabilidades distintas."
+          "text": "El cliente del proyecto de series necesita obtener la cantidad de tareas pendientes y el texto que describe su estado. La interfaz declara una función para cada resultado. En el relleno siguiente relacionarás el texto que necesita el cliente con el tipo de retorno de estado_serie.\n\nEn las actividades con otros datos se conservan las funciones y se cambian sus argumentos. El cambio de capacidad del proyecto de sobres modifica otra responsabilidad: su regla de cálculo. Las actividades de compilación y enlace permiten distinguir una declaración visible de la definición que debe reunir el programa."
         },
         {
           "type": "fill_code",
@@ -660,7 +660,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "sobres.h",
@@ -668,11 +668,11 @@
             },
             {
               "path": "sobres.cpp",
-              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n\n    return \"Varios sobres\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -718,11 +718,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Este proyecto conserva la referencia de la página diez. Con `serie.cpp` y `main.cpp` seleccionados, pulsa «Compilar, ejecutar y comprobar»: debe presentar `En curso: 2`, `Terminada: 0` y `Terminada: 0` en tres líneas, con salto final opcional. Su objetivo es contrastar la organización ya construida con una ejecución de referencia."
+          "text": "Este proyecto conserva la referencia de la página diez. Selecciona serie.cpp y main.cpp y pulsa «Compilar, ejecutar y comprobar».\n\nEl programa debe mostrar estas tres líneas:\n\nEn curso: 2\nTerminada: 0\nTerminada: 0\n\nEl salto de línea final es opcional. Esta ejecución permite contrastar la organización ya construida con el programa de referencia."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n",
+          "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "serie.h",
@@ -730,11 +730,11 @@
             },
             {
               "path": "serie.cpp",
-              "initialCode": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+              "initialCode": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n\n    return \"En curso\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+              "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -760,7 +760,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las pruebas de compilación y enlace de series también se realizan en proyectos independientes. Una llamada mal escrita falla en el cliente; una implementación no seleccionada aporta una definición ausente durante el enlace; un cuerpo ordinario situado en la cabecera puede duplicarse entre unidades."
+          "text": "Las pruebas de compilación y enlace de series utilizan proyectos independientes, cada uno con un cambio concreto:\n\nUna llamada con un nombre no declarado falla al compilar el cliente.\nSi la implementación no se selecciona, sus definiciones no llegan al enlace.\nSi un cuerpo ordinario se escribe en la cabecera, las fuentes que la incluyen pueden aportar definiciones duplicadas."
         },
         {
           "type": "note",
@@ -776,11 +776,11 @@
         },
         {
           "type": "paragraph",
-          "text": "El cliente de este proyecto lee tarjetas, entre cero y ciento veinte, y las auxiliares conservan capacidad doce. Comprueba `0`, `12`, `13`, `25` y `120` con los criterios ya definidos. Pulsa «Compilar, ejecutar y comprobar» sin cambiar las fuentes entre entradas; el salto final es opcional."
+          "text": "El cliente lee tarjetas, entre cero y ciento veinte, y las auxiliares conservan la capacidad de doce tarjetas por sobre.\n\nPara avanzar, basta con comprobar correctamente el primer caso:\nEntrada: 0 → Salida: Sin tarjetas: 0\n\nLos demás casos son ensayos optativos:\nEntrada: 12 → Salida: Un sobre: 1\nEntrada: 13 → Salida: Varios sobres: 2\nEntrada: 25 → Salida: Varios sobres: 3\nEntrada: 120 → Salida: Varios sobres: 10\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar», sin cambiar las fuentes entre esos datos. El salto de línea final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    int tarjetas{0};\n    std::cin >> tarjetas;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    int tarjetas{0};\n\n    std::cin >> tarjetas;\n\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "sobres.h",
@@ -788,11 +788,11 @@
             },
             {
               "path": "sobres.cpp",
-              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n\n    return \"Varios sobres\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    int tarjetas{0};\n    std::cin >> tarjetas;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    int tarjetas{0};\n\n    std::cin >> tarjetas;\n\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -851,11 +851,11 @@
         },
         {
           "type": "paragraph",
-          "text": "En este proyecto cambia la capacidad de doce a veinte: actualiza división y resto en la implementación y el comentario del requisito en la cabecera, conservando las declaraciones y la llamada con veinticinco tarjetas. Pulsa «Compilar, ejecutar y comprobar»: debe producir `Varios sobres: 2`, con salto final opcional."
+          "text": "Cambia la capacidad de doce a veinte tarjetas por sobre, conservando las declaraciones y la llamada con veinticinco tarjetas.\n\nActualiza la división y el cálculo del resto en la implementación.\nActualiza también el comentario del requisito en la cabecera.\nConserva las firmas de las funciones y los archivos seleccionados.\n\nPulsa «Compilar, ejecutar y comprobar». La salida debe ser Varios sobres: 2, con salto de línea final opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "sobres.h",
@@ -863,11 +863,11 @@
             },
             {
               "path": "sobres.cpp",
-              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n\n    return \"Varios sobres\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -925,7 +925,7 @@
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n    return 0;\n}\n",
+          "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "sobres.h",
@@ -937,7 +937,7 @@
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n    return 0;\n}\n"
+              "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -1009,7 +1009,7 @@
         {
           "type": "code",
           "language": "cpp",
-          "code": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 20;\n    if (tarjetas % 20 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+          "code": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 20;\n\n    if (tarjetas % 20 != 0) {\n        ++completos;\n    }\n\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n\n    return \"Varios sobres\";\n}\n"
         }
       ]
     },
@@ -1189,11 +1189,11 @@
         },
         {
           "type": "paragraph",
-          "text": "Este cliente lee hechas y total, respetando el dominio. Comprueba `0 40`, `40 40`, `0 8` y `8 8`. Pulsa «Compilar, ejecutar y comprobar» conservando fuentes y selección; los estados son `En curso` cuando faltan tareas y `Terminada` cuando no falta ninguna. El salto final es opcional."
+          "text": "Este cliente lee hechas y total, respetando el dominio del proyecto de series.\n\nPara avanzar, basta con comprobar correctamente el primer caso:\nEntrada: 0 40 → Salida: En curso: 40\n\nLos demás casos son ensayos optativos:\nEntrada: 40 40 → Salida: Terminada: 0\nEntrada: 0 8 → Salida: En curso: 8\nEntrada: 8 8 → Salida: Terminada: 0\n\nCambia sólo Entrada y pulsa «Compilar, ejecutar y comprobar». Conserva los archivos y su selección entre pruebas. El salto de línea final es opcional."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include \"serie.h\"\n#include <iostream>\nint main() {\n    int hechas{0};\n    int total{0};\n    std::cin >> hechas >> total;\n    std::cout << estado_serie(hechas, total) << \": \" << tareas_pendientes(hechas, total);\n    return 0;\n}\n",
+          "initialCode": "#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    int hechas{0};\n    int total{0};\n\n    std::cin >> hechas >> total;\n\n    std::cout << estado_serie(hechas, total) << \": \" << tareas_pendientes(hechas, total);\n\n    return 0;\n}\n",
           "projectFiles": [
             {
               "path": "serie.h",
@@ -1201,11 +1201,11 @@
             },
             {
               "path": "serie.cpp",
-              "initialCode": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+              "initialCode": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n\n    return \"En curso\";\n}\n"
             },
             {
               "path": "main.cpp",
-              "initialCode": "#include \"serie.h\"\n#include <iostream>\nint main() {\n    int hechas{0};\n    int total{0};\n    std::cin >> hechas >> total;\n    std::cout << estado_serie(hechas, total) << \": \" << tareas_pendientes(hechas, total);\n    return 0;\n}\n"
+              "initialCode": "#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    int hechas{0};\n    int total{0};\n\n    std::cin >> hechas >> total;\n\n    std::cout << estado_serie(hechas, total) << \": \" << tareas_pendientes(hechas, total);\n\n    return 0;\n}\n"
             }
           ],
           "sourceFiles": [
@@ -3877,6 +3877,528 @@
         "id": "block_0018_0001",
         "beforeSha256": "e776beb1d32d4df7a581e1dc5d4bc164f564d9188140e5fee86f567013b6de2e",
         "afterSha256": "b56d1b013ce83c038a998668236ec3330e8a8393a7830f15830a8f55e250cdde"
+      },
+      {
+        "id": "block_0002_0002",
+        "beforeSha256": "79b1bccb56d4dd1b11a5b9e1d194f16650e812af17a6bf5c5110480d62915bd7",
+        "afterSha256": "ec38ea34a3dc4a3db97b0a56ded3b11385a2b3cf8d8abcad7d7a82ffd2bb7c1b"
+      },
+      {
+        "id": "block_0002_0004",
+        "beforeSha256": "e96fade46b912ca2157fafa239dc58b188d492431ed3affb0c342ba84cadefcd",
+        "afterSha256": "b2aa343735dd40b131258227aa9c3ee2b345ab203677f6037eb6a6014dece469"
+      },
+      {
+        "id": "block_0006_0001",
+        "beforeSha256": "3614bf9f90ccf6da5d9e2e2748990d33c1f497ee3249d9ff54b5fcd815cd1df7",
+        "afterSha256": "e817550a801b2d37afd81bedb3577b432f7f1957564ffb28e72d2520a642cde4"
+      },
+      {
+        "id": "block_0008_0001",
+        "beforeSha256": "7ee5d143081a218863011dc8b22b03894df6fdb63286fc69343d733b5ec7b931",
+        "afterSha256": "9d7fe2405ceb1d5a9302b108781b34f0306cf4fac00edcf95be3c1e513cf0a69"
+      },
+      {
+        "id": "block_0008_0002",
+        "beforeSha256": "8c7f6f9ed2924a76a30df7e0b914f5d12b847b5fb9851f9e528f6228417dc05e",
+        "afterSha256": "28629d3f3042c3a2493d971fd4a8ca3edc4aa0d538caeea97b25c5dea3e118ed"
+      },
+      {
+        "id": "block_0008_0004",
+        "beforeSha256": "ba6a95852870bf0f2de77a8c96c964fca1bcf689e8b734f14fbfa143b2fc962a",
+        "afterSha256": "aca7bfa283a7ba9e72e116b04370e237ab88562bc3140386a5a3e15e1a33dae6"
+      },
+      {
+        "id": "block_0008_0008",
+        "beforeSha256": "54b597764567a00de3fa516219fe72054e2b4382a5c09f9018bc7fafec7bd073",
+        "afterSha256": "6c250fd2a2837126431f42b73ef27f9221f4352a13cb53e96f34c756391dc4d4"
+      },
+      {
+        "id": "block_0009_0003",
+        "beforeSha256": "03cd108d621eebd28d170fb8d2b03b9e8ccbe2f204f0e8c76b16015c2d41d63d",
+        "afterSha256": "a6c145dffb4406583292c996c35f9279dcf1dc979dd2c361f4a32aa8ef85248f"
+      },
+      {
+        "id": "block_0009_0004",
+        "beforeSha256": "ad82cf7e800b4ccdb38db365f3e5c6861a98ee05b68f00ab09c55de3df769418",
+        "afterSha256": "62323bcfca80b0bbdc98edfd059465af8c051582f74cb544404feeba726de869"
+      },
+      {
+        "id": "block_0009_0005",
+        "beforeSha256": "9e7b0c8a588c0c8840466978dbc6003d9d22edfdb72613c7e3a0bdc858af8d34",
+        "afterSha256": "ba311b435b68436755ca7a90d19d223e35bc68605848d55219dc36259f55cda0"
+      },
+      {
+        "id": "series_cinco_referencia_cliente",
+        "beforeSha256": "fc7be970d488e5da97ce46f64433b7d04291a9e8ab3ba3c7143967d427a9fdaa",
+        "afterSha256": "4733a182e97e26f33cca4c7b560ef8ab2f6a78425de1a97e940c6c4c05a242b3"
+      },
+      {
+        "id": "block_0010_0001",
+        "beforeSha256": "227d7a8211b13efa3d091c46ea5194fd787c3ec7e6acc93ed5a94be4d318dd34",
+        "afterSha256": "25e93711dd4c230c6bbde21d07fa6387063c1121e427255c037509fd54c93543"
+      },
+      {
+        "id": "block_0010_0003",
+        "beforeSha256": "5970c74a69ebec248b75bb237b367bc485ae139cbbddf6c486b6a2172aa91b4e",
+        "afterSha256": "033909d49c2111a88d9ebc88794b2191bbe18c221690d10dd3ba0febbe5d79fe"
+      },
+      {
+        "id": "block_0012_0002",
+        "beforeSha256": "0de03f074deea1722dc170e072fcf12b2f7d8ea32fc770c2c995e5f72e628713",
+        "afterSha256": "ba958ab355f861cc42bfaecd2b91ae985d091457b4cf5467200bd6168236a75b"
+      },
+      {
+        "id": "block_0013_0001",
+        "beforeSha256": "0e8ca7ba797ef1efffc3098a1a2d4a598a5fc65e5699fe748c79d3330d3f5aef",
+        "afterSha256": "95050d2f1f174163551d3d604ec19f1ab7a4b2aceb8459fc0273d3a329752dbb"
+      },
+      {
+        "id": "block_0013_0002",
+        "beforeSha256": "4b4c808d4d1d664f924366121791ae12f232dc4ef35702db54cf9e2708f36d66",
+        "afterSha256": "f1702ebc74b5e03ad82f4a5b7e14c14c772a0dcff09dbe834896801aa89179a7"
+      },
+      {
+        "id": "block_0013_0004",
+        "beforeSha256": "485e40ef86ec139d83f79bfb6b98b89bfd6e3a023e70c3a2ea83a55a893f01e5",
+        "afterSha256": "49b7c238ff7b2f13755cbd83174d75e240aab1e3e23ee9c748d3c919fcf6c529"
+      },
+      {
+        "id": "block_0014_0001",
+        "beforeSha256": "62ec48b6aff4f9bc9973378150d77c4e2b7b49875a530c3fd971e0d26280b8b5",
+        "afterSha256": "11d93f1d8f486be7b2b72f22d690db4503f097e1c7a39b64f3e96018bfca51a2"
+      },
+      {
+        "id": "block_0014_0002",
+        "beforeSha256": "d9d02e8cfa5df39e71ead96bc674e3de1a5bbb66c280bc9e273166b5857f58e0",
+        "afterSha256": "ce0dfb4f2dbcbd5ba4daa3d5d8ac961d30b34feff41a45a4b415e0c803936dc8"
+      },
+      {
+        "id": "block_0015_0001",
+        "beforeSha256": "ec4dfeba5725f8a21c492a8934cc11a397ad583c9d504136c3deb376d2f5ecd0",
+        "afterSha256": "68c92197614ca3ee8e17e4105efd579a33369568dbc84a5f0cf797d148774eb7"
+      },
+      {
+        "id": "block_0015_0002",
+        "beforeSha256": "5e75075ec82a0380034e53912ed4e1e4038371768545c6fcb5d3de1c4bcac038",
+        "afterSha256": "53ed5e990870bb135b11f86cbd91710d77b6261fe79058e3b1e752ca7762a711"
+      },
+      {
+        "id": "capacidad_veinte_bateria",
+        "beforeSha256": "9b745635bcf3eeb5e0e6b67dbdefeff54b97dd5f5fca683b9dcac2153cf63116",
+        "afterSha256": "cfb3059079093454f379e06f102d05ac7d80d3b87c2b896cc2cb4b622cb0facc"
+      },
+      {
+        "id": "capacidad_veinte_referencia_codigo",
+        "beforeSha256": "82951153a19e6b1d745c5ef5d4aea7fae0bc57a5f164a30b185c21cecbb1c9df",
+        "afterSha256": "657acade4ce7b2ad75845bbca9038d8458c4768916246257cdf83b653b8652c7"
+      },
+      {
+        "id": "block_0020_0001",
+        "beforeSha256": "f7ec70ae6de3f4a4fec7d2e177d98392297d3067e08fa06626ad274fbde864ec",
+        "afterSha256": "2badac4f86198719ee85ddeaaa2c3a5c48d2fd326d5ca40c104e9f118feb4f80"
+      },
+      {
+        "id": "block_0020_0002",
+        "beforeSha256": "3158fcac70f8c2e32bcdcad9ac098c824c684ecd2d0cc9c139463db6f8965d2d",
+        "afterSha256": "825cc42053f6deba5f2f3b6e7a2765d8c96adc485942f60b3e67d0ac73f12a35"
+      }
+    ],
+    "sourceFormatRevisions": [
+      {
+        "id": "block_0002_0002",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+        }
+      },
+      {
+        "id": "block_0002_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0006_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El proyecto de sobres conserva sobres.h y sobres.cpp y utiliza el main.cpp mostrado. Supón compilación y enlace correctos. Predice toda la salida del ejecutable.",
+          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << descripcion_sobres(1) << \": \" << sobres_necesarios(1) << \"\\n\";\n    std::cout << descripcion_sobres(12) << \": \" << sobres_necesarios(12) << \"\\n\";\n    std::cout << descripcion_sobres(13) << \": \" << sobres_necesarios(13);\n    return 0;\n}\n",
+          "answers": [
+            "Un sobre: 1\nUn sobre: 1\nVarios sobres: 2"
+          ],
+          "explanation": "Una tarjeta y doce ocupan un sobre. Trece requiere dos. El cliente usa la misma interfaz en todas las llamadas; no duplica los cuerpos."
+        }
+      },
+      {
+        "id": "block_0008_0008",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    // Presenta los cinco casos en el orden solicitado.\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "serie.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n#include <string>\n\n// Escribe las declaraciones de las dos auxiliares.\n#endif\n"
+            },
+            {
+              "path": "serie.cpp",
+              "initialCode": "#include \"serie.h\"\n\n// Define las dos auxiliares a partir de sus contratos.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    // Presenta los cinco casos en el orden solicitado.\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "serie.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "En curso: 2\nTerminada: 0\nTerminada: 0\nEn curso: 40\nTerminada: 0",
+                  "En curso: 2\nTerminada: 0\nTerminada: 0\nEn curso: 40\nTerminada: 0\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0009_0003",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+        }
+      },
+      {
+        "id": "block_0009_0004",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "series_cinco_referencia_cliente",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    std::cout << \"\\n\" << estado_serie(0, 40) << \": \" << tareas_pendientes(0, 40) << \"\\n\";\n    std::cout << estado_serie(40, 40) << \": \" << tareas_pendientes(40, 40);\n    return 0;\n}\n"
+        }
+      },
+      {
+        "id": "block_0010_0001",
+        "block": {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "El proyecto de series conserva serie.h y serie.cpp de la referencia y utiliza el main.cpp mostrado. Tras compilar y enlazar el proyecto, ¿qué salida produce?",
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(0, 8) << \": \" << tareas_pendientes(0, 8) << \"\\n\";\n    std::cout << estado_serie(8, 8) << \": \" << tareas_pendientes(8, 8);\n    return 0;\n}\n",
+          "answers": [
+            "En curso: 8\nTerminada: 0"
+          ],
+          "explanation": "La primera serie conserva ocho pendientes; la segunda no conserva ninguno. Los cuerpos se obtienen de la misma implementación, no de la declaración visible en main."
+        }
+      },
+      {
+        "id": "block_0012_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 12 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Varios sobres: 3",
+                  "Varios sobres: 3\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0013_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "serie.h",
+              "initialCode": "// Archivo: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Dominio: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+            },
+            {
+              "path": "serie.cpp",
+              "initialCode": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "serie.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "En curso: 2\nTerminada: 0\nTerminada: 0",
+                  "En curso: 2\nTerminada: 0\nTerminada: 0\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "block_0014_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    int tarjetas{0};\n    std::cin >> tarjetas;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 12 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    int tarjetas{0};\n    std::cin >> tarjetas;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0",
+                "outputs": [
+                  "Sin tarjetas: 0",
+                  "Sin tarjetas: 0\n"
+                ]
+              },
+              {
+                "standardInput": "12",
+                "outputs": [
+                  "Un sobre: 1",
+                  "Un sobre: 1\n"
+                ]
+              },
+              {
+                "standardInput": "13",
+                "outputs": [
+                  "Varios sobres: 2",
+                  "Varios sobres: 2\n"
+                ]
+              },
+              {
+                "standardInput": "25",
+                "outputs": [
+                  "Varios sobres: 3",
+                  "Varios sobres: 3\n"
+                ]
+              },
+              {
+                "standardInput": "120",
+                "outputs": [
+                  "Varios sobres: 10",
+                  "Varios sobres: 10\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0"
+        }
+      },
+      {
+        "id": "block_0015_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 12 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Varios sobres: 2",
+                  "Varios sobres: 2\n"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "capacidad_veinte_bateria",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 20 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "#include \"sobres.h\"\n\n// Recupera tus definiciones de sobres_necesarios y descripcion_sobres.\n// Ambas deben cumplir el contrato de capacidad veinte.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << \"Tarjetas: 0; \" << descripcion_sobres(0)\n        << \": \" << sobres_necesarios(0) << '\\n';\n    std::cout << \"Tarjetas: 12; \" << descripcion_sobres(12)\n        << \": \" << sobres_necesarios(12) << '\\n';\n    std::cout << \"Tarjetas: 19; \" << descripcion_sobres(19)\n        << \": \" << sobres_necesarios(19) << '\\n';\n    std::cout << \"Tarjetas: 20; \" << descripcion_sobres(20)\n        << \": \" << sobres_necesarios(20) << '\\n';\n    std::cout << \"Tarjetas: 21; \" << descripcion_sobres(21)\n        << \": \" << sobres_necesarios(21) << '\\n';\n    std::cout << \"Tarjetas: 24; \" << descripcion_sobres(24)\n        << \": \" << sobres_necesarios(24) << '\\n';\n    std::cout << \"Tarjetas: 25; \" << descripcion_sobres(25)\n        << \": \" << sobres_necesarios(25) << '\\n';\n    std::cout << \"Tarjetas: 120; \" << descripcion_sobres(120)\n        << \": \" << sobres_necesarios(120) << '\\n';\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "exact",
+            "cases": [
+              {
+                "standardInput": "",
+                "outputs": [
+                  "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Un sobre: 1\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Un sobre: 1\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Varios sobres: 2\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6",
+                  "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Un sobre: 1\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Un sobre: 1\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Varios sobres: 2\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6\n"
+                ],
+                "exitCode": 0,
+                "explanation": "La ejecución reúne los ocho resultados exigidos. Diecinueve y veinte tarjetas caben en un sobre; veintiuna necesita dos. Doce y veinticuatro distinguen la capacidad nueva de una adaptación que conserve el resto de doce. La comparación siguiente desarrolla por qué veinticinco, por sí solo, no descubre ese error.",
+                "reviewFeedback": [
+                  {
+                    "outputs": [
+                      "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Sin tarjetas: 0\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Varios sobres: 2\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Un sobre: 1\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6",
+                      "Tarjetas: 0; Sin tarjetas: 0\nTarjetas: 12; Sin tarjetas: 0\nTarjetas: 19; Un sobre: 1\nTarjetas: 20; Varios sobres: 2\nTarjetas: 21; Varios sobres: 2\nTarjetas: 24; Un sobre: 1\nTarjetas: 25; Varios sobres: 2\nTarjetas: 120; Varios sobres: 6\n"
+                    ],
+                    "text": "Este informe coincide con una división por veinte y un resto calculado con doce. Para doce tarjetas aparecen cero sobres, aunque hace falta uno; para veinte aparecen dos, aunque basta uno; y para veinticuatro aparece uno, aunque hacen falta dos. Revisa que las dos operaciones utilicen la misma capacidad. Que veinticinco produzca dos no basta para conservar el resto anterior."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "capacidad_veinte_referencia_codigo",
+        "block": {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 20;\n    if (tarjetas % 20 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+        }
+      },
+      {
+        "id": "block_0020_0002",
+        "block": {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"serie.h\"\n#include <iostream>\nint main() {\n    int hechas{0};\n    int total{0};\n    std::cin >> hechas >> total;\n    std::cout << estado_serie(hechas, total) << \": \" << tareas_pendientes(hechas, total);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "serie.h",
+              "initialCode": "// Archivo: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Dominio: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+            },
+            {
+              "path": "serie.cpp",
+              "initialCode": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"serie.h\"\n#include <iostream>\nint main() {\n    int hechas{0};\n    int total{0};\n    std::cin >> hechas >> total;\n    std::cout << estado_serie(hechas, total) << \": \" << tareas_pendientes(hechas, total);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "serie.cpp",
+            "main.cpp"
+          ],
+          "outputCheck": {
+            "inputComparison": "tokens",
+            "cases": [
+              {
+                "standardInput": "0 40",
+                "outputs": [
+                  "En curso: 40",
+                  "En curso: 40\n"
+                ]
+              },
+              {
+                "standardInput": "40 40",
+                "outputs": [
+                  "Terminada: 0",
+                  "Terminada: 0\n"
+                ]
+              },
+              {
+                "standardInput": "0 8",
+                "outputs": [
+                  "En curso: 8",
+                  "En curso: 8\n"
+                ]
+              },
+              {
+                "standardInput": "8 8",
+                "outputs": [
+                  "Terminada: 0",
+                  "Terminada: 0\n"
+                ]
+              }
+            ]
+          },
+          "initialStandardInput": "0 40"
+        }
       }
     ]
   },
@@ -5184,60 +5706,80 @@
       {
         "block": "block_0008_0001",
         "path": "/text",
-        "sourceSha256": "1bae843d4489b027b663a49dae409adc7213977e6af1c437f0b95607d4a56952",
+        "sourceSha256": "b104ed054adb7027e4fbd7738f58b9424a67760e227489a1296c7921d3fdc167",
         "spans": [
           {
             "start": 30,
             "end": 37,
             "text": "serie.h",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 39,
             "end": 48,
             "text": "serie.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
             "start": 51,
             "end": 59,
             "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 80,
+            "end": 86,
+            "text": "hechas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 89,
+            "end": 94,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 107,
+            "end": 133,
+            "text": "0 <= hechas <= total <= 40",
+            "role": "math"
+          },
+          {
+            "start": 155,
+            "end": 158,
+            "text": "dos",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 80,
-            "end": 106,
-            "text": "0 <= hechas <= total <= 40",
-            "role": "math",
-            "reading": "auto"
-          },
-          {
-            "start": 108,
-            "end": 148,
-            "text": "tareas_pendientes(int hechas, int total)",
+            "start": 171,
+            "end": 215,
+            "text": "int tareas_pendientes(int hechas, int total)",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 174,
-            "end": 209,
-            "text": "estado_serie(int hechas, int total)",
+            "start": 248,
+            "end": 295,
+            "text": "std::string estado_serie(int hechas, int total)",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 219,
-            "end": 228,
+            "start": 305,
+            "end": 314,
             "text": "Terminada",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 255,
-            "end": 263,
+            "start": 341,
+            "end": 349,
             "text": "En curso",
             "role": "output",
             "reading": "natural"
@@ -5247,60 +5789,74 @@
       {
         "block": "block_0008_0002",
         "path": "/text",
-        "sourceSha256": "3014b9da5211e84584db9bcf8fd6a0816e05fbce0d0232601f1bb4888b82311f",
+        "sourceSha256": "a7c79911efeb3526defcf369029bd995d84af1b7efd73c4430ad526d2973f489",
         "spans": [
           {
-            "start": 65,
-            "end": 72,
+            "start": 27,
+            "end": 34,
             "text": "serie.h",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 76,
-            "end": 85,
+            "start": 36,
+            "end": 45,
             "text": "serie.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 90,
-            "end": 98,
+            "start": 48,
+            "end": 56,
             "text": "main.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 237,
-            "end": 242,
+            "start": 250,
+            "end": 256,
+            "text": "hechas",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 267,
+            "end": 272,
+            "text": "total",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 275,
+            "end": 280,
             "text": "(3,5)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 246,
-            "end": 251,
+            "start": 281,
+            "end": 286,
             "text": "(0,0)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 255,
-            "end": 260,
+            "start": 287,
+            "end": 292,
             "text": "(5,5)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 264,
-            "end": 270,
+            "start": 293,
+            "end": 299,
             "text": "(0,40)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 275,
-            "end": 282,
+            "start": 300,
+            "end": 307,
             "text": "(40,40)",
             "role": "data",
             "reading": "natural"
@@ -5345,40 +5901,33 @@
       {
         "block": "block_0008_0004",
         "path": "/text",
-        "sourceSha256": "1dbb6e8919fd9c6ab0a2bae3af5042274e24fd3df912b9f699a627e0f1e4bf71",
+        "sourceSha256": "7060be9789ae24fe7b33457baf2b30e7ab59a3815c96967d0e058348e098777e",
         "spans": [
           {
-            "start": 243,
-            "end": 254,
-            "text": "En curso: 2",
+            "start": 324,
+            "end": 328,
+            "text": "cero",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 258,
-            "end": 270,
-            "text": "Terminada: 0",
+            "start": 331,
+            "end": 339,
+            "text": "cuarenta",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 274,
-            "end": 286,
-            "text": "Terminada: 0",
-            "role": "output",
-            "reading": "natural"
+            "start": 366,
+            "end": 370,
+            "text": "main",
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 290,
-            "end": 302,
-            "text": "En curso: 40",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 307,
-            "end": 319,
-            "text": "Terminada: 0",
+            "start": 493,
+            "end": 556,
+            "text": "En curso: 2\nTerminada: 0\nTerminada: 0\nEn curso: 40\nTerminada: 0",
             "role": "output",
             "reading": "natural"
           }
@@ -5440,41 +5989,48 @@
       {
         "block": "block_0009_0005",
         "path": "/text",
-        "sourceSha256": "eb27b7db6a340bb7cb989a49eae8a7c937a4177546497641e0b797048a085c29",
+        "sourceSha256": "01417ef09685eac2691b2d6b794119f301650841a38c680d56e2ec7309d61faa",
         "spans": [
           {
-            "start": 29,
-            "end": 40,
-            "text": "En curso: 2",
+            "start": 28,
+            "end": 32,
+            "text": "tres",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 73,
+            "end": 110,
+            "text": "En curso: 2\nTerminada: 0\nTerminada: 0",
             "role": "output",
             "reading": "natural"
           },
           {
-            "start": 42,
-            "end": 54,
-            "text": "Terminada: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 57,
-            "end": 69,
-            "text": "Terminada: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 214,
-            "end": 220,
+            "start": 173,
+            "end": 179,
             "text": "(0,40)",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 223,
-            "end": 230,
+            "start": 182,
+            "end": 189,
             "text": "(40,40)",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 239,
+            "end": 247,
+            "text": "cuarenta",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 250,
+            "end": 254,
+            "text": "cero",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5632,8 +6188,16 @@
       {
         "block": "block_0010_0003",
         "path": "/text",
-        "sourceSha256": "5e7a9924a2da755da2acead95b3608f0a71053c4622eea908ff14d8716fb7d4a",
-        "spans": []
+        "sourceSha256": "dc281d99cc9be0b0f2ea474f4a19af01d3d85716737209890eed8de31a642d4b",
+        "spans": [
+          {
+            "start": 268,
+            "end": 280,
+            "text": "estado_serie",
+            "role": "cpp",
+            "reading": "technical"
+          }
+        ]
       },
       {
         "block": "block_0010_0004",
@@ -5825,40 +6389,40 @@
       {
         "block": "block_0013_0001",
         "path": "/text",
-        "sourceSha256": "e4623194fee0e00f84541f9000b876c94b0369f41b3298e1f240305ddcc86077",
+        "sourceSha256": "6b3ac793cb346c959afcc7c5e3bcad2a08d7a64a53aa8674a0b7e560b6641b16",
         "spans": [
           {
-            "start": 61,
-            "end": 70,
+            "start": 50,
+            "end": 54,
+            "text": "diez",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 67,
+            "end": 76,
             "text": "serie.cpp",
-            "role": "data",
-            "reading": "natural"
+            "role": "cpp",
+            "reading": "technical"
           },
           {
-            "start": 75,
-            "end": 83,
+            "start": 79,
+            "end": 87,
             "text": "main.cpp",
+            "role": "cpp",
+            "reading": "technical"
+          },
+          {
+            "start": 162,
+            "end": 166,
+            "text": "tres",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 156,
-            "end": 167,
-            "text": "En curso: 2",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 171,
-            "end": 183,
-            "text": "Terminada: 0",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 188,
-            "end": 200,
-            "text": "Terminada: 0",
+            "start": 176,
+            "end": 213,
+            "text": "En curso: 2\nTerminada: 0\nTerminada: 0",
             "role": "output",
             "reading": "natural"
           }
@@ -5873,7 +6437,7 @@
       {
         "block": "block_0013_0004",
         "path": "/text",
-        "sourceSha256": "961641e67046b9bde6c13c18ad509e8c9ba97edfd572a5a22fb381b620e5ea5d",
+        "sourceSha256": "7139e4ce3c4f946a6412e1e5a23fefe01b5bf9d2941a2cde79d6f8f9475c2bcd",
         "spans": []
       },
       {
@@ -5927,48 +6491,104 @@
       {
         "block": "block_0014_0001",
         "path": "/text",
-        "sourceSha256": "a39e065f6e947271dd0f76732199a62c75c2824918d29ea91feb17f4fccd6725",
+        "sourceSha256": "b1273fe3982639c16111fd95a883b5876a5d756414c9e7a1ec2fa7537b5fe9cb",
         "spans": [
           {
-            "start": 32,
-            "end": 40,
+            "start": 15,
+            "end": 23,
             "text": "tarjetas",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 124,
-            "end": 125,
+            "start": 31,
+            "end": 35,
+            "text": "cero",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 38,
+            "end": 51,
+            "text": "ciento veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 96,
+            "end": 100,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 195,
+            "end": 196,
             "text": "0",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 129,
-            "end": 131,
+            "start": 207,
+            "end": 222,
+            "text": "Sin tarjetas: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 272,
+            "end": 274,
             "text": "12",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 135,
-            "end": 137,
+            "start": 285,
+            "end": 296,
+            "text": "Un sobre: 1",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 306,
+            "end": 308,
             "text": "13",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 141,
-            "end": 143,
+            "start": 319,
+            "end": 335,
+            "text": "Varios sobres: 2",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 345,
+            "end": 347,
             "text": "25",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 148,
-            "end": 151,
+            "start": 358,
+            "end": 374,
+            "text": "Varios sobres: 3",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 384,
+            "end": 387,
             "text": "120",
             "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 398,
+            "end": 415,
+            "text": "Varios sobres: 10",
+            "role": "output",
             "reading": "natural"
           }
         ]
@@ -5982,11 +6602,32 @@
       {
         "block": "block_0015_0001",
         "path": "/text",
-        "sourceSha256": "6a84c0baa033624d366ab4472ef898e4b495d7e3919fa37f2bc9095e921f1933",
+        "sourceSha256": "534387afc7526a3d7c771e258f72b3509ded9481f4f71f476212578f651a3a45",
         "spans": [
           {
-            "start": 273,
-            "end": 289,
+            "start": 23,
+            "end": 27,
+            "text": "doce",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 30,
+            "end": 36,
+            "text": "veinte",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 104,
+            "end": 115,
+            "text": "veinticinco",
+            "role": "data",
+            "reading": "natural"
+          },
+          {
+            "start": 383,
+            "end": 399,
             "text": "Varios sobres: 2",
             "role": "output",
             "reading": "natural"
@@ -6354,61 +6995,75 @@
       {
         "block": "block_0020_0001",
         "path": "/text",
-        "sourceSha256": "c0aeda18a85df88d39df0c88ce890c179cefb738173447ebf1d72fada9164d66",
+        "sourceSha256": "7f10f41875454512192c1533b242fe0d0a0a8e3655139b3a796b8e8e2eb5fefd",
         "spans": [
           {
             "start": 17,
             "end": 23,
             "text": "hechas",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
             "start": 26,
             "end": 31,
             "text": "total",
             "role": "cpp",
-            "reading": "auto"
+            "reading": "technical"
           },
           {
-            "start": 67,
-            "end": 71,
+            "start": 153,
+            "end": 157,
             "text": "0 40",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 75,
-            "end": 80,
+            "start": 168,
+            "end": 180,
+            "text": "En curso: 40",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 230,
+            "end": 235,
             "text": "40 40",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 84,
-            "end": 87,
+            "start": 246,
+            "end": 258,
+            "text": "Terminada: 0",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 268,
+            "end": 271,
             "text": "0 8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 92,
-            "end": 95,
+            "start": 282,
+            "end": 293,
+            "text": "En curso: 8",
+            "role": "output",
+            "reading": "natural"
+          },
+          {
+            "start": 303,
+            "end": 306,
             "text": "8 8",
             "role": "data",
             "reading": "natural"
           },
           {
-            "start": 187,
-            "end": 195,
-            "text": "En curso",
-            "role": "output",
-            "reading": "natural"
-          },
-          {
-            "start": 221,
-            "end": 230,
-            "text": "Terminada",
+            "start": 317,
+            "end": 329,
+            "text": "Terminada: 0",
             "role": "output",
             "reading": "natural"
           }
