@@ -936,8 +936,9 @@ que cumpla todos sus criterios vigentes. Los demás casos permanecen opcionales.
 de `projectFiles`; `exactSources` exige que no existan fuentes de
 compilación adicionales. `linksTo` referencia objetivos de biblioteca
 estática también declarados, y se acredita mediante dependencia y enlace del
-artefacto real. El mapa es inmutable tras publicarse y requiere una transición
-autenticada para cualquier ampliación futura.
+artefacto real. Cada contrato ya publicado permanece inmutable. Es posible añadir
+nuevos propietarios al final de la declaración mediante una transición
+autenticada, sin modificar ni reordenar los anteriores.
 
 Esta versión no acredita todavía todo el programa de Programación 2:
 requisitos públicos/privados de encabezados, opciones, lista de objetivos,

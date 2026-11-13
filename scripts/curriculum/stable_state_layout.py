@@ -2604,8 +2604,10 @@ def _validate_transition_v2(previous: dict, current: dict) -> None:
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
-            baseline.get("compilerCmakeGraphChecks") == current.get("compilerCmakeGraphChecks"),
-            "Published CMake graph requirements cannot be removed or rewritten")
+            (type(current.get("compilerCmakeGraphChecks")) is list and
+             current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
+             baseline["compilerCmakeGraphChecks"]),
+            "Published CMake graph requirements cannot be removed, reordered or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")
@@ -2859,8 +2861,10 @@ def validate_transition(previous: dict, current: dict) -> None:
             baseline.get("compilerNamedRuleChecks") == current.get("compilerNamedRuleChecks"),
             "Published named-rule requirements cannot be removed or rewritten")
     require(not baseline.get("compilerCmakeGraphChecks") or
-            baseline.get("compilerCmakeGraphChecks") == current.get("compilerCmakeGraphChecks"),
-            "Published CMake graph requirements cannot be removed or rewritten")
+            (type(current.get("compilerCmakeGraphChecks")) is list and
+             current["compilerCmakeGraphChecks"][:len(baseline["compilerCmakeGraphChecks"])] ==
+             baseline["compilerCmakeGraphChecks"]),
+            "Published CMake graph requirements cannot be removed, reordered or rewritten")
     require(not baseline.get("orderVisualSeparators") or
             baseline["orderVisualSeparators"] == current.get("orderVisualSeparators"),
             "Published visual separators cannot lose an established source owner")

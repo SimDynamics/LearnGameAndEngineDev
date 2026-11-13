@@ -30,6 +30,16 @@ def declaration() -> list[dict]:
             {"name": "faltantes", "type": "STATIC_LIBRARY",
              "sources": ["faltantes.cpp"], "exactSources": True},
         ],
+    }, {
+        "activity": "block_0008_0003",
+        "project": "Pases",
+        "targets": [
+            {"name": "portero", "type": "EXECUTABLE",
+             "sources": ["acceso.cpp"], "linksTo": ["regla"],
+             "exactSources": True},
+            {"name": "regla", "type": "STATIC_LIBRARY",
+             "sources": ["regla.cpp"], "exactSources": True},
+        ],
     }]
 
 
@@ -91,6 +101,25 @@ class CmakeGraphChecksTest(unittest.TestCase):
         altered["compilerCmakeGraphChecks"][0]["targets"][0]["linksTo"] = []
         with self.assertRaises(state.LayoutError):
             state.validate_transition(self.after, altered)
+
+    def test_second_original_owner_can_be_appended_without_changing_first(self):
+        only_first = deepcopy(self.after)
+        only_first["compilerCmakeGraphChecks"] = declaration()[:1]
+        state.validate(only_first)
+        state.validate_transition(self.before, only_first)
+        state.validate_transition(only_first, self.after)
+        self.assertEqual(self.before["pages"], self.after["pages"])
+        self.assertEqual(self.before["stateLayout"], self.after["stateLayout"])
+
+    def test_existing_owners_cannot_be_reordered_or_moved(self):
+        reordered = deepcopy(self.after)
+        reordered["compilerCmakeGraphChecks"].reverse()
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, reordered)
+        shortened = deepcopy(self.after)
+        shortened["compilerCmakeGraphChecks"].pop()
+        with self.assertRaises(state.LayoutError):
+            state.validate_transition(self.after, shortened)
 
     def test_non_spanish_mapped_lesson_cannot_receive_a_graph(self):
         invalid = deepcopy(self.after)

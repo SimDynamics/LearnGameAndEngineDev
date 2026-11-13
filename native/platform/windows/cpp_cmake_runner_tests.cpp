@@ -360,6 +360,13 @@ add_dependencies(first parts)
         "sources":["main.cpp"],"linksTo":["faltantes"],"exactSources":true},
        {"name":"faltantes","type":"STATIC_LIBRARY",
         "sources":["faltantes.cpp"],"exactSources":true}
+     ]},
+    {"activity":"block_0008_0003","project":"Pases",
+     "targets":[
+       {"name":"portero","type":"EXECUTABLE",
+        "sources":["acceso.cpp"],"linksTo":["regla"],"exactSources":true},
+       {"name":"regla","type":"STATIC_LIBRARY",
+        "sources":["regla.cpp"],"exactSources":true}
      ]}
   ],
 )json");
@@ -401,6 +408,145 @@ add_dependencies(first parts)
     check(!compiler_runtime_request_allowed(after,student),
         "The lesson accepted a request omitting its authenticated graph rubric");
     std::cout<<"PASS root CMake graph declaration: original U2 source, maps, drafts and responses unchanged; new source-bound rubric required\\n";
+    // Construct the actual historical U2 student project with its missing
+    // link repaired. A real MSVC run, not an in-memory matching string, must
+    // grant exactly the new first-case structural proof.
+    auto repaired_project=student;
+    repaired_project.capture_cmake_graph=true;
+    repaired_project.cmake_graph_check=after.cmake_graph_check;
+    repaired_project.request_id=1401;
+    repaired_project.revision=140;
+    repaired_project.project_key="qa/p2-u2-cmake-link-repair";
+    repaired_project.projects_directory=environment.paths.projects;
+    bool added_link=false;
+    for(auto& file:repaired_project.project_files)
+        if(file.first=="CMakeLists.txt") {
+            file.second+="target_link_libraries(revisar PRIVATE faltantes)\n";
+            added_link=true;
+        }
+    check(added_link&&compiler_runtime_request_allowed(after,repaired_project),
+        "A student CMake link edit was incorrectly refused before execution");
+    const auto first_case=run_cpp(repaired_project);
+    ran(first_case);
+    check(first_case.execution.stdout_bytes=="3:0:0"&&
+        first_case.execution.stderr_bytes.empty(),
+        "The actual published U2 project did not preserve its first-case output");
+    const auto credited_capture=capture_cpp_execution(repaired_project,first_case);
+    check(credited_capture.cmake_graph_correct&&
+        evaluate_cpp_output_check(*after.output_check,credited_capture,
+            repaired_project.revision).verdict==curriculum::OutputVerdict::correct,
+        "The real repaired project did not satisfy both graph and output evidence");
+    auto legacy_request=repaired_project;
+    legacy_request.capture_cmake_graph=false;
+    legacy_request.cmake_graph_check.reset();
+    const auto old_capture=capture_cpp_execution(legacy_request,first_case);
+    state::StateData saved;
+    state::prepare_lesson_state(saved,original);
+    check(record_compiler_puzzle_case(saved,original,before,legacy_request,
+            old_capture,"Salida histórica")&&
+        compiler_puzzle_completed(saved,original,before),
+        "A valid historical stdout receipt could not be represented");
+    check(!compiler_puzzle_completed(saved,mapped,after),
+        "The new CMake structure inherited an old stdout-only achievement");
+    state::prepare_lesson_state(saved,mapped);
+    check(record_compiler_puzzle_case(saved,mapped,after,repaired_project,
+            credited_capture,"Estructura y salida acreditadas")&&
+        compiler_puzzle_completed(saved,mapped,after),
+        "The first verified CMake case did not unlock its new objective");
+    const auto reopened=state::decode(state::encode(saved));
+    check(compiler_puzzle_completed(reopened,mapped,after)&&
+        compiler_puzzle_completed(reopened,original,before)&&
+        compiler_puzzle_case_count(reopened,mapped,after)==1,
+        "Reopening changed either historical stdout or new graph accreditation");
+    std::cout<<"PASS actual published U2 CMake editor: MSVC library link, first-case success, historical receipts and reopening\\n";
+
+    // The second original U2L2 exercise begins with an empty
+    // CMakeLists.txt. The student must build the static library and link it
+    // to the portero executable. The same stdout alone does not prove this.
+    const auto& passes_before=original.pages.at(8).blocks.at(3);
+    const auto& passes_after=mapped.pages.at(8).blocks.at(3);
+    const auto& passes_metadata=metadata.pages.at(8).blocks.at(3);
+    check(passes_before.stable_id=="block_0008_0003"&&
+        !passes_before.cmake_graph_check&&
+        passes_after.cmake_graph_check&&
+        passes_after.cmake_graph_check==passes_metadata.cmake_graph_check&&
+        passes_after.project_files==passes_before.project_files&&
+        curriculum::exercise_key(mapped,passes_after)==
+            curriculum::exercise_key(original,passes_before)&&
+        curriculum::draft_key("programming",mapped,passes_after)==
+            curriculum::draft_key("programming",original,passes_before)&&
+        curriculum::reference_objective_frame(mapped,passes_after)!=
+            curriculum::reference_objective_frame(original,passes_before),
+        "The second U2L2 CMake contract changed historical sources or addresses");
+    CppRunRequest passes;
+    passes.request_id=1440;
+    passes.revision=440;
+    passes.project_key="qa/p2-u2-new-linked-library";
+    passes.projects_directory=environment.paths.projects;
+    passes.project_files=passes_after.project_files;
+    passes.cmake=passes_after.cmake;
+    passes.cmake_graph_check=passes_after.cmake_graph_check;
+    passes.capture_cmake_graph=true;
+    passes.action=CppRunRequest::Action::compile_run;
+    for(auto& file:passes.project_files)
+        if(file.first=="CMakeLists.txt")
+            file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Pases LANGUAGES CXX)
+add_library(regla STATIC regla.cpp)
+add_executable(portero acceso.cpp)
+target_link_libraries(portero PRIVATE regla)
+target_compile_features(regla PRIVATE cxx_std_20)
+target_compile_features(portero PRIVATE cxx_std_20)
+set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+    check(compiler_runtime_request_allowed(passes_after,passes),
+        "The original Pases editor refused a valid new library and client");
+    const auto passes_result=run_cpp(passes);
+    ran(passes_result);
+    const auto passes_fresh=capture_cpp_execution(passes,passes_result);
+    check(passes_result.execution.stdout_bytes=="1:1:0"&&
+        passes_fresh.cmake_graph_correct&&
+        evaluate_cpp_output_check(*passes_after.output_check,passes_fresh,
+            passes.revision).verdict==curriculum::OutputVerdict::correct,
+        "Real MSVC failed the Pases graph or its three prepared observations");
+    auto passes_saved=reopened;
+    state::prepare_lesson_state(passes_saved,mapped);
+    check(!compiler_puzzle_completed(passes_saved,mapped,passes_after)&&
+        record_compiler_puzzle_case(passes_saved,mapped,passes_after,
+            passes,passes_fresh,"Pases enlazado")&&
+        compiler_puzzle_completed(passes_saved,mapped,passes_after)&&
+        compiler_puzzle_case_count(passes_saved,mapped,passes_after)==1,
+        "The correct first Pases case did not unlock its new contract");
+    auto duplicate=passes;
+    duplicate.request_id=1441;
+    duplicate.revision=441;
+    duplicate.project_key+="/duplicate-implementation";
+    for(auto& file:duplicate.project_files)
+        if(file.first=="CMakeLists.txt")
+            file.second=R"cmake(cmake_minimum_required(VERSION 3.20)
+project(Pases LANGUAGES CXX)
+add_library(regla STATIC regla.cpp)
+add_executable(portero acceso.cpp regla.cpp)
+target_compile_features(regla PRIVATE cxx_std_20)
+target_compile_features(portero PRIVATE cxx_std_20)
+set_target_properties(regla portero PROPERTIES CXX_EXTENSIONS OFF)
+)cmake";
+    const auto duplicate_result=run_cpp(duplicate);
+    ran(duplicate_result);
+    const auto duplicate_fresh=capture_cpp_execution(duplicate,duplicate_result);
+    check(duplicate_result.execution.stdout_bytes=="1:1:0"&&
+        evaluate_cpp_output_check(*passes_after.output_check,duplicate_fresh,
+            duplicate.revision).verdict==curriculum::OutputVerdict::correct&&
+        !duplicate_fresh.cmake_graph_correct&&
+        !record_compiler_puzzle_case(passes_saved,mapped,passes_after,
+            duplicate,duplicate_fresh,"Fuentes duplicadas"),
+        "The identical stdout from a duplicate source earned a library-link receipt");
+    const auto persisted=state::decode(state::encode(passes_saved));
+    check(compiler_puzzle_completed(persisted,mapped,passes_after)&&
+        compiler_puzzle_completed(persisted,mapped,after)&&
+        compiler_puzzle_completed(persisted,original,before),
+        "A failed alternative invalidated earlier achievements on reopening");
+    std::cout<<"PASS both original U2L2 CMake editors: linked library, duplicate source rejected, preserved first-case and history\\n";
     if(graph_only) {
         qa.finish();
         std::cout<<"PASS real CMake File API: source duplication is not library linking; target types, sources, dependency and link fragments verified\n";
