@@ -280,6 +280,10 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
     if(block.named_rule_source_check) {
         const auto& named=*block.named_rule_source_check;
         if(request.named_rule_probe!=named.execution_probe)return false;
+        if(!named.execution_probe&&std::ranges::any_of(named.editable_paths,
+                [](std::string_view path) {
+                    return curriculum::is_cpp_source_file(path);
+                }))return false;
         if(request.action!=CppRunRequest::Action::compile_run||request.diagnostic||
            request.cmake!=block.cmake||request.source_files!=block.source_files)
             return false;
