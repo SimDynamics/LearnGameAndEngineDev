@@ -2185,8 +2185,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
     for entry in records:
         require(type(entry) is dict and
                 {"activity", "targets"} <= set(entry) <=
-                {"activity", "project", "targets"},
-                "CMake graph owner needs activity, optional project and targets")
+                {"activity", "project", "minimumCmakeVersion", "targets"},
+                "CMake graph owner needs activity, optional project, minimum and targets")
         identity = _identity(entry["activity"])
         require(identity not in seen, "Repeated CMake graph activity")
         seen.add(identity)
@@ -2202,6 +2202,12 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         project = entry.get("project", "")
         require(type(project) is str and len(project) <= 128,
                 "CMake graph project name must be short text")
+        minimum = entry.get("minimumCmakeVersion")
+        if minimum is not None:
+            require(type(minimum) is str and len(minimum) <= 40 and
+                    re.fullmatch(r"[0-9]+(?:\\.[0-9]+){1,3}", minimum) and
+                    all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")),
+                    "CMake minimum must be a numeric major.minor version")
         targets = entry["targets"]
         require(type(targets) is list and 0 < len(targets) <= 16,
                 "CMake graph needs 1..16 targets")
