@@ -1491,6 +1491,7 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for (const auto& id : current_blocks) require(result.signatures.contains(id), "Unknown state block");
     std::map<std::string,std::string> refined_order_signatures;
     std::map<std::string,const ReviewedChoice*> revised_choices;
+    std::map<std::string,JsonObject> general_choice_revisions;
     std::map<std::string,const ReviewedCompiler*> revised_compilers;
     std::map<std::string,const ReviewedCompiler*> revised_compiler_references;
     if(metadata.HasKey(L"compilerRevisions")) {
@@ -1524,17 +1525,40 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     }
     if(metadata.HasKey(L"choiceRevisions")) {
         const auto records=array(metadata,"choiceRevisions");
-        require(result.version==2&&records.Size()<=reviewed_choices().size()&&(!records.Size()||locale=="es"),"Reviewed choices require their Spanish v2 ownership");
+        require(result.version==2&&
+                records.Size()<=reviewed_choices().size()+64&&
+                (!records.Size()||locale=="es"),
+            "Choice revisions require their Spanish v2 ownership");
         for(const auto& value:records) {
-            const auto item=value.GetObject();allowed_keys(item,{"id","block"},true);
-            const auto id=text(item,"id");const auto* reviewed=reviewed_choice_owner(lesson_id,id);
-            require(reviewed&&current_blocks.contains(id)&&revised_choices.emplace(id,reviewed).second,
-                "Unknown, inactive or repeated reviewed option identity");
+            const auto item=value.GetObject();
+            const auto id=text(item,"id");
+            require(valid_id(id)&&current_blocks.contains(id)&&
+                    !revised_choices.contains(id)&&
+                    !general_choice_revisions.contains(id),
+                "Unknown, inactive or repeated choice revision identity");
+            const auto* reviewed=reviewed_choice_owner(lesson_id,id);
             const auto snapshot=item.GetNamedObject(L"block");
-            require(text(snapshot,"type")=="multiple_choice"&&fingerprint(snapshot)==reviewed->before_full&&
-                state_fingerprint(snapshot)==reviewed->before_payload&&result.signatures.at(id)==reviewed->before_payload,
-                "The reviewed option snapshot changed its complete published original");
-            ChoiceRevision record;record.id=id;record.raw_json=utf8(snapshot.Stringify());record.sha256=fingerprint(snapshot);
+            if(item.HasKey(L"optionIndex")) {
+                allowed_keys(item,{"id","block","optionIndex","replacement"},true);
+                require(!reviewed&&text(snapshot,"type")=="multiple_choice"&&
+                        state_fingerprint(snapshot)==result.signatures.at(id),
+                    "General choice archive must belong to an original unchanged answer");
+                // Validate index, type and nonempty replacement now; its
+                // authentic active bytes are checked below against this copy.
+                (void)general_choice_projection(snapshot,item,true);
+                general_choice_revisions.emplace(id,item);
+            }else{
+                allowed_keys(item,{"id","block"},true);
+                require(reviewed&&text(snapshot,"type")=="multiple_choice"&&
+                        fingerprint(snapshot)==reviewed->before_full&&
+                        state_fingerprint(snapshot)==reviewed->before_payload&&
+                        result.signatures.at(id)==reviewed->before_payload,
+                    "The reviewed option snapshot changed its complete published original");
+                revised_choices.emplace(id,reviewed);
+            }
+            ChoiceRevision record;record.id=id;
+            record.raw_json=utf8(snapshot.Stringify());
+            record.sha256=fingerprint(snapshot);
             result.choice_revisions.push_back(std::move(record));
         }
     }
@@ -1708,6 +1732,16 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
     for(const auto& [id,reviewed]:revised_choices)
         require(editorial_edges[id].contains({std::string(reviewed->before_full),std::string(reviewed->first_after_full)}),
             "A reviewed option needs its exact first published editorial edge");
+    // The generic edit has no lesson-specific allowlist. It is allowed only
+    // when the editorial chain authenticates this exact complete predecessor.
+    for(const auto& [id,review]:general_choice_revisions) {
+        const auto original=review.GetNamedObject(L"block");
+        const auto& expected=return_actual_blocks;
+        (void)expected;
+        require(editorial_edges[id].contains({fingerprint(original),
+                editorial.at(id)}),
+            "A general choice revision needs its exact archived editorial edge");
+    }
     for(const auto& [id,reviewed]:revised_compilers)
         require(editorial_edges[id].contains({std::string(reviewed->before),std::string(reviewed->after)}),
             "A compiler expansion needs its exact first published editorial edge");
@@ -1727,7 +1761,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
             }
             const auto projected=source_format_originals.contains(id)?
                 source_format_projection(block,source_format_originals.at(id)):block;
-            const auto digest=state_fingerprint(projected);
+            const auto general=general_choice_revisions.find(id);
+            const auto normalized_choice=general!=general_choice_revisions.end()?
+                general_choice_projection(projected,general->second):projected;
+            const auto digest=state_fingerprint(normalized_choice);
             validate_choice_pair(projected,reviewed_choice_owner(lesson_id,id));
             if(projected.HasKey(L"compileCheck")) {
                 const auto spec=reviewed_compile_check(text(projected.GetNamedObject(L"compileCheck"),"diagnostic"));
@@ -1788,7 +1825,10 @@ StateLayout read_layout(const JsonObject& metadata, const JsonArray& pages, std:
                 for(std::size_t b=0;b<record.blocks.size();++b) {
                     const auto& id=record.blocks[b];
                     const auto source=blocks.GetAt(static_cast<unsigned>(b)).GetObject();
-                    const auto digest = state_fingerprint(source);
+                    const auto general=general_choice_revisions.find(id);
+                    const auto normalized=general!=general_choice_revisions.end()?
+                        general_choice_projection(source,general->second,true):source;
+                    const auto digest = state_fingerprint(normalized);
                     if(source.HasKey(L"compileCheck"))require(editorial_nodes.contains(id)&&
                         std::ranges::find(editorial_nodes.at(id),fingerprint(source))!=editorial_nodes.at(id).end(),
                         "A historical compilation diagnostic needs an exact occurrence in its owner's published editorial chain");
