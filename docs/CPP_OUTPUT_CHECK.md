@@ -662,7 +662,9 @@ de propósito; `minUses` exige un mínimo de referencias de la constante.
 
 El lector exige una definición de la función, una constante local `int` de
 valor correspondiente, un identificador de propósito y referencias reales al
-resultado, incluso cuando se devuelve mediante variables intermedias. Los
+resultado, incluso cuando se devuelve mediante variables intermedias.
+Admite las grafías equivalentes `const int` e `int const`; no exige un
+orden exclusivo de los especificadores de tipo. Los
 comentarios, las cadenas y las constantes declaradas pero no utilizadas no
 acreditan el objetivo. La constante puede inicializarse también con
 aritmética entera acotada sobre literales decimales, incluidos paréntesis,
@@ -687,6 +689,13 @@ expresión neutra. Si una variable intermedia derivada de la constante
 se sobrescribe con un cálculo que ya no depende de ella, ese resultado
 descartado no acredita el `return`. Una asignación posterior que
 vuelva a utilizar la constante sí puede establecer la dependencia.
+El mínimo `minUses` se cuenta sobre las referencias útiles que llegan
+al valor devuelto, directamente o a través de variables locales; una
+operación auxiliar que no llega al resultado no incrementa el mínimo.
+Tampoco se acreditan las referencias de un `return` situado directamente
+en una rama `if (false)`, `if (0)` o `if constexpr (false)`. Esta detección
+es acotada: no reemplaza la compilación, la ejecución ni las sondas
+independientes que correspondan a cada actividad.
 
 **Límites de la primera integración:** el análisis léxico de usos no
 demuestra por sí solo que todas las operaciones sean correctas o que otra

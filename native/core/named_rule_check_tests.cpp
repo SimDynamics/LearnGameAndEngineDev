@@ -28,6 +28,12 @@ void capacity() {
         })cpp",rules,true,"Equivalent capacity name");
     verify(R"cpp(
         int cajas_para(int piezas) {
+            int const plazas_por_caja = 4;
+            return (piezas + plazas_por_caja - 1) / plazas_por_caja;
+        })cpp",rules,true,"Equivalent east-const spelling");
+
+    verify(R"cpp(
+        int cajas_para(int piezas) {
             const int capacidad = 2 + 4 / 2;
             return (piezas + capacidad - 1) / capacidad;
         })cpp",rules,true,"Integer arithmetic and operator precedence");
@@ -68,6 +74,77 @@ void capacity() {
             const int cajas = (piezas + ajuste) / cupo;
             return cajas;
         })cpp",rules,true,"A returned intermediate derived from the local capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int observacion = capacidad + capacidad;
+            return (piezas + capacidad - 1) / 4;
+        })cpp",rules,false,
+        "Unused auxiliary calculations cannot supply a second result use");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int observacion = capacidad + capacidad;
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "Unused local results cannot substitute for the named capacity");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (false) return (piezas + capacidad - 1) / capacidad;
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An unreachable unbraced return cannot earn named-rule credit");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (0) {
+                return (piezas + capacidad - 1) / capacidad;
+            } else {
+                return (piezas + 3) / 4;
+            }
+        })cpp",rules,false,
+        "A false branch cannot substitute for the live else result");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if constexpr (false) {
+                return (piezas + capacidad - 1) / capacidad;
+            }
+            return (piezas + 3) / 4;
+        })cpp",rules,false,
+        "An inactive constexpr branch cannot supply result references");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            if (false) return 0;
+            return (piezas + capacidad - 1) / capacidad;
+        })cpp",rules,true,
+        "Skipping dead code must preserve a valid later return");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int ajuste = capacidad - 1;
+            const int resultado = (piezas + ajuste) / capacidad;
+            return resultado;
+        })cpp",rules,true,
+        "Real dependencies across local intermediate values must be accepted");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            int resultado = (piezas + capacidad - 1) / capacidad;
+            const int copia = resultado;
+            resultado = (piezas + 3) / 4;
+            return copia;
+        })cpp",rules,true,
+        "Reassigning a different local must not invalidate the returned copy");
+    verify(R"cpp(
+        int cajas_para(int piezas) {
+            const int capacidad{4};
+            const int observacion = capacidad + capacidad;
+            return (piezas + capacidad - 1) / 4;
+        })cpp",rules,false,
+        "minUses must apply to the returned computation, not the whole body");
     verify(R"cpp(
         int cajas_para(int piezas) {
             const int capacidad{4};
