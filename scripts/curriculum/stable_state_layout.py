@@ -2202,8 +2202,8 @@ def _validate_compiler_cmake_graph_checks(document: dict) -> None:
         project = entry.get("project", "")
         require(type(project) is str and len(project) <= 128,
                 "CMake graph project name must be short text")
-        minimum = entry.get("minimumCmakeVersion")
-        if minimum is not None:
+        if "minimumCmakeVersion" in entry:
+            minimum = entry["minimumCmakeVersion"]
             require(type(minimum) is str and len(minimum) <= 40 and
                     re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", minimum) and
                     all(int(part) <= 0xFFFFFFFF for part in minimum.split(".")),
