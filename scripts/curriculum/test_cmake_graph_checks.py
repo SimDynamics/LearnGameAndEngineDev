@@ -187,10 +187,12 @@ class FirstProjectGraphChecksTest(unittest.TestCase):
             with self.subTest(version=version):
                 with self.assertRaises(state.LayoutError):
                     state.validate(candidate)
-        candidate = deepcopy(self.after)
-        candidate["compilerCmakeGraphChecks"][0]["minimumCmakeVersion"] = 320
-        with self.assertRaises(state.LayoutError):
-            state.validate(candidate)
+        for invalid in (320, None, True):
+            candidate = deepcopy(self.after)
+            candidate["compilerCmakeGraphChecks"][0]["minimumCmakeVersion"] = invalid
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(state.LayoutError):
+                    state.validate(candidate)
         # Equivalent numeric spelling can be a new declaration, but never
         # silently mutate a requirement already authenticated and published.
         candidate = deepcopy(self.after)
