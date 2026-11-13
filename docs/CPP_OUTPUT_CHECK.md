@@ -664,7 +664,12 @@ El lector exige una definición de la función, una constante local `int` de
 valor correspondiente, un identificador de propósito y referencias reales al
 resultado, incluso cuando se devuelve mediante variables intermedias. Los
 comentarios, las cadenas y las constantes declaradas pero no utilizadas no
-acreditan el objetivo. Además, el motor comprueba la compilación, la
+acreditan el objetivo. La constante puede inicializarse también con
+aritmética entera acotada sobre literales decimales, incluidos paréntesis,
+signos y los operadores `+`, `-`, `*`, `/` y `%`. Se respetan
+precedencia y división entera; se rechazan desbordamiento, divisor cero
+y literales de base ambigua para el comprobador, sin interpretar macros
+ni evaluar expresiones C++ arbitrarias. Además, el motor comprueba la compilación, la
 ejecución y el primer caso válido de `outputCheck` antes de registrar el
 acierto. Los casos posteriores permanecen optativos.
 
