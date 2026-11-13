@@ -436,6 +436,23 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
             *owner.named_rule_source_check->execution_probe,
             early_exit.source_utf8),
         "An early exit must be rejected before generating an independent probe");
+    auto aliased_exit=passing;
+    aliased_exit.source_utf8="#include <cstdlib>\n"+aliased_exit.source_utf8;
+    aliased_exit.source_utf8=replace_unique(std::move(aliased_exit.source_utf8),
+        "return articulos * precio_unitario;",
+        "if (articulos == 11) {\n"
+        "        auto finish = &std::exit; finish(0);\n"
+        "    }\n"
+        "    return articulos * precio_unitario;");
+    require(!compiler_runtime_request_allowed(owner,aliased_exit)&&
+        !named_rule_single_file_probe_source(
+            *owner.named_rule_source_check->execution_probe,
+            aliased_exit.source_utf8),
+        "A function-pointer alias bypassed the early-exit source protection");
+    auto harmless_exit_comment=passing;
+    harmless_exit_comment.source_utf8+="\n// std::exit(0) is not executable code.\n";
+    require(compiler_runtime_request_allowed(owner,harmless_exit_comment),
+        "A harmless early-exit comment rejected the valid student source");
     const auto premature=run_cpp(early_exit);
     require(premature.error_utf8.empty()&&premature.compilation.succeeded()&&
         premature.execution.succeeded()&&!premature.named_rule_probe,
