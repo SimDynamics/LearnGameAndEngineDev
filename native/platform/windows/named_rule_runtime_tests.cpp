@@ -151,6 +151,29 @@ int cajas_para(int piezas) {
 )cpp");
     require(compiler_runtime_request_allowed(owner,submitted),
         "An equivalent local capacity cannot be graded by the editor");
+    // The same valid solution may spell the local and its intermediates
+    // with east-const. This must be accepted by the actual Windows gate.
+    auto const_intermediates=submitted;
+    change_project(const_intermediates,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    int const capacidad{4};
+    int const ajuste = capacidad - 1;
+    int const cajas = (piezas + ajuste) / capacidad;
+    return cajas;
+}
+)cpp");
+    require(compiler_runtime_request_allowed(owner,const_intermediates),
+        "Windows rejected east-const intermediate values with the same contract");
+    auto ignored_intermediate=const_intermediates;
+    change_project(ignored_intermediate,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
+int cajas_para(int piezas) {
+    int const capacidad{4};
+    int const observacion = capacidad + capacidad;
+    return (piezas + capacidad - 1) / 4;
+}
+)cpp");
+    require(!compiler_runtime_request_allowed(owner,ignored_intermediate),
+        "An unused east-const variable supplied a fake second result use");
     auto wrong=submitted;
     change_project(wrong,"componente/src/cajas.cpp",R"cpp(#include "envio/cajas.h"
 int cajas_para(int piezas) {
