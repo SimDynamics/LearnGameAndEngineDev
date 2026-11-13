@@ -355,18 +355,24 @@ add_dependencies(first parts)
         "The historical CMake lesson must have one root state map");
     projected.insert(at,R"json(  "compilerCmakeGraphChecks": [
     {"activity":"block_0004_0004","project":"Preparacion",
+     "minimumCmakeVersion":"3.20",
      "targets":[
        {"name":"revisar","type":"EXECUTABLE",
-        "sources":["main.cpp"],"linksTo":["faltantes"],"exactSources":true},
+        "sources":["main.cpp"],"linksTo":["faltantes"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true},
        {"name":"faltantes","type":"STATIC_LIBRARY",
-        "sources":["faltantes.cpp"],"exactSources":true}
+        "sources":["faltantes.cpp"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true}
      ]},
     {"activity":"block_0008_0003","project":"Pases",
+     "minimumCmakeVersion":"3.20",
      "targets":[
        {"name":"portero","type":"EXECUTABLE",
-        "sources":["acceso.cpp"],"linksTo":["regla"],"exactSources":true},
+        "sources":["acceso.cpp"],"linksTo":["regla"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true},
        {"name":"regla","type":"STATIC_LIBRARY",
-        "sources":["regla.cpp"],"exactSources":true}
+        "sources":["regla.cpp"],"exactSources":true,
+        "explicitCxx20":true,"explicitCxxExtensionsOff":true}
      ]}
   ],
 )json");
