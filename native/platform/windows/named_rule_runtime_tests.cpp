@@ -1,6 +1,7 @@
 #include "platform/windows/compiler_completion.hpp"
 #include "platform/windows/content_loader.hpp"
 #include "platform/windows/environment.hpp"
+#include "platform/windows/state_store.hpp"
 #include "core/lesson.hpp"
 
 #include <filesystem>
