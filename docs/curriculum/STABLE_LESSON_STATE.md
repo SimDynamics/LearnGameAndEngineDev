@@ -182,6 +182,17 @@ con las nuevas posiciones UTF-16, la revisión se rechaza: Work debe
 revisar el marcado mediante un contrato explícito, no moverlo
 silenciosamente.
 
+En una revisión general válida, el lector Windows reconstruye también
+los segmentos del texto anterior, asociándolos a su fuente histórica,
+en vez de conservar el texto nuevo o descartar sus resaltados. El archivo
+anterior se usa sólo para comprobar pausas y procedencia de lectura;
+el texto activo exige su propia narración cuando cambian sus palabras.
+Las ocho revisiones cerradas anteriores conservan sus reglas de lectura.
+La prueba `native.general_choice_editorial_reader` utiliza un perfil QA
+oculto y una copia temporal U9L13 con marcado real, comprueba las regiones
+de lectura activa e histórica y las vuelve a comprobar al reabrir.
+No sustituye una prueba audible de voz ni acredita escucha humana.
+
 El mecanismo admite exactamente un cambio de texto de opción por
 actividad en la versión inicial. El índice correcto y su posición,
 el resto de las opciones, las preguntas y las guías se conservan
