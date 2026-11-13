@@ -86,6 +86,7 @@ class NamedRuleAuthoringTest(unittest.TestCase):
                 editablePaths=["../otro_proyecto.cpp"]),
             lambda v: v["compilerNamedRuleChecks"][2].update(
                 editablePaths=["main.cpp"]),
+            lambda v: v["compilerNamedRuleChecks"][1].pop("executionProbe"),
             lambda v: v["compilerNamedRuleChecks"][0]["executionProbe"].update(
                 harness="componente/src/cajas.cpp"),
             lambda v: v["compilerNamedRuleChecks"][0]["executionProbe"].update(
