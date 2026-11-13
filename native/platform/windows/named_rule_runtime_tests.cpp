@@ -352,6 +352,21 @@ void actual_named_rule_msvc(const Lesson& lesson,const std::filesystem::path& pr
         "const int minimo_articulos{5};\n    return articulos >= minimo_articulos;");
     require(compiler_runtime_request_allowed(owner,passing),
         "A repaired, purpose-named student source failed the rubric");
+    auto location_sensitive=passing;
+    location_sensitive.source_utf8=replace_unique(
+        std::move(location_sensitive.source_utf8),
+        "return articulos * precio_unitario;",
+        "return articulos * precio_unitario + "
+        "(__LINE__ == 5 ? (articulos == 11 ? 1 : 0) : 0);");
+    require(!compiler_runtime_request_allowed(owner,location_sensitive)&&
+        !named_rule_single_file_probe_source(
+            *owner.named_rule_source_check->execution_probe,
+            location_sensitive.source_utf8),
+        "The Windows source gate accepted code that detects independent compilation");
+    auto harmless_prose=passing;
+    harmless_prose.source_utf8+="\n// __LINE__ and source_location are documentation.\n";
+    require(compiler_runtime_request_allowed(owner,harmless_prose),
+        "A harmless comment was mistaken for compilation-environment behavior");
     const auto real=run_cpp(passing);
     require(real.error_utf8.empty()&&real.compilation.succeeded()&&
         real.execution.succeeded(),
