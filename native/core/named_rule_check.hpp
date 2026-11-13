@@ -256,7 +256,8 @@ inline bool role(std::string_view name,const std::vector<std::string>& words) {
     }
     return false;
 }
-inline bool productive(const Tokens& t,std::size_t i) {
+inline bool productive(const Tokens& t,std::size_t i,
+        std::size_t scope_start=0) {
     // Direct algebraic identities cannot establish that a constant is
     // meaningfully used. This is deliberately a bounded syntactic check;
     // arbitrary C++ still requires execution evidence.
@@ -290,8 +291,27 @@ inline bool productive(const Tokens& t,std::size_t i) {
         }
         return false;
     };
-    return !(i>=2&&op(t[i-1],"*")&&zero_before(i-2))&&
-           !(i+2<t.size()&&op(t[i+1],"*")&&zero_after(i+2));
+    if((i>=2&&op(t[i-1],"*")&&zero_before(i-2))||
+       (i+2<t.size()&&op(t[i+1],"*")&&zero_after(i+2)))
+        return false;
+    // A zero factor can apply to an entire parenthesized expression:
+    // 0*(capacidad+capacidad) has two lexical uses but contributes nothing.
+    // Examine enclosing groups, not just the tokens adjacent to the name.
+    std::vector<std::size_t> containing;
+    for(auto at=scope_start;at<i;++at) {
+        if(op(t[at],"("))containing.push_back(at);
+        else if(op(t[at],")")&&!containing.empty())
+            containing.pop_back();
+    }
+    for(const auto open:containing) {
+        const auto close=closing(t,open,"(",")");
+        if(!close||*close<=i)continue;
+        if((open>=2&&op(t[open-1],"*")&&zero_before(open-2))||
+           (*close+2<t.size()&&op(t[*close+1],"*")&&
+            zero_after(*close+2)))
+            return false;
+    }
+    return true;
 }
 inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
         std::string_view name) {
@@ -305,7 +325,7 @@ inline std::size_t uses_in_return(const Tokens& t,Bounds bounds,
     const auto uses=[&](std::size_t first,std::size_t last) {
         std::size_t count=0;
         for(auto i=first;i<last;++i) {
-            if(!productive(t,i))continue;
+            if(!productive(t,i,bounds.open+1))continue;
             std::size_t contribution=id(t[i],name)?1:0;
             for(const auto& alias:aliases)
                 if(id(t[i],alias.first)) {
