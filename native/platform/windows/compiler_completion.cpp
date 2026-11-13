@@ -304,6 +304,10 @@ bool compiler_runtime_request_allowed(const curriculum::Block& block,const CppRu
                    std::ranges::find(named.editable_paths,original.first)==
                        named.editable_paths.end()&&
                    original.second!=current.second)return false;
+                if(std::ranges::find(named.comment_only_paths,original.first)!=
+                       named.comment_only_paths.end()&&
+                   !curriculum::named_rule_comment_only_edit(
+                       original.second,current.second))return false;
             }
             const auto found=std::ranges::find_if(request.project_files,
                 [&](const auto& file){return file.first==named.path;});
