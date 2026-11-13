@@ -368,8 +368,11 @@ std::string reference_objective_frame(const Lesson& lesson, const Block& activit
         token(std::to_string(contract.comment_only_paths.size()));
         for(const auto& path:contract.comment_only_paths)token(path);
         if(contract.execution_probe) {
-            token(contract.path.empty()?"independent-single-file-probe-v1":
-                "independent-cmake-probe-v1");
+            // The final-witness proof replaces the old exit-code-only
+            // accreditation. Receipts from that weaker probe cannot silently
+            // satisfy the updated objective; draft coordinates stay stable.
+            token(contract.path.empty()?"independent-single-file-probe-v2":
+                "independent-cmake-probe-v2");
             token(contract.execution_probe->harness_path);
             token(contract.execution_probe->header);
             token(std::to_string(contract.execution_probe->cases.size()));
