@@ -74,6 +74,39 @@ class GeneralChoiceEditorialTests(unittest.TestCase):
         self.assertEqual(after, before, "An unrelated text-semantic marker was changed")
         self.assertEqual(layout.original_projection(changed)["textSemantics"], before)
 
+    def test_marked_option_retains_its_reading_spans(self):
+        # The published U9 option has an empty spans array. Exercise the
+        # GENERAL mechanism with a genuine, nonempty UTF-16 selection too.
+        authored = deepcopy(self.original)
+        marker = next(field for field in authored["textSemantics"]["fields"]
+                      if field["block"] == OWNER and field["path"] == "/options/0")
+        selected = layout.text_semantics.select(
+            self.block["options"][0], "La operación", "prose", reading="natural")
+        marker["spans"] = [selected]
+        layout.validate(authored)
+        reviewed = layout.revise_choice_editorial(authored, OWNER, 0, REVISED)
+        updated = next(field for field in reviewed["textSemantics"]["fields"]
+                       if field["block"] == OWNER and field["path"] == "/options/0")
+        archive = reviewed["stateLayout"]["choiceRevisions"][0]["semanticBefore"]
+        self.assertEqual(updated["spans"], [selected])
+        self.assertEqual(archive["spans"], [selected])
+        self.assertEqual(layout.original_projection(reviewed)["textSemantics"],
+                         authored["textSemantics"])
+        layout.validate_transition(authored, reviewed)
+
+    def test_marked_option_rejects_stale_utf16_positions(self):
+        authored = deepcopy(self.original)
+        marker = next(field for field in authored["textSemantics"]["fields"]
+                      if field["block"] == OWNER and field["path"] == "/options/0")
+        marker["spans"] = [
+            layout.text_semantics.select(self.block["options"][0],
+                                         "precondición", "data")]
+        layout.validate(authored)
+        # The replacement removes this expression. Reusing the old offset
+        # would narrate/emphasize different words and must be rejected.
+        with self.assertRaises(layout.LayoutError):
+            layout.revise_choice_editorial(authored, OWNER, 0, REVISED)
+
     def test_rejects_stale_or_rewritten_narration_marking(self):
         valid = self.revise()
         changed = deepcopy(valid)
